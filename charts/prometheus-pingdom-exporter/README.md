@@ -50,6 +50,7 @@ The following table lists the configurable parameters of the prometheus-pingdom-
 | `pingdom.appId`        | Application ID, can be created on the pingdom website | `alsototallysecret`                      |
 | `pingdom.accountEmail` | Account-E-Mail of the Account owner                   | `somebodyorelse@invalid`                 |
 | `pingdom.wait`         | time (in seconds) between accessing the Pingdom  API  | `10`                                     |
+| `pod.annotations`      | Pod annotations                                       | `{}`                                     |
 
 
 Specify each parameter using the `--set key=value[,key=value]` argument to `helm install`.
