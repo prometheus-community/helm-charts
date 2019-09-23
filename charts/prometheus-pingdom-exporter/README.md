@@ -37,6 +37,7 @@ The following table lists the configurable parameters of the prometheus-pingdom-
 | `image.repository`     | Image                                                 | `camptocamp/prometheus-pingdom-exporter` |
 | `image.tag`            | Image tag                                             | `20180821-1`                             |
 | `image.pullPolicy`     | Image pull policy                                     | `IfNotPresent`                           |
+| `secret.annotations`   | Secret annotations                                    | `{}`                                     |
 | `service.type`         | Service type                                          | `ClusterIP`                              |
 | `service.port`         | Service port of Graphite UI                           | `9100`                                   |
 | `service.annotations`  | Service annotations                                   | `{}`                                     |
