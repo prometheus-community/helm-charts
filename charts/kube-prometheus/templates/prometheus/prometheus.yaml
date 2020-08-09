@@ -2,11 +2,11 @@
 apiVersion: monitoring.coreos.com/v1
 kind: Prometheus
 metadata:
-  name: {{ template "prometheus-operator.fullname" . }}-prometheus
-  namespace: {{ template "prometheus-operator.namespace" . }}
+  name: {{ template "kube-prometheus.fullname" . }}-prometheus
+  namespace: {{ template "kube-prometheus.namespace" . }}
   labels:
-    app: {{ template "prometheus-operator.name" . }}-prometheus
-{{ include "prometheus-operator.labels" . | indent 4 }}
+    app: {{ template "kube-prometheus.name" . }}-prometheus
+{{ include "kube-prometheus.labels" . | indent 4 }}
 {{- if .Values.prometheus.annotations }}
   annotations:
 {{ toYaml .Values.prometheus.annotations | indent 4 }}
@@ -17,8 +17,8 @@ spec:
 {{- if .Values.prometheus.prometheusSpec.alertingEndpoints }}
 {{ toYaml .Values.prometheus.prometheusSpec.alertingEndpoints | indent 6 }}
 {{- else if .Values.alertmanager.enabled }}
-      - namespace: {{ template "prometheus-operator.namespace" . }}
-        name: {{ template "prometheus-operator.fullname" . }}-alertmanager
+      - namespace: {{ template "kube-prometheus.namespace" . }}
+        name: {{ template "kube-prometheus.fullname" . }}-alertmanager
         port: {{ .Values.alertmanager.alertmanagerSpec.portName }}
         {{- if .Values.alertmanager.alertmanagerSpec.routePrefix }}
         pathPrefix: "{{ .Values.alertmanager.alertmanagerSpec.routePrefix }}"
@@ -57,7 +57,7 @@ spec:
 {{- else if and .Values.prometheus.ingress.enabled .Values.prometheus.ingress.hosts }}
   externalUrl: "http://{{ tpl (index .Values.prometheus.ingress.hosts 0) . }}{{ .Values.prometheus.prometheusSpec.routePrefix }}"
 {{- else }}
-  externalUrl: http://{{ template "prometheus-operator.fullname" . }}-prometheus.{{ template "prometheus-operator.namespace" . }}:{{ .Values.prometheus.service.port }}
+  externalUrl: http://{{ template "kube-prometheus.fullname" . }}-prometheus.{{ template "kube-prometheus.namespace" . }}:{{ .Values.prometheus.service.port }}
 {{- end }}
 {{- if .Values.prometheus.prometheusSpec.nodeSelector }}
   nodeSelector:
@@ -97,7 +97,7 @@ spec:
   configMaps:
 {{ toYaml .Values.prometheus.prometheusSpec.configMaps | indent 4 }}
 {{- end }}
-  serviceAccountName: {{ template "prometheus-operator.prometheus.serviceAccountName" . }}
+  serviceAccountName: {{ template "kube-prometheus.prometheus.serviceAccountName" . }}
 {{- if .Values.prometheus.prometheusSpec.serviceMonitorSelector }}
   serviceMonitorSelector:
 {{ toYaml .Values.prometheus.prometheusSpec.serviceMonitorSelector | indent 4 }}
@@ -154,7 +154,7 @@ spec:
 {{- else if .Values.prometheus.prometheusSpec.ruleSelectorNilUsesHelmValues }}
   ruleSelector:
     matchLabels:
-      app: {{ template "prometheus-operator.name" . }}
+      app: {{ template "kube-prometheus.name" . }}
       release: {{ $.Release.Name | quote }}
 {{ else }}
   ruleSelector: {}
@@ -183,7 +183,7 @@ spec:
         labelSelector:
           matchLabels:
             app: prometheus
-            prometheus: {{ template "prometheus-operator.fullname" . }}-prometheus
+            prometheus: {{ template "kube-prometheus.fullname" . }}-prometheus
 {{- else if eq .Values.prometheus.prometheusSpec.podAntiAffinity "soft" }}
     podAntiAffinity:
       preferredDuringSchedulingIgnoredDuringExecution:
@@ -193,7 +193,7 @@ spec:
           labelSelector:
             matchLabels:
               app: prometheus
-              prometheus: {{ template "prometheus-operator.fullname" . }}-prometheus
+              prometheus: {{ template "kube-prometheus.fullname" . }}-prometheus
 {{- end }}
 {{- end }}
 {{- if .Values.prometheus.prometheusSpec.tolerations }}
@@ -206,7 +206,7 @@ spec:
 {{- end }}
 {{- if .Values.prometheus.prometheusSpec.additionalScrapeConfigs }}
   additionalScrapeConfigs:
-    name: {{ template "prometheus-operator.fullname" . }}-prometheus-scrape-confg
+    name: {{ template "kube-prometheus.fullname" . }}-prometheus-scrape-confg
     key: additional-scrape-configs.yaml
 {{- end }}
 {{- if .Values.prometheus.prometheusSpec.additionalScrapeConfigsSecret.enabled }}
@@ -216,12 +216,12 @@ spec:
 {{- end }}
 {{- if .Values.prometheus.prometheusSpec.additionalAlertManagerConfigs }}
   additionalAlertManagerConfigs:
-    name: {{ template "prometheus-operator.fullname" . }}-prometheus-am-confg
+    name: {{ template "kube-prometheus.fullname" . }}-prometheus-am-confg
     key: additional-alertmanager-configs.yaml
 {{- end }}
 {{- if .Values.prometheus.prometheusSpec.additionalAlertRelabelConfigs }}
   additionalAlertRelabelConfigs:
-    name: {{ template "prometheus-operator.fullname" . }}-prometheus-am-relabel-confg
+    name: {{ template "kube-prometheus.fullname" . }}-prometheus-am-relabel-confg
     key: additional-alert-relabel-configs.yaml
 {{- end }}
 {{- if .Values.prometheus.prometheusSpec.containers }}

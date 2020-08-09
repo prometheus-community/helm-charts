@@ -2,20 +2,20 @@
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
-  name: {{ template "prometheus-operator.fullname" . }}-alertmanager
-  namespace: {{ template "prometheus-operator.namespace" . }}
+  name: {{ template "kube-prometheus.fullname" . }}-alertmanager
+  namespace: {{ template "kube-prometheus.namespace" . }}
   labels:
-    app: {{ template "prometheus-operator.name" . }}-alertmanager
-{{ include "prometheus-operator.labels" . | indent 4 }}
+    app: {{ template "kube-prometheus.name" . }}-alertmanager
+{{ include "kube-prometheus.labels" . | indent 4 }}
 spec:
   selector:
     matchLabels:
-      app: {{ template "prometheus-operator.name" . }}-alertmanager
+      app: {{ template "kube-prometheus.name" . }}-alertmanager
       release: {{ $.Release.Name | quote }}
       self-monitor: "true"
   namespaceSelector:
     matchNames:
-      - {{ printf "%s" (include "prometheus-operator.namespace" .) | quote }}
+      - {{ printf "%s" (include "kube-prometheus.namespace" .) | quote }}
   endpoints:
   - port: {{ .Values.alertmanager.alertmanagerSpec.portName }}
     {{- if .Values.alertmanager.serviceMonitor.interval }}

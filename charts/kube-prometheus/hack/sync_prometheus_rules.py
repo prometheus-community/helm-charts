@@ -98,16 +98,16 @@ alert_condition_map = {
 replacement_map = {
     'job="prometheus-operator"': {
         'replacement': 'job="{{ $operatorJob }}"',
-        'init': '{{- $operatorJob := printf "%s-%s" (include "prometheus-operator.fullname" .) "operator" }}'},
+        'init': '{{- $operatorJob := printf "%s-%s" (include "kube-prometheus.fullname" .) "operator" }}'},
     'job="prometheus-k8s"': {
         'replacement': 'job="{{ $prometheusJob }}"',
-        'init': '{{- $prometheusJob := printf "%s-%s" (include "prometheus-operator.fullname" .) "prometheus" }}'},
+        'init': '{{- $prometheusJob := printf "%s-%s" (include "kube-prometheus.fullname" .) "prometheus" }}'},
     'job="alertmanager-main"': {
         'replacement': 'job="{{ $alertmanagerJob }}"',
-        'init': '{{- $alertmanagerJob := printf "%s-%s" (include "prometheus-operator.fullname" .) "alertmanager" }}'},
+        'init': '{{- $alertmanagerJob := printf "%s-%s" (include "kube-prometheus.fullname" .) "alertmanager" }}'},
     'namespace="monitoring"': {
         'replacement': 'namespace="{{ $namespace }}"',
-        'init': '{{- $namespace := printf "%s" (include "prometheus-operator.namespace" .) }}'},
+        'init': '{{- $namespace := printf "%s" (include "kube-prometheus.namespace" .) }}'},
     'alertmanager-$1': {
         'replacement': '$1',
         'init': ''},
@@ -128,18 +128,18 @@ replacement_map = {
 header = '''{{- /*
 Generated from '%(name)s' group from %(url)s
 Do not change in-place! In order to change this file first read following link:
-https://github.com/helm/charts/tree/master/stable/prometheus-operator/hack
+https://github.com/prometheus-community/helm-charts/tree/main/charts/kube-prometheus/hack
 */ -}}
 {{- $kubeTargetVersion := default .Capabilities.KubeVersion.GitVersion .Values.kubeTargetVersionOverride }}
 {{- if and (semverCompare ">=%(min_kubernetes)s" $kubeTargetVersion) (semverCompare "<%(max_kubernetes)s" $kubeTargetVersion) .Values.defaultRules.create%(condition)s }}%(init_line)s
 apiVersion: monitoring.coreos.com/v1
 kind: PrometheusRule
 metadata:
-  name: {{ printf "%%s-%%s" (include "prometheus-operator.fullname" .) "%(name)s" | trunc 63 | trimSuffix "-" }}
-  namespace: {{ template "prometheus-operator.namespace" . }}
+  name: {{ printf "%%s-%%s" (include "kube-prometheus.fullname" .) "%(name)s" | trunc 63 | trimSuffix "-" }}
+  namespace: {{ template "kube-prometheus.namespace" . }}
   labels:
-    app: {{ template "prometheus-operator.name" . }}
-{{ include "prometheus-operator.labels" . | indent 4 }}
+    app: {{ template "kube-prometheus.name" . }}
+{{ include "kube-prometheus.labels" . | indent 4 }}
 {{- if .Values.defaultRules.labels }}
 {{ toYaml .Values.defaultRules.labels | indent 4 }}
 {{- end }}

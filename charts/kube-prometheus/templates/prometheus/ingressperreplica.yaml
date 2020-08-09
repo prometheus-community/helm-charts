@@ -5,8 +5,8 @@
 apiVersion: v1
 kind: List
 metadata:
-  name: {{ include "prometheus-operator.fullname" $ }}-prometheus-ingressperreplica
-  namespace: {{ template "prometheus-operator.namespace" $ }}
+  name: {{ include "kube-prometheus.fullname" $ }}-prometheus-ingressperreplica
+  namespace: {{ template "kube-prometheus.namespace" $ }}
 items:
 {{ range $i, $e := until $count }}
   - kind: Ingress
@@ -16,11 +16,11 @@ items:
     apiVersion: extensions/v1beta1
     {{ end -}}
     metadata:
-      name: {{ include "prometheus-operator.fullname" $ }}-prometheus-{{ $i }}
-      namespace: {{ template "prometheus-operator.namespace" $ }}
+      name: {{ include "kube-prometheus.fullname" $ }}-prometheus-{{ $i }}
+      namespace: {{ template "kube-prometheus.namespace" $ }}
       labels:
-        app: {{ include "prometheus-operator.name" $ }}-prometheus
-{{ include "prometheus-operator.labels" $ | indent 8 }}
+        app: {{ include "kube-prometheus.name" $ }}-prometheus
+{{ include "kube-prometheus.labels" $ | indent 8 }}
       {{- if $ingressValues.labels }}
       {{ toYaml $ingressValues.labels | indent 8 }}
       {{- end }}
@@ -36,7 +36,7 @@ items:
       {{- range $p := $ingressValues.paths }}
               - path: {{ tpl $p $ }}
                 backend:
-                  serviceName: {{ include "prometheus-operator.fullname" $ }}-prometheus-{{ $i }}
+                  serviceName: {{ include "kube-prometheus.fullname" $ }}-prometheus-{{ $i }}
                   servicePort: {{ $servicePort }}
       {{- end -}}
       {{- if or $ingressValues.tlsSecretName $ingressValues.tlsSecretPerReplica.enabled }}
