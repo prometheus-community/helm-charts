@@ -2,11 +2,11 @@
 apiVersion: monitoring.coreos.com/v1
 kind: Alertmanager
 metadata:
-  name: {{ template "prometheus-operator.fullname" . }}-alertmanager
-  namespace: {{ template "prometheus-operator.namespace" . }}
+  name: {{ template "kube-prometheus.fullname" . }}-alertmanager
+  namespace: {{ template "kube-prometheus.namespace" . }}
   labels:
-    app: {{ template "prometheus-operator.name" . }}-alertmanager
-{{ include "prometheus-operator.labels" . | indent 4 }}
+    app: {{ template "kube-prometheus.name" . }}-alertmanager
+{{ include "kube-prometheus.labels" . | indent 4 }}
 spec:
 {{- if .Values.alertmanager.alertmanagerSpec.image }}
   baseImage: {{ .Values.alertmanager.alertmanagerSpec.image.repository }}
@@ -17,13 +17,13 @@ spec:
 {{- end }}
   replicas: {{ .Values.alertmanager.alertmanagerSpec.replicas }}
   listenLocal: {{ .Values.alertmanager.alertmanagerSpec.listenLocal }}
-  serviceAccountName: {{ template "prometheus-operator.alertmanager.serviceAccountName" . }}
+  serviceAccountName: {{ template "kube-prometheus.alertmanager.serviceAccountName" . }}
 {{- if .Values.alertmanager.alertmanagerSpec.externalUrl }}
   externalUrl: "{{ .Values.alertmanager.alertmanagerSpec.externalUrl }}"
 {{- else if and .Values.alertmanager.ingress.enabled .Values.alertmanager.ingress.hosts }}
   externalUrl: "http://{{ index .Values.alertmanager.ingress.hosts 0 }}{{ .Values.alertmanager.alertmanagerSpec.routePrefix }}"
 {{- else }}
-  externalUrl: http://{{ template "prometheus-operator.fullname" . }}-alertmanager.{{ template "prometheus-operator.namespace" . }}:{{ .Values.alertmanager.service.port }}
+  externalUrl: http://{{ template "kube-prometheus.fullname" . }}-alertmanager.{{ template "kube-prometheus.namespace" . }}:{{ .Values.alertmanager.service.port }}
 {{- end }}
 {{- if .Values.alertmanager.alertmanagerSpec.nodeSelector }}
   nodeSelector:
@@ -75,7 +75,7 @@ spec:
         labelSelector:
           matchLabels:
             app: alertmanager
-            alertmanager: {{ template "prometheus-operator.fullname" . }}-alertmanager
+            alertmanager: {{ template "kube-prometheus.fullname" . }}-alertmanager
 {{- else if eq .Values.alertmanager.alertmanagerSpec.podAntiAffinity "soft" }}
     podAntiAffinity:
       preferredDuringSchedulingIgnoredDuringExecution:
@@ -85,7 +85,7 @@ spec:
           labelSelector:
             matchLabels:
               app: alertmanager
-              alertmanager: {{ template "prometheus-operator.fullname" . }}-alertmanager
+              alertmanager: {{ template "kube-prometheus.fullname" . }}-alertmanager
 {{- end }}
 {{- end }}
 {{- if .Values.alertmanager.alertmanagerSpec.tolerations }}

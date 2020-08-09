@@ -4,18 +4,18 @@
 apiVersion: v1
 kind: List
 metadata:
-  name: {{ include "prometheus-operator.fullname" $ }}-alertmanager-serviceperreplica
-  namespace: {{ template "prometheus-operator.namespace" . }}
+  name: {{ include "kube-prometheus.fullname" $ }}-alertmanager-serviceperreplica
+  namespace: {{ template "kube-prometheus.namespace" . }}
 items:
 {{- range $i, $e := until $count }}
   - apiVersion: v1
     kind: Service
     metadata:
-      name: {{ include "prometheus-operator.fullname" $ }}-alertmanager-{{ $i }}
-      namespace: {{ template "prometheus-operator.namespace" $ }}
+      name: {{ include "kube-prometheus.fullname" $ }}-alertmanager-{{ $i }}
+      namespace: {{ template "kube-prometheus.namespace" $ }}
       labels:
-        app: {{ include "prometheus-operator.name" $ }}-alertmanager
-{{ include "prometheus-operator.labels" $ | indent 8 }}
+        app: {{ include "kube-prometheus.name" $ }}-alertmanager
+{{ include "kube-prometheus.labels" $ | indent 8 }}
       {{- if $serviceValues.annotations }}
       annotations:
 {{ toYaml $serviceValues.annotations | indent 8 }}
@@ -39,8 +39,8 @@ items:
           targetPort: {{ $serviceValues.targetPort }}
       selector:
         app: alertmanager
-        alertmanager: {{ template "prometheus-operator.fullname" $ }}-alertmanager
-        statefulset.kubernetes.io/pod-name: alertmanager-{{ include "prometheus-operator.fullname" $ }}-alertmanager-{{ $i }}
+        alertmanager: {{ template "kube-prometheus.fullname" $ }}-alertmanager
+        statefulset.kubernetes.io/pod-name: alertmanager-{{ include "kube-prometheus.fullname" $ }}-alertmanager-{{ $i }}
       type: "{{ $serviceValues.type }}"
 {{- end }}
 {{- end }}

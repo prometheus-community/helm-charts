@@ -71,23 +71,23 @@ condition_map = {
 header = '''{{- /*
 Generated from '%(name)s' from %(url)s
 Do not change in-place! In order to change this file first read following link:
-https://github.com/helm/charts/tree/master/stable/prometheus-operator/hack
+https://github.com/prometheus-community/helm-charts/tree/main/charts/kube-prometheus/hack
 */ -}}
 {{- $kubeTargetVersion := default .Capabilities.KubeVersion.GitVersion .Values.kubeTargetVersionOverride }}
 {{- if and (semverCompare ">=%(min_kubernetes)s" $kubeTargetVersion) (semverCompare "<%(max_kubernetes)s" $kubeTargetVersion) .Values.grafana.enabled .Values.grafana.defaultDashboardsEnabled%(condition)s }}
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  namespace: {{ template "prometheus-operator.namespace" . }}
-  name: {{ printf "%%s-%%s" (include "prometheus-operator.fullname" $) "%(name)s" | trunc 63 | trimSuffix "-" }}
+  namespace: {{ template "kube-prometheus.namespace" . }}
+  name: {{ printf "%%s-%%s" (include "kube-prometheus.fullname" $) "%(name)s" | trunc 63 | trimSuffix "-" }}
   annotations:
 {{ toYaml .Values.grafana.sidecar.dashboards.annotations | indent 4 }}
   labels:
     {{- if $.Values.grafana.sidecar.dashboards.label }}
     {{ $.Values.grafana.sidecar.dashboards.label }}: "1"
     {{- end }}
-    app: {{ template "prometheus-operator.name" $ }}-grafana
-{{ include "prometheus-operator.labels" $ | indent 4 }}
+    app: {{ template "kube-prometheus.name" $ }}-grafana
+{{ include "kube-prometheus.labels" $ | indent 4 }}
 data:
 '''
 

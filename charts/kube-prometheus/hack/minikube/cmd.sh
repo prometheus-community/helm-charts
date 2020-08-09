@@ -36,7 +36,7 @@ if [ "$1" = "init-etcd-secret" ]; then
 fi
 
 
-if [ "$1" = "prometheus-operator" ]; then
+if [ "$1" = "upgrade-install" ]; then
   helm upgrade $HELM_RELEASE_NAME $CHART \
     --namespace $NAMESPACE     \
     --values    $VALUES_FILES  \
@@ -66,13 +66,13 @@ Commands:
                         the normal installation will not allow scraping of the kubelet,
                         scheduler or controller-manager components
   init-helm           - initialize helm and update repository so that we can install
-                        the prometheus-operator chart. This has to be run only once after
+                        the kube-prometheus chart. This has to be run only once after
                         a minikube installation is done
   init-etcd-secret    - pulls the certs used to access etcd from the api server and creates
                         a secret in the monitoring namespace with them. The values files
                         in the install command assume that this secret exists and is valid.
                         If not, then prometheus will not start
-  prometheus-operator - install or upgrade the prometheus operator chart in the cluster
+  upgrade-install     - install or upgrade the kube-prometheus chart in the cluster
   port-forward        - starts port-forwarding for prometheus, alertmanager, grafana
                         localhost:9090 - prometheus
                         localhost:9093 - alertmanager
