@@ -4,8 +4,11 @@
 This file documents all notable changes to prometheus-cloudwatch-exporter Helm Chart. The release
 numbering uses [semantic versioning](http://semver.org).
 
-
 NOTE: The change log until version 0.4.10 is auto generated based on git commits. Those include a reference to the git commit to be able to get more details.
+
+## 0.8.4
+
+Chart moved from stable to prometheus-community helm repo
 
 ## 0.8.1
 
@@ -127,4 +130,3 @@ commit: 647b56cc4
 
 Add cloudwatch exporter (#4022)
 commit: 0f730f26e
-
