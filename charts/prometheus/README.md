@@ -11,9 +11,9 @@ This chart bootstraps a [Prometheus](https://prometheus.io/) deployment on a [Ku
 ## Get Repo Info
 
 ```console
-$ helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
-$ helm repo add stable https://kubernetes-charts.storage.googleapis.com/
-$ helm repo update
+helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+helm repo add stable https://kubernetes-charts.storage.googleapis.com/
+helm repo update
 ```
 
 _See [helm repo](https://helm.sh/docs/helm/helm_repo/) for command documentation._
@@ -169,7 +169,7 @@ serverFiles:
 ```
 
 ```console
-$ helm install -f values.yaml -f service1-alert.yaml -f service2-alert.yaml ...etc
+helm install -f values.yaml -f service1-alert.yaml -f service2-alert.yaml ...etc
 ```
 
 ### RBAC Configuration
