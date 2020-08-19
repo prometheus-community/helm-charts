@@ -59,10 +59,10 @@ See [Customizing the Chart Before Installing](https://helm.sh/docs/intro/using_h
 
 ```console
 # Helm 2
-$ helm inspect values prometheus-community/prometheus
+$ helm inspect values prometheus-community/prometheus-adapter
 
 # Helm 3
-$ helm show values prometheus-community/prometheus
+$ helm show values prometheus-community/prometheus-adapter
 ```
 
 ### Prometheus Service Endpoint
