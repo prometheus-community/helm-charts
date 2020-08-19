@@ -147,7 +147,7 @@ You should adjust `prometheus.io/path` based on the URL that your pod serves met
 
 ### Sharing Alerts Between Services
 
-Note that you have multiple yaml files. This is particularly useful when you have alerts belonging to multiple services in the cluster. For example,
+Note that when [installing](#install-chart) or [upgrading](#upgrading-chart) you may use multiple values override files. This is particularly useful when you have alerts belonging to multiple services in the cluster. For example,
 
 ```yaml
 # values.yaml
@@ -169,7 +169,7 @@ serverFiles:
 ```
 
 ```console
-helm install -f values.yaml -f service1-alert.yaml -f service2-alert.yaml ...etc
+helm install [RELEASE_NAME] prometheus-community/prometheus -f values.yaml -f service1-alert.yaml -f service2-alert.yaml
 ```
 
 ### RBAC Configuration
