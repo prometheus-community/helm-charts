@@ -1,60 +1,76 @@
-# Consul Exporter
+# Prometheus Consul Exporter
 
-Prometheus exporter for Consul metrics.
-Learn more: https://github.com/prometheus/consul_exporter
+A Prometheus exporter for [Consul](https://www.consul.io/) metrics.
 
-## TL:DR
-
-```bash
-$ helm install stable/consul-exporter
-```
-```bash
-$ helm install stable/consul-exporter --set consulServer=my.consul.com:8500
-```
-
-## Introduction
-
-This chart creates a Consul-Exporter deployment on a
-[Kubernetes](http://kubernetes.io) cluster using the [Helm](https://helm.sh) package manager.
+This chart creates a [Consul Exporter](https://github.com/prometheus/consul_exporter) deployment on a [Kubernetes](http://kubernetes.io) cluster using the [Helm](https://helm.sh) package manager.
 
 ## Prerequisites
 
 - Kubernetes 1.8+ with Beta APIs enabled
 
-## Installing the Chart
+## Get Repo Info
 
-To install the chart with the release name `my-release`:
-```bash
-$ helm install --name my-release stable/consul-exporter
+```console
+helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+helm repo add stable https://kubernetes-charts.storage.googleapis.com/
+helm repo update
 ```
-```bash
-$ helm install --name my-release stable/consul-exporter --set consulServer=my.consul.com --set consulPort=8500
-```
-The command deploys Consul-Exporter on the Kubernetes cluster using the
-default configuration. The [configuration](#configuration) section lists the parameters that can be configured during installation.
 
-## Uninstalling the Chart
+_See [helm repo](https://helm.sh/docs/helm/helm_repo/) for command documentation._
 
-To uninstall/delete the `my-release` deployment:
-```bash
-$ helm delete --purge my-release
+## Install Chart
+
+```console
+# Helm 3
+$ helm install [RELEASE_NAME] prometheus-community/prometheus-consul-exporter
+
+# Helm 2
+$ helm install --name [RELEASE_NAME] prometheus-community/prometheus-consul-exporter
 ```
-The command removes all the Kubernetes components associated with the chart and deletes the release.
+
+_See [configuration](#configuration) below._
+
+_See [helm install](https://helm.sh/docs/helm/helm_install/) for command documentation._
+
+## Uninstall Chart
+
+```console
+# Helm 3
+$ helm uninstall [RELEASE_NAME]
+
+# Helm 2
+# helm delete --purge [RELEASE_NAME]
+```
+
+This removes all the Kubernetes components associated with the chart and deletes the release.
+
+_See [helm uninstall](https://helm.sh/docs/helm/helm_uninstall/) for command documentation._
+
+## Upgrading Chart
+
+```console
+# Helm 3 or 2
+$ helm upgrade [RELEASE_NAME] [CHART] --install
+```
+
+_See [helm upgrade](https://helm.sh/docs/helm/helm_upgrade/) for command documentation._
 
 ## Configuration
 
-Check the [Flags](https://github.com/prometheus/consul_exporter#flags) list and add to the options block in your value overrides.
+See [Customizing the Chart Before Installing](https://helm.sh/docs/intro/using_helm/#customizing-the-chart-before-installing). To see all configurable options with detailed comments, visit the chart's [values.yaml](./values.yaml), or run these configuration commands:
 
-Specify each parameter using the `--set key=value[,key=value]` argument to
-`helm install`. For example,
-```bash
-$ helm install --name my-release \
-    --set key_1=value_1,key_2=value_2 \
-    stable/consul-exporter
+```console
+# Helm 2
+$ helm inspect values prometheus-community/prometheus-consul-exporter
+
+# Helm 3
+$ helm show values prometheus-community/prometheus-consul-exporter
 ```
-Alternatively, a YAML file that specifies the values for the parameters can be
-provided while installing the chart. For example,
-```bash
-# example for staging
-$ helm install --name my-release -f values.yaml stable/consul-exporter
-```
+
+### Consul Server Info
+
+Set `consulServer` to `[MY_CONSUL_HOST]:[MY_CONSUL_PORT]`.
+
+### Flags
+
+Check the [Flags](https://github.com/prometheus/consul_exporter#flags) list and add to the `options` block in your value overrides.
