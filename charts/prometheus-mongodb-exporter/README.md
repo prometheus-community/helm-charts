@@ -1,70 +1,80 @@
 # Prometheus MongoDB Exporter
 
+A Prometheus exporter for [MongoDB](https://www.mongodb.com/) metrics.
+
 Installs the [MongoDB Exporter](https://github.com/percona/mongodb_exporter) for [Prometheus](https://prometheus.io/). The
 MongoDB Exporter collects and exports oplog, replica set, server status, sharding and storage engine metrics.
 
-## Installing the Chart
-
-To install the chart with the release name `my-release`:
+## Get Repo Info
 
 ```console
-$ helm upgrade --install my-release stable/prometheus-mongodb-exporter
+helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+helm repo update
 ```
 
-This command deploys the MongoDB Exporter with the default configuration. The [configuration](#configuration) section lists the parameters that can be configured during installation.
+_See [helm repo](https://helm.sh/docs/helm/helm_repo/) for command documentation._
 
-## Using the Chart
+## Install Chart
 
-To use the chart, ensure the `mongodb.uri` is populated with a valid [MongoDB URI](https://docs.mongodb.com/manual/reference/connection-string)
-or an existing secret (in the releases namespace) containing the key defined on `existingSecret.key`, with the URI is referred via `existingSecret.name`. If no secret key is defined, the default value is `mongodb-uri`.
-If the MongoDB server requires authentication, credentials should be populated in the connection string as well. The MongoDB Exporter supports
-connecting to either a MongoDB replica set member, shard, or standalone instance.
+```console
+# Helm 3
+$ helm install [RELEASE_NAME] prometheus-community/prometheus-mongodb-exporter
 
-The chart comes with a ServiceMonitor for use with the [Prometheus Operator](https://github.com/helm/charts/tree/master/stable/prometheus-operator).
-If you're not using the Prometheus Operator, you can disable the ServiceMonitor by setting `serviceMonitor.enabled` to `false` and instead
-populate the `podAnnotations` as below:
+# Helm 2
+$ helm install --name [RELEASE_NAME] prometheus-community/prometheus-mongodb-exporter
+```
+
+_See [configuration](#configuration) below._
+
+_See [helm install](https://helm.sh/docs/helm/helm_install/) for command documentation._
+
+## Uninstall Chart
+
+```console
+# Helm 3
+$ helm uninstall [RELEASE_NAME]
+
+# Helm 2
+# helm delete --purge [RELEASE_NAME]
+```
+
+This removes all the Kubernetes components associated with the chart and deletes the release.
+
+_See [helm uninstall](https://helm.sh/docs/helm/helm_uninstall/) for command documentation._
+
+## Upgrading Chart
+
+```console
+# Helm 3 or 2
+$ helm upgrade [RELEASE_NAME] [CHART] --install
+```
+
+_See [helm upgrade](https://helm.sh/docs/helm/helm_upgrade/) for command documentation._
+
+## Configuration
+
+See [Customizing the Chart Before Installing](https://helm.sh/docs/intro/using_helm/#customizing-the-chart-before-installing). To see all configurable options with detailed comments, visit the chart's [values.yaml](./values.yaml), or run these configuration commands:
+
+```console
+# Helm 2
+$ helm inspect values prometheus-community/prometheus-mongodb-exporter
+
+# Helm 3
+$ helm show values prometheus-community/prometheus-mongodb-exporter
+```
+
+### MongoDB Server Connection
+
+To use the chart, ensure the `mongodb.uri` is populated with a valid [MongoDB URI](https://docs.mongodb.com/manual/reference/connection-string) or an existing secret (in the releases namespace) containing the key defined on `existingSecret.key`, with the URI is referred via `existingSecret.name`. If no secret key is defined, the default value is `mongodb-uri`.
+
+If the MongoDB server requires authentication, credentials should be populated in the connection string as well. The MongoDB Exporter supports connecting to either a MongoDB replica set member, shard, or standalone instance.
+
+### Service Monitor
+
+The chart comes with a ServiceMonitor for use with the [Prometheus Operator](https://github.com/helm/charts/tree/master/stable/prometheus-operator). If you're not using the Prometheus Operator, you can disable the ServiceMonitor by setting `serviceMonitor.enabled` to `false` and instead populate the `podAnnotations` as below:
 
 ```yaml
 podAnnotations:
   prometheus.io/scrape: "true"
   prometheus.io/port: "metrics"
 ```
-
-## Configuration
-
-| Parameter | Description | Default |
-|-----------|-------------|---------|
-| `affinity` | Node/pod affinities | `{}` |
-| `annotations` | Annotations to be added to the pods | `{}` |
-| `existingSecret.name` | Refer to an existing secret name instead of using `mongodb.uri` | `` |
-| `existingSecret.key` | Refer to an existing secret key | `mongodb-uri` |
-| `extraArgs` | The extra command line arguments to pass to the MongoDB Exporter  | See values.yaml |
-| `fullnameOverride` | Override the full chart name | `` |
-| `image.pullPolicy` | MongoDB Exporter image pull policy | `IfNotPresent` |
-| `image.repository` | MongoDB Exporter image name | `ssheehy/mongodb-exporter` |
-| `image.tag` | MongoDB Exporter image tag | `0.10.0` |
-| `imagePullSecrets` | List of container registry secrets | `[]` |
-| `mongodb.uri` | The [URI](https://docs.mongodb.com/manual/reference/connection-string) to connect to MongoDB | `` |
-| `nameOverride` | Override the application name  | `` |
-| `nodeSelector` | Node labels for pod assignment | `{}` |
-| `podAnnotations` | Annotations to be added to all pods | `{}` |
-| `port` | The container port to listen on | `9216` |
-| `priorityClassName` | Pod priority class name | `` |
-| `replicas` | Number of replicas in the replica set | `1` |
-| `resources` | Pod resource requests and limits | `{}` |
-| `env` | Extra environment variables passed to pod | `{}` |
-| `securityContext` | Security context for the pod | See values.yaml |
-| `service.labels` | Additional labels for the service definition | `{}` |
-| `service.annotations` | Annotations to be added to the service | `{}` |
-| `service.port` | The port to expose | `9216` |
-| `service.type` | The type of service to expose | `ClusterIP` |
-| `serviceAccount.create` | If `true`, create the service account | `true` |
-| `serviceAccount.name` | Name of the service account | `` |
-| `serviceMonitor.enabled` | Set to true if using the Prometheus Operator | `true` |
-| `serviceMonitor.interval` | Interval at which metrics should be scraped | `30s` |
-| `serviceMonitor.scrapeTimeout` | Interval at which metric scrapes should time out | `10s` |
-| `serviceMonitor.namespace` | The namespace where the Prometheus Operator is deployed | `` |
-| `serviceMonitor.additionalLabels` | Additional labels to add to the ServiceMonitor | `{}` |
-| `serviceMonitor.targetLabels` | Set of labels to transfer on the Kubernetes Service onto the target. | `[]`
-| `serviceMonitor.metricRelabelings` | MetricRelabelConfigs to apply to samples before ingestion. | `[]` |
-| `tolerations` | List of node taints to tolerate  | `[]` |

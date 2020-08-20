@@ -2,67 +2,71 @@
 
 [prometheus-to-sd](https://github.com/GoogleCloudPlatform/k8s-stackdriver/tree/master/prometheus-to-sd) is a simple component that can scrape metrics stored in prometheus text format from one or multiple components and push them to the Stackdriver
 
-## TL;DR;
-
-```bash
-$ helm install stable/prometheus-to-sd
-```
-
-
 ## Prerequisites
 
 - a service exposing metrics in prometheus format
 - k8s cluster should run on GCE or GKE
 
-## Installing the Chart
+## Get Repo Info
 
-To install the chart with the release name `my-release`:
-
-```bash
-$ helm install --name my-release stable/prometheus-to-sd
+```console
+helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+helm repo update
 ```
 
-The command deploys prometheus-to-sd on the Kubernetes cluster in the default configuration.
+_See [helm repo](https://helm.sh/docs/helm/helm_repo/) for command documentation._
 
-## Uninstalling the Chart
+## Install Chart
 
-To uninstall/delete the `my-release` deployment:
+```console
+# Helm 3
+$ helm install [RELEASE_NAME] prometheus-community/prometheus-to-sd
 
-```bash
-$ helm delete my-release
+# Helm 2
+$ helm install --name [RELEASE_NAME] prometheus-community/prometheus-to-sd
 ```
 
-The command removes all the Kubernetes components associated with the chart and deletes the release.
+_See [configuration](#configuration) below._
+
+_See [helm install](https://helm.sh/docs/helm/helm_install/) for command documentation._
+
+## Uninstall Chart
+
+```console
+# Helm 3
+$ helm uninstall [RELEASE_NAME]
+
+# Helm 2
+# helm delete --purge [RELEASE_NAME]
+```
+
+This removes all the Kubernetes components associated with the chart and deletes the release.
+
+_See [helm uninstall](https://helm.sh/docs/helm/helm_uninstall/) for command documentation._
+
+## Upgrading Chart
+
+```console
+# Helm 3 or 2
+$ helm upgrade [RELEASE_NAME] [CHART] --install
+```
+
+_See [helm upgrade](https://helm.sh/docs/helm/helm_upgrade/) for command documentation._
 
 ## Configuration
 
-The following table lists the configurable parameters and their default values.
+See [Customizing the Chart Before Installing](https://helm.sh/docs/intro/using_helm/#customizing-the-chart-before-installing). To see all configurable options with detailed comments, visit the chart's [values.yaml](./values.yaml), or run these configuration commands:
 
-| Parameter          | Description                                                                               | Default                                                    |
-| ------------------ | ----------------------------------------------------------------------------------------- | ---------------------------------------------------------- |
-| `image.repository` | prometheus-to-sd image repository                                                         | `gcr.io/google-containers/prometheus-to-sd`                |
-| `image.tag`        | prometheus-to-sd image tag                                                                | `v0.5.2`                                                   |
-| `image.pullPolicy` | Image pull policy                                                                         | `IfNotPresent`                                             |
-| `resources`        | CPU/Memory resource requests/limits                                                       | `{}`                                                       |
-| `port`             | Profiler port                                                                             | `6060`                                                     |
-| `metricSources`    | Sources for metrics in the next format: component-name:http://host:port?whitelisted=a,b,c | `{"kube-state-metrics": "http://kube-state-metrics:8080"}` |
-| `nodeSelector`     | node labels for pod assignment                                                            | `{}`                                                       |
-| `tolerations`      | tolerations for node taints                                                               | `[]`                                                       |
+```console
+# Helm 2
+$ helm inspect values prometheus-community/prometheus-to-sd
+
+# Helm 3
+$ helm show values prometheus-community/prometheus-to-sd
+```
 
 For more information please refer to the [prometheus-to-sd](https://github.com/GoogleCloudPlatform/k8s-stackdriver/tree/master/prometheus-to-sd) documentation.
 
-Specify each parameter using the `--set key=value[,key=value]` argument to `helm install`. For example,
+### Metrics Sources
 
-```bash
-$ helm install --name my-release \
-  --set "metricsSources.kube-state-metrics=http://kube-state-metrics:8080" \
-    stable/prometheus-to-sd
-```
-
-Alternatively, a YAML file that specifies the values for the parameters can be provided while installing the chart. For example,
-
-```bash
-$ helm install --name my-release -f values.yaml stable/prometheus-to-sd
-```
-
-Multiple metrics sources can be defined.
+Multiple metrics sources can be defined. To configure, set `metricsSources` value (example: `http://kube-state-metrics:8080`)

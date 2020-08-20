@@ -1,92 +1,63 @@
 # Prometheus Pushgateway
 
-* Installs prometheus [pushgateway](https://github.com/prometheus/pushgateway)
-
-## TL;DR;
-
-```console
-$ helm install stable/prometheus-pushgateway
-```
-
-## Introduction
-
 This chart bootstraps a prometheus [pushgateway](http://github.com/prometheus/pushgateway) deployment on a [Kubernetes](http://kubernetes.io) cluster using the [Helm](https://helm.sh) package manager.
 
 An optional prometheus `ServiceMonitor` can be enabled, should you wish to use this gateway with a [Prometheus Operator](https://github.com/coreos/prometheus-operator).
 
-## Installing the Chart
-
-To install the chart with the release name `my-release`:
+## Get Repo Info
 
 ```console
-$ helm install --name my-release stable/prometheus-pushgateway
+helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+helm repo update
 ```
 
-The command deploys pushgateway on the Kubernetes cluster in the default configuration. The [configuration](#configuration) section lists the parameters that can be configured during installation.
+_See [helm repo](https://helm.sh/docs/helm/helm_repo/) for command documentation._
 
-## Uninstalling the Chart
-
-To uninstall/delete the `my-release` deployment:
+## Install Chart
 
 ```console
-$ helm delete my-release
+# Helm 3
+$ helm install [RELEASE_NAME] prometheus-community/prometheus-pushgateway
+
+# Helm 2
+$ helm install --name [RELEASE_NAME] prometheus-community/prometheus-pushgateway
 ```
 
-The command removes all the Kubernetes components associated with the chart and deletes the release.
+_See [configuration](#configuration) below._
+
+_See [helm install](https://helm.sh/docs/helm/helm_install/) for command documentation._
+
+## Uninstall Chart
+
+```console
+# Helm 3
+$ helm uninstall [RELEASE_NAME]
+
+# Helm 2
+# helm delete --purge [RELEASE_NAME]
+```
+
+This removes all the Kubernetes components associated with the chart and deletes the release.
+
+_See [helm uninstall](https://helm.sh/docs/helm/helm_uninstall/) for command documentation._
+
+## Upgrading Chart
+
+```console
+# Helm 3 or 2
+$ helm upgrade [RELEASE_NAME] [CHART] --install
+```
+
+_See [helm upgrade](https://helm.sh/docs/helm/helm_upgrade/) for command documentation._
 
 ## Configuration
 
-The following table lists the configurable parameters of the pushgateway chart and their default values.
-
-|        Parameter                  |                                                          Description                                                          |      Default                      |
-| --------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- | --------------------------------- |
-| `affinity`                        | Affinity settings for pod assignment                                                                                          | `{}`                              |
-| `extraArgs`                       | Optional flags for pushgateway                                                                                                | `[]`                              |
-| `extraVars`                       | Optional environment variables for pushgateway                                                                                | `[]`                              |
-| `image.repository`                | Image repository                                                                                                              | `prom/pushgateway`                |
-| `image.tag`                       | Image tag                                                                                                                     | `v1.2.0`                          |
-| `image.pullPolicy`                | Image pull policy                                                                                                             | `IfNotPresent`                    |
-| `ingress.enabled`                 | Enables Ingress for pushgateway                                                                                               | `false`                           |
-| `ingress.annotations`             | Ingress annotations                                                                                                           | `{}`                              |
-| `ingress.hosts`                   | Ingress accepted hostnames                                                                                                    | `nil`                             |
-| `ingress.tls`                     | Ingress TLS configuration                                                                                                     | `[]`                              |
-| `resources`                       | CPU/Memory resource requests/limits                                                                                           | `{}`                              |
-| `replicaCount`                    | Number of replicas                                                                                                            | `1`                               |
-| `strategy`                        | Deployment strategy                                                                                                           | `{ "type": "Recreate" }`          |
-| `service.type`                    | Service type                                                                                                                  | `ClusterIP`                       |
-| `service.port`                    | The service port                                                                                                              | `9091`                            |
-| `service.nodePort`                | The optional service node port when `service.type` is `NodePort`                                                              | ``                                |
-| `service.targetPort`              | The target port of the container                                                                                              | `9091`                            |
-| `serviceAnnotations`              | Annotations for the service                                                                                                   | `{}`                              |
-| `serviceLabels`                   | Labels for service                                                                                                            | `{}`                              |
-| `serviceAccount.create`           | Specifies whether a service account should be created.                                                                        | `true`                            |
-| `serviceAccount.name`             | Service account to be used. If not set and `serviceAccount.create` is `true`, a name is generated using the fullname template |                                   |
-| `tolerations`                     | List of node taints to tolerate                                                                                               | `{}`                              |
-| `nodeSelector`                    | Node labels for pod assignment                                                                                                | `{}`                              |
-| `podAnnotations`                  | Annotations for pod                                                                                                           | `{}`                              |
-| `podLabels`                       | Labels for pod                                                                                                                | `{}`                              |
-| `serviceAccountLabels`            | Labels for service account                                                                                                    | `{}`                              |
-| `persistentVolumeLabels`          | Labels for persistent volume                                                                                                  | `{}`                              |
-| `serviceMonitor.enabled`          | if `true`, creates a Prometheus Operator ServiceMonitor                                                                       | `false`                           |
-| `serviceMonitor.namespace`        | Namespace which Prometheus is running in                                                                                      | `monitoring`                      |
-| `serviceMonitor.interval`         | How frequently to scrape metrics (use by default, falling back to Prometheus' default)                                        | `nil`                             |
-| `serviceMonitor.scrapeTimeout`    | How long to scrape metrics before timing out. (use by default, falling back to Prometheus' default)                           | `nil`                             |
-| `serviceMonitor.additionalLables` | Used to pass Labels that are required by the Installed Prometheus Operator                                                    | `{}`                              |
-| `serviceMonitor.honorLabels`      | if `true`, label conflicts are resolved by keeping label values from the scraped data                                         | `true`                            |
-| `podDisruptionBudget`             | If set, create a PodDisruptionBudget with the items in this map set in the spec                                               | ``                                |
-| `networkPolicy.allowAll`          | Allow connectivity from all pods in the cluster                                                                               | ``                                |
-| `networkPolicy.customSelectors`   | Allow connectivity from pods that match a list of podSelectors and namespaceSelectors                                         | ``                                |
-
-Specify each parameter using the `--set key=value[,key=value]` argument to `helm install`. For example,
+See [Customizing the Chart Before Installing](https://helm.sh/docs/intro/using_helm/#customizing-the-chart-before-installing). To see all configurable options with detailed comments, visit the chart's [values.yaml](./values.yaml), or run these configuration commands:
 
 ```console
-$ helm install --name my-release \
-  --set serviceAccount.name=pushgateway  \
-    stable/prometheus-pushgateway
-```
+# Helm 2
+$ helm inspect values prometheus-community/prometheus-pushgateway
 
-Alternatively, a YAML file that specifies the values for the above parameters can be provided while installing the chart. For example,
-
-```console
-$ helm install --name my-release -f values.yaml stable/prometheus-pushgateway
+# Helm 3
+$ helm show values prometheus-community/prometheus-pushgateway
 ```

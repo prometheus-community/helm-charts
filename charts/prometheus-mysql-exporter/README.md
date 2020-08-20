@@ -1,97 +1,79 @@
 # Prometheus Mysql Exporter
 
--   Installs prometheus [mysql exporter](https://github.com/prometheus/mysqld_exporter)
+A Prometheus exporter for [MySQL](https://www.mysql.com/) metrics.
 
-## TL;DR;
+This chart bootstraps a Prometheus [MySQL Exporter](http://github.com/prometheus/mysql_exporter) deployment on a [Kubernetes](http://kubernetes.io) cluster using the [Helm](https://helm.sh) package manager.
 
-```console
-$ helm install stable/prometheus-mysql-exporter
-```
-
-## Introduction
-
-This chart bootstraps a prometheus [mysql exporter](http://github.com/prometheus/mysql_exporter) deployment on a [Kubernetes](http://kubernetes.io) cluster using the [Helm](https://helm.sh) package manager. The exporter can connect to mysql directly or using the [Cloud SQL Proxy](https://cloud.google.com/sql/docs/mysql/sql-proxy).
-
-## Installing the Chart
-
-To install the chart with the release name `my-release`:
+## Get Repo Info
 
 ```console
-$ helm install --name my-release stable/prometheus-mysql-exporter --set mysql.user="username",mysql.pass="password",mysql.host="example.com",mysql.port="3306"
+helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+helm repo update
 ```
 
-The command deploys a mysql exporter on the Kubernetes cluster in the default configuration. The [configuration](#configuration) section lists the parameters that can be configured during installation.
+_See [helm repo](https://helm.sh/docs/helm/helm_repo/) for command documentation._
 
-## Uninstalling the Chart
-
-To uninstall/delete the `my-release` deployment:
+## Install Chart
 
 ```console
-$ helm delete my-release
+# Helm 3
+$ helm install [RELEASE_NAME] prometheus-community/prometheus-mysql-exporter
+
+# Helm 2
+$ helm install --name [RELEASE_NAME] prometheus-community/prometheus-mysql-exporter
 ```
 
-The command removes all the Kubernetes components associated with the chart and deletes the release.
+_See [configuration](#configuration) below._
+
+_See [helm install](https://helm.sh/docs/helm/helm_install/) for command documentation._
+
+## Uninstall Chart
+
+```console
+# Helm 3
+$ helm uninstall [RELEASE_NAME]
+
+# Helm 2
+# helm delete --purge [RELEASE_NAME]
+```
+
+This removes all the Kubernetes components associated with the chart and deletes the release.
+
+_See [helm uninstall](https://helm.sh/docs/helm/helm_uninstall/) for command documentation._
+
+## Upgrading Chart
+
+```console
+# Helm 3 or 2
+$ helm upgrade [RELEASE_NAME] [CHART] --install
+```
+
+_See [helm upgrade](https://helm.sh/docs/helm/helm_upgrade/) for command documentation._
 
 ## Configuration
 
-The following table lists the configurable parameters of the mysql exporter chart and their default values.
-
-| Parameter                              | Description                                                | Default                            |
-| -------------------------------------- | -----------------------------------------------------------| ---------------------------------- |
-| `replicaCount`                         | Amount of pods for the deployment                          | `1`                                |
-| `image.repository`                     | Image repository                                           | `prom/mysqld-exporter`             |
-| `image.tag`                            | Image tag                                                  | `v0.11.0`                          |
-| `image.pullPolicy`                     | Image pull policy                                          | `IfNotPresent`                     |
-| `service.name`                         | Service name                                               | `mysql-exporter`                   |
-| `service.labels`                       | Additional labels for the service                          | `{}`                               |
-| `service.annotations`                  | Annotations to be added to the service                     | `{}`                               |
-| `service.type`                         | Service type                                               | `ClusterIP`                        |
-| `service.externalport`                 | The service port                                           | `9104`                             |
-| `service.internalPort`                 | The target port of the container                           | `9104`                             |
-| `resources`                            | CPU/Memory resource requests/limits                        | `{}`                               |
-| `annotations`                          | pod annotations for easier discovery                       | `see values.yaml`                  |
-| `collectors`                           | Collector configuration                                    | `see values.yaml`                  |
-| `podLabels`                            | Additional labels to add to each pod                       | `{}`                               |
-| `mysql.db`                             | MySQL connection db (optional)                             | `""`                               |
-| `mysql.host`                           | MySQL connection host                                      | `localhost`                        |
-| `mysql.param`                          | MySQL connection parameters (optional)                     | `"tcp"`                            |
-| `mysql.pass`                           | MySQL connection password                                  | `password`                         |
-| `mysql.port`                           | MySQL connection port                                      | `3306`                             |
-| `mysql.protocol`                       | MySQL connection protocol (optional)                       | `""`                               |
-| `mysql.user`                           | MySQL connection username                                  | `exporter`                         |
-| `mysql.existingSecret`                 | Use existing kubernetes secret for DATA_SOURCE_NAME        | `false`                            |
-| `cloudsqlproxy.enabled`                | Flag to enable the connection using Cloud SQL Proxy        | `false`                            |
-| `cloudsqlproxy.image.repo`             | Cloud SQL Proxy image repository                           | `gcr.io/cloudsql-docker/gce-proxy` |
-| `cloudsqlproxy.image.tag`              | Cloud SQL Proxy image tag                                  | `1.14`                             |
-| `cloudsqlproxy.image.pullPolicy`       | Cloud SQL Proxy image pull policy                          | `IfNotPresent`                     |
-| `cloudsqlproxy.instanceConnectionName` | Google Cloud instance connection name                      | `project:us-central1:dbname`       |
-| `cloudsqlproxy.port`                   | Cloud SQL Proxy listening port                             | `3306`                             |
-| `cloudsqlproxy.credentials`            | Cloud SQL Proxy service account credentials                | `bogus credential file`            |
-| `serviceMonitor.enabled`               | Integration with prometheus-operator                       | `false`                            |
-| `serviceMonitor.interval`              | Interval for polling this exporter                         |                                    |
-| `serviceMonitor.scrapeTimeout`         | Timeout where exporter is considered faulty                |                                    |
-| `serviceMonitor.jobLabel`              | Label to use to retrieve the job name from                 | `""`                               |
-| `serviceMonitor.targetLabels`          | Labels to transfer from service onto the target            | `[]`                               |
-| `serviceMonitor.podTargetLabels`       | Labels to transfor from pod onto the target                | `[]`                               |
-| `serviceMonitor.metricRelabelings`     | MetricRelabelConfigs to apply to samples before ingestion. | `[]`                               |
-
-Specify each parameter using the `--set key=value[,key=value]` argument to `helm install`. For example,
+See [Customizing the Chart Before Installing](https://helm.sh/docs/intro/using_helm/#customizing-the-chart-before-installing). To see all configurable options with detailed comments, visit the chart's [values.yaml](./values.yaml), or run these configuration commands:
 
 ```console
-$ helm install --name my-release \
-  --set mysql.user="username",mysql.password="password",mysql.host="localhost",mysql.port="3306"  \
-    stable/prometheus-mysql-exporter
+# Helm 2
+$ helm inspect values prometheus-community/prometheus-mysql-exporter
+
+# Helm 3
+$ helm show values prometheus-community/prometheus-mysql-exporter
 ```
 
-Alternatively, a YAML file that specifies the values for the above parameters can be provided while installing the chart. For example,
+### MySQL Connection
 
-```console
-$ helm install --name my-release -f values.yaml stable/prometheus-mysql-exporter
-```
+The exporter can connect to mysql directly or using the [Cloud SQL Proxy](https://cloud.google.com/sql/docs/mysql/sql-proxy).
+
+- To configure direct MySQL connection by value, set `mysql.user`, `mysql.pass`, `mysql.host` and `mysql.port` (see additional options in the `mysql` configuration block)
+- To configure direct MySQL connnetion by secret, you must store a connection string in a secret, and set `mysql.existingSecret` to `[SECRET_NAME]`
+
+### Exporter Documentation and Params
 
 Documentation for the MySQL Exporter can be found here: (<https://github.com/prometheus/mysqld_exporter>)
 A mysql params overview can be found here: (<https://github.com/go-sql-driver/mysql#dsn-data-source-name>)
 
-## Collector Flags
+### Collector Flags
 
 Available collector flags can be found in the [values.yaml](https://github.com/kilhyunjun/charts/blob/master/stable/prometheus-mysql-exporter/values.yaml) and a description of each flag can be found in the [mysqld_exporter](https://github.com/prometheus/mysqld_exporter#collector-flags) repository.

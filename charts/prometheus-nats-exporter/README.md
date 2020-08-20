@@ -1,83 +1,63 @@
 # Prometheus NATS Exporter
 
-* Installs prometheus [NATS exporter](https://github.com/nats-io/prometheus-nats-exporter)
+An Prometheus Exporter for [NATS](https://github.com/nats-io/k8s) metrics.
 
-## TL;DR;
+This chart bootstraps a prometheus [NATS Exporter](https://github.com/nats-io/prometheus-nats-exporter) deployment on a [Kubernetes](http://kubernetes.io) cluster using the [Helm](https://helm.sh) package manager.
+
+## Get Repo Info
 
 ```console
-$ helm install incubator/prometheus-nats-exporter
+helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+helm repo update
 ```
 
-## Introduction
+_See [helm repo](https://helm.sh/docs/helm/helm_repo/) for command documentation._
 
-This chart bootstraps a prometheus [NATS exporter](https://github.com/nats-io/prometheus-nats-exporter) deployment on a [Kubernetes](http://kubernetes.io) cluster using the [Helm](https://helm.sh) package manager.
-
-## Installing the Chart
-
-To install the chart with the release name `my-release`:
+## Install Chart
 
 ```console
-$ helm install --name my-release stable/prometheus-nats-exporter
+# Helm 3
+$ helm install [RELEASE_NAME] prometheus-community/prometheus-nats-exporter
+
+# Helm 2
+$ helm install --name [RELEASE_NAME] prometheus-community/prometheus-nats-exporter
 ```
 
-The command deploys NATS exporter on the Kubernetes cluster in the default configuration. The [configuration](#configuration) section lists the parameters that can be configured during installation.
+_See [configuration](#configuration) below._
 
-## Uninstalling the Chart
+_See [helm install](https://helm.sh/docs/helm/helm_install/) for command documentation._
 
-To uninstall/delete the `my-release` deployment:
+## Uninstall Chart
 
 ```console
-$ helm delete my-release
+# Helm 3
+$ helm uninstall [RELEASE_NAME]
+
+# Helm 2
+# helm delete --purge [RELEASE_NAME]
 ```
 
-The command removes all the Kubernetes components associated with the chart and deletes the release.
+This removes all the Kubernetes components associated with the chart and deletes the release.
 
-## Configuration
+_See [helm uninstall](https://helm.sh/docs/helm/helm_uninstall/) for command documentation._
 
-The following table lists the configurable parameters of the postgres Exporter chart and their default values.
-
-| Parameter                         | Description                                             | Default                                          |
-| --------------------------------- | ------------------------------------------------------- | ------------------------------------------------ |
-| `image`                           | Image                                                   | `synadia/prometheus-nats-exporter`               |
-| `imageTag`                        | Image tag                                               | `0.6.2`                                          |
-| `imagePullPolicy`                 | Image pull policy                                       | `IfNotPresent`                                   |
-| `service.type`                    | Service type                                            | `ClusterIP`                                      |
-| `service.port`                    | The service port                                        | `80`                                             |
-| `service.targetPort`              | The target port of the container                        | `7777`                                           |
-| `serviceMonitor.enabled`          | Set to true if using the Prometheus Operator            | `false`                                          |
-| `serviceMonitor.interval`         | Interval at which metrics should be scraped             | ``                                               |
-| `serviceMonitor.namespace`        | The namespace where the Prometheus Operator is deployed | ``                                               |
-| `serviceMonitor.additionalLabels` | Additional labels to add to the ServiceMonitor          | `{}`                                             |
-| `resources`                       |                                                         | `{}`                                             |
-| `config.nats.service`             | NATS monitoring [service name][svc-name]                | `nats-nats-monitoring`                           |
-| `config.nats.namespace`           | Namespace in which NATS deployed                        | `default`                                        |
-| `config.nats.port`                | NATS monitoring service port                            | `8222`                                           |
-| `config.metrics.varz`             | NATS varz metrics                                       | `true`                                           |
-| `config.metrics.channelz`         | NATS channelz metrics                                   | `true`                                           |
-| `config.metrics.connz`            | NATS connz metrics                                      | `true`                                           |
-| `config.metrics.routez`           | NATS routez metrics                                     | `true`                                           |
-| `config.metrics.serverz`          | NATS serverz metrics                                    | `true`                                           |
-| `config.metrics.subz`             | NATS subz metrics                                       | `true`                                           |
-| `config.metrics.gatewayz          | NATS gatewayz metrics                                   | `true`                                           |
-| `tolerations`                     | Add tolerations                                         | `[]`                                             |
-| `nodeSelector`                    | node labels for pod assignment                          | `{}`                                             |
-| `affinity`                        | node/pod affinities                                     | `{}`                                             |
-| `annotations`                     | Deployment annotations                                  | `{}`                                             |
-| `extraContainers`                 | Additional sidecar containers                           | `""`                                             |
-| `extraVolumes`                    | Additional volumes for use in extraContainers           | `""`                                             |
-
-[svc-name]: https://github.com/helm/charts/blob/master/stable/nats/templates/monitoring-svc.yaml
-
-Specify each parameter using the `--set key=value[,key=value]` argument to `helm install`. For example,
+## Upgrading Chart
 
 ```console
-$ helm install --name my-release stable/prometheus-nats-exporter \
-  --set config.nats.service=nats-production-nats-monitoring \
-  --set config.metrics.subz=false
+# Helm 3 or 2
+$ helm upgrade [RELEASE_NAME] [CHART] --install
 ```
 
-Alternatively, a YAML file that specifies the values for the above parameters can be provided while installing the chart. For example,
+_See [helm upgrade](https://helm.sh/docs/helm/helm_upgrade/) for command documentation._
+
+## Configuring
+
+See [Customizing the Chart Before Installing](https://helm.sh/docs/intro/using_helm/#customizing-the-chart-before-installing). To see all configurable options with detailed comments, visit the chart's [values.yaml](./values.yaml), or run these configuration commands:
 
 ```console
-$ helm install --name my-release stable/prometheus-nats-exporter -f values.yaml
+# Helm 2
+$ helm inspect values prometheus-community/prometheus-nats-exporter
+
+# Helm 3
+$ helm show values prometheus-community/prometheus-nats-exporter
 ```
