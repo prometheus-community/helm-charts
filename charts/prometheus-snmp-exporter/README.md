@@ -1,109 +1,81 @@
 # Prometheus SNMP Exporter
 
-Prometheus exporter for snmp monitoring
+An Prometheus exporter that exposes information gathered from SNMP.
 
-Learn more: [https://github.com/prometheus/snmp_exporter](https://github.com/prometheus/snmp_exporter)
-
-## TL;DR;
-
-```bash
-$ helm install stable/prometheus-snmp-exporter
-```
-
-## Introduction
-
-This chart creates a SNMP-Exporter deployment on a [Kubernetes](http://kubernetes.io) cluster using the [Helm](https://helm.sh) package manager.
+This chart creates a [SNMP Exporter](https://github.com/prometheus/snmp_exporter) deployment on a [Kubernetes](http://kubernetes.io) cluster using the [Helm](https://helm.sh) package manager.
 
 ## Prerequisites
 
 - Kubernetes 1.8+ with Beta APIs enabled
 
-## Installing the Chart
+## Get Repo Info
 
-To install the chart with the release name `my-release`:
-
-```bash
-$ helm install --name my-release stable/prometheus-snmp-exporter
+```console
+helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+helm repo add stable https://kubernetes-charts.storage.googleapis.com/
+helm repo update
 ```
 
-The command deploys SNMP Exporter on the Kubernetes cluster using the default configuration. The [configuration](#configuration) section lists the parameters that can be configured during installation.
+_See [helm repo](https://helm.sh/docs/helm/helm_repo/) for command documentation._
 
-## Uninstalling the Chart
+## Install Chart
 
-To uninstall/delete the `my-release` deployment:
+```console
+# Helm 3
+$ helm install [RELEASE_NAME] prometheus-community/prometheus-snmp-exporter
 
-```bash
-$ helm delete --purge my-release
+# Helm 2
+$ helm install --name [RELEASE_NAME] prometheus-community/prometheus-snmp-exporter
 ```
-The command removes all the Kubernetes components associated with the chart and deletes the release.
+
+_See [configuration](#configuration) below._
+
+_See [helm install](https://helm.sh/docs/helm/helm_install/) for command documentation._
+
+## Uninstall Chart
+
+```console
+# Helm 3
+$ helm uninstall [RELEASE_NAME]
+
+# Helm 2
+# helm delete --purge [RELEASE_NAME]
+```
+
+This removes all the Kubernetes components associated with the chart and deletes the release.
+
+_See [helm uninstall](https://helm.sh/docs/helm/helm_uninstall/) for command documentation._
+
+## Upgrading Chart
+
+```console
+# Helm 3 or 2
+$ helm upgrade [RELEASE_NAME] [CHART] --install
+```
+
+_See [helm upgrade](https://helm.sh/docs/helm/helm_upgrade/) for command documentation._
 
 ## Configuration
 
-The following table lists the configurable parameters of the SNMP-Exporter chart and their default values.
+See [Customizing the Chart Before Installing](https://helm.sh/docs/intro/using_helm/#customizing-the-chart-before-installing). To see all configurable options with detailed comments, visit the chart's [values.yaml](./values.yaml), or run these configuration commands:
 
-|               Parameter                |                   Description                   |            Default            |
-| -------------------------------------- | ----------------------------------------------- | ----------------------------- |
-| `config`                               | Prometheus SNMP configuration                   | {}                            |
-| `configmapReload.name`                 | configmap-reload container name                 | `configmap-reload`            |
-| `configmapReload.image.repository`     | configmap-reload container image repository     | `jimmidyson/configmap-reload` |
-| `configmapReload.image.tag`            | configmap-reload container image tag            | `v0.2.2`                      |
-| `configmapReload.image.pullPolicy`     | configmap-reload container image pull policy    | `IfNotPresent`                |
-| `configmapReload.extraArgs`            | Additional configmap-reload container arguments | `{}`                          |
-| `configmapReload.extraConfigmapMounts` | Additional configmap-reload configMap mounts    | `[]`                          |
-| `configmapReload.resources`            | configmap-reload pod resource requests & limits | `{}`                          |
-| `extraArgs`                            | Optional flags for exporter                     | `[]`                          |
-| `image.repository`                     | container image repository                      | `prom/snmp-exporter`          |
-| `image.tag`                            | container image tag                             | `v0.12.0`                     |
-| `image.pullPolicy`                     | container image pull policy                     | `IfNotPresent`                |
-| `ingress.annotations`                  | Ingress annotations                             | None                          |
-| `ingress.enabled`                      | Enables Ingress                                 | `false`                       |
-| `ingress.hosts`                        | Ingress accepted hostnames                      | None                          |
-| `ingress.tls`                          | Ingress TLS configuration                       | None                          |
-| `nodeSelector`                         | node labels for pod assignment                  | `{}`                          |
-| `tolerations`                          | node tolerations for pod assignment             | `[]`                          |
-| `affinity`                             | node affinity for pod assignment                | `{}`                          |
-| `podAnnotations`                       | annotations to add to each pod                  | `{}`                          |
-| `resources`                            | pod resource requests & limits                  | `{}`                          |
-| `restartPolicy`                        | container restart policy                        | `Always`                      |
-| `service.annotations`                  | annotations for the service                     | `{}`                          |
-| `service.labels`                       | additional labels for the service               | None                          |
-| `service.type`                         | type of service to create                       | `ClusterIP`                   |
-| `service.port`                         | port for the snmp http service                  | `9116`                        |
-| `service.externalIPs`                  | list of external ips                            | []                            |
-| `rbac.create`                          | Use Role-based Access Control                   | `true`                        |
-| `serviceAccount.create`                | Should we create a ServiceAccount               | `true`                        |
-| `serviceAccount.name`                  | Name of the ServiceAccount to use               | `null`                        |
-| `serviceMonitor.enabled`               | Enables ServiceMonitor                          | `false`                       |
-| `serviceMonitor.params.enabled`        | Enables params for serviceMonitor               | `false`                       |
-| `serviceMonitor.params.conf.module`    | Module to use for scrapes                       | `[]`                          |
-| `serviceMonitor.params.conf.target`    | List of target(s) to scrape                     | `[]`                          |
+```console
+# Helm 2
+$ helm inspect values prometheus-community/prometheus-snmp-exporter
 
-
-Specify each parameter using the `--set key=value[,key=value]` argument to `helm install`. For example,
-
-```bash
-$ helm install --name my-release \
-    --set key_1=value_1,key_2=value_2 \
-    stable/prometheus-snmp-exporter
+# Helm 3
+$ helm show values prometheus-community/prometheus-snmp-exporter
 ```
 
-Alternatively, a YAML file that specifies the values for the parameters can be provided while installing the chart. For example,
+See [prometheus/snmp_exporter/README.md](https://github.com/prometheus/snmp_exporter/) for further information.
 
-```bash
-# example for staging
-$ helm install --name my-release -f values.yaml stable/prometheus-snmp-exporter
-```
-
-> **Tip**: You can use the default [values.yaml](values.yaml)
-
-## Prometheus Configuration
-
+### Prometheus Configuration
 
 The snmp exporter needs to be passed the address as a parameter, this can be done with relabelling.
 
 Example config:
 
-```
+```yaml
 scrape_configs:
   - job_name: 'snmp'
     static_configs:
@@ -120,5 +92,3 @@ scrape_configs:
       - target_label: __address__
         replacement: my-service-name:9116  # The SNMP exporter's Service name and port.
 ```
-
-See [prometheus/snmp_exporter/README.md](https://github.com/prometheus/snmp_exporter/) for further information.
