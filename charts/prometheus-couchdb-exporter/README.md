@@ -1,80 +1,67 @@
 # prometheus-couchdb-exporter
 
-[couchdb-prometheus-exporter](https://github.com/gesellix/couchdb-prometheus-exporter) is a Prometheus exporter for CouchDB metrics.
+A Prometheus exporter for [CouchDB](https://couchdb.apache.org/) metrics.
 
-## TL;DR;
-
-```bash
-$ helm install stable/prometheus-couchdb-exporter
-```
-
-## Introduction
-
-This chart bootstraps a [couchdb-exporter](https://github.com/gesellix/couchdb-prometheus-exporter) deployment on a [Kubernetes](http://kubernetes.io) cluster using the [Helm](https://helm.sh) package manager.
+This chart bootstraps a [CouchDB Exporter](https://github.com/gesellix/couchdb-prometheus-exporter) deployment on a [Kubernetes](http://kubernetes.io) cluster using the [Helm](https://helm.sh) package manager.
 
 ## Prerequisites
 
 - Kubernetes 1.8+ with Beta APIs enabled
 
-## Installing the Chart
+## Get Repo Info
 
-To install the chart with the release name `my-release`:
-
-```bash
-$ helm install --name my-release stable/prometheus-couchdb-exporter
+```console
+helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+helm repo update
 ```
 
-The command deploys prometheus-couchdb-exporter on the Kubernetes cluster in the default configuration.
+_See [helm repo](https://helm.sh/docs/helm/helm_repo/) for command documentation._
 
-## Uninstalling the Chart
+## Install Chart
 
-To uninstall/delete the `my-release` deployment:
+```console
+# Helm 3
+$ helm install [RELEASE_NAME] prometheus-community/prometheus-couchdb-exporter
 
-```bash
-$ helm delete my-release
+# Helm 2
+$ helm install --name [RELEASE_NAME] prometheus-community/prometheus-couchdb-exporter
 ```
 
-The command removes all the Kubernetes components associated with the chart and deletes the release.
+_See [configuration](#configuration) below._
+
+_See [helm install](https://helm.sh/docs/helm/helm_install/) for command documentation._
+
+## Uninstall Chart
+
+```console
+# Helm 3
+$ helm uninstall [RELEASE_NAME]
+
+# Helm 2
+# helm delete --purge [RELEASE_NAME]
+```
+
+This removes all the Kubernetes components associated with the chart and deletes the release.
+
+_See [helm uninstall](https://helm.sh/docs/helm/helm_uninstall/) for command documentation._
+
+## Upgrading Chart
+
+```console
+# Helm 3 or 2
+$ helm upgrade [RELEASE_NAME] [CHART] --install
+```
+
+_See [helm upgrade](https://helm.sh/docs/helm/helm_upgrade/) for command documentation._
 
 ## Configuration
 
-The following table lists the configurable parameters and their default values.
+See [Customizing the Chart Before Installing](https://helm.sh/docs/intro/using_helm/#customizing-the-chart-before-installing). To see all configurable options with detailed comments, visit the chart's [values.yaml](./values.yaml), or run these configuration commands:
 
-| Parameter              | Description                                         | Default                                 |
-| ---------------------- | --------------------------------------------------- | --------------------------------------- |
-| `replicaCount`         | desired number of prometheus-couchdb-exporter pods  | `1`                                     |
-| `image.repository`     | prometheus-couchdb-exporter image repository        | `gesellix/couchdb-prometheus-exporter`  |
-| `image.tag`            | prometheus-couchdb-exporter image tag               | `16`                                    |
-| `image.pullPolicy`     | image pull policy                                   | `IfNotPresent`                          |
-| `service.type`         | desired service type                                | `ClusterIP`                             |
-| `service.port`         | service external port                               | `9984`                                  |
-| `ingress.enabled`      | enable ingress controller resource                  | `false`                                 |
-| `ingress.annotations`  | annotations for the host's ingress records          | `false`                                 |
-| `ingress.path`         | path for the ingress route                          | `/`                                     |
-| `ingress.hosts`        | list of host address for ingress creation           |                                         |
-| `ingress.tls`          | utilize TLS backend in ingress                      |                                         |
-| `resources`            | cpu/memory resource requests/limits                 | {}                                      |
-| `nodeSelector`         | node labels for pod assignment                      | {}                                      |
-| `tolerations`          | tolerations for pod assignment                      | {}                                      |
-| `affinity`             | affinity settings for proxy pod assignments         | {}                                      |
-| `couchdb.uri`          | address of the couchdb                              | `http://couchdb.default.svc:5984`       |
-| `couchdb.databases`    | comma separated databases to monitor                | `_all_dbs`                              |
-| `couchdb.username`     | username for couchdb                                |                                         |
-| `couchdb.password`     | password for couchdb                                |                                         |
+```console
+# Helm 2
+$ helm inspect values prometheus-community/prometheus-couchdb-exporter
 
-
-For more information please refer to the [couchdb-prometheus-exporter]https://github.com/gesellix/couchdb-prometheus-exporter) documentation.
-
-Specify each parameter using the `--set key=value[,key=value]` argument to `helm install`. For example,
-
-```bash
-$ helm install --name my-release \
-  --set "couchdb.uri=http://mycouchdb:5984" \
-    stable/prometheus-couchdb-exporter
-```
-
-Alternatively, a YAML file that specifies the values for the parameters can be provided while installing the chart. For example,
-
-```bash
-$ helm install --name my-release -f values.yaml stable/prometheus-couchdb-exporter
+# Helm 3
+$ helm show values prometheus-community/prometheus-couchdb-exporter
 ```

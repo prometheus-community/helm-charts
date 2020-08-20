@@ -1,103 +1,87 @@
 # prometheus-redis-exporter
 
-[redis_exporter](https://github.com/oliver006/redis_exporter) is a Prometheus exporter for Redis metrics.
+Prometheus exporter for [Redis](https://redis.io/) metrics.
 
-## TL;DR;
-
-```bash
-$ helm install stable/prometheus-redis-exporter
-```
-
-## Introduction
-
-This chart bootstraps a [redis_exporter](https://github.com/oliver006/redis_exporter) deployment on a [Kubernetes](http://kubernetes.io) cluster using the [Helm](https://helm.sh) package manager.
+This chart bootstraps a [Redis exporter](https://github.com/oliver006/redis_exporter) deployment on a [Kubernetes](http://kubernetes.io) cluster using the [Helm](https://helm.sh) package manager.
 
 ## Prerequisites
 
 - Kubernetes 1.10+ with Beta APIs enabled
 
-## Installing the Chart
+## Get Repo Info
 
-To install the chart with the release name `my-release`:
-
-```bash
-$ helm install --name my-release stable/prometheus-redis-exporter
+```console
+helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+helm repo update
 ```
 
-The command deploys prometheus-redis-exporter on the Kubernetes cluster in the default configuration.
+_See [helm repo](https://helm.sh/docs/helm/helm_repo/) for command documentation._
 
-## Uninstalling the Chart
+## Install Chart
 
-To uninstall/delete the `my-release` deployment:
+```console
+# Helm 3
+$ helm install [RELEASE_NAME] prometheus-community/prometheus-redis-exporter
 
-```bash
-$ helm delete my-release
+# Helm 2
+$ helm install --name [RELEASE_NAME] prometheus-community/prometheus-redis-exporter
 ```
 
-The command removes all the Kubernetes components associated with the chart and deletes the release.
+_See [configuration](#configuration) below._
 
-## Configuration
+_See [helm install](https://helm.sh/docs/helm/helm_install/) for command documentation._
 
-The following table lists the configurable parameters and their default values.
+## Uninstall Chart
 
-| Parameter              | Description                                         | Default                   |
-| ---------------------- | --------------------------------------------------- | ------------------------- |
-| `replicaCount`         | desired number of prometheus-redis-exporter pods    | `1`                       |
-| `image.repository`     | prometheus-redis-exporter image repository          | `oliver006/redis_exporter`|
-| `image.tag`            | prometheus-redis-exporter image tag                 | `v1.3.4`                 |
-| `image.pullPolicy`     | image pull policy                                   | `IfNotPresent`            |
-| `image.pullSecrets`    | image pull secrets                                  | {}                        |
-| `extraArgs`            | extra arguments for the binary; possible values [here](https://github.com/oliver006/redis_exporter#flags)| {}
-| `env`                  | additional environment variables in YAML format. Can be used to pass credentials as env variables (via secret) as per the image readme [here](https://github.com/oliver006/redis_exporter#environment-variables) | {} |
-| `resources`            | cpu/memory resource requests/limits                 | {}                        |
-| `tolerations`          | toleration labels for pod assignment                | {}                        |
-| `affinity`             | affinity settings for pod assignment                | {}                        |
-| `service.type`         | desired service type                                | `ClusterIP`               |
-| `service.port`         | service external port                               | `9121`                    |
-| `service.annotations`  | Custom annotations for service                      | `{}`                      |
-| `service.labels`       | Additional custom labels for the service            | `{}`                      |
-| `redisAddress`         | Address of the Redis instance to scrape. Use `rediss://` for SSL.      | `redis://myredis:6379`    |
-| `annotations`          | pod annotations for easier discovery                | {}                        |
-| `rbac.create`           | Specifies whether RBAC resources should be created.| `true` |
-| `rbac.pspEnabled`       | Specifies whether a PodSecurityPolicy should be created.| `true` |
-| `serviceAccount.create` | Specifies whether a service account should be created.| `true` |
-| `serviceAccount.name`   | Name of the service account.|        |
-| `serviceMonitor.enabled`       | Use servicemonitor from prometheus operator            | `false`                    |
-| `serviceMonitor.namespace`     | Namespace this servicemonitor is installed in          |                            |
-| `serviceMonitor.interval`      | How frequently Prometheus should scrape                |                            |
-| `serviceMonitor.telemetryPath` | Path to redis-exporter telemtery-path                  |                            |
-| `serviceMonitor.labels`        | Labels for the servicemonitor passed to Prometheus Operator      |  `{}`            |
-| `serviceMonitor.timeout`       | Timeout after which the scrape is ended                |                            |
-| `serviceMonitor.targetLabels`  | Set of labels to transfer on the Kubernetes Service onto the target.  |             |
-| `serviceMonitor.metricRelabelings` | MetricRelabelConfigs to apply to samples before ingestion.  |             |
-| `prometheusRule.enabled`           | Set this to true to create prometheusRules for Prometheus operator | `false`     |
-| `prometheusRule.additionalLabels`  | Additional labels that can be used so prometheusRules will be discovered by Prometheus  | `{}`  |
-| `prometheusRule.namespace`         | namespace where prometheusRules resource should be created |      |
-| `prometheusRule.rules`             | [rules](https://prometheus.io/docs/prometheus/latest/configuration/alerting_rules/) to be created, check values for an example.                      | `[]`                                                    |
-| `script.configmap`     | Let you run a custom lua script from a configmap. The corresponding environment variable `REDIS_EXPORTER_SCRIPT` will be set automatically ||
-| `script.keyname`       | Name of the key inside configmap which contains your script ||
-| `auth.enabled`       | Specifies whether redis uses authentication | `false` |
-| `auth.secret.name`       | Name of existing redis secret (ignores redisPassword) ||
-| `auth.secret.key`       | Name of key containing password to be retrieved from the existing secret ||
-| `auth.redisPassword`       | Redis password (when not stored in a secret) ||
+```console
+# Helm 3
+$ helm uninstall [RELEASE_NAME]
+
+# Helm 2
+# helm delete --purge [RELEASE_NAME]
+```
+
+This removes all the Kubernetes components associated with the chart and deletes the release.
+
+_See [helm uninstall](https://helm.sh/docs/helm/helm_uninstall/) for command documentation._
+
+## Upgrading Chart
+
+```console
+# Helm 3 or 2
+$ helm upgrade [RELEASE_NAME] [CHART] --install
+```
+
+_See [helm upgrade](https://helm.sh/docs/helm/helm_upgrade/) for command documentation._
+
+### To 3.0.1
+
+ The default tag for the exporter image is now `v1.x.x`. This major release includes changes to the names of various metrics and no longer directly supports the configuration (and scraping) of multiple redis instances; that is now the Prometheus server's responsibility. You'll want to use [this dashboard](https://github.com/oliver006/redis_exporter/blob/master/contrib/grafana_prometheus_redis_dashboard.json) now. Please see the [redis_exporter github page](https://github.com/oliver006/redis_exporter#upgrading-from-0x-to-1x) for more details.
+
+## Configuring
+
+See [Customizing the Chart Before Installing](https://helm.sh/docs/intro/using_helm/#customizing-the-chart-before-installing). To see all configurable options with detailed comments, visit the chart's [values.yaml](./values.yaml), or run these configuration commands:
+
+```console
+# Helm 2
+$ helm inspect values prometheus-community/prometheus-redis-exporter
+
+# Helm 3
+$ helm show values prometheus-community/prometheus-redis-exporter
+```
 
 For more information please refer to the [redis_exporter](https://github.com/oliver006/redis_exporter) documentation.
 
-Specify each parameter using the `--set key=value[,key=value]` argument to `helm install`. For example,
+### Redis Connection
 
-```bash
-$ helm install --name my-release \
-  --set "redisAddress=redis://myredis:6379" \
-    stable/prometheus-redis-exporter
-```
+- To configure RabbitMQ connection set `redisAddress` string (example format: `redis://myredis:6379`)
+- To configure auth by value, set `auth.enabled` to `true`, and `auth.redisPassword` value
+- To configure auth by secret, set `auth.secret.name` and `auth.secret.key` values
 
-Alternatively, a YAML file that specifies the values for the parameters can be provided while installing the chart. For example,
-
-```bash
-$ helm install --name my-release -f values.yaml stable/prometheus-redis-exporter
-```
 ### Using a custom LUA-Script
+
 First, you need to deploy the script with a configmap. This is an example script from mentioned in the [redis_exporter-image repository](https://github.com/oliver006/redis_exporter/blob/master/contrib/sample_collect_script.lua)
+
 ```yaml
 apiVersion: v1
 kind: ConfigMap
@@ -127,10 +111,5 @@ data:
 
     return result
 ```
+
 If you want to use this script for collecting metrics, you could do this by just set `script.configmap` to the name of the configmap (e.g. `prometheus-redis-exporter-script`) and `script.keyname` to the configmap-key holding the script (eg. `script`). The required variables inside the container will be set automatically.
-
-## Upgrading
-
-### To 3.0.1
-
- The default tag for the exporter image is now `v1.x.x`. This major release includes changes to the names of various metrics and no longer directly supports the configuration (and scraping) of multiple redis instances; that is now the Prometheus server's responsibility. You'll want to use [this dashboard](https://github.com/oliver006/redis_exporter/blob/master/contrib/grafana_prometheus_redis_dashboard.json) now. Please see the [redis_exporter github page](https://github.com/oliver006/redis_exporter#upgrading-from-0x-to-1x) for more details.

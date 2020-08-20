@@ -1,3 +1,7 @@
+# ⚠️ DEPRECATED
+
+This chart will be renamed, but first must be deprecated before the prometheus-community/helm-charts repo is indexed, so that it won't be listed in the hubs. See [this prometheus-community issue](https://github.com/prometheus-community/community/issues/28#issuecomment-670406329) for reasoning and next steps.
+
 # prometheus-operator
 
 Installs [prometheus-operator](https://github.com/coreos/prometheus-operator) to create/configure/manage Prometheus clusters atop Kubernetes. This chart includes multiple components and is suitable for a variety of use-cases.
