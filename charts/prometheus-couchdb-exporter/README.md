@@ -12,7 +12,6 @@ This chart bootstraps a [CouchDB Exporter](https://github.com/gesellix/couchdb-p
 
 ```console
 helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
-helm repo add stable https://kubernetes-charts.storage.googleapis.com/
 helm repo update
 ```
 

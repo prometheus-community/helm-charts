@@ -13,7 +13,6 @@ This chart bootstraps a [cloudwatch exporter](http://github.com/prometheus/cloud
 
 ```console
 helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
-helm repo add stable https://kubernetes-charts.storage.googleapis.com/
 helm repo update
 ```
 

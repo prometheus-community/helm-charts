@@ -8,7 +8,6 @@ This chart bootstraps a Prometheus [MySQL Exporter](http://github.com/prometheus
 
 ```console
 helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
-helm repo add stable https://kubernetes-charts.storage.googleapis.com/
 helm repo update
 ```
 

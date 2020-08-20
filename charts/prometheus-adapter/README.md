@@ -10,7 +10,6 @@ Kubernetes 1.14+
 
 ```console
 helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
-helm repo add stable https://kubernetes-charts.storage.googleapis.com/
 helm repo update
 ```
 

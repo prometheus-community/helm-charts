@@ -14,7 +14,6 @@ This chart creates a Blackbox-Exporter deployment on a [Kubernetes](http://kuber
 
 ```console
 helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
-helm repo add stable https://kubernetes-charts.storage.googleapis.com/
 helm repo update
 ```
 
