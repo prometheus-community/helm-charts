@@ -28,7 +28,7 @@ $ helm install [RELEASE_NAME] prometheus-community/kube-prometheus
 By default this chart installs [dependent charts](https://helm.sh/docs/helm/helm_dependency/):
 
 - [stable/kube-state-metrics](https://github.com/helm/charts/tree/master/stable/kube-state-metrics)
-- [stable/prometheus-node-exporter](https://github.com/helm/charts/tree/master/stable/prometheus-node-exporter)
+- [stable/prometheus-node-exporter](https://github.com/prometheus-community/helm-charts/tree/main/prometheus-node-exporter)
 - [stable/grafana](https://github.com/helm/charts/tree/master/stable/grafana)
 
 ### Multiple releases
