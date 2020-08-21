@@ -6,7 +6,7 @@ This script generates prometheus rules set for alertmanager from any properly fo
 
 Currently following imported:
 
-- [prometheus-operator/kube-prometheus rules set](https://github.com/kube-prometheus/kube-prometheus/master/manifests/prometheus-rules.yaml)
+- [prometheus-operator/kube-prometheus rules set](https://github.com/prometheus-operator/kube-prometheus/master/manifests/prometheus-rules.yaml)
   - In order to modify these rules:
     - prepare and merge PR into [kubernetes-mixin](https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/rules) master and/or release branch
     - run import inside your fork of [prometheus-operator/kube-prometheus](https://github.com/prometheus-operator/kube-prometheus/tree/master)
