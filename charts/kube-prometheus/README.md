@@ -4,55 +4,62 @@ Installs [kube-prometheus](https://github.com/prometheus-operator/kube-prometheu
 
 See the [kube-prometheus](https://github.com/prometheus-operator/kube-prometheus) README for details about components, dashboards, and alerts.
 
-- This chart was formerly named `prometheus-operator` chart, and renamed to more clearly reflect that it installs the `kube-prometheus` project, within which Prometheus Operator is only one component.
+_Note: This chart was formerly named `prometheus-operator` chart, now renamed to more clearly reflect that it installs the `kube-prometheus` project, within which Prometheus Operator is only one component._
 
 ## Prerequisites
 
 - Kubernetes 1.10+ with Beta APIs
 - Helm 2.12+ (If using Helm < 2.14, [see below for CRD workaround](#Helm-fails-to-create-CRDs))
 
-## Add repos
+## Get Repo Info
 
 ```console
 helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
 helm repo add stable https://kubernetes-charts.storage.googleapis.com/
+helm repo update
 ```
 
-## Install
+_See [helm repo](https://helm.sh/docs/helm/helm_repo/) for command documentation._
+
+## Install Chart
 
 ```console
-helm install [RELEASE_NAME] prometheus-community/kube-prometheus
+# Helm 3
+$ helm install [RELEASE_NAME] prometheus-community/kube-prometheus
+
+# Helm 2
+$ helm install --name [RELEASE_NAME] prometheus-community/kube-prometheus
 ```
 
-### Dependencies
+_See [configuration](#configuration) below._
 
-By default this chart installs [dependent charts](https://helm.sh/docs/helm/helm_dependency/):
+_See [helm install](https://helm.sh/docs/helm/helm_install/) for command documentation._
+
+## Dependencies
+
+By default this chart installs additional, dependent charts:
 
 - [stable/kube-state-metrics](https://github.com/helm/charts/tree/master/stable/kube-state-metrics)
 - [stable/prometheus-node-exporter](https://github.com/prometheus-community/helm-charts/tree/main/prometheus-node-exporter)
 - [stable/grafana](https://github.com/helm/charts/tree/master/stable/grafana)
 
-### Multiple releases
+To disable dependencies during installation, see [multiple releases](#multiple-releases) below.
 
-The same chart can be used to run multiple Prometheus instances in the same cluster if required. To achieve this, it is necessary to run only one instance of prometheus-operator and a pair of alertmanager pods for an HA configuration, while all other components need to be disabled. To disable a dependency during installation, set `kubeStateMetrics.enabled`, `nodeExporter.enabled` and `grafana.enabled` to `false`.
+_See [helm dependency](https://helm.sh/docs/helm/helm_dependency/) for command documentation._
 
-## Configuration
-
-See [Customizing the Chart Before Installing](https://helm.sh/docs/intro/using_helm/#customizing-the-chart-before-installing). To see all configurable options with detailed comments:
+## Uninstall Chart
 
 ```console
-helm show values prometheus-community/kube-prometheus
+# Helm 3
+$ helm uninstall [RELEASE_NAME]
+
+# Helm 2
+# helm delete --purge [RELEASE_NAME]
 ```
 
-You may also `helm show values` on this chart's [dependencies](#dependencies) for additional options.
+This removes all the Kubernetes components associated with the chart and deletes the release.
 
-## Uninstall
-
-```console
-helm uninstall [RELEASE_NAME]
-```
-
-The command removes all the Kubernetes components associated with the chart and deletes the release.
+_See [helm uninstall](https://helm.sh/docs/helm/helm_uninstall/) for command documentation._
 
 CRDs created by this chart are not removed by default and should be manually cleaned up:
 
@@ -64,6 +71,67 @@ kubectl delete crd podmonitors.monitoring.coreos.com
 kubectl delete crd alertmanagers.monitoring.coreos.com
 kubectl delete crd thanosrulers.monitoring.coreos.com
 ```
+
+## Upgrading Chart
+
+```console
+# Helm 3 or 2
+$ helm upgrade [RELEASE_NAME] prometheus-community/kube-prometheus
+```
+
+_See [helm upgrade](https://helm.sh/docs/helm/helm_upgrade/) for command documentation._
+
+### Migrating from stable/prometheus-operator chart
+
+A major chart version change (like v1.2.3 -> v2.0.0) indicates that there is an incompatible breaking change needing manual actions.
+
+### From 8.x to 9.x
+
+Version 9 of the helm chart removes the existing `additionalScrapeConfigsExternal` in favour of `additionalScrapeConfigsSecret`. This change lets users specify the secret name and secret key to use for the additional scrape configuration of prometheus. This is useful for users that have prometheus-operator as a subchart and also have a template that creates the additional scrape configuration.
+
+### From 7.x to 8.x
+
+Due to new template functions being used in the rules in version 8.x.x of the chart, an upgrade to Prometheus Operator and Prometheus is necessary in order to support them. First, upgrade to the latest version of 7.x.x
+
+```sh
+helm upgrade [RELEASE_NAME] prometheus-community/kube-prometheus --version 7.5.0
+```
+
+Then upgrade to 8.x.x
+
+```sh
+helm upgrade [RELEASE_NAME] prometheus-community/kube-prometheus --version [8.x.x]
+```
+
+Minimal recommended Prometheus version for this chart release is `2.12.x`
+
+### From 6.x to 7.x
+
+Due to a change in grafana subchart, version 7.x.x now requires Helm >= 2.12.0.
+
+### From 5.x to 6.x
+
+Due to a change in deployment labels of kube-state-metrics, the upgrade requires `helm upgrade --force` in order to re-create the deployment. If this is not done an error will occur indicating that the deployment cannot be modified:
+
+```console
+invalid: spec.selector: Invalid value: v1.LabelSelector{MatchLabels:map[string]string{"app.kubernetes.io/name":"kube-state-metrics"}, MatchExpressions:[]v1.LabelSelectorRequirement(nil)}: field is immutable
+```
+
+If this error has already been encountered, a `helm history` command can be used to determine which release has worked, then `helm rollback` to the release, then `helm upgrade --force` to this new one
+
+## Configuration
+
+See [Customizing the Chart Before Installing](https://helm.sh/docs/intro/using_helm/#customizing-the-chart-before-installing). To see all configurable options with detailed comments:
+
+```console
+helm show values prometheus-community/kube-prometheus
+```
+
+You may also `helm show values` on this chart's [dependencies](#dependencies) for additional options.
+
+### Multiple releases
+
+The same chart can be used to run multiple Prometheus instances in the same cluster if required. To achieve this, it is necessary to run only one instance of prometheus-operator and a pair of alertmanager pods for an HA configuration, while all other components need to be disabled. To disable a dependency during installation, set `kubeStateMetrics.enabled`, `nodeExporter.enabled` and `grafana.enabled` to `false`.
 
 ## Work-Arounds for Known Issues
 
@@ -91,11 +159,7 @@ You should upgrade to Helm 2.14 + in order to avoid this issue. However, if you 
     ```
 
 2. Wait for CRDs to be created, which should only take a few seconds
-3. Install the chart, but disable the CRD provisioning by setting `prometheusOperator.createCustomResource=false`
-
-    ```console
-    helm install [RELEASE_NAME] prometheus-community/kube-prometheus --set prometheusOperator.createCustomResource=false
-    ```
+3. [Install](#install-chart) the chart, but disable the CRD provisioning by setting `prometheusOperator.createCustomResource` to `false`
 
 ## PrometheusRules Admission Webhooks
 
@@ -130,52 +194,11 @@ For more in-depth documentation of configuration options meanings, please see
 - [Prometheus](https://prometheus.io/docs/introduction/overview/)
 - [Grafana](https://github.com/helm/charts/tree/master/stable/grafana#grafana-helm-chart)
 
-## Migrating from stable/prometheus-operator chart
-
-A major chart version change (like v1.2.3 -> v2.0.0) indicates that there is an
-incompatible breaking change needing manual actions.
-
-### Upgrading from 8.x.x to 9.x.x
-
-Version 9 of the helm chart removes the existing `additionalScrapeConfigsExternal` in favour of `additionalScrapeConfigsSecret`. This change lets users specify the secret name and secret key to use for the additional scrape configuration of prometheus. This is useful for users that have prometheus-operator as a subchart and also have a template that creates the additional scrape configuration.
-
-### Upgrading from 7.x.x to 8.x.x
-
-Due to new template functions being used in the rules in version 8.x.x of the chart, an upgrade to Prometheus Operator and Prometheus is necessary in order to support them.
-First, upgrade to the latest version of 7.x.x
-
-```sh
-helm upgrade [RELEASE_NAME] prometheus-community/kube-prometheus --version 7.4.0
-```
-
-Then upgrade to 8.x.x
-
-```sh
-helm upgrade [RELEASE_NAME] prometheus-community/kube-prometheus
-```
-
-Minimal recommended Prometheus version for this chart release is `2.12.x`
-
-### Upgrading from 6.x.x to 7.x.x
-
-Due to a change in grafana subchart, version 7.x.x now requires Helm >= 2.12.0.
-
-### Upgrading from 5.x.x to 6.x.x
-
-Due to a change in deployment labels of kube-state-metrics, the upgrade requires `helm upgrade --force` in order to re-create the deployment. If this is not done an error will occur indicating that the deployment cannot be modified:
-
-```console
-invalid: spec.selector: Invalid value: v1.LabelSelector{MatchLabels:map[string]string{"app.kubernetes.io/name":"kube-state-metrics"}, MatchExpressions:[]v1.LabelSelectorRequirement(nil)}: field is immutable
-```
-
-If this error has already been encountered, a `helm history` command can be used to determine which release has worked, then `helm rollback` to the release, then `helm upgrade --force` to this new one
-
 ## prometheus.io/scrape
 
 The prometheus operator does not support annotation-based discovery of services, using the `serviceMonitor` CRD in its place as it provides far more configuration options. For information on how to use servicemonitors, please see the documentation on the `prometheus-operator/prometheus-operator` documentation here: [Running Exporters](https://github.com/prometheus-operator/prometheus-operator/blob/master/Documentation/user-guides/running-exporters.md)
 
-By default, Prometheus discovers ServiceMonitors within its namespace, that are labeled with the same release tag as the prometheus-operator release.
-Sometimes, you may need to discover custom ServiceMonitors, for example used to scrape data from third-party applications. An easy way of doing this, without compromising the default ServiceMonitors discovery, is allowing Prometheus to discover all ServiceMonitors within its namespace, without applying label filtering. To do so, you can set `prometheus.prometheusSpec.serviceMonitorSelectorNilUsesHelmValues` to `false`.
+By default, Prometheus discovers ServiceMonitors within its namespace, that are labeled with the same release tag as the prometheus-operator release. Sometimes, you may need to discover custom ServiceMonitors, for example used to scrape data from third-party applications. An easy way of doing this, without compromising the default ServiceMonitors discovery, is allowing Prometheus to discover all ServiceMonitors within its namespace, without applying label filtering. To do so, you can set `prometheus.prometheusSpec.serviceMonitorSelectorNilUsesHelmValues` to `false`.
 
 ## Migrating from coreos/prometheus-operator chart
 
@@ -193,12 +216,12 @@ You can check out the tickets for this change [here](https://github.com/promethe
 
 The chart has added 3 [dependencies](#dependencies).
 
-- Node-Exporter, Kube-State-Metrics: These components are loaded as dependencies into the chart, and are relatively simple components.
+- Node-Exporter, Kube-State-Metrics: These components are loaded as dependencies into the chart, and are relatively simple components
 - Grafana: The Grafana chart is more feature-rich than this chart - it contains a sidecar that is able to load data sources and dashboards from configmaps deployed into the same cluster. For more information check out the [documentation for the chart](https://github.com/helm/charts/tree/master/stable/grafana)
 
 #### CoreOS CRDs
 
-The CRDs are provisioned using crd-install hooks, rather than relying on a separate chart installation. If you already have these CRDs provisioned and don't want to remove them, you can disable the CRD creation by these hooks by passing `prometheusOperator.createCustomResource=false` (not required if using Helm v3).
+The CRDs are provisioned using crd-install hooks, rather than relying on a separate chart installation. If you already have these CRDs provisioned and don't want to remove them, you can disable the CRD creation by these hooks by setting `prometheusOperator.createCustomResource` to `false` (not required if using Helm v3).
 
 #### Kubelet Service
 
