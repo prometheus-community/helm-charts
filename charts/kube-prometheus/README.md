@@ -4,23 +4,24 @@ Installs [kube-prometheus](https://github.com/prometheus-operator/kube-prometheu
 
 See the [kube-prometheus](https://github.com/prometheus-operator/kube-prometheus) README for details about components, dashboards, and alerts.
 
-* This chart was formerly named `prometheus-operator` chart, and renamed to more clearly reflect that it installs the `kube-prometheus` project, within which Prometheus Operator is only one component.
+- This chart was formerly named `prometheus-operator` chart, and renamed to more clearly reflect that it installs the `kube-prometheus` project, within which Prometheus Operator is only one component.
 
 ## Prerequisites
-  - Kubernetes 1.10+ with Beta APIs
-  - Helm 2.12+ (If using Helm < 2.14, [see below for CRD workaround](#Helm-fails-to-create-CRDs))
+
+- Kubernetes 1.10+ with Beta APIs
+- Helm 2.12+ (If using Helm < 2.14, [see below for CRD workaround](#Helm-fails-to-create-CRDs))
 
 ## Add repos
 
 ```console
-$ helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
-$ helm repo add stable https://kubernetes-charts.storage.googleapis.com/
+helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+helm repo add stable https://kubernetes-charts.storage.googleapis.com/
 ```
 
 ## Install
 
 ```console
-$ helm install [RELEASE_NAME] prometheus-community/kube-prometheus
+helm install [RELEASE_NAME] prometheus-community/kube-prometheus
 ```
 
 ### Dependencies
@@ -40,7 +41,7 @@ The same chart can be used to run multiple Prometheus instances in the same clus
 See [Customizing the Chart Before Installing](https://helm.sh/docs/intro/using_helm/#customizing-the-chart-before-installing). To see all configurable options with detailed comments:
 
 ```console
-$ helm show values prometheus-community/kube-prometheus
+helm show values prometheus-community/kube-prometheus
 ```
 
 You may also `helm show values` on this chart's [dependencies](#dependencies) for additional options.
@@ -48,7 +49,7 @@ You may also `helm show values` on this chart's [dependencies](#dependencies) fo
 ## Uninstall
 
 ```console
-$ helm uninstall [RELEASE_NAME]
+helm uninstall [RELEASE_NAME]
 ```
 
 The command removes all the Kubernetes components associated with the chart and deletes the release.
@@ -67,6 +68,7 @@ kubectl delete crd thanosrulers.monitoring.coreos.com
 ## Work-Arounds for Known Issues
 
 ### Running on private GKE clusters
+
 When Google configure the control plane for private clusters, they automatically configure VPC peering between your Kubernetes cluster’s network and a separate Google managed project. In order to restrict what Google are able to access within your cluster, the firewall rules configured restrict access to your Kubernetes pods. This means that in order to use the webhook component with a GKE private cluster, you must configure an additional firewall rule to allow the GKE control plane access to your webhook pod.
 
 You can read more information on how to add firewall rules for the GKE control plane nodes in the [GKE docs](https://cloud.google.com/kubernetes-engine/docs/how-to/private-clusters#add_firewall_rules)
@@ -74,40 +76,46 @@ You can read more information on how to add firewall rules for the GKE control p
 Alternatively, you can disable the hooks by setting `prometheusOperator.admissionWebhooks.enabled=false`.
 
 ### Helm fails to create CRDs
+
 You should upgrade to Helm 2.14 + in order to avoid this issue. However, if you are stuck with an earlier Helm release you should instead use the following approach: Due to a bug in helm, it is possible for the 5 CRDs that are created by this chart to fail to get fully deployed before Helm attempts to create resources that require them. This affects all versions of Helm with a [potential fix pending](https://github.com/helm/helm/pull/5112). In order to work around this issue when installing the chart you will need to make sure all 5 CRDs exist in the cluster first and disable their previsioning by the chart:
 
 1. Create CRDs
-```console
-kubectl apply -f https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/release-0.38/example/prometheus-operator-crd/monitoring.coreos.com_alertmanagers.yaml
-kubectl apply -f https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/release-0.38/example/prometheus-operator-crd/monitoring.coreos.com_podmonitors.yaml
-kubectl apply -f https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/release-0.38/example/prometheus-operator-crd/monitoring.coreos.com_prometheuses.yaml
-kubectl apply -f https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/release-0.38/example/prometheus-operator-crd/monitoring.coreos.com_prometheusrules.yaml
-kubectl apply -f https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/release-0.38/example/prometheus-operator-crd/monitoring.coreos.com_servicemonitors.yaml
-kubectl apply -f https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/release-0.38/example/prometheus-operator-crd/monitoring.coreos.com_thanosrulers.yaml
-```
+
+    ```console
+    kubectl apply -f https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/release-0.38/example/prometheus-operator-crd/monitoring.coreos.com_alertmanagers.yaml
+    kubectl apply -f https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/release-0.38/example/prometheus-operator-crd/monitoring.coreos.com_podmonitors.yaml
+    kubectl apply -f https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/release-0.38/example/prometheus-operator-crd/monitoring.coreos.com_prometheuses.yaml
+    kubectl apply -f https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/release-0.38/example/prometheus-operator-crd/monitoring.coreos.com_prometheusrules.yaml
+    kubectl apply -f https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/release-0.38/example/prometheus-operator-crd/monitoring.coreos.com_servicemonitors.yaml
+    kubectl apply -f https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/release-0.38/example/prometheus-operator-crd/monitoring.coreos.com_thanosrulers.yaml
+    ```
 
 2. Wait for CRDs to be created, which should only take a few seconds
-
 3. Install the chart, but disable the CRD provisioning by setting `prometheusOperator.createCustomResource=false`
-```console
-$ helm install [RELEASE_NAME] prometheus-community/kube-prometheus --set prometheusOperator.createCustomResource=false
-```
+
+    ```console
+    helm install [RELEASE_NAME] prometheus-community/kube-prometheus --set prometheusOperator.createCustomResource=false
+    ```
 
 ## PrometheusRules Admission Webhooks
 
 With Prometheus Operator version 0.30+, the core Prometheus Operator pod exposes an endpoint that will integrate with the `validatingwebhookconfiguration` Kubernetes feature to prevent malformed rules from being added to the cluster.
 
 ### How the Chart Configures the Hooks
+
 A validating and mutating webhook configuration requires the endpoint to which the request is sent to use TLS. It is possible to set up custom certificates to do this, but in most cases, a self-signed certificate is enough. The setup of this component requires some more complex orchestration when using helm. The steps are created to be idempotent and to allow turning the feature on and off without running into helm quirks.
+
 1. A pre-install hook provisions a certificate into the same namespace using a format compatible with provisioning using end-user certificates. If the certificate already exists, the hook exits.
 2. The prometheus operator pod is configured to use a TLS proxy container, which will load that certificate.
 3. Validating and Mutating webhook configurations are created in the cluster, with their failure mode set to Ignore. This allows rules to be created by the same chart at the same time, even though the webhook has not yet been fully set up - it does not have the correct CA field set.
 4. A post-install hook reads the CA from the secret created by step 1 and patches the Validating and Mutating webhook configurations. This process will allow a custom CA provisioned by some other process to also be patched into the webhook configurations. The chosen failure policy is also patched into the webhook configurations
 
 ### Alternatives
+
 It should be possible to use [jetstack/cert-manager](https://github.com/jetstack/cert-manager) if a more complete solution is required, but it has not been tested.
 
 ### Limitations
+
 Because the operator can only run as a single pod, there is potential for this component failure to cause rule deployment failure. Because this risk is outweighed by the benefit of having validation, the feature is enabled by default.
 
 ## Developing Prometheus Rules and Grafana Dashboards
@@ -117,6 +125,7 @@ This chart Grafana Dashboards and Prometheus Rules are just a copy from [prometh
 ## Further Information
 
 For more in-depth documentation of configuration options meanings, please see
+
 - [Prometheus Operator](https://github.com/prometheus-operator/prometheus-operator)
 - [Prometheus](https://prometheus.io/docs/introduction/overview/)
 - [Grafana](https://github.com/helm/charts/tree/master/stable/grafana#grafana-helm-chart)
@@ -127,32 +136,42 @@ A major chart version change (like v1.2.3 -> v2.0.0) indicates that there is an
 incompatible breaking change needing manual actions.
 
 ### Upgrading from 8.x.x to 9.x.x
+
 Version 9 of the helm chart removes the existing `additionalScrapeConfigsExternal` in favour of `additionalScrapeConfigsSecret`. This change lets users specify the secret name and secret key to use for the additional scrape configuration of prometheus. This is useful for users that have prometheus-operator as a subchart and also have a template that creates the additional scrape configuration.
 
 ### Upgrading from 7.x.x to 8.x.x
+
 Due to new template functions being used in the rules in version 8.x.x of the chart, an upgrade to Prometheus Operator and Prometheus is necessary in order to support them.
 First, upgrade to the latest version of 7.x.x
+
 ```sh
 helm upgrade [RELEASE_NAME] prometheus-community/kube-prometheus --version 7.4.0
 ```
+
 Then upgrade to 8.x.x
+
 ```sh
 helm upgrade [RELEASE_NAME] prometheus-community/kube-prometheus
 ```
+
 Minimal recommended Prometheus version for this chart release is `2.12.x`
 
 ### Upgrading from 6.x.x to 7.x.x
+
 Due to a change in grafana subchart, version 7.x.x now requires Helm >= 2.12.0.
 
 ### Upgrading from 5.x.x to 6.x.x
+
 Due to a change in deployment labels of kube-state-metrics, the upgrade requires `helm upgrade --force` in order to re-create the deployment. If this is not done an error will occur indicating that the deployment cannot be modified:
 
-```
+```console
 invalid: spec.selector: Invalid value: v1.LabelSelector{MatchLabels:map[string]string{"app.kubernetes.io/name":"kube-state-metrics"}, MatchExpressions:[]v1.LabelSelectorRequirement(nil)}: field is immutable
 ```
+
 If this error has already been encountered, a `helm history` command can be used to determine which release has worked, then `helm rollback` to the release, then `helm upgrade --force` to this new one
 
 ## prometheus.io/scrape
+
 The prometheus operator does not support annotation-based discovery of services, using the `serviceMonitor` CRD in its place as it provides far more configuration options. For information on how to use servicemonitors, please see the documentation on the `prometheus-operator/prometheus-operator` documentation here: [Running Exporters](https://github.com/prometheus-operator/prometheus-operator/blob/master/Documentation/user-guides/running-exporters.md)
 
 By default, Prometheus discovers ServiceMonitors within its namespace, that are labeled with the same release tag as the prometheus-operator release.
@@ -178,14 +197,18 @@ The chart has added 3 [dependencies](#dependencies).
 - Grafana: The Grafana chart is more feature-rich than this chart - it contains a sidecar that is able to load data sources and dashboards from configmaps deployed into the same cluster. For more information check out the [documentation for the chart](https://github.com/helm/charts/tree/master/stable/grafana)
 
 #### CoreOS CRDs
+
 The CRDs are provisioned using crd-install hooks, rather than relying on a separate chart installation. If you already have these CRDs provisioned and don't want to remove them, you can disable the CRD creation by these hooks by passing `prometheusOperator.createCustomResource=false` (not required if using Helm v3).
 
 #### Kubelet Service
+
 Because the kubelet service has a new name in the chart, make sure to clean up the old kubelet service in the `kube-system` namespace to prevent counting container metrics twice.
 
 #### Persistent Volumes
+
 If you would like to keep the data of the current persistent volumes, it should be possible to attach existing volumes to new PVCs and PVs that are created using the conventions in the new chart. For example, in order to use an existing Azure disk for a helm release called `prometheus-migration` the following resources can be created:
-```
+
+```yaml
 apiVersion: v1
 kind: PersistentVolume
 metadata:
@@ -206,7 +229,8 @@ spec:
   storageClassName: prometheus
   volumeMode: Filesystem
 ```
-```
+
+```yaml
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
@@ -240,11 +264,11 @@ The metrics bind address of kube-proxy is default to `127.0.0.1:10249` that prom
 
 Depending on the cluster, the relevant part `config.conf` will be in ConfigMap `kube-system/kube-proxy` or `kube-system/kube-proxy-config`. For example:
 
-```
+```console
 kubectl -n kube-system edit cm kube-proxy
 ```
 
-```
+```yaml
 apiVersion: v1
 data:
   config.conf: |-
