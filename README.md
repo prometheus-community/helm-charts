@@ -19,9 +19,9 @@ You can then run `helm search repo prometheus-community` to see the charts.
 
 ## Contributing
 
-We'd love to have you contribute! Please refer to our [contribution guidelines](CONTRIBUTING.md) for details.
+The source code of all Prometheus community Helm charts can be found on Github: <https://github.com/prometheus-community/helm-charts/>
 
-The Helm chart source code can be found on Github in: <https://github.com/prometheus-community/helm-charts/>
+We'd love to have you contribute! Please refer to our [contribution guidelines](CONTRIBUTING.md) for details.
 
 ## Helm charts build status
 
