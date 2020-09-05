@@ -2,14 +2,14 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name:  {{ template "kube-prometheus.fullname" . }}-admission-patch
-  namespace: {{ template "kube-prometheus.namespace" . }}
+  name:  {{ template "kube-prometheus-stack.fullname" . }}-admission-patch
+  namespace: {{ template "kube-prometheus-stack.namespace" . }}
   annotations:
     "helm.sh/hook": post-install,post-upgrade
     "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
   labels:
-    app: {{ template "kube-prometheus.name" $ }}-admission-patch
-{{- include "kube-prometheus.labels" $ | indent 4 }}
+    app: {{ template "kube-prometheus-stack.name" $ }}-admission-patch
+{{- include "kube-prometheus-stack.labels" $ | indent 4 }}
 spec:
   {{- if .Capabilities.APIVersions.Has "batch/v1alpha1" }}
   # Alpha feature since k8s 1.12
@@ -17,14 +17,14 @@ spec:
   {{- end }}
   template:
     metadata:
-      name:  {{ template "kube-prometheus.fullname" . }}-admission-patch
+      name:  {{ template "kube-prometheus-stack.fullname" . }}-admission-patch
 {{- with .Values.prometheusOperator.admissionWebhooks.patch.podAnnotations }}
       annotations:
 {{ toYaml .  | indent 8 }}
 {{- end }}
       labels:
-        app: {{ template "kube-prometheus.name" $ }}-admission-patch
-{{- include "kube-prometheus.labels" $ | indent 8 }}
+        app: {{ template "kube-prometheus-stack.name" $ }}-admission-patch
+{{- include "kube-prometheus-stack.labels" $ | indent 8 }}
     spec:
       {{- if .Values.prometheusOperator.admissionWebhooks.patch.priorityClassName }}
       priorityClassName: {{ .Values.prometheusOperator.admissionWebhooks.patch.priorityClassName }}
@@ -39,14 +39,14 @@ spec:
           imagePullPolicy: {{ .Values.prometheusOperator.admissionWebhooks.patch.image.pullPolicy }}
           args:
             - patch
-            - --webhook-name={{ template "kube-prometheus.fullname" . }}-admission
-            - --namespace={{ template "kube-prometheus.namespace" . }}
-            - --secret-name={{ template "kube-prometheus.fullname" . }}-admission
+            - --webhook-name={{ template "kube-prometheus-stack.fullname" . }}-admission
+            - --namespace={{ template "kube-prometheus-stack.namespace" . }}
+            - --secret-name={{ template "kube-prometheus-stack.fullname" . }}-admission
             - --patch-failure-policy={{ .Values.prometheusOperator.admissionWebhooks.failurePolicy }}
           resources:
 {{ toYaml .Values.prometheusOperator.admissionWebhooks.patch.resources | indent 12 }}
       restartPolicy: OnFailure
-      serviceAccountName: {{ template "kube-prometheus.fullname" . }}-admission
+      serviceAccountName: {{ template "kube-prometheus-stack.fullname" . }}-admission
       {{- with .Values.prometheusOperator.admissionWebhooks.patch.nodeSelector }}
       nodeSelector:
 {{ toYaml . | indent 8 }}

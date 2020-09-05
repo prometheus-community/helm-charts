@@ -98,16 +98,16 @@ alert_condition_map = {
 replacement_map = {
     'job="prometheus-operator"': {
         'replacement': 'job="{{ $operatorJob }}"',
-        'init': '{{- $operatorJob := printf "%s-%s" (include "kube-prometheus.fullname" .) "operator" }}'},
+        'init': '{{- $operatorJob := printf "%s-%s" (include "kube-prometheus-stack.fullname" .) "operator" }}'},
     'job="prometheus-k8s"': {
         'replacement': 'job="{{ $prometheusJob }}"',
-        'init': '{{- $prometheusJob := printf "%s-%s" (include "kube-prometheus.fullname" .) "prometheus" }}'},
+        'init': '{{- $prometheusJob := printf "%s-%s" (include "kube-prometheus-stack.fullname" .) "prometheus" }}'},
     'job="alertmanager-main"': {
         'replacement': 'job="{{ $alertmanagerJob }}"',
-        'init': '{{- $alertmanagerJob := printf "%s-%s" (include "kube-prometheus.fullname" .) "alertmanager" }}'},
+        'init': '{{- $alertmanagerJob := printf "%s-%s" (include "kube-prometheus-stack.fullname" .) "alertmanager" }}'},
     'namespace="monitoring"': {
         'replacement': 'namespace="{{ $namespace }}"',
-        'init': '{{- $namespace := printf "%s" (include "kube-prometheus.namespace" .) }}'},
+        'init': '{{- $namespace := printf "%s" (include "kube-prometheus-stack.namespace" .) }}'},
     'alertmanager-$1': {
         'replacement': '$1',
         'init': ''},
@@ -128,18 +128,18 @@ replacement_map = {
 header = '''{{- /*
 Generated from '%(name)s' group from %(url)s
 Do not change in-place! In order to change this file first read following link:
-https://github.com/prometheus-community/helm-charts/tree/main/charts/kube-prometheus/hack
+https://github.com/prometheus-community/helm-charts/tree/main/charts/kube-prometheus-stack/hack
 */ -}}
 {{- $kubeTargetVersion := default .Capabilities.KubeVersion.GitVersion .Values.kubeTargetVersionOverride }}
 {{- if and (semverCompare ">=%(min_kubernetes)s" $kubeTargetVersion) (semverCompare "<%(max_kubernetes)s" $kubeTargetVersion) .Values.defaultRules.create%(condition)s }}%(init_line)s
 apiVersion: monitoring.coreos.com/v1
 kind: PrometheusRule
 metadata:
-  name: {{ printf "%%s-%%s" (include "kube-prometheus.fullname" .) "%(name)s" | trunc 63 | trimSuffix "-" }}
-  namespace: {{ template "kube-prometheus.namespace" . }}
+  name: {{ printf "%%s-%%s" (include "kube-prometheus-stack.fullname" .) "%(name)s" | trunc 63 | trimSuffix "-" }}
+  namespace: {{ template "kube-prometheus-stack.namespace" . }}
   labels:
-    app: {{ template "kube-prometheus.name" . }}
-{{ include "kube-prometheus.labels" . | indent 4 }}
+    app: {{ template "kube-prometheus-stack.name" . }}
+{{ include "kube-prometheus-stack.labels" . | indent 4 }}
 {{- if .Values.defaultRules.labels }}
 {{ toYaml .Values.defaultRules.labels | indent 4 }}
 {{- end }}

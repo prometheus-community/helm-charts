@@ -1,24 +1,24 @@
-{{- $namespace := printf "%s" (include "kube-prometheus.namespace" .) }}
+{{- $namespace := printf "%s" (include "kube-prometheus-stack.namespace" .) }}
 {{- if .Values.prometheusOperator.enabled }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ template "kube-prometheus.fullname" . }}-operator
-  namespace: {{ template "kube-prometheus.namespace" . }}
+  name: {{ template "kube-prometheus-stack.fullname" . }}-operator
+  namespace: {{ template "kube-prometheus-stack.namespace" . }}
   labels:
-    app: {{ template "kube-prometheus.name" . }}-operator
-{{ include "kube-prometheus.labels" . | indent 4 }}
+    app: {{ template "kube-prometheus-stack.name" . }}-operator
+{{ include "kube-prometheus-stack.labels" . | indent 4 }}
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: {{ template "kube-prometheus.name" . }}-operator
+      app: {{ template "kube-prometheus-stack.name" . }}-operator
       release: {{ $.Release.Name | quote }}
   template:
     metadata:
       labels:
-        app: {{ template "kube-prometheus.name" . }}-operator
-{{ include "kube-prometheus.labels" . | indent 8 }}
+        app: {{ template "kube-prometheus-stack.name" . }}-operator
+{{ include "kube-prometheus-stack.labels" . | indent 8 }}
 {{- if .Values.prometheusOperator.podLabels }}
 {{ toYaml .Values.prometheusOperator.podLabels | indent 8 }}
 {{- end }}
@@ -31,7 +31,7 @@ spec:
       priorityClassName: {{ .Values.prometheusOperator.priorityClassName }}
     {{- end }}
       containers:
-        - name: {{ template "kube-prometheus.name" . }}
+        - name: {{ template "kube-prometheus-stack.name" . }}
           {{- if .Values.prometheusOperator.image.sha }}
           image: "{{ .Values.prometheusOperator.image.repository }}:{{ .Values.prometheusOperator.image.tag }}@sha256:{{ .Values.prometheusOperator.image.sha }}"
           {{- else }}
@@ -43,7 +43,7 @@ spec:
             - --manage-crds={{ .Values.prometheusOperator.manageCrds }}
           {{- end }}
           {{- if .Values.prometheusOperator.kubeletService.enabled }}
-            - --kubelet-service={{ .Values.prometheusOperator.kubeletService.namespace }}/{{ template "kube-prometheus.fullname" . }}-kubelet
+            - --kubelet-service={{ .Values.prometheusOperator.kubeletService.namespace }}/{{ template "kube-prometheus-stack.fullname" . }}-kubelet
           {{- end }}
           {{- if .Values.prometheusOperator.logFormat }}
             - --log-format={{ .Values.prometheusOperator.logFormat }}
@@ -116,13 +116,13 @@ spec:
         - name: tls-proxy-secret
           secret:
             defaultMode: 420
-            secretName: {{ template "kube-prometheus.fullname" . }}-admission
+            secretName: {{ template "kube-prometheus-stack.fullname" . }}-admission
 {{- end }}
 {{- if .Values.prometheusOperator.securityContext }}
       securityContext:
 {{ toYaml .Values.prometheusOperator.securityContext | indent 8 }}
 {{- end }}
-      serviceAccountName: {{ template "kube-prometheus.operator.serviceAccountName" . }}
+      serviceAccountName: {{ template "kube-prometheus-stack.operator.serviceAccountName" . }}
 {{- if .Values.prometheusOperator.hostNetwork }}
       hostNetwork: true
       dnsPolicy: ClusterFirstWithHostNet
