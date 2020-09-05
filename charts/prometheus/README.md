@@ -37,8 +37,10 @@ _See [helm install](https://helm.sh/docs/helm/helm_install/) for command documen
 By default this chart installs additional, dependent charts:
 
 - [stable/kube-state-metrics](https://github.com/helm/charts/tree/master/stable/kube-state-metrics)
+- [prometheus-node-exporter](https://github.com/prometheus-community/helm-charts/tree/main/charts/prometheus-node-exporter)
+- [prometheus-pushgateway](https://github.com/prometheus-community/helm-charts/tree/main/charts/prometheus-pushgateway)
 
-To disable the dependency during installation, set `kubeStateMetrics.enabled` to `false`.
+Please see [requirements.yaml](./requirements.yaml) for mor info.
 
 _See [helm dependency](https://helm.sh/docs/helm/helm_dependency/) for command documentation._
 
@@ -64,6 +66,13 @@ $ helm upgrade [RELEASE_NAME] [CHART] --install
 ```
 
 _See [helm upgrade](https://helm.sh/docs/helm/helm_upgrade/) for command documentation._
+
+### To 12.0.0
+
+Version 12.0.0 replaces vendored node-exporter and pushgateway components with
+the prometheus-community charts as to deduplicate community effort.
+
+To migrate, please adhere to the sub-charts' values files.
 
 ### To 9.0
 
