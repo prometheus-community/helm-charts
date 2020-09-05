@@ -1,10 +1,10 @@
-# kube-prometheus
+# kube-prometheus-stack
 
-Installs [kube-prometheus](https://github.com/prometheus-operator/kube-prometheus), a collection of Kubernetes manifests, [Grafana](http://grafana.com/) dashboards, and [Prometheus rules](https://prometheus.io/docs/prometheus/latest/configuration/recording_rules/) combined with documentation and scripts to provide easy to operate end-to-end Kubernetes cluster monitoring with [Prometheus](https://prometheus.io/) using the [Prometheus Operator](https://github.com/prometheus-operator/prometheus-operator).
+Installs the [kube-prometheus stack](https://github.com/prometheus-operator/kube-prometheus), a collection of Kubernetes manifests, [Grafana](http://grafana.com/) dashboards, and [Prometheus rules](https://prometheus.io/docs/prometheus/latest/configuration/recording_rules/) combined with documentation and scripts to provide easy to operate end-to-end Kubernetes cluster monitoring with [Prometheus](https://prometheus.io/) using the [Prometheus Operator](https://github.com/prometheus-operator/prometheus-operator).
 
 See the [kube-prometheus](https://github.com/prometheus-operator/kube-prometheus) README for details about components, dashboards, and alerts.
 
-_Note: This chart was formerly named `prometheus-operator` chart, now renamed to more clearly reflect that it installs the `kube-prometheus` project, within which Prometheus Operator is only one component._
+_Note: This chart was formerly named `prometheus-operator` chart, now renamed to more clearly reflect that it installs the `kube-prometheus` project stack, within which Prometheus Operator is only one component._
 
 ## Prerequisites
 
@@ -25,10 +25,10 @@ _See [helm repo](https://helm.sh/docs/helm/helm_repo/) for command documentation
 
 ```console
 # Helm 3
-$ helm install [RELEASE_NAME] prometheus-community/kube-prometheus
+$ helm install [RELEASE_NAME] prometheus-community/kube-prometheus-stack
 
 # Helm 2
-$ helm install --name [RELEASE_NAME] prometheus-community/kube-prometheus
+$ helm install --name [RELEASE_NAME] prometheus-community/kube-prometheus-stack
 ```
 
 _See [configuration](#configuration) below._
@@ -76,7 +76,7 @@ kubectl delete crd thanosrulers.monitoring.coreos.com
 
 ```console
 # Helm 3 or 2
-$ helm upgrade [RELEASE_NAME] prometheus-community/kube-prometheus
+$ helm upgrade [RELEASE_NAME] prometheus-community/kube-prometheus-stack
 ```
 
 _See [helm upgrade](https://helm.sh/docs/helm/helm_upgrade/) for command documentation._
@@ -94,13 +94,13 @@ Version 9 of the helm chart removes the existing `additionalScrapeConfigsExterna
 Due to new template functions being used in the rules in version 8.x.x of the chart, an upgrade to Prometheus Operator and Prometheus is necessary in order to support them. First, upgrade to the latest version of 7.x.x
 
 ```sh
-helm upgrade [RELEASE_NAME] prometheus-community/kube-prometheus --version 7.5.0
+helm upgrade [RELEASE_NAME] prometheus-community/kube-prometheus-stack --version 7.5.0
 ```
 
 Then upgrade to 8.x.x
 
 ```sh
-helm upgrade [RELEASE_NAME] prometheus-community/kube-prometheus --version [8.x.x]
+helm upgrade [RELEASE_NAME] prometheus-community/kube-prometheus-stack --version [8.x.x]
 ```
 
 Minimal recommended Prometheus version for this chart release is `2.12.x`
@@ -124,7 +124,7 @@ If this error has already been encountered, a `helm history` command can be used
 See [Customizing the Chart Before Installing](https://helm.sh/docs/intro/using_helm/#customizing-the-chart-before-installing). To see all configurable options with detailed comments:
 
 ```console
-helm show values prometheus-community/kube-prometheus
+helm show values prometheus-community/kube-prometheus-stack
 ```
 
 You may also `helm show values` on this chart's [dependencies](#dependencies) for additional options.
