@@ -2,7 +2,7 @@
 name: Feature request
 about: Suggest an idea for this project
 title: '[name of the chart e.g. prometheus-couchdb-exporter] issue title'
-labels: ''
+labels: 'enhancement'
 assignees: ''
 
 ---

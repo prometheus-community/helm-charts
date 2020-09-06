@@ -2,7 +2,7 @@
 name: Bug report
 about: Create a report to help us improve
 title: '[name of the chart e.g. prometheus-kube-stack] issue title'
-labels: ''
+labels: 'bug'
 assignees: ''
 
 ---
