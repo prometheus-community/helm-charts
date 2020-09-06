@@ -217,7 +217,7 @@ You can check out the tickets for this change [here](https://github.com/promethe
 The chart has added 3 [dependencies](#dependencies).
 
 - Node-Exporter, Kube-State-Metrics: These components are loaded as dependencies into the chart, and are relatively simple components
-- Grafana: The Grafana chart is more feature-rich than this chart - it contains a sidecar that is able to load data sources and dashboards from configmaps deployed into the same cluster. For more information check out the [documentation for the chart](https://github.com/grafana/helm-charts/tree/main/charts/grafana)
+- Grafana: The Grafana chart is more feature-rich that contains a sidecar that is able to load data sources and dashboards from configmaps deployed into the same cluster and more information on that can be found by visiting the [documentation for the chart](https://github.com/grafana/helm-charts/tree/main/charts/grafana)
 
 #### CoreOS CRDs
 
