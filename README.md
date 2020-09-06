@@ -28,3 +28,7 @@ We'd love to have you contribute! Please refer to our [contribution guidelines](
 
 <!-- Keep full URL links to repo files because this README syncs from main to gh-pages.  -->
 [Apache 2.0 License](https://github.com/prometheus-community/helm-charts/blob/main/LICENSE).
+
+## Helm charts build status
+
+![Release Charts](https://github.com/prometheus-community/helm-charts/workflows/Release%20Charts/badge.svg?branch=main)
