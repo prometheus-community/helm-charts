@@ -27,7 +27,7 @@ A clear and concise description of what the bug is.
 
 Helm Version:
 
-```
+```console
 $ helm version
 please put the output of it here
 ```
@@ -38,8 +38,6 @@ Kubernetes Version:
 $ kubectl version
 please put the output of it here
 ```
-
-
 
 **Which chart**:
 **Which version of the chart**:
