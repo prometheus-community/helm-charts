@@ -41,7 +41,7 @@ By default this chart installs additional, dependent charts:
 
 - [stable/kube-state-metrics](https://github.com/helm/charts/tree/master/stable/kube-state-metrics)
 - [stable/prometheus-node-exporter](https://github.com/prometheus-community/helm-charts/tree/main/prometheus-node-exporter)
-- [stable/grafana](https://github.com/helm/charts/tree/master/stable/grafana)
+- [grafana/grafana](https://github.com/grafana/helm-charts/tree/main/charts/grafana)
 
 To disable dependencies during installation, see [multiple releases](#multiple-releases) below.
 
@@ -192,7 +192,7 @@ For more in-depth documentation of configuration options meanings, please see
 
 - [Prometheus Operator](https://github.com/prometheus-operator/prometheus-operator)
 - [Prometheus](https://prometheus.io/docs/introduction/overview/)
-- [Grafana](https://github.com/helm/charts/tree/master/stable/grafana#grafana-helm-chart)
+- [Grafana](https://github.com/grafana/helm-charts/tree/main/charts/grafana#grafana-helm-chart)
 
 ## prometheus.io/scrape
 
