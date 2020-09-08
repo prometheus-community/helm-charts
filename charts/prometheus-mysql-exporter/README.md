@@ -39,7 +39,7 @@ $ helm upgrade [RELEASE_NAME] [CHART] --install
 Version 1.0.0 is a major update.
 
 * The chart now follows the new Kubernetes label recommendations:
-https://kubernetes.io/docs/concepts/overview/working-with-objects/common-labels/
+<https://kubernetes.io/docs/concepts/overview/working-with-objects/common-labels/>
 
 The simplest way to update is to do a force upgrade, which recreates the resources by doing a delete and an install.
 
@@ -79,8 +79,8 @@ $ helm show values prometheus-community/prometheus-mysql-exporter
 
 The exporter can connect to mysql directly or using the [Cloud SQL Proxy](https://cloud.google.com/sql/docs/mysql/sql-proxy).
 
-- To configure direct MySQL connection by value, set `mysql.user`, `mysql.pass`, `mysql.host` and `mysql.port` (see additional options in the `mysql` configuration block)
-- To configure direct MySQL connnetion by secret, you must store a connection string in a secret, and set `mysql.existingSecret` to `[SECRET_NAME]`
+* To configure direct MySQL connection by value, set `mysql.user`, `mysql.pass`, `mysql.host` and `mysql.port` (see additional options in the `mysql` configuration block)
+* To configure direct MySQL connnetion by secret, you must store a connection string in a secret, and set `mysql.existingSecret` to `[SECRET_NAME]`
 
 ### Exporter Documentation and Params
 
