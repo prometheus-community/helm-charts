@@ -81,7 +81,7 @@ $ helm upgrade [RELEASE_NAME] prometheus-community/kube-prometheus-stack
 
 _See [helm upgrade](https://helm.sh/docs/helm/helm_upgrade/) for command documentation._
 
-### Migrating from stable/prometheus-operator chart
+### Upgrading an existing Release to a new major version
 
 A major chart version change (like v1.2.3 -> v2.0.0) indicates that there is an incompatible breaking change needing manual actions.
 
