@@ -13,7 +13,7 @@ Currently following imported:
 
      ```bash
      jb update
-     make generate-in-docker
+     make generate
      ```
 
     - prepare and merge PR with imported changes into `prometheus-operator/kube-prometheus` master and/or release branch
@@ -38,7 +38,7 @@ Currently following imported:
 
      ```bash
      jb update
-     make generate-in-docker
+     make generate
      ```
 
     - prepare and merge PR with imported changes into `prometheus-operator/kube-prometheus` master and/or release branch
