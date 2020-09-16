@@ -1,10 +1,10 @@
 {{- /*
-Generated from 'kubernetes-system' group from https://raw.githubusercontent.com/prometheus-operator/kube-prometheus/master/manifests/prometheus-rules.yaml
+Generated from 'kubernetes-system' group from https://raw.githubusercontent.com/prometheus-operator/kube-prometheus/release-0.3/manifests/prometheus-rules.yaml
 Do not change in-place! In order to change this file first read following link:
 https://github.com/prometheus-community/helm-charts/tree/main/charts/kube-prometheus-stack/hack
 */ -}}
 {{- $kubeTargetVersion := default .Capabilities.KubeVersion.GitVersion .Values.kubeTargetVersionOverride }}
-{{- if and (semverCompare ">=1.14.0-0" $kubeTargetVersion) (semverCompare "<9.9.9-9" $kubeTargetVersion) .Values.defaultRules.create .Values.defaultRules.rules.kubernetesSystem }}
+{{- if and (semverCompare ">=1.14.0-0" $kubeTargetVersion) (semverCompare "<1.16.4-0" $kubeTargetVersion) .Values.defaultRules.create .Values.defaultRules.rules.kubernetesSystem }}
 apiVersion: monitoring.coreos.com/v1
 kind: PrometheusRule
 metadata:
@@ -28,7 +28,7 @@ spec:
       annotations:
         message: There are {{`{{`}} $value {{`}}`}} different semantic versions of Kubernetes components running.
         runbook_url: {{ .Values.defaultRules.runbookUrl }}alert-name-kubeversionmismatch
-      expr: count(count by (gitVersion) (label_replace(kubernetes_build_info{job!~"kube-dns|coredns"},"gitVersion","$1","gitVersion","(v[0-9]*.[0-9]*).*"))) > 1
+      expr: count(count by (gitVersion) (label_replace(kubernetes_build_info{job!~"kube-dns|coredns"},"gitVersion","$1","gitVersion","(v[0-9]*.[0-9]*.[0-9]*).*"))) > 1
       for: 15m
       labels:
         severity: warning

@@ -26,13 +26,49 @@ def change_style(style, representer):
 charts = [
     {
         'source': 'https://raw.githubusercontent.com/prometheus-operator/kube-prometheus/master/manifests/prometheus-rules.yaml',
-        'destination': '../templates/prometheus/rules-1.14',
-        'min_kubernetes': '1.14.0-0'
+        'destination': '../templates/prometheus/rules-1.19',
+        'min_kubernetes': '1.19.0-0',
     },
     {
-        'source': 'https://raw.githubusercontent.com/etcd-io/etcd/master/Documentation/op-guide/etcd3_alert.rules.yml',
+        'source': 'https://raw.githubusercontent.com/etcd-io/etcd/release-3.4/Documentation/op-guide/etcd3_alert.rules.yml',
+        'destination': '../templates/prometheus/rules-1.19',
+        'min_kubernetes': '1.19.0-0'
+    },
+    {
+        'source': 'https://raw.githubusercontent.com/prometheus-operator/kube-prometheus/release-0.6/manifests/prometheus-rules.yaml',
+        'destination': '../templates/prometheus/rules-1.18',
+        'min_kubernetes': '1.18.0-0',
+        'max_kubernetes': '1.19.0-0'
+    },
+    {
+        'source': 'https://raw.githubusercontent.com/etcd-io/etcd/release-3.4/Documentation/op-guide/etcd3_alert.rules.yml',
+        'destination': '../templates/prometheus/rules-1.18',
+        'min_kubernetes': '1.18.0-0',
+        'max_kubernetes': '1.19.0-0'
+    },
+    {
+        'source': 'https://raw.githubusercontent.com/prometheus-operator/kube-prometheus/release-0.4/manifests/prometheus-rules.yaml',
+        'destination': '../templates/prometheus/rules-1.16',
+        'min_kubernetes': '1.16.5-0',
+        'max_kubernetes': '1.18.0-0'
+    },
+    {
+        'source': 'https://raw.githubusercontent.com/etcd-io/etcd/release-3.4/Documentation/op-guide/etcd3_alert.rules.yml',
+        'destination': '../templates/prometheus/rules-1.16',
+        'min_kubernetes': '1.16.5-0',
+        'max_kubernetes': '1.18.0-0'
+    },
+    {
+        'source': 'https://raw.githubusercontent.com/prometheus-operator/kube-prometheus/release-0.3/manifests/prometheus-rules.yaml',
         'destination': '../templates/prometheus/rules-1.14',
-        'min_kubernetes': '1.14.0-0'
+        'min_kubernetes': '1.14.0-0',
+        'max_kubernetes': '1.16.4-0'
+    },
+    {
+        'source': 'https://raw.githubusercontent.com/etcd-io/etcd/release-3.4/Documentation/op-guide/etcd3_alert.rules.yml',
+        'destination': '../templates/prometheus/rules-1.14',
+        'min_kubernetes': '1.14.0-0',
+        'max_kubernetes': '1.16.4-0'
     },
     {
         'source': 'https://raw.githubusercontent.com/prometheus-operator/kube-prometheus/release-0.1/manifests/prometheus-rules.yaml',
@@ -41,7 +77,7 @@ charts = [
         'max_kubernetes': '1.14.0-0'
     },
     {
-        'source': 'https://raw.githubusercontent.com/etcd-io/etcd/master/Documentation/op-guide/etcd3_alert.rules.yml',
+        'source': 'https://raw.githubusercontent.com/etcd-io/etcd/release-3.4/Documentation/op-guide/etcd3_alert.rules.yml',
         'destination': '../templates/prometheus/rules',
         'min_kubernetes': '1.10.0-0',
         'max_kubernetes': '1.14.0-0'

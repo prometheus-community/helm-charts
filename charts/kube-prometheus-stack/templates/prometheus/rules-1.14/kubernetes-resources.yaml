@@ -1,10 +1,10 @@
 {{- /*
-Generated from 'kubernetes-resources' group from https://raw.githubusercontent.com/prometheus-operator/kube-prometheus/master/manifests/prometheus-rules.yaml
+Generated from 'kubernetes-resources' group from https://raw.githubusercontent.com/prometheus-operator/kube-prometheus/release-0.3/manifests/prometheus-rules.yaml
 Do not change in-place! In order to change this file first read following link:
 https://github.com/prometheus-community/helm-charts/tree/main/charts/kube-prometheus-stack/hack
 */ -}}
 {{- $kubeTargetVersion := default .Capabilities.KubeVersion.GitVersion .Values.kubeTargetVersionOverride }}
-{{- if and (semverCompare ">=1.14.0-0" $kubeTargetVersion) (semverCompare "<9.9.9-9" $kubeTargetVersion) .Values.defaultRules.create .Values.defaultRules.rules.kubernetesResources }}
+{{- if and (semverCompare ">=1.14.0-0" $kubeTargetVersion) (semverCompare "<1.16.4-0" $kubeTargetVersion) .Values.defaultRules.create .Values.defaultRules.rules.kubernetesResources }}
 apiVersion: monitoring.coreos.com/v1
 kind: PrometheusRule
 metadata:
@@ -29,7 +29,7 @@ spec:
         message: Cluster has overcommitted CPU resource requests for Pods and cannot tolerate node failure.
         runbook_url: {{ .Values.defaultRules.runbookUrl }}alert-name-kubecpuovercommit
       expr: |-
-        sum(namespace:kube_pod_container_resource_requests_cpu_cores:sum{})
+        sum(namespace:kube_pod_container_resource_requests_cpu_cores:sum)
           /
         sum(kube_node_status_allocatable_cpu_cores)
           >
@@ -37,12 +37,12 @@ spec:
       for: 5m
       labels:
         severity: warning
-    - alert: KubeMemoryOvercommit
+    - alert: KubeMemOvercommit
       annotations:
         message: Cluster has overcommitted memory resource requests for Pods and cannot tolerate node failure.
-        runbook_url: {{ .Values.defaultRules.runbookUrl }}alert-name-kubememoryovercommit
+        runbook_url: {{ .Values.defaultRules.runbookUrl }}alert-name-kubememovercommit
       expr: |-
-        sum(namespace:kube_pod_container_resource_requests_memory_bytes:sum{})
+        sum(namespace:kube_pod_container_resource_requests_memory_bytes:sum)
           /
         sum(kube_node_status_allocatable_memory_bytes)
           >
@@ -52,10 +52,10 @@ spec:
       for: 5m
       labels:
         severity: warning
-    - alert: KubeCPUQuotaOvercommit
+    - alert: KubeCPUOvercommit
       annotations:
         message: Cluster has overcommitted CPU resource requests for Namespaces.
-        runbook_url: {{ .Values.defaultRules.runbookUrl }}alert-name-kubecpuquotaovercommit
+        runbook_url: {{ .Values.defaultRules.runbookUrl }}alert-name-kubecpuovercommit
       expr: |-
         sum(kube_resourcequota{job="kube-state-metrics", type="hard", resource="cpu"})
           /
@@ -64,10 +64,10 @@ spec:
       for: 5m
       labels:
         severity: warning
-    - alert: KubeMemoryQuotaOvercommit
+    - alert: KubeMemOvercommit
       annotations:
         message: Cluster has overcommitted memory resource requests for Namespaces.
-        runbook_url: {{ .Values.defaultRules.runbookUrl }}alert-name-kubememoryquotaovercommit
+        runbook_url: {{ .Values.defaultRules.runbookUrl }}alert-name-kubememovercommit
       expr: |-
         sum(kube_resourcequota{job="kube-state-metrics", type="hard", resource="memory"})
           /
@@ -76,18 +76,18 @@ spec:
       for: 5m
       labels:
         severity: warning
-    - alert: KubeQuotaFullyUsed
+    - alert: KubeQuotaExceeded
       annotations:
         message: Namespace {{`{{`}} $labels.namespace {{`}}`}} is using {{`{{`}} $value | humanizePercentage {{`}}`}} of its {{`{{`}} $labels.resource {{`}}`}} quota.
-        runbook_url: {{ .Values.defaultRules.runbookUrl }}alert-name-kubequotafullyused
+        runbook_url: {{ .Values.defaultRules.runbookUrl }}alert-name-kubequotaexceeded
       expr: |-
         kube_resourcequota{job="kube-state-metrics", type="used"}
           / ignoring(instance, job, type)
         (kube_resourcequota{job="kube-state-metrics", type="hard"} > 0)
-          >= 1
+          > 0.90
       for: 15m
       labels:
-        severity: info
+        severity: warning
     - alert: CPUThrottlingHigh
       annotations:
         message: '{{`{{`}} $value | humanizePercentage {{`}}`}} throttling of CPU in namespace {{`{{`}} $labels.namespace {{`}}`}} for container {{`{{`}} $labels.container {{`}}`}} in pod {{`{{`}} $labels.pod {{`}}`}}.'
@@ -99,5 +99,5 @@ spec:
           > ( 25 / 100 )
       for: 15m
       labels:
-        severity: info
+        severity: warning
 {{- end }}

@@ -1,10 +1,10 @@
 {{- /*
-Generated from 'kube-prometheus-node-recording.rules' group from https://raw.githubusercontent.com/prometheus-operator/kube-prometheus/master/manifests/prometheus-rules.yaml
+Generated from 'kube-prometheus-node-recording.rules' group from https://raw.githubusercontent.com/prometheus-operator/kube-prometheus/release-0.3/manifests/prometheus-rules.yaml
 Do not change in-place! In order to change this file first read following link:
 https://github.com/prometheus-community/helm-charts/tree/main/charts/kube-prometheus-stack/hack
 */ -}}
 {{- $kubeTargetVersion := default .Capabilities.KubeVersion.GitVersion .Values.kubeTargetVersionOverride }}
-{{- if and (semverCompare ">=1.14.0-0" $kubeTargetVersion) (semverCompare "<9.9.9-9" $kubeTargetVersion) .Values.defaultRules.create .Values.defaultRules.rules.kubePrometheusNodeRecording }}
+{{- if and (semverCompare ">=1.14.0-0" $kubeTargetVersion) (semverCompare "<1.16.4-0" $kubeTargetVersion) .Values.defaultRules.create .Values.defaultRules.rules.kubePrometheusNodeRecording }}
 apiVersion: monitoring.coreos.com/v1
 kind: PrometheusRule
 metadata:
@@ -26,6 +26,8 @@ spec:
     rules:
     - expr: sum(rate(node_cpu_seconds_total{mode!="idle",mode!="iowait"}[3m])) BY (instance)
       record: instance:node_cpu:rate:sum
+    - expr: sum((node_filesystem_size_bytes{mountpoint="/"} - node_filesystem_free_bytes{mountpoint="/"})) BY (instance)
+      record: instance:node_filesystem_usage:sum
     - expr: sum(rate(node_network_receive_bytes_total[3m])) BY (instance)
       record: instance:node_network_receive_bytes:rate:sum
     - expr: sum(rate(node_network_transmit_bytes_total[3m])) BY (instance)
