@@ -26,18 +26,6 @@ def change_style(style, representer):
 # Source files list
 charts = [
     {
-        'source': 'https://raw.githubusercontent.com/prometheus-operator/kube-prometheus/master/manifests/grafana-dashboardDefinitions.yaml',
-        'destination': '../templates/grafana/dashboards-1.19',
-        'type': 'yaml',
-        'min_kubernetes': '1.19.0-0'
-    },
-    {
-        'source': 'https://raw.githubusercontent.com/etcd-io/etcd/master/Documentation/op-guide/grafana.json',
-        'destination': '../templates/grafana/dashboards-1.19',
-        'type': 'json',
-        'min_kubernetes': '1.19.0-0'
-    },
-    {
         'source': 'https://raw.githubusercontent.com/prometheus-operator/kube-prometheus/release-0.6/manifests/grafana-dashboardDefinitions.yaml',
         'destination': '../templates/grafana/dashboards-1.18',
         'type': 'yaml',

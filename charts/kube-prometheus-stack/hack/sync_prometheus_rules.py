@@ -25,16 +25,6 @@ def change_style(style, representer):
 # Source files list
 charts = [
     {
-        'source': 'https://raw.githubusercontent.com/prometheus-operator/kube-prometheus/master/manifests/prometheus-rules.yaml',
-        'destination': '../templates/prometheus/rules-1.19',
-        'min_kubernetes': '1.19.0-0',
-    },
-    {
-        'source': 'https://raw.githubusercontent.com/etcd-io/etcd/0c5cffc60b9ea7bc348cb54a418f769b21c0414c/Documentation/op-guide/etcd3_alert.rules.yml',
-        'destination': '../templates/prometheus/rules-1.19',
-        'min_kubernetes': '1.19.0-0'
-    },
-    {
         'source': 'https://raw.githubusercontent.com/prometheus-operator/kube-prometheus/release-0.6/manifests/prometheus-rules.yaml',
         'destination': '../templates/prometheus/rules-1.18',
         'min_kubernetes': '1.18.0-0',
