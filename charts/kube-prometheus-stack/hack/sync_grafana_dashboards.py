@@ -33,13 +33,6 @@ charts = [
         'max_kubernetes': '1.19.0-0'
     },
     {
-        'source': 'https://raw.githubusercontent.com/etcd-io/etcd/master/Documentation/op-guide/grafana.json',
-        'destination': '../templates/grafana/dashboards-1.18',
-        'type': 'json',
-        'min_kubernetes': '1.18.0-0',
-        'max_kubernetes': '1.19.0-0'
-    },
-    {
         'source': 'https://raw.githubusercontent.com/prometheus-operator/kube-prometheus/release-0.4/manifests/grafana-dashboardDefinitions.yaml',
         'destination': '../templates/grafana/dashboards-1.16',
         'type': 'yaml',
@@ -47,23 +40,9 @@ charts = [
         'max_kubernetes': '1.18.0-0'
     },
     {
-        'source': 'https://raw.githubusercontent.com/etcd-io/etcd/master/Documentation/op-guide/grafana.json',
-        'destination': '../templates/grafana/dashboards-1.16',
-        'type': 'json',
-        'min_kubernetes': '1.16.5-0',
-        'max_kubernetes': '1.18.0-0'
-    },
-    {
-        'source': 'https://raw.githubusercontent.com/prometheus-operator/kube-prometheus/master/manifests/grafana-dashboardDefinitions.yaml',
+        'source': 'https://raw.githubusercontent.com/prometheus-operator/kube-prometheus/release-0.3/manifests/grafana-dashboardDefinitions.yaml',
         'destination': '../templates/grafana/dashboards-1.14',
         'type': 'yaml',
-        'min_kubernetes': '1.14.0-0',
-        'max_kubernetes': '1.16.4-0'
-    },
-    {
-        'source': 'https://raw.githubusercontent.com/etcd-io/etcd/master/Documentation/op-guide/grafana.json',
-        'destination': '../templates/grafana/dashboards-1.14',
-        'type': 'json',
         'min_kubernetes': '1.14.0-0',
         'max_kubernetes': '1.16.4-0'
     },
@@ -78,8 +57,7 @@ charts = [
         'source': 'https://raw.githubusercontent.com/etcd-io/etcd/master/Documentation/op-guide/grafana.json',
         'destination': '../templates/grafana/dashboards',
         'type': 'json',
-        'min_kubernetes': '1.10.0-0',
-        'max_kubernetes': '1.14.0-0'
+        'min_kubernetes': '1.10.0-0'
     },
 ]
 
