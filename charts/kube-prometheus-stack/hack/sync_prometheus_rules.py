@@ -30,7 +30,7 @@ charts = [
         'min_kubernetes': '1.19.0-0',
     },
     {
-        'source': 'https://raw.githubusercontent.com/etcd-io/etcd/release-3.4/Documentation/op-guide/etcd3_alert.rules.yml',
+        'source': 'https://raw.githubusercontent.com/etcd-io/etcd/0c5cffc60b9ea7bc348cb54a418f769b21c0414c/Documentation/op-guide/etcd3_alert.rules.yml',
         'destination': '../templates/prometheus/rules-1.19',
         'min_kubernetes': '1.19.0-0'
     },
@@ -41,7 +41,7 @@ charts = [
         'max_kubernetes': '1.19.0-0'
     },
     {
-        'source': 'https://raw.githubusercontent.com/etcd-io/etcd/release-3.4/Documentation/op-guide/etcd3_alert.rules.yml',
+        'source': 'https://raw.githubusercontent.com/etcd-io/etcd/0c5cffc60b9ea7bc348cb54a418f769b21c0414c/Documentation/op-guide/etcd3_alert.rules.yml',
         'destination': '../templates/prometheus/rules-1.18',
         'min_kubernetes': '1.18.0-0',
         'max_kubernetes': '1.19.0-0'
@@ -53,7 +53,7 @@ charts = [
         'max_kubernetes': '1.18.0-0'
     },
     {
-        'source': 'https://raw.githubusercontent.com/etcd-io/etcd/release-3.4/Documentation/op-guide/etcd3_alert.rules.yml',
+        'source': 'https://raw.githubusercontent.com/etcd-io/etcd/0c5cffc60b9ea7bc348cb54a418f769b21c0414c/Documentation/op-guide/etcd3_alert.rules.yml',
         'destination': '../templates/prometheus/rules-1.16',
         'min_kubernetes': '1.16.5-0',
         'max_kubernetes': '1.18.0-0'
@@ -65,7 +65,7 @@ charts = [
         'max_kubernetes': '1.16.4-0'
     },
     {
-        'source': 'https://raw.githubusercontent.com/etcd-io/etcd/release-3.4/Documentation/op-guide/etcd3_alert.rules.yml',
+        'source': 'https://raw.githubusercontent.com/etcd-io/etcd/0c5cffc60b9ea7bc348cb54a418f769b21c0414c/Documentation/op-guide/etcd3_alert.rules.yml',
         'destination': '../templates/prometheus/rules-1.14',
         'min_kubernetes': '1.14.0-0',
         'max_kubernetes': '1.16.4-0'
@@ -77,7 +77,7 @@ charts = [
         'max_kubernetes': '1.14.0-0'
     },
     {
-        'source': 'https://raw.githubusercontent.com/etcd-io/etcd/release-3.4/Documentation/op-guide/etcd3_alert.rules.yml',
+        'source': 'https://raw.githubusercontent.com/etcd-io/etcd/0c5cffc60b9ea7bc348cb54a418f769b21c0414c/Documentation/op-guide/etcd3_alert.rules.yml',
         'destination': '../templates/prometheus/rules',
         'min_kubernetes': '1.10.0-0',
         'max_kubernetes': '1.14.0-0'
