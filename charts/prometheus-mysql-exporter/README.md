@@ -27,26 +27,6 @@ _See [configuration](https://github.com/prometheus-community/helm-charts/tree/ma
 
 _See [helm install](https://helm.sh/docs/helm/helm_install/) for command documentation._
 
-## Upgrading Chart
-
-```console
-# Helm 3 or 2
-$ helm upgrade [RELEASE_NAME] [CHART] --install
-```
-
-### To =< 1.0.0
-
-Version 1.0.0 is a major update.
-
-* The chart now follows the new Kubernetes label recommendations:
-<https://kubernetes.io/docs/concepts/overview/working-with-objects/common-labels/>
-
-The simplest way to update is to do a force upgrade, which recreates the resources by doing a delete and an install.
-
-```console
-helm upgrade prometheus-mysql-exporter prometheus-community/prometheus-mysql-exporter --force
-```
-
 ## Uninstall Chart
 
 ```console
@@ -62,6 +42,26 @@ This removes all the Kubernetes components associated with the chart and deletes
 _See [helm uninstall](https://helm.sh/docs/helm/helm_uninstall/) for command documentation._
 
 _See [helm upgrade](https://helm.sh/docs/helm/helm_upgrade/) for command documentation._
+
+## Upgrading Chart
+
+```console
+# Helm 3 or 2
+$ helm upgrade [RELEASE_NAME] [CHART] --install
+```
+
+### To =< 1.0.0
+
+Version 1.0.0 is a major update.
+
+- The chart now follows the new Kubernetes label recommendations:
+<https://kubernetes.io/docs/concepts/overview/working-with-objects/common-labels/>
+
+The simplest way to update is to do a force upgrade, which recreates the resources by doing a delete and an install.
+
+```console
+helm upgrade prometheus-mysql-exporter prometheus-community/prometheus-mysql-exporter --force
+```
 
 ## Configuration
 
@@ -79,8 +79,8 @@ $ helm show values prometheus-community/prometheus-mysql-exporter
 
 The exporter can connect to mysql directly or using the [Cloud SQL Proxy](https://cloud.google.com/sql/docs/mysql/sql-proxy).
 
-* To configure direct MySQL connection by value, set `mysql.user`, `mysql.pass`, `mysql.host` and `mysql.port` (see additional options in the `mysql` configuration block)
-* To configure direct MySQL connnetion by secret, you must store a connection string in a secret, and set `mysql.existingSecret` to `[SECRET_NAME]`
+- To configure direct MySQL connection by value, set `mysql.user`, `mysql.pass`, `mysql.host` and `mysql.port` (see additional options in the `mysql` configuration block)
+- To configure direct MySQL connnetion by secret, you must store a connection string in a secret, and set `mysql.existingSecret` to `[SECRET_NAME]`
 
 ### Exporter Documentation and Params
 
