@@ -200,6 +200,30 @@ The prometheus operator does not support annotation-based discovery of services,
 
 By default, Prometheus discovers ServiceMonitors within its namespace, that are labeled with the same release tag as the prometheus-operator release. Sometimes, you may need to discover custom ServiceMonitors, for example used to scrape data from third-party applications. An easy way of doing this, without compromising the default ServiceMonitors discovery, is allowing Prometheus to discover all ServiceMonitors within its namespace, without applying label filtering. To do so, you can set `prometheus.prometheusSpec.serviceMonitorSelectorNilUsesHelmValues` to `false`.
 
+## Migrating from stable/prometheus-operator chart
+
+If your current **prometheus-operator** values are compatible with the ones provided in the **kube-prometheus-stack** chart, you can follow these steps to migrate from your current chart to the new one:
+
+> The guide presumes that you are using `monitoring` namespace to host your old and new monitoring deployments
+
+1. Patch your current PersistingVolume to Retain claim policy:
+
+```
+kubectl patch pv pvc-138f88aa-d4c7-4e83-aaeb-c951c8f41cb6 -p '{"spec":{"persistentVolumeReclaimPolicy":"Retain"}}' -n monitoring
+```
+
+2. Uninstall your current **prometheus-operator** release, your PV will become Released.
+
+3. Remove current `spec.claimRef` values to change the PV's status from Released to Available
+
+```
+kubectl edit pv pvc-138f88aa-d4c7-4e83-aaeb-c951c8f41cb6 -n monitoring
+```
+
+After these steps, you can perform a fresh **kube-prometheus-stack** installation, just make sure that you're using matching `volumeClaimTemplate` values in your `values.yaml`.
+
+The new release should now re-attach your previously released PV with its content.
+
 ## Migrating from coreos/prometheus-operator chart
 
 The multiple charts have been combined into a single chart that installs prometheus operator, prometheus, alertmanager, grafana as well as the multitude of exporters necessary to monitor a cluster.
