@@ -208,7 +208,7 @@ If your current **prometheus-operator** values are compatible with the ones prov
 
 1. Patch your current PersistingVolume to Retain claim policy:
 
-```
+```bash
 kubectl patch pv pvc-138f88aa-d4c7-4e83-aaeb-c951c8f41cb6 -p '{"spec":{"persistentVolumeReclaimPolicy":"Retain"}}' -n monitoring
 ```
 
@@ -216,7 +216,7 @@ kubectl patch pv pvc-138f88aa-d4c7-4e83-aaeb-c951c8f41cb6 -p '{"spec":{"persiste
 
 3. Remove current `spec.claimRef` values to change the PV's status from Released to Available
 
-```
+```bash
 kubectl edit pv pvc-138f88aa-d4c7-4e83-aaeb-c951c8f41cb6 -n monitoring
 ```
 
