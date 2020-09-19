@@ -2,7 +2,7 @@
 
 A Prometheus exporter for [Druid](https://druid.apache.org/) metrics.
 
-Installs the [Druid Exporter](https://github.com/opstree/druid-exporter) for [Prometheus](https://prometheus.io/). 
+Installs the [Druid Exporter](https://github.com/opstree/druid-exporter) for [Prometheus](https://prometheus.io/).
 
 Some of the metrics collections are:-
 - Druid's health metrics
@@ -76,7 +76,7 @@ To use this chart, ensure that `druidURL` is populated with valid Druid URL. Bas
 
 An example could be:-
 
-```
+```console
 http://druid.opstreelabs.in
 ```
 
