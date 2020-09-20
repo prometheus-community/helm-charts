@@ -202,25 +202,29 @@ By default, Prometheus discovers ServiceMonitors within its namespace, that are 
 
 ## Migrating from stable/prometheus-operator chart
 
-If your current **prometheus-operator** values are compatible with the ones provided in the **kube-prometheus-stack** chart, you can follow these steps to migrate from your current chart to the new one:
+If the **prometheus-operator** values are compatible with the new **kube-prometheus-stack** chart, please follow the below steps for migration:
 
-> The guide presumes that you are using `monitoring` namespace to host your old and new monitoring deployments
+> The guide presumes that chart is deployed in `monitoring` namespace and the deployments are running there. If in other namespace, please replace the `monitoring` to the deployed namespace.
 
-1. Patch your current PersistingVolume to Retain claim policy:
+1. Patch the PersistenceVolume created/used by the prometheus-operator chart to `Retain` claim policy:
 
 ```bash
-kubectl patch pv pvc-138f88aa-d4c7-4e83-aaeb-c951c8f41cb6 -p '{"spec":{"persistentVolumeReclaimPolicy":"Retain"}}' -n monitoring
+kubectl patch pv/<PersistenceVolume name> -p '{"spec":{"persistentVolumeReclaimPolicy":"Retain"}}' -n monitoring
 ```
 
-2. Uninstall your current **prometheus-operator** release, your PV will become Released.
+**Note:** To execute the above command, the user must have a cluster wide permission. Please refer [Kubernetes RBAC](https://kubernetes.io/docs/reference/access-authn-authz/rbac/)
+
+2. Uninstall the **prometheus-operator** release, and verify PV become Released.
 
 3. Remove current `spec.claimRef` values to change the PV's status from Released to Available
 
 ```bash
-kubectl edit pv pvc-138f88aa-d4c7-4e83-aaeb-c951c8f41cb6 -n monitoring
+kubectl patch pv/<pv_name> --type json -p $'- op: remove\n path: /spec/claimRef'
 ```
 
-After these steps, you can perform a fresh **kube-prometheus-stack** installation, just make sure that you're using matching `volumeClaimTemplate` values in your `values.yaml`.
+**Note:** To execute the above command, the user must have a cluster wide permission. Please refer [Kubernetes RBAC](https://kubernetes.io/docs/reference/access-authn-authz/rbac/)
+
+After these steps, proceed to a fresh **kube-prometheus-stack** installation and make sure the current release of **kube-prometheus-stack** matching the `volumeClaimTemplate` values in the `values.yaml`.
 
 The new release should now re-attach your previously released PV with its content.
 
