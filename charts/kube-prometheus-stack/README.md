@@ -209,17 +209,22 @@ If the **prometheus-operator** values are compatible with the new **kube-prometh
 1. Patch the PersistenceVolume created/used by the prometheus-operator chart to `Retain` claim policy:
 
 ```bash
-kubectl patch pv/<PersistenceVolume name> -p '{"spec":{"persistentVolumeReclaimPolicy":"Retain"}}' -n monitoring
+kubectl patch pv/<PersistentVolume name> -p '{"spec":{"persistentVolumeReclaimPolicy":"Retain"}}' -n monitoring
 ```
 
 **Note:** To execute the above command, the user must have a cluster wide permission. Please refer [Kubernetes RBAC](https://kubernetes.io/docs/reference/access-authn-authz/rbac/)
 
-2. Uninstall the **prometheus-operator** release, and verify PV become Released.
+2. Uninstall the **prometheus-operator** release and delete the existing PersistentVolumeClaim, and verify PV become Released.
+
+```bash
+helm uninstall prometheus-operator -n monitoring
+kubectl delete pvc/<PersistenceVolumeClaim name> -n monitoring
+```
 
 3. Remove current `spec.claimRef` values to change the PV's status from Released to Available
 
 ```bash
-kubectl patch pv/<pv_name> --type json -p $'- op: remove\n path: /spec/claimRef'
+kubectl patch pv/<PersistentVolume name> --type json -p='[{"op": "remove", "path": "/spec/claimRef"}]' -n monitoring'
 ```
 
 **Note:** To execute the above command, the user must have a cluster wide permission. Please refer [Kubernetes RBAC](https://kubernetes.io/docs/reference/access-authn-authz/rbac/)
