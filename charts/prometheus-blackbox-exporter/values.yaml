@@ -16,7 +16,7 @@ strategy:
 
 image:
   repository: prom/blackbox-exporter
-  tag: v0.16.0
+  tag: v0.17.0
   pullPolicy: IfNotPresent
 
   ## Optionally specify an array of imagePullSecrets.
@@ -52,7 +52,7 @@ config:
       prober: http
       timeout: 5s
       http:
-        valid_http_versions: ["HTTP/1.1", "HTTP/2"]
+        valid_http_versions: ["HTTP/1.1", "HTTP/2.0"]
         no_follow_redirects: false
         preferred_ip_protocol: "ip4"
 
@@ -85,6 +85,7 @@ priorityClassName: ""
 
 service:
   annotations: {}
+  labels: {}
   type: ClusterIP
   port: 9115
 
@@ -116,6 +117,9 @@ ingress:
 
 podAnnotations: {}
 
+pod:
+  labels: {}
+
 extraArgs: []
 #  --history.limit=1000
 
@@ -129,6 +133,7 @@ serviceMonitor:
 
   # Default values that will be used for all ServiceMonitors created by `targets`
   defaults:
+    additionalMetricsRelabels: {}
     labels: {}
     interval: 30s
     scrapeTimeout: 30s
@@ -137,10 +142,11 @@ serviceMonitor:
   targets:
 #    - name: example                    # Human readable URL that will appear in Prometheus / AlertManager
 #      url: http://example.com/healthz  # The URL that blackbox will scrape
-#      labels: {}                       # List of labels for ServiceMonitor. Overrides value set in `defaults`
+#      labels: {}                       # Map of labels for ServiceMonitor. Overrides value set in `defaults`
 #      interval: 60s                    # Scraping interval. Overrides value set in `defaults`
 #      scrapeTimeout: 60s               # Scrape timeout. Overrides value set in `defaults`
 #      module: http_2xx                 # Module used for scraping. Overrides value set in `defaults`
+#      additionalMetricsRelabels: {}    # Map of metric labels and values to add
 
 ## Custom PrometheusRules to be defined
 ## ref: https://github.com/coreos/prometheus-operator#customresourcedefinitions
@@ -156,3 +162,8 @@ networkPolicy:
   enabled: false
   # Limit access only from monitoring namespace
   allowMonitoringNamespace: false
+
+## dnsPolicy and dnsConfig for Deployments and Daemonsets if you want non-default settings.
+## These will be passed directly to the PodSpec of same.
+dnsPolicy:
+dnsConfig:
