@@ -221,6 +221,12 @@ helm uninstall prometheus-operator -n monitoring
 kubectl delete pvc/<PersistenceVolumeClaim name> -n monitoring
 ```
 
+Additonaly, you have to manually remove the remaining `prometheus-operator-kubelet` service:
+
+```bash
+kubectl delete service/prometheus-operator-kubelet -n kube-system
+```
+
 3. Remove current `spec.claimRef` values to change the PV's status from Released to Available
 
 ```bash
