@@ -221,21 +221,32 @@ helm uninstall prometheus-operator -n monitoring
 kubectl delete pvc/<PersistenceVolumeClaim name> -n monitoring
 ```
 
-Additonaly, you have to manually remove the remaining `prometheus-operator-kubelet` service:
+Additonaly, you have to manually remove the remaining `prometheus-operator-kubelet` service.
 
 ```bash
 kubectl delete service/prometheus-operator-kubelet -n kube-system
 ```
 
-3. Remove current `spec.claimRef` values to change the PV's status from Released to Available
+3. Remove current `spec.claimRef` values to change the PV's status from Released to Available.
 
 ```bash
-kubectl patch pv/<PersistentVolume name> --type json -p='[{"op": "remove", "path": "/spec/claimRef"}]' -n monitoring'
+kubectl patch pv/<PersistentVolume name> --type json -p='[{"op": "remove", "path": "/spec/claimRef"}]' -n monitoring
 ```
 
 **Note:** To execute the above command, the user must have a cluster wide permission. Please refer [Kubernetes RBAC](https://kubernetes.io/docs/reference/access-authn-authz/rbac/)
 
 After these steps, proceed to a fresh **kube-prometheus-stack** installation and make sure the current release of **kube-prometheus-stack** matching the `volumeClaimTemplate` values in the `values.yaml`.
+
+Additionally, you should check the current AZ of your legacy installation's PV, and configure the fresh release to use the same AZ as the old one. If the pods are in a different AZ than the PV, the release will fail to bind the existing one, hence creating a new PV.
+
+This can be achieved either by specifying the labels trough `values.yaml`, e.g. setting `prometheus.prometheusSpec.nodeSelector` to:
+
+```bash
+nodeSelector:
+  failure-domain.beta.kubernetes.io/zone: east-west-1
+```
+
+or passing these values as `--set` overrides during installation.
 
 The new release should now re-attach your previously released PV with its content.
 
