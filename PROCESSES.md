@@ -7,7 +7,8 @@ This document outlines processes and procedures for some common tasks in the cha
 One of the Chart maintainers should review the PR.
 If everything is fine then the PR should be [approved](https://docs.github.com/en/free-pro-team@latest/github/collaborating-with-issues-and-pull-requests/approving-a-pull-request-with-required-reviews).
 The one who approves the PR should also merge it directly.
-In case the reviewer wants someone else to have a look on it it should be mentioned as a comment so that it's transparent for everyone.
+In case the reviewer wants someone else to have a look on it,
+it should be mentioned as a comment so that it's transparent for everyone.
 
 As a chart maintainer can not approve it's own PRs every chart should have at least two maintainers.
 For charts where this is not the case or where none of the other maintainers does a review within two weeks the maintainer who created the PR could request a review from a repository admin instead.
@@ -98,4 +99,4 @@ The `main` branch is protected and the following settings are configured:
 
 - Force pushes and deletions are disabled
 
-  Force pushes and deletions on the `main` branch branch should never be done.
+  Force pushes and deletions on the `main` branch should never be done.
