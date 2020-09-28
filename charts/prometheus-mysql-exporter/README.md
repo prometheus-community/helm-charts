@@ -23,7 +23,7 @@ $ helm install [RELEASE_NAME] prometheus-community/prometheus-mysql-exporter
 $ helm install --name [RELEASE_NAME] prometheus-community/prometheus-mysql-exporter
 ```
 
-_See [configuration](https://github.com/prometheus-community/helm-charts/tree/main/charts/prometheus-mysql-exporter#configuration) below._
+_See [configuration](#configuration) below._
 
 _See [helm install](https://helm.sh/docs/helm/helm_install/) for command documentation._
 
