@@ -35,6 +35,25 @@ _See [configuration](#configuration) below._
 
 _See [helm install](https://helm.sh/docs/helm/helm_install/) for command documentation._
 
+## Access Dashboards
+**Access Prometheus Dashboard**
+```console
+$ kubectl  port-forward svc/my-release-kube-prom-prometheus 9090:9090
+```
+Then you can access the dashboard on http://localhost:9090
+
+**Access Grafana Dashboard**
+```console
+$ kubectl  port-forward svc/my-release-grafana 3000:80
+```
+Use the **`username: admin` and `password: prom-operator`** to access the dashboard on http://localhost:3000
+
+**Access Alert Manager Dashboard**
+```console
+$ kubectl  port-forward svc/my-release-kube-prom-alertmanager  9093:9093
+```
+Then you can access the dashboard on http://localhost:9093
+
 ## Dependencies
 
 By default this chart installs additional, dependent charts:
