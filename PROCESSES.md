@@ -5,7 +5,7 @@ This document outlines processes and procedures for some common tasks in the cha
 ## Review Process
 
 One of the Chart maintainers should review the PR.
-If everything is fine then the PR should be [approved](https://docs.github.com/en/free-pro-team@latest/github/collaborating-with-issues-and-pull-requests/approving-a-pull-request-with-required-reviews).
+If everything is fine (passes [Technical Requirements](https://github.com/prometheus-community/helm-charts/blob/main/CONTRIBUTING.md#technical-requirements), etc) then the PR should be [approved](https://docs.github.com/en/free-pro-team@latest/github/collaborating-with-issues-and-pull-requests/approving-a-pull-request-with-required-reviews).
 The one who approves the PR should also merge it directly.
 In case the reviewer wants someone else to have a look on it,
 it should be mentioned as a comment so that it's transparent for everyone.
