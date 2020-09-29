@@ -44,7 +44,7 @@ Repository access and permissions are managed via the GitHub teams.
 | [helm-charts-maintainers](https://github.com/orgs/prometheus-community/teams/helm-charts-maintainers) | Write |
 | [helm-charts-admins](https://github.com/orgs/prometheus-community/teams/helm-charts-admins) | Admin |
 
-Chart maintainers are members of [helm-charts-maintainers](https://github.com/orgs/prometheus-community/teams/helm-charts-maintainers).
+Chart maintainers are members of [@prometheus-community/helm-charts-maintainers](https://github.com/orgs/prometheus-community/teams/helm-charts-maintainers).
 This allows them to manage issues, review PRs etc according to the rules in [CODEOWNERS](./.github/CODEOWNERS).
 To request adding a user to [@prometheus-community/helm-charts-maintainers](https://github.com/orgs/prometheus-community/teams/helm-charts-maintainers), ask [@prometheus-community/helm-charts-admins](https://github.com/orgs/prometheus-community/teams/helm-charts-admins) in the corresponding issue or pull request.
 
