@@ -209,7 +209,7 @@ If the **prometheus-operator** values are compatible with the new **kube-prometh
 1. Patch the PersistenceVolume created/used by the prometheus-operator chart to `Retain` claim policy:
 
 ```bash
-kubectl patch pv/<PersistentVolume name> -p '{"spec":{"persistentVolumeReclaimPolicy":"Retain"}}' -n monitoring
+kubectl patch pv/<PersistentVolume name> -p '{"spec":{"persistentVolumeReclaimPolicy":"Retain"}}'
 ```
 
 **Note:** To execute the above command, the user must have a cluster wide permission. Please refer [Kubernetes RBAC](https://kubernetes.io/docs/reference/access-authn-authz/rbac/)
@@ -227,6 +227,8 @@ Additonaly, you have to manually remove the remaining `prometheus-operator-kubel
 kubectl delete service/prometheus-operator-kubelet -n kube-system
 ```
 
+You can choose to remove all your existing CRDs (ServiceMonitors, Podmonitors, etc.) if you want to. If you would like to keep these, you can set `prometheusOperator.createCustomResource` to `false` to disable CRD provisioning during the fresh installation.
+
 3. Remove current `spec.claimRef` values to change the PV's status from Released to Available.
 
 ```bash
@@ -243,7 +245,7 @@ This can be achieved either by specifying the labels trough `values.yaml`, e.g. 
 
 ```bash
 nodeSelector:
-  failure-domain.beta.kubernetes.io/zone: east-west-1
+  failure-domain.beta.kubernetes.io/zone: east-west-1a
 ```
 
 or passing these values as `--set` overrides during installation.
