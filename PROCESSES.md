@@ -45,7 +45,8 @@ Repository access and permissions are managed via the GitHub teams.
 | [helm-charts-admins](https://github.com/orgs/prometheus-community/teams/helm-charts-admins) | Admin |
 
 Chart maintainers are members of [helm-charts-maintainers](https://github.com/orgs/prometheus-community/teams/helm-charts-maintainers).
-This allows them to manage issues, review PRs etc.
+This allows them to manage issues, review PRs etc according to the rules in [CODEOWNERS](./.github/CODEOWNERS).
+To request adding a user to [@prometheus-community/helm-charts-maintainers](https://github.com/orgs/prometheus-community/teams/helm-charts-maintainers), ask [@prometheus-community/helm-charts-admins](https://github.com/orgs/prometheus-community/teams/helm-charts-admins) in the corresponding issue or pull request.
 
 Admin permissions allow you to modify repository settings, that's nothing which is needed on a daily basis.
 The goals is to limit the number of admins to avoid misconfigurations.
