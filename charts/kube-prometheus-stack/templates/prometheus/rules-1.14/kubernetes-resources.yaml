@@ -26,8 +26,9 @@ spec:
     rules:
     - alert: KubeCPUOvercommit
       annotations:
-        message: Cluster has overcommitted CPU resource requests for Pods and cannot tolerate node failure.
+        description: Cluster has overcommitted CPU resource requests for Pods and cannot tolerate node failure.
         runbook_url: {{ .Values.defaultRules.runbookUrl }}alert-name-kubecpuovercommit
+        summary: Cluster has overcommitted CPU resource requests.
       expr: |-
         sum(namespace:kube_pod_container_resource_requests_cpu_cores:sum{})
           /
@@ -39,8 +40,9 @@ spec:
         severity: warning
     - alert: KubeMemoryOvercommit
       annotations:
-        message: Cluster has overcommitted memory resource requests for Pods and cannot tolerate node failure.
+        description: Cluster has overcommitted memory resource requests for Pods and cannot tolerate node failure.
         runbook_url: {{ .Values.defaultRules.runbookUrl }}alert-name-kubememoryovercommit
+        summary: Cluster has overcommitted memory resource requests.
       expr: |-
         sum(namespace:kube_pod_container_resource_requests_memory_bytes:sum{})
           /
@@ -54,8 +56,9 @@ spec:
         severity: warning
     - alert: KubeCPUQuotaOvercommit
       annotations:
-        message: Cluster has overcommitted CPU resource requests for Namespaces.
+        description: Cluster has overcommitted CPU resource requests for Namespaces.
         runbook_url: {{ .Values.defaultRules.runbookUrl }}alert-name-kubecpuquotaovercommit
+        summary: Cluster has overcommitted CPU resource requests.
       expr: |-
         sum(kube_resourcequota{job="kube-state-metrics", type="hard", resource="cpu"})
           /
@@ -66,8 +69,9 @@ spec:
         severity: warning
     - alert: KubeMemoryQuotaOvercommit
       annotations:
-        message: Cluster has overcommitted memory resource requests for Namespaces.
+        description: Cluster has overcommitted memory resource requests for Namespaces.
         runbook_url: {{ .Values.defaultRules.runbookUrl }}alert-name-kubememoryquotaovercommit
+        summary: Cluster has overcommitted memory resource requests.
       expr: |-
         sum(kube_resourcequota{job="kube-state-metrics", type="hard", resource="memory"})
           /
@@ -76,22 +80,50 @@ spec:
       for: 5m
       labels:
         severity: warning
-    - alert: KubeQuotaFullyUsed
+    - alert: KubeQuotaAlmostFull
       annotations:
-        message: Namespace {{`{{`}} $labels.namespace {{`}}`}} is using {{`{{`}} $value | humanizePercentage {{`}}`}} of its {{`{{`}} $labels.resource {{`}}`}} quota.
-        runbook_url: {{ .Values.defaultRules.runbookUrl }}alert-name-kubequotafullyused
+        description: Namespace {{`{{`}} $labels.namespace {{`}}`}} is using {{`{{`}} $value | humanizePercentage {{`}}`}} of its {{`{{`}} $labels.resource {{`}}`}} quota.
+        runbook_url: {{ .Values.defaultRules.runbookUrl }}alert-name-kubequotaalmostfull
+        summary: Namespace quota is going to be full.
       expr: |-
         kube_resourcequota{job="kube-state-metrics", type="used"}
           / ignoring(instance, job, type)
         (kube_resourcequota{job="kube-state-metrics", type="hard"} > 0)
-          >= 1
+          > 0.9 < 1
       for: 15m
       labels:
         severity: info
+    - alert: KubeQuotaFullyUsed
+      annotations:
+        description: Namespace {{`{{`}} $labels.namespace {{`}}`}} is using {{`{{`}} $value | humanizePercentage {{`}}`}} of its {{`{{`}} $labels.resource {{`}}`}} quota.
+        runbook_url: {{ .Values.defaultRules.runbookUrl }}alert-name-kubequotafullyused
+        summary: Namespace quota is fully used.
+      expr: |-
+        kube_resourcequota{job="kube-state-metrics", type="used"}
+          / ignoring(instance, job, type)
+        (kube_resourcequota{job="kube-state-metrics", type="hard"} > 0)
+          == 1
+      for: 15m
+      labels:
+        severity: info
+    - alert: KubeQuotaExceeded
+      annotations:
+        description: Namespace {{`{{`}} $labels.namespace {{`}}`}} is using {{`{{`}} $value | humanizePercentage {{`}}`}} of its {{`{{`}} $labels.resource {{`}}`}} quota.
+        runbook_url: {{ .Values.defaultRules.runbookUrl }}alert-name-kubequotaexceeded
+        summary: Namespace quota has exceeded the limits.
+      expr: |-
+        kube_resourcequota{job="kube-state-metrics", type="used"}
+          / ignoring(instance, job, type)
+        (kube_resourcequota{job="kube-state-metrics", type="hard"} > 0)
+          > 1
+      for: 15m
+      labels:
+        severity: warning
     - alert: CPUThrottlingHigh
       annotations:
-        message: '{{`{{`}} $value | humanizePercentage {{`}}`}} throttling of CPU in namespace {{`{{`}} $labels.namespace {{`}}`}} for container {{`{{`}} $labels.container {{`}}`}} in pod {{`{{`}} $labels.pod {{`}}`}}.'
+        description: '{{`{{`}} $value | humanizePercentage {{`}}`}} throttling of CPU in namespace {{`{{`}} $labels.namespace {{`}}`}} for container {{`{{`}} $labels.container {{`}}`}} in pod {{`{{`}} $labels.pod {{`}}`}}.'
         runbook_url: {{ .Values.defaultRules.runbookUrl }}alert-name-cputhrottlinghigh
+        summary: Processes experience elevated CPU throttling.
       expr: |-
         sum(increase(container_cpu_cfs_throttled_periods_total{container!="", }[5m])) by (container, pod, namespace)
           /
