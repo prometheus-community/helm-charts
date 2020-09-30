@@ -25,12 +25,11 @@ spec:
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           command: ["consul_exporter"]
-          args: [
-            "--consul.server={{ .Values.consulServer }}",
+          args:
+            - "--consul.server={{ .Values.consulServer }}"
             {{- range $key, $value := .Values.options }}
-            "--{{ $key }}{{ if $value }}={{ $value }}{{ end }}",
+            - "--{{ $key }}{{ if $value }}={{ $value }}{{ end }}"
             {{- end }}
-          ]
           ports:
             - name: http
               containerPort: {{ .Values.service.port }}
@@ -47,17 +46,24 @@ spec:
               port: http
             initialDelaySeconds: 30
             timeoutSeconds: 10
-          resources:
-{{ toYaml .Values.resources | indent 12 }}
+          {{- with .Values.resources }}
+          resources: {{ toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.extraVolumeMounts }}
+          volumeMounts: {{ toYaml . | nindent 12 }}
+          {{- end }}
+        {{- with .Values.extraContainers }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
     {{- with .Values.nodeSelector }}
-      nodeSelector:
-{{ toYaml . | indent 8 }}
+      nodeSelector: {{ toYaml . | nindent 8 }}
     {{- end }}
     {{- with .Values.affinity }}
-      affinity:
-{{ toYaml . | indent 8 }}
+      affinity: {{ toYaml . | nindent 8 }}
     {{- end }}
     {{- with .Values.tolerations }}
-      tolerations:
-{{ toYaml . | indent 8 }}
+      tolerations: {{ toYaml . | nindent 8 }}
+    {{- end }}
+    {{- with .Values.extraVolumes }}
+    volumes: {{ toYaml . | nindent 8 }}
     {{- end }}
