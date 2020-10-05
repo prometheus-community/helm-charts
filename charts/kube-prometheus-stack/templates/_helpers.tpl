@@ -91,3 +91,14 @@ Allow the release namespace to be overridden for multi-namespace deployments in 
     {{- .Release.Namespace -}}
   {{- end -}}
 {{- end -}}
+
+{{/*
+Return the appropriate apiVersion for custom resource definition.
+*/}}
+{{- define "crds.apiVersion" -}}
+{{- if .Capabilities.APIVersions.Has "apiextensions.k8s.io/v1" }}
+{{- print "apiextensions.k8s.io/v1" -}}
+{{- else -}}
+{{- print "apiextensions.k8s.io/v1beta1" -}}
+{{- end -}}
+{{- end -}}
