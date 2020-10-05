@@ -24,6 +24,7 @@ spec:
     spec:
       serviceAccountName: {{ template "prometheus-pushgateway.serviceAccountName" . }}
       containers:
+{{ toYaml .Values.containers | indent 8}}      
         - name: pushgateway
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
@@ -59,6 +60,7 @@ spec:
               mountPath: "{{ .Values.persistentVolume.mountPath }}"
               subPath: "{{ .Values.persistentVolume.subPath }}"
           {{- end }}
+
     {{- if .Values.nodeSelector }}
       nodeSelector:
 {{ toYaml .Values.nodeSelector | indent 8 }}
@@ -71,13 +73,21 @@ spec:
       affinity:
 {{ toYaml .Values.affinity | indent 8 }}
     {{- end }}
-      {{- if .Values.persistentVolume.enabled }}
+      {{- if or .Values.persistentVolume.enabled .Values.secrets }}
     {{- if .Values.securityContext }}
       securityContext:
 {{ toYaml .Values.securityContext | indent 8 }}
     {{- end }}
       volumes:
+        {{- range .Values.secrets }}      
+        - name: secret-{{ . }}
+          secret:
+            defaultMode: 420
+            secretName: {{ . }}
+        {{- end }}
+    {{- if .Values.persistentVolume.enabled }}
         - name: storage-volume
           persistentVolumeClaim:
             claimName: {{ if .Values.persistentVolume.existingClaim }}{{ .Values.persistentVolume.existingClaim }}{{- else }}{{ template "prometheus-pushgateway.fullname" . }}{{- end }}
+      {{- end -}}
       {{- end -}}
