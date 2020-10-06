@@ -1,25 +1,16 @@
 # Stackdriver Exporter
 
-Prometheus exporter for Stackdriver, allowing for Google Cloud metrics.  You
-must have appropriate IAM permissions for this exporter to work.  If you
-are passing in an IAM key then you must have:
+Prometheus exporter for Stackdriver, allowing for Google Cloud metrics.
+You must have appropriate IAM permissions for this exporter to work.
+If you are passing in an IAM key then you must have:
 
 * monitoring.metricDescriptors.list
 * monitoring.timeSeries.list
 
-These are contained within `roles/monitoring.viewer`.  If you're using legacy
-access scopes, then you must have
-`https://www.googleapis.com/auth/monitoring.read`.
+These are contained within `roles/monitoring.viewer`.
+If you're using legacy access scopes, then you must have `https://www.googleapis.com/auth/monitoring.read`.
 
-Learn more: https://github.com/frodenas/stackdriver_exporter
-
-## TL;DR;
-
-```bash
-$ helm install stable/stackdriver-exporter --set stackdriver.projectId=google-project-name
-```
-
-## Introduction
+Learn more: <https://github.com/frodenas/stackdriver_exporter>
 
 This chart creates a Stackdriver-Exporter deployment on a
 [Kubernetes](http://kubernetes.io) cluster using the [Helm](https://helm.sh)
@@ -29,88 +20,65 @@ package manager.
 
 - Kubernetes 1.8+ with Beta APIs enabled
 
-## Installing the Chart
+## Get Repo Info
 
-To install the chart with the release name `my-release`:
-
-```bash
-$ helm install --name my-release stable/stackdriver-exporter --set stackdriver.projectId=google-project-name
+```console
+helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+helm repo update
 ```
 
-The command deploys Stackdriver-Exporter on the Kubernetes cluster using the
-default configuration. The [configuration](#configuration) section lists the
-parameters that can be configured during installation.
+_See [helm repo](https://helm.sh/docs/helm/helm_repo/) for command documentation._
 
-## Uninstalling the Chart
+## Install Chart
 
-To uninstall/delete the `my-release` deployment:
+```console
+# Helm 3
+$ helm install [RELEASE_NAME] prometheus-community/prometheus-stackdriver-exporter --set stackdriver.projectId=google-project-name
 
-```bash
-$ helm delete --purge my-release
+# Helm 2
+$ helm install --name [RELEASE_NAME] prometheus-community/prometheus-stackdriver-exporter --set stackdriver.projectId=google-project-name
 ```
-The command removes all the Kubernetes components associated with the chart and
-deletes the release.
+
+The command deploys Stackdriver-Exporter on the Kubernetes cluster using the default configuration.
+
+_See [configuration](#configuration) below._
+
+_See [helm install](https://helm.sh/docs/helm/helm_install/) for command documentation._
+
+## Uninstall Chart
+
+```console
+# Helm 3
+$ helm uninstall [RELEASE_NAME]
+
+# Helm 2
+# helm delete --purge [RELEASE_NAME]
+```
+
+This removes all the Kubernetes components associated with the chart and deletes the release.
+
+_See [helm uninstall](https://helm.sh/docs/helm/helm_uninstall/) for command documentation._
+
+## Upgrading Chart
+
+```console
+# Helm 3 or 2
+$ helm upgrade [RELEASE_NAME] [CHART] --install
+```
+
+_See [helm upgrade](https://helm.sh/docs/helm/helm_upgrade/) for command documentation._
 
 ## Configuration
 
-The following table lists the configurable parameters of the
-Stackdriver-Exporter chart and their default values.
+See [Customizing the Chart Before Installing](https://helm.sh/docs/intro/using_helm/#customizing-the-chart-before-installing).
+To see all configurable options with detailed comments, visit the chart's [values.yaml](./values.yaml), or run these configuration commands:
 
-Parameter                           | Description                                                                     | Default
------------------------------------ | ------------------------------------------------------------------------------- | --------------------------------
-`replicaCount`                      | Desired number of pods                                                          | `1`
-`restartPolicy`                     | Container restart policy                                                        | `Always`
-`image.repository`                  | Container image repository                                                      | `frodenas/stackdriver-exporter`
-`image.tag`                         | Container image tag                                                             | `v0.6.0`
-`image.pullPolicy`                  | Container image pull policy                                                     | `IfNotPresent`
-`resources`                         | Resource requests & limits                                                      | `{}`
-`serviceAccount.name`               | Name of Kubernetes service account to use                                       | `""` (defaults to `default`)
-`serviceAccount.create`             | Toggle for service account creation                                             | `false`
-`serviceAccount.annotations`        | Annotations for service account. Only used if `create` is `true`.               | `nil`
-`service.type`                      | Type of service to create                                                       | `ClusterIP`
-`service.httpPort`                  | Port for the http service                                                       | `9255`
-`stackdriver.projectId`             | GCP Project ID                                                                  | ``
-`stackdriver.serviceAccountSecret`  | Optionally specify an existing secret which contains credentials.json if necessary. | `""`
-`stackdriver.serviceAccountKey`     | Optionally specify the service account key JSON file. Must be provided when no existing secret is used, in this case a new secret will be created holding this service account | `""`
-`stackdriver.maxRetries`            | Max number of retries that should be attempted on errors from Stackdriver       | `0`
-`stackdriver.httpTimeout`           | How long should Stackdriver_exporter wait for a result from the Stackdriver API | `10s`
-`stackdriver.maxBackoff`            | Max time between each request in an exponential backoff scenario                | `5s`
-`stackdriver.backoffJitter`         | The amount of jitter to introduce in an exponential backoff scenario            | `1s`
-`stackdriver.retryStatuses`         | The HTTP statuses that should trigger a retry                                   | `503`
-`stackdriver.metrics.typePrefixes`  | Comma separated Metric Type prefixes                                            | `compute.googleapis.com/instance/cpu`
-`stackdriver.metrics.interval`      | Metrics interval to request from GCP                                            | `5m`
-`stackdriver.metrics.offset`        | Offset (into the past) to request                                               | `0s`
-`web.listenAddress`                 | Port to listen on                                                               | `9255`
-`web.path`                          | Path under which to expose metrics                                              | `/metrics`
-`annotations`                       | Deployment annotations                                                          | `{}`
-`affinity`                          | Pod affinity                                                                    | `{}`
-`nodeSelector`                      | Node labels for pod assignment												  | `{}`
-`tolerations`                       | Node taints to tolerate (requires Kubernetes >=1.6) 							  | `[]`
-`serviceMonitor.enabled`            | if `true`, creates a Prometheus Operator ServiceMonitor                         | `false`
-`serviceMonitor.namespace`          | Namespace where you want to create the ServiceMonitor                           | `monitoring`
-`serviceMonitor.additionalLabels`   | Labels used by Prometheus Operator to discover your Service Monitor. Set according to your Prometheus setup | `{}`
-`monitoring`
-`serviceMonitor.interval`           | How frequently to scrape metrics (not set: fall back to Prometheus' default)    |  `nil`
-`serviceMonitor.honorLabels`        | if `true`, label conflicts are resolved by keeping label values from the scraped data | `true`
+```console
+# Helm 2
+$ helm inspect values prometheus-community/prometheus-stackdriver-exporter
 
-
-
-Specify each parameter using the `--set key=value[,key=value]` argument to
-`helm install`. For example,
-
-
-```bash
-$ helm install --name my-release \
-    --set key_1=value_1,key_2=value_2 \
-    stable/stackdriver-exporter
-```
-
-Alternatively, a YAML file that specifies the values for the parameters can be
-provided while installing the chart. For example,
-
-```bash
-# example for staging
-$ helm install --name my-release -f values.yaml stable/stackdriver-exporter
+# Helm 3
+$ helm show values prometheus-community/prometheus-stackdriver-exporter
 ```
 
 > **Tip**: You can use the default [values.yaml](values.yaml), as long as you provide a value for stackdriver.projectId
