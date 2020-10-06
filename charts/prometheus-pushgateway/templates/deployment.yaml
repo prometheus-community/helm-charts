@@ -24,7 +24,7 @@ spec:
     spec:
       serviceAccountName: {{ template "prometheus-pushgateway.serviceAccountName" . }}
       containers:
-        {{- if .Values.extraContainers }}      
+        {{- if .Values.extraContainers }}
 {{ toYaml .Values.extraContainers | indent 8 }}
         {{- end }}
         - name: pushgateway
@@ -75,18 +75,15 @@ spec:
       affinity:
 {{ toYaml .Values.affinity | indent 8 }}
     {{- end }}
-      {{- if or .Values.persistentVolume.enabled .Values.secrets }}
+      {{- if or .Values.persistentVolume.enabled .Values.extraVolumes }}
     {{- if .Values.securityContext }}
       securityContext:
 {{ toYaml .Values.securityContext | indent 8 }}
     {{- end }}
       volumes:
-        {{- range .Values.secrets }}      
-        - name: secret-{{ . }}
-          secret:
-            defaultMode: 420
-            secretName: {{ . }}
-        {{- end }}
+    {{- if .Values.extraVolumes }}      
+{{ toYaml .Values.extraVolumes | indent 8 }}      
+    {{- end }}
     {{- if .Values.persistentVolume.enabled }}
         - name: storage-volume
           persistentVolumeClaim:
