@@ -10,7 +10,7 @@ https://github.com/prometheus-community/helm-charts/tree/main/charts/kube-promet
 apiVersion: monitoring.coreos.com/v1
 kind: PrometheusRule
 metadata:
-  name: {{ printf "%s-%s" (include "kube-prometheus-stack.fullname" .) "kube-prometheus" | trunc 63 | trimSuffix "-" }}
+  name: {{ printf "%s-%s" (include "kube-prometheus-stack.fullname" .) "prometheus-operator" | trunc 63 | trimSuffix "-" }}
   namespace: {{ template "kube-prometheus-stack.namespace" . }}
   labels:
     app: {{ template "kube-prometheus-stack.name" . }}
@@ -28,28 +28,36 @@ spec:
     rules:
     - alert: PrometheusOperatorListErrors
       annotations:
-        message: Errors while performing List operations in controller {{`{{`}}$labels.controller{{`}}`}} in {{`{{`}}$labels.namespace{{`}}`}} namespace.
-      expr: (sum by (controller,namespace) (rate(prometheus_operator_list_operations_failed_total{job="{{ $operatorJob }}",namespace="{{ $namespace }}"}[1h])) / sum by (controller,namespace) (rate(prometheus_operator_list_operations_total{job="{{ $operatorJob }}",namespace="{{ $namespace }}"}[1h]))) > 0.4
+        description: Errors while performing List operations in controller {{`{{`}}$labels.controller{{`}}`}} in {{`{{`}}$labels.namespace{{`}}`}} namespace.
+        runbook_url: {{ .Values.defaultRules.runbookUrl }}alert-name-prometheusoperatorlisterrors
+        summary: Errors while performing list operations in controller.
+      expr: (sum by (controller,namespace) (rate(prometheus_operator_list_operations_failed_total{job="{{ $operatorJob }}",namespace="{{ $namespace }}"}[10m])) / sum by (controller,namespace) (rate(prometheus_operator_list_operations_total{job="{{ $operatorJob }}",namespace="{{ $namespace }}"}[10m]))) > 0.4
       for: 15m
       labels:
         severity: warning
     - alert: PrometheusOperatorWatchErrors
       annotations:
-        message: Errors while performing Watch operations in controller {{`{{`}}$labels.controller{{`}}`}} in {{`{{`}}$labels.namespace{{`}}`}} namespace.
-      expr: (sum by (controller,namespace) (rate(prometheus_operator_watch_operations_failed_total{job="{{ $operatorJob }}",namespace="{{ $namespace }}"}[1h])) / sum by (controller,namespace) (rate(prometheus_operator_watch_operations_total{job="{{ $operatorJob }}",namespace="{{ $namespace }}"}[1h]))) > 0.4
+        description: Errors while performing watch operations in controller {{`{{`}}$labels.controller{{`}}`}} in {{`{{`}}$labels.namespace{{`}}`}} namespace.
+        runbook_url: {{ .Values.defaultRules.runbookUrl }}alert-name-prometheusoperatorwatcherrors
+        summary: Errors while performing watch operations in controller.
+      expr: (sum by (controller,namespace) (rate(prometheus_operator_watch_operations_failed_total{job="{{ $operatorJob }}",namespace="{{ $namespace }}"}[10m])) / sum by (controller,namespace) (rate(prometheus_operator_watch_operations_total{job="{{ $operatorJob }}",namespace="{{ $namespace }}"}[10m]))) > 0.4
       for: 15m
       labels:
         severity: warning
     - alert: PrometheusOperatorReconcileErrors
       annotations:
-        message: Errors while reconciling {{`{{`}} $labels.controller {{`}}`}} in {{`{{`}} $labels.namespace {{`}}`}} Namespace.
-      expr: rate(prometheus_operator_reconcile_errors_total{job="{{ $operatorJob }}",namespace="{{ $namespace }}"}[5m]) > 0.1
+        description: '{{`{{`}} $value | humanizePercentage {{`}}`}} of reconciling operations failed for {{`{{`}} $labels.controller {{`}}`}} controller in {{`{{`}} $labels.namespace {{`}}`}} namespace.'
+        runbook_url: {{ .Values.defaultRules.runbookUrl }}alert-name-prometheusoperatorreconcileerrors
+        summary: Errors while reconciling controller.
+      expr: (sum by (controller,namespace) (rate(prometheus_operator_reconcile_errors_total{job="{{ $operatorJob }}",namespace="{{ $namespace }}"}[5m]))) / (sum by (controller,namespace) (rate(prometheus_operator_reconcile_operations_total{job="{{ $operatorJob }}",namespace="{{ $namespace }}"}[5m]))) > 0.1
       for: 10m
       labels:
         severity: warning
     - alert: PrometheusOperatorNodeLookupErrors
       annotations:
-        message: Errors while reconciling Prometheus in {{`{{`}} $labels.namespace {{`}}`}} Namespace.
+        description: Errors while reconciling Prometheus in {{`{{`}} $labels.namespace {{`}}`}} Namespace.
+        runbook_url: {{ .Values.defaultRules.runbookUrl }}alert-name-prometheusoperatornodelookuperrors
+        summary: Errors while reconciling Prometheus.
       expr: rate(prometheus_operator_node_address_lookup_errors_total{job="{{ $operatorJob }}",namespace="{{ $namespace }}"}[5m]) > 0.1
       for: 10m
       labels:
