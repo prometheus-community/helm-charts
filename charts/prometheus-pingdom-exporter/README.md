@@ -1,13 +1,12 @@
 # Prometheus Pingdom Exporter
 
-- **Source:** https://github.com/giantswarm/prometheus-pingdom-exporter
+- **Source:** <https://github.com/giantswarm/prometheus-pingdom-exporter>
 
 [prometheus-pingdom-exporter](https://github.com/giantswarm/prometheus-pingdom-exporter) the prometheus-pingdom-exporter cares about preprocessing the pingdom uptime check results for consumption of by prometheus.
 
-
 ## Prerequisites
 
-- Kubernetes 1.16+ 
+- Kubernetes 1.16+
 
 ## Get Repo Info
 
@@ -55,7 +54,6 @@ $ helm upgrade [RELEASE_NAME] [CHART] --install
 
 _See [helm upgrade](https://helm.sh/docs/helm/helm_upgrade/) for command documentation._
 
-
 ## Configuring
 
 See [Customizing the Chart Before Installing](https://helm.sh/docs/intro/using_helm/#customizing-the-chart-before-installing). To see all configurable options with detailed comments, visit the chart's [values.yaml](./values.yaml), or run these configuration commands:
@@ -67,4 +65,3 @@ $ helm inspect values prometheus-com/pprometheus-pingdom-exporter
 # Helm 3
 $ helm show values prometheus-com/pprometheus-pingdom-exporter
 ```
-
