@@ -4,62 +4,67 @@
 
 [prometheus-pingdom-exporter](https://github.com/giantswarm/prometheus-pingdom-exporter) the prometheus-pingdom-exporter cares about preprocessing the pingdom uptime check results for consumption of by prometheus.
 
-## Introduction
 
-This chart creates a kubernetes deployment on a Kubernetes cluster using the Helm package manager.
+## Prerequisites
 
-## Installing the Chart
+- Kubernetes 1.16+ 
 
-Install from remote URL with the release name `prometheus-pingdom-exporter`:
-
-```console
-$ helm upgrade -i prometheus-pingdom-exporter kiwigrid/prometheus-pingdom-exporter
-```
-
-## Uninstalling the Chart
-
-To uninstall/delete the `prometheus-pingdom-exporter` deployment:
+## Get Repo Info
 
 ```console
-$ helm delete prometheus-pingdom-exporter --purge
+helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+helm repo update
 ```
 
-The command removes all the Kubernetes components associated with the chart and deletes the release.
+_See [helm repo](https://helm.sh/docs/helm/helm_repo/) for command documentation._
 
-## Configuration
-
-The following table lists the configurable parameters of the prometheus-pingdom-exporter chart and their default values.
-
-
-
-| Parameter              | Description                                           | Default                                  |
-| ---------------------- | ----------------------------------------------------- | ---------------------------------------- |
-| `image.repository`     | Image                                                 | `camptocamp/prometheus-pingdom-exporter` |
-| `image.tag`            | Image tag                                             | `20180821-1`                             |
-| `image.pullPolicy`     | Image pull policy                                     | `IfNotPresent`                           |
-| `secret.annotations`   | Secret annotations                                    | `{}`                                     |
-| `service.type`         | Service type                                          | `ClusterIP`                              |
-| `service.port`         | Service port of Graphite UI                           | `9100`                                   |
-| `service.annotations`  | Service annotations                                   | `{}`                                     |
-| `service.labels`       | Service labels                                        | `{}`                                     |
-| `resources`            | Resource limits                                       | `{}`                                     |
-| `nodeSelector`         | NodeSelector                                          | `{}`                                     |
-| `tolerations`          | Tolerations                                           | `[]`                                     |
-| `affinity`             | Affinity                                              | `{}`                                     |
-| `pingdom.user`         | Username of the Pingdom Account                       | `somebody@invalid`                       |
-| `pingdom.password`     | Password of the Pingdom Account                       | `totallysecret`                          |
-| `pingdom.appId`        | Application ID, can be created on the pingdom website | `alsototallysecret`                      |
-| `pingdom.accountEmail` | Account-E-Mail of the Account owner                   | `somebodyorelse@invalid`                 |
-| `pingdom.wait`         | time (in seconds) between accessing the Pingdom  API  | `10`                                     |
-| `pod.annotations`      | Pod annotations                                       | `{}`                                     |
-
-
-Specify each parameter using the `--set key=value[,key=value]` argument to `helm install`.
-
-Alternatively, a YAML file that specifies the values for the above parameters can be provided while installing the chart. For example,
+## Install Chart
 
 ```console
-$ helm install --name prometheus-pingdom-exporter -f values.yaml kiwigrid/prometheus-pingdom-exporter
+# Helm 3
+$ helm install [RELEASE_NAME] prometheus-com/pprometheus-pingdom-exporter
+
+# Helm 2
+$ helm install --name [RELEASE_NAME] prometheus-com/pprometheus-pingdom-exporter
 ```
 
-> **Tip**: You can use the default [values.yaml](values.yaml)
+_See [configuration](#configuration) below._
+
+_See [helm install](https://helm.sh/docs/helm/helm_install/) for command documentation._
+
+## Uninstall Chart
+
+```console
+# Helm 3
+$ helm uninstall [RELEASE_NAME]
+
+# Helm 2
+# helm delete --purge [RELEASE_NAME]
+```
+
+This removes all the Kubernetes components associated with the chart and deletes the release.
+
+_See [helm uninstall](https://helm.sh/docs/helm/helm_uninstall/) for command documentation._
+
+## Upgrading Chart
+
+```console
+# Helm 3 or 2
+$ helm upgrade [RELEASE_NAME] [CHART] --install
+```
+
+_See [helm upgrade](https://helm.sh/docs/helm/helm_upgrade/) for command documentation._
+
+
+## Configuring
+
+See [Customizing the Chart Before Installing](https://helm.sh/docs/intro/using_helm/#customizing-the-chart-before-installing). To see all configurable options with detailed comments, visit the chart's [values.yaml](./values.yaml), or run these configuration commands:
+
+```console
+# Helm 2
+$ helm inspect values prometheus-com/pprometheus-pingdom-exporter
+
+# Helm 3
+$ helm show values prometheus-com/pprometheus-pingdom-exporter
+```
+
