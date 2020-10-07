@@ -3,16 +3,12 @@ kind: Deployment
 metadata:
   name: {{ include "prometheus-pingdom-exporter.fullname" . }}
   labels:
-    app.kubernetes.io/name: {{ include "prometheus-pingdom-exporter.name" . }}
-    helm.sh/chart: {{ include "prometheus-pingdom-exporter.chart" . }}
-    app.kubernetes.io/instance: {{ .Release.Name }}
-    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    {{- include "prometheus-pingdom-exporter.labels" . | nindent 4 }}
 spec:
   replicas: {{ .Values.replicaCount }}
   selector:
     matchLabels:
-      app.kubernetes.io/name: {{ include "prometheus-pingdom-exporter.name" . }}
-      app.kubernetes.io/instance: {{ .Release.Name }}
+      {{- include "prometheus-pingdom-exporter.selectorLabels" . | nindent 6 }}
   template:
     metadata:
       {{- if .Values.pod.annotations }}
@@ -20,8 +16,7 @@ spec:
         {{- toYaml .Values.pod.annotations | nindent 8 }}
       {{- end }}
       labels:
-        app.kubernetes.io/name: {{ include "prometheus-pingdom-exporter.name" . }}
-        app.kubernetes.io/instance: {{ .Release.Name }}
+        {{- include "prometheus-pingdom-exporter.selectorLabels" . | nindent 8 }}
     spec:
       containers:
         - name: {{ .Chart.Name }}
