@@ -237,7 +237,24 @@ kubectl patch pv/<PersistentVolume name> --type json -p='[{"op": "remove", "path
 
 **Note:** To execute the above command, the user must have a cluster wide permission. Please refer [Kubernetes RBAC](https://kubernetes.io/docs/reference/access-authn-authz/rbac/)
 
-After these steps, proceed to a fresh **kube-prometheus-stack** installation and make sure the current release of **kube-prometheus-stack** matching the `volumeClaimTemplate` values in the `values.yaml`.
+After these steps, proceed to a fresh **kube-prometheus-stack** installation and make sure the current release of **kube-prometheus-stack** matching the `volumeClaimTemplate` values in the `values.yaml`. 
+
+The binding is done via metching a specific amount of storage requested and with certain access modes.
+
+For example, if you had storage specified as this with **prometheus-operator**:
+
+```bash
+volumeClaimTemplate:
+  spec:
+    storageClassName: gp2
+    accessModes: ["ReadWriteOnce"]
+    resources:
+     requests:
+       storage: 50Gi
+```
+
+You have to specify matching `volumeClaimTemplate` with 50Gi storage and `ReadWriteOnce` access mode.
+
 
 Additionally, you should check the current AZ of your legacy installation's PV, and configure the fresh release to use the same AZ as the old one. If the pods are in a different AZ than the PV, the release will fail to bind the existing one, hence creating a new PV.
 
