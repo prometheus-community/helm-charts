@@ -24,13 +24,13 @@ _See [helm repo](https://helm.sh/docs/helm/helm_repo/) for command documentation
 
 ```console
 # Helm 3
-$ helm install [RELEASE_NAME] prometheus-community/prometheus-stackdriver-exporter --set stackdriver.projectId=google-project-name
+$ helm install [RELEASE_NAME] prometheus-community/prometheus-elasticsearch-exporter
 
 # Helm 2
-$ helm install --name [RELEASE_NAME] prometheus-community/prometheus-stackdriver-exporter --set stackdriver.projectId=google-project-name
+$ helm install --name [RELEASE_NAME] prometheus-community/prometheus-elasticsearch-exporter
 ```
 
-The command deploys Stackdriver-Exporter on the Kubernetes cluster using the default configuration.
+The command deploys Elasticsearch Exporter on the Kubernetes cluster using the default configuration.
 
 _See [configuration](#configuration) below._
 
@@ -77,10 +77,10 @@ To see all configurable options with detailed comments, visit the chart's [value
 
 ```console
 # Helm 2
-$ helm inspect values prometheus-community/prometheus-stackdriver-exporter
+$ helm inspect values prometheus-community/prometheus-elasticsearch-exporter
 
 # Helm 3
-$ helm show values prometheus-community/prometheus-stackdriver-exporter
+$ helm show values prometheus-community/prometheus-elasticsearch-exporter
 ```
 
 > **Tip**: You can use the default [values.yaml](values.yaml)
