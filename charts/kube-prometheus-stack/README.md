@@ -208,6 +208,7 @@ For more in-depth documentation of configuration options meanings, please see
 
 The prometheus operator does not support annotation-based discovery of services, using the `PodMonitor` or `ServiceMonitor` CRD in its place as they provide far more configuration options.
 For information on how to use PodMonitors/ServiceMonitors, please see the documentation on the `prometheus-operator/prometheus-operator` documentation here:
+
 - [ServiceMonitors](https://github.com/prometheus-operator/prometheus-operator/blob/master/Documentation/user-guides/getting-started.md#include-servicemonitors)
 - [PodMonitors](https://github.com/prometheus-operator/prometheus-operator/blob/master/Documentation/user-guides/getting-started.md#include-podmonitors)
 - [Running Exporters](https://github.com/prometheus-operator/prometheus-operator/blob/master/Documentation/user-guides/running-exporters.md)
@@ -216,6 +217,74 @@ By default, Prometheus discovers PodMonitors and ServiceMonitors within its name
 Sometimes, you may need to discover custom PodMonitors/ServiceMonitors, for example used to scrape data from third-party applications.
 An easy way of doing this, without compromising the default PodMonitors/ServiceMonitors discovery, is allowing Prometheus to discover all PodMonitors/ServiceMonitors within its namespace, without applying label filtering.
 To do so, you can set `prometheus.prometheusSpec.podMonitorSelectorNilUsesHelmValues` and `prometheus.prometheusSpec.serviceMonitorSelectorNilUsesHelmValues` to `false`.
+
+## Migrating from stable/prometheus-operator chart
+
+If the **prometheus-operator** values are compatible with the new **kube-prometheus-stack** chart, please follow the below steps for migration:
+
+> The guide presumes that chart is deployed in `monitoring` namespace and the deployments are running there. If in other namespace, please replace the `monitoring` to the deployed namespace.
+
+1. Patch the PersistenceVolume created/used by the prometheus-operator chart to `Retain` claim policy:
+
+    ```console
+    kubectl patch pv/<PersistentVolume name> -p '{"spec":{"persistentVolumeReclaimPolicy":"Retain"}}'
+    ```
+
+    **Note:** To execute the above command, the user must have a cluster wide permission. Please refer [Kubernetes RBAC](https://kubernetes.io/docs/reference/access-authn-authz/rbac/)
+
+2. Uninstall the **prometheus-operator** release and delete the existing PersistentVolumeClaim, and verify PV become Released.
+
+    ```console
+    helm uninstall prometheus-operator -n monitoring
+    kubectl delete pvc/<PersistenceVolumeClaim name> -n monitoring
+    ```
+
+    Additonaly, you have to manually remove the remaining `prometheus-operator-kubelet` service.
+
+    ```console
+    kubectl delete service/prometheus-operator-kubelet -n kube-system
+    ```
+
+    You can choose to remove all your existing CRDs (ServiceMonitors, Podmonitors, etc.) if you want to. If you would like to keep these, you can set `prometheusOperator.createCustomResource` to `false` to disable CRD provisioning during the fresh installation.
+
+3. Remove current `spec.claimRef` values to change the PV's status from Released to Available.
+
+    ```console
+    kubectl patch pv/<PersistentVolume name> --type json -p='[{"op": "remove", "path": "/spec/claimRef"}]' -n monitoring
+    ```
+
+**Note:** To execute the above command, the user must have a cluster wide permission. Please refer [Kubernetes RBAC](https://kubernetes.io/docs/reference/access-authn-authz/rbac/)
+
+After these steps, proceed to a fresh **kube-prometheus-stack** installation and make sure the current release of **kube-prometheus-stack** matching the `volumeClaimTemplate` values in the `values.yaml`.
+
+The binding is done via metching a specific amount of storage requested and with certain access modes.
+
+For example, if you had storage specified as this with **prometheus-operator**:
+
+```yaml
+volumeClaimTemplate:
+  spec:
+    storageClassName: gp2
+    accessModes: ["ReadWriteOnce"]
+    resources:
+     requests:
+       storage: 50Gi
+```
+
+You have to specify matching `volumeClaimTemplate` with 50Gi storage and `ReadWriteOnce` access mode.
+
+Additionally, you should check the current AZ of your legacy installation's PV, and configure the fresh release to use the same AZ as the old one. If the pods are in a different AZ than the PV, the release will fail to bind the existing one, hence creating a new PV.
+
+This can be achieved either by specifying the labels trough `values.yaml`, e.g. setting `prometheus.prometheusSpec.nodeSelector` to:
+
+```yaml
+nodeSelector:
+  failure-domain.beta.kubernetes.io/zone: east-west-1a
+```
+
+or passing these values as `--set` overrides during installation.
+
+The new release should now re-attach your previously released PV with its content.
 
 ## Migrating from coreos/prometheus-operator chart
 
