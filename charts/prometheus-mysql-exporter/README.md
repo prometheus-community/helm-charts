@@ -41,6 +41,8 @@ This removes all the Kubernetes components associated with the chart and deletes
 
 _See [helm uninstall](https://helm.sh/docs/helm/helm_uninstall/) for command documentation._
 
+_See [helm upgrade](https://helm.sh/docs/helm/helm_upgrade/) for command documentation._
+
 ## Upgrading Chart
 
 ```console
@@ -48,11 +50,22 @@ _See [helm uninstall](https://helm.sh/docs/helm/helm_uninstall/) for command doc
 $ helm upgrade [RELEASE_NAME] [CHART] --install
 ```
 
-_See [helm upgrade](https://helm.sh/docs/helm/helm_upgrade/) for command documentation._
+### To =< 1.0.0
+
+Version 1.0.0 is a major update.
+
+- The chart now follows the new Kubernetes label recommendations:
+<https://kubernetes.io/docs/concepts/overview/working-with-objects/common-labels/>
+
+The simplest way to update is to do a force upgrade, which recreates the resources by doing a delete and an install.
+
+```console
+helm upgrade prometheus-mysql-exporter prometheus-community/prometheus-mysql-exporter --force
+```
 
 ## Configuration
 
-See [Customizing the Chart Before Installing](https://helm.sh/docs/intro/using_helm/#customizing-the-chart-before-installing). To see all configurable options with detailed comments, visit the chart's [values.yaml](./values.yaml), or run these configuration commands:
+See [Customizing the Chart Before Installing](https://helm.sh/docs/intro/using_helm/#customizing-the-chart-before-installing). To see all configurable options with detailed comments, visit the chart's [values.yaml](https://github.com/prometheus-community/helm-charts/blob/main/charts/prometheus-mysql-exporter/values.yaml), or run these configuration commands:
 
 ```console
 # Helm 2
@@ -76,4 +89,4 @@ A mysql params overview can be found here: (<https://github.com/go-sql-driver/my
 
 ### Collector Flags
 
-Available collector flags can be found in the [values.yaml](https://github.com/kilhyunjun/charts/blob/master/stable/prometheus-mysql-exporter/values.yaml) and a description of each flag can be found in the [mysqld_exporter](https://github.com/prometheus/mysqld_exporter#collector-flags) repository.
+Available collector flags can be found in the [values.yaml](https://github.com/prometheus-community/helm-charts/blob/main/charts/prometheus-mysql-exporter/values.yaml) and a description of each flag can be found in the [mysqld_exporter](https://github.com/prometheus/mysqld_exporter#collector-flags) repository.
