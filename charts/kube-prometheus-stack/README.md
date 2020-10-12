@@ -103,13 +103,13 @@ Version 9 of the helm chart removes the existing `additionalScrapeConfigsExterna
 Due to new template functions being used in the rules in version 8.x.x of the chart, an upgrade to Prometheus Operator and Prometheus is necessary in order to support them. First, upgrade to the latest version of 7.x.x
 
 ```sh
-helm upgrade [RELEASE_NAME] prometheus-community/kube-prometheus-stack --version 7.5.0
+helm upgrade [RELEASE_NAME] stable/prometheus-operator --version 7.5.0
 ```
 
 Then upgrade to 8.x.x
 
 ```sh
-helm upgrade [RELEASE_NAME] prometheus-community/kube-prometheus-stack --version [8.x.x]
+helm upgrade [RELEASE_NAME] stable/prometheus-operator --version [8.x.x]
 ```
 
 Minimal recommended Prometheus version for this chart release is `2.12.x`
