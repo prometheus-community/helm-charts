@@ -10,7 +10,7 @@ If you are passing in an IAM key then you must have:
 These are contained within `roles/monitoring.viewer`.
 If you're using legacy access scopes, then you must have `https://www.googleapis.com/auth/monitoring.read`.
 
-Learn more: <https://github.com/frodenas/stackdriver_exporter>
+Learn more: <https://github.com/prometheus-community/stackdriver_exporter>
 
 This chart creates a Stackdriver-Exporter deployment on a
 [Kubernetes](http://kubernetes.io) cluster using the [Helm](https://helm.sh)
