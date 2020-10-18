@@ -1,0 +1,73 @@
+rbac:
+  # Specifies whether RBAC resources should be created
+  create: true
+  # Specifies whether a PodSecurityPolicy should be created
+  pspEnabled: true
+serviceAccount:
+  # Specifies whether a ServiceAccount should be created
+  create: true
+  # The name of the ServiceAccount to use.
+  # If not set and create is true, a name is generated using the fullname template
+  name:
+
+replicaCount: 1
+image:
+  repository: danielqsj/kafka-exporter
+  tag: latest
+  pullPolicy: IfNotPresent
+
+kafkaServer:
+  - kafka-server:9092
+
+service:
+  type: ClusterIP
+  port: 9308
+  annotations: {}
+
+liveness:
+  enabled: false
+  probe:
+    httpGet:
+      path: /
+      port: exporter-port
+readiness:
+  enabled: false
+  probe:
+    httpGet:
+      path: /
+      port: exporter-port
+
+prometheus:
+  serviceMonitor:
+    enabled: false
+    namespace: monitoring
+    interval: "30s"
+    additionalLabels: {}
+
+resources: {}
+  # We usually recommend not to specify default resources and to leave this as a conscious
+  # choice for the user. This also increases chances charts run on environments with little
+  # resources, such as Minikube. If you do want to specify resources, uncomment the following
+  # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+  # limits:
+  #  cpu: 100m
+  #  memory: 128Mi
+  # requests:
+  #  cpu: 100m
+  #  memory: 128Mi
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
+
+# this allows the usage of tls connection to your kafka cluster based on a secret in tls format
+# mandatory keys:
+# ca.crt
+# tls.crt
+# tls.key
+tls:
+  enabled: false
+  # mountPath: /secret/certs
+  # secretName: <name of an existing secret>
