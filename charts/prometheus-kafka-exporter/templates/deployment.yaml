@@ -27,6 +27,12 @@ spec:
           {{- range $server := .Values.kafkaServer }}
             - '--kafka.server={{ $server }}'
           {{- end }}
+          {{- if .Values.tls.enabled }}
+            - '--tls.enabled'
+            - '--tls.ca-file={{ .Values.tls.mountPath }}/ca.crt'
+            - '--tls.cert-file={{ .Values.tls.mountPath }}/tls.crt'
+            - '--tls.key-file={{ .Values.tls.mountPath }}/tls.key'
+          {{- end }}
           name: {{ .Chart.Name }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
@@ -34,16 +40,22 @@ spec:
             - name: exporter-port
               containerPort: 9308
               protocol: TCP
-{{- if .Values.liveness.enabled }}
           livenessProbe:
-{{- toYaml .Values.liveness.probe | trim | nindent 12 }}
-{{- end }}
-{{- if .Values.readiness.enabled }}
+            httpGet:
+              path: /
+              port: exporter-port
           readinessProbe:
-{{- toYaml .Values.readiness.probe | trim | nindent 12 }}
-{{- end }}
+            httpGet:
+              path: /
+              port: exporter-port
           resources:
 {{ toYaml .Values.resources | indent 12 }}
+          {{- if .Values.tls.enabled }}
+          volumeMounts:
+          - mountPath: {{ .Values.tls.mountPath }}
+            name: kafka-certs
+            readOnly: true
+          {{- end }}
     {{- with .Values.nodeSelector }}
       nodeSelector:
 {{ toYaml . | indent 8 }}
@@ -55,4 +67,10 @@ spec:
     {{- with .Values.tolerations }}
       tolerations:
 {{ toYaml . | indent 8 }}
+    {{- end }}
+      {{- if .Values.tls.enabled }}
+      volumes:
+      - name: kafka-certs
+        secret:
+          secretName: {{ .Values.tls.secretName }}
     {{- end }}
