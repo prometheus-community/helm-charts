@@ -23,6 +23,9 @@ spec:
         app.kubernetes.io/instance: {{ .Release.Name }}
         app.kubernetes.io/managed-by: {{ .Release.Service }}
         helm.sh/chart: {{ include "prometheus-blackbox-exporter.chart" . }}
+        {{- if .Values.pod.labels }}
+{{ toYaml .Values.pod.labels | indent 8 }}
+        {{- end }}
       annotations:
         checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
         {{- if .Values.podAnnotations }}
@@ -55,6 +58,9 @@ spec:
       priorityClassName: "{{ .Values.priorityClassName }}"
       {{- end }}
       containers:
+        {{- if .Values.extraContainers }}
+{{ toYaml .Values.extraContainers | indent 8 }}
+        {{- end }}      
         - name: blackbox-exporter
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
@@ -67,6 +73,11 @@ spec:
             runAsNonRoot: {{ .Values.runAsNonRoot  }}
             runAsUser: {{ .Values.runAsUser }}
             {{- end }}
+          env:
+          {{- range $key, $value := .Values.extraEnv }}
+            - name: {{ $key }}
+              value: {{ $value | quote }}
+          {{- end }}
           args:
 {{- if .Values.config }}
             - "--config.file=/config/blackbox.yaml"
@@ -108,6 +119,9 @@ spec:
         {{- toYaml .Values.dnsConfig | nindent 8 }}
 {{- end }}
       volumes:
+    {{- if .Values.extraVolumes }}      
+{{ toYaml .Values.extraVolumes | indent 8 }}      
+    {{- end }}      
         - name: config
 {{- if .Values.secretConfig }}
           secret:

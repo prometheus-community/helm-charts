@@ -39,28 +39,28 @@ spec:
           {{- end }}
           imagePullPolicy: "{{ .Values.prometheusOperator.image.pullPolicy }}"
           args:
-          {{- if semverCompare "< v0.39.0" .Values.prometheusOperator.image.tag }}
+            {{- if semverCompare "< v0.39.0" .Values.prometheusOperator.image.tag }}
             - --manage-crds={{ .Values.prometheusOperator.manageCrds }}
-          {{- end }}
-          {{- if .Values.prometheusOperator.kubeletService.enabled }}
+            {{- end }}
+            {{- if .Values.prometheusOperator.kubeletService.enabled }}
             - --kubelet-service={{ .Values.prometheusOperator.kubeletService.namespace }}/{{ template "kube-prometheus-stack.fullname" . }}-kubelet
-          {{- end }}
-          {{- if .Values.prometheusOperator.logFormat }}
+            {{- end }}
+            {{- if .Values.prometheusOperator.logFormat }}
             - --log-format={{ .Values.prometheusOperator.logFormat }}
-          {{- end }}
-          {{- if .Values.prometheusOperator.logLevel }}
+            {{- end }}
+            {{- if .Values.prometheusOperator.logLevel }}
             - --log-level={{ .Values.prometheusOperator.logLevel }}
-          {{- end }}
-          {{- if .Values.prometheusOperator.denyNamespaces }}
+            {{- end }}
+            {{- if .Values.prometheusOperator.denyNamespaces }}
             - --deny-namespaces={{ .Values.prometheusOperator.denyNamespaces | join "," }}
-          {{- end }}
-          {{- with $.Values.prometheusOperator.namespaces }}
-          {{ $ns := .additional }}
-          {{- if .releaseNamespace }}
-          {{- $ns = append $ns $namespace }}
-          {{- end }}
+            {{- end }}
+            {{- with $.Values.prometheusOperator.namespaces }}
+            {{ $ns := .additional }}
+            {{- if .releaseNamespace }}
+            {{- $ns = append $ns $namespace }}
+            {{- end }}
             - --namespaces={{ $ns | join "," }}
-          {{- end }}
+            {{- end }}
             - --logtostderr=true
             - --localhost=127.0.0.1
             {{- if .Values.prometheusOperator.prometheusConfigReloaderImage.sha }}
@@ -75,6 +75,15 @@ spec:
             {{- end }}
             - --config-reloader-cpu={{ .Values.prometheusOperator.configReloaderCpu }}
             - --config-reloader-memory={{ .Values.prometheusOperator.configReloaderMemory }}
+            {{- if .Values.prometheusOperator.alertmanagerInstanceNamespaces }}
+            - --alertmanager-instance-namespaces={{ .Values.prometheusOperator.alertmanagerInstanceNamespaces | join "," }}
+            {{- end }}
+            {{- if .Values.prometheusOperator.prometheusInstanceNamespaces }}
+            - --prometheus-instance-namespaces={{ .Values.prometheusOperator.prometheusInstanceNamespaces | join "," }}
+            {{- end }}
+            {{- if .Values.prometheusOperator.thanosInstanceNamespaces }}
+            - --thanos-instance-namespaces={{ .Values.prometheusOperator.thanosInstanceNamespaces | join "," }}
+            {{- end }}
             {{- if .Values.prometheusOperator.secretFieldSelector }}
             - --secret-field-selector={{ .Values.prometheusOperator.secretFieldSelector }}
             {{- end }}
