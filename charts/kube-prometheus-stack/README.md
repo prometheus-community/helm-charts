@@ -257,7 +257,7 @@ If the **prometheus-operator** values are compatible with the new **kube-prometh
 
 After these steps, proceed to a fresh **kube-prometheus-stack** installation and make sure the current release of **kube-prometheus-stack** matching the `volumeClaimTemplate` values in the `values.yaml`.
 
-The binding is done via metching a specific amount of storage requested and with certain access modes.
+The binding is done via matching a specific amount of storage requested and with certain access modes.
 
 For example, if you had storage specified as this with **prometheus-operator**:
 
