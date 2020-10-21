@@ -28,15 +28,14 @@ spec:
             {{- toYaml .Values.securityContext | nindent 12 }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
-          {{- if or .Values.extraArgs .Values.configFileName }}
           args: 
-            {{- range $key, $value := .Values.extraArgs }}
-            - --{{ $key }}={{ $value }}
-            {{- end }}
+            --storage.path=/alertmanager
             {{- if .Values.configFileName }}
             - --config.file=/etc/alertmanager/{{ .Values.configFileName }}
             {{- end }}
-          {{- end }}
+            {{- range $key, $value := .Values.extraArgs }}
+            - --{{ $key }}={{ $value }}
+            {{- end }}
           ports:
             - name: http
               containerPort: 9093
