@@ -220,7 +220,7 @@ To do so, you can set `prometheus.prometheusSpec.podMonitorSelectorNilUsesHelmVa
 
 ## Migrating from stable/prometheus-operator chart
 
-## Without downtime
+## Zero downtime
 
 Since `kube-prometheus-stack` is fully compatible with the `stable/prometheus-operator` chart a migration without downtime can be achieved.
 However the old name prefix needs to be kept. If you want the new name please follow the step by step guide bellow (with downtime).
@@ -228,7 +228,7 @@ However the old name prefix needs to be kept. If you want the new name please fo
 You can override the fullname to achieve this:
 
 ```
-helm upgrade prometheus-operator prometheus-community/kube-prometheus -n monitoring --set nameOverride=prometheus-operator --set fullnameOverride=prometheus-operator
+helm upgrade prometheus-operator prometheus-community/kube-prometheus-stack -n monitoring --set nameOverride=prometheus-operator --set fullnameOverride=prometheus-operator
 ```
 
 ## Redeploy with new name (downtime)
