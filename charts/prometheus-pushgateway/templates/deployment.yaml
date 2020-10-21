@@ -23,6 +23,12 @@ spec:
 {{ toYaml .Values.podAnnotations | indent 8 }}
     spec:
       serviceAccountName: {{ template "prometheus-pushgateway.serviceAccountName" . }}
+      {{- with .Values.imagePullSecretsNames }}
+      imagePullSecrets:
+        {{- range $secretName := . }}
+      - name: {{ $secretName }}
+      {{- end }}
+      {{- end }}
       containers:
         - name: pushgateway
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
