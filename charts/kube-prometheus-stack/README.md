@@ -227,9 +227,11 @@ However the old name prefix needs to be kept. If you want the new name please fo
 
 You can override the fullname to achieve this:
 
+```console
+helm upgrade prometheus-operator prometheus-community/kube-prometheus-stack -n monitoring --reuse-values --set nameOverride=prometheus-operator --set fullnameOverride=prometheus-operator
 ```
-helm upgrade prometheus-operator prometheus-community/kube-prometheus-stack -n monitoring --set nameOverride=prometheus-operator --set fullnameOverride=prometheus-operator
-```
+
+**Note**: It is recommended to run this first with `--dry-run --debug`.
 
 ## Redeploy with new name (downtime)
 
