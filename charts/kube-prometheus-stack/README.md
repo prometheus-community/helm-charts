@@ -222,13 +222,13 @@ To do so, you can set `prometheus.prometheusSpec.podMonitorSelectorNilUsesHelmVa
 
 ## Zero downtime
 
-Since `kube-prometheus-stack` is fully compatible with the `stable/prometheus-operator` chart a migration without downtime can be achieved.
-However the old name prefix needs to be kept. If you want the new name please follow the step by step guide bellow (with downtime).
+Since `kube-prometheus-stack` is fully compatible with the `stable/prometheus-operator` chart, a migration without downtime can be achieved.
+However, the old name prefix needs to be kept. If you want the new name please follow the step by step guide below (with downtime).
 
-You can override the fullname to achieve this:
+You can override the name to achieve this:
 
 ```console
-helm upgrade prometheus-operator prometheus-community/kube-prometheus-stack -n monitoring --reuse-values --set nameOverride=prometheus-operator --set fullnameOverride=prometheus-operator
+helm upgrade prometheus-operator prometheus-community/kube-prometheus-stack -n monitoring --reuse-values --set nameOverride=prometheus-operator
 ```
 
 **Note**: It is recommended to run this first with `--dry-run --debug`.
@@ -272,7 +272,7 @@ If the **prometheus-operator** values are compatible with the new **kube-prometh
 
 After these steps, proceed to a fresh **kube-prometheus-stack** installation and make sure the current release of **kube-prometheus-stack** matching the `volumeClaimTemplate` values in the `values.yaml`.
 
-The binding is done via metching a specific amount of storage requested and with certain access modes.
+The binding is done via matching a specific amount of storage requested and with certain access modes.
 
 For example, if you had storage specified as this with **prometheus-operator**:
 
