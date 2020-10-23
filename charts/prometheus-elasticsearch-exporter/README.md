@@ -59,6 +59,18 @@ $ helm upgrade [RELEASE_NAME] [CHART] --install
 
 _See [helm upgrade](https://helm.sh/docs/helm/helm_upgrade/) for command documentation._
 
+### To 4.0.0
+
+While migrating the chart from `stable/elasticsearch-exporter` it was renamed to `prometheus-elasticsearch-exporter`.
+If you want to upgrade from a previous version you can set `fullnameOverride` and `nameOverride` to so that the deployment keeps the same name.
+
+The example below shows how those values should be set for a `my-exporter` release of the previous chart.
+
+```console
+helm install my-exporter stable/elasticsearch-exporter
+helm upgrade my-exporter . --set fullnameOverride=my-exporter-elasticsearch-exporter --set nameOverride=elasticsearch-exporter
+```
+
 ### To 3.0.0
 
 `prometheusRule.rules` are now processed as Helm template, allowing to set variables in them.
