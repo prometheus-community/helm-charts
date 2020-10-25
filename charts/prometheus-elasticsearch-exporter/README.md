@@ -62,7 +62,7 @@ _See [helm upgrade](https://helm.sh/docs/helm/helm_upgrade/) for command documen
 ### To 4.0.0
 
 While migrating the chart from `stable/elasticsearch-exporter` it was renamed to `prometheus-elasticsearch-exporter`.
-If you want to upgrade from a previous version you can set `fullnameOverride` and `nameOverride` to so that the deployment keeps the same name.
+If you want to upgrade from a previous version and you need to keep the old resource names (`Service`, `Deployment`, etc) you can set `fullnameOverride` and `nameOverride` to do so.
 
 The example below shows how those values should be set for a `my-exporter` release of the previous chart.
 
