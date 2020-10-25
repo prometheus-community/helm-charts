@@ -1,0 +1,76 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ template "prometheus-kafka-exporter.fullname" . }}
+  labels:
+    app: {{ template "prometheus-kafka-exporter.name" . }}
+    chart: {{ template "prometheus-kafka-exporter.chart" . }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app: {{ template "prometheus-kafka-exporter.name" . }}
+      release: {{ .Release.Name }}
+  template:
+    metadata:
+      annotations:
+{{ toYaml .Values.annotations | indent 8 }}
+      labels:
+        app: {{ template "prometheus-kafka-exporter.name" . }}
+        release: {{ .Release.Name }}
+    spec:
+      serviceAccountName: {{ template "prometheus-kafka-exporter.serviceAccountName" . }}
+      containers:
+        - args:
+          {{- range $server := .Values.kafkaServer }}
+            - '--kafka.server={{ $server }}'
+          {{- end }}
+          {{- if .Values.tls.enabled }}
+            - '--tls.enabled'
+            - '--tls.ca-file={{ .Values.tls.mountPath }}/ca.crt'
+            - '--tls.cert-file={{ .Values.tls.mountPath }}/tls.crt'
+            - '--tls.key-file={{ .Values.tls.mountPath }}/tls.key'
+          {{- end }}
+          name: {{ .Chart.Name }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: exporter-port
+              containerPort: 9308
+              protocol: TCP
+{{- if .Values.liveness.enabled }}
+          livenessProbe:
+{{- toYaml .Values.liveness.probe | trim | nindent 12 }}
+{{- end }}
+{{- if .Values.readiness.enabled }}
+          readinessProbe:
+{{- toYaml .Values.readiness.probe | trim | nindent 12 }}
+{{- end }}
+          resources:
+{{ toYaml .Values.resources | indent 12 }}
+          {{- if .Values.tls.enabled }}
+          volumeMounts:
+          - mountPath: {{ .Values.tls.mountPath }}
+            name: kafka-certs
+            readOnly: true
+          {{- end }}
+    {{- with .Values.nodeSelector }}
+      nodeSelector:
+{{ toYaml . | indent 8 }}
+    {{- end }}
+    {{- with .Values.affinity }}
+      affinity:
+{{ toYaml . | indent 8 }}
+    {{- end }}
+    {{- with .Values.tolerations }}
+      tolerations:
+{{ toYaml . | indent 8 }}
+    {{- end }}
+      {{- if .Values.tls.enabled }}
+      volumes:
+      - name: kafka-certs
+        secret:
+          secretName: {{ .Values.tls.secretName }}
+    {{- end }}

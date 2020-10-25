@@ -161,7 +161,7 @@ alertmanager:
   ## they'll need to be properly escaped so that they are not interpreted by
   ## Helm
   ## ref: https://helm.sh/docs/developing_charts/#using-the-tpl-function
-  ##      https://prometheus.io/docs/alerting/configuration/#%3Ctmpl_string%3E
+  ##      https://prometheus.io/docs/alerting/configuration/#tmpl_string
   ##      https://prometheus.io/docs/alerting/notifications/
   ##      https://prometheus.io/docs/alerting/notification_examples/
   tplConfig: false
@@ -314,6 +314,15 @@ alertmanager:
     ##
     interval: ""
     selfMonitor: true
+
+    ## scheme: HTTP scheme to use for scraping. Can be used with `tlsConfig` for example if using istio mTLS.
+    scheme: ""
+
+    ## tlsConfig: TLS configuration to use when scraping the endpoint. For example if using istio mTLS.
+    ## Of type: https://github.com/coreos/prometheus-operator/blob/master/Documentation/api.md#tlsconfig
+    tlsConfig: {}
+
+    bearerTokenFile:
 
     ## 	metric relabel configs to apply to samples before ingestion.
     ##
@@ -489,6 +498,10 @@ alertmanager:
     ## PortName to use for Alert Manager.
     ##
     portName: "web"
+
+    ## ClusterAdvertiseAddress is the explicit address to advertise in cluster. Needs to be provided for non RFC1918 [1] (public) addresses. [1] RFC1918: https://tools.ietf.org/html/rfc1918
+    ##
+    clusterAdvertiseAddress: false
 
 
 ## Using default values from https://github.com/grafana/helm-charts/blob/main/charts/grafana/values.yaml
@@ -1191,6 +1204,12 @@ prometheusOperator:
   ##
   denyNamespaces: []
 
+  ## Filter namespaces to look for prometheus-operator custom resources
+  ##
+  alertmanagerInstanceNamespaces: []
+  prometheusInstanceNamespaces: []
+  thanosInstanceNamespaces: []
+
   ## Service account for Alertmanager to use.
   ## ref: https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-account/
   ##
@@ -1345,8 +1364,8 @@ prometheusOperator:
   ## Prometheus-operator image
   ##
   image:
-    repository: quay.io/coreos/prometheus-operator
-    tag: v0.38.1
+    repository: quay.io/prometheus-operator/prometheus-operator
+    tag: v0.42.1
     sha: ""
     pullPolicy: IfNotPresent
 
@@ -1354,14 +1373,14 @@ prometheusOperator:
   ##
   configmapReloadImage:
     repository: docker.io/jimmidyson/configmap-reload
-    tag: v0.3.0
+    tag: v0.4.0
     sha: ""
 
   ## Prometheus-config-reloader image to use for config and rule reloading
   ##
   prometheusConfigReloaderImage:
-    repository: quay.io/coreos/prometheus-config-reloader
-    tag: v0.38.1
+    repository: quay.io/prometheus-operator/prometheus-config-reloader
+    tag: v0.42.1
     sha: ""
 
   ## Set the prometheus config reloader side-car CPU limit
@@ -1376,11 +1395,11 @@ prometheusOperator:
   ##
   secretFieldSelector: ""
 
-  ## Hyperkube image to use when cleaning up
+  ## kubectl image to use when cleaning up
   ##
-  hyperkubeImage:
-    repository: k8s.gcr.io/hyperkube
-    tag: v1.16.12
+  kubectlImage:
+    repository: docker.io/bitnami/kubectl
+    tag: 1.16.15
     sha: ""
     pullPolicy: IfNotPresent
 
@@ -1625,7 +1644,7 @@ prometheus:
     ##
     image:
       repository: quay.io/prometheus/prometheus
-      tag: v2.18.2
+      tag: v2.21.0
       sha: ""
 
     ## Tolerations for use with node taints
@@ -1768,6 +1787,26 @@ prometheus:
     ## See https://github.com/prometheus-operator/prometheus-operator/blob/master/Documentation/api.md#namespaceselector for usage
     ##
     podMonitorNamespaceSelector: {}
+
+    ## If true, a nil or {} value for prometheus.prometheusSpec.probeSelector will cause the
+    ## prometheus resource to be created with selectors based on values in the helm deployment,
+    ## which will also match the probes created
+    ##
+    probeSelectorNilUsesHelmValues: true
+
+    ## Probes to be selected for target discovery.
+    ## If {}, select all Probes
+    ##
+    probeSelector: {}
+    ## Example which selects Probes with label "prometheus" set to "somelabel"
+    # probeSelector:
+    #   matchLabels:
+    #     prometheus: somelabel
+
+    ## Namespaces to be selected for Probe discovery.
+    ## See https://github.com/prometheus-operator/prometheus-operator/blob/master/Documentation/api.md#namespaceselector for usage
+    ##
+    probeNamespaceSelector: {}
 
     ## How long to retain metrics
     ##

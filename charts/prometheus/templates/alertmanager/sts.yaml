@@ -78,6 +78,9 @@ spec:
 
           ports:
             - containerPort: 9093
+          {{- if .Values.alertmanager.statefulSet.headless.enableMeshPeer }}
+            - containerPort: 6783
+          {{- end }}
           readinessProbe:
             httpGet:
               path: {{ .Values.alertmanager.prefixURL }}/#/status
@@ -165,6 +168,11 @@ spec:
       {{- end }}
 {{- else }}
         - name: storage-volume
-          emptyDir: {}
+          emptyDir:
+          {{- if .Values.alertmanager.emptyDir.sizeLimit }}
+            sizeLimit: {{ .Values.alertmanager.emptyDir.sizeLimit }}
+          {{- else }}
+            {}
+          {{- end -}}
 {{- end }}
 {{- end }}

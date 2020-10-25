@@ -224,6 +224,11 @@ alertmanager:
     ##
     subPath: ""
 
+  emptyDir:
+    ## alertmanager emptyDir volume size limit
+    ##
+    sizeLimit: ""
+
   ## Annotations to be added to alertmanager pods
   ##
   podAnnotations: {}
@@ -277,7 +282,7 @@ alertmanager:
 
       ## Enabling peer mesh service end points for enabling the HA alert manager
       ## Ref: https://github.com/prometheus/alertmanager/blob/master/README.md
-      # enableMeshPeer : true
+      enableMeshPeer: false
 
       servicePort: 80
 
@@ -574,7 +579,7 @@ server:
   ##
   image:
     repository: prom/prometheus
-    tag: v2.20.1
+    tag: v2.21.0
     pullPolicy: IfNotPresent
 
   ## prometheus server priorityClassName
@@ -592,7 +597,7 @@ server:
   ## (Optional)
   prefixURL: ""
 
-  ## External URL which can access alertmanager
+  ## External URL which can access prometheus
   ## Maybe same with Ingress host name
   baseURL: ""
 
@@ -821,6 +826,8 @@ server:
     subPath: ""
 
   emptyDir:
+    ## Prometheus server emptyDir volume size limit
+    ##
     sizeLimit: ""
 
   ## Annotations to be added to Prometheus server pods
@@ -1114,7 +1121,6 @@ pushgateway:
 
   persistentVolume:
     ## If true, pushgateway will create/use a Persistent Volume Claim
-    ## If false, use emptyDir
     ##
     enabled: false
 
@@ -1521,6 +1527,9 @@ serverFiles:
           - source_labels: [__meta_kubernetes_pod_name]
             action: replace
             target_label: kubernetes_pod_name
+          - source_labels: [__meta_kubernetes_pod_phase]
+            regex: Pending|Succeeded|Failed
+            action: drop
 
       # Example Scrape config for pods which should be scraped slower. An useful example
       # would be stackriver-exporter which querys an API on every scrape of the pod
@@ -1560,6 +1569,9 @@ serverFiles:
           - source_labels: [__meta_kubernetes_pod_name]
             action: replace
             target_label: kubernetes_pod_name
+          - source_labels: [__meta_kubernetes_pod_phase]
+            regex: Pending|Succeeded|Failed
+            action: drop
 
 # adds additional scrape configs to prometheus.yml
 # must be a string so you have to add a | after extraScrapeConfigs:
