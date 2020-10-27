@@ -88,11 +88,13 @@ A major chart version change (like v1.2.3 -> v2.0.0) indicates that there is an 
 
 ### From 9.x to 10.x
 
-Version 10 upgrades prometheus-operator to from 0.38.x 0.42.x. Starting with 0.40.x an additional `Probes` CRD is introduced. Helm does not automatically upgrade or install new CRDs on a chart upgrade, so you have to install the CRD manually before updating:
+Version 10 upgrades prometheus-operator to from 0.38.x 0.42.x. Starting with 0.40.x an additional `Probes` CRD is introduced. Also, in 0.42.x the `Prometheuses` CRD had a `probeNamespaceSelector` field added. Helm does not automatically upgrade or install new CRDs on a chart upgrade, so you have to install the CRD manually before updating:
 
 ```console
-kubectl apply -f https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/release-0.42/example/prometheus-operator-crd/monitoring.coreos.com_probes.yaml
+kubectl apply -f https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/release-0.42/example/prometheus-operator-crd/monitoring.coreos.com_probes.yaml \
+   -f https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/release-0.42/example/prometheus-operator-crd/monitoring.coreos.com_prometheuses.yaml
 ```
+
 
 ### From 8.x to 9.x
 
