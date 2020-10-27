@@ -39,7 +39,9 @@ spec:
           {{- end }}
           imagePullPolicy: "{{ .Values.prometheusOperator.image.pullPolicy }}"
           args:
-            {{- if semverCompare "< v0.39.0" .Values.prometheusOperator.image.tag }}
+            # Empty if statement to catch non-semver master tags that do not need the --manage-crds flag
+            {{- if regexMatch "master.*" .Values.prometheusOperator.image.tag -}}
+            {{- else if (semverCompare "< v0.39.0" .Values.prometheusOperator.image.tag) -}}
             - --manage-crds={{ .Values.prometheusOperator.manageCrds }}
             {{- end }}
             {{- if .Values.prometheusOperator.kubeletService.enabled }}
