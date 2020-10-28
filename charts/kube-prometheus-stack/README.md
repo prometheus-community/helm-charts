@@ -86,6 +86,10 @@ _See [helm upgrade](https://helm.sh/docs/helm/helm_upgrade/) for command documen
 
 A major chart version change (like v1.2.3 -> v2.0.0) indicates that there is an incompatible breaking change needing manual actions.
 
+### From 10.x to 11.x
+
+Version 11 will remove the deprecated tlsProxy via ghostunnel in favor of native TLS support the prometheus-operator has gained with v0.39.0.
+
 ### From 9.x to 10.x
 
 Version 10 upgrades prometheus-operator to from 0.38.x 0.42.x. Starting with 0.40.x an additional `Probes` CRD is introduced. Helm does not automatically upgrade or install new CRDs on a chart upgrade, so you have to install the CRD manually before updating:
