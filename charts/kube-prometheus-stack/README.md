@@ -181,7 +181,7 @@ Version 10 updated the api version of the CRDs to `apiextensions.k8s.io/v1`, whi
     ```
 
 2. Wait for CRDs to be created, which should only take a few seconds
-3. [Install](#install-chart) the chart, but disable the CRD provisioning by setting `prometheusOperator.createCustomResource` to `false`
+3. [Install](#install-chart) the chart
 
 ## PrometheusRules Admission Webhooks
 
@@ -272,7 +272,7 @@ If the **prometheus-operator** values are compatible with the new **kube-prometh
     kubectl delete service/prometheus-operator-kubelet -n kube-system
     ```
 
-    You can choose to remove all your existing CRDs (ServiceMonitors, Podmonitors, etc.) if you want to. If you would like to keep these, you can set `prometheusOperator.createCustomResource` to `false` to disable CRD provisioning during the fresh installation.
+    You can choose to remove all your existing CRDs (ServiceMonitors, Podmonitors, etc.) if you want to.
 
 3. Remove current `spec.claimRef` values to change the PV's status from Released to Available.
 
@@ -331,10 +331,6 @@ The chart has added 3 [dependencies](#dependencies).
 
 - Node-Exporter, Kube-State-Metrics: These components are loaded as dependencies into the chart, and are relatively simple components
 - Grafana: The Grafana chart is more feature-rich than this chart - it contains a sidecar that is able to load data sources and dashboards from configmaps deployed into the same cluster. For more information check out the [documentation for the chart](https://github.com/helm/charts/tree/master/stable/grafana)
-
-#### CoreOS CRDs
-
-The CRDs are provisioned using crd-install hooks, rather than relying on a separate chart installation. If you already have these CRDs provisioned and don't want to remove them, you can disable the CRD creation by these hooks by setting `prometheusOperator.createCustomResource` to `false` (not required if using Helm v3).
 
 #### Kubelet Service
 
