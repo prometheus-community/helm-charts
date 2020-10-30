@@ -40,7 +40,7 @@ _See [helm install](https://helm.sh/docs/helm/helm_install/) for command documen
 By default this chart installs additional, dependent charts:
 
 - [stable/kube-state-metrics](https://github.com/helm/charts/tree/master/stable/kube-state-metrics)
-- [stable/prometheus-node-exporter](https://github.com/prometheus-community/helm-charts/tree/main/charts/prometheus-node-exporter)
+- [prometheus-community/prometheus-node-exporter](https://github.com/prometheus-community/helm-charts/tree/main/charts/prometheus-node-exporter)
 - [grafana/grafana](https://github.com/grafana/helm-charts/tree/main/charts/grafana)
 
 To disable dependencies during installation, see [multiple releases](#multiple-releases) below.
@@ -165,7 +165,7 @@ Alternatively, you can disable the hooks by setting `prometheusOperator.admissio
 
 ### Helm fails to create CRDs
 
-Version 10 updated the api version of the CRDs to `apiextensions.k8s.io/v1`, which Helm 2 is [unable](https://github.com/helm/helm/issues/6783) to install. In order to work around this issue when installing the chart you will need to make sure all 8 CRDs exist in the cluster first and disable their provisioning by the chart:
+Version 10 updated the api version of the CRDs to `apiextensions.k8s.io/v1`, which Helm 2 is [unable](https://github.com/helm/helm/issues/6783) to install. You will need to make sure all 8 CRDs exist in the cluster first:
 
 1. Create CRDs
 
