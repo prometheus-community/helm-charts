@@ -6,7 +6,7 @@ from os import makedirs
 import requests
 import yaml
 from yaml.representer import SafeRepresenter
-
+import re
 
 # https://stackoverflow.com/a/20863889/961092
 class LiteralStr(str):
@@ -217,6 +217,27 @@ def add_rules_conditions(rules, indent=4):
     return rules
 
 
+def add_custom_labels(rules, indent=4):
+    """Add if wrapper for additional rules labels"""
+    rule_condition = '{{- if .Values.defaultRules.additionalRuleLabels }}\n{{ toYaml .Values.defaultRules.additionalRuleLabels | indent 8 }}\n{{- end }}'
+    rule_condition_len = len(rule_condition) + 1
+
+    separator = " " * indent + "- alert:.*"
+    alerts_positions = re.finditer(separator,rules)
+    alert=-1
+    for alert_position in alerts_positions:
+        # add rule_condition at the end of the alert block
+        if alert >= 0 :
+            index = alert_position.start() + rule_condition_len * alert - 1
+            rules = rules[:index] + "\n" + rule_condition + rules[index:]
+        alert += 1
+
+    # add rule_condition at the end of the last alert
+    if alert >= 0:
+        index = len(rules) - 1
+        rules = rules[:index] + "\n" + rule_condition + rules[index:]
+    return rules
+
 def write_group_to_file(group, url, destination, min_kubernetes, max_kubernetes):
     fix_expr(group['rules'])
     group_name = group['name']
@@ -231,6 +252,7 @@ def write_group_to_file(group, url, destination, min_kubernetes, max_kubernetes)
             if replacement_map[line]['init']:
                 init_line += '\n' + replacement_map[line]['init']
     # append per-alert rules
+    rules = add_custom_labels(rules)
     rules = add_rules_conditions(rules)
     # initialize header
     lines = header % {
