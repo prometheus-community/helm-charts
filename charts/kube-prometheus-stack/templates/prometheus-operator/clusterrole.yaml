@@ -7,28 +7,20 @@ metadata:
     app: {{ template "kube-prometheus-stack.name" . }}-operator
 {{ include "kube-prometheus-stack.labels" . | indent 4 }}
 rules:
-{{- if or .Values.prometheusOperator.manageCrds .Values.prometheusOperator.cleanupCustomResource }}
-- apiGroups:
-  - apiextensions.k8s.io
-  resources:
-  - customresourcedefinitions
-  verbs:
-  - '*'
-{{- end }}
 - apiGroups:
   - monitoring.coreos.com
   resources:
   - alertmanagers
-  - prometheuses
-  - thanosrulers
-  - prometheuses/finalizers
   - alertmanagers/finalizers
+  - alertmanagerconfigs
+  - prometheuses
+  - prometheuses/finalizers
+  - thanosrulers
   - thanosrulers/finalizers
   - servicemonitors
   - podmonitors
-  - prometheusrules
   - probes
-  - probes/finalizers
+  - prometheusrules
   verbs:
   - '*'
 - apiGroups:
@@ -73,6 +65,14 @@ rules:
   - ""
   resources:
   - namespaces
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - networking.k8s.io
+  resources:
+  - ingresses
   verbs:
   - get
   - list
