@@ -9,7 +9,7 @@ _Note: This chart was formerly named `prometheus-operator` chart, now renamed to
 ## Prerequisites
 
 - Kubernetes 1.16+
-- Helm 2.12+ (If using Helm 2, [see below for CRD workaround](#Helm-fails-to-create-CRDs))
+- Helm 3+
 
 ## Get Repo Info
 
@@ -24,11 +24,8 @@ _See [helm repo](https://helm.sh/docs/helm/helm_repo/) for command documentation
 ## Install Chart
 
 ```console
-# Helm 3
+# Helm
 $ helm install [RELEASE_NAME] prometheus-community/kube-prometheus-stack
-
-# Helm 2
-$ helm install --name [RELEASE_NAME] prometheus-community/kube-prometheus-stack
 ```
 
 _See [configuration](#configuration) below._
@@ -50,11 +47,8 @@ _See [helm dependency](https://helm.sh/docs/helm/helm_dependency/) for command d
 ## Uninstall Chart
 
 ```console
-# Helm 3
+# Helm
 $ helm uninstall [RELEASE_NAME]
-
-# Helm 2
-# helm delete --purge [RELEASE_NAME]
 ```
 
 This removes all the Kubernetes components associated with the chart and deletes the release.
@@ -77,15 +71,22 @@ kubectl delete crd thanosrulers.monitoring.coreos.com
 ## Upgrading Chart
 
 ```console
-# Helm 3 or 2
+# Helm
 $ helm upgrade [RELEASE_NAME] prometheus-community/kube-prometheus-stack
 ```
+
+With Helm v3, CRDs created by this chart are not updated by default and should be manually updated.
+Consult also the [Helm Documentation on CRDs](https://helm.sh/docs/chart_best_practices/custom_resource_definitions).
 
 _See [helm upgrade](https://helm.sh/docs/helm/helm_upgrade/) for command documentation._
 
 ### Upgrading an existing Release to a new major version
 
 A major chart version change (like v1.2.3 -> v2.0.0) indicates that there is an incompatible breaking change needing manual actions.
+
+### From 11.x to 12.x
+
+The chart was migrated to support only helm v3 and later.
 
 ### From 10.x to 11.x
 
@@ -162,26 +163,6 @@ When Google configure the control plane for private clusters, they automatically
 You can read more information on how to add firewall rules for the GKE control plane nodes in the [GKE docs](https://cloud.google.com/kubernetes-engine/docs/how-to/private-clusters#add_firewall_rules)
 
 Alternatively, you can disable the hooks by setting `prometheusOperator.admissionWebhooks.enabled=false`.
-
-### Helm fails to create CRDs
-
-Version 10 updated the api version of the CRDs to `apiextensions.k8s.io/v1`, which Helm 2 is [unable](https://github.com/helm/helm/issues/6783) to install. You will need to make sure all 8 CRDs exist in the cluster first:
-
-1. Create CRDs
-
-    ```console
-    kubectl apply -f https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/release-0.43/example/prometheus-operator-crd/monitoring.coreos.com_alertmanagerconfigs.yaml
-    kubectl apply -f https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/release-0.43/example/prometheus-operator-crd/monitoring.coreos.com_alertmanagers.yaml
-    kubectl apply -f https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/release-0.43/example/prometheus-operator-crd/monitoring.coreos.com_podmonitors.yaml
-    kubectl apply -f https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/release-0.43/example/prometheus-operator-crd/monitoring.coreos.com_probes.yaml
-    kubectl apply -f https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/release-0.43/example/prometheus-operator-crd/monitoring.coreos.com_prometheuses.yaml
-    kubectl apply -f https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/release-0.43/example/prometheus-operator-crd/monitoring.coreos.com_prometheusrules.yaml
-    kubectl apply -f https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/release-0.43/example/prometheus-operator-crd/monitoring.coreos.com_servicemonitors.yaml
-    kubectl apply -f https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/release-0.43/example/prometheus-operator-crd/monitoring.coreos.com_thanosrulers.yaml
-    ```
-
-2. Wait for CRDs to be created, which should only take a few seconds
-3. [Install](#install-chart) the chart
 
 ## PrometheusRules Admission Webhooks
 
