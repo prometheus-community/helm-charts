@@ -61,7 +61,7 @@ condition_map = {
     'kube-prometheus-node-alerting.rules': ' .Values.defaultRules.rules.kubePrometheusNodeAlerting',
     'kube-prometheus-node-recording.rules': ' .Values.defaultRules.rules.kubePrometheusNodeRecording',
     'kube-scheduler.rules': ' .Values.kubeScheduler.enabled .Values.defaultRules.rules.kubeScheduler',
-    'kube-state-metrics': ' .Values.kubeStateMetrics.enabled .Values.defaultRules.rules.kubeStateMetrics',
+    'kube-state-metrics': ' .Values.defaultRules.rules.kubeStateMetrics',
     'kubelet.rules': ' .Values.kubelet.enabled .Values.defaultRules.rules.kubelet',
     'kubernetes-absent': ' .Values.defaultRules.rules.kubernetesAbsent',
     'kubernetes-resources': ' .Values.defaultRules.rules.kubernetesResources',
@@ -71,15 +71,15 @@ condition_map = {
     'kubernetes-system-kubelet': ' .Values.defaultRules.rules.kubernetesSystem', # kubernetes-system was split into more groups in 1.14, one of them is kubernetes-system-kubelet
     'kubernetes-system-controller-manager': ' .Values.kubeControllerManager.enabled',
     'kubernetes-system-scheduler': ' .Values.kubeScheduler.enabled .Values.defaultRules.rules.kubeScheduler',
-    'node-exporter.rules': ' .Values.nodeExporter.enabled .Values.defaultRules.rules.node',
-    'node-exporter': ' .Values.nodeExporter.enabled .Values.defaultRules.rules.node',
-    'node.rules': ' .Values.nodeExporter.enabled .Values.defaultRules.rules.node',
+    'node-exporter.rules': ' .Values.defaultRules.rules.node',
+    'node-exporter': ' .Values.defaultRules.rules.node',
+    'node.rules': ' .Values.defaultRules.rules.node',
     'node-network': ' .Values.defaultRules.rules.network',
     'node-time': ' .Values.defaultRules.rules.time',
     'prometheus-operator': ' .Values.defaultRules.rules.prometheusOperator',
     'prometheus.rules': ' .Values.defaultRules.rules.prometheus',
     'prometheus': ' .Values.defaultRules.rules.prometheus', # kube-prometheus >= 1.14 uses prometheus as group instead of prometheus.rules
-    'kubernetes-apps': ' .Values.kubeStateMetrics.enabled .Values.defaultRules.rules.kubernetesApps',
+    'kubernetes-apps': ' .Values.defaultRules.rules.kubernetesApps',
     'etcd': ' .Values.kubeEtcd.enabled .Values.defaultRules.rules.etcd',
 }
 
