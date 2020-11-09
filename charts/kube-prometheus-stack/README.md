@@ -266,7 +266,7 @@ If the **prometheus-operator** values are compatible with the new **kube-prometh
     kubectl delete pvc/<PersistenceVolumeClaim name> -n monitoring
     ```
 
-    Additonaly, you have to manually remove the remaining `prometheus-operator-kubelet` service.
+    Additionally, you have to manually remove the remaining `prometheus-operator-kubelet` service.
 
     ```console
     kubectl delete service/prometheus-operator-kubelet -n kube-system
