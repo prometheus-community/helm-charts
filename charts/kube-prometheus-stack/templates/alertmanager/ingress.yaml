@@ -23,6 +23,11 @@ metadata:
 {{- end }}
 {{ include "kube-prometheus-stack.labels" . | indent 4 }}
 spec:
+  {{- if or (.Capabilities.APIVersions.Has "networking.k8s.io/v1/IngressClass") (.Capabilities.APIVersions.Has "networking.k8s.io/v1beta1/IngressClass") }}
+  {{- if .Values.alertmanager.ingress.ingressClassName }}
+  ingressClassName: {{ .Values.alertmanager.ingress.ingressClassName }}
+  {{- end }}
+  {{- end }}
   rules:
   {{- if .Values.alertmanager.ingress.hosts }}
   {{- range $host := .Values.alertmanager.ingress.hosts }}
