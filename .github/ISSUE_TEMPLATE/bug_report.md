@@ -62,7 +62,7 @@ For example:
 
 ```console
 helm install my-release prometheus-community/name-of-chart --version version --values values.yaml
-``**
+```
 
 **Helm values set after installation/upgrade:**
 
