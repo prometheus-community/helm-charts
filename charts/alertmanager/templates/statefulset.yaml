@@ -23,6 +23,19 @@ spec:
       securityContext:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
       containers:
+        {{- if and (.Values.configmapReload.enabled) (.Values.config) }}
+        - name: {{ .Chart.Name }}-{{ .Values.configmapReload.name }}
+          image: "{{ .Values.configmapReload.image.repository }}:{{ .Values.configmapReload.image.tag }}"
+          imagePullPolicy: "{{ .Values.configmapReload.image.pullPolicy }}"
+          args:
+            - --volume-dir=/etc/alertmanager
+            - --webhook-url=http://127.0.0.1:{{ .Values.service.port }}/-/reload
+          resources:
+            {{ toYaml .Values.configmapReload.resources | indent 12 }}
+          volumeMounts:
+            - name: config
+              mountPath: /etc/alertmanager
+        {{- end }}
         - name: {{ .Chart.Name }}
           securityContext:
             {{- toYaml .Values.securityContext | nindent 12 }}
@@ -51,8 +64,7 @@ spec:
           volumeMounts:
             {{- if .Values.config }}
             - name: config
-              mountPath: /etc/alertmanager/alertmanager.yml
-              subPath: alertmanager.yml
+              mountPath: /etc/alertmanager
             {{- end }}
             - name: storage
               mountPath: /alertmanager
