@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: "{{ include "prometheus-statsd-exporter.fullname" . }}-test-metrics-publish"
+  labels:
+    {{- include "prometheus-statsd-exporter.labels" . | nindent 4 }}
+  annotations:
+    "helm.sh/hook": test-success
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded    
+spec:
+  containers:
+    - name: netcat
+      image: busybox:1.28
+      command: ['/bin/sh']
+      args: ['-c', 'for i in 1 2 3 4 5;do echo "foo:$i|c" | nc -w 1 {{ include "prometheus-statsd-exporter.fullname" . }} {{ .Values.udpPort }} && echo "published foo:$i|c metric";done']
+  restartPolicy: Never
