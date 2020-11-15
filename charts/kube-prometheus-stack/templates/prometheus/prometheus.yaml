@@ -32,7 +32,7 @@ spec:
 {{ toYaml .Values.prometheus.prometheusSpec.apiserverConfig | indent 4}}
 {{- end }}
 {{- if .Values.prometheus.prometheusSpec.image }}
-  baseImage: {{ .Values.prometheus.prometheusSpec.image.repository }}
+  image: {{ .Values.prometheus.prometheusSpec.image.repository }}:{{ .Values.prometheus.prometheusSpec.image.tag }}
   version: {{ .Values.prometheus.prometheusSpec.image.tag }}
   {{- if .Values.prometheus.prometheusSpec.image.sha }}
   sha: {{ .Values.prometheus.prometheusSpec.image.sha }}
@@ -129,6 +129,22 @@ spec:
 {{ toYaml .Values.prometheus.prometheusSpec.podMonitorNamespaceSelector | indent 4 }}
 {{ else }}
   podMonitorNamespaceSelector: {}
+{{- end }}
+{{- if .Values.prometheus.prometheusSpec.probeSelector }}
+  probeSelector:
+{{ toYaml .Values.prometheus.prometheusSpec.probeSelector | indent 4 }}
+{{ else if .Values.prometheus.prometheusSpec.probeSelectorNilUsesHelmValues  }}
+  probeSelector:
+    matchLabels:
+      release: {{ $.Release.Name | quote }}
+{{ else }}
+  probeSelector: {}
+{{- end }}
+{{- if .Values.prometheus.prometheusSpec.probeNamespaceSelector }}
+  probeNamespaceSelector:
+{{ toYaml .Values.prometheus.prometheusSpec.probeNamespaceSelector | indent 4 }}
+{{ else }}
+  probeNamespaceSelector: {}
 {{- end }}
 {{- if .Values.prometheus.prometheusSpec.remoteRead }}
   remoteRead:
