@@ -18,6 +18,11 @@ metadata:
 {{ toYaml .Values.prometheus.thanosIngress.labels | indent 4 }}
 {{- end }}
 spec:
+  {{- if or (.Capabilities.APIVersions.Has "networking.k8s.io/v1/IngressClass") (.Capabilities.APIVersions.Has "networking.k8s.io/v1beta1/IngressClass") }}
+  {{- if .Values.prometheus.thanosIngress.ingressClassName }}
+  ingressClassName: {{ .Values.prometheus.thanosIngress.ingressClassName }}
+  {{- end }}
+  {{- end }}
   rules:
   {{- if .Values.prometheus.thanosIngress.hosts }}
   {{- range $host := .Values.prometheus.thanosIngress.hosts }}

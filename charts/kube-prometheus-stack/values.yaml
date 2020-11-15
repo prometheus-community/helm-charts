@@ -64,6 +64,9 @@ defaultRules:
   ## Annotations for default rules
   annotations: {}
 
+  ## Additional labels for PrometheusRule alerts
+  additionalRuleLabels: {}
+
 ## Deprecated way to provide custom recording or alerting rules to be deployed into the cluster.
 ##
 # additionalPrometheusRules: []
@@ -193,6 +196,10 @@ alertmanager:
   ingress:
     enabled: false
 
+    # For Kubernetes >= 1.18 you should specify the ingress-controller via the field ingressClassName
+    # See https://kubernetes.io/blog/2020/04/02/improvements-to-the-ingress-api-in-kubernetes-1.18/#specifying-the-class-of-an-ingress
+    # ingressClassName: nginx
+
     annotations: {}
 
     labels: {}
@@ -225,6 +232,11 @@ alertmanager:
   ##
   ingressPerReplica:
     enabled: false
+
+    # For Kubernetes >= 1.18 you should specify the ingress-controller via the field ingressClassName
+    # See https://kubernetes.io/blog/2020/04/02/improvements-to-the-ingress-api-in-kubernetes-1.18/#specifying-the-class-of-an-ingress
+    # ingressClassName: nginx
+
     annotations: {}
     labels: {}
 
@@ -376,6 +388,42 @@ alertmanager:
     ## this Alertmanager instance. Defaults to 'alertmanager-' The secret is mounted into /etc/alertmanager/config.
     ##
     # configSecret:
+
+    ## AlertmanagerConfigs to be selected to merge and configure Alertmanager with.
+    ##
+    alertmanagerConfigSelector: {}
+    ## Example which selects all alertmanagerConfig resources
+    ## with label "alertconfig" with values any of "example-config" or "example-config-2"
+    # alertmanagerConfigSelector:
+    #   matchExpressions:
+    #     - key: alertconfig
+    #       operator: In
+    #       values:
+    #         - example-config
+    #         - example-config-2
+    #
+    ## Example which selects all alertmanagerConfig resources with label "role" set to "example-config"
+    # alertmanagerConfigSelector:
+    #   matchLabels:
+    #     role: example-config
+
+    ## Namespaces to be selected for AlertmanagerConfig discovery. If nil, only check own namespace.
+    ##
+    alertmanagerConfigNamespaceSelector: {}
+    ## Example which selects all namespaces
+    ## with label "alertmanagerconfig" with values any of "example-namespace" or "example-namespace-2"
+    # alertmanagerConfigNamespaceSelector:
+    #   matchExpressions:
+    #     - key: alertmanagerconfig
+    #       operator: In
+    #       values:
+    #         - example-namespace
+    #         - example-namespace-2
+
+    ## Example which selects all namespaces with label "alertmanagerconfig" set to "enabled"
+    # alertmanagerConfigNamespaceSelector:
+    #   matchLabels:
+    #     alertmanagerconfig: enabled
 
     ## Define Log Format
     # Use logfmt (default) or json-formatted logging
@@ -607,6 +655,10 @@ grafana:
     interval: ""
     selfMonitor: true
 
+    # Path to use for scraping metrics. Might be different if server.root_url is set
+    # in grafana.ini
+    path: "/metrics"
+
     ## 	metric relabel configs to apply to samples before ingestion.
     ##
     metricRelabelings: []
@@ -686,8 +738,9 @@ kubelet:
     probes: true
 
     ## Enable scraping /metrics/resource from kubelet's service
+    ## This is disabled by default because container metrics are already exposed by cAdvisor
     ##
-    resource: true
+    resource: false
     # From kubernetes 1.18, /metrics/resource/v1alpha1 renamed to /metrics/resource
     resourcePath: "/metrics/resource/v1alpha1"
     ## Metric relabellings to apply to samples before ingestion
@@ -1154,18 +1207,9 @@ prometheus-node-exporter:
 prometheusOperator:
   enabled: true
 
-  # If true prometheus operator will create and update its CRDs on startup
-  # Only for prometheusOperator.image.tag < v0.39.0
-  manageCrds: true
-
-  tlsProxy:
+  # Prometheus-Operator v0.39.0 and later support TLS natively.
+  tls:
     enabled: true
-    image:
-      repository: squareup/ghostunnel
-      tag: v1.5.2
-      sha: ""
-      pullPolicy: IfNotPresent
-    resources: {}
 
   ## Admission webhook support for PrometheusRules resources added in Prometheus Operator 0.30 can be enabled to prevent incorrectly formatted
   ## rules from making their way into prometheus and potentially preventing the container from starting
@@ -1180,7 +1224,7 @@ prometheusOperator:
       enabled: true
       image:
         repository: jettech/kube-webhook-certgen
-        tag: v1.2.1
+        tag: v1.5.0
         sha: ""
         pullPolicy: IfNotPresent
       resources: {}
@@ -1251,14 +1295,6 @@ prometheusOperator:
     ## Ref: https://kubernetes.io/docs/user-guide/services/#external-ips
     ##
     externalIPs: []
-
-  ## Deploy CRDs used by Prometheus Operator.
-  ##
-  createCustomResource: true
-
-  ## Attempt to clean up CRDs created by Prometheus Operator.
-  ##
-  cleanupCustomResource: false
 
   ## Labels to add to the operator pod
   ##
@@ -1365,7 +1401,7 @@ prometheusOperator:
   ##
   image:
     repository: quay.io/prometheus-operator/prometheus-operator
-    tag: v0.42.1
+    tag: v0.43.2
     sha: ""
     pullPolicy: IfNotPresent
 
@@ -1380,7 +1416,7 @@ prometheusOperator:
   ##
   prometheusConfigReloaderImage:
     repository: quay.io/prometheus-operator/prometheus-config-reloader
-    tag: v0.42.1
+    tag: v0.43.2
     sha: ""
 
   ## Set the prometheus config reloader side-car CPU limit
@@ -1394,14 +1430,6 @@ prometheusOperator:
   ## Set a Field Selector to filter watched secrets
   ##
   secretFieldSelector: ""
-
-  ## kubectl image to use when cleaning up
-  ##
-  kubectlImage:
-    repository: docker.io/bitnami/kubectl
-    tag: 1.16.15
-    sha: ""
-    pullPolicy: IfNotPresent
 
 ## Deploy a Prometheus instance
 ##
@@ -1489,9 +1517,14 @@ prometheus:
     minAvailable: 1
     maxUnavailable: ""
 
-# Ingress exposes thanos sidecar outside the clsuter
+  # Ingress exposes thanos sidecar outside the clsuter
   thanosIngress:
     enabled: false
+
+    # For Kubernetes >= 1.18 you should specify the ingress-controller via the field ingressClassName
+    # See https://kubernetes.io/blog/2020/04/02/improvements-to-the-ingress-api-in-kubernetes-1.18/#specifying-the-class-of-an-ingress
+    # ingressClassName: nginx
+
     annotations: {}
     labels: {}
     servicePort: 10901
@@ -1515,6 +1548,11 @@ prometheus:
 
   ingress:
     enabled: false
+
+    # For Kubernetes >= 1.18 you should specify the ingress-controller via the field ingressClassName
+    # See https://kubernetes.io/blog/2020/04/02/improvements-to-the-ingress-api-in-kubernetes-1.18/#specifying-the-class-of-an-ingress
+    # ingressClassName: nginx
+
     annotations: {}
     labels: {}
 
@@ -1543,6 +1581,11 @@ prometheus:
   ##
   ingressPerReplica:
     enabled: false
+
+    # For Kubernetes >= 1.18 you should specify the ingress-controller via the field ingressClassName
+    # See https://kubernetes.io/blog/2020/04/02/improvements-to-the-ingress-api-in-kubernetes-1.18/#specifying-the-class-of-an-ingress
+    # ingressClassName: nginx
+
     annotations: {}
     labels: {}
 
@@ -1644,7 +1687,7 @@ prometheus:
     ##
     image:
       repository: quay.io/prometheus/prometheus
-      tag: v2.21.0
+      tag: v2.22.1
       sha: ""
 
     ## Tolerations for use with node taints
@@ -1788,6 +1831,26 @@ prometheus:
     ##
     podMonitorNamespaceSelector: {}
 
+    ## If true, a nil or {} value for prometheus.prometheusSpec.probeSelector will cause the
+    ## prometheus resource to be created with selectors based on values in the helm deployment,
+    ## which will also match the probes created
+    ##
+    probeSelectorNilUsesHelmValues: true
+
+    ## Probes to be selected for target discovery.
+    ## If {}, select all Probes
+    ##
+    probeSelector: {}
+    ## Example which selects Probes with label "prometheus" set to "somelabel"
+    # probeSelector:
+    #   matchLabels:
+    #     prometheus: somelabel
+
+    ## Namespaces to be selected for Probe discovery.
+    ## See https://github.com/prometheus-operator/prometheus-operator/blob/master/Documentation/api.md#namespaceselector for usage
+    ##
+    probeNamespaceSelector: {}
+
     ## How long to retain metrics
     ##
     retention: 10d
@@ -1899,7 +1962,7 @@ prometheus:
     ## to break upgrades of Prometheus. It is advised to review Prometheus release notes to ensure that no incompatible
     ## scrape configs are going to break Prometheus after the upgrade.
     ##
-    ## The scrape configuraiton example below will find master nodes, provided they have the name .*mst.*, relabel the
+    ## The scrape configuration example below will find master nodes, provided they have the name .*mst.*, relabel the
     ## port to 2379 and allow etcd scraping provided it is running on all Kubernetes master nodes
     ##
     additionalScrapeConfigs: []

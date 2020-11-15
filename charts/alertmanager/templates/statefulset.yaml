@@ -28,6 +28,12 @@ spec:
             {{- toYaml .Values.securityContext | nindent 12 }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
+          args: 
+            - --storage.path=/alertmanager
+            - --config.file=/etc/alertmanager/alertmanager.yml
+            {{- range $key, $value := .Values.extraArgs }}
+            - --{{ $key }}={{ $value }}
+            {{- end }}
           ports:
             - name: http
               containerPort: 9093
@@ -43,15 +49,19 @@ spec:
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
           volumeMounts:
+            {{- if .Values.config }}
             - name: config
-              mountPath: /etc/alertmanager/config.yml
-              subPath: config.yml
+              mountPath: /etc/alertmanager/alertmanager.yml
+              subPath: alertmanager.yml
+            {{- end }}
             - name: storage
               mountPath: /alertmanager
+      {{- if .Values.config }}
       volumes:
         - name: config
           configMap:
             name: {{ include "alertmanager.fullname" . }}
+      {{- end }}
 {{- if .Values.persistence.enabled }}
   volumeClaimTemplates:
     - metadata:
@@ -70,8 +80,8 @@ spec:
       {{- end }}
       {{- end }}
 {{- else }}
-    - name: storage
-      emptyDir: {}
+        - name: storage
+          emptyDir: {}
 {{- end -}}
       {{- with .Values.nodeSelector }}
       nodeSelector:

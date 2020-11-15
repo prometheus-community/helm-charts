@@ -7,30 +7,21 @@ metadata:
     app: {{ template "kube-prometheus-stack.name" . }}-prometheus
 {{ include "kube-prometheus-stack.labels" . | indent 4 }}
 rules:
-- apiGroups:
-  - ""
-  resources:
-  - nodes/metrics
-  verbs:
-  - get
-  - list
-  - watch
 # This permission are not in the kube-prometheus repo
 # they're grabbed from https://github.com/prometheus/prometheus/blob/master/documentation/examples/rbac-setup.yml
 - apiGroups: [""]
   resources:
   - nodes
-  - nodes/proxy
+  - nodes/metrics
   - services
   - endpoints
   - pods
   verbs: ["get", "list", "watch"]
 - apiGroups:
-  - extensions
   - "networking.k8s.io"
   resources:
   - ingresses
   verbs: ["get", "list", "watch"]
-- nonResourceURLs: ["/metrics"]
+- nonResourceURLs: ["/metrics", "/metrics/cadvisor"]
   verbs: ["get"]
 {{- end }}
