@@ -2,100 +2,79 @@
 
 The [prometheus-statsd-exporter](https://github.com/prometheus/statsd_exporter) receives StatsD metrics and exports them as Prometheus metrics.
 
-## Introduction
-
 This chart creates a `prometheus-statsd-exporter` deployment using the [Helm](https://helm.sh) package manager.
-
 
 ## Prerequisites
 
 - Kubernetes 1.16 or above
-- `prometheus-statsd-exporter` `v0.16.0`
 
+## Get Repo Info
 
-## Installing the Chart
-
-The `prometheus-statsd-exporter` chart is stored in the `niclic` repository.
-
-Add the `niclic` repository to your list of helm repositories.
-
-```sh
-helm repo add niclic https://niclic.github.com/helm-charts
-
-# review the list of avaialble charts
-helm search repo niclic
-NAME                              CHART VERSION APP VERSION DESCRIPTION                           
-niclic/prometheus-statsd-exporter 0.1.0         0.16.0      StatsD to Prometheus metrics exporter.
+```console
+helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+help repo update
 ```
 
-To install the chart with the release name `prometheus-statsd-exporter` and default values:
+_See [helm repo](https://helm.sh/docs/helm/helm_repo/) for command documentation._
 
-```sh
-helm install prometheus-statsd-exporter niclic/prometheus-statsd-exporter
+## Install Chart
+
+```console
+# Helm 3
+$ helm install [RELEASE_NAME] prometheus-community/prometheus-statsd-exporter
+
+# Helm 2
+$ helm install --name [RELEASE_NAME] prometheus-community/prometheus-statsd-exporter
 ```
 
+_See [configuration](#configuration) below._
 
-## Testing the Chart.
+_See [helm install](https://helm.sh/docs/helm/helm_install/) for command documentation._
 
-To run the tests for this chart.
+## Test Chart
 
 ```sh
 helm test prometheus-statsd-exporter
 ```
 
+_See [helm test](https://helm.sh/docs/helm/helm_test/) for command documentation._
 
-## Uninstalling the Chart
+## Uninstall Chart
 
-To uninstall `prometheus-statsd-exporter`:
+```console
+# Helm 3
+$ helm uninstall [RELEASE_NAME]
 
-```sh
-helm uninstall prometheus-statsd-exporter
+# Helm 2
+$ helm delete --purge [RELEASE_NAME]
 ```
+
+This removes all the Kubernetes components associated with the chart and deletes the release.
+
+_See [helm uninstall](https://helm.sh/docs/helm/helm_uninstall/) for command documentation._
+
+
+## Upgrading Chart
+
+```console
+# Helm 3 or 2
+$ helm upgrade [RELEASE_NAME] [CHART] --install
+```
+
+_See [helm upgrade](https://helm.sh/docs/helm/helm_upgrade/) for command documentation._
 
 
 ## Configuration
 
-The following table lists the configurable parameters of the `prometheus-statsd-exporter` chart and their default values.
+See [Customizing the Chart Before Installing](https://helm.sh/docs/intro/using_helm/#customizing-the-chart-before-installing). To see all configurable options with detailed comments, visit the chart's [values.yaml](./values.yaml), or run these configuration commands:
 
+```console
+# Helm 2
+$ helm inspect values prometheus-community/prometheus-statsd-exporter
 
-|             Parameter               |            Description                   |                    Default                |
-|-------------------------------------|------------------------------------------|-------------------------------------------|
-| `replicaCount`                      | Number of pods to run                    | `1`                                       |
-| `image.repository`                  | The docker image to run                  | `prom/statsd-exporter`                    |
-| `image.tag`                         | The image tag to pull                    | `v0.16.0`                                 |
-| `image.pullPolicy`                  | Image pull policy                        | `IfNotPresent`                            |
-| `imagePullSecrets`                  | Image pull secrets                       | `[]`                                      |
-| `serviceAccount.create`             | Create a service account                 | `true`                                    |
-| `podAnnotations`                    | Annotations to add to pods               | `{}`                                      |
-| `priorityClassName`                 | Priority class name                      | `""`                                      |
-| `podSecurityContext`                | Security settings for the pod            | `{}`                                      |
-| `securityContext`                   | Security settings for the container      | `{}`                                      |
-| `service.type`                      | Type of kubernetes service               | `ClusterIP`                               |
-| `webPort`                           | Web port for metrics endpoint            | `9102`                                    |
-| `udpPort`                           | UDP port to receive statsd metrics       | `9125`                                    |
-| `tcpPort`                           | TCP port to receive statsd metrics       | `9125`                                    |
-| `ingress.enabled`                   | Create an ingress resource               | `false`                                   |
-| `resources`                         | Pod resource requests & limits           | `{}`                                      |
-| `nodeSelector`                      | Node labels for pod assignment           | `{}`                                      |
-| `affinity`                          | Node affinity for pod assignment         | `{}`                                      |
-| `tolerations`                       | Node tolerations for pod assignment      | `[]`                                      |
-| `statsdMappingConfig`               | `statsd-exporter` mappings               | `timer_type: histogram`                   |
-
-
-Specify each parameter you'd like to override using a YAML file.
-
-```sh
-helm install prometheus-statsd-exporter niclic/prometheus-statsd-exporter -f values.yaml
+# Helm 3
+$ helm show values prometheus-community/prometheus-statsd-exporter
 ```
-
-> **Tip**: You can use the default [values.yaml](values.yaml)
-
-You can also override specific values by using the `--set key=value[,key=value]` argument to `helm install`. For example, to change the `udpPort` to `8125`:
-
-```sh
-helm install prometheus-statsd-exporter niclic/prometheus-statsd-exporter --set udpPort=8125
-```
-
 
 ## Metric Mapping and Configuration
 This chart provides a minimal default configuration. To create a custom mapping configuration and review default settings, consult the [official docs](https://github.com/prometheus/statsd_exporter#metric-mapping-and-configuration).
