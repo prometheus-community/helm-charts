@@ -426,7 +426,7 @@ alertmanager:
     #     alertmanagerconfig: enabled
 
     ## Define Log Format
-    # Use logfmt (default) or json-formatted logging
+    # Use logfmt (default) or json logging
     logFormat: logfmt
 
     ## Log level for Alertmanager to be configured with.
@@ -654,6 +654,10 @@ grafana:
     ##
     interval: ""
     selfMonitor: true
+
+    # Path to use for scraping metrics. Might be different if server.root_url is set
+    # in grafana.ini
+    path: "/metrics"
 
     ## 	metric relabel configs to apply to samples before ingestion.
     ##
@@ -1248,7 +1252,7 @@ prometheusOperator:
   ##
   alertmanagerInstanceNamespaces: []
   prometheusInstanceNamespaces: []
-  thanosInstanceNamespaces: []
+  thanosRulerInstanceNamespaces: []
 
   ## Service account for Alertmanager to use.
   ## ref: https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-account/
@@ -1304,7 +1308,7 @@ prometheusOperator:
   # priorityClassName: ""
 
   ## Define Log Format
-  # Use logfmt (default) or json-formatted logging
+  # Use logfmt (default) or json logging
   # logFormat: logfmt
 
   ## Decrease log verbosity to errors only
@@ -1513,7 +1517,7 @@ prometheus:
     minAvailable: 1
     maxUnavailable: ""
 
-# Ingress exposes thanos sidecar outside the clsuter
+  # Ingress exposes thanos sidecar outside the clsuter
   thanosIngress:
     enabled: false
 
@@ -1664,6 +1668,10 @@ prometheus:
     ## Interval between consecutive scrapes.
     ##
     scrapeInterval: ""
+
+    ## Number of seconds to wait for target to respond before erroring
+    ##
+    scrapeTimeout: ""
 
     ## Interval between consecutive evaluations.
     ##
@@ -1936,6 +1944,8 @@ prometheus:
     ## ref: https://github.com/prometheus-operator/prometheus-operator/blob/master/Documentation/user-guides/storage.md
     ##
     storageSpec: {}
+    ## Using PersistentVolumeClaim
+    ##
     #  volumeClaimTemplate:
     #    spec:
     #      storageClassName: gluster
@@ -1944,6 +1954,11 @@ prometheus:
     #        requests:
     #          storage: 50Gi
     #    selector: {}
+
+    ## Using tmpfs volume
+    ##
+    #  emptyDir:
+    #    medium: Memory
 
     # Additional volumes on the output StatefulSet definition.
     volumes: []
