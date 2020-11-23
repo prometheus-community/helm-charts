@@ -13,14 +13,14 @@ spec:
     matchLabels:
       app: {{ template "prometheus-cloudwatch-exporter.name" . }}
       release: {{ .Release.Name }}
-{{- if .Values.deployment.matchLabels }}
-{{ toYaml .Values.deployment.matchLabels | indent 6 }}
-{{- end }}
   template:
     metadata:
       labels:
         app: {{ template "prometheus-cloudwatch-exporter.name" . }}
         release: {{ .Release.Name }}
+        {{- if .Values.pod.labels }}
+{{ toYaml .Values.pod.labels | indent 8 }}
+        {{- end }}
       annotations:
         {{ if .Values.aws.role}}iam.amazonaws.com/role: {{ .Values.aws.role }}{{ end }}
         checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
