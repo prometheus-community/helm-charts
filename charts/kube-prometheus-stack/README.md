@@ -283,7 +283,7 @@ You have to specify matching `volumeClaimTemplate` with 50Gi storage and `ReadWr
 
 Additionally, you should check the current AZ of your legacy installation's PV, and configure the fresh release to use the same AZ as the old one. If the pods are in a different AZ than the PV, the release will fail to bind the existing one, hence creating a new PV.
 
-This can be achieved either by specifying the labels trough `values.yaml`, e.g. setting `prometheus.prometheusSpec.nodeSelector` to:
+This can be achieved either by specifying the labels through `values.yaml`, e.g. setting `prometheus.prometheusSpec.nodeSelector` to:
 
 ```yaml
 nodeSelector:
