@@ -1,6 +1,6 @@
 # prometheus-kafka-exporter
 
-A Prometheus exporter for [Apacher Kafka](https://kafka.apache.org/) metrics.
+A Prometheus exporter for [Apache Kafka](https://kafka.apache.org/) metrics.
 
 This chart bootstraps a [Kafka Exporter](https://github.com/danielqsj/kafka_exporter) deployment on a [Kubernetes](http://kubernetes.io) cluster using the [Helm](https://helm.sh) package manager.
 
