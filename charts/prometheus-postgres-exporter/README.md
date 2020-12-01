@@ -40,7 +40,18 @@ This removes all the Kubernetes components associated with the chart and deletes
 
 _See [helm uninstall](https://helm.sh/docs/helm/helm_uninstall/) for command documentation._
 
-## Upgrading Chart
+## Upgrading
+
+### To 2.0.0
+
+Backwards compatibility is not guaranteed unless you modify the labels used on the chart's deployments.
+Use the workaround below to upgrade from versions previous to 2.0.0. The following example assumes that the release name is prometheus-postgres-exporter:
+
+```console
+$ kubectl patch deployment prometheus-postgres-exporter --type=json -p='[{"op": "remove", "path": "/spec/selector/matchLabels/chart"}]'
+```
+
+### Other minor version upgrade
 
 ```console
 # Helm
