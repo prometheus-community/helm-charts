@@ -201,9 +201,9 @@ spec:
       requiredDuringSchedulingIgnoredDuringExecution:
       - topologyKey: {{ .Values.prometheus.prometheusSpec.podAntiAffinityTopologyKey }}
         labelSelector:
-          matchLabels:
-            app: prometheus
-            prometheus: {{ template "kube-prometheus-stack.fullname" . }}-prometheus
+          matchExpressions:
+            - {key: app, operator: In, values: [prometheus]}
+            - {key: prometheus, operator: In, values: [{{ template "kube-prometheus-stack.fullname" . }}-prometheus]}
 {{- else if eq .Values.prometheus.prometheusSpec.podAntiAffinity "soft" }}
     podAntiAffinity:
       preferredDuringSchedulingIgnoredDuringExecution:
@@ -211,9 +211,9 @@ spec:
         podAffinityTerm:
           topologyKey: {{ .Values.prometheus.prometheusSpec.podAntiAffinityTopologyKey }}
           labelSelector:
-            matchLabels:
-              app: prometheus
-              prometheus: {{ template "kube-prometheus-stack.fullname" . }}-prometheus
+            matchExpressions:
+              - {key: app, operator: In, values: [prometheus]}
+              - {key: prometheus, operator: In, values: [{{ template "kube-prometheus-stack.fullname" . }}-prometheus]}
 {{- end }}
 {{- end }}
 {{- if .Values.prometheus.prometheusSpec.tolerations }}
