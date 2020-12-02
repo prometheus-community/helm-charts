@@ -265,6 +265,14 @@ spec:
           !=
         kube_hpa_status_current_replicas{job="kube-state-metrics", namespace=~"{{ $targetNamespace }}"})
           and
+        (kube_hpa_status_current_replicas{job="kube-state-metrics", namespace=~"{{ $targetNamespace }}"}
+          >
+        kube_hpa_spec_min_replicas{job="kube-state-metrics", namespace=~"{{ $targetNamespace }}"})
+          and
+        (kube_hpa_status_current_replicas{job="kube-state-metrics", namespace=~"{{ $targetNamespace }}"}
+          <
+        kube_hpa_spec_max_replicas{job="kube-state-metrics", namespace=~"{{ $targetNamespace }}"})
+          and
         changes(kube_hpa_status_current_replicas[15m]) == 0
       for: 15m
       labels:
