@@ -21,7 +21,7 @@ _See [helm repo](https://helm.sh/docs/helm/helm_repo/) for command documentation
 ## Install Chart
 
 ```console
-$ helm install [RELEASE_NAME] prometheus-community/prometheus-postgres-exporter
+helm install [RELEASE_NAME] prometheus-community/prometheus-postgres-exporter
 ```
 
 _See [configuration](#configuration) below._
