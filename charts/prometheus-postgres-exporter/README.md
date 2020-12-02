@@ -42,7 +42,7 @@ _See [helm uninstall](https://helm.sh/docs/helm/helm_uninstall/) for command doc
 
 ### To 2.0.0
 
-The primary change in 2.0.0 is the Chart API from v1 to v2. This now requires Helm3. 
+The primary change in 2.0.0 is the Chart API from v1 to v2. This now requires Helm3.
 Backwards compatibility is not guaranteed unless you modify the labels used on the chart's deployments.
 Use the workaround below to upgrade from versions previous to 2.0.0. The following example assumes that the release name is prometheus-postgres-exporter:
 
