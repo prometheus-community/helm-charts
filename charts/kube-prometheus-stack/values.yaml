@@ -196,6 +196,10 @@ alertmanager:
   ingress:
     enabled: false
 
+    # For Kubernetes >= 1.18 you should specify the ingress-controller via the field ingressClassName
+    # See https://kubernetes.io/blog/2020/04/02/improvements-to-the-ingress-api-in-kubernetes-1.18/#specifying-the-class-of-an-ingress
+    # ingressClassName: nginx
+
     annotations: {}
 
     labels: {}
@@ -228,6 +232,11 @@ alertmanager:
   ##
   ingressPerReplica:
     enabled: false
+
+    # For Kubernetes >= 1.18 you should specify the ingress-controller via the field ingressClassName
+    # See https://kubernetes.io/blog/2020/04/02/improvements-to-the-ingress-api-in-kubernetes-1.18/#specifying-the-class-of-an-ingress
+    # ingressClassName: nginx
+
     annotations: {}
     labels: {}
 
@@ -278,6 +287,10 @@ alertmanager:
     ## List of IP addresses at which the Prometheus server service is available
     ## Ref: https://kubernetes.io/docs/user-guide/services/#external-ips
     ##
+
+    ## Additional ports to open for Alertmanager service
+    additionalPorts: []
+
     externalIPs: []
     loadBalancerIP: ""
     loadBalancerSourceRanges: []
@@ -380,8 +393,44 @@ alertmanager:
     ##
     # configSecret:
 
+    ## AlertmanagerConfigs to be selected to merge and configure Alertmanager with.
+    ##
+    alertmanagerConfigSelector: {}
+    ## Example which selects all alertmanagerConfig resources
+    ## with label "alertconfig" with values any of "example-config" or "example-config-2"
+    # alertmanagerConfigSelector:
+    #   matchExpressions:
+    #     - key: alertconfig
+    #       operator: In
+    #       values:
+    #         - example-config
+    #         - example-config-2
+    #
+    ## Example which selects all alertmanagerConfig resources with label "role" set to "example-config"
+    # alertmanagerConfigSelector:
+    #   matchLabels:
+    #     role: example-config
+
+    ## Namespaces to be selected for AlertmanagerConfig discovery. If nil, only check own namespace.
+    ##
+    alertmanagerConfigNamespaceSelector: {}
+    ## Example which selects all namespaces
+    ## with label "alertmanagerconfig" with values any of "example-namespace" or "example-namespace-2"
+    # alertmanagerConfigNamespaceSelector:
+    #   matchExpressions:
+    #     - key: alertmanagerconfig
+    #       operator: In
+    #       values:
+    #         - example-namespace
+    #         - example-namespace-2
+
+    ## Example which selects all namespaces with label "alertmanagerconfig" set to "enabled"
+    # alertmanagerConfigNamespaceSelector:
+    #   matchLabels:
+    #     alertmanagerconfig: enabled
+
     ## Define Log Format
-    # Use logfmt (default) or json-formatted logging
+    # Use logfmt (default) or json logging
     logFormat: logfmt
 
     ## Log level for Alertmanager to be configured with.
@@ -489,6 +538,12 @@ alertmanager:
     ## Containers allows injecting additional containers. This is meant to allow adding an authentication proxy to an Alertmanager pod.
     ##
     containers: []
+
+    # Additional volumes on the output StatefulSet definition.
+    volumes: []
+
+    # Additional VolumeMounts on the output StatefulSet definition.
+    volumeMounts: []
 
     ## Priority class assigned to the Pods
     ##
@@ -610,6 +665,10 @@ grafana:
     interval: ""
     selfMonitor: true
 
+    # Path to use for scraping metrics. Might be different if server.root_url is set
+    # in grafana.ini
+    path: "/metrics"
+
     ## 	metric relabel configs to apply to samples before ingestion.
     ##
     metricRelabelings: []
@@ -689,8 +748,9 @@ kubelet:
     probes: true
 
     ## Enable scraping /metrics/resource from kubelet's service
+    ## This is disabled by default because container metrics are already exposed by cAdvisor
     ##
-    resource: true
+    resource: false
     # From kubernetes 1.18, /metrics/resource/v1alpha1 renamed to /metrics/resource
     resourcePath: "/metrics/resource/v1alpha1"
     ## Metric relabellings to apply to samples before ingestion
@@ -1157,23 +1217,11 @@ prometheus-node-exporter:
 prometheusOperator:
   enabled: true
 
-  # If true prometheus operator will create and update its CRDs on startup
-  # Only for prometheusOperator.image.tag < v0.39.0
-  manageCrds: true
-
-  # This is deprecated and will be removed in v11 of the chart. Please use native TLS support below.
-  tlsProxy:
-    enabled: true
-    image:
-      repository: squareup/ghostunnel
-      tag: v1.5.2
-      sha: ""
-      pullPolicy: IfNotPresent
-    resources: {}
-
-  # Prometheus-Operator v0.39.0 and later support TLS natively. To preserve compatibility with tlsProxy, the secret tls-proxy-secret is reused
+  # Prometheus-Operator v0.39.0 and later support TLS natively.
   tls:
-    enabled: false
+    enabled: true
+    # Value must match version names from https://golang.org/pkg/crypto/tls/#pkg-constants
+    tlsMinVersion: VersionTLS13
 
   ## Admission webhook support for PrometheusRules resources added in Prometheus Operator 0.30 can be enabled to prevent incorrectly formatted
   ## rules from making their way into prometheus and potentially preventing the container from starting
@@ -1188,7 +1236,7 @@ prometheusOperator:
       enabled: true
       image:
         repository: jettech/kube-webhook-certgen
-        tag: v1.2.1
+        tag: v1.5.0
         sha: ""
         pullPolicy: IfNotPresent
       resources: {}
@@ -1216,7 +1264,7 @@ prometheusOperator:
   ##
   alertmanagerInstanceNamespaces: []
   prometheusInstanceNamespaces: []
-  thanosInstanceNamespaces: []
+  thanosRulerInstanceNamespaces: []
 
   ## Service account for Alertmanager to use.
   ## ref: https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-account/
@@ -1260,14 +1308,6 @@ prometheusOperator:
     ##
     externalIPs: []
 
-  ## Deploy CRDs used by Prometheus Operator.
-  ##
-  createCustomResource: true
-
-  ## Attempt to clean up CRDs created by Prometheus Operator.
-  ##
-  cleanupCustomResource: false
-
   ## Labels to add to the operator pod
   ##
   podLabels: {}
@@ -1280,7 +1320,7 @@ prometheusOperator:
   # priorityClassName: ""
 
   ## Define Log Format
-  # Use logfmt (default) or json-formatted logging
+  # Use logfmt (default) or json logging
   # logFormat: logfmt
 
   ## Decrease log verbosity to errors only
@@ -1373,7 +1413,7 @@ prometheusOperator:
   ##
   image:
     repository: quay.io/prometheus-operator/prometheus-operator
-    tag: v0.42.1
+    tag: v0.43.2
     sha: ""
     pullPolicy: IfNotPresent
 
@@ -1388,7 +1428,7 @@ prometheusOperator:
   ##
   prometheusConfigReloaderImage:
     repository: quay.io/prometheus-operator/prometheus-config-reloader
-    tag: v0.42.1
+    tag: v0.43.2
     sha: ""
 
   ## Set the prometheus config reloader side-car CPU limit
@@ -1402,14 +1442,6 @@ prometheusOperator:
   ## Set a Field Selector to filter watched secrets
   ##
   secretFieldSelector: ""
-
-  ## kubectl image to use when cleaning up
-  ##
-  kubectlImage:
-    repository: docker.io/bitnami/kubectl
-    tag: 1.16.15
-    sha: ""
-    pullPolicy: IfNotPresent
 
 ## Deploy a Prometheus instance
 ##
@@ -1497,9 +1529,14 @@ prometheus:
     minAvailable: 1
     maxUnavailable: ""
 
-# Ingress exposes thanos sidecar outside the clsuter
+  # Ingress exposes thanos sidecar outside the clsuter
   thanosIngress:
     enabled: false
+
+    # For Kubernetes >= 1.18 you should specify the ingress-controller via the field ingressClassName
+    # See https://kubernetes.io/blog/2020/04/02/improvements-to-the-ingress-api-in-kubernetes-1.18/#specifying-the-class-of-an-ingress
+    # ingressClassName: nginx
+
     annotations: {}
     labels: {}
     servicePort: 10901
@@ -1523,6 +1560,11 @@ prometheus:
 
   ingress:
     enabled: false
+
+    # For Kubernetes >= 1.18 you should specify the ingress-controller via the field ingressClassName
+    # See https://kubernetes.io/blog/2020/04/02/improvements-to-the-ingress-api-in-kubernetes-1.18/#specifying-the-class-of-an-ingress
+    # ingressClassName: nginx
+
     annotations: {}
     labels: {}
 
@@ -1551,6 +1593,11 @@ prometheus:
   ##
   ingressPerReplica:
     enabled: false
+
+    # For Kubernetes >= 1.18 you should specify the ingress-controller via the field ingressClassName
+    # See https://kubernetes.io/blog/2020/04/02/improvements-to-the-ingress-api-in-kubernetes-1.18/#specifying-the-class-of-an-ingress
+    # ingressClassName: nginx
+
     annotations: {}
     labels: {}
 
@@ -1634,6 +1681,10 @@ prometheus:
     ##
     scrapeInterval: ""
 
+    ## Number of seconds to wait for target to respond before erroring
+    ##
+    scrapeTimeout: ""
+
     ## Interval between consecutive evaluations.
     ##
     evaluationInterval: ""
@@ -1652,7 +1703,7 @@ prometheus:
     ##
     image:
       repository: quay.io/prometheus/prometheus
-      tag: v2.21.0
+      tag: v2.22.1
       sha: ""
 
     ## Tolerations for use with node taints
@@ -1905,6 +1956,8 @@ prometheus:
     ## ref: https://github.com/prometheus-operator/prometheus-operator/blob/master/Documentation/user-guides/storage.md
     ##
     storageSpec: {}
+    ## Using PersistentVolumeClaim
+    ##
     #  volumeClaimTemplate:
     #    spec:
     #      storageClassName: gluster
@@ -1914,8 +1967,14 @@ prometheus:
     #          storage: 50Gi
     #    selector: {}
 
+    ## Using tmpfs volume
+    ##
+    #  emptyDir:
+    #    medium: Memory
+
     # Additional volumes on the output StatefulSet definition.
     volumes: []
+
     # Additional VolumeMounts on the output StatefulSet definition.
     volumeMounts: []
 
@@ -1927,7 +1986,7 @@ prometheus:
     ## to break upgrades of Prometheus. It is advised to review Prometheus release notes to ensure that no incompatible
     ## scrape configs are going to break Prometheus after the upgrade.
     ##
-    ## The scrape configuraiton example below will find master nodes, provided they have the name .*mst.*, relabel the
+    ## The scrape configuration example below will find master nodes, provided they have the name .*mst.*, relabel the
     ## port to 2379 and allow etcd scraping provided it is running on all Kubernetes master nodes
     ##
     additionalScrapeConfigs: []

@@ -9,7 +9,7 @@ metadata:
 {{ include "kube-prometheus-stack.labels" . | indent 4 }}
 spec:
 {{- if .Values.alertmanager.alertmanagerSpec.image }}
-  baseImage: {{ .Values.alertmanager.alertmanagerSpec.image.repository }}
+  image: {{ .Values.alertmanager.alertmanagerSpec.image.repository }}:{{ .Values.alertmanager.alertmanagerSpec.image.tag }}
   version: {{ .Values.alertmanager.alertmanagerSpec.image.tag }}
   {{- if .Values.alertmanager.alertmanagerSpec.image.sha }}
   sha: {{ .Values.alertmanager.alertmanagerSpec.image.sha }}
@@ -21,7 +21,7 @@ spec:
 {{- if .Values.alertmanager.alertmanagerSpec.externalUrl }}
   externalUrl: "{{ .Values.alertmanager.alertmanagerSpec.externalUrl }}"
 {{- else if and .Values.alertmanager.ingress.enabled .Values.alertmanager.ingress.hosts }}
-  externalUrl: "http://{{ index .Values.alertmanager.ingress.hosts 0 }}{{ .Values.alertmanager.alertmanagerSpec.routePrefix }}"
+  externalUrl: "http://{{ tpl (index .Values.alertmanager.ingress.hosts 0) . }}{{ .Values.alertmanager.alertmanagerSpec.routePrefix }}"
 {{- else }}
   externalUrl: http://{{ template "kube-prometheus-stack.fullname" . }}-alertmanager.{{ template "kube-prometheus-stack.namespace" . }}:{{ .Values.alertmanager.service.port }}
 {{- end }}
@@ -43,6 +43,14 @@ spec:
 {{- if .Values.alertmanager.alertmanagerSpec.configMaps }}
   configMaps:
 {{ toYaml .Values.alertmanager.alertmanagerSpec.configMaps | indent 4 }}
+{{- end }}
+{{- if .Values.alertmanager.alertmanagerSpec.alertmanagerConfigSelector }}
+  alertmanagerConfigSelector:
+{{ toYaml .Values.alertmanager.alertmanagerSpec.alertmanagerConfigSelector | indent 4}}
+{{- end }}
+{{- if .Values.alertmanager.alertmanagerSpec.alertmanagerConfigNamespaceSelector }}
+  alertmanagerConfigNamespaceSelector:
+{{ toYaml .Values.alertmanager.alertmanagerSpec.alertmanagerConfigNamespaceSelector | indent 4}}
 {{- end }}
 {{- if .Values.alertmanager.alertmanagerSpec.resources }}
   resources:
@@ -108,10 +116,12 @@ spec:
 {{ toYaml .Values.alertmanager.alertmanagerSpec.additionalPeers | indent 4 }}
 {{- end }}
 {{- if .Values.alertmanager.alertmanagerSpec.volumes }}
-  volumes: {{.Values.alertmanager.alertmanagerSpec.volumes }}
+  volumes:
+{{ toYaml .Values.alertmanager.alertmanagerSpec.volumes | indent 4 }}
 {{- end }}
 {{- if .Values.alertmanager.alertmanagerSpec.volumeMounts }}
-  volumeMounts: {{.Values.alertmanager.alertmanagerSpec.volumeMounts }}
+  volumeMounts:
+{{ toYaml .Values.alertmanager.alertmanagerSpec.volumeMounts | indent 4 }}
 {{- end }}
   portName: {{ .Values.alertmanager.alertmanagerSpec.portName }}
 {{- end }}

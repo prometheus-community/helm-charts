@@ -6,7 +6,7 @@ This script generates prometheus rules set for alertmanager from any properly fo
 
 Currently following imported:
 
-- [prometheus-operator/kube-prometheus rules set](https://github.com/prometheus-operator/kube-prometheus/master/manifests/prometheus-rules.yaml)
+- [prometheus-operator/kube-prometheus rules set](https://github.com/prometheus-operator/kube-prometheus/tree/master/manifests/prometheus-rules.yaml)
   - In order to modify these rules:
     - prepare and merge PR into [kubernetes-mixin](https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/rules) master and/or release branch
     - run import inside your fork of [prometheus-operator/kube-prometheus](https://github.com/prometheus-operator/kube-prometheus/tree/master)
@@ -19,7 +19,7 @@ Currently following imported:
     - prepare and merge PR with imported changes into `prometheus-operator/kube-prometheus` master and/or release branch
     - run sync_prometheus_rules.py inside your fork of this repo
     - send PR with changes to this repo
-- [etcd-io/etc rules set](https://github.com/etcd-io/etcd/blob/master/Documentation/op-guide/etcd3_alert.rules.yml)
+- [etcd-io/etcd rules set](https://github.com/etcd-io/etcd/blob/master/Documentation/etcd-mixin/README.md)
   - In order to modify these rules:
     - prepare and merge PR into [etcd-io/etcd](https://github.com/etcd-io/etcd/blob/master/Documentation/op-guide/grafana.json) repo
     - run sync_prometheus_rules.py inside your fork of this repo
@@ -31,10 +31,10 @@ This script generates grafana dashboards from json files, splitting them to sepa
 
 Currently following imported:
 
-- [prometheus-operator/kube-prometheus dashboards](https://github.com/prometheus-operator/kube-prometheus/manifests/grafana-deployment.yaml)
+- [prometheus-operator/kube-prometheus dashboards](https://github.com/prometheus-operator/kube-prometheus/tree/master/manifests/grafana-deployment.yaml)
   - In order to modify these dashboards:
     - prepare and merge PR into [kubernetes-mixin](https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/dashboards) master and/or release branch
-    - run import inside your fork of [prometheus-operator/kube-prometheus](https://github.com/kube-prometheus/kube-prometheus/tree/master)
+    - run import inside your fork of [prometheus-operator/kube-prometheus](https://github.com/prometheus-operator/kube-prometheus/tree/master)
 
      ```bash
      jb update
