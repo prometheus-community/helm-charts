@@ -29,8 +29,7 @@ We would like these checks to pass before we even continue reviewing your change
 Added prometheus-statsd-exporter (I needed one, so I think someone may be in need too)
 
 #### Which issue this PR fixes
-*(optional, in `fixes #<issue number>(, fixes #<issue_number>, ...)` format, will close that issue when PR gets merged)*
-  - fixes #
+
 
 #### Special notes for your reviewer:
 
