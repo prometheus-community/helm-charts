@@ -60,7 +60,3 @@ $ helm show values prometheus-community/prometheus-statsd-exporter
 ### Statsd Exporter Server
 
 - Use early created ConfigMap with file `statsd.mappingConf` contained in data or specify mapping values in `statsd.mappingConfig`
-
-### Helm 2
-I did not tested it due deprecation Helm Version 2.  
-[Official deprecation notice](https://github.com/helm/charts#%EF%B8%8F-deprecation-and-archive-notice)
