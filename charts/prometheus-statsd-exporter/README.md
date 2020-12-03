@@ -7,6 +7,7 @@ This chart bootstraps a [Statsd Exporter](https://github.com/prometheus/statsd_e
 ## Prerequisites
 
 - Kubernetes 1.16+ with Beta APIs enabled
+- Helm 3+
 
 ## Get Repo Info
 
@@ -20,7 +21,6 @@ _See [helm repo](https://helm.sh/docs/helm/helm_repo/) for command documentation
 ## Install Chart
 
 ```console
-# Helm 3
 $ helm install [RELEASE_NAME] prometheus-community/prometheus-statsd-exporter
 ```
 
@@ -31,7 +31,6 @@ _See [helm install](https://helm.sh/docs/helm/helm_install/) for command documen
 ## Uninstall Chart
 
 ```console
-# Helm 3
 $ helm uninstall [RELEASE_NAME]
 ```
 
@@ -42,7 +41,6 @@ _See [helm uninstall](https://helm.sh/docs/helm/helm_uninstall/) for command doc
 ## Upgrading Chart
 
 ```console
-# Helm 3
 $ helm upgrade [RELEASE_NAME] [CHART] --install
 ```
 
@@ -53,7 +51,6 @@ _See [helm upgrade](https://helm.sh/docs/helm/helm_upgrade/) for command documen
 See [Customizing the Chart Before Installing](https://helm.sh/docs/intro/using_helm/#customizing-the-chart-before-installing). To see all configurable options with detailed comments, visit the chart's [values.yaml](./values.yaml), or run these configuration commands:
 
 ```console
-# Helm 3
 $ helm show values prometheus-community/prometheus-statsd-exporter
 ```
 
