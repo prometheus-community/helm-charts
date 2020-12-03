@@ -53,13 +53,14 @@ _See [helm upgrade](https://helm.sh/docs/helm/helm_upgrade/) for command documen
 See [Customizing the Chart Before Installing](https://helm.sh/docs/intro/using_helm/#customizing-the-chart-before-installing). To see all configurable options with detailed comments, visit the chart's [values.yaml](./values.yaml), or run these configuration commands:
 
 ```console
-# Helm 2
-$ helm inspect values prometheus-community/prometheus-rabbitmq-exporter
-
 # Helm 3
-$ helm show values prometheus-community/prometheus-rabbitmq-exporter
+$ helm show values prometheus-community/prometheus-statsd-exporter
 ```
 
-### Statsd Connection
+### Statsd Exporter Server
 
-- To configure Statsd connection by value, set `rabbitmq.url`, `rabbitmq.user` and `rabbitmq.password` (see additional options in the `rabbitmq` configuration block)
+- Use early created ConfigMap with file `statsd.mappingConf` contained in data or specify mapping values in `statsd.mappingConfig`
+
+### Helm 2
+I did not tested it due deprecation Helm Version 2.  
+[Official deprecation notice](https://github.com/helm/charts#%EF%B8%8F-deprecation-and-archive-notice)
