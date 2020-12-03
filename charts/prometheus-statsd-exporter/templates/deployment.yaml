@@ -78,20 +78,20 @@ spec:
               port: http
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
+          {{- if or .Values.statsd.mappingConfigMapName .Values.statsd.mappingConfig }}
           volumeMounts:
             - name: statsd-mapping-config
               mountPath: /etc/prometheus-statsd-exporter
+          {{- end }}
+      {{- if or .Values.statsd.mappingConfigMapName .Values.statsd.mappingConfig }}
       volumes:
         - name: statsd-mapping-config
           configMap:
-            {{- if .Values.statsd.mappingConfigMapName }}
-            name: {{ .Values.statsd.mappingConfigMapName }}
-            {{- else }}
-            name: {{ template "prometheus-statsd-exporter.fullname" . }}
-            {{- end }}
+            name: {{ template "prometheus-statsd-exporter.configMapName" . }}
             items:
               - key: statsd.mappingConf
                 path: statsd-mapping.conf
+      {{- end }}
       {{- with .Values.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
