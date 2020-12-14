@@ -1,0 +1,79 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "prometheus-pingdom-exporter.fullname" . }}
+  labels:
+    {{- include "prometheus-pingdom-exporter.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "prometheus-pingdom-exporter.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- if .Values.pod.annotations }}
+      annotations:
+        {{- toYaml .Values.pod.annotations | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "prometheus-pingdom-exporter.selectorLabels" . | nindent 8 }}
+    spec:
+      containers:
+        - name: {{ .Chart.Name }}
+          args:
+            - server
+            - "$(PINGDOM_USER)"
+            - "$(PINGDOM_PASSWORD)"
+            - "$(PINGDOM_APPID)"
+            - "$(PINGDOM_ACCOUNT)"
+            - "--port={{ .Values.service.port }}"
+            - "--wait={{ .Values.pingdom.wait }}"
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          env:
+            - name: PINGDOM_USER
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "prometheus-pingdom-exporter.name" . }}
+                  key: user
+            - name: PINGDOM_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "prometheus-pingdom-exporter.name" . }}
+                  key: password
+            - name: PINGDOM_APPID
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "prometheus-pingdom-exporter.name" . }}
+                  key: appId
+            - name: PINGDOM_ACCOUNT
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "prometheus-pingdom-exporter.name" . }}
+                  key: accountEmail
+          ports:
+            - name: http
+              containerPort: {{ .Values.service.port }}
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: /
+              port: http
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+    {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}
+    {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}

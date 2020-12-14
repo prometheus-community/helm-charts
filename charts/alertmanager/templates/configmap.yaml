@@ -1,3 +1,4 @@
+{{- if .Values.config }}
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -5,5 +6,10 @@ metadata:
   labels:
     {{- include "alertmanager.labels" . | nindent 4 }}
 data:
-  config.yml: |
+  alertmanager.yml: |
     {{- toYaml .Values.config | default "{}" | nindent 4 }}
+  {{- range $key, $value := .Values.templates }}
+  {{ $key }}: |-
+    {{- $value | nindent 4 }}
+  {{- end }}
+{{- end }}

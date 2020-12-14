@@ -47,7 +47,7 @@ alertmanager:
   ## alertmanager container image
   ##
   image:
-    repository: prom/alertmanager
+    repository: quay.io/prometheus/alertmanager
     tag: v0.21.0
     pullPolicy: IfNotPresent
 
@@ -223,6 +223,11 @@ alertmanager:
     ## Useful if the volume's root directory is not empty
     ##
     subPath: ""
+
+  emptyDir:
+    ## alertmanager emptyDir volume size limit
+    ##
+    sizeLimit: ""
 
   ## Annotations to be added to alertmanager pods
   ##
@@ -432,7 +437,7 @@ nodeExporter:
   ## node-exporter container image
   ##
   image:
-    repository: prom/node-exporter
+    repository: quay.io/prometheus/node-exporter
     tag: v1.0.1
     pullPolicy: IfNotPresent
 
@@ -525,8 +530,11 @@ nodeExporter:
 
   ## Security context to be added to node-exporter pods
   ##
-  securityContext: {}
-    # runAsUser: 0
+  securityContext:
+    fsGroup: 65534
+    runAsGroup: 65534
+    runAsNonRoot: true
+    runAsUser: 65534
 
   service:
     annotations:
@@ -568,13 +576,20 @@ server:
   #   - yournamespace
 
   name: server
-  sidecarContainers:
+
+  # sidecarContainers - add more containers to prometheus server
+  # Key/Value where Key is the sidecar `- name: <Key>`
+  # Example:
+  #   sidecarContainers:
+  #      webserver:
+  #        image: nginx
+  sidecarContainers: {}
 
   ## Prometheus server container image
   ##
   image:
-    repository: prom/prometheus
-    tag: v2.21.0
+    repository: quay.io/prometheus/prometheus
+    tag: v2.22.1
     pullPolicy: IfNotPresent
 
   ## prometheus server priorityClassName
@@ -592,7 +607,7 @@ server:
   ## (Optional)
   prefixURL: ""
 
-  ## External URL which can access alertmanager
+  ## External URL which can access prometheus
   ## Maybe same with Ingress host name
   baseURL: ""
 
@@ -821,6 +836,8 @@ server:
     subPath: ""
 
   emptyDir:
+    ## Prometheus server emptyDir volume size limit
+    ##
     sizeLimit: ""
 
   ## Annotations to be added to Prometheus server pods
@@ -885,12 +902,12 @@ server:
   ##
   readinessProbeInitialDelay: 30
   readinessProbePeriodSeconds: 5
-  readinessProbeTimeout: 30
+  readinessProbeTimeout: 4
   readinessProbeFailureThreshold: 3
   readinessProbeSuccessThreshold: 1
   livenessProbeInitialDelay: 30
   livenessProbePeriodSeconds: 15
-  livenessProbeTimeout: 30
+  livenessProbeTimeout: 10
   livenessProbeFailureThreshold: 3
   livenessProbeSuccessThreshold: 1
 
@@ -977,7 +994,7 @@ pushgateway:
   ##
   image:
     repository: prom/pushgateway
-    tag: v1.2.0
+    tag: v1.3.0
     pullPolicy: IfNotPresent
 
   ## pushgateway priorityClassName
@@ -1114,7 +1131,6 @@ pushgateway:
 
   persistentVolume:
     ## If true, pushgateway will create/use a Persistent Volume Claim
-    ## If false, use emptyDir
     ##
     enabled: false
 
@@ -1526,7 +1542,7 @@ serverFiles:
             action: drop
 
       # Example Scrape config for pods which should be scraped slower. An useful example
-      # would be stackriver-exporter which querys an API on every scrape of the pod
+      # would be stackriver-exporter which queries an API on every scrape of the pod
       #
       # The relabeling allows the actual pod scrape endpoint to be configured via the
       # following annotations:

@@ -32,7 +32,7 @@ spec:
 {{ toYaml .Values.prometheus.prometheusSpec.apiserverConfig | indent 4}}
 {{- end }}
 {{- if .Values.prometheus.prometheusSpec.image }}
-  baseImage: {{ .Values.prometheus.prometheusSpec.image.repository }}
+  image: {{ .Values.prometheus.prometheusSpec.image.repository }}:{{ .Values.prometheus.prometheusSpec.image.tag }}
   version: {{ .Values.prometheus.prometheusSpec.image.tag }}
   {{- if .Values.prometheus.prometheusSpec.image.sha }}
   sha: {{ .Values.prometheus.prometheusSpec.image.sha }}
@@ -71,6 +71,9 @@ spec:
   enableAdminAPI: {{ .Values.prometheus.prometheusSpec.enableAdminAPI }}
 {{- if .Values.prometheus.prometheusSpec.scrapeInterval }}
   scrapeInterval: {{ .Values.prometheus.prometheusSpec.scrapeInterval }}
+{{- end }}
+{{- if .Values.prometheus.prometheusSpec.scrapeTimeout }}
+  scrapeTimeout: {{ .Values.prometheus.prometheusSpec.scrapeTimeout }}
 {{- end }}
 {{- if .Values.prometheus.prometheusSpec.evaluationInterval }}
   evaluationInterval: {{ .Values.prometheus.prometheusSpec.evaluationInterval }}
@@ -130,6 +133,22 @@ spec:
 {{ else }}
   podMonitorNamespaceSelector: {}
 {{- end }}
+{{- if .Values.prometheus.prometheusSpec.probeSelector }}
+  probeSelector:
+{{ toYaml .Values.prometheus.prometheusSpec.probeSelector | indent 4 }}
+{{ else if .Values.prometheus.prometheusSpec.probeSelectorNilUsesHelmValues  }}
+  probeSelector:
+    matchLabels:
+      release: {{ $.Release.Name | quote }}
+{{ else }}
+  probeSelector: {}
+{{- end }}
+{{- if .Values.prometheus.prometheusSpec.probeNamespaceSelector }}
+  probeNamespaceSelector:
+{{ toYaml .Values.prometheus.prometheusSpec.probeNamespaceSelector | indent 4 }}
+{{ else }}
+  probeNamespaceSelector: {}
+{{- end }}
 {{- if .Values.prometheus.prometheusSpec.remoteRead }}
   remoteRead:
 {{ toYaml .Values.prometheus.prometheusSpec.remoteRead | indent 4 }}
@@ -165,7 +184,7 @@ spec:
 {{- end }}
 {{- if .Values.prometheus.prometheusSpec.podMetadata }}
   podMetadata:
-{{ toYaml .Values.prometheus.prometheusSpec.podMetadata | indent 4 }}
+{{ tpl (toYaml .Values.prometheus.prometheusSpec.podMetadata | indent 4) . }}
 {{- end }}
 {{- if .Values.prometheus.prometheusSpec.query }}
   query:
@@ -254,4 +273,30 @@ spec:
 {{- if .Values.prometheus.prometheusSpec.volumeMounts }}
   volumeMounts:
 {{ toYaml .Values.prometheus.prometheusSpec.volumeMounts | indent 4 }}
+{{- end }}
+{{- if .Values.prometheus.prometheusSpec.arbitraryFSAccessThroughSMs }}
+  arbitraryFSAccessThroughSMs:
+{{ toYaml .Values.prometheus.prometheusSpec.arbitraryFSAccessThroughSMs | indent 4 }}
+{{- end }}
+{{- if .Values.prometheus.prometheusSpec.overrideHonorLabels }}
+  overrideHonorLabels: {{ .Values.prometheus.prometheusSpec.overrideHonorLabels }}
+{{- end }}
+{{- if .Values.prometheus.prometheusSpec.overrideHonorTimestamps }}
+  overrideHonorTimestamps: {{ .Values.prometheus.prometheusSpec.overrideHonorTimestamps }}
+{{- end }}
+{{- if .Values.prometheus.prometheusSpec.ignoreNamespaceSelectors }}
+  ignoreNamespaceSelectors: {{ .Values.prometheus.prometheusSpec.ignoreNamespaceSelectors }}
+{{- end }}
+{{- if .Values.prometheus.prometheusSpec.prometheusRulesExcludedFromEnforce }}
+  prometheusRulesExcludedFromEnforce:
+{{ toYaml .Values.prometheus.prometheusSpec.prometheusRulesExcludedFromEnforce | indent 4 }}
+{{- end }}
+{{- if .Values.prometheus.prometheusSpec.queryLogFile }}
+  queryLogFile: {{ .Values.prometheus.prometheusSpec.queryLogFile }}
+{{- end }}
+{{- if .Values.prometheus.prometheusSpec.enforcedSampleLimit }}
+  enforcedSampleLimit: {{ .Values.prometheus.prometheusSpec.enforcedSampleLimit }}
+{{- end }}
+{{- if .Values.prometheus.prometheusSpec.allowOverlappingBlocks }}
+  allowOverlappingBlocks: {{ .Values.prometheus.prometheusSpec.allowOverlappingBlocks }}
 {{- end }}

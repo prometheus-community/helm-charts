@@ -13,6 +13,36 @@ podDisruptionBudget: {}
 ##   NO_PROXY: "localhost,127.0.0.1"
 extraEnv: {}
 
+extraVolumes: []
+  # - name: secret-blackbox-oauth-htpasswd
+  #   secret:
+  #     defaultMode: 420
+  #     secretName: blackbox-oauth-htpasswd
+  # - name: storage-volume
+  #   persistentVolumeClaim:
+  #     claimName: example
+
+extraContainers: []
+  # - name: oAuth2-proxy
+  #   args:
+  #     - -https-address=:9116
+  #     - -upstream=http://localhost:9115
+  #     - -skip-auth-regex=^/metrics
+  #     - -openshift-delegate-urls={"/":{"group":"monitoring.coreos.com","resource":"prometheuses","verb":"get"}}
+  #   image: openshift/oauth-proxy:v1.1.0
+  #   ports:
+  #       - containerPort: 9116
+  #         name: proxy
+  #   resources:
+  #       limits:
+  #         memory: 16Mi
+  #       requests:
+  #         memory: 4Mi
+  #         cpu: 20m
+  #   volumeMounts:
+  #     - mountPath: /etc/prometheus/secrets/blackbox-tls
+  #       name: secret-blackbox-tls
+
 ## Enable pod security policy
 pspEnabled: true
 
@@ -24,7 +54,7 @@ strategy:
 
 image:
   repository: prom/blackbox-exporter
-  tag: v0.17.0
+  tag: v0.18.0
   pullPolicy: IfNotPresent
 
   ## Optionally specify an array of imagePullSecrets.
@@ -38,6 +68,7 @@ image:
 runAsUser: 1000
 readOnlyRootFilesystem: true
 runAsNonRoot: true
+
 
 livenessProbe:
   httpGet:
@@ -53,6 +84,11 @@ nodeSelector: {}
 tolerations: []
 affinity: {}
 
+# if the configuration is managed as secret outside the chart, using SealedSecret for example,
+# provide the name of the secret here. If secretConfig is set to true, configExistingSecretName will be ignored
+# in favor of the config value.
+configExistingSecretName: ""
+# Store the configuration as a `Secret` instead of a `ConfigMap`, useful in case it contains sensitive data
 secretConfig: false
 config:
   modules:
@@ -96,7 +132,7 @@ service:
   labels: {}
   type: ClusterIP
   port: 9115
-
+  targetPort: 9115
 serviceAccount:
   # Specifies whether a ServiceAccount should be created
   create: true
@@ -146,6 +182,12 @@ serviceMonitor:
     interval: 30s
     scrapeTimeout: 30s
     module: http_2xx
+  ## scheme: HTTP scheme to use for scraping. Can be used with `tlsConfig` for example if using istio mTLS.
+  scheme: http
+  ## tlsConfig: TLS configuration to use when scraping the endpoint. For example if using istio mTLS.
+  ## Of type: https://github.com/coreos/prometheus-operator/blob/master/Documentation/api.md#tlsconfig
+  tlsConfig: {}
+  bearerTokenFile:
 
   targets:
 #    - name: example                    # Human readable URL that will appear in Prometheus / AlertManager
@@ -169,6 +211,8 @@ networkPolicy:
   # Enable network policy and allow access from anywhere
   enabled: false
   # Limit access only from monitoring namespace
+  # Before setting this value to true, you must add the name=monitoring label to the monitoring namespace
+  # Network Policy uses label filtering
   allowMonitoringNamespace: false
 
 ## dnsPolicy and dnsConfig for Deployments and Daemonsets if you want non-default settings.

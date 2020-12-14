@@ -4,7 +4,7 @@ Do not change in-place! In order to change this file first read following link:
 https://github.com/prometheus-community/helm-charts/tree/main/charts/kube-prometheus-stack/hack
 */ -}}
 {{- $kubeTargetVersion := default .Capabilities.KubeVersion.GitVersion .Values.kubeTargetVersionOverride }}
-{{- if and (semverCompare ">=1.14.0-0" $kubeTargetVersion) (semverCompare "<9.9.9-9" $kubeTargetVersion) .Values.defaultRules.create .Values.nodeExporter.enabled .Values.defaultRules.rules.node }}
+{{- if and (semverCompare ">=1.14.0-0" $kubeTargetVersion) (semverCompare "<9.9.9-9" $kubeTargetVersion) .Values.defaultRules.create .Values.defaultRules.rules.node }}
 apiVersion: monitoring.coreos.com/v1
 kind: PrometheusRule
 metadata:
@@ -40,6 +40,9 @@ spec:
       for: 1h
       labels:
         severity: warning
+{{- if .Values.defaultRules.additionalRuleLabels }}
+{{ toYaml .Values.defaultRules.additionalRuleLabels | indent 8 }}
+{{- end }}
     - alert: NodeFilesystemSpaceFillingUp
       annotations:
         description: Filesystem on {{`{{`}} $labels.device {{`}}`}} at {{`{{`}} $labels.instance {{`}}`}} has only {{`{{`}} printf "%.2f" $value {{`}}`}}% available space left and is filling up fast.
@@ -56,6 +59,9 @@ spec:
       for: 1h
       labels:
         severity: critical
+{{- if .Values.defaultRules.additionalRuleLabels }}
+{{ toYaml .Values.defaultRules.additionalRuleLabels | indent 8 }}
+{{- end }}
     - alert: NodeFilesystemAlmostOutOfSpace
       annotations:
         description: Filesystem on {{`{{`}} $labels.device {{`}}`}} at {{`{{`}} $labels.instance {{`}}`}} has only {{`{{`}} printf "%.2f" $value {{`}}`}}% available space left.
@@ -70,6 +76,9 @@ spec:
       for: 1h
       labels:
         severity: warning
+{{- if .Values.defaultRules.additionalRuleLabels }}
+{{ toYaml .Values.defaultRules.additionalRuleLabels | indent 8 }}
+{{- end }}
     - alert: NodeFilesystemAlmostOutOfSpace
       annotations:
         description: Filesystem on {{`{{`}} $labels.device {{`}}`}} at {{`{{`}} $labels.instance {{`}}`}} has only {{`{{`}} printf "%.2f" $value {{`}}`}}% available space left.
@@ -84,6 +93,9 @@ spec:
       for: 1h
       labels:
         severity: critical
+{{- if .Values.defaultRules.additionalRuleLabels }}
+{{ toYaml .Values.defaultRules.additionalRuleLabels | indent 8 }}
+{{- end }}
     - alert: NodeFilesystemFilesFillingUp
       annotations:
         description: Filesystem on {{`{{`}} $labels.device {{`}}`}} at {{`{{`}} $labels.instance {{`}}`}} has only {{`{{`}} printf "%.2f" $value {{`}}`}}% available inodes left and is filling up.
@@ -100,6 +112,9 @@ spec:
       for: 1h
       labels:
         severity: warning
+{{- if .Values.defaultRules.additionalRuleLabels }}
+{{ toYaml .Values.defaultRules.additionalRuleLabels | indent 8 }}
+{{- end }}
     - alert: NodeFilesystemFilesFillingUp
       annotations:
         description: Filesystem on {{`{{`}} $labels.device {{`}}`}} at {{`{{`}} $labels.instance {{`}}`}} has only {{`{{`}} printf "%.2f" $value {{`}}`}}% available inodes left and is filling up fast.
@@ -116,6 +131,9 @@ spec:
       for: 1h
       labels:
         severity: critical
+{{- if .Values.defaultRules.additionalRuleLabels }}
+{{ toYaml .Values.defaultRules.additionalRuleLabels | indent 8 }}
+{{- end }}
     - alert: NodeFilesystemAlmostOutOfFiles
       annotations:
         description: Filesystem on {{`{{`}} $labels.device {{`}}`}} at {{`{{`}} $labels.instance {{`}}`}} has only {{`{{`}} printf "%.2f" $value {{`}}`}}% available inodes left.
@@ -130,6 +148,9 @@ spec:
       for: 1h
       labels:
         severity: warning
+{{- if .Values.defaultRules.additionalRuleLabels }}
+{{ toYaml .Values.defaultRules.additionalRuleLabels | indent 8 }}
+{{- end }}
     - alert: NodeFilesystemAlmostOutOfFiles
       annotations:
         description: Filesystem on {{`{{`}} $labels.device {{`}}`}} at {{`{{`}} $labels.instance {{`}}`}} has only {{`{{`}} printf "%.2f" $value {{`}}`}}% available inodes left.
@@ -144,24 +165,33 @@ spec:
       for: 1h
       labels:
         severity: critical
+{{- if .Values.defaultRules.additionalRuleLabels }}
+{{ toYaml .Values.defaultRules.additionalRuleLabels | indent 8 }}
+{{- end }}
     - alert: NodeNetworkReceiveErrs
       annotations:
         description: '{{`{{`}} $labels.instance {{`}}`}} interface {{`{{`}} $labels.device {{`}}`}} has encountered {{`{{`}} printf "%.0f" $value {{`}}`}} receive errors in the last two minutes.'
         runbook_url: {{ .Values.defaultRules.runbookUrl }}alert-name-nodenetworkreceiveerrs
         summary: Network interface is reporting many receive errors.
-      expr: increase(node_network_receive_errs_total[2m]) > 10
+      expr: rate(node_network_receive_errs_total[2m]) / rate(node_network_receive_packets_total[2m]) > 0.01
       for: 1h
       labels:
         severity: warning
+{{- if .Values.defaultRules.additionalRuleLabels }}
+{{ toYaml .Values.defaultRules.additionalRuleLabels | indent 8 }}
+{{- end }}
     - alert: NodeNetworkTransmitErrs
       annotations:
         description: '{{`{{`}} $labels.instance {{`}}`}} interface {{`{{`}} $labels.device {{`}}`}} has encountered {{`{{`}} printf "%.0f" $value {{`}}`}} transmit errors in the last two minutes.'
         runbook_url: {{ .Values.defaultRules.runbookUrl }}alert-name-nodenetworktransmiterrs
         summary: Network interface is reporting many transmit errors.
-      expr: increase(node_network_transmit_errs_total[2m]) > 10
+      expr: rate(node_network_transmit_errs_total[2m]) / rate(node_network_transmit_packets_total[2m]) > 0.01
       for: 1h
       labels:
         severity: warning
+{{- if .Values.defaultRules.additionalRuleLabels }}
+{{ toYaml .Values.defaultRules.additionalRuleLabels | indent 8 }}
+{{- end }}
     - alert: NodeHighNumberConntrackEntriesUsed
       annotations:
         description: '{{`{{`}} $value | humanizePercentage {{`}}`}} of conntrack entries are used.'
@@ -170,6 +200,9 @@ spec:
       expr: (node_nf_conntrack_entries / node_nf_conntrack_entries_limit) > 0.75
       labels:
         severity: warning
+{{- if .Values.defaultRules.additionalRuleLabels }}
+{{ toYaml .Values.defaultRules.additionalRuleLabels | indent 8 }}
+{{- end }}
     - alert: NodeTextFileCollectorScrapeError
       annotations:
         description: Node Exporter text file collector failed to scrape.
@@ -178,6 +211,9 @@ spec:
       expr: node_textfile_scrape_error{job="node-exporter"} == 1
       labels:
         severity: warning
+{{- if .Values.defaultRules.additionalRuleLabels }}
+{{ toYaml .Values.defaultRules.additionalRuleLabels | indent 8 }}
+{{- end }}
     - alert: NodeClockSkewDetected
       annotations:
         message: Clock on {{`{{`}} $labels.instance {{`}}`}} is out of sync by more than 300s. Ensure NTP is configured correctly on this host.
@@ -198,15 +234,24 @@ spec:
       for: 10m
       labels:
         severity: warning
+{{- if .Values.defaultRules.additionalRuleLabels }}
+{{ toYaml .Values.defaultRules.additionalRuleLabels | indent 8 }}
+{{- end }}
     - alert: NodeClockNotSynchronising
       annotations:
         message: Clock on {{`{{`}} $labels.instance {{`}}`}} is not synchronising. Ensure NTP is configured on this host.
         runbook_url: {{ .Values.defaultRules.runbookUrl }}alert-name-nodeclocknotsynchronising
         summary: Clock not synchronising.
-      expr: min_over_time(node_timex_sync_status[5m]) == 0
+      expr: |-
+        min_over_time(node_timex_sync_status[5m]) == 0
+        and
+        node_timex_maxerror_seconds >= 16
       for: 10m
       labels:
         severity: warning
+{{- if .Values.defaultRules.additionalRuleLabels }}
+{{ toYaml .Values.defaultRules.additionalRuleLabels | indent 8 }}
+{{- end }}
     - alert: NodeRAIDDegraded
       annotations:
         description: RAID array '{{`{{`}} $labels.device {{`}}`}}' on {{`{{`}} $labels.instance {{`}}`}} is in degraded state due to one or more disks failures. Number of spare drives is insufficient to fix issue automatically.
@@ -216,6 +261,9 @@ spec:
       for: 15m
       labels:
         severity: critical
+{{- if .Values.defaultRules.additionalRuleLabels }}
+{{ toYaml .Values.defaultRules.additionalRuleLabels | indent 8 }}
+{{- end }}
     - alert: NodeRAIDDiskFailure
       annotations:
         description: At least one device in RAID array on {{`{{`}} $labels.instance {{`}}`}} failed. Array '{{`{{`}} $labels.device {{`}}`}}' needs attention and possibly a disk swap.
@@ -224,4 +272,7 @@ spec:
       expr: node_md_disks{state="fail"} > 0
       labels:
         severity: warning
+{{- if .Values.defaultRules.additionalRuleLabels }}
+{{ toYaml .Values.defaultRules.additionalRuleLabels | indent 8 }}
+{{- end }}
 {{- end }}

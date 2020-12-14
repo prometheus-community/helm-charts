@@ -64,6 +64,9 @@ defaultRules:
   ## Annotations for default rules
   annotations: {}
 
+  ## Additional labels for PrometheusRule alerts
+  additionalRuleLabels: {}
+
 ## Deprecated way to provide custom recording or alerting rules to be deployed into the cluster.
 ##
 # additionalPrometheusRules: []
@@ -193,6 +196,10 @@ alertmanager:
   ingress:
     enabled: false
 
+    # For Kubernetes >= 1.18 you should specify the ingress-controller via the field ingressClassName
+    # See https://kubernetes.io/blog/2020/04/02/improvements-to-the-ingress-api-in-kubernetes-1.18/#specifying-the-class-of-an-ingress
+    # ingressClassName: nginx
+
     annotations: {}
 
     labels: {}
@@ -225,6 +232,11 @@ alertmanager:
   ##
   ingressPerReplica:
     enabled: false
+
+    # For Kubernetes >= 1.18 you should specify the ingress-controller via the field ingressClassName
+    # See https://kubernetes.io/blog/2020/04/02/improvements-to-the-ingress-api-in-kubernetes-1.18/#specifying-the-class-of-an-ingress
+    # ingressClassName: nginx
+
     annotations: {}
     labels: {}
 
@@ -275,6 +287,10 @@ alertmanager:
     ## List of IP addresses at which the Prometheus server service is available
     ## Ref: https://kubernetes.io/docs/user-guide/services/#external-ips
     ##
+
+    ## Additional ports to open for Alertmanager service
+    additionalPorts: []
+
     externalIPs: []
     loadBalancerIP: ""
     loadBalancerSourceRanges: []
@@ -377,8 +393,44 @@ alertmanager:
     ##
     # configSecret:
 
+    ## AlertmanagerConfigs to be selected to merge and configure Alertmanager with.
+    ##
+    alertmanagerConfigSelector: {}
+    ## Example which selects all alertmanagerConfig resources
+    ## with label "alertconfig" with values any of "example-config" or "example-config-2"
+    # alertmanagerConfigSelector:
+    #   matchExpressions:
+    #     - key: alertconfig
+    #       operator: In
+    #       values:
+    #         - example-config
+    #         - example-config-2
+    #
+    ## Example which selects all alertmanagerConfig resources with label "role" set to "example-config"
+    # alertmanagerConfigSelector:
+    #   matchLabels:
+    #     role: example-config
+
+    ## Namespaces to be selected for AlertmanagerConfig discovery. If nil, only check own namespace.
+    ##
+    alertmanagerConfigNamespaceSelector: {}
+    ## Example which selects all namespaces
+    ## with label "alertmanagerconfig" with values any of "example-namespace" or "example-namespace-2"
+    # alertmanagerConfigNamespaceSelector:
+    #   matchExpressions:
+    #     - key: alertmanagerconfig
+    #       operator: In
+    #       values:
+    #         - example-namespace
+    #         - example-namespace-2
+
+    ## Example which selects all namespaces with label "alertmanagerconfig" set to "enabled"
+    # alertmanagerConfigNamespaceSelector:
+    #   matchLabels:
+    #     alertmanagerconfig: enabled
+
     ## Define Log Format
-    # Use logfmt (default) or json-formatted logging
+    # Use logfmt (default) or json logging
     logFormat: logfmt
 
     ## Log level for Alertmanager to be configured with.
@@ -487,6 +539,16 @@ alertmanager:
     ##
     containers: []
 
+    # Additional volumes on the output StatefulSet definition.
+    volumes: []
+
+    # Additional VolumeMounts on the output StatefulSet definition.
+    volumeMounts: []
+
+    ## InitContainers allows injecting additional initContainers. This is meant to allow doing some changes
+    ## (permissions, dir tree) on mounted volumes before starting prometheus
+    initContainers: []
+
     ## Priority class assigned to the Pods
     ##
     priorityClassName: ""
@@ -498,6 +560,14 @@ alertmanager:
     ## PortName to use for Alert Manager.
     ##
     portName: "web"
+
+    ## ClusterAdvertiseAddress is the explicit address to advertise in cluster. Needs to be provided for non RFC1918 [1] (public) addresses. [1] RFC1918: https://tools.ietf.org/html/rfc1918
+    ##
+    clusterAdvertiseAddress: false
+
+    ## ForceEnableClusterMode ensures Alertmanager does not deactivate the cluster mode when running with a single replica.
+    ## Use case is e.g. spanning an Alertmanager cluster across Kubernetes clusters with a single replica in each.
+    forceEnableClusterMode: false
 
 
 ## Using default values from https://github.com/grafana/helm-charts/blob/main/charts/grafana/values.yaml
@@ -553,6 +623,7 @@ grafana:
       ## Annotations for Grafana dashboard configmaps
       ##
       annotations: {}
+      multicluster: false
     datasources:
       enabled: true
       defaultDatasourceEnabled: true
@@ -602,6 +673,10 @@ grafana:
     ##
     interval: ""
     selfMonitor: true
+
+    # Path to use for scraping metrics. Might be different if server.root_url is set
+    # in grafana.ini
+    path: "/metrics"
 
     ## 	metric relabel configs to apply to samples before ingestion.
     ##
@@ -682,8 +757,9 @@ kubelet:
     probes: true
 
     ## Enable scraping /metrics/resource from kubelet's service
+    ## This is disabled by default because container metrics are already exposed by cAdvisor
     ##
-    resource: true
+    resource: false
     # From kubernetes 1.18, /metrics/resource/v1alpha1 renamed to /metrics/resource
     resourcePath: "/metrics/resource/v1alpha1"
     ## Metric relabellings to apply to samples before ingestion
@@ -1150,18 +1226,11 @@ prometheus-node-exporter:
 prometheusOperator:
   enabled: true
 
-  # If true prometheus operator will create and update its CRDs on startup
-  # Only for prometheusOperator.image.tag < v0.39.0
-  manageCrds: true
-
-  tlsProxy:
+  # Prometheus-Operator v0.39.0 and later support TLS natively.
+  tls:
     enabled: true
-    image:
-      repository: squareup/ghostunnel
-      tag: v1.5.2
-      sha: ""
-      pullPolicy: IfNotPresent
-    resources: {}
+    # Value must match version names from https://golang.org/pkg/crypto/tls/#pkg-constants
+    tlsMinVersion: VersionTLS13
 
   ## Admission webhook support for PrometheusRules resources added in Prometheus Operator 0.30 can be enabled to prevent incorrectly formatted
   ## rules from making their way into prometheus and potentially preventing the container from starting
@@ -1176,7 +1245,7 @@ prometheusOperator:
       enabled: true
       image:
         repository: jettech/kube-webhook-certgen
-        tag: v1.2.1
+        tag: v1.5.0
         sha: ""
         pullPolicy: IfNotPresent
       resources: {}
@@ -1199,6 +1268,12 @@ prometheusOperator:
   ## Namespaces not to scope the interaction of the Prometheus Operator (deny list).
   ##
   denyNamespaces: []
+
+  ## Filter namespaces to look for prometheus-operator custom resources
+  ##
+  alertmanagerInstanceNamespaces: []
+  prometheusInstanceNamespaces: []
+  thanosRulerInstanceNamespaces: []
 
   ## Service account for Alertmanager to use.
   ## ref: https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-account/
@@ -1242,14 +1317,6 @@ prometheusOperator:
     ##
     externalIPs: []
 
-  ## Deploy CRDs used by Prometheus Operator.
-  ##
-  createCustomResource: true
-
-  ## Attempt to clean up CRDs created by Prometheus Operator.
-  ##
-  cleanupCustomResource: false
-
   ## Labels to add to the operator pod
   ##
   podLabels: {}
@@ -1262,7 +1329,7 @@ prometheusOperator:
   # priorityClassName: ""
 
   ## Define Log Format
-  # Use logfmt (default) or json-formatted logging
+  # Use logfmt (default) or json logging
   # logFormat: logfmt
 
   ## Decrease log verbosity to errors only
@@ -1354,8 +1421,8 @@ prometheusOperator:
   ## Prometheus-operator image
   ##
   image:
-    repository: quay.io/coreos/prometheus-operator
-    tag: v0.38.1
+    repository: quay.io/prometheus-operator/prometheus-operator
+    tag: v0.44.0
     sha: ""
     pullPolicy: IfNotPresent
 
@@ -1363,14 +1430,14 @@ prometheusOperator:
   ##
   configmapReloadImage:
     repository: docker.io/jimmidyson/configmap-reload
-    tag: v0.3.0
+    tag: v0.4.0
     sha: ""
 
   ## Prometheus-config-reloader image to use for config and rule reloading
   ##
   prometheusConfigReloaderImage:
-    repository: quay.io/coreos/prometheus-config-reloader
-    tag: v0.38.1
+    repository: quay.io/prometheus-operator/prometheus-config-reloader
+    tag: v0.44.0
     sha: ""
 
   ## Set the prometheus config reloader side-car CPU limit
@@ -1384,14 +1451,6 @@ prometheusOperator:
   ## Set a Field Selector to filter watched secrets
   ##
   secretFieldSelector: ""
-
-  ## kubectl image to use when cleaning up
-  ##
-  kubectlImage:
-    repository: docker.io/bitnami/kubectl
-    tag: 1.16.15
-    sha: ""
-    pullPolicy: IfNotPresent
 
 ## Deploy a Prometheus instance
 ##
@@ -1479,9 +1538,14 @@ prometheus:
     minAvailable: 1
     maxUnavailable: ""
 
-# Ingress exposes thanos sidecar outside the clsuter
+  # Ingress exposes thanos sidecar outside the clsuter
   thanosIngress:
     enabled: false
+
+    # For Kubernetes >= 1.18 you should specify the ingress-controller via the field ingressClassName
+    # See https://kubernetes.io/blog/2020/04/02/improvements-to-the-ingress-api-in-kubernetes-1.18/#specifying-the-class-of-an-ingress
+    # ingressClassName: nginx
+
     annotations: {}
     labels: {}
     servicePort: 10901
@@ -1505,6 +1569,11 @@ prometheus:
 
   ingress:
     enabled: false
+
+    # For Kubernetes >= 1.18 you should specify the ingress-controller via the field ingressClassName
+    # See https://kubernetes.io/blog/2020/04/02/improvements-to-the-ingress-api-in-kubernetes-1.18/#specifying-the-class-of-an-ingress
+    # ingressClassName: nginx
+
     annotations: {}
     labels: {}
 
@@ -1533,6 +1602,11 @@ prometheus:
   ##
   ingressPerReplica:
     enabled: false
+
+    # For Kubernetes >= 1.18 you should specify the ingress-controller via the field ingressClassName
+    # See https://kubernetes.io/blog/2020/04/02/improvements-to-the-ingress-api-in-kubernetes-1.18/#specifying-the-class-of-an-ingress
+    # ingressClassName: nginx
+
     annotations: {}
     labels: {}
 
@@ -1613,8 +1687,14 @@ prometheus:
     apiserverConfig: {}
 
     ## Interval between consecutive scrapes.
+    ## Defaults to 30s.
+    ## ref: https://github.com/prometheus-operator/prometheus-operator/blob/release-0.44/pkg/prometheus/promcfg.go#L180-L183
     ##
     scrapeInterval: ""
+
+    ## Number of seconds to wait for target to respond before erroring
+    ##
+    scrapeTimeout: ""
 
     ## Interval between consecutive evaluations.
     ##
@@ -1634,7 +1714,7 @@ prometheus:
     ##
     image:
       repository: quay.io/prometheus/prometheus
-      tag: v2.18.2
+      tag: v2.22.1
       sha: ""
 
     ## Tolerations for use with node taints
@@ -1778,6 +1858,26 @@ prometheus:
     ##
     podMonitorNamespaceSelector: {}
 
+    ## If true, a nil or {} value for prometheus.prometheusSpec.probeSelector will cause the
+    ## prometheus resource to be created with selectors based on values in the helm deployment,
+    ## which will also match the probes created
+    ##
+    probeSelectorNilUsesHelmValues: true
+
+    ## Probes to be selected for target discovery.
+    ## If {}, select all Probes
+    ##
+    probeSelector: {}
+    ## Example which selects Probes with label "prometheus" set to "somelabel"
+    # probeSelector:
+    #   matchLabels:
+    #     prometheus: somelabel
+
+    ## Namespaces to be selected for Probe discovery.
+    ## See https://github.com/prometheus-operator/prometheus-operator/blob/master/Documentation/api.md#namespaceselector for usage
+    ##
+    probeNamespaceSelector: {}
+
     ## How long to retain metrics
     ##
     retention: 10d
@@ -1867,6 +1967,8 @@ prometheus:
     ## ref: https://github.com/prometheus-operator/prometheus-operator/blob/master/Documentation/user-guides/storage.md
     ##
     storageSpec: {}
+    ## Using PersistentVolumeClaim
+    ##
     #  volumeClaimTemplate:
     #    spec:
     #      storageClassName: gluster
@@ -1876,8 +1978,14 @@ prometheus:
     #          storage: 50Gi
     #    selector: {}
 
+    ## Using tmpfs volume
+    ##
+    #  emptyDir:
+    #    medium: Memory
+
     # Additional volumes on the output StatefulSet definition.
     volumes: []
+
     # Additional VolumeMounts on the output StatefulSet definition.
     volumeMounts: []
 
@@ -1889,7 +1997,7 @@ prometheus:
     ## to break upgrades of Prometheus. It is advised to review Prometheus release notes to ensure that no incompatible
     ## scrape configs are going to break Prometheus after the upgrade.
     ##
-    ## The scrape configuraiton example below will find master nodes, provided they have the name .*mst.*, relabel the
+    ## The scrape configuration example below will find master nodes, provided they have the name .*mst.*, relabel the
     ## port to 2379 and allow etcd scraping provided it is running on all Kubernetes master nodes
     ##
     additionalScrapeConfigs: []
@@ -1994,6 +2102,46 @@ prometheus:
     ## PortName to use for Prometheus.
     ##
     portName: "web"
+
+    ## ArbitraryFSAccessThroughSMs configures whether configuration based on a service monitor can access arbitrary files
+    ## on the file system of the Prometheus container e.g. bearer token files.
+    arbitraryFSAccessThroughSMs: false
+
+    ## OverrideHonorLabels if set to true overrides all user configured honor_labels. If HonorLabels is set in ServiceMonitor
+    ## or PodMonitor to true, this overrides honor_labels to false.
+    overrideHonorLabels: false
+
+    ## OverrideHonorTimestamps allows to globally enforce honoring timestamps in all scrape configs.
+    overrideHonorTimestamps: false
+
+    ## IgnoreNamespaceSelectors if set to true will ignore NamespaceSelector settings from the podmonitor and servicemonitor
+    ## configs, and they will only discover endpoints within their current namespace. Defaults to false.
+    ignoreNamespaceSelectors: false
+
+    ## PrometheusRulesExcludedFromEnforce - list of prometheus rules to be excluded from enforcing of adding namespace labels.
+    ## Works only if enforcedNamespaceLabel set to true. Make sure both ruleNamespace and ruleName are set for each pair
+    prometheusRulesExcludedFromEnforce: false
+
+    ## QueryLogFile specifies the file to which PromQL queries are logged. Note that this location must be writable,
+    ## and can be persisted using an attached volume. Alternatively, the location can be set to a stdout location such
+    ## as /dev/stdout to log querie information to the default Prometheus log stream. This is only available in versions
+    ## of Prometheus >= 2.16.0. For more details, see the Prometheus docs (https://prometheus.io/docs/guides/query-log/)
+    queryLogFile: false
+
+    ## EnforcedSampleLimit defines global limit on number of scraped samples that will be accepted. This overrides any SampleLimit
+    ## set per ServiceMonitor or/and PodMonitor. It is meant to be used by admins to enforce the SampleLimit to keep overall
+    ## number of samples/series under the desired limit. Note that if SampleLimit is lower that value will be taken instead.
+    enforcedSampleLimit: false
+
+    ## AllowOverlappingBlocks enables vertical compaction and vertical query merge in Prometheus. This is still experimental
+    ## in Prometheus so it may change in any upcoming release.
+    allowOverlappingBlocks: false
+
+  additionalRulesForClusterRole: []
+  #  - apiGroups: [ "" ]
+  #    resources:
+  #      - nodes/proxy
+  #    verbs: [ "get", "list", "watch" ]
 
   additionalServiceMonitors: []
   ## Name of the ServiceMonitor to create

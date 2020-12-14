@@ -8,14 +8,14 @@ _Note: This chart was formerly named `prometheus-operator` chart, now renamed to
 
 ## Prerequisites
 
-- Kubernetes 1.10+ with Beta APIs
-- Helm 2.12+ (If using Helm < 2.14, [see below for CRD workaround](#Helm-fails-to-create-CRDs))
+- Kubernetes 1.16+
+- Helm 3+
 
 ## Get Repo Info
 
 ```console
 helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
-helm repo add stable https://kubernetes-charts.storage.googleapis.com/
+helm repo add stable https://charts.helm.sh/stable
 helm repo update
 ```
 
@@ -24,11 +24,8 @@ _See [helm repo](https://helm.sh/docs/helm/helm_repo/) for command documentation
 ## Install Chart
 
 ```console
-# Helm 3
+# Helm
 $ helm install [RELEASE_NAME] prometheus-community/kube-prometheus-stack
-
-# Helm 2
-$ helm install --name [RELEASE_NAME] prometheus-community/kube-prometheus-stack
 ```
 
 _See [configuration](#configuration) below._
@@ -40,7 +37,7 @@ _See [helm install](https://helm.sh/docs/helm/helm_install/) for command documen
 By default this chart installs additional, dependent charts:
 
 - [stable/kube-state-metrics](https://github.com/helm/charts/tree/master/stable/kube-state-metrics)
-- [stable/prometheus-node-exporter](https://github.com/prometheus-community/helm-charts/tree/main/charts/prometheus-node-exporter)
+- [prometheus-community/prometheus-node-exporter](https://github.com/prometheus-community/helm-charts/tree/main/charts/prometheus-node-exporter)
 - [grafana/grafana](https://github.com/grafana/helm-charts/tree/main/charts/grafana)
 
 To disable dependencies during installation, see [multiple releases](#multiple-releases) below.
@@ -50,11 +47,8 @@ _See [helm dependency](https://helm.sh/docs/helm/helm_dependency/) for command d
 ## Uninstall Chart
 
 ```console
-# Helm 3
+# Helm
 $ helm uninstall [RELEASE_NAME]
-
-# Helm 2
-# helm delete --purge [RELEASE_NAME]
 ```
 
 This removes all the Kubernetes components associated with the chart and deletes the release.
@@ -64,26 +58,53 @@ _See [helm uninstall](https://helm.sh/docs/helm/helm_uninstall/) for command doc
 CRDs created by this chart are not removed by default and should be manually cleaned up:
 
 ```console
+kubectl delete crd alertmanagerconfigs.monitoring.coreos.com
+kubectl delete crd alertmanagers.monitoring.coreos.com
+kubectl delete crd podmonitors.monitoring.coreos.com
+kubectl delete crd probes.monitoring.coreos.com
 kubectl delete crd prometheuses.monitoring.coreos.com
 kubectl delete crd prometheusrules.monitoring.coreos.com
 kubectl delete crd servicemonitors.monitoring.coreos.com
-kubectl delete crd podmonitors.monitoring.coreos.com
-kubectl delete crd alertmanagers.monitoring.coreos.com
 kubectl delete crd thanosrulers.monitoring.coreos.com
 ```
 
 ## Upgrading Chart
 
 ```console
-# Helm 3 or 2
+# Helm
 $ helm upgrade [RELEASE_NAME] prometheus-community/kube-prometheus-stack
 ```
+
+With Helm v3, CRDs created by this chart are not updated by default and should be manually updated.
+Consult also the [Helm Documentation on CRDs](https://helm.sh/docs/chart_best_practices/custom_resource_definitions).
 
 _See [helm upgrade](https://helm.sh/docs/helm/helm_upgrade/) for command documentation._
 
 ### Upgrading an existing Release to a new major version
 
 A major chart version change (like v1.2.3 -> v2.0.0) indicates that there is an incompatible breaking change needing manual actions.
+
+### From 11.x to 12.x
+
+The chart was migrated to support only helm v3 and later.
+
+### From 10.x to 11.x
+
+Version 11 upgrades prometheus-operator from 0.42.x to 0.43.x. Starting with 0.43.x an additional `AlertmanagerConfigs` CRD is introduced. Helm does not automatically upgrade or install new CRDs on a chart upgrade, so you have to install the CRD manually before updating:
+
+```console
+kubectl apply -f https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/release-0.43/example/prometheus-operator-crd/monitoring.coreos.com_alertmanagerconfigs.yaml
+```
+
+Version 11 removes the deprecated tlsProxy via ghostunnel in favor of native TLS support the prometheus-operator gained with v0.39.0.
+
+### From 9.x to 10.x
+
+Version 10 upgrades prometheus-operator from 0.38.x to 0.42.x. Starting with 0.40.x an additional `Probes` CRD is introduced. Helm does not automatically upgrade or install new CRDs on a chart upgrade, so you have to install the CRD manually before updating:
+
+```console
+kubectl apply -f https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/release-0.42/example/prometheus-operator-crd/monitoring.coreos.com_probes.yaml
+```
 
 ### From 8.x to 9.x
 
@@ -93,13 +114,13 @@ Version 9 of the helm chart removes the existing `additionalScrapeConfigsExterna
 
 Due to new template functions being used in the rules in version 8.x.x of the chart, an upgrade to Prometheus Operator and Prometheus is necessary in order to support them. First, upgrade to the latest version of 7.x.x
 
-```sh
+```console
 helm upgrade [RELEASE_NAME] prometheus-community/kube-prometheus-stack --version 7.5.0
 ```
 
 Then upgrade to 8.x.x
 
-```sh
+```console
 helm upgrade [RELEASE_NAME] prometheus-community/kube-prometheus-stack --version [8.x.x]
 ```
 
@@ -143,24 +164,6 @@ You can read more information on how to add firewall rules for the GKE control p
 
 Alternatively, you can disable the hooks by setting `prometheusOperator.admissionWebhooks.enabled=false`.
 
-### Helm fails to create CRDs
-
-You should upgrade to Helm 2.14 + in order to avoid this issue. However, if you are stuck with an earlier Helm release you should instead use the following approach: Due to a bug in helm, it is possible for the 5 CRDs that are created by this chart to fail to get fully deployed before Helm attempts to create resources that require them. This affects all versions of Helm with a [potential fix pending](https://github.com/helm/helm/pull/5112). In order to work around this issue when installing the chart you will need to make sure all 5 CRDs exist in the cluster first and disable their previsioning by the chart:
-
-1. Create CRDs
-
-    ```console
-    kubectl apply -f https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/release-0.38/example/prometheus-operator-crd/monitoring.coreos.com_alertmanagers.yaml
-    kubectl apply -f https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/release-0.38/example/prometheus-operator-crd/monitoring.coreos.com_podmonitors.yaml
-    kubectl apply -f https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/release-0.38/example/prometheus-operator-crd/monitoring.coreos.com_prometheuses.yaml
-    kubectl apply -f https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/release-0.38/example/prometheus-operator-crd/monitoring.coreos.com_prometheusrules.yaml
-    kubectl apply -f https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/release-0.38/example/prometheus-operator-crd/monitoring.coreos.com_servicemonitors.yaml
-    kubectl apply -f https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/release-0.38/example/prometheus-operator-crd/monitoring.coreos.com_thanosrulers.yaml
-    ```
-
-2. Wait for CRDs to be created, which should only take a few seconds
-3. [Install](#install-chart) the chart, but disable the CRD provisioning by setting `prometheusOperator.createCustomResource` to `false`
-
 ## PrometheusRules Admission Webhooks
 
 With Prometheus Operator version 0.30+, the core Prometheus Operator pod exposes an endpoint that will integrate with the `validatingwebhookconfiguration` Kubernetes feature to prevent malformed rules from being added to the cluster.
@@ -198,6 +201,7 @@ For more in-depth documentation of configuration options meanings, please see
 
 The prometheus operator does not support annotation-based discovery of services, using the `PodMonitor` or `ServiceMonitor` CRD in its place as they provide far more configuration options.
 For information on how to use PodMonitors/ServiceMonitors, please see the documentation on the `prometheus-operator/prometheus-operator` documentation here:
+
 - [ServiceMonitors](https://github.com/prometheus-operator/prometheus-operator/blob/master/Documentation/user-guides/getting-started.md#include-servicemonitors)
 - [PodMonitors](https://github.com/prometheus-operator/prometheus-operator/blob/master/Documentation/user-guides/getting-started.md#include-podmonitors)
 - [Running Exporters](https://github.com/prometheus-operator/prometheus-operator/blob/master/Documentation/user-guides/running-exporters.md)
@@ -206,6 +210,89 @@ By default, Prometheus discovers PodMonitors and ServiceMonitors within its name
 Sometimes, you may need to discover custom PodMonitors/ServiceMonitors, for example used to scrape data from third-party applications.
 An easy way of doing this, without compromising the default PodMonitors/ServiceMonitors discovery, is allowing Prometheus to discover all PodMonitors/ServiceMonitors within its namespace, without applying label filtering.
 To do so, you can set `prometheus.prometheusSpec.podMonitorSelectorNilUsesHelmValues` and `prometheus.prometheusSpec.serviceMonitorSelectorNilUsesHelmValues` to `false`.
+
+## Migrating from stable/prometheus-operator chart
+
+## Zero downtime
+
+Since `kube-prometheus-stack` is fully compatible with the `stable/prometheus-operator` chart, a migration without downtime can be achieved.
+However, the old name prefix needs to be kept. If you want the new name please follow the step by step guide below (with downtime).
+
+You can override the name to achieve this:
+
+```console
+helm upgrade prometheus-operator prometheus-community/kube-prometheus-stack -n monitoring --reuse-values --set nameOverride=prometheus-operator
+```
+
+**Note**: It is recommended to run this first with `--dry-run --debug`.
+
+## Redeploy with new name (downtime)
+
+If the **prometheus-operator** values are compatible with the new **kube-prometheus-stack** chart, please follow the below steps for migration:
+
+> The guide presumes that chart is deployed in `monitoring` namespace and the deployments are running there. If in other namespace, please replace the `monitoring` to the deployed namespace.
+
+1. Patch the PersistenceVolume created/used by the prometheus-operator chart to `Retain` claim policy:
+
+    ```console
+    kubectl patch pv/<PersistentVolume name> -p '{"spec":{"persistentVolumeReclaimPolicy":"Retain"}}'
+    ```
+
+    **Note:** To execute the above command, the user must have a cluster wide permission. Please refer [Kubernetes RBAC](https://kubernetes.io/docs/reference/access-authn-authz/rbac/)
+
+2. Uninstall the **prometheus-operator** release and delete the existing PersistentVolumeClaim, and verify PV become Released.
+
+    ```console
+    helm uninstall prometheus-operator -n monitoring
+    kubectl delete pvc/<PersistenceVolumeClaim name> -n monitoring
+    ```
+
+    Additionally, you have to manually remove the remaining `prometheus-operator-kubelet` service.
+
+    ```console
+    kubectl delete service/prometheus-operator-kubelet -n kube-system
+    ```
+
+    You can choose to remove all your existing CRDs (ServiceMonitors, Podmonitors, etc.) if you want to.
+
+3. Remove current `spec.claimRef` values to change the PV's status from Released to Available.
+
+    ```console
+    kubectl patch pv/<PersistentVolume name> --type json -p='[{"op": "remove", "path": "/spec/claimRef"}]' -n monitoring
+    ```
+
+**Note:** To execute the above command, the user must have a cluster wide permission. Please refer to [Kubernetes RBAC](https://kubernetes.io/docs/reference/access-authn-authz/rbac/)
+
+After these steps, proceed to a fresh **kube-prometheus-stack** installation and make sure the current release of **kube-prometheus-stack** matching the `volumeClaimTemplate` values in the `values.yaml`.
+
+The binding is done via matching a specific amount of storage requested and with certain access modes.
+
+For example, if you had storage specified as this with **prometheus-operator**:
+
+```yaml
+volumeClaimTemplate:
+  spec:
+    storageClassName: gp2
+    accessModes: ["ReadWriteOnce"]
+    resources:
+     requests:
+       storage: 50Gi
+```
+
+You have to specify matching `volumeClaimTemplate` with 50Gi storage and `ReadWriteOnce` access mode.
+
+Additionally, you should check the current AZ of your legacy installation's PV, and configure the fresh release to use the same AZ as the old one. If the pods are in a different AZ than the PV, the release will fail to bind the existing one, hence creating a new PV.
+
+This can be achieved either by specifying the labels through `values.yaml`, e.g. setting `prometheus.prometheusSpec.nodeSelector` to:
+
+```yaml
+nodeSelector:
+  failure-domain.beta.kubernetes.io/zone: east-west-1a
+```
+
+or passing these values as `--set` overrides during installation.
+
+The new release should now re-attach your previously released PV with its content.
 
 ## Migrating from coreos/prometheus-operator chart
 
@@ -225,10 +312,6 @@ The chart has added 3 [dependencies](#dependencies).
 
 - Node-Exporter, Kube-State-Metrics: These components are loaded as dependencies into the chart, and are relatively simple components
 - Grafana: The Grafana chart is more feature-rich than this chart - it contains a sidecar that is able to load data sources and dashboards from configmaps deployed into the same cluster. For more information check out the [documentation for the chart](https://github.com/helm/charts/tree/master/stable/grafana)
-
-#### CoreOS CRDs
-
-The CRDs are provisioned using crd-install hooks, rather than relying on a separate chart installation. If you already have these CRDs provisioned and don't want to remove them, you can disable the CRD creation by these hooks by setting `prometheusOperator.createCustomResource` to `false` (not required if using Helm v3).
 
 #### Kubelet Service
 
@@ -272,18 +355,12 @@ metadata:
 spec:
   accessModes:
   - ReadWriteOnce
-  dataSource: null
   resources:
     requests:
       storage: 1Gi
   storageClassName: prometheus
   volumeMode: Filesystem
   volumeName: pvc-prometheus-migration-prometheus-0
-status:
-  accessModes:
-  - ReadWriteOnce
-  capacity:
-    storage: 1Gi
 ```
 
 The PVC will take ownership of the PV and when you create a release using a persistent volume claim template it will use the existing PVCs as they match the naming convention used by the chart. For other cloud providers similar approaches can be used.

@@ -16,7 +16,13 @@ metadata:
 spec:
   endpoints:
   - port: http
-    scheme: http
+    scheme: {{ $.Values.serviceMonitor.scheme }}
+    {{- if $.Values.serviceMonitor.bearerTokenFile }}
+    bearerTokenFile: {{ $.Values.serviceMonitor.bearerTokenFile }}
+    {{- end }}
+    {{- if $.Values.serviceMonitor.tlsConfig }}
+    tlsConfig: {{ toYaml $.Values.serviceMonitor.tlsConfig | nindent 6 }}
+    {{- end }}
     path: "/probe"
     interval: {{ .interval | default $.Values.serviceMonitor.defaults.interval }}
     scrapeTimeout: {{ .scrapeTimeout | default $.Values.serviceMonitor.defaults.scrapeTimeout }}

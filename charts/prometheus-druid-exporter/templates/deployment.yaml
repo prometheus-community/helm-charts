@@ -1,0 +1,54 @@
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "prometheus-druid-exporter.fullname" . }}
+  labels:
+    app.kubernetes.io/name: {{ include "prometheus-druid-exporter.fullname" . }}
+    helm.sh/chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/version: {{ .Chart.AppVersion }}
+  annotations:
+    {{- toYaml .Values.annotations | nindent 4 }}
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ include "prometheus-druid-exporter.fullname" . }}
+      app.kubernetes.io/instance: {{ .Release.Name }}
+  template:
+    metadata:
+      annotations:
+        {{- if not .Values.serviceMonitor.enabled }}
+        prometheus.io/path: /metrics
+        prometheus.io/port: metrics
+        prometheus.io/scrape: "true"
+        {{- end }}
+        {{- if .Values.podAnnotations }}
+        {{ toYaml .Values.podAnnotations | nindent 8 }}
+        {{- end }}
+      labels:
+        app.kubernetes.io/name: {{ include "prometheus-druid-exporter.fullname" . }}
+        app.kubernetes.io/instance: {{ .Release.Name }}
+    spec:
+      containers:
+      - env:
+        - name: DRUID_URL
+          value: {{ .Values.druidURL }}
+        - name: PORT
+          value: {{ .Values.exporterPort | quote}}
+        - name: LOG_LEVEL
+          value: {{ .Values.logLevel }}
+        - name: LOG_FORMAT
+          value: {{ .Values.logFormat }}
+        image: "{{ .Values.image.name }}:{{ .Values.image.tag }}"
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        name: {{ include "prometheus-druid-exporter.fullname" . }}
+        ports:
+        - containerPort: {{ .Values.exporterPort }}
+          protocol: TCP
+{{- if .Values.serviceAccount.create }}
+      serviceAccount: {{ include "prometheus-druid-exporter.fullname" . }}
+      serviceAccountName: {{ include "prometheus-druid-exporter.fullname" . }}
+{{- end }}

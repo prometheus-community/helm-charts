@@ -4,7 +4,7 @@ Do not change in-place! In order to change this file first read following link:
 https://github.com/prometheus-community/helm-charts/tree/main/charts/kube-prometheus-stack/hack
 */ -}}
 {{- $kubeTargetVersion := default .Capabilities.KubeVersion.GitVersion .Values.kubeTargetVersionOverride }}
-{{- if and (semverCompare ">=1.10.0-0" $kubeTargetVersion) (semverCompare "<1.14.0-0" $kubeTargetVersion) .Values.defaultRules.create .Values.kubeStateMetrics.enabled .Values.defaultRules.rules.kubernetesApps }}
+{{- if and (semverCompare ">=1.10.0-0" $kubeTargetVersion) (semverCompare "<1.14.0-0" $kubeTargetVersion) .Values.defaultRules.create .Values.defaultRules.rules.kubernetesApps }}
 {{- $targetNamespace := .Values.defaultRules.appNamespacesTarget }}
 apiVersion: monitoring.coreos.com/v1
 kind: PrometheusRule
@@ -33,6 +33,9 @@ spec:
       for: 1h
       labels:
         severity: critical
+{{- if .Values.defaultRules.additionalRuleLabels }}
+{{ toYaml .Values.defaultRules.additionalRuleLabels | indent 8 }}
+{{- end }}
     - alert: KubePodNotReady
       annotations:
         message: Pod {{`{{`}} $labels.namespace {{`}}`}}/{{`{{`}} $labels.pod {{`}}`}} has been in a non-ready state for longer than an hour.
@@ -41,6 +44,9 @@ spec:
       for: 1h
       labels:
         severity: critical
+{{- if .Values.defaultRules.additionalRuleLabels }}
+{{ toYaml .Values.defaultRules.additionalRuleLabels | indent 8 }}
+{{- end }}
     - alert: KubeDeploymentGenerationMismatch
       annotations:
         message: Deployment generation for {{`{{`}} $labels.namespace {{`}}`}}/{{`{{`}} $labels.deployment {{`}}`}} does not match, this indicates that the Deployment has failed but has not been rolled back.
@@ -52,6 +58,9 @@ spec:
       for: 15m
       labels:
         severity: critical
+{{- if .Values.defaultRules.additionalRuleLabels }}
+{{ toYaml .Values.defaultRules.additionalRuleLabels | indent 8 }}
+{{- end }}
     - alert: KubeDeploymentReplicasMismatch
       annotations:
         message: Deployment {{`{{`}} $labels.namespace {{`}}`}}/{{`{{`}} $labels.deployment {{`}}`}} has not matched the expected number of replicas for longer than an hour.
@@ -63,6 +72,9 @@ spec:
       for: 1h
       labels:
         severity: critical
+{{- if .Values.defaultRules.additionalRuleLabels }}
+{{ toYaml .Values.defaultRules.additionalRuleLabels | indent 8 }}
+{{- end }}
     - alert: KubeStatefulSetReplicasMismatch
       annotations:
         message: StatefulSet {{`{{`}} $labels.namespace {{`}}`}}/{{`{{`}} $labels.statefulset {{`}}`}} has not matched the expected number of replicas for longer than 15 minutes.
@@ -74,6 +86,9 @@ spec:
       for: 15m
       labels:
         severity: critical
+{{- if .Values.defaultRules.additionalRuleLabels }}
+{{ toYaml .Values.defaultRules.additionalRuleLabels | indent 8 }}
+{{- end }}
     - alert: KubeStatefulSetGenerationMismatch
       annotations:
         message: StatefulSet generation for {{`{{`}} $labels.namespace {{`}}`}}/{{`{{`}} $labels.statefulset {{`}}`}} does not match, this indicates that the StatefulSet has failed but has not been rolled back.
@@ -85,6 +100,9 @@ spec:
       for: 15m
       labels:
         severity: critical
+{{- if .Values.defaultRules.additionalRuleLabels }}
+{{ toYaml .Values.defaultRules.additionalRuleLabels | indent 8 }}
+{{- end }}
     - alert: KubeStatefulSetUpdateNotRolledOut
       annotations:
         message: StatefulSet {{`{{`}} $labels.namespace {{`}}`}}/{{`{{`}} $labels.statefulset {{`}}`}} update has not been rolled out.
@@ -104,6 +122,9 @@ spec:
       for: 15m
       labels:
         severity: critical
+{{- if .Values.defaultRules.additionalRuleLabels }}
+{{ toYaml .Values.defaultRules.additionalRuleLabels | indent 8 }}
+{{- end }}
     - alert: KubeDaemonSetRolloutStuck
       annotations:
         message: Only {{`{{`}} $value {{`}}`}}% of the desired Pods of DaemonSet {{`{{`}} $labels.namespace {{`}}`}}/{{`{{`}} $labels.daemonset {{`}}`}} are scheduled and ready.
@@ -115,6 +136,9 @@ spec:
       for: 15m
       labels:
         severity: critical
+{{- if .Values.defaultRules.additionalRuleLabels }}
+{{ toYaml .Values.defaultRules.additionalRuleLabels | indent 8 }}
+{{- end }}
     - alert: KubeDaemonSetNotScheduled
       annotations:
         message: '{{`{{`}} $value {{`}}`}} Pods of DaemonSet {{`{{`}} $labels.namespace {{`}}`}}/{{`{{`}} $labels.daemonset {{`}}`}} are not scheduled.'
@@ -126,6 +150,9 @@ spec:
       for: 10m
       labels:
         severity: warning
+{{- if .Values.defaultRules.additionalRuleLabels }}
+{{ toYaml .Values.defaultRules.additionalRuleLabels | indent 8 }}
+{{- end }}
     - alert: KubeDaemonSetMisScheduled
       annotations:
         message: '{{`{{`}} $value {{`}}`}} Pods of DaemonSet {{`{{`}} $labels.namespace {{`}}`}}/{{`{{`}} $labels.daemonset {{`}}`}} are running where they are not supposed to run.'
@@ -134,6 +161,9 @@ spec:
       for: 10m
       labels:
         severity: warning
+{{- if .Values.defaultRules.additionalRuleLabels }}
+{{ toYaml .Values.defaultRules.additionalRuleLabels | indent 8 }}
+{{- end }}
     - alert: KubeCronJobRunning
       annotations:
         message: CronJob {{`{{`}} $labels.namespace {{`}}`}}/{{`{{`}} $labels.cronjob {{`}}`}} is taking more than 1h to complete.
@@ -142,6 +172,9 @@ spec:
       for: 1h
       labels:
         severity: warning
+{{- if .Values.defaultRules.additionalRuleLabels }}
+{{ toYaml .Values.defaultRules.additionalRuleLabels | indent 8 }}
+{{- end }}
     - alert: KubeJobCompletion
       annotations:
         message: Job {{`{{`}} $labels.namespace {{`}}`}}/{{`{{`}} $labels.job_name {{`}}`}} is taking more than one hour to complete.
@@ -150,6 +183,9 @@ spec:
       for: 1h
       labels:
         severity: warning
+{{- if .Values.defaultRules.additionalRuleLabels }}
+{{ toYaml .Values.defaultRules.additionalRuleLabels | indent 8 }}
+{{- end }}
     - alert: KubeJobFailed
       annotations:
         message: Job {{`{{`}} $labels.namespace {{`}}`}}/{{`{{`}} $labels.job_name {{`}}`}} failed to complete.
@@ -158,4 +194,7 @@ spec:
       for: 1h
       labels:
         severity: warning
+{{- if .Values.defaultRules.additionalRuleLabels }}
+{{ toYaml .Values.defaultRules.additionalRuleLabels | indent 8 }}
+{{- end }}
 {{- end }}

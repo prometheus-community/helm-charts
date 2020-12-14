@@ -6,13 +6,14 @@ This chart bootstraps a [Prometheus](https://prometheus.io/) deployment on a [Ku
 
 ## Prerequisites
 
-- Kubernetes 1.3+ with Beta APIs enabled
+- Kubernetes 1.16+
+- Helm 3+
 
 ## Get Repo Info
 
 ```console
 helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
-helm repo add stable https://kubernetes-charts.storage.googleapis.com/
+helm repo add stable https://charts.helm.sh/stable
 helm repo update
 ```
 
@@ -21,11 +22,8 @@ _See [helm repo](https://helm.sh/docs/helm/helm_repo/) for command documentation
 ## Install Chart
 
 ```console
-# Helm 3
+# Helm
 $ helm install [RELEASE_NAME] prometheus-community/prometheus
-
-# Helm 2
-$ helm install --name [RELEASE_NAME] prometheus-community/prometheus
 ```
 
 _See [configuration](#configuration) below._
@@ -45,11 +43,8 @@ _See [helm dependency](https://helm.sh/docs/helm/helm_dependency/) for command d
 ## Uninstall Chart
 
 ```console
-# Helm 3
+# Helm
 $ helm uninstall [RELEASE_NAME]
-
-# Helm 2
-# helm delete --purge [RELEASE_NAME]
 ```
 
 This removes all the Kubernetes components associated with the chart and deletes the release.
@@ -59,7 +54,7 @@ _See [helm uninstall](https://helm.sh/docs/helm/helm_uninstall/) for command doc
 ## Upgrading Chart
 
 ```console
-# Helm 3 or 2
+# Helm
 $ helm upgrade [RELEASE_NAME] [CHART] --install
 ```
 

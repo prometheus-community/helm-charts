@@ -38,6 +38,9 @@ spec:
       for: 5m
       labels:
         severity: warning
+{{- if .Values.defaultRules.additionalRuleLabels }}
+{{ toYaml .Values.defaultRules.additionalRuleLabels | indent 8 }}
+{{- end }}
     - alert: KubeMemoryOvercommit
       annotations:
         description: Cluster has overcommitted memory resource requests for Pods and cannot tolerate node failure.
@@ -54,6 +57,9 @@ spec:
       for: 5m
       labels:
         severity: warning
+{{- if .Values.defaultRules.additionalRuleLabels }}
+{{ toYaml .Values.defaultRules.additionalRuleLabels | indent 8 }}
+{{- end }}
     - alert: KubeCPUQuotaOvercommit
       annotations:
         description: Cluster has overcommitted CPU resource requests for Namespaces.
@@ -67,6 +73,9 @@ spec:
       for: 5m
       labels:
         severity: warning
+{{- if .Values.defaultRules.additionalRuleLabels }}
+{{ toYaml .Values.defaultRules.additionalRuleLabels | indent 8 }}
+{{- end }}
     - alert: KubeMemoryQuotaOvercommit
       annotations:
         description: Cluster has overcommitted memory resource requests for Namespaces.
@@ -75,11 +84,14 @@ spec:
       expr: |-
         sum(kube_resourcequota{job="kube-state-metrics", type="hard", resource="memory"})
           /
-        sum(kube_node_status_allocatable_memory_bytes{job="node-exporter"})
+        sum(kube_node_status_allocatable_memory_bytes{job="kube-state-metrics"})
           > 1.5
       for: 5m
       labels:
         severity: warning
+{{- if .Values.defaultRules.additionalRuleLabels }}
+{{ toYaml .Values.defaultRules.additionalRuleLabels | indent 8 }}
+{{- end }}
     - alert: KubeQuotaAlmostFull
       annotations:
         description: Namespace {{`{{`}} $labels.namespace {{`}}`}} is using {{`{{`}} $value | humanizePercentage {{`}}`}} of its {{`{{`}} $labels.resource {{`}}`}} quota.
@@ -93,6 +105,9 @@ spec:
       for: 15m
       labels:
         severity: info
+{{- if .Values.defaultRules.additionalRuleLabels }}
+{{ toYaml .Values.defaultRules.additionalRuleLabels | indent 8 }}
+{{- end }}
     - alert: KubeQuotaFullyUsed
       annotations:
         description: Namespace {{`{{`}} $labels.namespace {{`}}`}} is using {{`{{`}} $value | humanizePercentage {{`}}`}} of its {{`{{`}} $labels.resource {{`}}`}} quota.
@@ -106,6 +121,9 @@ spec:
       for: 15m
       labels:
         severity: info
+{{- if .Values.defaultRules.additionalRuleLabels }}
+{{ toYaml .Values.defaultRules.additionalRuleLabels | indent 8 }}
+{{- end }}
     - alert: KubeQuotaExceeded
       annotations:
         description: Namespace {{`{{`}} $labels.namespace {{`}}`}} is using {{`{{`}} $value | humanizePercentage {{`}}`}} of its {{`{{`}} $labels.resource {{`}}`}} quota.
@@ -119,6 +137,9 @@ spec:
       for: 15m
       labels:
         severity: warning
+{{- if .Values.defaultRules.additionalRuleLabels }}
+{{ toYaml .Values.defaultRules.additionalRuleLabels | indent 8 }}
+{{- end }}
     - alert: CPUThrottlingHigh
       annotations:
         description: '{{`{{`}} $value | humanizePercentage {{`}}`}} throttling of CPU in namespace {{`{{`}} $labels.namespace {{`}}`}} for container {{`{{`}} $labels.container {{`}}`}} in pod {{`{{`}} $labels.pod {{`}}`}}.'
@@ -132,4 +153,7 @@ spec:
       for: 15m
       labels:
         severity: info
+{{- if .Values.defaultRules.additionalRuleLabels }}
+{{ toYaml .Values.defaultRules.additionalRuleLabels | indent 8 }}
+{{- end }}
 {{- end }}

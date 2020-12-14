@@ -91,3 +91,19 @@ scrape_configs:
       - target_label: __address__
         replacement: my-service-name:9116  # The SNMP exporter's Service name and port.
 ```
+
+Eaxample configuration via a ServiceMonitor
+```yaml
+serviceMonitor:
+  enabled: true
+  relabelings:
+    - sourceLabels: [__param_target]
+      targetLabel: instance
+  params:
+    enabled: true
+    conf:
+      module:
+        - fortigate_snmp
+      target:
+        - 192.168.1.2 # SNMP device
+```
