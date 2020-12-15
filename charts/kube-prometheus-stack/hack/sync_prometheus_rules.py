@@ -6,7 +6,7 @@ from os import makedirs
 import requests
 import yaml
 from yaml.representer import SafeRepresenter
-
+import re
 
 # https://stackoverflow.com/a/20863889/961092
 class LiteralStr(str):
@@ -61,7 +61,7 @@ condition_map = {
     'kube-prometheus-node-alerting.rules': ' .Values.defaultRules.rules.kubePrometheusNodeAlerting',
     'kube-prometheus-node-recording.rules': ' .Values.defaultRules.rules.kubePrometheusNodeRecording',
     'kube-scheduler.rules': ' .Values.kubeScheduler.enabled .Values.defaultRules.rules.kubeScheduler',
-    'kube-state-metrics': ' .Values.kubeStateMetrics.enabled .Values.defaultRules.rules.kubeStateMetrics',
+    'kube-state-metrics': ' .Values.defaultRules.rules.kubeStateMetrics',
     'kubelet.rules': ' .Values.kubelet.enabled .Values.defaultRules.rules.kubelet',
     'kubernetes-absent': ' .Values.defaultRules.rules.kubernetesAbsent',
     'kubernetes-resources': ' .Values.defaultRules.rules.kubernetesResources',
@@ -71,15 +71,15 @@ condition_map = {
     'kubernetes-system-kubelet': ' .Values.defaultRules.rules.kubernetesSystem', # kubernetes-system was split into more groups in 1.14, one of them is kubernetes-system-kubelet
     'kubernetes-system-controller-manager': ' .Values.kubeControllerManager.enabled',
     'kubernetes-system-scheduler': ' .Values.kubeScheduler.enabled .Values.defaultRules.rules.kubeScheduler',
-    'node-exporter.rules': ' .Values.nodeExporter.enabled .Values.defaultRules.rules.node',
-    'node-exporter': ' .Values.nodeExporter.enabled .Values.defaultRules.rules.node',
-    'node.rules': ' .Values.nodeExporter.enabled .Values.defaultRules.rules.node',
+    'node-exporter.rules': ' .Values.defaultRules.rules.node',
+    'node-exporter': ' .Values.defaultRules.rules.node',
+    'node.rules': ' .Values.defaultRules.rules.node',
     'node-network': ' .Values.defaultRules.rules.network',
     'node-time': ' .Values.defaultRules.rules.time',
     'prometheus-operator': ' .Values.defaultRules.rules.prometheusOperator',
     'prometheus.rules': ' .Values.defaultRules.rules.prometheus',
     'prometheus': ' .Values.defaultRules.rules.prometheus', # kube-prometheus >= 1.14 uses prometheus as group instead of prometheus.rules
-    'kubernetes-apps': ' .Values.kubeStateMetrics.enabled .Values.defaultRules.rules.kubernetesApps',
+    'kubernetes-apps': ' .Values.defaultRules.rules.kubernetesApps',
     'etcd': ' .Values.kubeEtcd.enabled .Values.defaultRules.rules.etcd',
 }
 
@@ -113,6 +113,9 @@ replacement_map = {
         'init': ''},
     'https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#': {
         'replacement': '{{ .Values.defaultRules.runbookUrl }}',
+        'init': ''},
+    'https://github.com/prometheus-operator/kube-prometheus/wiki/': {
+        'replacement': '{{ .Values.defaultRules.runbookUrl }}alert-name-',
         'init': ''},
     'job="kube-state-metrics"': {
         'replacement': 'job="kube-state-metrics", namespace=~"{{ $targetNamespace }}"',
@@ -217,6 +220,27 @@ def add_rules_conditions(rules, indent=4):
     return rules
 
 
+def add_custom_labels(rules, indent=4):
+    """Add if wrapper for additional rules labels"""
+    rule_condition = '{{- if .Values.defaultRules.additionalRuleLabels }}\n{{ toYaml .Values.defaultRules.additionalRuleLabels | indent 8 }}\n{{- end }}'
+    rule_condition_len = len(rule_condition) + 1
+
+    separator = " " * indent + "- alert:.*"
+    alerts_positions = re.finditer(separator,rules)
+    alert=-1
+    for alert_position in alerts_positions:
+        # add rule_condition at the end of the alert block
+        if alert >= 0 :
+            index = alert_position.start() + rule_condition_len * alert - 1
+            rules = rules[:index] + "\n" + rule_condition + rules[index:]
+        alert += 1
+
+    # add rule_condition at the end of the last alert
+    if alert >= 0:
+        index = len(rules) - 1
+        rules = rules[:index] + "\n" + rule_condition + rules[index:]
+    return rules
+
 def write_group_to_file(group, url, destination, min_kubernetes, max_kubernetes):
     fix_expr(group['rules'])
     group_name = group['name']
@@ -231,6 +255,7 @@ def write_group_to_file(group, url, destination, min_kubernetes, max_kubernetes)
             if replacement_map[line]['init']:
                 init_line += '\n' + replacement_map[line]['init']
     # append per-alert rules
+    rules = add_custom_labels(rules)
     rules = add_rules_conditions(rules)
     # initialize header
     lines = header % {

@@ -23,6 +23,11 @@ metadata:
 {{ toYaml .Values.prometheus.ingress.labels | indent 4 }}
 {{- end }}
 spec:
+  {{- if or (.Capabilities.APIVersions.Has "networking.k8s.io/v1/IngressClass") (.Capabilities.APIVersions.Has "networking.k8s.io/v1beta1/IngressClass") }}
+  {{- if .Values.prometheus.ingress.ingressClassName }}
+  ingressClassName: {{ .Values.prometheus.ingress.ingressClassName }}
+  {{- end }}
+  {{- end }}
   rules:
   {{- if .Values.prometheus.ingress.hosts }}
   {{- range $host := .Values.prometheus.ingress.hosts }}
@@ -48,6 +53,6 @@ spec:
   {{- end -}}
   {{- if .Values.prometheus.ingress.tls }}
   tls:
-{{ toYaml .Values.prometheus.ingress.tls | indent 4 }}
+{{ tpl (toYaml .Values.prometheus.ingress.tls | indent 4) . }}
   {{- end -}}
 {{- end -}}

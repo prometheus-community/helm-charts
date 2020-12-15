@@ -10,7 +10,7 @@ assignees: ''
 <!-- Thanks for filing an issue!
 Before hitting the button, please answer these questions.
 It's helpful to search the existing GitHub issues first.
-It's likely that another user has already reported the issue you're facing, or it's a known issue that we're already aware o. 
+It's likely that another user has already reported the issue you're facing, or it's a known issue that we're already aware of.
 
 Fill in as much of the template below as you can.
 The more information we have the better we can help you.
@@ -40,31 +40,34 @@ please put the output of it here
 ```
 
 **Which chart**:
-**Which version of the chart**:
 
+**Which version of the chart**:
 
 **What happened**:
 
-
 **What you expected to happen**:
 
-
 **How to reproduce it** (as minimally and precisely as possible):
+**Changed values of values.yaml** (only put values which differ from the defaults):
 
-<~--
-This could be something like:
+values.yaml
 
-values.yaml (only put values which differ from the defaults)
-
-```
+```console
 key: value
 ```
 
-```
+**The helm command that you execute and failing/misfunctioning**:
+
+For example:
+
+```console
 helm install my-release prometheus-community/name-of-chart --version version --values values.yaml
 ```
 
--->
+**Helm values set after installation/upgrade:**
 
+```console
+helm get values my-release
+```
 
 **Anything else we need to know**:

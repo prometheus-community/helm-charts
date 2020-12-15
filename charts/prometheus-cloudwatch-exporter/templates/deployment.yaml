@@ -18,6 +18,9 @@ spec:
       labels:
         app: {{ template "prometheus-cloudwatch-exporter.name" . }}
         release: {{ .Release.Name }}
+        {{- if .Values.pod.labels }}
+{{ toYaml .Values.pod.labels | indent 8 }}
+        {{- end }}
       annotations:
         {{ if .Values.aws.role}}iam.amazonaws.com/role: {{ .Values.aws.role }}{{ end }}
         checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
@@ -26,6 +29,10 @@ spec:
       {{- with .Values.priorityClassName }}
       priorityClassName: "{{ . }}"
       {{- end }}
+    {{- if .Values.image.pullSecrets }}
+      imagePullSecrets:
+        {{- toYaml .Values.image.pullSecrets | nindent 8 }}
+    {{- end }}
       containers:
         - name: {{ .Chart.Name }}
         {{- if not .Values.aws.role }}
