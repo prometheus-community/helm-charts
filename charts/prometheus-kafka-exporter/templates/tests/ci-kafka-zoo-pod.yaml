@@ -3,6 +3,41 @@ apiVersion: v1
 kind: Pod
 metadata:
   labels:
+    app: zookeeper
+  name: zookeeper
+  annotations:
+    "helm.sh/hook": test
+spec:
+  containers:
+  - env:
+    - name: ZOO_SERVERS
+      value: server.1=zoo.zoo:2888:3888:participant
+    - name: ALLOW_ANONYMOUS_LOGIN
+      value: "yes"
+    image: bitnami/zookeeper:3.4.10-r12
+    imagePullPolicy: IfNotPresent
+    name: zookeeper
+    ports:
+    - containerPort: 2181
+      name: client
+      protocol: TCP
+    - containerPort: 2888
+      name: peer
+      protocol: TCP
+    - containerPort: 3888
+      name: leader-election
+      protocol: TCP
+    volumeMounts:
+    - mountPath: /bitnami/zookeeper
+      name: zookeeper
+  volumes:
+  - emptyDir: {}
+    name: zookeeper
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
     app: kafka
   name: kafka
   annotations:
@@ -54,38 +89,3 @@ spec:
   volumes:
   - emptyDir: {}
     name: datadir
----
-apiVersion: v1
-kind: Pod
-metadata:
-  labels:
-    app: zookeeper
-  name: zookeeper
-  annotations:
-    "helm.sh/hook": test
-spec:
-  containers:
-  - env:
-    - name: ZOO_SERVERS
-      value: server.1=zoo.zoo:2888:3888:participant
-    - name: ALLOW_ANONYMOUS_LOGIN
-      value: "yes"
-    image: bitnami/zookeeper:3.4.10-r12
-    imagePullPolicy: IfNotPresent
-    name: zookeeper
-    ports:
-    - containerPort: 2181
-      name: client
-      protocol: TCP
-    - containerPort: 2888
-      name: peer
-      protocol: TCP
-    - containerPort: 3888
-      name: leader-election
-      protocol: TCP
-    volumeMounts:
-    - mountPath: /bitnami/zookeeper
-      name: zookeeper
-  volumes:
-  - emptyDir: {}
-    name: zookeeper
