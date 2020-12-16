@@ -13,7 +13,7 @@ This chart bootstraps a [Prometheus](https://prometheus.io/) deployment on a [Ku
 
 ```console
 helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
-helm repo add stable https://charts.helm.sh/stable
+helm repo add kube-state-metrics https://kubernetes.github.io/kube-state-metrics
 helm repo update
 ```
 
