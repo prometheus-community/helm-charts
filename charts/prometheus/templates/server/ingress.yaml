@@ -19,6 +19,11 @@ metadata:
   name: {{ template "prometheus.server.fullname" . }}
 {{ include "prometheus.namespace" . | indent 2 }}
 spec:
+  {{- if or (.Capabilities.APIVersions.Has "networking.k8s.io/v1/IngressClass") (.Capabilities.APIVersions.Has "networking.k8s.io/v1beta1/IngressClass") }}
+  {{- if .Values.server.ingress.ingressClassName }}
+  ingressClassName: {{ .Values.server.ingress.ingressClassName }}
+  {{- end }}
+  {{- end }}
   rules:
   {{- range .Values.server.ingress.hosts }}
     {{- $url := splitList "/" . }}
