@@ -5,7 +5,7 @@
 apiVersion: v1
 kind: List
 metadata:
-  name: {{ include "kube-prometheus-stack.fullname" $ }}-alertmanager-ingressperreplica
+  name: {{ include "kube-prometheus-stack.alertmanager.fullname" $ }}-ingressperreplica
   namespace: {{ template "kube-prometheus-stack.namespace" . }}
 items:
 {{ range $i, $e := until $count }}
@@ -16,10 +16,10 @@ items:
     apiVersion: extensions/v1beta1
     {{ end -}}
     metadata:
-      name: {{ include "kube-prometheus-stack.fullname" $ }}-alertmanager-{{ $i }}
+      name: {{ include "kube-prometheus-stack.alertmanager.fullname" $ }}-{{ $i }}
       namespace: {{ template "kube-prometheus-stack.namespace" $ }}
       labels:
-        app: {{ include "kube-prometheus-stack.name" $ }}-alertmanager
+        app: {{ include "kube-prometheus-stack.alertmanager.fullname" $ }}
 {{ include "kube-prometheus-stack.labels" $ | indent 8 }}
       {{- if $ingressValues.labels }}
 {{ toYaml $ingressValues.labels | indent 8 }}
@@ -41,7 +41,7 @@ items:
       {{- range $p := $ingressValues.paths }}
               - path: {{ tpl $p $ }}
                 backend:
-                  serviceName: {{ include "kube-prometheus-stack.fullname" $ }}-alertmanager-{{ $i }}
+                  serviceName: {{ include "kube-prometheus-stack.alertmanager.fullname" $ }}-{{ $i }}
                   servicePort: {{ $servicePort }}
       {{- end -}}
       {{- if or $ingressValues.tlsSecretName $ingressValues.tlsSecretPerReplica.enabled }}

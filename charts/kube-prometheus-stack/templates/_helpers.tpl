@@ -36,7 +36,11 @@ The longest name that gets created adds and extra 37 characters, so truncation s
 
 {{/* Fullname suffixed with alertmanager */}}
 {{- define "kube-prometheus-stack.alertmanager.fullname" -}}
-{{- printf "%s-alertmanager" (include "kube-prometheus-stack.fullname" .) -}}
+{{- if .Values.alertmanager.fullnameOverride -}}
+{{- printf "%s-%s" (include "kube-prometheus-stack.fullname" .) .Values.alertmanager.fullnameOverride -}}
+{{- else -}}
+{{- printf "%s-%s" (include "kube-prometheus-stack.fullname" .) "patate" -}}
+{{- end }}
 {{- end }}
 
 {{/* Create chart name and version as used by the chart label. */}}
@@ -75,9 +79,11 @@ heritage: {{ $.Release.Service | quote }}
 {{/* Create the name of alertmanager service account to use */}}
 {{- define "kube-prometheus-stack.alertmanager.serviceAccountName" -}}
 {{- if .Values.alertmanager.serviceAccount.create -}}
-    {{ default (include "kube-prometheus-stack.alertmanager.fullname" .) .Values.alertmanager.serviceAccount.name }}
+#    {{ default (include "kube-prometheus-stack.alertmanager.fullname" .) .Values.alertmanager.serviceAccount.name }}
+     {{ "a" }}
 {{- else -}}
-    {{ default "default" .Values.alertmanager.serviceAccount.name }}
+#    {{ default "default" .Values.alertmanager.serviceAccount.name }}
+     {{ "ab" }}
 {{- end -}}
 {{- end -}}
 
