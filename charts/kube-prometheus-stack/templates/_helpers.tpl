@@ -39,7 +39,7 @@ The longest name that gets created adds and extra 37 characters, so truncation s
 {{- if .Values.alertmanager.fullnameOverride -}}
 {{- printf "%s-%s" (include "kube-prometheus-stack.fullname" .) .Values.alertmanager.fullnameOverride -}}
 {{- else -}}
-{{- printf "%s-%s" (include "kube-prometheus-stack.fullname" .) "patate" -}}
+{{- printf "%s-%s" (include "kube-prometheus-stack.fullname" .) -}}
 {{- end }}
 {{- end }}
 
@@ -79,11 +79,9 @@ heritage: {{ $.Release.Service | quote }}
 {{/* Create the name of alertmanager service account to use */}}
 {{- define "kube-prometheus-stack.alertmanager.serviceAccountName" -}}
 {{- if .Values.alertmanager.serviceAccount.create -}}
-#    {{ default (include "kube-prometheus-stack.alertmanager.fullname" .) .Values.alertmanager.serviceAccount.name }}
-     {{ "a" }}
+    {{ default (include "kube-prometheus-stack.alertmanager.fullname" .) .Values.alertmanager.serviceAccount.name }}
 {{- else -}}
-#    {{ default "default" .Values.alertmanager.serviceAccount.name }}
-     {{ "ab" }}
+    {{ default "default" .Values.alertmanager.serviceAccount.name }}
 {{- end -}}
 {{- end -}}
 
