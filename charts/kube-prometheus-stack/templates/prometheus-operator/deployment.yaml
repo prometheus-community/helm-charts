@@ -92,8 +92,8 @@ spec:
             {{- end }}
             {{- if .Values.prometheusOperator.tls.enabled }}
             - --web.enable-tls=true
-            - --web.cert-file=cert/cert
-            - --web.key-file=cert/key
+            - --web.cert-file=cert/{{ if .Values.prometheusOperator.admissionWebhooks.certManager.enabled }}tls.crt{{ else }}cert{{ end }}
+            - --web.key-file=cert/{{ if .Values.prometheusOperator.admissionWebhooks.certManager.enabled }}tls.key{{ else }}key{{ end }}
             - --web.listen-address=:8443
             - --web.tls-min-version={{ .Values.prometheusOperator.tls.tlsMinVersion }}
           ports:
@@ -109,13 +109,11 @@ spec:
           securityContext:
             allowPrivilegeEscalation: false
             readOnlyRootFilesystem: true
-          {{- if .Values.prometheusOperator.tls.enabled }}
+{{- if .Values.prometheusOperator.tls.enabled }}
           volumeMounts:
             - name: tls-secret
               mountPath: /cert
               readOnly: true
-          {{- end }}
-{{- if .Values.prometheusOperator.tls.enabled }}
       volumes:
         - name: tls-secret
           secret:
