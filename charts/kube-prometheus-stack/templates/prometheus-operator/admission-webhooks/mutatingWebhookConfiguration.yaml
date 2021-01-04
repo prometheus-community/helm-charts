@@ -3,6 +3,11 @@ apiVersion: admissionregistration.k8s.io/v1
 kind: MutatingWebhookConfiguration
 metadata:
   name:  {{ template "kube-prometheus-stack.fullname" . }}-admission
+{{- if .Values.prometheusOperator.admissionWebhooks.certManager.enabled }}
+  annotations:
+    certmanager.k8s.io/inject-ca-from: {{ printf "%s/%s-root-cert" .Release.Namespace (include "kube-prometheus-stack.fullname" .) | quote }}
+    cert-manager.io/inject-ca-from: {{ printf "%s/%s-root-cert" .Release.Namespace (include "kube-prometheus-stack.fullname" .) | quote }}
+{{- end }}
   labels:
     app: {{ template "kube-prometheus-stack.name" $ }}-admission
 {{- include "kube-prometheus-stack.labels" $ | indent 4 }}
