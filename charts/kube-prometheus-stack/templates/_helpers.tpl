@@ -39,7 +39,7 @@ The longest name that gets created adds and extra 37 characters, so truncation s
 {{- if .Values.alertmanager.fullnameOverride -}}
 {{- printf "%s-%s" (include "kube-prometheus-stack.fullname" .) .Values.alertmanager.fullnameOverride -}}
 {{- else -}}
-{{- printf "%s-%s" (include "kube-prometheus-stack.fullname" .) -}}
+{{- printf "%s-alertmanager" (include "kube-prometheus-stack.fullname" .) -}}
 {{- end }}
 {{- end }}
 
