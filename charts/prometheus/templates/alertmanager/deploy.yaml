@@ -73,9 +73,21 @@ spec:
           readinessProbe:
             httpGet:
               path: {{ .Values.alertmanager.prefixURL }}/-/ready
-              port: 9093
-            initialDelaySeconds: 30
-            timeoutSeconds: 30
+              port: 9090
+            initialDelaySeconds: {{ .Values.alertmanager.readinessProbeInitialDelay }}
+            periodSeconds: {{ .Values.alertmanager.readinessProbePeriodSeconds }}
+            timeoutSeconds: {{ .Values.alertmanager.readinessProbeTimeout }}
+            failureThreshold: {{ .Values.alertmanager.readinessProbeFailureThreshold }}
+            successThreshold: {{ .Values.alertmanager.readinessProbeSuccessThreshold }}
+          livenessProbe:
+            httpGet:
+              path: {{ .Values.alertmanager.prefixURL }}/-/healthy
+              port: 9090
+            initialDelaySeconds: {{ .Values.alertmanager.livenessProbeInitialDelay }}
+            periodSeconds: {{ .Values.alertmanager.livenessProbePeriodSeconds }}
+            timeoutSeconds: {{ .Values.alertmanager.livenessProbeTimeout }}
+            failureThreshold: {{ .Values.alertmanager.livenessProbeFailureThreshold }}
+            successThreshold: {{ .Values.alertmanager.livenessProbeSuccessThreshold }}
           resources:
 {{ toYaml .Values.alertmanager.resources | indent 12 }}
           volumeMounts:
