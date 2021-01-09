@@ -35,7 +35,9 @@ spec:
       {{- if .Values.hostNetwork.enabled }}
       hostNetwork: true
       {{- end }}
+      {{- if .Values.dnsPolicy }}
       dnsPolicy: {{ .Values.dnsPolicy }}
+      {{- end}}
       containers:
       - name: {{ .Chart.Name }}
         image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
@@ -53,6 +55,9 @@ spec:
         - --metrics-relist-interval={{ .Values.metricsRelistInterval }}
         - --v={{ .Values.logLevel }}
         - --config=/etc/adapter/config.yaml
+        {{- if .Values.extraArguments }}
+        {{- toYaml .Values.extraArguments | trim | nindent 8 }}
+        {{- end }}
         ports:
         - containerPort: {{ .Values.listenPort }}
           name: https
