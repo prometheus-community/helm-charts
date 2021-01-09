@@ -623,6 +623,7 @@ grafana:
       ## Annotations for Grafana dashboard configmaps
       ##
       annotations: {}
+      multicluster: false
     datasources:
       enabled: true
       defaultDatasourceEnabled: true
@@ -1239,6 +1240,9 @@ prometheusOperator:
   admissionWebhooks:
     failurePolicy: Fail
     enabled: true
+    ## A PEM encoded CA bundle which will be used to validate the webhook's server certificate.
+    ## If unspecified, system trust roots on the apiserver are used.
+    caBundle: ""
     ## If enabled, generate a self-signed certificate, then patch the webhook configurations with the generated data.
     ## On chart upgrades (or if the secret exists) the cert will not be re-generated. You can use this to provide your own
     ## certs ahead of time if you wish.
@@ -1258,6 +1262,12 @@ prometheusOperator:
       nodeSelector: {}
       affinity: {}
       tolerations: []
+    # Use certmanager to generate webhook certs
+    certManager:
+      enabled: false
+      # issuerRef:
+      #   name: "issuer"
+      #   kind: "ClusterIssuer"
 
   ## Namespaces to scope the interaction of the Prometheus Operator and the apiserver (allow list).
   ## This is mutually exclusive with denyNamespaces. Setting this to an empty object will disable the configuration
@@ -1448,7 +1458,7 @@ prometheusOperator:
 
   ## Set the prometheus config reloader side-car memory limit
   ##
-  configReloaderMemory: 25Mi
+  configReloaderMemory: 50Mi
 
   ## Set a Field Selector to filter watched secrets
   ##
@@ -1540,7 +1550,7 @@ prometheus:
     minAvailable: 1
     maxUnavailable: ""
 
-  # Ingress exposes thanos sidecar outside the clsuter
+  # Ingress exposes thanos sidecar outside the cluster
   thanosIngress:
     enabled: false
 
@@ -1561,7 +1571,7 @@ prometheus:
     paths: []
     # - /
 
-    ## TLS configuration for Alertmanager Ingress
+    ## TLS configuration for Thanos Ingress
     ## Secret must be manually created in the namespace
     ##
     tls: []
