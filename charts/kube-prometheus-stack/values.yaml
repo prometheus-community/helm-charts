@@ -1846,9 +1846,12 @@ prometheus:
     #     prometheus: somelabel
 
     ## Namespaces to be selected for ServiceMonitor discovery.
-    ## See https://github.com/prometheus-operator/prometheus-operator/blob/master/Documentation/api.md#namespaceselector for usage
     ##
     serviceMonitorNamespaceSelector: {}
+    ## Example which selects ServiceMonitors in namespaces with label "prometheus" set to "somelabel"
+    # serviceMonitorNamespaceSelector:
+    #   matchLabels:
+    #     prometheus: somelabel
 
     ## If true, a nil or {} value for prometheus.prometheusSpec.podMonitorSelector will cause the
     ## prometheus resource to be created with selectors based on values in the helm deployment,
@@ -1906,9 +1909,19 @@ prometheus:
     ##
     paused: false
 
-    ## Number of Prometheus replicas desired
+    ## Number of replicas of each shard to deploy for a Prometheus deployment.
+    ## Number of replicas multiplied by shards is the total number of Pods created.
     ##
     replicas: 1
+
+    ## EXPERIMENTAL: Number of shards to distribute targets onto.
+    ## Number of replicas multiplied by shards is the total number of Pods created.
+    ## Note that scaling down shards will not reshard data onto remaining instances, it must be manually moved.
+    ## Increasing shards will not reshard data either but it will continue to be available from the same instances.
+    ## To query globally use Thanos sidecar and Thanos querier or remote write data to a central location.
+    ## Sharding is done on the content of the `__address__` target meta-label.
+    ##
+    shards: 1
 
     ## Log level for Prometheus be configured in
     ##
