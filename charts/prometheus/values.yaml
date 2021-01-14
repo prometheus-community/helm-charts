@@ -589,7 +589,7 @@ server:
   ##
   image:
     repository: quay.io/prometheus/prometheus
-    tag: v2.22.1
+    tag: v2.24.0
     pullPolicy: IfNotPresent
 
   ## prometheus server priorityClassName
@@ -994,7 +994,7 @@ pushgateway:
   ##
   image:
     repository: prom/pushgateway
-    tag: v1.3.0
+    tag: v1.3.1
     pullPolicy: IfNotPresent
 
   ## pushgateway priorityClassName
@@ -1509,6 +1509,8 @@ serverFiles:
       # following annotations:
       #
       # * `prometheus.io/scrape`: Only scrape pods that have a value of `true`
+      # * `prometheus.io/scheme`: If the metrics endpoint is secured then you will need
+      # to set this to `https` & most likely set the `tls_config` of the scrape config.
       # * `prometheus.io/path`: If the metrics path is not `/metrics` override this.
       # * `prometheus.io/port`: Scrape the pod on the indicated port instead of the default of `9102`.
       - job_name: 'kubernetes-pods'
@@ -1520,6 +1522,10 @@ serverFiles:
           - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scrape]
             action: keep
             regex: true
+          - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scheme]
+            action: replace
+            regex: (https?)
+            target_label: __scheme__
           - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_path]
             action: replace
             target_label: __metrics_path__
@@ -1548,6 +1554,8 @@ serverFiles:
       # following annotations:
       #
       # * `prometheus.io/scrape-slow`: Only scrape pods that have a value of `true`
+      # * `prometheus.io/scheme`: If the metrics endpoint is secured then you will need
+      # to set this to `https` & most likely set the `tls_config` of the scrape config.
       # * `prometheus.io/path`: If the metrics path is not `/metrics` override this.
       # * `prometheus.io/port`: Scrape the pod on the indicated port instead of the default of `9102`.
       - job_name: 'kubernetes-pods-slow'
@@ -1562,6 +1570,10 @@ serverFiles:
           - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scrape_slow]
             action: keep
             regex: true
+          - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scheme]
+            action: replace
+            regex: (https?)
+            target_label: __scheme__
           - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_path]
             action: replace
             target_label: __metrics_path__
