@@ -6,6 +6,10 @@ numbering uses [semantic versioning](http://semver.org).
 
 NOTE: The change log until version 0.4.10 is auto generated based on git commits. Those include a reference to the git commit to be able to get more details.
 
+## 0.13.0
+
+Added option to enable STS regional endpoints via ENV variable mounted to pods
+
 ## 0.8.4
 
 Chart moved from stable to prometheus-community helm repo
