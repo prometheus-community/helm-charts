@@ -58,23 +58,11 @@ spec:
             {{- end }}
             - --namespaces={{ $ns | join "," }}
             {{- end }}
-            {{- if (semverCompare "< v0.44.0" .Values.prometheusOperator.image.tag) }}
-            - --logtostderr=true
-            {{- end }}
             - --localhost=127.0.0.1
             {{- if .Values.prometheusOperator.prometheusConfigReloaderImage.sha }}
             - --prometheus-config-reloader={{ .Values.prometheusOperator.prometheusConfigReloaderImage.repository }}:{{ .Values.prometheusOperator.prometheusConfigReloaderImage.tag }}@sha256:{{ .Values.prometheusOperator.prometheusConfigReloaderImage.sha }}
             {{- else }}
             - --prometheus-config-reloader={{ .Values.prometheusOperator.prometheusConfigReloaderImage.repository }}:{{ .Values.prometheusOperator.prometheusConfigReloaderImage.tag }}
-            {{- end }}
-            # Empty if statement to catch non-semver master tags that do not need the --config-reloader-image flag
-            {{- if regexMatch "master.*" .Values.prometheusOperator.image.tag -}}
-            {{- else if (semverCompare "< v0.43.0" .Values.prometheusOperator.image.tag) -}}
-            {{- if .Values.prometheusOperator.configmapReloadImage.sha }}
-            - --config-reloader-image={{ .Values.prometheusOperator.configmapReloadImage.repository }}:{{ .Values.prometheusOperator.configmapReloadImage.tag }}@sha256:{{ .Values.prometheusOperator.configmapReloadImage.sha }}
-            {{- else }}
-            - --config-reloader-image={{ .Values.prometheusOperator.configmapReloadImage.repository }}:{{ .Values.prometheusOperator.configmapReloadImage.tag }}
-            {{- end }}
             {{- end }}
             - --config-reloader-cpu={{ .Values.prometheusOperator.configReloaderCpu }}
             - --config-reloader-memory={{ .Values.prometheusOperator.configReloaderMemory }}
