@@ -2,7 +2,7 @@
 
 VERSION=$1
 
-[ -z ${VERSION} ] && echo "Pass prometheus-operator version as first comandline argument" && exit 1
+[ -z "${VERSION}" ] && echo "Pass prometheus-operator version as first comandline argument" && exit 1
 
 FILES=(
   "crd-alertmanagerconfigs.yaml :  monitoring.coreos.com_alertmanagerconfigs.yaml"
@@ -20,7 +20,7 @@ for line in "${FILES[@]}" ; do
     SOURCE=$(echo "${line##*:}" | xargs)
 
     URL="https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/$VERSION/example/prometheus-operator-crd/$SOURCE"
-    echo "# $URL" > ../crds/$DESTINATION
-    curl -L $URL >> ../crds/$DESTINATION
+    echo "# ${URL}" > ../crds/"${DESTINATION}"
+    curl -L "${URL}" >> ../crds/"${DESTINATION}"
 
 done
