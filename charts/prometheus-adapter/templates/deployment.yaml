@@ -45,7 +45,7 @@ spec:
         args:
         - /adapter
         - --secure-port={{ .Values.listenPort }}
-        {{- if .Values.tls.enable }}
+        {{- if or .Values.tls.enable .Values.certManager.enabled }}
         - --tls-cert-file=/var/run/serving-cert/tls.crt
         - --tls-private-key-file=/var/run/serving-cert/tls.key
         {{- end }}
@@ -93,7 +93,7 @@ spec:
           readOnly: true
         - mountPath: /tmp
           name: tmp
-        {{- if .Values.tls.enable }}
+        {{- if or .Values.tls.enable .Values.certManager.enabled }}
         - mountPath: /var/run/serving-cert
           name: volume-serving-cert
           readOnly: true
@@ -120,7 +120,7 @@ spec:
           name: {{ .Values.rules.existing | default (include "k8s-prometheus-adapter.fullname" . ) }}
       - name: tmp
         emptyDir: {}
-      {{- if .Values.tls.enable }}
+      {{- if or .Values.tls.enable .Values.certManager.enabled }}
       - name: volume-serving-cert
         secret:
           secretName: {{ template "k8s-prometheus-adapter.fullname" . }}
