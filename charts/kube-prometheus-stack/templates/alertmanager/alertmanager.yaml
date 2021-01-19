@@ -85,9 +85,9 @@ spec:
       requiredDuringSchedulingIgnoredDuringExecution:
       - topologyKey: {{ .Values.alertmanager.alertmanagerSpec.podAntiAffinityTopologyKey }}
         labelSelector:
-          matchLabels:
-            app: alertmanager
-            alertmanager: {{ template "kube-prometheus-stack.fullname" . }}-alertmanager
+          matchExpressions:
+            - {key: app, operator: In, values: [alertmanager]}
+            - {key: prometheus, operator: In, values: [{{ template "kube-prometheus-stack.fullname" . }}-alertmanager]}
 {{- else if eq .Values.alertmanager.alertmanagerSpec.podAntiAffinity "soft" }}
     podAntiAffinity:
       preferredDuringSchedulingIgnoredDuringExecution:
@@ -95,9 +95,9 @@ spec:
         podAffinityTerm:
           topologyKey: {{ .Values.alertmanager.alertmanagerSpec.podAntiAffinityTopologyKey }}
           labelSelector:
-            matchLabels:
-              app: alertmanager
-              alertmanager: {{ template "kube-prometheus-stack.fullname" . }}-alertmanager
+            matchExpressions:
+              - {key: app, operator: In, values: [alertmanager]}
+              - {key: prometheus, operator: In, values: [{{ template "kube-prometheus-stack.fullname" . }}-alertmanager]}
 {{- end }}
 {{- end }}
 {{- if .Values.alertmanager.alertmanagerSpec.tolerations }}
