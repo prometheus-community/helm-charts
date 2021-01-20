@@ -189,6 +189,8 @@ A validating and mutating webhook configuration requires the endpoint to which t
 
 It should be possible to use [jetstack/cert-manager](https://github.com/jetstack/cert-manager) if a more complete solution is required, but it has not been tested.
 
+You can enable automatic self-signed TLS certificate provisioning via cert-manager by setting the `prometheusOperator.admissionWebhooks.certManager.enabled` value to true.
+
 ### Limitations
 
 Because the operator can only run as a single pod, there is potential for this component failure to cause rule deployment failure. Because this risk is outweighed by the benefit of having validation, the feature is enabled by default.
