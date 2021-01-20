@@ -6,6 +6,11 @@ apiVersion: apiregistration.k8s.io/v1beta1
 {{- end }}
 kind: APIService
 metadata:
+{{- if .Values.certManager.enabled }}
+  annotations:
+    certmanager.k8s.io/inject-ca-from: {{ printf "%s/%s-root-cert" .Release.Namespace (include "k8s-prometheus-adapter.fullname" .) | quote }}
+    cert-manager.io/inject-ca-from: {{ printf "%s/%s-root-cert" .Release.Namespace (include "k8s-prometheus-adapter.fullname" .) | quote }}
+{{- end }}
   labels:
     app: {{ template "k8s-prometheus-adapter.name" . }}
     chart: {{ template "k8s-prometheus-adapter.chart" . }}
@@ -16,12 +21,12 @@ spec:
   service:
     name: {{ template "k8s-prometheus-adapter.fullname" . }}
     namespace: {{ .Release.Namespace | quote }}
-  {{ if .Values.tls.enable -}}
+  {{- if .Values.tls.enable -}}
   caBundle: {{ b64enc .Values.tls.ca }}
   {{- end }}
   group: external.metrics.k8s.io
   version: v1beta1
-  insecureSkipTLSVerify: {{ if .Values.tls.enable }}false{{ else }}true{{ end }}
+  insecureSkipTLSVerify: {{ if or .Values.tls.enable .Values.certManager.enabled }}false{{ else }}true{{ end }}
   groupPriorityMinimum: 100
   versionPriority: 100
 {{- end -}}
