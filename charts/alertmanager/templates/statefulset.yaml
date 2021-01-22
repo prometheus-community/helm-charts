@@ -32,9 +32,29 @@ spec:
             {{- toYaml .Values.securityContext | nindent 12 }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
+          env:
+            - name: POD_IP
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: status.podIP
           args:
             - --storage.path=/alertmanager
             - --config.file=/etc/alertmanager/alertmanager.yml
+            {{- if or (gt .Values.replicaCount 1.0) (.Values.additionalPeers) }}
+            - --cluster.advertise-address=$(POD_IP):9094
+            - --cluster.listen-address=0.0.0.0:9094
+            {{- end }}
+            {{- if gt .Values.replicaCount 1.0}}
+            {{- range $i := until (int .Values.replicaCount) }}
+            - --cluster.peer={{ tpl $.Release.Name $ }}-{{ tpl $.Chart.Name $ }}-{{ $i }}.{{ tpl $.Release.Name $ }}-{{ tpl $.Chart.Name $ }}-headless:9094
+            {{- end }}
+            {{- end }}
+            {{- if .Values.additionalPeers }}
+            {{- range $item := .Values.additionalPeers }}
+            - --cluster.peer={{ $item }}
+            {{- end }}
+            {{- end }}
             {{- range $key, $value := .Values.extraArgs }}
             - --{{ $key }}={{ $value }}
             {{- end }}
