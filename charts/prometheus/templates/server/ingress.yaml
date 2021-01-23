@@ -4,11 +4,7 @@
 {{- $serviceName := include "prometheus.server.fullname" . }}
 {{- $servicePort := .Values.server.service.servicePort -}}
 {{- $extraPaths := .Values.server.ingress.extraPaths -}}
-{{- if .Capabilities.APIVersions.Has "networking.k8s.io/v1beta1" }}
-apiVersion: networking.k8s.io/v1beta1
-{{ else }}
-apiVersion: extensions/v1beta1
-{{ end -}}
+apiVersion: {{ template "ingress.apiVersion" . }}
 kind: Ingress
 metadata:
 {{- if .Values.server.ingress.annotations }}
@@ -23,6 +19,11 @@ metadata:
   name: {{ template "prometheus.server.fullname" . }}
 {{ include "prometheus.namespace" . | indent 2 }}
 spec:
+  {{- if or (.Capabilities.APIVersions.Has "networking.k8s.io/v1/IngressClass") (.Capabilities.APIVersions.Has "networking.k8s.io/v1beta1/IngressClass") }}
+  {{- if .Values.server.ingress.ingressClassName }}
+  ingressClassName: {{ .Values.server.ingress.ingressClassName }}
+  {{- end }}
+  {{- end }}
   rules:
   {{- range .Values.server.ingress.hosts }}
     {{- $url := splitList "/" . }}

@@ -4,6 +4,10 @@ metadata:
   name: {{ include "alertmanager.fullname" . }}
   labels:
     {{- include "alertmanager.labels" . | nindent 4 }}
+{{- if .Values.statefulSet.annotations }}
+  annotations:
+    {{ toYaml .Values.statefulSet.annotations | nindent 4 }}
+{{- end }}
 spec:
   replicas: {{ .Values.replicaCount }}
   selector:
@@ -41,7 +45,7 @@ spec:
             {{- toYaml .Values.securityContext | nindent 12 }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
-          args: 
+          args:
             - --storage.path=/alertmanager
             - --config.file=/etc/alertmanager/alertmanager.yml
             {{- range $key, $value := .Values.extraArgs }}
