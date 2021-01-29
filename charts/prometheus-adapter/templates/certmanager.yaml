@@ -1,0 +1,48 @@
+{{- if .Values.certManager.enabled -}}
+---
+# Create a selfsigned Issuer, in order to create a root CA certificate for
+# signing webhook serving certificates
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  name: {{ template "k8s-prometheus-adapter.fullname" . }}-self-signed-issuer
+spec:
+  selfSigned: {}
+---
+# Generate a CA Certificate used to sign certificates for the webhook
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: {{ template "k8s-prometheus-adapter.fullname" . }}-root-cert
+spec:
+  secretName: {{ template "k8s-prometheus-adapter.fullname" . }}-root-cert
+  duration: {{ .Values.certManager.caCertDuration }}
+  issuerRef:
+    name: {{ template "k8s-prometheus-adapter.fullname" . }}-self-signed-issuer
+  commonName: "ca.webhook.prometheus-adapter"
+  isCA: true
+---
+# Create an Issuer that uses the above generated CA certificate to issue certs
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  name: {{ template "k8s-prometheus-adapter.fullname" . }}-root-issuer
+spec:
+  ca:
+    secretName: {{ template "k8s-prometheus-adapter.fullname" . }}-root-cert
+---
+# Finally, generate a serving certificate for the apiservices to use
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: {{ template "k8s-prometheus-adapter.fullname" . }}-cert
+spec:
+  secretName: {{ template "k8s-prometheus-adapter.fullname" . }}
+  duration: {{ .Values.certManager.certDuration }}
+  issuerRef:
+    name: {{ template "k8s-prometheus-adapter.fullname" . }}-root-issuer
+  dnsNames:
+  - {{ template "k8s-prometheus-adapter.fullname" . }}
+  - {{ template "k8s-prometheus-adapter.fullname" . }}.{{ .Release.Namespace }}
+  - {{ template "k8s-prometheus-adapter.fullname" . }}.{{ .Release.Namespace }}.svc
+{{- end -}}

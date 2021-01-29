@@ -158,6 +158,8 @@ alertmanager:
         receiver: 'null'
     receivers:
     - name: 'null'
+    templates:
+    - '/etc/alertmanager/config/*.tmpl'
 
   ## Pass the Alertmanager configuration directives through Helm's templating
   ## engine. If the Alertmanager configuration contains Alertmanager templates,
@@ -170,6 +172,10 @@ alertmanager:
   tplConfig: false
 
   ## Alertmanager template files to format alerts
+  ## By default, templateFiles are placed in /etc/alertmanager/config/ and if
+  ## they have a .tmpl file suffix will be loaded. See config.templates above
+  ## to change, add other suffixes. If adding other suffixes, be sure to update
+  ## config.templates above to include those suffixes.
   ## ref: https://prometheus.io/docs/alerting/notifications/
   ##      https://prometheus.io/docs/alerting/notification_examples/
   ##
@@ -623,6 +629,7 @@ grafana:
       ## Annotations for Grafana dashboard configmaps
       ##
       annotations: {}
+      multicluster: false
     datasources:
       enabled: true
       defaultDatasourceEnabled: true
@@ -1217,8 +1224,8 @@ prometheus-node-exporter:
     ##
     jobLabel: node-exporter
   extraArgs:
-    - --collector.filesystem.ignored-mount-points=^/(dev|proc|sys|var/lib/docker/.+)($|/)
-    - --collector.filesystem.ignored-fs-types=^(autofs|binfmt_misc|cgroup|configfs|debugfs|devpts|devtmpfs|fusectl|hugetlbfs|mqueue|overlay|proc|procfs|pstore|rpc_pipefs|securityfs|sysfs|tracefs)$
+    - --collector.filesystem.ignored-mount-points=^/(dev|proc|sys|var/lib/docker/.+|var/lib/kubelet/.+)($|/)
+    - --collector.filesystem.ignored-fs-types=^(autofs|binfmt_misc|bpf|cgroup2?|configfs|debugfs|devpts|devtmpfs|fusectl|hugetlbfs|iso9660|mqueue|nsfs|overlay|proc|procfs|pstore|rpc_pipefs|securityfs|selinuxfs|squashfs|sysfs|tracefs)$
 
 ## Manages Prometheus and Alertmanager components
 ##
@@ -1236,6 +1243,9 @@ prometheusOperator:
   admissionWebhooks:
     failurePolicy: Fail
     enabled: true
+    ## A PEM encoded CA bundle which will be used to validate the webhook's server certificate.
+    ## If unspecified, system trust roots on the apiserver are used.
+    caBundle: ""
     ## If enabled, generate a self-signed certificate, then patch the webhook configurations with the generated data.
     ## On chart upgrades (or if the secret exists) the cert will not be re-generated. You can use this to provide your own
     ## certs ahead of time if you wish.
@@ -1255,6 +1265,12 @@ prometheusOperator:
       nodeSelector: {}
       affinity: {}
       tolerations: []
+    # Use certmanager to generate webhook certs
+    certManager:
+      enabled: false
+      # issuerRef:
+      #   name: "issuer"
+      #   kind: "ClusterIssuer"
 
   ## Namespaces to scope the interaction of the Prometheus Operator and the apiserver (allow list).
   ## This is mutually exclusive with denyNamespaces. Setting this to an empty object will disable the configuration
@@ -1421,22 +1437,23 @@ prometheusOperator:
   ##
   image:
     repository: quay.io/prometheus-operator/prometheus-operator
-    tag: v0.44.0
+    tag: v0.45.0
     sha: ""
     pullPolicy: IfNotPresent
 
-  ## Configmap-reload image to use for reloading configmaps
+  ## Prometheus image to use for prometheuses managed by the operator
   ##
-  configmapReloadImage:
-    repository: docker.io/jimmidyson/configmap-reload
-    tag: v0.4.0
-    sha: ""
+  # prometheusDefaultBaseImage: quay.io/prometheus/prometheus
+
+  ## Alertmanager image to use for alertmanagers managed by the operator
+  ##
+  # alertmanagerDefaultBaseImage: quay.io/prometheus/alertmanager
 
   ## Prometheus-config-reloader image to use for config and rule reloading
   ##
   prometheusConfigReloaderImage:
     repository: quay.io/prometheus-operator/prometheus-config-reloader
-    tag: v0.44.0
+    tag: v0.45.0
     sha: ""
 
   ## Set the prometheus config reloader side-car CPU limit
@@ -1445,7 +1462,7 @@ prometheusOperator:
 
   ## Set the prometheus config reloader side-car memory limit
   ##
-  configReloaderMemory: 25Mi
+  configReloaderMemory: 50Mi
 
   ## Set a Field Selector to filter watched secrets
   ##
@@ -1467,6 +1484,19 @@ prometheus:
   serviceAccount:
     create: true
     name: ""
+
+  # Service for thanos service discovery on sidecar
+  # Enable this can make Thanos Query can use
+  # `--store=dnssrv+_grpc._tcp.${kube-prometheus-stack.fullname}-thanos-discovery.${namespace}.svc.cluster.local` to discovery
+  # Thanos sidecar on prometheus nodes
+  # (Please remember to change ${kube-prometheus-stack.fullname} and ${namespace}. Not just copy and paste!)
+  thanosService:
+    enabled: false
+    annotations: {}
+    labels: {}
+    portName: grpc
+    port: 10901
+    targetPort: "grpc"
 
   ## Configuration for Prometheus service
   ##
@@ -1537,7 +1567,7 @@ prometheus:
     minAvailable: 1
     maxUnavailable: ""
 
-  # Ingress exposes thanos sidecar outside the clsuter
+  # Ingress exposes thanos sidecar outside the cluster
   thanosIngress:
     enabled: false
 
@@ -1548,6 +1578,12 @@ prometheus:
     annotations: {}
     labels: {}
     servicePort: 10901
+
+    ## Port to expose on each node
+    ## Only used if service.type is 'NodePort'
+    ##
+    nodePort: 30901
+
     ## Hosts must be provided if Ingress is enabled.
     ##
     hosts: []
@@ -1558,7 +1594,7 @@ prometheus:
     paths: []
     # - /
 
-    ## TLS configuration for Alertmanager Ingress
+    ## TLS configuration for Thanos Ingress
     ## Secret must be manually created in the namespace
     ##
     tls: []
@@ -1640,6 +1676,8 @@ prometheus:
   ## ref: https://kubernetes.io/docs/concepts/policy/pod-security-policy/
   podSecurityPolicy:
     allowedCapabilities: []
+    allowedHostPaths: []
+    volumes: []
 
   serviceMonitor:
     ## Scrape interval. If not set, the Prometheus default scrape interval is used.
@@ -1713,7 +1751,7 @@ prometheus:
     ##
     image:
       repository: quay.io/prometheus/prometheus
-      tag: v2.22.1
+      tag: v2.24.0
       sha: ""
 
     ## Tolerations for use with node taints
@@ -1833,9 +1871,12 @@ prometheus:
     #     prometheus: somelabel
 
     ## Namespaces to be selected for ServiceMonitor discovery.
-    ## See https://github.com/prometheus-operator/prometheus-operator/blob/master/Documentation/api.md#namespaceselector for usage
     ##
     serviceMonitorNamespaceSelector: {}
+    ## Example which selects ServiceMonitors in namespaces with label "prometheus" set to "somelabel"
+    # serviceMonitorNamespaceSelector:
+    #   matchLabels:
+    #     prometheus: somelabel
 
     ## If true, a nil or {} value for prometheus.prometheusSpec.podMonitorSelector will cause the
     ## prometheus resource to be created with selectors based on values in the helm deployment,
@@ -1893,9 +1934,19 @@ prometheus:
     ##
     paused: false
 
-    ## Number of Prometheus replicas desired
+    ## Number of replicas of each shard to deploy for a Prometheus deployment.
+    ## Number of replicas multiplied by shards is the total number of Pods created.
     ##
     replicas: 1
+
+    ## EXPERIMENTAL: Number of shards to distribute targets onto.
+    ## Number of replicas multiplied by shards is the total number of Pods created.
+    ## Note that scaling down shards will not reshard data onto remaining instances, it must be manually moved.
+    ## Increasing shards will not reshard data either but it will continue to be available from the same instances.
+    ## To query globally use Thanos sidecar and Thanos querier or remote write data to a central location.
+    ## Sharding is done on the content of the `__address__` target meta-label.
+    ##
+    shards: 1
 
     ## Log level for Prometheus be configured in
     ##

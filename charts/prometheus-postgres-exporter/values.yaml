@@ -9,6 +9,13 @@ image:
   tag: v0.8.0
   pullPolicy: IfNotPresent
 
+  ## Optionally specify an array of imagePullSecrets.
+  ## Secrets must be manually created in the namespace.
+  ## ref: https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/
+  ##
+  # pullSecrets:
+  #   - myRegistrKeySecretName
+
 service:
   type: ClusterIP
   port: 80
@@ -30,6 +37,10 @@ serviceMonitor:
   # labels:
   # Set timeout for scrape
   # timeout: 10s
+  # Set of labels to transfer from the Kubernetes Service onto the target
+  # targetLabels: []
+  # MetricRelabelConfigs to apply to samples before ingestion
+  # metricRelabelings: []
 
 prometheusRule:
   enabled: false
@@ -102,6 +113,7 @@ config:
   disableSettingsMetrics: false
   autoDiscoverDatabases: false
   excludeDatabases: []
+  constantLabels: {}
   # this are the defaults queries that the exporter will run, extracted from: https://github.com/wrouesnel/postgres_exporter/blob/master/queries.yaml
   queries: |-
     pg_replication:
@@ -319,6 +331,13 @@ affinity: {}
 annotations: {}
 
 podLabels: {}
+
+# Configurable health checks
+livenessProbe:
+  initialDelaySeconds: 0
+
+readinessProbe:
+  initialDelaySeconds: 0
 
 # Init containers, e. g. for secrets creation before the exporter
 initContainers: []

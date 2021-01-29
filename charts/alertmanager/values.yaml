@@ -37,6 +37,8 @@ securityContext:
   runAsNonRoot: true
   runAsGroup: 65534
 
+additionalPeers: []
+
 service:
   type: ClusterIP
   port: 9093
@@ -90,6 +92,9 @@ config:
   global: {}
     # slack_api_url: ''
 
+  templates:
+    - '/etc/alertmanager/*.tmpl'
+
   receivers:
     - name: default-receiver
       # slack_configs:
@@ -101,3 +106,30 @@ config:
     group_interval: 5m
     receiver: default-receiver
     repeat_interval: 3h
+
+## Monitors ConfigMap changes and POSTs to a URL
+## Ref: https://github.com/jimmidyson/configmap-reload
+##
+configmapReload:
+  ## If false, the configmap-reload container will not be deployed
+  ##
+  enabled: false
+
+  ## configmap-reload container name
+  ##
+  name: configmap-reload
+
+  ## configmap-reload container image
+  ##
+  image:
+    repository: jimmidyson/configmap-reload
+    tag: v0.4.0
+    pullPolicy: IfNotPresent
+
+  ## configmap-reload resource requests and limits
+  ## Ref: http://kubernetes.io/docs/user-guide/compute-resources/
+  ##
+  resources: {}
+
+templates: {}
+#   alertmanager.tmpl: |-

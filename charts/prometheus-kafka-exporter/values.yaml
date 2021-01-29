@@ -1,8 +1,19 @@
+image:
+  repository: danielqsj/kafka-exporter
+  tag: latest
+  pullPolicy: IfNotPresent
+
+replicaCount: 1
+
+kafkaServer:
+  - kafka-server:9092
+
 rbac:
   # Specifies whether RBAC resources should be created
   create: true
   # Specifies whether a PodSecurityPolicy should be created
   pspEnabled: true
+
 serviceAccount:
   # Specifies whether a ServiceAccount should be created
   create: true
@@ -10,14 +21,7 @@ serviceAccount:
   # If not set and create is true, a name is generated using the fullname template
   name:
 
-replicaCount: 1
-image:
-  repository: danielqsj/kafka-exporter
-  tag: latest
-  pullPolicy: IfNotPresent
-
-kafkaServer:
-  - kafka-server:9092
+env: []
 
 service:
   type: ClusterIP
@@ -30,6 +34,7 @@ liveness:
     httpGet:
       path: /
       port: exporter-port
+
 readiness:
   enabled: false
   probe:
@@ -77,3 +82,8 @@ tls:
   enabled: false
   # mountPath: /secret/certs
   # secretName: <name of an existing secret>
+
+# If enabled Kafka dependency chart will be used.
+# This is only needed for the CI job so it should always be disabled.
+kafka:
+  enabled: false

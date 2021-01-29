@@ -18,6 +18,11 @@ metadata:
   name: {{ template "prometheus.alertmanager.fullname" . }}
 {{ include "prometheus.namespace" . | indent 2 }}
 spec:
+  {{- if or (.Capabilities.APIVersions.Has "networking.k8s.io/v1/IngressClass") (.Capabilities.APIVersions.Has "networking.k8s.io/v1beta1/IngressClass") }}
+  {{- if .Values.alertmanager.ingress.ingressClassName }}
+  ingressClassName: {{ .Values.alertmanager.ingress.ingressClassName }}
+  {{- end }}
+  {{- end }}
   rules:
   {{- range .Values.alertmanager.ingress.hosts }}
     {{- $url := splitList "/" . }}
