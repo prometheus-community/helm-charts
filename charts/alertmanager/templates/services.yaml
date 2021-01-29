@@ -27,5 +27,15 @@ spec:
       targetPort: http
       protocol: TCP
       name: http
+    {{- if or (gt .Values.replicaCount 1.0) (.Values.additionalPeers) }}
+    - port: 9094
+      targetPort: 9094
+      protocol: TCP
+      name: cluster-tcp
+    - port: 9094
+      targetPort: 9094
+      protocol: UDP
+      name: cluster-udp
+    {{- end }}
   selector:
     {{- include "alertmanager.selectorLabels" . | nindent 4 }}
