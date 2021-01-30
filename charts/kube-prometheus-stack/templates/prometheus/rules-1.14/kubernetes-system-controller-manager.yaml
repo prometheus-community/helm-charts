@@ -4,7 +4,7 @@ Do not change in-place! In order to change this file first read following link:
 https://github.com/prometheus-community/helm-charts/tree/main/charts/kube-prometheus-stack/hack
 */ -}}
 {{- $kubeTargetVersion := default .Capabilities.KubeVersion.GitVersion .Values.kubeTargetVersionOverride }}
-{{- if and (semverCompare ">=1.14.0-0" $kubeTargetVersion) (semverCompare "<9.9.9-9" $kubeTargetVersion) .Values.defaultRules.create .Values.kubeControllerManager.enabled }}
+{{- if and (semverCompare ">=1.14.0-0" $kubeTargetVersion) (semverCompare "<9.9.9-9" $kubeTargetVersion) .Values.defaultRules.create .Values.kubeControllerManager.enabled .Values.kubeControllerManager.serviceMonitor.enabled }}
 apiVersion: monitoring.coreos.com/v1
 kind: PrometheusRule
 metadata:
@@ -24,7 +24,6 @@ spec:
   groups:
   - name: kubernetes-system-controller-manager
     rules:
-{{- if .Values.kubeControllerManager.enabled }}
     - alert: KubeControllerManagerDown
       annotations:
         description: KubeControllerManager has disappeared from Prometheus target discovery.
@@ -36,6 +35,5 @@ spec:
         severity: critical
 {{- if .Values.defaultRules.additionalRuleLabels }}
 {{ toYaml .Values.defaultRules.additionalRuleLabels | indent 8 }}
-{{- end }}
 {{- end }}
 {{- end }}
