@@ -40,7 +40,7 @@ spec:
 {{- end }}
 {{- if .Values.prometheus.prometheusSpec.externalLabels }}
   externalLabels:
-{{ toYaml .Values.prometheus.prometheusSpec.externalLabels | indent 4}}
+{{ tpl (toYaml .Values.prometheus.prometheusSpec.externalLabels | indent 4) . }}
 {{- end }}
 {{- if .Values.prometheus.prometheusSpec.prometheusExternalLabelNameClear }}
   prometheusExternalLabelName: ""
@@ -65,6 +65,7 @@ spec:
 {{- end }}
   paused: {{ .Values.prometheus.prometheusSpec.paused }}
   replicas: {{ .Values.prometheus.prometheusSpec.replicas }}
+  shards: {{ .Values.prometheus.prometheusSpec.shards }}
   logLevel:  {{ .Values.prometheus.prometheusSpec.logLevel }}
   logFormat:  {{ .Values.prometheus.prometheusSpec.logFormat }}
   listenLocal: {{ .Values.prometheus.prometheusSpec.listenLocal }}
@@ -200,9 +201,9 @@ spec:
       requiredDuringSchedulingIgnoredDuringExecution:
       - topologyKey: {{ .Values.prometheus.prometheusSpec.podAntiAffinityTopologyKey }}
         labelSelector:
-          matchLabels:
-            app: prometheus
-            prometheus: {{ template "kube-prometheus-stack.fullname" . }}-prometheus
+          matchExpressions:
+            - {key: app, operator: In, values: [prometheus]}
+            - {key: prometheus, operator: In, values: [{{ template "kube-prometheus-stack.fullname" . }}-prometheus]}
 {{- else if eq .Values.prometheus.prometheusSpec.podAntiAffinity "soft" }}
     podAntiAffinity:
       preferredDuringSchedulingIgnoredDuringExecution:
@@ -210,9 +211,9 @@ spec:
         podAffinityTerm:
           topologyKey: {{ .Values.prometheus.prometheusSpec.podAntiAffinityTopologyKey }}
           labelSelector:
-            matchLabels:
-              app: prometheus
-              prometheus: {{ template "kube-prometheus-stack.fullname" . }}-prometheus
+            matchExpressions:
+              - {key: app, operator: In, values: [prometheus]}
+              - {key: prometheus, operator: In, values: [{{ template "kube-prometheus-stack.fullname" . }}-prometheus]}
 {{- end }}
 {{- end }}
 {{- if .Values.prometheus.prometheusSpec.tolerations }}
