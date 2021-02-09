@@ -20,6 +20,9 @@ prometheus:
     enabled: false
     additionalLabels: {}
     namespace: ""
+    scheme: http
+    bearerTokenFile:
+    tlsConfig: {}
 
     relabelings: []
     scrapeTimeout: 10s
@@ -48,6 +51,7 @@ serviceAccount:
   # The name of the ServiceAccount to use.
   # If not set and create is true, a name is generated using the fullname template
   name:
+  annotations: {}
   imagePullSecrets: []
 
 securityContext:
@@ -55,6 +59,11 @@ securityContext:
   runAsGroup: 65534
   runAsNonRoot: true
   runAsUser: 65534
+
+containerSecurityContext: {}
+  # capabilities:
+  #   add:
+  #   - SYS_TIME
 
 rbac:
   ## If true, create & use RBAC resources
@@ -84,7 +93,9 @@ affinity: {}
 #                 - target-host-name
 
 # Annotations to be added to node exporter pods
-podAnnotations: {}
+podAnnotations:
+  # Fix for very slow GKE cluster upgrades
+  cluster-autoscaler.kubernetes.io/safe-to-evict: "true"
 
 # Extra labels to be added to node exporter pods
 podLabels: {}
@@ -122,7 +133,9 @@ extraHostVolumeMounts: []
 configmaps: []
 # - name: <configMapName>
 #   mountPath: <mountPath>
-
+secrets: []
+# - name: <secretName>
+#   mountPath: <mountPatch>
 ## Override the deployment namespace
 ##
 namespaceOverride: ""

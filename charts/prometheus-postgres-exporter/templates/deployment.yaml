@@ -35,6 +35,12 @@ spec:
       initContainers:
 {{ toYaml .Values.initContainers | indent 8 }}
 {{- end }}
+    {{- if .Values.image.pullSecrets }}
+      imagePullSecrets:
+      {{- range .Values.image.pullSecrets }}
+        - name: {{ . }}
+      {{- end }}
+    {{- end }}
       containers:
         - name: {{ .Chart.Name }}
           args:
@@ -51,6 +57,10 @@ spec:
           - "--exclude-databases"
           - {{ .Values.config.excludeDatabases | join "," }}
           {{- end }}
+          {{- end }}
+          {{- if .Values.config.constantLabels }}
+          {{ $firstLabel := true -}}
+          - "--constantLabels={{- range $k, $v := .Values.config.constantLabels }}{{- if not $firstLabel -}},{{ end -}}{{ $firstLabel = false -}}{{ $k }}={{ $v }}{{- end }}"
           {{- end }}
           env:
           {{- if .Values.config.datasourceSecret }}
@@ -82,10 +92,12 @@ spec:
               containerPort: {{ .Values.service.targetPort }}
               protocol: TCP
           livenessProbe:
+            initialDelaySeconds: {{ .Values.livenessProbe.initialDelaySeconds }}
             httpGet:
               path: /
               port: http
           readinessProbe:
+            initialDelaySeconds: {{ .Values.readinessProbe.initialDelaySeconds }}
             httpGet:
               path: /
               port: http
