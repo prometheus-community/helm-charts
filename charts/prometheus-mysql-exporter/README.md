@@ -2,7 +2,7 @@
 
 A Prometheus exporter for [MySQL](https://www.mysql.com/) metrics.
 
-This chart bootstraps a Prometheus [MySQL Exporter](http://github.com/prometheus/mysql_exporter) deployment on a [Kubernetes](http://kubernetes.io) cluster using the [Helm](https://helm.sh) package manager.
+This chart bootstraps a Prometheus [MySQL Exporter](https://github.com/prometheus/mysqld_exporter) deployment on a [Kubernetes](http://kubernetes.io) cluster using the [Helm](https://helm.sh) package manager.
 
 ## Get Repo Info
 
