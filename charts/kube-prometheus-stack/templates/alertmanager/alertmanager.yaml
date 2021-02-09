@@ -19,7 +19,7 @@ spec:
   listenLocal: {{ .Values.alertmanager.alertmanagerSpec.listenLocal }}
   serviceAccountName: {{ template "kube-prometheus-stack.alertmanager.serviceAccountName" . }}
 {{- if .Values.alertmanager.alertmanagerSpec.externalUrl }}
-  externalUrl: "{{ .Values.alertmanager.alertmanagerSpec.externalUrl }}"
+  externalUrl: "{{ tpl .Values.alertmanager.alertmanagerSpec.externalUrl . }}"
 {{- else if and .Values.alertmanager.ingress.enabled .Values.alertmanager.ingress.hosts }}
   externalUrl: "http://{{ tpl (index .Values.alertmanager.ingress.hosts 0) . }}{{ .Values.alertmanager.alertmanagerSpec.routePrefix }}"
 {{- else }}
@@ -47,10 +47,14 @@ spec:
 {{- if .Values.alertmanager.alertmanagerSpec.alertmanagerConfigSelector }}
   alertmanagerConfigSelector:
 {{ toYaml .Values.alertmanager.alertmanagerSpec.alertmanagerConfigSelector | indent 4}}
+{{ else }}
+  alertmanagerConfigSelector: {}
 {{- end }}
 {{- if .Values.alertmanager.alertmanagerSpec.alertmanagerConfigNamespaceSelector }}
   alertmanagerConfigNamespaceSelector:
 {{ toYaml .Values.alertmanager.alertmanagerSpec.alertmanagerConfigNamespaceSelector | indent 4}}
+{{ else }}
+  alertmanagerConfigNamespaceSelector: {}
 {{- end }}
 {{- if .Values.alertmanager.alertmanagerSpec.resources }}
   resources:
@@ -81,9 +85,9 @@ spec:
       requiredDuringSchedulingIgnoredDuringExecution:
       - topologyKey: {{ .Values.alertmanager.alertmanagerSpec.podAntiAffinityTopologyKey }}
         labelSelector:
-          matchLabels:
-            app: alertmanager
-            alertmanager: {{ template "kube-prometheus-stack.fullname" . }}-alertmanager
+          matchExpressions:
+            - {key: app, operator: In, values: [alertmanager]}
+            - {key: prometheus, operator: In, values: [{{ template "kube-prometheus-stack.fullname" . }}-alertmanager]}
 {{- else if eq .Values.alertmanager.alertmanagerSpec.podAntiAffinity "soft" }}
     podAntiAffinity:
       preferredDuringSchedulingIgnoredDuringExecution:
@@ -91,9 +95,9 @@ spec:
         podAffinityTerm:
           topologyKey: {{ .Values.alertmanager.alertmanagerSpec.podAntiAffinityTopologyKey }}
           labelSelector:
-            matchLabels:
-              app: alertmanager
-              alertmanager: {{ template "kube-prometheus-stack.fullname" . }}-alertmanager
+            matchExpressions:
+              - {key: app, operator: In, values: [alertmanager]}
+              - {key: prometheus, operator: In, values: [{{ template "kube-prometheus-stack.fullname" . }}-alertmanager]}
 {{- end }}
 {{- end }}
 {{- if .Values.alertmanager.alertmanagerSpec.tolerations }}
