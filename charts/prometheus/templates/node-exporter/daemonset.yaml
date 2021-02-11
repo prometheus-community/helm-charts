@@ -45,6 +45,7 @@ spec:
           args:
             - --path.procfs=/host/proc
             - --path.sysfs=/host/sys
+            - --path.rootfs=/host/root
           {{- if .Values.nodeExporter.hostNetwork }}
             - --web.listen-address=:{{ .Values.nodeExporter.service.hostPort }}
           {{- end }}
@@ -71,6 +72,10 @@ spec:
               readOnly:  true
             - name: sys
               mountPath: /host/sys
+              readOnly: true
+            - name: root
+              mountPath: /host/root
+              mountPropagation: HostToContainer
               readOnly: true
           {{- range .Values.nodeExporter.extraHostPathMounts }}
             - name: {{ .name }}
@@ -103,6 +108,10 @@ spec:
       nodeSelector:
 {{ toYaml .Values.nodeExporter.nodeSelector | indent 8 }}
     {{- end }}
+    {{- with .Values.nodeExporter.dnsConfig }}
+      dnsConfig:
+{{ toYaml . | indent 8 }}
+    {{- end }}
     {{- if .Values.nodeExporter.securityContext }}
       securityContext:
 {{ toYaml .Values.nodeExporter.securityContext | indent 8 }}
@@ -114,6 +123,9 @@ spec:
         - name: sys
           hostPath:
             path: /sys
+        - name: root
+          hostPath:
+            path: /
       {{- range .Values.nodeExporter.extraHostPathMounts }}
         - name: {{ .name }}
           hostPath:

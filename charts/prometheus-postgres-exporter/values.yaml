@@ -9,6 +9,13 @@ image:
   tag: v0.8.0
   pullPolicy: IfNotPresent
 
+  ## Optionally specify an array of imagePullSecrets.
+  ## Secrets must be manually created in the namespace.
+  ## ref: https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/
+  ##
+  # pullSecrets:
+  #   - myRegistrKeySecretName
+
 service:
   type: ClusterIP
   port: 80
@@ -30,6 +37,26 @@ serviceMonitor:
   # labels:
   # Set timeout for scrape
   # timeout: 10s
+  # Set of labels to transfer from the Kubernetes Service onto the target
+  # targetLabels: []
+  # MetricRelabelConfigs to apply to samples before ingestion
+  # metricRelabelings: []
+
+prometheusRule:
+  enabled: false
+  additionalLabels: {}
+  namespace: ""
+  rules: []
+    ## These are just examples rules, please adapt them to your needs.
+    ## Make sure to constraint the rules to the current prometheus-postgres-exporter service.
+    # - alert: HugeReplicationLag
+    #   expr: pg_replication_lag{service="{{ template "prometheus-postgres-exporter.fullname" . }}"} / 3600 > 1
+    #   for: 1m
+    #   labels:
+    #     severity: critical
+    #   annotations:
+    #     description: replication for {{ template "prometheus-postgres-exporter.fullname" . }} PostgreSQL is lagging by {{ "{{ $value }}" }} hour(s).
+    #     summary: PostgreSQL replication is lagging by {{ "{{ $value }}" }} hour(s).
 
 resources: {}
   # We usually recommend not to specify default resources and to leave this as a conscious
@@ -86,6 +113,7 @@ config:
   disableSettingsMetrics: false
   autoDiscoverDatabases: false
   excludeDatabases: []
+  constantLabels: {}
   # this are the defaults queries that the exporter will run, extracted from: https://github.com/wrouesnel/postgres_exporter/blob/master/queries.yaml
   queries: |-
     pg_replication:
@@ -303,6 +331,21 @@ affinity: {}
 annotations: {}
 
 podLabels: {}
+
+# Configurable health checks
+livenessProbe:
+  initialDelaySeconds: 0
+
+readinessProbe:
+  initialDelaySeconds: 0
+
+# Init containers, e. g. for secrets creation before the exporter
+initContainers: []
+  # - name:
+  #   image:
+  #   volumeMounts:
+  #     - name: creds
+  #       mountPath: /creds
 
 # Additional sidecar containers, e. g. for a database proxy, such as Google's cloudsql-proxy
 extraContainers: |

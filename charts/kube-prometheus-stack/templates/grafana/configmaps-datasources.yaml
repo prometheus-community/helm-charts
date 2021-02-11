@@ -16,12 +16,15 @@ data:
   datasource.yaml: |-
     apiVersion: 1
     datasources:
+{{- $scrapeInterval := .Values.grafana.sidecar.datasources.defaultDatasourceScrapeInterval | default .Values.prometheus.prometheusSpec.scrapeInterval | default "30s" }}
 {{- if .Values.grafana.sidecar.datasources.defaultDatasourceEnabled }}
     - name: Prometheus
       type: prometheus
       url: http://{{ template "kube-prometheus-stack.fullname" . }}-prometheus:{{ .Values.prometheus.service.port }}/{{ trimPrefix "/" .Values.prometheus.prometheusSpec.routePrefix }}
       access: proxy
       isDefault: true
+      jsonData:
+        timeInterval: {{ $scrapeInterval }}
 {{- if .Values.grafana.sidecar.datasources.createPrometheusReplicasDatasources }}
 {{- range until (int .Values.prometheus.prometheusSpec.replicas) }}
     - name: Prometheus-{{ . }}
@@ -29,6 +32,8 @@ data:
       url: http://prometheus-{{ template "kube-prometheus-stack.fullname" $ }}-prometheus-{{ . }}.prometheus-operated:9090/{{ trimPrefix "/" $.Values.prometheus.prometheusSpec.routePrefix }}
       access: proxy
       isDefault: false
+      jsonData:
+        timeInterval: {{ $scrapeInterval }}
 {{- end }}
 {{- end }}
 {{- end }}

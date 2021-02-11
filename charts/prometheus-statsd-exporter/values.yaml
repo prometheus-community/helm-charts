@@ -1,0 +1,120 @@
+# Default values for prometheus-statsd-exporter.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+replicaCount: 1
+# deploymentRevisionHistoryLimit: 10
+
+image:
+  repository: prom/statsd-exporter
+  pullPolicy: IfNotPresent
+  # Overrides the image tag whose default is the chart appVersion.
+  tag: v0.20.0
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+
+statsd:
+  # The UDP port on which to receive statsd metric lines.
+  udpPort: 9125
+
+  # The TCP port on which to receive statsd metric lines.
+  tcpPort: 9125
+
+  # Maximum size of your metric mapping cache.
+  # Relies on least recently used replacement policy if max size is reached.
+  cacheSize: 1000
+
+  # Size of internal queue for processing events.
+  eventQueueSize: 10000
+
+  # Number of events to hold in queue before flushing.
+  eventFlushThreshold: 1000
+
+  # Time interval before flushing events in queue.
+  eventFlushInterval: 200ms
+
+  # Metric mapping ConfigMap
+#  mappingConfigMapName: ""
+
+  # Metric mapping configuration
+#  mappingConfig: |-
+
+serviceMonitor:
+  enabled: false
+  interval: 30s
+  scrapeTimeout: 10s
+  namespace: monitoring
+  honorLabels: false
+  additionalLabels: {}
+
+serviceAccount:
+  # Specifies whether a service account should be created
+  create: true
+  # Annotations to add to the service account
+  annotations: {}
+  # The name of the service account to use.
+  # If not set and create is true, a name is generated using the fullname template
+  name: ""
+
+podAnnotations: {}
+
+podSecurityContext: {}
+  # fsGroup: 2000
+
+securityContext: {}
+  # capabilities:
+  #   drop:
+  #   - ALL
+  # readOnlyRootFilesystem: true
+  # runAsNonRoot: true
+  # runAsUser: 1000
+
+service:
+  type: ClusterIP
+  # The address on which to expose the web interface and generated Prometheus metrics.
+  port: 9102
+  # Path under which to expose metrics.
+  path: /metrics
+  annotations: {}
+
+ingress:
+  enabled: false
+  annotations: {}
+    # kubernetes.io/ingress.class: nginx
+    # kubernetes.io/tls-acme: "true"
+  hosts:
+    - host: chart-example.local
+      #  pathType: ImplementationSpecific # only Kubernetes v1.19+
+      paths: []
+  tls: []
+  #  - secretName: chart-example-tls
+  #    hosts:
+  #      - chart-example.local
+
+resources: {}
+  # We usually recommend not to specify default resources and to leave this as a conscious
+  # choice for the user. This also increases chances charts run on environments with little
+  # resources, such as Minikube. If you do want to specify resources, uncomment the following
+  # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+  # limits:
+  #   cpu: 100m
+  #   memory: 128Mi
+  # requests:
+  #   cpu: 100m
+  #   memory: 128Mi
+
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 100
+  targetCPUUtilizationPercentage: 80
+  # targetMemoryUtilizationPercentage: 80
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}

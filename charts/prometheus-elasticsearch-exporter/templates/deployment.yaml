@@ -23,6 +23,9 @@ spec:
       labels:
         app: {{ template "elasticsearch-exporter.name" . }}
         release: "{{ .Release.Name }}"
+        {{- if .Values.podLabels }}
+{{ toYaml .Values.podLabels | indent 8 }}
+        {{- end }}
       {{- if .Values.podAnnotations }}
       annotations:
 {{ toYaml .Values.podAnnotations | indent 8 }}
@@ -46,6 +49,10 @@ spec:
         runAsNonRoot: true
         runAsUser: {{ .Values.securityContext.runAsUser }}
       {{- end }}
+{{- with .Values.dnsConfig }}
+      dnsConfig:
+{{ toYaml . | indent 8 }}
+{{- end }}
       containers:
         - name: exporter
           env:
