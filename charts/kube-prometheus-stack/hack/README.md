@@ -19,9 +19,9 @@ Currently following imported:
     - prepare and merge PR with imported changes into `prometheus-operator/kube-prometheus` master and/or release branch
     - run sync_prometheus_rules.py inside your fork of this repo
     - send PR with changes to this repo
-- [etcd-io/etcd rules set](https://github.com/etcd-io/etcd/blob/master/Documentation/etcd-mixin/README.md)
+- [etcd-io/website rules set](https://github.com/etcd-io/website/tree/master/content/docs/v3.4.0/etcd-mixin/README.md)
   - In order to modify these rules:
-    - prepare and merge PR into [etcd-io/etcd](https://github.com/etcd-io/etcd/blob/master/Documentation/op-guide/grafana.json) repo
+    - prepare and merge PR into [etcd-io/website](https://github.com/etcd-io/website/blob/master/content/docs/v3.4.0/etcd-mixin/mixin.libsonnet) repo
     - run sync_prometheus_rules.py inside your fork of this repo
     - send PR with changes to this repo
 
