@@ -1,18 +1,14 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ template "logstash-exporter.fullname" . }}
+  name: {{ include "prometheus-logstash-exporter.fullname" . }}
   labels:
-    chart: {{ template "logstash-exporter.chart" . }}
-    app: {{ template "logstash-exporter.name" . }}
-    release: "{{ .Release.Name }}"
-    heritage: "{{ .Release.Service }}"
+    {{- include "prometheus-logstash-exporter.labels" . | nindent 4 }}
 spec:
   replicas: {{ .Values.replicaCount }}
   selector:
     matchLabels:
-      app: {{ template "logstash-exporter.name" . }}
-      release: "{{ .Release.Name }}"
+      {{- include "prometheus-logstash-exporter.selectorLabels" . | nindent 6 }}
   strategy:
     rollingUpdate:
       maxSurge: 1
@@ -20,29 +16,26 @@ spec:
     type: RollingUpdate
   template:
     metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
       labels:
-        app: {{ template "logstash-exporter.name" . }}
-        release: "{{ .Release.Name }}"
+        {{- include "prometheus-logstash-exporter.selectorLabels" . | nindent 8 }}
         {{- if .Values.podLabels }}
 {{ toYaml .Values.podLabels | indent 8 }}
         {{- end }}
-      {{- if .Values.podAnnotations }}
-      annotations:
-{{ toYaml .Values.podAnnotations | indent 8 }}
-      {{- end }}
     spec:
-      {{- if .Values.serviceAccount.create  }}
-      serviceAccountName: {{ template "logstash-exporter.fullname" . }}
-      {{- else }}
-      serviceAccountName: {{ .Values.serviceAccount.name }}
-      {{- end }}
-{{- if .Values.priorityClassName }}
-      priorityClassName: "{{ .Values.priorityClassName }}"
-{{- end }}
-{{- if .Values.image.pullSecret }}
+      {{- with .Values.imagePullSecrets }}
       imagePullSecrets:
-        - name: {{ .Values.image.pullSecret }}
-{{- end }}
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "prometheus-logstash-exporter.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      {{- with .Values.priorityClassName }}
+      priorityClassName: "{{ . }}"
+      {{- end }}
       restartPolicy: {{ .Values.restartPolicy }}
       {{- if .Values.securityContext.enabled }}
       securityContext:

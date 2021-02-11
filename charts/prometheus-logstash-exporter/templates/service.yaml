@@ -1,12 +1,9 @@
 kind: Service
 apiVersion: v1
 metadata:
-  name: {{ template "logstash-exporter.fullname" . }}
+  name: {{ include "prometheus-logstash-exporter.fullname" . }}
   labels:
-    chart: {{ template "logstash-exporter.chart" . }}
-    app: {{ template "logstash-exporter.name" . }}
-    release: "{{ .Release.Name }}"
-    heritage: "{{ .Release.Service }}"
+    {{- include "prometheus-logstash-exporter.labels" . | nindent 4 }}
 {{- if .Values.service.labels }}
 {{ toYaml .Values.service.labels | indent 4 }}
 {{- end }}
@@ -21,5 +18,4 @@ spec:
       port: {{ .Values.service.httpPort }}
       protocol: TCP
   selector:
-    app: {{ template "logstash-exporter.name" . }}
-    release: "{{ .Release.Name }}"
+    {{- include "prometheus-logstash-exporter.selectorLabels" . | nindent 4 }}
