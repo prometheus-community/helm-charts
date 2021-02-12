@@ -8,6 +8,15 @@ metadata:
 {{ template "prometheus-pushgateway.defaultLabels" merge (dict "extraLabels" .Values.serviceLabels) .  }}
 spec:
   type: {{ .Values.service.type }}
+{{- if .Values.prometheus.service.loadBalancerIP }}
+  loadBalancerIP: {{ .Values.prometheus.service.loadBalancerIP }}
+{{- end }}
+{{- if .Values.prometheus.service.loadBalancerSourceRanges }}
+  loadBalancerSourceRanges:
+  {{- range $cidr := .Values.prometheus.service.loadBalancerSourceRanges }}
+    - {{ $cidr }}
+  {{- end }}
+{{- end }}
   ports:
     - port: {{ .Values.service.port }}
       targetPort: {{ .Values.service.targetPort }}
