@@ -27,9 +27,15 @@ If release name contains chart name it will be used as a full name.
 {{/* Generate basic labels */}}
 {{- define "prometheus-node-exporter.labels" }}
 app: {{ template "prometheus-node-exporter.name" . }}
+app.kubernetes.io/component: {{ template "prometheus-node-exporter.name" . }}
+app.kubernetes.io/instance: {{ .Release.Name }}
+app.kubernetes.io/managed-by: {{ .Release.Service }}
+app.kubernetes.io/name: {{ template "prometheus-node-exporter.name" . }}
+app.kubernetes.io/version: "{{ .Chart.Version }}"
+app.kubernetes.io/part-of: {{ template "prometheus-node-exporter.name" . }}  
+chart: {{ template "prometheus-node-exporter.chart" . }}
 heritage: {{.Release.Service }}
 release: {{.Release.Name }}
-chart: {{ template "prometheus-node-exporter.chart" . }}
 {{- if .Values.podLabels}}
 {{ toYaml .Values.podLabels }}
 {{- end }}
