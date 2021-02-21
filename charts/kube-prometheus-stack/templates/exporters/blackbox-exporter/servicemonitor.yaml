@@ -1,0 +1,32 @@
+{{- if .Values.blackboxExporter.enabled }}
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: {{ template "kube-prometheus-stack.fullname" . }}-blackbox-exporter
+  namespace: {{ template "kube-prometheus-stack.namespace" . }}
+  labels:
+    app: {{ template "kube-prometheus-stack.name" . }}-blackbox-exporter
+{{ include "kube-prometheus-stack.labels" . | indent 4 }}
+spec:
+  jobLabel: {{ .Values.blackboxExporter.jobLabel }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: prometheus-blackbox-exporter
+      app.kubernetes.io/instance: {{ $.Release.Name}}
+  endpoints:
+  - port: http
+    {{- if .Values.blackboxExporter.serviceMonitor.interval }}
+    interval: {{ .Values.blackboxExporter.serviceMonitor.interval }}
+    {{- end }}
+    {{- if .Values.blackboxExporter.serviceMonitor.scrapeTimeout }}
+    scrapeTimeout: {{ .Values.blackboxExporter.serviceMonitor.scrapeTimeout }}
+    {{- end }}
+{{- if .Values.blackboxExporter.serviceMonitor.metricRelabelings }}
+    metricRelabelings:
+{{ tpl (toYaml .Values.blackboxExporter.serviceMonitor.metricRelabelings | indent 4) . }}
+{{- end }}
+{{- if .Values.blackboxExporter.serviceMonitor.relabelings }}
+    relabelings:
+{{ toYaml .Values.blackboxExporter.serviceMonitor.relabelings | indent 4 }}
+{{- end }}
+{{- end }}
