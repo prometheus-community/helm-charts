@@ -1,5 +1,5 @@
 {{- /*
-Generated from 'kubernetes-system-apiserver' group from https://raw.githubusercontent.com/prometheus-operator/kube-prometheus/master/manifests/prometheus-rules.yaml
+Generated from 'kubernetes-system-apiserver' group from https://raw.githubusercontent.com/prometheus-operator/kube-prometheus/master/manifests/kubernetes-prometheusRule.yaml
 Do not change in-place! In order to change this file first read following link:
 https://github.com/prometheus-community/helm-charts/tree/main/charts/kube-prometheus-stack/hack
 */ -}}
@@ -48,16 +48,15 @@ spec:
 {{- end }}
     - alert: AggregatedAPIErrors
       annotations:
-        description: An aggregated API {{`{{`}} $labels.name {{`}}`}}/{{`{{`}} $labels.namespace {{`}}`}} has reported errors. The number of errors have increased for it in the past five minutes. High values indicate that the availability of the service changes too often.
+        description: An aggregated API {{`{{`}} $labels.name {{`}}`}}/{{`{{`}} $labels.namespace {{`}}`}} has reported errors. It has appeared unavailable {{`{{`}} $value | humanize {{`}}`}} times averaged over the past 10m.
         runbook_url: {{ .Values.defaultRules.runbookUrl }}alert-name-aggregatedapierrors
         summary: An aggregated API has reported errors.
-      expr: sum by(name, namespace)(increase(aggregator_unavailable_apiservice_count[5m])) > 2
+      expr: sum by(name, namespace)(increase(aggregator_unavailable_apiservice_count[10m])) > 4
       labels:
         severity: warning
 {{- if .Values.defaultRules.additionalRuleLabels }}
 {{ toYaml .Values.defaultRules.additionalRuleLabels | indent 8 }}
 {{- end }}
-{{- if semverCompare ">=1.18.0-0" $kubeTargetVersion }}
     - alert: AggregatedAPIDown
       annotations:
         description: An aggregated API {{`{{`}} $labels.name {{`}}`}}/{{`{{`}} $labels.namespace {{`}}`}} has been only {{`{{`}} $value | humanize {{`}}`}}% available over the last 10m.
@@ -67,7 +66,6 @@ spec:
       for: 5m
       labels:
         severity: warning
-{{- end }}
 {{- if .Values.defaultRules.additionalRuleLabels }}
 {{ toYaml .Values.defaultRules.additionalRuleLabels | indent 8 }}
 {{- end }}
@@ -84,5 +82,17 @@ spec:
 {{- if .Values.defaultRules.additionalRuleLabels }}
 {{ toYaml .Values.defaultRules.additionalRuleLabels | indent 8 }}
 {{- end }}
+{{- end }}
+    - alert: KubeAPITerminatedRequests
+      annotations:
+        description: The apiserver has terminated {{`{{`}} $value | humanizePercentage {{`}}`}} of its incoming requests.
+        runbook_url: {{ .Values.defaultRules.runbookUrl }}alert-name-kubeapiterminatedrequests
+        summary: The apiserver has terminated {{`{{`}} $value | humanizePercentage {{`}}`}} of its incoming requests.
+      expr: sum(rate(apiserver_request_terminations_total{job="apiserver"}[10m]))  / (  sum(rate(apiserver_request_total{job="apiserver"}[10m])) + sum(rate(apiserver_request_terminations_total{job="apiserver"}[10m])) ) > 0.20
+      for: 5m
+      labels:
+        severity: warning
+{{- if .Values.defaultRules.additionalRuleLabels }}
+{{ toYaml .Values.defaultRules.additionalRuleLabels | indent 8 }}
 {{- end }}
 {{- end }}

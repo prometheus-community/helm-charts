@@ -6,7 +6,7 @@ This script generates prometheus rules set for alertmanager from any properly fo
 
 Currently following imported:
 
-- [prometheus-operator/kube-prometheus rules set](https://github.com/prometheus-operator/kube-prometheus/tree/master/manifests/prometheus-rules.yaml)
+- [prometheus-operator/kube-prometheus rules set](https://github.com/prometheus-operator/kube-prometheus/tree/master/manifests/kubernetes-prometheusRule.yaml)
   - In order to modify these rules:
     - prepare and merge PR into [kubernetes-mixin](https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/rules) master and/or release branch
     - run import inside your fork of [prometheus-operator/kube-prometheus](https://github.com/prometheus-operator/kube-prometheus/tree/master)
@@ -19,9 +19,9 @@ Currently following imported:
     - prepare and merge PR with imported changes into `prometheus-operator/kube-prometheus` master and/or release branch
     - run sync_prometheus_rules.py inside your fork of this repo
     - send PR with changes to this repo
-- [etcd-io/etcd rules set](https://github.com/etcd-io/etcd/blob/master/Documentation/etcd-mixin/README.md)
+- [etcd-io/website rules set](https://github.com/etcd-io/website/tree/master/content/docs/v3.4.0/etcd-mixin/README.md)
   - In order to modify these rules:
-    - prepare and merge PR into [etcd-io/etcd](https://github.com/etcd-io/etcd/blob/master/Documentation/op-guide/grafana.json) repo
+    - prepare and merge PR into [etcd-io/website](https://github.com/etcd-io/website/blob/master/content/docs/v3.4.0/etcd-mixin/mixin.libsonnet) repo
     - run sync_prometheus_rules.py inside your fork of this repo
     - send PR with changes to this repo
 
@@ -44,9 +44,9 @@ Currently following imported:
     - prepare and merge PR with imported changes into `prometheus-operator/kube-prometheus` master and/or release branch
     - run sync_grafana_dashboards.py inside your fork of this repo
     - send PR with changes to this repo
-- [etcd-io/etc dashboard](https://github.com/etcd-io/etcd/blob/master/Documentation/op-guide/grafana.json)
+- [etcd-io/website dashboard](https://github.com/etcd-io/website/blob/master/content/docs/v3.4.0/op-guide/grafana.json)
   - In order to modify this dashboard:
-    - prepare and merge PR into [etcd-io/etcd](https://github.com/etcd-io/etcd/blob/master/Documentation/op-guide/grafana.json) repo
+    - prepare and merge PR into [etcd-io/website](https://github.com/etcd-io/website/blob/master/content/docs/v3.4.0/op-guide/grafana.json) repo
     - run sync_grafana_dashboards.py inside your fork of this repo
     - send PR with changes to this repo
 

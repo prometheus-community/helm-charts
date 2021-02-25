@@ -59,6 +59,12 @@ spec:
             - --namespaces={{ $ns | join "," }}
             {{- end }}
             - --localhost=127.0.0.1
+            {{- if .Values.prometheusOperator.prometheusDefaultBaseImage }}
+            - --prometheus-default-base-image={{ .Values.prometheusOperator.prometheusDefaultBaseImage }}
+            {{- end }}
+            {{- if .Values.prometheusOperator.alertmanagerDefaultBaseImage }}
+            - --alertmanager-default-base-image={{ .Values.prometheusOperator.alertmanagerDefaultBaseImage }}
+            {{- end }}
             {{- if .Values.prometheusOperator.prometheusConfigReloaderImage.sha }}
             - --prometheus-config-reloader={{ .Values.prometheusOperator.prometheusConfigReloaderImage.repository }}:{{ .Values.prometheusOperator.prometheusConfigReloaderImage.tag }}@sha256:{{ .Values.prometheusOperator.prometheusConfigReloaderImage.sha }}
             {{- else }}
@@ -78,14 +84,17 @@ spec:
             {{- if .Values.prometheusOperator.secretFieldSelector }}
             - --secret-field-selector={{ .Values.prometheusOperator.secretFieldSelector }}
             {{- end }}
+            {{- if .Values.prometheusOperator.clusterDomain }}
+            - --cluster-domain={{ .Values.prometheusOperator.clusterDomain }}
+            {{- end }}
             {{- if .Values.prometheusOperator.tls.enabled }}
             - --web.enable-tls=true
             - --web.cert-file=/cert/{{ if .Values.prometheusOperator.admissionWebhooks.certManager.enabled }}tls.crt{{ else }}cert{{ end }}
             - --web.key-file=/cert/{{ if .Values.prometheusOperator.admissionWebhooks.certManager.enabled }}tls.key{{ else }}key{{ end }}
-            - --web.listen-address=:8443
+            - --web.listen-address=:{{ .Values.prometheusOperator.tls.internalPort }}
             - --web.tls-min-version={{ .Values.prometheusOperator.tls.tlsMinVersion }}
           ports:
-            - containerPort: 8443
+            - containerPort: {{ .Values.prometheusOperator.tls.internalPort }}
               name: https
           {{- else }}
           ports:
@@ -108,6 +117,10 @@ spec:
             defaultMode: 420
             secretName: {{ template "kube-prometheus-stack.fullname" . }}-admission
 {{- end }}
+    {{- with .Values.prometheusOperator.dnsConfig }}
+      dnsConfig:
+{{ toYaml . | indent 8 }}
+    {{- end }}
 {{- if .Values.prometheusOperator.securityContext }}
       securityContext:
 {{ toYaml .Values.prometheusOperator.securityContext | indent 8 }}

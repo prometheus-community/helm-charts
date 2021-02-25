@@ -49,6 +49,10 @@ spec:
         runAsNonRoot: true
         runAsUser: {{ .Values.securityContext.runAsUser }}
       {{- end }}
+{{- with .Values.dnsConfig }}
+      dnsConfig:
+{{ toYaml . | indent 8 }}
+{{- end }}
       containers:
         - name: exporter
           env:
@@ -164,6 +168,9 @@ spec:
               subPath: {{ .subPath }}
               {{- end }}
             {{- end }}
+            {{- if .Values.extraVolumeMounts }}
+            {{- toYaml .Values.extraVolumeMounts | nindent 12 }}
+            {{- end }}
 {{- if .Values.nodeSelector }}
       nodeSelector:
 {{ toYaml .Values.nodeSelector | indent 8 }}
@@ -186,4 +193,7 @@ spec:
         - name: {{ .name }}
           secret:
             secretName: {{ .secretName }}
+        {{- end }}
+        {{- if .Values.extraVolumes }}
+        {{- toYaml .Values.extraVolumes | nindent 8 }}
         {{- end }}

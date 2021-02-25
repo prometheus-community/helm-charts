@@ -1,4 +1,5 @@
 {{- if and .Values.prometheus.enabled .Values.prometheus.ingress.enabled }}
+{{- $pathType := .Values.prometheus.ingress.pathType | default "" }}
 {{- $serviceName := printf "%s-%s" (include "kube-prometheus-stack.fullname" .) "prometheus" }}
 {{- $servicePort := .Values.prometheus.service.port -}}
 {{- $routePrefix := list .Values.prometheus.prometheusSpec.routePrefix }}
@@ -36,6 +37,9 @@ spec:
         paths:
   {{- range $p := $paths }}
           - path: {{ tpl $p $ }}
+            {{- if $pathType }}
+            pathType: {{ $pathType }}
+            {{- end }}
             backend:
               serviceName: {{ $serviceName }}
               servicePort: {{ $servicePort }}
@@ -46,6 +50,9 @@ spec:
         paths:
   {{- range $p := $paths }}
           - path: {{ tpl $p $ }}
+            {{- if $pathType }}
+            pathType: {{ $pathType }}
+            {{- end }}
             backend:
               serviceName: {{ $serviceName }}
               servicePort: {{ $servicePort }}
