@@ -1,5 +1,5 @@
 {{- /*
-Generated from 'k8s.rules' group from https://raw.githubusercontent.com/prometheus-operator/kube-prometheus/master/manifests/prometheus-rules.yaml
+Generated from 'k8s.rules' group from https://raw.githubusercontent.com/prometheus-operator/kube-prometheus/master/manifests/kubernetes-prometheusRule.yaml
 Do not change in-place! In order to change this file first read following link:
 https://github.com/prometheus-community/helm-charts/tree/main/charts/kube-prometheus-stack/hack
 */ -}}
@@ -24,8 +24,6 @@ spec:
   groups:
   - name: k8s.rules
     rules:
-    - expr: sum(rate(container_cpu_usage_seconds_total{job="kubelet", metrics_path="/metrics/cadvisor", image!="", container!="POD"}[5m])) by (namespace)
-      record: namespace:container_cpu_usage_seconds_total:sum_rate
     - expr: |-
         sum by (cluster, namespace, pod, container) (
           rate(container_cpu_usage_seconds_total{job="kubelet", metrics_path="/metrics/cadvisor", image!="", container!="POD"}[5m])
@@ -57,8 +55,6 @@ spec:
           max by(namespace, pod, node) (kube_pod_info{node!=""})
         )
       record: node_namespace_pod_container:container_memory_swap
-    - expr: sum(container_memory_usage_bytes{job="kubelet", metrics_path="/metrics/cadvisor", image!="", container!="POD"}) by (namespace)
-      record: namespace:container_memory_usage_bytes:sum
     - expr: |-
         sum by (namespace) (
             sum by (namespace, pod) (

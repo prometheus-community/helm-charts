@@ -1,4 +1,5 @@
 {{- if and .Values.prometheus.enabled .Values.prometheus.servicePerReplica.enabled .Values.prometheus.ingressPerReplica.enabled }}
+{{- $pathType := .Values.prometheus.ingressPerReplica.pathType | default "" }}
 {{- $count := .Values.prometheus.prometheusSpec.replicas | int -}}
 {{- $servicePort := .Values.prometheus.servicePerReplica.port -}}
 {{- $ingressValues := .Values.prometheus.ingressPerReplica -}}
@@ -40,6 +41,9 @@ items:
             paths:
       {{- range $p := $ingressValues.paths }}
               - path: {{ tpl $p $ }}
+                {{- if $pathType }}
+                pathType: {{ $pathType }}
+                {{- end }}
                 backend:
                   serviceName: {{ include "kube-prometheus-stack.fullname" $ }}-prometheus-{{ $i }}
                   servicePort: {{ $servicePort }}
