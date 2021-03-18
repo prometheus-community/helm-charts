@@ -15,12 +15,15 @@ metadata:
 {{ toYaml .Values.prometheus.thanosService.annotations | indent 4 }}
 {{- end }}
 spec:
-  type: ClusterIP
+  type: {{ .Values.prometheus.thanosService.type }}
   clusterIP: None
   ports:
   - name: {{ .Values.prometheus.thanosService.portName }}
     port: {{ .Values.prometheus.thanosService.port }}
     targetPort: {{ .Values.prometheus.thanosService.targetPort }}
+    {{- if eq .Values.prometheus.thanosService.type "NodePort" }}
+    nodePort: {{ .Values.prometheus.thanosService.nodePort }}
+    {{- end }}
   selector:
     app: prometheus
     prometheus: {{ template "kube-prometheus-stack.fullname" . }}-prometheus
