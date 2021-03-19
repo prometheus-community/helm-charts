@@ -118,10 +118,10 @@ config:
   constantLabels: {}
   # possible values debug, info, warn, error, fatal
   logLevel: ""
-  # this are the defaults queries that the exporter will run, extracted from: https://github.com/wrouesnel/postgres_exporter/blob/master/queries.yaml
+  # These are the default queries that the exporter will run, extracted from: https://github.com/prometheus-community/postgres_exporter/blob/master/queries.yaml
   queries: |-
     pg_replication:
-      query: "SELECT EXTRACT(EPOCH FROM (now() - pg_last_xact_replay_timestamp())) as lag"
+      query: "SELECT CASE WHEN NOT pg_is_in_recovery() THEN 0 ELSE GREATEST (0, EXTRACT(EPOCH FROM (now() - pg_last_xact_replay_timestamp()))) END AS lag"
       master: true
       metrics:
         - lag:
@@ -137,7 +137,32 @@ config:
             description: "Time at which postmaster started"
 
     pg_stat_user_tables:
-      query: "SELECT current_database() datname, schemaname, relname, seq_scan, seq_tup_read, idx_scan, idx_tup_fetch, n_tup_ins, n_tup_upd, n_tup_del, n_tup_hot_upd, n_live_tup, n_dead_tup, n_mod_since_analyze, COALESCE(last_vacuum, '1970-01-01Z'), COALESCE(last_vacuum, '1970-01-01Z') as last_vacuum, COALESCE(last_autovacuum, '1970-01-01Z') as last_autovacuum, COALESCE(last_analyze, '1970-01-01Z') as last_analyze, COALESCE(last_autoanalyze, '1970-01-01Z') as last_autoanalyze, vacuum_count, autovacuum_count, analyze_count, autoanalyze_count FROM pg_stat_user_tables"
+      query: |
+       SELECT
+         current_database() datname,
+         schemaname,
+         relname,
+         seq_scan,
+         seq_tup_read,
+         idx_scan,
+         idx_tup_fetch,
+         n_tup_ins,
+         n_tup_upd,
+         n_tup_del,
+         n_tup_hot_upd,
+         n_live_tup,
+         n_dead_tup,
+         n_mod_since_analyze,
+         COALESCE(last_vacuum, '1970-01-01Z') as last_vacuum,
+         COALESCE(last_autovacuum, '1970-01-01Z') as last_autovacuum,
+         COALESCE(last_analyze, '1970-01-01Z') as last_analyze,
+         COALESCE(last_autoanalyze, '1970-01-01Z') as last_autoanalyze,
+         vacuum_count,
+         autovacuum_count,
+         analyze_count,
+         autoanalyze_count
+       FROM
+         pg_stat_user_tables
       metrics:
         - datname:
             usage: "LABEL"
@@ -244,7 +269,7 @@ config:
             description: "Number of buffer hits in this table's TOAST table indexes (if any)"
 
     pg_database:
-      query: "SELECT pg_database.datname, pg_database_size(pg_database.datname) as size FROM pg_database"
+      query: "SELECT pg_database.datname, pg_database_size(pg_database.datname) as size_bytes FROM pg_database"
       master: true
       cache_seconds: 30
       metrics:
@@ -256,7 +281,7 @@ config:
             description: "Disk space used by the database"
 
     pg_stat_statements:
-      query: "SELECT t2.rolname, t3.datname, queryid, calls, total_time / 1000 as total_time_seconds, min_time / 1000 as min_time_seconds, max_time / 1000 as max_time_seconds, mean_time / 1000 as mean_time_seconds, stddev_time / 1000 as stddev_time_seconds, rows, shared_blks_hit, shared_blks_read, shared_blks_dirtied, shared_blks_written, local_blks_hit, local_blks_read, local_blks_dirtied, local_blks_written, temp_blks_read, temp_blks_written, blk_read_time / 1000 as blk_read_time_seconds, blk_write_time / 1000 as blk_write_time_seconds FROM pg_stat_statements t1 join pg_roles t2 on (t1.userid=t2.oid) join pg_database t3 on (t1.dbid=t3.oid)"
+      query: "SELECT t2.rolname, t3.datname, queryid, calls, total_time / 1000 as total_time_seconds, min_time / 1000 as min_time_seconds, max_time / 1000 as max_time_seconds, mean_time / 1000 as mean_time_seconds, stddev_time / 1000 as stddev_time_seconds, rows, shared_blks_hit, shared_blks_read, shared_blks_dirtied, shared_blks_written, local_blks_hit, local_blks_read, local_blks_dirtied, local_blks_written, temp_blks_read, temp_blks_written, blk_read_time / 1000 as blk_read_time_seconds, blk_write_time / 1000 as blk_write_time_seconds FROM pg_stat_statements t1 JOIN pg_roles t2 ON (t1.userid=t2.oid) JOIN pg_database t3 ON (t1.dbid=t3.oid) WHERE t2.rolname != 'rdsadmin'"
       master: true
       metrics:
         - rolname:
@@ -325,6 +350,50 @@ config:
         - blk_write_time_seconds:
             usage: "COUNTER"
             description: "Total time the statement spent writing blocks, in milliseconds (if track_io_timing is enabled, otherwise zero)"
+
+    pg_stat_activity:
+      query: |
+        WITH
+          metrics AS (
+            SELECT
+              application_name,
+              SUM(EXTRACT(EPOCH FROM (CURRENT_TIMESTAMP - state_change))::bigint)::float AS process_idle_seconds_sum,
+              COUNT(*) AS process_idle_seconds_count
+            FROM pg_stat_activity
+            WHERE state = 'idle'
+            GROUP BY application_name
+          ),
+          buckets AS (
+            SELECT
+              application_name,
+              le,
+              SUM(
+                CASE WHEN EXTRACT(EPOCH FROM (CURRENT_TIMESTAMP - state_change)) <= le
+                  THEN 1
+                  ELSE 0
+                END
+              )::bigint AS bucket
+            FROM
+              pg_stat_activity,
+              UNNEST(ARRAY[1, 2, 5, 15, 30, 60, 90, 120, 300]) AS le
+            GROUP BY application_name, le
+            ORDER BY application_name, le
+          )
+        SELECT
+          application_name,
+          process_idle_seconds_sum,
+          process_idle_seconds_count,
+          ARRAY_AGG(le) AS process_idle_seconds,
+          ARRAY_AGG(bucket) AS process_idle_seconds_bucket
+        FROM metrics JOIN buckets USING (application_name)
+        GROUP BY 1, 2, 3
+      metrics:
+        - application_name:
+            usage: "LABEL"
+            description: "Application Name"
+        - process_idle_seconds:
+            usage: "HISTOGRAM"
+            description: "Idle time of server processes"
 
 nodeSelector: {}
 
