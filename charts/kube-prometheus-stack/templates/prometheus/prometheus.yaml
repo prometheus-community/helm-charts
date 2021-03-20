@@ -268,9 +268,6 @@ spec:
 {{- end }}
   portName: {{ .Values.prometheus.prometheusSpec.portName }}
 {{- end }}
-{{- if .Values.prometheus.prometheusSpec.enforcedNamespaceLabel }}
-  enforcedNamespaceLabel: {{ .Values.prometheus.prometheusSpec.enforcedNamespaceLabel }}
-{{- end }}
 {{- if .Values.prometheus.prometheusSpec.volumes }}
   volumes:
 {{ toYaml .Values.prometheus.prometheusSpec.volumes | indent 4 }}
@@ -292,9 +289,17 @@ spec:
 {{- if .Values.prometheus.prometheusSpec.ignoreNamespaceSelectors }}
   ignoreNamespaceSelectors: {{ .Values.prometheus.prometheusSpec.ignoreNamespaceSelectors }}
 {{- end }}
-{{- if .Values.prometheus.prometheusSpec.prometheusRulesExcludedFromEnforce }}
+{{- if .Values.prometheus.prometheusSpec.enforcedNamespaceLabel }}
+  enforcedNamespaceLabel: {{ .Values.prometheus.prometheusSpec.enforcedNamespaceLabel }}
+{{- $prometheusDefaultRulesExcludedFromEnforce := (include "rules.names" .) | fromYaml }}
   prometheusRulesExcludedFromEnforce:
+{{- range $prometheusDefaultRulesExcludedFromEnforce.rules }}
+    - ruleNamespace: "{{ template "kube-prometheus-stack.namespace" $ }}"
+      ruleName: "{{ printf "%s-%s" (include "kube-prometheus-stack.fullname" $) . | trunc 63 | trimSuffix "-" }}"
+{{- end }}
+{{- if .Values.prometheus.prometheusSpec.prometheusRulesExcludedFromEnforce }}
 {{ toYaml .Values.prometheus.prometheusSpec.prometheusRulesExcludedFromEnforce | indent 4 }}
+{{- end }}
 {{- end }}
 {{- if .Values.prometheus.prometheusSpec.queryLogFile }}
   queryLogFile: {{ .Values.prometheus.prometheusSpec.queryLogFile }}
