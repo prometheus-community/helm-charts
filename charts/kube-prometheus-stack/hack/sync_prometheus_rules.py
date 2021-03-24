@@ -285,6 +285,17 @@ def write_group_to_file(group, url, destination, min_kubernetes, max_kubernetes)
 
     print("Generated %s" % new_filename)
 
+def write_rules_names_template():
+    with open('../templates/prometheus/_rules.tpl', 'w') as f:
+        f.write('''{{- /*
+Generated file. Do not change in-place! In order to change this file first read following link:
+https://github.com/prometheus-community/helm-charts/tree/main/charts/kube-prometheus-stack/hack
+*/ -}}\n''')
+        f.write('{{- define "rules.names" }}\n')
+        f.write('rules:\n')
+        for rule in condition_map:
+            f.write('  - "%s"\n' % rule)
+        f.write('{{- end }}')
 
 def main():
     init_yaml_styles()
@@ -305,6 +316,10 @@ def main():
         groups = yaml_text['spec']['groups'] if yaml_text.get('spec') else yaml_text['groups']
         for group in groups:
             write_group_to_file(group, chart['source'], chart['destination'], chart['min_kubernetes'], chart['max_kubernetes'])
+
+    # write rules.names named template
+    write_rules_names_template()
+
     print("Finished")
 
 
