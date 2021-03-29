@@ -1,0 +1,62 @@
+{{- if and .Values.prometheus.enabled .Values.prometheus.thanosServicePerReplica.enabled .Values.prometheus.thanosIngressPerReplica.enabled }}
+{{- $pathType := .Values.prometheus.thanosIngressPerReplica.pathType | default "" }}
+{{- $count := .Values.prometheus.prometheusSpec.replicas | int -}}
+{{- $thanosPort := .Values.prometheus.thanosServicePerReplica.port -}}
+{{- $ingressValues := .Values.prometheus.thanosIngressPerReplica -}}
+apiVersion: v1
+kind: List
+metadata:
+  name: {{ include "kube-prometheus-stack.fullname" $ }}-thanos-ingressperreplica
+  namespace: {{ template "kube-prometheus-stack.namespace" $ }}
+items:
+{{ range $i, $e := until $count }}
+  - kind: Ingress
+    {{- if $.Capabilities.APIVersions.Has "networking.k8s.io/v1beta1" }}
+    apiVersion: networking.k8s.io/v1beta1
+    {{ else }}
+    apiVersion: extensions/v1beta1
+    {{ end -}}
+    metadata:
+      name: {{ include "kube-prometheus-stack.fullname" $ }}-thanos-gateway-{{ $i }}
+      namespace: {{ template "kube-prometheus-stack.namespace" $ }}
+      labels:
+        app: {{ include "kube-prometheus-stack.name" $ }}-prometheus
+{{ include "kube-prometheus-stack.labels" $ | indent 8 }}
+      {{- if $ingressValues.labels }}
+{{ toYaml $ingressValues.labels | indent 8 }}
+      {{- end }}
+      {{- if $ingressValues.annotations }}
+      annotations:
+{{ toYaml $ingressValues.annotations | indent 8 }}
+      {{- end }}
+    spec:
+      {{- if or ($.Capabilities.APIVersions.Has "networking.k8s.io/v1") ($.Capabilities.APIVersions.Has "networking.k8s.io/v1beta1") }}
+      {{- if $ingressValues.ingressClassName }}
+      ingressClassName: {{ $ingressValues.ingressClassName }}
+      {{- end }}
+      {{- end }}
+      rules:
+        - host: {{ $ingressValues.hostPrefix }}-{{ $i }}.{{ $ingressValues.hostDomain }}
+          http:
+            paths:
+      {{- range $p := $ingressValues.paths }}
+              - path: {{ tpl $p $ }}
+                {{- if $pathType }}
+                pathType: {{ $pathType }}
+                {{- end }}
+                backend:
+                  serviceName: {{ include "kube-prometheus-stack.fullname" $ }}-thanos-gateway-{{ $i }}
+                  servicePort: {{ $thanosPort }}
+      {{- end -}}
+      {{- if or $ingressValues.tlsSecretName $ingressValues.tlsSecretPerReplica.enabled }}
+      tls:
+        - hosts:
+            - {{ $ingressValues.hostPrefix }}-{{ $i }}.{{ $ingressValues.hostDomain }}
+          {{- if $ingressValues.tlsSecretPerReplica.enabled }}
+          secretName: {{ $ingressValues.tlsSecretPerReplica.prefix }}-{{ $i }}
+          {{- else }}
+          secretName: {{ $ingressValues.tlsSecretName }}
+          {{- end }}
+      {{- end }}
+{{- end -}}
+{{- end -}}

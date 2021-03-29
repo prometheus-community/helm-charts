@@ -1651,6 +1651,13 @@ prometheus:
     ##
     nodePort: 30901
 
+  thanosServicePerReplica:
+    enabled: false
+    annotations: {}
+    portName: grpc
+    port: 10901
+    targetPort: "grpc"
+
   ## Configuration for Prometheus service
   ##
   service:
@@ -1758,6 +1765,47 @@ prometheus:
     # - secretName: thanos-gateway-tls
     #   hosts:
     #   - thanos-gateway.domain.com
+  thanosIngressPerReplica:
+    enabled: false
+
+    # For Kubernetes >= 1.18 you should specify the ingress-controller via the field ingressClassName
+    # See https://kubernetes.io/blog/2020/04/02/improvements-to-the-ingress-api-in-kubernetes-1.18/#specifying-the-class-of-an-ingress
+    # ingressClassName: nginx
+
+    annotations: {}
+    labels: {}
+    servicePort: 10901
+
+    ## Port to expose on each node
+    ## Only used if service.type is 'NodePort'
+    ##
+    nodePort: 30901
+
+    hostPrefix: ""
+    ## Domain that will be used for the per replica ingress
+    hostDomain: ""
+
+    ## Paths to use for ingress rules
+    ##
+    paths: []
+    # - /
+
+    ## For Kubernetes >= 1.18 you should specify the pathType (determines how Ingress paths should be matched)
+    ## See https://kubernetes.io/blog/2020/04/02/improvements-to-the-ingress-api-in-kubernetes-1.18/#better-path-matching-with-path-types
+    # pathType: ImplementationSpecific
+    ## Secret name containing the TLS certificate for Prometheus per replica ingress
+    ## Secret must be manually created in the namespace
+    tlsSecretName: ""
+
+    ## Separated secret for each per replica Ingress. Can be used together with cert-manager
+    ##
+    tlsSecretPerReplica:
+      enabled: false
+      ## Final form of the secret for each per replica ingress is
+      ## {{ tlsSecretPerReplica.prefix }}-{{ $replicaNumber }}
+      ##
+      prefix: "thanos"
+
 
   ingress:
     enabled: false
