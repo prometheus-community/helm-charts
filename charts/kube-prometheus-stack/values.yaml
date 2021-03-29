@@ -331,7 +331,7 @@ alertmanager:
     nodePort: 30904
 
     ## Loadbalancer source IP ranges
-    ## Only used if servicePerReplica.type is "LoadBalancer"
+    ## Only used if servicePerReplica.type is "loadbalancer"
     loadBalancerSourceRanges: []
     ## Service type
     ##
@@ -891,14 +891,12 @@ kubeControllerManager:
   ## If using kubeControllerManager.endpoints only the port and targetPort are used
   ##
   service:
-    enabled: true
     port: 10252
     targetPort: 10252
     # selector:
     #   component: kube-controller-manager
 
   serviceMonitor:
-    enabled: true
     ## Scrape interval. If not set, the Prometheus default scrape interval is used.
     ##
     interval: ""
@@ -1026,7 +1024,6 @@ kubeEtcd:
   ## Etcd service. If using kubeEtcd.endpoints only the port and targetPort are used
   ##
   service:
-    enabled: true
     port: 2379
     targetPort: 2379
     # selector:
@@ -1044,7 +1041,6 @@ kubeEtcd:
   ##   keyFile: /etc/prometheus/secrets/etcd-client-cert/etcd-client-key
   ##
   serviceMonitor:
-    enabled: true
     ## Scrape interval. If not set, the Prometheus default scrape interval is used.
     ##
     interval: ""
@@ -1088,14 +1084,12 @@ kubeScheduler:
   ## If using kubeScheduler.endpoints only the port and targetPort are used
   ##
   service:
-    enabled: true
     port: 10251
     targetPort: 10251
     # selector:
     #   component: kube-scheduler
 
   serviceMonitor:
-    enabled: true
     ## Scrape interval. If not set, the Prometheus default scrape interval is used.
     ##
     interval: ""
@@ -1141,14 +1135,12 @@ kubeProxy:
   # - 10.141.4.24
 
   service:
-    enabled: true
     port: 10249
     targetPort: 10249
     # selector:
     #   k8s-app: kube-proxy
 
   serviceMonitor:
-    enabled: true
     ## Scrape interval. If not set, the Prometheus default scrape interval is used.
     ##
     interval: ""
@@ -1359,13 +1351,13 @@ prometheusOperator:
     additionalPorts: []
 
   ## Loadbalancer IP
-  ## Only use if service.type is "LoadBalancer"
+  ## Only use if service.type is "loadbalancer"
   ##
     loadBalancerIP: ""
     loadBalancerSourceRanges: []
 
   ## Service type
-  ## NodePort, ClusterIP, LoadBalancer
+  ## NodePort, ClusterIP, loadbalancer
   ##
     type: ClusterIP
 
@@ -1488,7 +1480,7 @@ prometheusOperator:
   ##
   image:
     repository: quay.io/prometheus-operator/prometheus-operator
-    tag: v0.46.0
+    tag: v0.45.0
     sha: ""
     pullPolicy: IfNotPresent
 
@@ -1504,7 +1496,7 @@ prometheusOperator:
   ##
   prometheusConfigReloaderImage:
     repository: quay.io/prometheus-operator/prometheus-config-reloader
-    tag: v0.46.0
+    tag: v0.45.0
     sha: ""
 
   ## Set the prometheus config reloader side-car CPU limit
@@ -1549,19 +1541,12 @@ prometheus:
     port: 10901
     targetPort: "grpc"
 
-    ## Service type
-    ##
-    type: ClusterIP
-
-    ## Port to expose on each node
-    ##
-    nodePort: 30901
-
   thanosServicePerReplica:
     enabled: false
     annotations: {}
     portName: grpc
     port: 10901
+    targetPort: "grpc"
 
   ## Configuration for Prometheus service
   ##
@@ -1588,7 +1573,7 @@ prometheus:
     nodePort: 30090
 
     ## Loadbalancer IP
-    ## Only use if service.type is "LoadBalancer"
+    ## Only use if service.type is "loadbalancer"
     loadBalancerIP: ""
     loadBalancerSourceRanges: []
     ## Service type
@@ -1616,7 +1601,7 @@ prometheus:
     nodePort: 30091
 
     ## Loadbalancer source IP ranges
-    ## Only used if servicePerReplica.type is "LoadBalancer"
+    ## Only used if servicePerReplica.type is "loadbalancer"
     loadBalancerSourceRanges: []
     ## Service type
     ##
@@ -1967,10 +1952,10 @@ prometheus:
     ruleSelectorNilUsesHelmValues: true
 
     ## PrometheusRules to be selected for target discovery.
-    ## If {}, select all PrometheusRules
+    ## If {}, select all ServiceMonitors
     ##
     ruleSelector: {}
-    ## Example which select all PrometheusRules resources
+    ## Example which select all prometheusrules resources
     ## with label "prometheus" with values any of "example-rules" or "example-rules-2"
     # ruleSelector:
     #   matchExpressions:
@@ -1980,7 +1965,7 @@ prometheus:
     #         - example-rules
     #         - example-rules-2
     #
-    ## Example which select all PrometheusRules resources with label "role" set to "example-rules"
+    ## Example which select all prometheusrules resources with label "role" set to "example-rules"
     # ruleSelector:
     #   matchLabels:
     #     role: example-rules
@@ -2298,14 +2283,9 @@ prometheus:
     ## configs, and they will only discover endpoints within their current namespace. Defaults to false.
     ignoreNamespaceSelectors: false
 
-    ## EnforcedNamespaceLabel enforces adding a namespace label of origin for each alert and metric that is user created.
-    ## The label value will always be the namespace of the object that is being created.
-    ## Disabled by default
-    enforcedNamespaceLabel: ""
-
     ## PrometheusRulesExcludedFromEnforce - list of prometheus rules to be excluded from enforcing of adding namespace labels.
     ## Works only if enforcedNamespaceLabel set to true. Make sure both ruleNamespace and ruleName are set for each pair
-    prometheusRulesExcludedFromEnforce: []
+    prometheusRulesExcludedFromEnforce: false
 
     ## QueryLogFile specifies the file to which PromQL queries are logged. Note that this location must be writable,
     ## and can be persisted using an attached volume. Alternatively, the location can be set to a stdout location such
