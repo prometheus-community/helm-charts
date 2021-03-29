@@ -1,4 +1,5 @@
 {{- if and .Values.alertmanager.enabled .Values.alertmanager.servicePerReplica.enabled .Values.alertmanager.ingressPerReplica.enabled }}
+{{- $pathType := .Values.alertmanager.ingressPerReplica.pathType | default "" }}
 {{- $count := .Values.alertmanager.alertmanagerSpec.replicas | int -}}
 {{- $servicePort := .Values.alertmanager.service.port -}}
 {{- $ingressValues := .Values.alertmanager.ingressPerReplica -}}
@@ -40,6 +41,9 @@ items:
             paths:
       {{- range $p := $ingressValues.paths }}
               - path: {{ tpl $p $ }}
+                {{- if $pathType }}
+                pathType: {{ $pathType }}
+                {{- end }}
                 backend:
                   serviceName: {{ include "kube-prometheus-stack.fullname" $ }}-alertmanager-{{ $i }}
                   servicePort: {{ $servicePort }}
