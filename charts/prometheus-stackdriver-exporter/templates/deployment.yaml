@@ -39,6 +39,11 @@ spec:
         - name: stackdriver-service-account
           secret:
             secretName: {{ .Values.stackdriver.serviceAccountSecret | quote }}
+            {{- if and (.Values.stackdriver.serviceAccountSecret) (.Values.stackdriver.serviceAccountSecretKey) }}
+            items:
+              - key: {{ .Values.stackdriver.serviceAccountSecretKey | quote }}
+                path: credentials.json
+            {{- end }}
       {{- else if .Values.stackdriver.serviceAccountKey }}
         - name: stackdriver-service-account
           secret:
@@ -108,4 +113,3 @@ spec:
       tolerations:
         {{- toYaml .Values.tolerations | nindent 8 }}
       {{- end }}
-
