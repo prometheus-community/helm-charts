@@ -21,9 +21,7 @@ spec:
       {{- toYaml .Values.podAnnotations | nindent 8 }}
       {{- end }}
     spec:
-{{- if and .Values.rbac.create .Values.serviceAccount.create }}
       serviceAccountName: {{ template "prometheus-node-exporter.serviceAccountName" . }}
-{{- end }}
 {{- if .Values.securityContext }}
       securityContext:
 {{ toYaml .Values.securityContext | indent 8 }}
@@ -44,7 +42,9 @@ spec:
           args:
             - --path.procfs=/host/proc
             - --path.sysfs=/host/sys
+            {{- if .Values.hostRootFsMount }}
             - --path.rootfs=/host/root
+            {{- end }}
             - --web.listen-address=$(HOST_IP):{{ .Values.service.port }}
 {{- if .Values.extraArgs }}
 {{ toYaml .Values.extraArgs | indent 12 }}
@@ -83,10 +83,12 @@ spec:
             - name: sys
               mountPath: /host/sys
               readOnly: true
+            {{- if .Values.hostRootFsMount }}
             - name: root
               mountPath: /host/root
               mountPropagation: HostToContainer
               readOnly: true
+            {{- end }}
             {{- if .Values.extraHostVolumeMounts }}
             {{- range $_, $mount := .Values.extraHostVolumeMounts }}
             - name: {{ $mount.name }}
@@ -152,9 +154,11 @@ spec:
         - name: sys
           hostPath:
             path: /sys
+        {{- if .Values.hostRootFsMount }}
         - name: root
           hostPath:
             path: /
+        {{- end }}
         {{- if .Values.extraHostVolumeMounts }}
         {{- range $_, $mount := .Values.extraHostVolumeMounts }}
         - name: {{ $mount.name }}
