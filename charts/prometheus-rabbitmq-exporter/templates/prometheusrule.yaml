@@ -12,36 +12,58 @@ metadata:
   {{- end }}
 spec:
   groups:
-  - name: rabbitmq
-    rules:
-    - alert: RabbitmqDown
-      expr: |
-        absent(rabbitmq_up == 1)
-      for: 1m
-      labels:
-        severity: critical
-    - alert: RabbitmqNotRunning
-      expr: |
-        rabbitmq_running{self="1"} != 1
-      for: 1m
-      labels:
-        severity: critical
-    - alert: RabbitmqMessages
-      expr: |
-        rabbitmq_queue_messages > 250
-      for: 10m
-      labels:
-        severity: warning
-    - alert: RabbitmqMessages
-      expr: |
-        rabbitmq_queue_messages > 500
-      for: 10m
-      labels:
-        severity: critical
-    - alert: RabbitmqPartition
-      expr: |
-        rabbitmq_partitions{self="1"} != 0
-      for: 1m
-      labels:
-        severity: critical
+    - name: {{ template "prometheus-rabbitmq-exporter.fullname" . }}
+      rules:
+        - alert: RabbitmqNodeDown
+          expr: rabbitmq_running{service="{{ template "prometheus-rabbitmq-exporter.fullname" . }}"} == 0
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: A Rabbitmq node is down
+            description: |
+              The Rabbitmq node {{ "{{ $labels.node }}" }} of
+               the cluster tracked by {{ "{{ $labels.service }}" }} was not running during the last 5m.
+        - alert: RabbitmqClusterDown
+          expr: |
+            rabbitmq_up{service="{{ template "prometheus-rabbitmq-exporter.fullname" . }}"} == 0
+          for: 5m
+          labels:
+            severity: critical
+          annotations:
+            summary: The Rabbitmq cluster {{ "{{ $labels.service }}" }} is maybe down.
+            description: |
+                The Rabbitmq exporter couldn't scrape any Rabbitmq node of the
+                cluster tracked by {{ "{{ $labels.service }}" }} during the last 5m, the cluster is maybe down.
+        - alert: RabbitMQClusterPartition
+          expr: rabbitmq_partitions{service="{{ template "prometheus-rabbitmq-exporter.fullname" . }}"} > 0
+          for: 5m
+          labels:
+            severity: critical
+          annotations:
+            summary: A cluster partition was detected
+            description: |
+                Cluster partition in Rabbitmq cluster tracked by {{ "{{ $labels.service }}" }} was detected
+                by the node {{ "{{ $labels.node }}" }}
+        - alert: RabbitmqOutOfMemory
+          expr: |
+            rabbitmq_node_mem_used{service="{{ template "prometheus-rabbitmq-exporter.fullname" . }}"}
+            / rabbitmq_node_mem_limit{service="{{ template "prometheus-rabbitmq-exporter.fullname" . }}"}
+            * 100 > 90
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: The Rabbitmq node {{ "{{ $labels.node }}" }} is Out of memory
+            description: |
+                Memory available for Rabbmitmq node {{ "{{ $labels.node }}" }} is lower than 10%
+        - alert: RabbitmqTooManyConnections
+          expr: rabbitmq_connectionsTotal{service="{{ template "prometheus-rabbitmq-exporter.fullname" . }}"} > 1000
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: Too many connections to the Rabbitmq cluster
+            description: |
+                The Rabbitmq cluster tracked by {{ "{{ $labels.service }}" }} has too many connections {{ "{{ $value }}" }} (> 1000)
 {{- end }}
