@@ -67,7 +67,7 @@ For more information please refer to the [redis_exporter](https://github.com/oli
 
 ### Redis Connection
 
-- To configure RabbitMQ connection set `redisAddress` string (example format: `redis://myredis:6379`)
+- To configure Redis connection set `redisAddress` string (example format: `redis://myredis:6379`)
 - To configure auth by value, set `auth.enabled` to `true`, and `auth.redisPassword` value
 - To configure auth by secret, set `auth.secret.name` and `auth.secret.key` values
 
