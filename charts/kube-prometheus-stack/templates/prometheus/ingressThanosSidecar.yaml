@@ -4,11 +4,13 @@
 {{- $thanosPort := .Values.prometheus.thanosIngress.servicePort -}}
 {{- $routePrefix := list .Values.prometheus.prometheusSpec.routePrefix }}
 {{- $paths := .Values.prometheus.thanosIngress.paths | default $routePrefix -}}
-{{- if .Capabilities.APIVersions.Has "networking.k8s.io/v1beta1" }}
+{{- if .Capabilities.APIVersions.Has "networking.k8s.io/v1" -}}
+apiVersion: networking.k8s.io/v1
+  {{- else if .Capabilities.APIVersions.Has "networking.k8s.io/v1beta1" -}}
 apiVersion: networking.k8s.io/v1beta1
-{{ else }}
+  {{- else -}}
 apiVersion: extensions/v1beta1
-{{ end -}}
+  {{- end }}
 kind: Ingress
 metadata:
 {{- if .Values.prometheus.thanosIngress.annotations }}
@@ -40,9 +42,16 @@ spec:
             pathType: {{ $pathType }}
             {{- end }}
             backend:
+              {{- if .Capabilities.APIVersions.Has "networking.k8s.io/v1" }}
+              service:
+                name: {{ $serviceName }}
+                port:
+                  number: {{ $thanosPort }}
+              {{- else }}
               serviceName: {{ $serviceName }}
               servicePort: {{ $thanosPort }}
-  {{- end -}}
+    {{- end }}
+    {{- end -}}
   {{- end -}}
   {{- else }}
     - http:
@@ -53,8 +62,15 @@ spec:
             pathType: {{ $pathType }}
             {{- end }}
             backend:
+              {{- if .Capabilities.APIVersions.Has "networking.k8s.io/v1" }}
+              service:
+                name: {{ $serviceName }}
+                port:
+                  number: {{ $thanosPort }}
+              {{- else }}
               serviceName: {{ $serviceName }}
               servicePort: {{ $thanosPort }}
+  {{- end }}
   {{- end -}}
   {{- end -}}
   {{- if .Values.prometheus.thanosIngress.tls }}
