@@ -11,17 +11,19 @@ metadata:
 items:
 {{ range $i, $e := until $count }}
   - kind: Ingress
-    {{- if $.Capabilities.APIVersions.Has "networking.k8s.io/v1beta1" }}
+    {{- if .Capabilities.APIVersions.Has "networking.k8s.io/v1" }}
+    apiVersion: networking.k8s.io/v1
+    {{- else if .Capabilities.APIVersions.Has "networking.k8s.io/v1beta1" }}
     apiVersion: networking.k8s.io/v1beta1
-    {{ else }}
+    {{- else }}
     apiVersion: extensions/v1beta1
-    {{ end -}}
+    {{- end }}
     metadata:
       name: {{ include "kube-prometheus-stack.fullname" $ }}-alertmanager-{{ $i }}
       namespace: {{ template "kube-prometheus-stack.namespace" $ }}
       labels:
         app: {{ include "kube-prometheus-stack.name" $ }}-alertmanager
-{{ include "kube-prometheus-stack.labels" $ | indent 8 }}
+      {{ include "kube-prometheus-stack.labels" $ | indent 8 }}
       {{- if $ingressValues.labels }}
 {{ toYaml $ingressValues.labels | indent 8 }}
       {{- end }}
@@ -45,8 +47,15 @@ items:
                 pathType: {{ $pathType }}
                 {{- end }}
                 backend:
+                  {{- if .Capabilities.APIVersions.Has "networking.k8s.io/v1" }}
+                  service:
+                    name: {{ include "kube-prometheus-stack.fullname" $ }}-alertmanager-{{ $i }}
+                    port:
+                      number: {{ $servicePort }}
+                  {{- else }}
                   serviceName: {{ include "kube-prometheus-stack.fullname" $ }}-alertmanager-{{ $i }}
                   servicePort: {{ $servicePort }}
+      {{- end }}
       {{- end -}}
       {{- if or $ingressValues.tlsSecretName $ingressValues.tlsSecretPerReplica.enabled }}
       tls:
