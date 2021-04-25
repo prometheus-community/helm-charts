@@ -6,7 +6,7 @@ metadata:
     {{- include "alertmanager.labels" . | nindent 4 }}
 {{- if .Values.service.annotations }}
   annotations:
-    {{ toYaml .Values.service.annotations | indent 4 }}
+    {{- toYaml .Values.service.annotations | nindent 4 }}
 {{- end }}
 spec:
   type: {{ .Values.service.type }}
@@ -15,6 +15,9 @@ spec:
       targetPort: http
       protocol: TCP
       name: http
+      {{- if (and (eq .Values.service.type "NodePort") .Values.service.nodePort) }}
+      nodePort: {{ .Values.service.nodePort }}
+      {{- end }}
   selector:
     {{- include "alertmanager.selectorLabels" . | nindent 4 }}
 ---

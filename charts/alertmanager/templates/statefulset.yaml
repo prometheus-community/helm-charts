@@ -18,6 +18,10 @@ spec:
     metadata:
       labels:
         {{- include "alertmanager.selectorLabels" . | nindent 8 }}
+{{- if .Values.podAnnotations }}
+      annotations:
+        {{- toYaml .Values.podAnnotations | nindent 8 }}
+{{- end }}
     spec:
     {{- with .Values.imagePullSecrets }}
       imagePullSecrets:
@@ -55,6 +59,10 @@ spec:
                 fieldRef:
                   apiVersion: v1
                   fieldPath: status.podIP
+{{- if .Values.command }}
+          command:
+            {{- toYaml .Values.command | nindent 12 }}
+{{- end }}
           args:
             - --storage.path=/alertmanager
             - --config.file=/etc/alertmanager/alertmanager.yml
@@ -63,8 +71,9 @@ spec:
             - --cluster.listen-address=0.0.0.0:9094
             {{- end }}
             {{- if gt .Values.replicaCount 1.0}}
+            {{- $fullName := include "alertmanager.fullname" . }}
             {{- range $i := until (int .Values.replicaCount) }}
-            - --cluster.peer={{ tpl $.Release.Name $ }}-{{ tpl $.Chart.Name $ }}-{{ $i }}.{{ tpl $.Release.Name $ }}-{{ tpl $.Chart.Name $ }}-headless:9094
+            - --cluster.peer={{ $fullName }}-{{ $i }}.{{ $fullName }}-headless:9094
             {{- end }}
             {{- end }}
             {{- if .Values.additionalPeers }}

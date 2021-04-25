@@ -1,4 +1,4 @@
-{{- if .Values.kubeControllerManager.enabled }}
+{{- if and .Values.kubeControllerManager.enabled .Values.kubeControllerManager.serviceMonitor.enabled }}
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
@@ -22,6 +22,9 @@ spec:
     interval: {{ .Values.kubeControllerManager.serviceMonitor.interval }}
     {{- end }}
     bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
+    {{- if .Values.kubeControllerManager.serviceMonitor.proxyUrl }}
+    proxyUrl: {{ .Values.kubeControllerManager.serviceMonitor.proxyUrl}}
+    {{- end }}
     {{- if .Values.kubeControllerManager.serviceMonitor.https }}
     scheme: https
     tlsConfig:
