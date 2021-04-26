@@ -70,6 +70,12 @@ spec:
   logFormat:  {{ .Values.prometheus.prometheusSpec.logFormat }}
   listenLocal: {{ .Values.prometheus.prometheusSpec.listenLocal }}
   enableAdminAPI: {{ .Values.prometheus.prometheusSpec.enableAdminAPI }}
+{{- if .Values.prometheus.prometheusSpec.enableFeatures }}
+  enableFeatures:
+{{- range $enableFeatures := .Values.prometheus.prometheusSpec.enableFeatures }}
+  - {{ tpl $enableFeatures $ }}
+{{- end }}
+{{- end }}
 {{- if .Values.prometheus.prometheusSpec.scrapeInterval }}
   scrapeInterval: {{ .Values.prometheus.prometheusSpec.scrapeInterval }}
 {{- end }}
@@ -150,13 +156,23 @@ spec:
 {{ else }}
   probeNamespaceSelector: {}
 {{- end }}
-{{- if .Values.prometheus.prometheusSpec.remoteRead }}
+{{- if (or .Values.prometheus.prometheusSpec.remoteRead .Values.prometheus.prometheusSpec.additionalRemoteRead) }}
   remoteRead:
+{{- if .Values.prometheus.prometheusSpec.remoteRead }}
 {{ toYaml .Values.prometheus.prometheusSpec.remoteRead | indent 4 }}
 {{- end }}
-{{- if .Values.prometheus.prometheusSpec.remoteWrite }}
+{{- if .Values.prometheus.prometheusSpec.additionalRemoteRead }}
+{{ toYaml .Values.prometheus.prometheusSpec.additionalRemoteRead | indent 4 }}
+{{- end }}
+{{- end }}
+{{- if (or .Values.prometheus.prometheusSpec.remoteWrite .Values.prometheus.prometheusSpec.additionalRemoteWrite) }}
   remoteWrite:
+{{- if .Values.prometheus.prometheusSpec.remoteWrite }}
 {{ toYaml .Values.prometheus.prometheusSpec.remoteWrite | indent 4 }}
+{{- end }}
+{{- if .Values.prometheus.prometheusSpec.additionalRemoteWrite }}
+{{ toYaml .Values.prometheus.prometheusSpec.additionalRemoteWrite | indent 4 }}
+{{- end }}
 {{- end }}
 {{- if .Values.prometheus.prometheusSpec.securityContext }}
   securityContext:

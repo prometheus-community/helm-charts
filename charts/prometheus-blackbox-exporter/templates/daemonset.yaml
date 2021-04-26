@@ -48,7 +48,16 @@ spec:
         - name: {{ . }}
       {{- end }}
     {{- end }}
-
+      {{- if .Values.hostAliases }}
+      hostAliases:
+        {{- range .Values.hostAliases }}
+        - ip: {{ .ip }}
+          hostnames:
+          {{- range .hostNames }}
+          - {{ . }}
+          {{- end }}
+        {{- end }}
+      {{- end }}
       restartPolicy: {{ .Values.restartPolicy }}
 
       {{- if .Values.priorityClassName }}
@@ -103,6 +112,7 @@ spec:
 {{- if .Values.dnsPolicy }}
       dnsPolicy: {{ .Values.dnsPolicy | toString }}
 {{- end }}
+      hostNetwork: {{ .Values.hostNetwork }}
 {{- if .Values.dnsConfig }}
       dnsConfig:
         {{- toYaml .Values.dnsConfig | nindent 8 }}
