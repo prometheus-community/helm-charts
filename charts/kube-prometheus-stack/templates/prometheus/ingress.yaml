@@ -4,13 +4,8 @@
   {{- $servicePort := .Values.prometheus.service.port -}}
   {{- $routePrefix := list .Values.prometheus.prometheusSpec.routePrefix -}}
   {{- $paths := .Values.prometheus.ingress.paths | default $routePrefix -}}
-  {{- if .Capabilities.APIVersions.Has "networking.k8s.io/v1" -}}
-apiVersion: networking.k8s.io/v1
-  {{- else if .Capabilities.APIVersions.Has "networking.k8s.io/v1beta1" -}}
-apiVersion: networking.k8s.io/v1beta1
-  {{- else -}}
-apiVersion: extensions/v1beta1
-  {{- end }}
+  {{- $apiIsStable := include "kube-prometheus-stack.ingress.isStable" . -}}
+apiVersion: {{ include "kube-prometheus-stack.ingress.apiVersion" . }}
 kind: Ingress
 metadata:
 {{- if .Values.prometheus.ingress.annotations }}
@@ -26,7 +21,7 @@ metadata:
 {{ toYaml .Values.prometheus.ingress.labels | indent 4 }}
 {{- end }}
 spec:
-  {{- if or (.Capabilities.APIVersions.Has "networking.k8s.io/v1") (.Capabilities.APIVersions.Has "networking.k8s.io/v1beta1") }}
+  {{- if $apiIsStable }}
   {{- if .Values.prometheus.ingress.ingressClassName }}
   ingressClassName: {{ .Values.prometheus.ingress.ingressClassName }}
   {{- end }}
@@ -43,7 +38,7 @@ spec:
             pathType: {{ $pathType }}
             {{- end }}
             backend:
-              {{- if $.Capabilities.APIVersions.Has "networking.k8s.io/v1" }}
+              {{- if $apiIsStable }}
               service:
                 name: {{ $serviceName }}
                 port:
@@ -63,7 +58,7 @@ spec:
             pathType: {{ $pathType }}
             {{- end }}
             backend:
-              {{- if $.Capabilities.APIVersions.Has "networking.k8s.io/v1" }}
+              {{- if $apiIsStable }}
               service:
                 name: {{ $serviceName }}
                 port:

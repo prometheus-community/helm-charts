@@ -49,7 +49,7 @@ The longest name that gets created adds and extra 37 characters, so truncation s
 app.kubernetes.io/managed-by: {{ .Release.Service }}
 app.kubernetes.io/instance: {{ .Release.Name }}
 app.kubernetes.io/version: "{{ .Chart.Version }}"
-app.kubernetes.io/part-of: {{ template "kube-prometheus-stack.name" . }}  
+app.kubernetes.io/part-of: {{ template "kube-prometheus-stack.name" . }}
 chart: {{ template "kube-prometheus-stack.chartref" . }}
 release: {{ $.Release.Name | quote }}
 heritage: {{ $.Release.Service | quote }}
@@ -94,4 +94,20 @@ Allow the release namespace to be overridden for multi-namespace deployments in 
   {{- else -}}
     {{- .Release.Namespace -}}
   {{- end -}}
+{{- end -}}
+
+{{/* Get Ingress API Version */}}
+{{- define "kube-prometheus-stack.ingress.apiVersion" -}}
+  {{- if and (.Capabilities.APIVersions.Has "networking.k8s.io/v1") (semverCompare ">= 1.19.x" .Capabilities.KubeVersion.Version) -}}
+      {{- print "networking.k8s.io/v1" -}}
+  {{- else if .Capabilities.APIVersions.Has "networking.k8s.io/v1beta1" -}}
+    {{- print "networking.k8s.io/v1beta1" -}}
+  {{- else -}}
+    {{- print "extensions/v1beta1" -}}
+  {{- end -}}
+{{- end -}}
+
+{{/* Check Ingress stability */}}
+{{- define "kube-prometheus-stack.ingress.isStable" -}}
+  {{- eq (include "kube-prometheus-stack.ingress.apiVersion" .) "networking.k8s.io/v1" -}}
 {{- end -}}
