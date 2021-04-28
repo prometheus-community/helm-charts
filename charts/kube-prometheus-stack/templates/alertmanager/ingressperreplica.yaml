@@ -3,6 +3,7 @@
 {{- $count := .Values.alertmanager.alertmanagerSpec.replicas | int -}}
 {{- $servicePort := .Values.alertmanager.service.port -}}
 {{- $ingressValues := .Values.alertmanager.ingressPerReplica -}}
+{{- $apiIsStable := include "kube-prometheus-stack.ingress.isStable" . -}}
 apiVersion: v1
 kind: List
 metadata:
@@ -11,13 +12,7 @@ metadata:
 items:
 {{ range $i, $e := until $count }}
   - kind: Ingress
-    {{- if $.Capabilities.APIVersions.Has "networking.k8s.io/v1" }}
-    apiVersion: networking.k8s.io/v1
-    {{- else if $.Capabilities.APIVersions.Has "networking.k8s.io/v1beta1" }}
-    apiVersion: networking.k8s.io/v1beta1
-    {{- else }}
-    apiVersion: extensions/v1beta1
-    {{- end }}
+    apiVersion: {{ include "kube-prometheus-stack.ingress.apiVersion" . }}
     metadata:
       name: {{ include "kube-prometheus-stack.fullname" $ }}-alertmanager-{{ $i }}
       namespace: {{ template "kube-prometheus-stack.namespace" $ }}
@@ -32,7 +27,7 @@ items:
 {{ toYaml $ingressValues.annotations | indent 8 }}
       {{- end }}
     spec:
-      {{- if or ($.Capabilities.APIVersions.Has "networking.k8s.io/v1") ($.Capabilities.APIVersions.Has "networking.k8s.io/v1beta1") }}
+      {{- if $apiIsStable }}
       {{- if $ingressValues.ingressClassName }}
       ingressClassName: {{ $ingressValues.ingressClassName }}
       {{- end }}
@@ -47,7 +42,7 @@ items:
                 pathType: {{ $pathType }}
                 {{- end }}
                 backend:
-                  {{- if $.Capabilities.APIVersions.Has "networking.k8s.io/v1" }}
+                  {{- if $apiIsStable }}
                   service:
                     name: {{ include "kube-prometheus-stack.fullname" $ }}-alertmanager-{{ $i }}
                     port:
