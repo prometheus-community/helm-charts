@@ -107,7 +107,7 @@ Allow the release namespace to be overridden for multi-namespace deployments in 
 
 {{/* Get Ingress API Version */}}
 {{- define "kube-prometheus-stack.ingress.apiVersion" -}}
-{{- if and (.Capabilities.APIVersions.Has "networking.k8s.io/v1") (semverCompare ">= 1.19.x" (include "kube-prometheus-stack.ingress.kubeVersion" .)) -}}
+  {{- if and (.Capabilities.APIVersions.Has "networking.k8s.io/v1") (semverCompare ">= 1.19.x" (include "kube-prometheus-stack.ingress.kubeVersion" .)) -}}
       {{- print "networking.k8s.io/v1" -}}
   {{- else if .Capabilities.APIVersions.Has "networking.k8s.io/v1beta1" -}}
     {{- print "networking.k8s.io/v1beta1" -}}
