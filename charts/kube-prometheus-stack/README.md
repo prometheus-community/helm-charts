@@ -122,6 +122,12 @@ kubectl apply -f https://raw.githubusercontent.com/prometheus-operator/prometheu
 
 ### From 11.x to 12.x
 
+Version 12 upgrades prometheus-operator from 0.43.x to 0.44.x. Helm does not automatically upgrade or install new CRDs on a chart upgrade, so you have to install the CRD manually before updating:
+
+```console
+kubectl apply -f https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/release-0.44/example/prometheus-operator-crd/monitoring.coreos.com_prometheuses.yaml
+```
+
 The chart was migrated to support only helm v3 and later.
 
 ### From 10.x to 11.x
