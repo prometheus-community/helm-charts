@@ -98,11 +98,7 @@ Allow the release namespace to be overridden for multi-namespace deployments in 
 
 {{/* Allow KubeVersion to be overridden. */}}
 {{- define "kube-prometheus-stack.ingress.kubeVersion" -}}
-  {{- if .Values.kubeVersionOverride -}}
-    {{- .Values.kubeVersionOverride -}}
-  {{- else -}}
-    {{- print .Capabilities.KubeVersion.Version -}}
-  {{- end -}}
+  {{- default .Capabilities.KubeVersion.Version .Values.kubeVersionOverride -}}
 {{- end -}}
 
 {{/* Get Ingress API Version */}}
