@@ -1,16 +1,12 @@
-{{- if and (.Values.rbac.create) (not .Values.rbac.useExistingRole) (not .Values.rbac.useClusterRole) }}
-{{- range (split "," .Values.namespaces) }}
----
+{{- if and (.Values.rbac.create) (not .Values.rbac.useExistingRole) (.Values.rbac.useClusterRole) }}
 apiVersion: rbac.authorization.k8s.io/v1
-kind: Role
+kind: ClusterRole
 metadata:
   labels:
     app.kubernetes.io/name: {{ template "kube-state-metrics.name" $ }}
     helm.sh/chart: {{ $.Chart.Name }}-{{ $.Chart.Version }}
     app.kubernetes.io/managed-by: {{ $.Release.Service }}
     app.kubernetes.io/instance: {{ $.Release.Name }}
-  name: {{ template "kube-state-metrics.fullname" $ }}
-  namespace: {{ . | trim }}
-rules: {{ include "rbac.rules" $ | indent 2 }}
-{{- end }}
+  name: {{ include "kube-state-metrics.fullname" $ }}
+rules: {{ include "rbac.rules" . | indent 2 }}
 {{- end }}
