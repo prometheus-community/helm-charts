@@ -1,4 +1,5 @@
 {{- if and .Values.alertmanager.enabled .Values.alertmanager.servicePerReplica.enabled .Values.alertmanager.ingressPerReplica.enabled }}
+{{- $root := . -}}
 {{- $pathType := .Values.alertmanager.ingressPerReplica.pathType | default "" }}
 {{- $count := .Values.alertmanager.alertmanagerSpec.replicas | int -}}
 {{- $servicePort := .Values.alertmanager.service.port -}}
@@ -12,7 +13,7 @@ metadata:
 items:
 {{ range $i, $e := until $count }}
   - kind: Ingress
-    apiVersion: {{ include "kube-prometheus-stack.ingress.apiVersion" . }}
+    apiVersion: {{ include "kube-prometheus-stack.ingress.apiVersion" $root }}
     metadata:
       name: {{ include "kube-prometheus-stack.fullname" $ }}-alertmanager-{{ $i }}
       namespace: {{ template "kube-prometheus-stack.namespace" $ }}
