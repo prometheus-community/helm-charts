@@ -142,7 +142,7 @@ spec:
         - --resources=volumeattachments
 {{  end  }}
 {{ if .Values.namespaces }}
-        - --namespaces={{ .Values.namespaces | join "," }}
+        - --namespaces={{ tpl .Values.namespaces $ | join "," }}
 {{ end }}
 {{ if .Values.autosharding.enabled }}
         - --pod=$(POD_NAME)
@@ -165,6 +165,9 @@ spec:
         image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
         ports:
         - containerPort: 8080
+{{- if .Values.selfMonitor.enabled }}
+        - containerPort: 8081
+{{- end }}
         livenessProbe:
           httpGet:
             path: /healthz

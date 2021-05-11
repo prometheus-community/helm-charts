@@ -96,9 +96,14 @@ Allow the release namespace to be overridden for multi-namespace deployments in 
   {{- end -}}
 {{- end -}}
 
+{{/* Allow KubeVersion to be overridden. */}}
+{{- define "kube-prometheus-stack.ingress.kubeVersion" -}}
+  {{- default .Capabilities.KubeVersion.Version .Values.kubeVersionOverride -}}
+{{- end -}}
+
 {{/* Get Ingress API Version */}}
 {{- define "kube-prometheus-stack.ingress.apiVersion" -}}
-  {{- if and (.Capabilities.APIVersions.Has "networking.k8s.io/v1") (semverCompare ">= 1.19.x" .Capabilities.KubeVersion.Version) -}}
+  {{- if and (.Capabilities.APIVersions.Has "networking.k8s.io/v1") (semverCompare ">= 1.19.x" (include "kube-prometheus-stack.ingress.kubeVersion" .)) -}}
       {{- print "networking.k8s.io/v1" -}}
   {{- else if .Capabilities.APIVersions.Has "networking.k8s.io/v1beta1" -}}
     {{- print "networking.k8s.io/v1beta1" -}}
