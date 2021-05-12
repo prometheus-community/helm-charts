@@ -43,7 +43,7 @@ spec:
             - --volume-dir=/etc/alertmanager
             - --webhook-url=http://127.0.0.1:{{ .Values.service.port }}/-/reload
           resources:
-            {{ toYaml .Values.configmapReload.resources | indent 12 }}
+            {{- toYaml .Values.configmapReload.resources | nindent 12 }}
           volumeMounts:
             - name: config
               mountPath: /etc/alertmanager
@@ -111,6 +111,18 @@ spec:
           configMap:
             name: {{ include "alertmanager.fullname" . }}
       {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+    {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}
+    {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}
 {{- if .Values.persistence.enabled }}
   volumeClaimTemplates:
     - metadata:
@@ -132,15 +144,3 @@ spec:
         - name: storage
           emptyDir: {}
 {{- end -}}
-      {{- with .Values.nodeSelector }}
-      nodeSelector:
-        {{- toYaml . | nindent 8 }}
-      {{- end }}
-    {{- with .Values.affinity }}
-      affinity:
-        {{- toYaml . | nindent 8 }}
-    {{- end }}
-    {{- with .Values.tolerations }}
-      tolerations:
-        {{- toYaml . | nindent 8 }}
-    {{- end }}
