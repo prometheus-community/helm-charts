@@ -81,7 +81,13 @@ spec:
                     {{- with .Values.log.level }}
                     "--log.level={{ . }}",
                     {{- end }}
-                    {{- if .Values.es.uri }}
+                    {{- if .Values.es.awsSigningProxy }}
+                    {{- if .Values.es.awsSigningProxy.enabled }}
+                    "--es.uri=http://localhost:{{ .Values.es.awsSigningProxy.port | default 9252 }}",
+                    {{- else if .Values.es.uri }}
+                    "--es.uri={{ .Values.es.uri }}",
+                    {{- end }}
+                    {{- else if .Values.es.uri }}
                     "--es.uri={{ .Values.es.uri }}",
                     {{- end }}
                     {{- if .Values.es.all }}
@@ -171,6 +177,51 @@ spec:
             {{- if .Values.extraVolumeMounts }}
             {{- toYaml .Values.extraVolumeMounts | nindent 12 }}
             {{- end }}
+        {{- if .Values.es.awsSigningProxy }}
+        {{- if .Values.es.awsSigningProxy.enabled }}
+        - name: "aws-es-proxy"
+          image: "{{ .Values.es.awsSigningProxy.image.repository | default "abutaha/aws-es-proxy" }}:{{ .Values.es.awsSigningProxy.image.tag | default "v1.1" }}"
+          imagePullPolicy: {{ .Values.es.awsSigningProxy.image.pullPolicy | default "IfNotPresent" | quote }}
+          args:
+            - "-endpoint"
+            - {{ .Values.es.uri | quote }}
+            - "-listen"
+            - "localhost:{{ .Values.es.awsSigningProxy.port | default 9252 }}"
+            - "-timeout"
+            - {{ .Values.es.awsSigningProxy.timeout | default 60 | quote }}
+            - "-pretty"
+          env:
+            - name: PORT_NUM
+              value: {{ .Values.es.awsSigningProxy.port | default 9252 | quote }}
+            {{- if .Values.serviceAccount.roleArn }}
+            - name: AWS_ROLE_ARN
+              value: {{ .Values.serviceAccount.roleArn | quote }}
+            - name: AWS_WEB_IDENTITY_TOKEN_FILE
+              value: /var/run/secrets/eks.amazonaws.com/serviceaccount/token
+            {{- end }}
+          {{ if .Values.es.awsSigningProxy.liveness.enabled }}
+          livenessProbe:
+            exec:
+              command:
+                - wget
+                - -q
+                - -O
+                - /dev/null
+                - "localhost:{{ .Values.es.awsSigningProxy.port }}/_cluster/health"
+            initialDelaySeconds: {{ .Values.es.awsSigningProxy.liveness.delay | default 10 }}
+            periodSeconds: {{ .Values.es.awsSigningProxy.liveness.period | default 30 }}
+          {{- end }}
+          {{- if .Values.es.awsSigningProxy.roleArn }}
+          volumeMounts:
+            - mountPath: /var/run/secrets/eks.amazonaws.com/serviceaccount
+              name: aws-iam-token
+              readOnly: true
+          {{- end }}
+          {{- with .Values.es.awsSigningProxy.resources }}
+          resources: {{- toYaml . | nindent 12 }}
+          {{- end }}
+        {{- end }}
+        {{- end }}
 {{- if .Values.nodeSelector }}
       nodeSelector:
 {{ toYaml .Values.nodeSelector | indent 8 }}
@@ -196,4 +247,14 @@ spec:
         {{- end }}
         {{- if .Values.extraVolumes }}
         {{- toYaml .Values.extraVolumes | nindent 8 }}
+        {{- end }}
+        {{- if .Values.serviceAccount.roleArn }}
+        - name: aws-iam-token
+          projected:
+            defaultMode: 420
+            sources:
+              - serviceAccountToken:
+                  audience: {{ .Values.serviceAccount.stsHost | default "sts.amazonaws.com" | quote }}
+                  expirationSeconds: {{ .Values.serviceAccount.stsExpirationSeconds | default 86400 }}
+                  path: token
         {{- end }}
