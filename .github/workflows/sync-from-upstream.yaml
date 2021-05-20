@@ -1,0 +1,24 @@
+name: Sync from upstream
+
+on:
+  # schedule:
+  #   - cron: '*/5 7-20 * * *'
+
+  # Allows to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+jobs:
+  sync-app-repository:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Sync from upstream
+        uses: giantswarm/subtree-util@main
+        with:
+          target_github_token: ${{ secrets.ARCHITECT_BOT_GITHUB_REPO_SYNC_TOKEN }}
+          target_repository: giantswarm/prometheus-operator-app
+          target_path: helm/prometheus-operator-app
+          source_tag_wildcard: "kube-prometheus-stack-*"
+          source_path: charts/kube-prometheus-stack
