@@ -395,7 +395,7 @@ apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   labels:
-    app: prometheus
+    app.kubernetes.io/name: prometheus
     prometheus: prometheus-migration-prometheus
   name: prometheus-prometheus-migration-prometheus-db-prometheus-prometheus-migration-prometheus-0
   namespace: monitoring
