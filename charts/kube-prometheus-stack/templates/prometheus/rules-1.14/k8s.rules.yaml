@@ -26,7 +26,7 @@ spec:
     rules:
     - expr: |-
         sum by (cluster, namespace, pod, container) (
-          rate(container_cpu_usage_seconds_total{job="kubelet", metrics_path="/metrics/cadvisor", image!="", container!="POD"}[5m])
+          rate(container_cpu_usage_seconds_total{job="kubelet", metrics_path="/metrics/cadvisor", image!=""}[5m])
         ) * on (cluster, namespace, pod) group_left(node) topk by (cluster, namespace, pod) (
           1, max by(cluster, namespace, pod, node) (kube_pod_info{node!=""})
         )
@@ -56,27 +56,27 @@ spec:
         )
       record: node_namespace_pod_container:container_memory_swap
     - expr: |-
-        sum by (namespace) (
-            sum by (namespace, pod) (
-                max by (namespace, pod, container) (
-                    kube_pod_container_resource_requests_memory_bytes{job="kube-state-metrics"}
-                ) * on(namespace, pod) group_left() max by (namespace, pod) (
-                    kube_pod_status_phase{phase=~"Pending|Running"} == 1
-                )
-            )
-        )
-      record: namespace:kube_pod_container_resource_requests_memory_bytes:sum
-    - expr: |-
-        sum by (namespace) (
-            sum by (namespace, pod) (
-                max by (namespace, pod, container) (
-                    kube_pod_container_resource_requests_cpu_cores{job="kube-state-metrics"}
-                ) * on(namespace, pod) group_left() max by (namespace, pod) (
+        sum by (namespace, cluster) (
+            sum by (namespace, pod, cluster) (
+                max by (namespace, pod, container, cluster) (
+                  kube_pod_container_resource_requests{resource="memory",job="kube-state-metrics"}
+                ) * on(namespace, pod, cluster) group_left() max by (namespace, pod) (
                   kube_pod_status_phase{phase=~"Pending|Running"} == 1
                 )
             )
         )
-      record: namespace:kube_pod_container_resource_requests_cpu_cores:sum
+      record: namespace_memory:kube_pod_container_resource_requests:sum
+    - expr: |-
+        sum by (namespace, cluster) (
+            sum by (namespace, pod, cluster) (
+                max by (namespace, pod, container, cluster) (
+                  kube_pod_container_resource_requests{resource="cpu",job="kube-state-metrics"}
+                ) * on(namespace, pod, cluster) group_left() max by (namespace, pod) (
+                  kube_pod_status_phase{phase=~"Pending|Running"} == 1
+                )
+            )
+        )
+      record: namespace_cpu:kube_pod_container_resource_requests:sum
     - expr: |-
         max by (cluster, namespace, workload, pod) (
           label_replace(

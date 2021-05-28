@@ -47,9 +47,27 @@ spec:
 {{- end }}
           ]
 {{- end }}
+          {{- if not .Values.mysql.existingSecret }}
+          env:
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+          {{- if .Values.mysql.existingPasswordSecret.name }}
+                  name: {{ .Values.mysql.existingPasswordSecret.name }}
+                  key: {{ .Values.mysql.existingPasswordSecret.key }}
+          {{- else }}
+                  name: {{ template "prometheus-mysql-exporter.fullname" . }}
+                  key: password
+          {{- end }}
+          {{- end }}
+          {{- if .Values.mysql.existingSecret }}
           envFrom:
             - secretRef:
                 name: {{ template "prometheus-mysql-exporter.secret" . }}
+          {{- else }}
+            - name: DATA_SOURCE_NAME
+              value: "{{ .Values.mysql.user }}:$(DB_PASSWORD)@{{ if .Values.mysql.protocol }}{{ .Values.mysql.protocol }}{{ end }}({{ .Values.mysql.host }}:{{ .Values.mysql.port }})/{{ if .Values.mysql.db }}{{ .Values.mysql.db }}{{ end }}{{ if .Values.mysql.param }}?{{ .Values.mysql.param }}{{ end }}"
+          {{- end }}
           ports:
             - containerPort: {{ .Values.service.internalPort }}
           livenessProbe:
