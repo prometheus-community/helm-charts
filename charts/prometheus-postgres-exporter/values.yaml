@@ -351,14 +351,14 @@ config:
             usage: "COUNTER"
             description: "Total time the statement spent writing blocks, in milliseconds (if track_io_timing is enabled, otherwise zero)"
 
-    pg_stat_activity:
+    pg_stat_activity_idle:
       query: |
         WITH
           metrics AS (
             SELECT
               application_name,
-              SUM(EXTRACT(EPOCH FROM (CURRENT_TIMESTAMP - state_change))::bigint)::float AS process_idle_seconds_sum,
-              COUNT(*) AS process_idle_seconds_count
+              SUM(EXTRACT(EPOCH FROM (CURRENT_TIMESTAMP - state_change))::bigint)::float AS process_seconds_sum,
+              COUNT(*) AS process_seconds_count
             FROM pg_stat_activity
             WHERE state = 'idle'
             GROUP BY application_name
@@ -381,17 +381,17 @@ config:
           )
         SELECT
           application_name,
-          process_idle_seconds_sum,
-          process_idle_seconds_count,
-          ARRAY_AGG(le) AS process_idle_seconds,
-          ARRAY_AGG(bucket) AS process_idle_seconds_bucket
+          process_seconds_sum,
+          process_seconds_count,
+          ARRAY_AGG(le) AS process_seconds,
+          ARRAY_AGG(bucket) AS process_seconds_bucket
         FROM metrics JOIN buckets USING (application_name)
         GROUP BY 1, 2, 3
       metrics:
         - application_name:
             usage: "LABEL"
             description: "Application Name"
-        - process_idle_seconds:
+        - process_seconds:
             usage: "HISTOGRAM"
             description: "Idle time of server processes"
 
