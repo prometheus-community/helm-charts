@@ -50,11 +50,12 @@ Allow the release namespace to be overridden for multi-namespace deployments in 
 {{- define "kube-state-metrics.labels" }}
 app.kubernetes.io/name: {{ template "kube-state-metrics.name" . }}
 app.kubernetes.io/instance: {{ .Release.Name }}
+app.kubernetes.io/component: metrics 
 app.kubernetes.io/managed-by: {{ .Release.Service }}
 app.kubernetes.io/version: "{{ .Chart.Version }}"
 app.kubernetes.io/part-of: {{ template "kube-state-metrics.name" . }} 
 helm.sh/chart: {{ .Chart.Name }}-{{ .Chart.Version }} 
 {{- if .Values.customLabels }}
-{{ toYaml .Values.customLabels | indent 4 }}
+{{ toYaml .Values.customLabels }}
 {{- end }}
 {{- end }}
