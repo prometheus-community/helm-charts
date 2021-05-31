@@ -40,3 +40,17 @@ Create the name of the service account to use
     {{ default "default" .Values.serviceAccount.name }}
 {{- end -}}
 {{- end -}}
+
+{{/* Generate basic labels */}}
+{{- define "prometheus-snmp-exporter.labels" }}
+app.kubernetes.io/name: {{ template "prometheus-snmp-exporter.name" . }}
+app.kubernetes.io/instance: "{{ .Release.Name }}"
+app.kubernetes.io/component: metrics 
+app.kubernetes.io/managed-by: "{{ .Release.Service }}"
+app.kubernetes.io/version: "{{ .Chart.AppVersion }}"
+app.kubernetes.io/part-of: {{ template "prometheus-snmp-exporter.name" . }} 
+helm.sh/chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+{{- if .Values.customLabels }}
+{{ toYaml .Values.customLabels }}
+{{- end }}
+{{- end }}
