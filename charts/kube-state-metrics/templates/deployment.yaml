@@ -8,7 +8,7 @@ metadata:
   name: {{ template "kube-state-metrics.fullname" . }}
   namespace: {{ template "kube-state-metrics.namespace" . }}
   labels:
-{{- include "kube-state-metrics.labels" . | indent 4 }}
+    {{- include "kube-state-metrics.labels" . | indent 4 }}
 spec:
   selector:
     matchLabels:
@@ -142,7 +142,7 @@ spec:
         - --resources=volumeattachments
 {{  end  }}
 {{ if .Values.namespaces }}
-        - --namespaces={{ tpl .Values.namespaces $ | join "," }}
+        - --namespaces={{ .Values.namespaces | join "," }}
 {{ end }}
 {{ if .Values.autosharding.enabled }}
         - --pod=$(POD_NAME)
@@ -165,9 +165,6 @@ spec:
         image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
         ports:
         - containerPort: 8080
-{{- if .Values.selfMonitor.enabled }}
-        - containerPort: 8081
-{{- end }}
         livenessProbe:
           httpGet:
             path: /healthz
