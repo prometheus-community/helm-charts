@@ -1,11 +1,8 @@
-{{- if and (eq $.Values.rbac.create true) (not .Values.rbac.useExistingRole) -}}
-{{- if eq .Values.rbac.useClusterRole false }}
-{{- range (split "," $.Values.namespace) }}
-{{- end }}
-{{- end -}}
+{{- if and (eq .Values.rbac.create true) (not .Values.rbac.useExistingRole) -}}
+{{- range (split "," .Values.namespaces) }}
 ---
 apiVersion: rbac.authorization.k8s.io/v1
-{{- if eq .Values.rbac.useClusterRole false }}
+{{- if eq $.Values.rbac.useClusterRole false }}
 kind: Role
 {{- else }}
 kind: ClusterRole
@@ -17,7 +14,7 @@ metadata:
     app.kubernetes.io/managed-by: {{ $.Release.Service }}
     app.kubernetes.io/instance: {{ $.Release.Name }}
   name: {{ template "kube-state-metrics.fullname" $ }}
-{{- if eq .Values.rbac.useClusterRole false }}
+{{- if eq $.Values.rbac.useClusterRole false }}
   namespace: {{ . }}
 {{- end }}
 rules:
@@ -189,4 +186,5 @@ rules:
     - verticalpodautoscalers
   verbs: ["list", "watch"]
 {{ end -}}
+{{- end -}}
 {{- end -}}
