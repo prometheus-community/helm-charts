@@ -116,3 +116,9 @@ Allow the release namespace to be overridden for multi-namespace deployments in 
 {{- define "kube-prometheus-stack.ingress.isStable" -}}
   {{- eq (include "kube-prometheus-stack.ingress.apiVersion" .) "networking.k8s.io/v1" -}}
 {{- end -}}
+
+{{/* Check Ingress supports pathType */}}
+{{/* pathType was added to networking.k8s.io/v1beta1 in Kubernetes 1.18 */}}
+{{- define "kube-prometheus-stack.ingress.supportsPathType" -}}
+  {{- or (eq (include "kube-prometheus-stack.ingress.isStable" .) "true") (and (eq (include "kube-prometheus-stack.ingress.apiVersion" .) "networking.k8s.io/v1beta1") (semverCompare ">= 1.18.x" (include "kube-prometheus-stack.ingress.kubeVersion" .))) -}}
+{{- end -}}
