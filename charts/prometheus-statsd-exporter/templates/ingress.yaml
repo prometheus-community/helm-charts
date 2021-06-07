@@ -2,7 +2,6 @@
 {{- $fullName := include "prometheus-statsd-exporter.fullname" . -}}
 {{- $svcPort := .Values.service.port -}}
 {{- $kubeTargetVersion := default .Capabilities.KubeVersion.GitVersion .Values.kubeTargetVersionOverride }}
-{{- $pathType := .Values.ingress.pathType -}}
 {{- if semverCompare ">=1.19.0-0" $kubeTargetVersion }}
 apiVersion: networking.k8s.io/v1
 {{- else }}
@@ -34,9 +33,9 @@ spec:
       http:
         paths:
           {{- range .paths }}
-          - path: {{ . }}
+          - path: {{ .path }}
             {{- if semverCompare ">=1.19.0-0" $kubeTargetVersion }}
-            pathType: {{ $pathType | default "ImplementationSpecific" }}
+            pathType: {{ .pathType | default "ImplementationSpecific" }}
             {{- end }}
             backend:
               {{- if semverCompare ">=1.19.0-0" $kubeTargetVersion }}
