@@ -98,7 +98,12 @@ Allow the release namespace to be overridden for multi-namespace deployments in 
 
 {{/* Allow KubeVersion to be overridden. */}}
 {{- define "kube-prometheus-stack.ingress.kubeVersion" -}}
-  {{- default .Capabilities.KubeVersion.Version .Values.kubeVersionOverride -}}
+  {{- $kubeVersion := default .Capabilities.KubeVersion.Version .Values.kubeVersionOverride -}}
+  {{/* Special use case for Aamzon EKS */}}
+  {{- if and (regexMatch "\\d+\\.\\d+\\.\\d+-eks-.+" $kubeVersion) (not .Values.kubeVersionOverride) -}}
+    {{- $kubeVersion = regexFind "\\d+\\.\\d+\\.\\d+" $kubeVersion -}}
+  {{- end -}}
+  {{- $kubeVersion -}}
 {{- end -}}
 
 {{/* Get Ingress API Version */}}
