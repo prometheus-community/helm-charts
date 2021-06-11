@@ -34,18 +34,6 @@ charts = [
         'destination': '../templates/prometheus/rules-1.14',
         'min_kubernetes': '1.14.0-0'
     },
-    {
-        'source': 'https://raw.githubusercontent.com/prometheus-operator/kube-prometheus/release-0.1/manifests/prometheus-rules.yaml',
-        'destination': '../templates/prometheus/rules',
-        'min_kubernetes': '1.10.0-0',
-        'max_kubernetes': '1.14.0-0'
-    },
-    {
-        'source': 'https://raw.githubusercontent.com/etcd-io/website/master/content/en/docs/v3.4/op-guide/etcd3_alert.rules.yml',
-        'destination': '../templates/prometheus/rules',
-        'min_kubernetes': '1.10.0-0',
-        'max_kubernetes': '1.14.0-0'
-    },
 ]
 
 # Additional conditions map
