@@ -122,7 +122,7 @@ rules:
       nodeQuery: sum(rate(container_cpu_usage_seconds_total{<<.LabelMatchers>>, id='/'}[3m])) by (<<.GroupBy>>)
       resources:
         overrides:
-          instance:
+          node:
             resource: node
           namespace:
             resource: namespace
@@ -134,7 +134,7 @@ rules:
       nodeQuery: sum(container_memory_working_set_bytes{<<.LabelMatchers>>,id='/'}) by (<<.GroupBy>>)
       resources:
         overrides:
-          instance:
+          node:
             resource: node
           namespace:
             resource: namespace
