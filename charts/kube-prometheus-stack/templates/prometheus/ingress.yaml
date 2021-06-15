@@ -5,6 +5,7 @@
   {{- $routePrefix := list .Values.prometheus.prometheusSpec.routePrefix -}}
   {{- $paths := .Values.prometheus.ingress.paths | default $routePrefix -}}
   {{- $apiIsStable := eq (include "kube-prometheus-stack.ingress.isStable" .) "true" -}}
+  {{- $ingressSupportsPathType := eq (include "kube-prometheus-stack.ingress.supportsPathType" .) "true" -}}
 apiVersion: {{ include "kube-prometheus-stack.ingress.apiVersion" . }}
 kind: Ingress
 metadata:
@@ -34,7 +35,7 @@ spec:
         paths:
   {{- range $p := $paths }}
           - path: {{ tpl $p $ }}
-            {{- if $pathType }}
+            {{- if and $pathType $ingressSupportsPathType }}
             pathType: {{ $pathType }}
             {{- end }}
             backend:
@@ -54,7 +55,7 @@ spec:
         paths:
   {{- range $p := $paths }}
           - path: {{ tpl $p $ }}
-            {{- if $pathType }}
+            {{- if and $pathType $ingressSupportsPathType }}
             pathType: {{ $pathType }}
             {{- end }}
             backend:
