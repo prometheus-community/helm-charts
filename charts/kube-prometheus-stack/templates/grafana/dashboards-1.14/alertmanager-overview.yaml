@@ -1,5 +1,5 @@
 {{- /*
-Generated from 'persistentvolumesusage' from https://raw.githubusercontent.com/prometheus-operator/kube-prometheus/main/manifests/grafana-dashboardDefinitions.yaml
+Generated from 'alertmanager-overview' from https://raw.githubusercontent.com/prometheus-operator/kube-prometheus/main/manifests/grafana-dashboardDefinitions.yaml
 Do not change in-place! In order to change this file first read following link:
 https://github.com/prometheus-community/helm-charts/tree/main/charts/kube-prometheus-stack/hack
 */ -}}
@@ -9,7 +9,7 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   namespace: {{ template "kube-prometheus-stack.namespace" . }}
-  name: {{ printf "%s-%s" (include "kube-prometheus-stack.fullname" $) "persistentvolumesusage" | trunc 63 | trimSuffix "-" }}
+  name: {{ printf "%s-%s" (include "kube-prometheus-stack.fullname" $) "alertmanager-overview" | trunc 63 | trimSuffix "-" }}
   annotations:
 {{ toYaml .Values.grafana.sidecar.dashboards.annotations | indent 4 }}
   labels:
@@ -19,7 +19,7 @@ metadata:
     app: {{ template "kube-prometheus-stack.name" $ }}-grafana
 {{ include "kube-prometheus-stack.labels" $ | indent 4 }}
 data:
-  persistentvolumesusage.json: |-
+  alertmanager-overview.json: |-
     {
         "__inputs": [
 
@@ -34,13 +34,13 @@ data:
         },
         "editable": false,
         "gnetId": null,
-        "graphTooltip": 0,
+        "graphTooltip": 1,
         "hideControls": false,
         "id": null,
         "links": [
 
         ],
-        "refresh": "10s",
+        "refresh": "30s",
         "rows": [
             {
                 "collapse": false,
@@ -61,16 +61,16 @@ data:
                         },
                         "id": 2,
                         "legend": {
-                            "alignAsTable": true,
-                            "avg": true,
-                            "current": true,
-                            "max": true,
-                            "min": true,
+                            "alignAsTable": false,
+                            "avg": false,
+                            "current": false,
+                            "max": false,
+                            "min": false,
                             "rightSide": false,
-                            "show": true,
+                            "show": false,
                             "sideWidth": null,
                             "total": false,
-                            "values": true
+                            "values": false
                         },
                         "lines": true,
                         "linewidth": 1,
@@ -87,23 +87,16 @@ data:
 
                         ],
                         "spaceLength": 10,
-                        "span": 9,
+                        "span": 6,
                         "stack": true,
                         "steppedLine": false,
                         "targets": [
                             {
-                                "expr": "(\n  sum without(instance, node) (topk(1, (kubelet_volume_stats_capacity_bytes{cluster=\"$cluster\", job=\"kubelet\", metrics_path=\"/metrics\", namespace=\"$namespace\", persistentvolumeclaim=\"$volume\"})))\n  -\n  sum without(instance, node) (topk(1, (kubelet_volume_stats_available_bytes{cluster=\"$cluster\", job=\"kubelet\", metrics_path=\"/metrics\", namespace=\"$namespace\", persistentvolumeclaim=\"$volume\"})))\n)\n",
+                                "expr": "sum(alertmanager_alerts{namespace=\"$namespace\",service=\"$service\"}) by (namespace,service,instance)",
                                 "format": "time_series",
-                                "intervalFactor": 1,
-                                "legendFormat": "Used Space",
+                                "intervalFactor": 2,
+                                "legendFormat": "{{`{{`}}instance{{`}}`}}",
                                 "refId": "A"
-                            },
-                            {
-                                "expr": "sum without(instance, node) (topk(1, (kubelet_volume_stats_available_bytes{cluster=\"$cluster\", job=\"kubelet\", metrics_path=\"/metrics\", namespace=\"$namespace\", persistentvolumeclaim=\"$volume\"})))\n",
-                                "format": "time_series",
-                                "intervalFactor": 1,
-                                "legendFormat": "Free Space",
-                                "refId": "B"
                             }
                         ],
                         "thresholds": [
@@ -111,9 +104,9 @@ data:
                         ],
                         "timeFrom": null,
                         "timeShift": null,
-                        "title": "Volume Space Usage",
+                        "title": "Alerts",
                         "tooltip": {
-                            "shared": false,
+                            "shared": true,
                             "sort": 0,
                             "value_type": "individual"
                         },
@@ -129,113 +122,129 @@ data:
                         },
                         "yaxes": [
                             {
-                                "format": "bytes",
+                                "format": "none",
                                 "label": null,
                                 "logBase": 1,
                                 "max": null,
-                                "min": 0,
+                                "min": null,
                                 "show": true
                             },
                             {
-                                "format": "bytes",
+                                "format": "none",
                                 "label": null,
                                 "logBase": 1,
                                 "max": null,
-                                "min": 0,
+                                "min": null,
                                 "show": true
                             }
                         ]
                     },
                     {
-                        "cacheTimeout": null,
-                        "colorBackground": false,
-                        "colorValue": false,
-                        "colors": [
-                            "rgba(50, 172, 45, 0.97)",
-                            "rgba(237, 129, 40, 0.89)",
-                            "rgba(245, 54, 54, 0.9)"
-                        ],
-                        "datasource": "$datasource",
-                        "format": "percent",
-                        "gauge": {
-                            "maxValue": 100,
-                            "minValue": 0,
-                            "show": true,
-                            "thresholdLabels": false,
-                            "thresholdMarkers": true
+                        "aliasColors": {
+
                         },
+                        "bars": false,
+                        "dashLength": 10,
+                        "dashes": false,
+                        "datasource": "$datasource",
+                        "fill": 1,
+                        "fillGradient": 0,
                         "gridPos": {
 
                         },
                         "id": 3,
-                        "interval": null,
+                        "legend": {
+                            "alignAsTable": false,
+                            "avg": false,
+                            "current": false,
+                            "max": false,
+                            "min": false,
+                            "rightSide": false,
+                            "show": false,
+                            "sideWidth": null,
+                            "total": false,
+                            "values": false
+                        },
+                        "lines": true,
+                        "linewidth": 1,
                         "links": [
 
                         ],
-                        "mappingType": 1,
-                        "mappingTypes": [
-                            {
-                                "name": "value to text",
-                                "value": 1
-                            },
-                            {
-                                "name": "range to text",
-                                "value": 2
-                            }
+                        "nullPointMode": "null",
+                        "percentage": false,
+                        "pointradius": 5,
+                        "points": false,
+                        "renderer": "flot",
+                        "repeat": null,
+                        "seriesOverrides": [
+
                         ],
-                        "maxDataPoints": 100,
-                        "nullPointMode": "connected",
-                        "nullText": null,
-                        "postfix": "",
-                        "postfixFontSize": "50%",
-                        "prefix": "",
-                        "prefixFontSize": "50%",
-                        "rangeMaps": [
-                            {
-                                "from": "null",
-                                "text": "N/A",
-                                "to": "null"
-                            }
-                        ],
-                        "span": 3,
-                        "sparkline": {
-                            "fillColor": "rgba(31, 118, 189, 0.18)",
-                            "full": false,
-                            "lineColor": "rgb(31, 120, 193)",
-                            "show": false
-                        },
-                        "tableColumn": "",
+                        "spaceLength": 10,
+                        "span": 6,
+                        "stack": true,
+                        "steppedLine": false,
                         "targets": [
                             {
-                                "expr": "max without(instance,node) (\n(\n  topk(1, kubelet_volume_stats_capacity_bytes{cluster=\"$cluster\", job=\"kubelet\", metrics_path=\"/metrics\", namespace=\"$namespace\", persistentvolumeclaim=\"$volume\"})\n  -\n  topk(1, kubelet_volume_stats_available_bytes{cluster=\"$cluster\", job=\"kubelet\", metrics_path=\"/metrics\", namespace=\"$namespace\", persistentvolumeclaim=\"$volume\"})\n)\n/\ntopk(1, kubelet_volume_stats_capacity_bytes{cluster=\"$cluster\", job=\"kubelet\", metrics_path=\"/metrics\", namespace=\"$namespace\", persistentvolumeclaim=\"$volume\"})\n* 100)\n",
+                                "expr": "sum(rate(alertmanager_alerts_received_total{namespace=\"$namespace\",service=\"$service\"}[5m])) by (namespace,service,instance)",
                                 "format": "time_series",
                                 "intervalFactor": 2,
-                                "legendFormat": "",
+                                "legendFormat": "{{`{{`}}instance{{`}}`}} Received",
                                 "refId": "A"
-                            }
-                        ],
-                        "thresholds": "80, 90",
-                        "title": "Volume Space Usage",
-                        "tooltip": {
-                            "shared": false
-                        },
-                        "type": "singlestat",
-                        "valueFontSize": "80%",
-                        "valueMaps": [
+                            },
                             {
-                                "op": "=",
-                                "text": "N/A",
-                                "value": "null"
+                                "expr": "sum(rate(alertmanager_alerts_invalid_total{namespace=\"$namespace\",service=\"$service\"}[5m])) by (namespace,service,instance)",
+                                "format": "time_series",
+                                "intervalFactor": 2,
+                                "legendFormat": "{{`{{`}}instance{{`}}`}} Invalid",
+                                "refId": "B"
                             }
                         ],
-                        "valueName": "current"
+                        "thresholds": [
+
+                        ],
+                        "timeFrom": null,
+                        "timeShift": null,
+                        "title": "Alerts receive rate",
+                        "tooltip": {
+                            "shared": true,
+                            "sort": 0,
+                            "value_type": "individual"
+                        },
+                        "type": "graph",
+                        "xaxis": {
+                            "buckets": null,
+                            "mode": "time",
+                            "name": null,
+                            "show": true,
+                            "values": [
+
+                            ]
+                        },
+                        "yaxes": [
+                            {
+                                "format": "ops",
+                                "label": null,
+                                "logBase": 1,
+                                "max": null,
+                                "min": null,
+                                "show": true
+                            },
+                            {
+                                "format": "ops",
+                                "label": null,
+                                "logBase": 1,
+                                "max": null,
+                                "min": null,
+                                "show": true
+                            }
+                        ]
                     }
                 ],
                 "repeat": null,
                 "repeatIteration": null,
                 "repeatRowId": null,
-                "showTitle": false,
-                "title": "Dashboard Row",
+                "showTitle": true,
+                "title": "Alerts",
                 "titleSize": "h6",
                 "type": "row"
             },
@@ -258,16 +267,16 @@ data:
                         },
                         "id": 4,
                         "legend": {
-                            "alignAsTable": true,
-                            "avg": true,
-                            "current": true,
-                            "max": true,
-                            "min": true,
+                            "alignAsTable": false,
+                            "avg": false,
+                            "current": false,
+                            "max": false,
+                            "min": false,
                             "rightSide": false,
-                            "show": true,
+                            "show": false,
                             "sideWidth": null,
                             "total": false,
-                            "values": true
+                            "values": false
                         },
                         "lines": true,
                         "linewidth": 1,
@@ -279,27 +288,26 @@ data:
                         "pointradius": 5,
                         "points": false,
                         "renderer": "flot",
-                        "repeat": null,
+                        "repeat": "integration",
                         "seriesOverrides": [
 
                         ],
                         "spaceLength": 10,
-                        "span": 9,
                         "stack": true,
                         "steppedLine": false,
                         "targets": [
                             {
-                                "expr": "sum without(instance, node) (topk(1, (kubelet_volume_stats_inodes_used{cluster=\"$cluster\", job=\"kubelet\", metrics_path=\"/metrics\", namespace=\"$namespace\", persistentvolumeclaim=\"$volume\"})))\n",
+                                "expr": "sum(rate(alertmanager_notifications_total{namespace=\"$namespace\",service=\"$service\", integration=\"$integration\"}[5m])) by (integration,namespace,service,instance)",
                                 "format": "time_series",
-                                "intervalFactor": 1,
-                                "legendFormat": "Used inodes",
+                                "intervalFactor": 2,
+                                "legendFormat": "{{`{{`}}instance{{`}}`}} Total",
                                 "refId": "A"
                             },
                             {
-                                "expr": "(\n  sum without(instance, node) (topk(1, (kubelet_volume_stats_inodes{cluster=\"$cluster\", job=\"kubelet\", metrics_path=\"/metrics\", namespace=\"$namespace\", persistentvolumeclaim=\"$volume\"})))\n  -\n  sum without(instance, node) (topk(1, (kubelet_volume_stats_inodes_used{cluster=\"$cluster\", job=\"kubelet\", metrics_path=\"/metrics\", namespace=\"$namespace\", persistentvolumeclaim=\"$volume\"})))\n)\n",
+                                "expr": "sum(rate(alertmanager_notifications_failed_total{namespace=\"$namespace\",service=\"$service\", integration=\"$integration\"}[5m])) by (integration,namespace,service,instance)",
                                 "format": "time_series",
-                                "intervalFactor": 1,
-                                "legendFormat": " Free inodes",
+                                "intervalFactor": 2,
+                                "legendFormat": "{{`{{`}}instance{{`}}`}} Failed",
                                 "refId": "B"
                             }
                         ],
@@ -308,9 +316,9 @@ data:
                         ],
                         "timeFrom": null,
                         "timeShift": null,
-                        "title": "Volume inodes Usage",
+                        "title": "$integration: Notifications Send Rate",
                         "tooltip": {
-                            "shared": false,
+                            "shared": true,
                             "sort": 0,
                             "value_type": "individual"
                         },
@@ -326,113 +334,135 @@ data:
                         },
                         "yaxes": [
                             {
-                                "format": "none",
+                                "format": "ops",
                                 "label": null,
                                 "logBase": 1,
                                 "max": null,
-                                "min": 0,
+                                "min": null,
                                 "show": true
                             },
                             {
-                                "format": "none",
+                                "format": "ops",
                                 "label": null,
                                 "logBase": 1,
                                 "max": null,
-                                "min": 0,
+                                "min": null,
                                 "show": true
                             }
                         ]
                     },
                     {
-                        "cacheTimeout": null,
-                        "colorBackground": false,
-                        "colorValue": false,
-                        "colors": [
-                            "rgba(50, 172, 45, 0.97)",
-                            "rgba(237, 129, 40, 0.89)",
-                            "rgba(245, 54, 54, 0.9)"
-                        ],
-                        "datasource": "$datasource",
-                        "format": "percent",
-                        "gauge": {
-                            "maxValue": 100,
-                            "minValue": 0,
-                            "show": true,
-                            "thresholdLabels": false,
-                            "thresholdMarkers": true
+                        "aliasColors": {
+
                         },
+                        "bars": false,
+                        "dashLength": 10,
+                        "dashes": false,
+                        "datasource": "$datasource",
+                        "fill": 1,
+                        "fillGradient": 0,
                         "gridPos": {
 
                         },
                         "id": 5,
-                        "interval": null,
+                        "legend": {
+                            "alignAsTable": false,
+                            "avg": false,
+                            "current": false,
+                            "max": false,
+                            "min": false,
+                            "rightSide": false,
+                            "show": false,
+                            "sideWidth": null,
+                            "total": false,
+                            "values": false
+                        },
+                        "lines": true,
+                        "linewidth": 1,
                         "links": [
 
                         ],
-                        "mappingType": 1,
-                        "mappingTypes": [
-                            {
-                                "name": "value to text",
-                                "value": 1
-                            },
-                            {
-                                "name": "range to text",
-                                "value": 2
-                            }
+                        "nullPointMode": "null",
+                        "percentage": false,
+                        "pointradius": 5,
+                        "points": false,
+                        "renderer": "flot",
+                        "repeat": "integration",
+                        "seriesOverrides": [
+
                         ],
-                        "maxDataPoints": 100,
-                        "nullPointMode": "connected",
-                        "nullText": null,
-                        "postfix": "",
-                        "postfixFontSize": "50%",
-                        "prefix": "",
-                        "prefixFontSize": "50%",
-                        "rangeMaps": [
-                            {
-                                "from": "null",
-                                "text": "N/A",
-                                "to": "null"
-                            }
-                        ],
-                        "span": 3,
-                        "sparkline": {
-                            "fillColor": "rgba(31, 118, 189, 0.18)",
-                            "full": false,
-                            "lineColor": "rgb(31, 120, 193)",
-                            "show": false
-                        },
-                        "tableColumn": "",
+                        "spaceLength": 10,
+                        "stack": false,
+                        "steppedLine": false,
                         "targets": [
                             {
-                                "expr": "max without(instance,node) (\ntopk(1, kubelet_volume_stats_inodes_used{cluster=\"$cluster\", job=\"kubelet\", metrics_path=\"/metrics\", namespace=\"$namespace\", persistentvolumeclaim=\"$volume\"})\n/\ntopk(1, kubelet_volume_stats_inodes{cluster=\"$cluster\", job=\"kubelet\", metrics_path=\"/metrics\", namespace=\"$namespace\", persistentvolumeclaim=\"$volume\"})\n* 100)\n",
+                                "expr": "histogram_quantile(0.99,\n  sum(rate(alertmanager_notification_latency_seconds_bucket{namespace=\"$namespace\",service=\"$service\", integration=\"$integration\"}[5m])) by (le,namespace,service,instance)\n) \n",
                                 "format": "time_series",
                                 "intervalFactor": 2,
-                                "legendFormat": "",
+                                "legendFormat": "{{`{{`}}instance{{`}}`}} 99th Percentile",
                                 "refId": "A"
-                            }
-                        ],
-                        "thresholds": "80, 90",
-                        "title": "Volume inodes Usage",
-                        "tooltip": {
-                            "shared": false
-                        },
-                        "type": "singlestat",
-                        "valueFontSize": "80%",
-                        "valueMaps": [
+                            },
                             {
-                                "op": "=",
-                                "text": "N/A",
-                                "value": "null"
+                                "expr": "histogram_quantile(0.50,\n  sum(rate(alertmanager_notification_latency_seconds_bucket{namespace=\"$namespace\",service=\"$service\", integration=\"$integration\"}[5m])) by (le,namespace,service,instance)\n) \n",
+                                "format": "time_series",
+                                "intervalFactor": 2,
+                                "legendFormat": "{{`{{`}}instance{{`}}`}} Median",
+                                "refId": "B"
+                            },
+                            {
+                                "expr": "sum(rate(alertmanager_notification_latency_seconds_sum{namespace=\"$namespace\",service=\"$service\", integration=\"$integration\"}[5m])) by (namespace,service,instance)\n/\nsum(rate(alertmanager_notification_latency_seconds_count{namespace=\"$namespace\",service=\"$service\", integration=\"$integration\"}[5m])) by (namespace,service,instance)\n",
+                                "format": "time_series",
+                                "intervalFactor": 2,
+                                "legendFormat": "{{`{{`}}instance{{`}}`}} Average",
+                                "refId": "C"
                             }
                         ],
-                        "valueName": "current"
+                        "thresholds": [
+
+                        ],
+                        "timeFrom": null,
+                        "timeShift": null,
+                        "title": "$integration: Notification Duration",
+                        "tooltip": {
+                            "shared": true,
+                            "sort": 0,
+                            "value_type": "individual"
+                        },
+                        "type": "graph",
+                        "xaxis": {
+                            "buckets": null,
+                            "mode": "time",
+                            "name": null,
+                            "show": true,
+                            "values": [
+
+                            ]
+                        },
+                        "yaxes": [
+                            {
+                                "format": "s",
+                                "label": null,
+                                "logBase": 1,
+                                "max": null,
+                                "min": null,
+                                "show": true
+                            },
+                            {
+                                "format": "s",
+                                "label": null,
+                                "logBase": 1,
+                                "max": null,
+                                "min": null,
+                                "show": true
+                            }
+                        ]
                     }
                 ],
                 "repeat": null,
                 "repeatIteration": null,
                 "repeatRowId": null,
-                "showTitle": false,
-                "title": "Dashboard Row",
+                "showTitle": true,
+                "title": "Notifications",
                 "titleSize": "h6",
                 "type": "row"
             }
@@ -440,14 +470,14 @@ data:
         "schemaVersion": 14,
         "style": "dark",
         "tags": [
-            "kubernetes-mixin"
+            "alertmanager-mixin"
         ],
         "templating": {
             "list": [
                 {
                     "current": {
-                        "text": "default",
-                        "value": "default"
+                        "text": "Prometheus",
+                        "value": "Prometheus"
                     },
                     "hide": 0,
                     "label": null,
@@ -463,44 +493,19 @@ data:
                 {
                     "allValue": null,
                     "current": {
-
-                    },
-                    "datasource": "$datasource",
-                    "hide": {{ if .Values.grafana.sidecar.dashboards.multicluster }}0{{ else }}2{{ end }},
-                    "includeAll": false,
-                    "label": "cluster",
-                    "multi": false,
-                    "name": "cluster",
-                    "options": [
-
-                    ],
-                    "query": "label_values(kubelet_volume_stats_capacity_bytes, cluster)",
-                    "refresh": 2,
-                    "regex": "",
-                    "sort": 1,
-                    "tagValuesQuery": "",
-                    "tags": [
-
-                    ],
-                    "tagsQuery": "",
-                    "type": "query",
-                    "useTags": false
-                },
-                {
-                    "allValue": null,
-                    "current": {
-
+                        "text": "",
+                        "value": ""
                     },
                     "datasource": "$datasource",
                     "hide": 0,
                     "includeAll": false,
-                    "label": "Namespace",
+                    "label": null,
                     "multi": false,
                     "name": "namespace",
                     "options": [
 
                     ],
-                    "query": "label_values(kubelet_volume_stats_capacity_bytes{cluster=\"$cluster\", job=\"kubelet\", metrics_path=\"/metrics\"}, namespace)",
+                    "query": "label_values(alertmanager_alerts, namespace)",
                     "refresh": 2,
                     "regex": "",
                     "sort": 1,
@@ -515,18 +520,46 @@ data:
                 {
                     "allValue": null,
                     "current": {
-
+                        "text": "",
+                        "value": ""
                     },
                     "datasource": "$datasource",
                     "hide": 0,
                     "includeAll": false,
-                    "label": "PersistentVolumeClaim",
+                    "label": null,
                     "multi": false,
-                    "name": "volume",
+                    "name": "service",
                     "options": [
 
                     ],
-                    "query": "label_values(kubelet_volume_stats_capacity_bytes{cluster=\"$cluster\", job=\"kubelet\", metrics_path=\"/metrics\", namespace=\"$namespace\"}, persistentvolumeclaim)",
+                    "query": "label_values(alertmanager_alerts, service)",
+                    "refresh": 2,
+                    "regex": "",
+                    "sort": 1,
+                    "tagValuesQuery": "",
+                    "tags": [
+
+                    ],
+                    "tagsQuery": "",
+                    "type": "query",
+                    "useTags": false
+                },
+                {
+                    "allValue": null,
+                    "current": {
+                        "text": "all",
+                        "value": "$__all"
+                    },
+                    "datasource": "$datasource",
+                    "hide": 2,
+                    "includeAll": true,
+                    "label": null,
+                    "multi": false,
+                    "name": "integration",
+                    "options": [
+
+                    ],
+                    "query": "label_values(alertmanager_notifications_total{integration=~\".*\"}, integration)",
                     "refresh": 2,
                     "regex": "",
                     "sort": 1,
@@ -541,7 +574,7 @@ data:
             ]
         },
         "time": {
-            "from": "now-7d",
+            "from": "now-1h",
             "to": "now"
         },
         "timepicker": {
@@ -569,9 +602,9 @@ data:
                 "30d"
             ]
         },
-        "timezone": "UTC",
-        "title": "Kubernetes / Persistent Volumes",
-        "uid": "919b92a8e8041bd567af9edab12c840c",
+        "timezone": "utc",
+        "title": "Alertmanager / Overview",
+        "uid": "alertmanager-overview",
         "version": 0
     }
 {{- end }}
