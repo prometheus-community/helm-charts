@@ -1,5 +1,5 @@
 {{- /*
-Generated from 'kube-state-metrics' group from https://raw.githubusercontent.com/prometheus-operator/kube-prometheus/master/manifests/prometheus-rules.yaml
+Generated from 'kube-state-metrics' group from https://raw.githubusercontent.com/prometheus-operator/kube-prometheus/main/manifests/kube-state-metrics-prometheusRule.yaml
 Do not change in-place! In order to change this file first read following link:
 https://github.com/prometheus-community/helm-charts/tree/main/charts/kube-prometheus-stack/hack
 */ -}}
@@ -50,6 +50,34 @@ spec:
           /
         sum(rate(kube_state_metrics_watch_total{job="kube-state-metrics"}[5m])))
         > 0.01
+      for: 15m
+      labels:
+        severity: critical
+{{- if .Values.defaultRules.additionalRuleLabels }}
+{{ toYaml .Values.defaultRules.additionalRuleLabels | indent 8 }}
+{{- end }}
+    - alert: KubeStateMetricsShardingMismatch
+      annotations:
+        description: kube-state-metrics pods are running with different --total-shards configuration, some Kubernetes objects may be exposed multiple times or not exposed at all.
+        runbook_url: {{ .Values.defaultRules.runbookUrl }}alert-name-kubestatemetricsshardingmismatch
+        summary: kube-state-metrics sharding is misconfigured.
+      expr: stdvar (kube_state_metrics_total_shards{job="kube-state-metrics"}) != 0
+      for: 15m
+      labels:
+        severity: critical
+{{- if .Values.defaultRules.additionalRuleLabels }}
+{{ toYaml .Values.defaultRules.additionalRuleLabels | indent 8 }}
+{{- end }}
+    - alert: KubeStateMetricsShardsMissing
+      annotations:
+        description: kube-state-metrics shards are missing, some Kubernetes objects are not being exposed.
+        runbook_url: {{ .Values.defaultRules.runbookUrl }}alert-name-kubestatemetricsshardsmissing
+        summary: kube-state-metrics shards are missing.
+      expr: |-
+        2^max(kube_state_metrics_total_shards{job="kube-state-metrics"}) - 1
+          -
+        sum( 2 ^ max by (shard_ordinal) (kube_state_metrics_shard_ordinal{job="kube-state-metrics"}) )
+        != 0
       for: 15m
       labels:
         severity: critical

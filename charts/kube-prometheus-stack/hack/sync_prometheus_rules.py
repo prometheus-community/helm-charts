@@ -25,7 +25,37 @@ def change_style(style, representer):
 # Source files list
 charts = [
     {
-        'source': 'https://raw.githubusercontent.com/prometheus-operator/kube-prometheus/master/manifests/kubernetes-prometheusRule.yaml',
+        'source': 'https://raw.githubusercontent.com/prometheus-operator/kube-prometheus/main/manifests/alertmanager-prometheusRule.yaml',
+        'destination': '../templates/prometheus/rules-1.14',
+        'min_kubernetes': '1.14.0-0'
+    },
+    {
+        'source': 'https://raw.githubusercontent.com/prometheus-operator/kube-prometheus/main/manifests/kube-prometheus-prometheusRule.yaml',
+        'destination': '../templates/prometheus/rules-1.14',
+        'min_kubernetes': '1.14.0-0'
+    },
+    {
+        'source': 'https://raw.githubusercontent.com/prometheus-operator/kube-prometheus/main/manifests/kubernetes-prometheusRule.yaml',
+        'destination': '../templates/prometheus/rules-1.14',
+        'min_kubernetes': '1.14.0-0'
+    },
+    {
+        'source': 'https://raw.githubusercontent.com/prometheus-operator/kube-prometheus/main/manifests/kube-state-metrics-prometheusRule.yaml',
+        'destination': '../templates/prometheus/rules-1.14',
+        'min_kubernetes': '1.14.0-0'
+    },
+    {
+        'source': 'https://raw.githubusercontent.com/prometheus-operator/kube-prometheus/main/manifests/node-exporter-prometheusRule.yaml',
+        'destination': '../templates/prometheus/rules-1.14',
+        'min_kubernetes': '1.14.0-0'
+    },
+    {
+        'source': 'https://raw.githubusercontent.com/prometheus-operator/kube-prometheus/main/manifests/prometheus-prometheusRule.yaml',
+        'destination': '../templates/prometheus/rules-1.14',
+        'min_kubernetes': '1.14.0-0'
+    },
+    {
+        'source': 'https://raw.githubusercontent.com/prometheus-operator/kube-prometheus/main/manifests/prometheus-operator-prometheusRule.yaml',
         'destination': '../templates/prometheus/rules-1.14',
         'min_kubernetes': '1.14.0-0'
     },
