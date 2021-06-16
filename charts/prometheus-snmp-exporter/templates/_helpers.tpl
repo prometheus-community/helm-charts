@@ -41,16 +41,27 @@ Create the name of the service account to use
 {{- end -}}
 {{- end -}}
 
-{{/* Generate basic labels */}}
+{{/*
+Common labels
+*/}}
 {{- define "prometheus-snmp-exporter.labels" }}
-app.kubernetes.io/name: {{ template "prometheus-snmp-exporter.name" . }}
-app.kubernetes.io/instance: "{{ .Release.Name }}"
-app.kubernetes.io/component: metrics 
-app.kubernetes.io/managed-by: "{{ .Release.Service }}"
-app.kubernetes.io/version: "{{ .Chart.AppVersion }}"
-app.kubernetes.io/part-of: {{ template "prometheus-snmp-exporter.name" . }} 
-helm.sh/chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+helm.sh/chart: {{ include "prometheus-snmp-exporter.chart" . }}
+app.kubernetes.io/managed-by: {{ .Release.Service }}
+app.kubernetes.io/component: metrics
+app.kubernetes.io/part-of: {{ template "prometheus-snmp-exporter.name" . }}
+{{- include "prometheus-snmp-exporter.selectorLabels" . }}
+{{- if .Chart.AppVersion }}
+app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
+{{- end }}
 {{- if .Values.customLabels }}
 {{ toYaml .Values.customLabels }}
 {{- end }}
+{{- end }}
+
+{{/*
+Selector labels
+*/}}
+{{- define "prometheus-snmp-exporter.selectorLabels" }}
+app.kubernetes.io/name: {{ include "prometheus-snmp-exporter.name" . }}
+app.kubernetes.io/instance: {{ .Release.Name }}
 {{- end }}
