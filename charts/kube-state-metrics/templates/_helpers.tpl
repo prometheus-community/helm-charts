@@ -46,16 +46,34 @@ Allow the release namespace to be overridden for multi-namespace deployments in 
   {{- end -}}
 {{- end -}}
 
-{{/* Generate basic labels */}}
+{{/*
+Create chart name and version as used by the chart label.
+*/}}
+{{- define "kube-state-metrics.chart" -}}
+{{- printf "%s-%s" .Chart.Name .Chart.Version | replace "+" "_" | trunc 63 | trimSuffix "-" -}}
+{{- end -}}
+
+{{/*
+Generate basic labels
+*/}}
 {{- define "kube-state-metrics.labels" }}
-app.kubernetes.io/name: {{ template "kube-state-metrics.name" . }}
-app.kubernetes.io/instance: "{{ .Release.Name }}"
-app.kubernetes.io/component: metrics 
-app.kubernetes.io/managed-by: "{{ .Release.Service }}"
-app.kubernetes.io/version: "{{ .Chart.AppVersion }}"
-app.kubernetes.io/part-of: {{ template "kube-state-metrics.name" . }} 
-helm.sh/chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+helm.sh/chart: {{ include "kube-state-metrics.chart" . }}
+app.kubernetes.io/managed-by: {{ .Release.Service }}
+app.kubernetes.io/component: metrics
+app.kubernetes.io/part-of: {{ template "kube-state-metrics.name" . }}
+{{- include "kube-state-metrics.selectorLabels" . }}
+{{- if .Chart.AppVersion }}
+app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
+{{- end }}
 {{- if .Values.customLabels }}
 {{ toYaml .Values.customLabels }}
 {{- end }}
+{{- end }}
+
+{{/*
+Selector labels
+*/}}
+{{- define "kube-state-metrics.selectorLabels" }}
+app.kubernetes.io/name: {{ include "kube-state-metrics.name" . }}
+app.kubernetes.io/instance: {{ .Release.Name }}
 {{- end }}
