@@ -45,3 +45,26 @@ Allow the release namespace to be overridden for multi-namespace deployments in 
     {{- .Release.Namespace -}}
   {{- end -}}
 {{- end -}}
+
+{{/*
+A list of labels to apply to all resources
+*/}}
+{{- define "kube-state-metrics.labels" }}
+helm.sh/chart: {{ .Chart.Name }}-{{ .Chart.Version }}
+app.kubernetes.io/instance: {{ .Release.Name }}
+app.kubernetes.io/managed-by: {{ .Release.Service }}
+{{- include "kube-state-metrics.selectors" .}}
+{{- if .Chart.AppVersion }}
+app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
+{{- end }}
+{{- if .Values.customLabels }}
+{{ toYaml .Values.customLabels }}
+{{- end }}
+{{- end }}
+
+{{/*
+A list of selector labels to use in deployment and service resources
+*/}}
+{{- define "kube-state-metrics.selectors" }}
+app.kubernetes.io/name: {{ template "kube-state-metrics.name" . }}
+{{- end }}
