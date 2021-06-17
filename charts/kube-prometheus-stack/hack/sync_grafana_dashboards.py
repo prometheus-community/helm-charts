@@ -26,30 +26,16 @@ def change_style(style, representer):
 # Source files list
 charts = [
     {
-        'source': 'https://raw.githubusercontent.com/prometheus-operator/kube-prometheus/master/manifests/grafana-dashboardDefinitions.yaml',
+        'source': 'https://raw.githubusercontent.com/prometheus-operator/kube-prometheus/main/manifests/grafana-dashboardDefinitions.yaml',
         'destination': '../templates/grafana/dashboards-1.14',
         'type': 'yaml',
         'min_kubernetes': '1.14.0-0'
     },
     {
-        'source': 'https://raw.githubusercontent.com/etcd-io/website/master/content/docs/current/op-guide/grafana.json',
+        'source': 'https://raw.githubusercontent.com/etcd-io/website/master/content/en/docs/v3.4/op-guide/grafana.json',
         'destination': '../templates/grafana/dashboards-1.14',
         'type': 'json',
         'min_kubernetes': '1.14.0-0'
-    },
-    {
-        'source': 'https://raw.githubusercontent.com/prometheus-operator/kube-prometheus/release-0.1/manifests/grafana-dashboardDefinitions.yaml',
-        'destination': '../templates/grafana/dashboards',
-        'type': 'yaml',
-        'min_kubernetes': '1.10.0-0',
-        'max_kubernetes': '1.14.0-0'
-    },
-    {
-        'source': 'https://raw.githubusercontent.com/etcd-io/website/master/content/docs/current/op-guide/grafana.json',
-        'destination': '../templates/grafana/dashboards',
-        'type': 'json',
-        'min_kubernetes': '1.10.0-0',
-        'max_kubernetes': '1.14.0-0'
     },
 ]
 
@@ -74,7 +60,7 @@ Do not change in-place! In order to change this file first read following link:
 https://github.com/prometheus-community/helm-charts/tree/main/charts/kube-prometheus-stack/hack
 */ -}}
 {{- $kubeTargetVersion := default .Capabilities.KubeVersion.GitVersion .Values.kubeTargetVersionOverride }}
-{{- if and (semverCompare ">=%(min_kubernetes)s" $kubeTargetVersion) (semverCompare "<%(max_kubernetes)s" $kubeTargetVersion) .Values.grafana.enabled .Values.grafana.defaultDashboardsEnabled%(condition)s }}
+{{- if and (or .Values.grafana.enabled .Values.grafana.forceDeployDashboards) (semverCompare ">=%(min_kubernetes)s" $kubeTargetVersion) (semverCompare "<%(max_kubernetes)s" $kubeTargetVersion) .Values.grafana.defaultDashboardsEnabled%(condition)s }}
 apiVersion: v1
 kind: ConfigMap
 metadata:
