@@ -254,10 +254,16 @@ spec:
     name: {{ .Values.prometheus.prometheusSpec.additionalScrapeConfigsSecret.name }}
     key: {{ .Values.prometheus.prometheusSpec.additionalScrapeConfigsSecret.key }}
 {{- end }}
-{{- if .Values.prometheus.prometheusSpec.additionalAlertManagerConfigs }}
+{{- if or .Values.prometheus.prometheusSpec.additionalAlertManagerConfigs .Values.prometheus.prometheusSpec.additionalAlertManagerConfigsSecret }}
   additionalAlertManagerConfigs:
+{{- if .Values.prometheus.prometheusSpec.additionalAlertManagerConfigs }}
     name: {{ template "kube-prometheus-stack.fullname" . }}-prometheus-am-confg
     key: additional-alertmanager-configs.yaml
+{{- end }}
+{{- if .Values.prometheus.prometheusSpec.additionalAlertManagerConfigsSecret }}
+    name: {{ .Values.prometheus.prometheusSpec.additionalAlertManagerConfigsSecret.name }}
+    key: {{ .Values.prometheus.prometheusSpec.additionalAlertManagerConfigsSecret.key }}
+{{- end }}
 {{- end }}
 {{- if .Values.prometheus.prometheusSpec.additionalAlertRelabelConfigs }}
   additionalAlertRelabelConfigs:
