@@ -153,7 +153,11 @@ spec:
       {{- if .Values.server.sidecarContainers }}
         {{- range $name, $spec :=  .Values.server.sidecarContainers }}
         - name: {{ $name }}
-          {{- toYaml $spec | nindent 10 }}
+          {{- if kindIs "string" $spec }}
+            {{- tpl $spec $ | nindent 10 }}
+          {{- else }}
+            {{- toYaml $spec | nindent 10 }}
+          {{- end }}
         {{- end }}
       {{- end }}
       hostNetwork: {{ .Values.server.hostNetwork }}
@@ -227,11 +231,17 @@ spec:
         - name: {{ .name }}
           secret:
             secretName: {{ .secretName }}
+            {{- with .optional }}
+            optional: {{ . }}
+            {{- end }}
       {{- end }}
       {{- range .Values.configmapReload.prometheus.extraConfigmapMounts }}
         - name: {{ .name }}
           configMap:
             name: {{ .configMap }}
+            {{- with .optional }}
+            optional: {{ . }}
+            {{- end }}
       {{- end }}
 {{- end -}}
 {{- end -}}

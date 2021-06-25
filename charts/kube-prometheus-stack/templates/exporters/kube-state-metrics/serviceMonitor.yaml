@@ -26,6 +26,24 @@ spec:
     relabelings:
 {{ toYaml .Values.kubeStateMetrics.serviceMonitor.relabelings | indent 4 }}
 {{- end }}
+{{- if .Values.kubeStateMetrics.serviceMonitor.selfMonitor.enabled }}
+  - port: metrics
+    {{- if .Values.kubeStateMetrics.serviceMonitor.interval }}
+    interval: {{ .Values.kubeStateMetrics.serviceMonitor.interval }}
+    {{- end }}
+    {{- if .Values.kubeStateMetrics.serviceMonitor.proxyUrl }}
+    proxyUrl: {{ .Values.kubeStateMetrics.serviceMonitor.proxyUrl}}
+    {{- end }}
+    honorLabels: true
+{{- if .Values.kubeStateMetrics.serviceMonitor.metricRelabelings }}
+    metricRelabelings:
+{{ tpl (toYaml .Values.kubeStateMetrics.serviceMonitor.metricRelabelings | indent 4) . }}
+{{- end }}
+{{- if .Values.kubeStateMetrics.serviceMonitor.relabelings }}
+    relabelings:
+{{ toYaml .Values.kubeStateMetrics.serviceMonitor.relabelings | indent 4 }}
+{{- end }}
+{{- end }}
 {{- if .Values.kubeStateMetrics.serviceMonitor.namespaceOverride }}
   namespaceSelector:
     matchNames:
