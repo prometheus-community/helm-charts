@@ -4,6 +4,7 @@
 {{- $servicePort := .Values.prometheus.servicePerReplica.port -}}
 {{- $ingressValues := .Values.prometheus.ingressPerReplica -}}
 {{- $apiIsStable := eq (include "kube-prometheus-stack.ingress.isStable" .) "true" -}}
+{{- $ingressSupportsPathType := eq (include "kube-prometheus-stack.ingress.supportsPathType" .) "true" -}}
 apiVersion: v1
 kind: List
 metadata:
@@ -38,7 +39,7 @@ items:
             paths:
       {{- range $p := $ingressValues.paths }}
               - path: {{ tpl $p $ }}
-                {{- if $pathType }}
+                {{- if and $pathType $ingressSupportsPathType }}
                 pathType: {{ $pathType }}
                 {{- end }}
                 backend:

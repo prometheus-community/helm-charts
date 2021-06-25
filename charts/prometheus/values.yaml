@@ -107,6 +107,10 @@ alertmanager:
     ##
     enabled: false
 
+    # For Kubernetes >= 1.18 you should specify the ingress-controller via the field ingressClassName
+    # See https://kubernetes.io/blog/2020/04/02/improvements-to-the-ingress-api-in-kubernetes-1.18/#specifying-the-class-of-an-ingress
+    # ingressClassName: nginx
+
     ## alertmanager Ingress annotations
     ##
     annotations: {}
@@ -123,6 +127,11 @@ alertmanager:
     hosts: []
     #   - alertmanager.domain.com
     #   - domain.com/alertmanager
+
+    path: /
+
+    # pathType is only for k8s >= 1.18
+    pathType: Prefix
 
     ## Extra paths to prepend to every host configuration. This is useful when working with annotation based services.
     extraPaths: []
@@ -613,6 +622,18 @@ server:
   #        image: nginx
   sidecarContainers: {}
 
+  # sidecarTemplateValues - context to be used in template for sidecarContainers
+  # Example:
+  #   sidecarTemplateValues: *your-custom-globals
+  #   sidecarContainers:
+  #     webserver: |-
+  #       {{ include "webserver-container-template" . }}
+  # Template for `webserver-container-template` might looks like this:
+  #   image: "{{ .Values.server.sidecarTemplateValues.repository }}:{{ .Values.server.sidecarTemplateValues.tag }}"
+  #   ...
+  #
+  sidecarTemplateValues: {}
+
   ## Prometheus server container image
   ##
   image:
@@ -670,6 +691,10 @@ server:
 
   ## Path to a configuration file on prometheus server container FS
   configPath: /etc/config/prometheus.yml
+
+  ### The data directory used by prometheus to set --storage.tsdb.path
+  ### When empty server.persistentVolume.mountPath is used instead
+  storagePath: ""
 
   global:
     ## How frequently to scrape targets by default
@@ -740,6 +765,10 @@ server:
     ##
     enabled: false
 
+    # For Kubernetes >= 1.18 you should specify the ingress-controller via the field ingressClassName
+    # See https://kubernetes.io/blog/2020/04/02/improvements-to-the-ingress-api-in-kubernetes-1.18/#specifying-the-class-of-an-ingress
+    # ingressClassName: nginx
+
     ## Prometheus server Ingress annotations
     ##
     annotations: {}
@@ -756,6 +785,11 @@ server:
     hosts: []
     #   - prometheus.domain.com
     #   - domain.com/prometheus
+
+    path: /
+
+    # pathType is only for k8s >= 1.18
+    pathType: Prefix
 
     ## Extra paths to prepend to every host configuration. This is useful when working with annotation based services.
     extraPaths: []
@@ -1062,6 +1096,10 @@ pushgateway:
     ##
     enabled: false
 
+    # For Kubernetes >= 1.18 you should specify the ingress-controller via the field ingressClassName
+    # See https://kubernetes.io/blog/2020/04/02/improvements-to-the-ingress-api-in-kubernetes-1.18/#specifying-the-class-of-an-ingress
+    # ingressClassName: nginx
+
     ## pushgateway Ingress annotations
     ##
     annotations: {}
@@ -1074,6 +1112,11 @@ pushgateway:
     hosts: []
     #   - pushgateway.domain.com
     #   - domain.com/pushgateway
+
+    path: /
+
+    # pathType is only for k8s >= 1.18
+    pathType: Prefix
 
     ## Extra paths to prepend to every host configuration. This is useful when working with annotation based services.
     extraPaths: []

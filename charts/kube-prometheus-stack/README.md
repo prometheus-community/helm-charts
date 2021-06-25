@@ -35,7 +35,7 @@ _See [helm install](https://helm.sh/docs/helm/helm_install/) for command documen
 
 By default this chart installs additional, dependent charts:
 
-- [kubernetes/kube-state-metrics](https://github.com/kubernetes/kube-state-metrics/tree/master/charts/kube-state-metrics)
+- [prometheus-community/kube-state-metrics](https://github.com/prometheus-community/helm-charts/tree/main/charts/kube-state-metrics)
 - [prometheus-community/prometheus-node-exporter](https://github.com/prometheus-community/helm-charts/tree/main/charts/prometheus-node-exporter)
 - [grafana/grafana](https://github.com/grafana/helm-charts/tree/main/charts/grafana)
 
@@ -82,6 +82,9 @@ _See [helm upgrade](https://helm.sh/docs/helm/helm_upgrade/) for command documen
 ### Upgrading an existing Release to a new major version
 
 A major chart version change (like v1.2.3 -> v2.0.0) indicates that there is an incompatible breaking change needing manual actions.
+
+### From 15.x to 16.x
+Version 16 upgrades kube-state-metrics to v2.0.0. This includes changed command-line arguments and removed metrics, see this [blog post](https://kubernetes.io/blog/2021/04/13/kube-state-metrics-v-2-0/). This version also removes Grafana dashboards that supported Kubernetes 1.14 or earlier.
 
 ### From 14.x to 15.x
 Version 15 upgrades prometheus-operator from 0.46.x to 0.47.x. Helm does not automatically upgrade or install new CRDs on a chart upgrade, so you have to install the CRDs manually before updating:
@@ -392,7 +395,7 @@ apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   labels:
-    app: prometheus
+    app.kubernetes.io/name: prometheus
     prometheus: prometheus-migration-prometheus
   name: prometheus-prometheus-migration-prometheus-db-prometheus-prometheus-migration-prometheus-0
   namespace: monitoring

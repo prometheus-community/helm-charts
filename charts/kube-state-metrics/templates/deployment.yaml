@@ -13,30 +13,30 @@ metadata:
     app.kubernetes.io/instance: "{{ .Release.Name }}"
     app.kubernetes.io/managed-by: "{{ .Release.Service }}"
     app.kubernetes.io/version: "{{ .Chart.AppVersion }}"
-{{- if .Values.customLabels }}
+    {{- if .Values.customLabels }}
 {{ toYaml .Values.customLabels | indent 4 }}
-{{- end }}
+    {{- end }}
 spec:
   selector:
     matchLabels:
       app.kubernetes.io/name: {{ template "kube-state-metrics.name" . }}
   replicas: {{ .Values.replicas }}
-{{- if .Values.autosharding.enabled }}
+  {{- if .Values.autosharding.enabled }}
   serviceName: {{ template "kube-state-metrics.fullname" . }}
   volumeClaimTemplates: []
-{{- end }}
+  {{- end }}
   template:
     metadata:
       labels:
         app.kubernetes.io/name: {{ template "kube-state-metrics.name" . }}
         app.kubernetes.io/instance: "{{ .Release.Name }}"
-{{- if .Values.customLabels }}
+        {{- if .Values.customLabels }}
 {{ toYaml .Values.customLabels | indent 8 }}
-{{- end }}
-{{- if .Values.podAnnotations }}
+        {{- end }}
+      {{- if .Values.podAnnotations }}
       annotations:
 {{ toYaml .Values.podAnnotations | indent 8 }}
-{{- end }}
+      {{- end }}
     spec:
       hostNetwork: {{ .Values.hostNetwork }}
       serviceAccountName: {{ template "kube-state-metrics.serviceAccountName" . }}
@@ -51,7 +51,7 @@ spec:
     {{- end }}
       containers:
       - name: {{ .Chart.Name }}
-{{- if .Values.autosharding.enabled }}
+        {{- if .Values.autosharding.enabled }}
         env:
         - name: POD_NAME
           valueFrom:
@@ -61,159 +61,94 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: metadata.namespace
-{{- end }}
+        {{- end }}
         args:
-{{  if .Values.extraArgs  }}
+        {{-  if .Values.extraArgs  }}
         {{- range .Values.extraArgs  }}
         - {{ . }}
         {{- end  }}
-{{  end  }}
-{{  if .Values.collectors.certificatesigningrequests  }}
-        - --resources=certificatesigningrequests
-{{  end  }}
-{{  if .Values.collectors.configmaps  }}
-        - --resources=configmaps
-{{  end  }}
-{{  if .Values.collectors.cronjobs  }}
-        - --resources=cronjobs
-{{  end  }}
-{{ if .Values.collectors.daemonsets  }}
-        - --resources=daemonsets
-{{  end  }}
-{{  if .Values.collectors.deployments  }}
-        - --resources=deployments
-{{  end  }}
-{{  if .Values.collectors.endpoints  }}
-        - --resources=endpoints
-{{  end  }}
-{{  if .Values.collectors.horizontalpodautoscalers  }}
-        - --resources=horizontalpodautoscalers
-{{  end  }}
-{{  if .Values.collectors.ingresses  }}
-        - --resources=ingresses
-{{  end  }}
-{{  if .Values.collectors.jobs  }}
-        - --resources=jobs
-{{  end  }}
-{{  if .Values.collectors.limitranges  }}
-        - --resources=limitranges
-{{  end  }}
-{{  if .Values.collectors.mutatingwebhookconfigurations  }}
-        - --resources=mutatingwebhookconfigurations
-{{  end  }}
-{{  if .Values.collectors.namespaces  }}
-        - --resources=namespaces
-{{  end  }}
-{{  if .Values.collectors.networkpolicies  }}
-        - --resources=networkpolicies
-{{  end  }}
-{{  if .Values.collectors.nodes  }}
-        - --resources=nodes
-{{  end  }}
-{{  if .Values.collectors.persistentvolumeclaims  }}
-        - --resources=persistentvolumeclaims
-{{  end  }}
-{{  if .Values.collectors.persistentvolumes  }}
-        - --resources=persistentvolumes
-{{  end  }}
-{{  if .Values.collectors.poddisruptionbudgets  }}
-        - --resources=poddisruptionbudgets
-{{  end  }}
-{{  if .Values.collectors.pods  }}
-        - --resources=pods
-{{  end  }}
-{{  if .Values.collectors.replicasets  }}
-        - --resources=replicasets
-{{  end  }}
-{{  if .Values.collectors.replicationcontrollers  }}
-        - --resources=replicationcontrollers
-{{  end  }}
-{{  if .Values.collectors.resourcequotas  }}
-        - --resources=resourcequotas
-{{  end  }}
-{{  if .Values.collectors.secrets  }}
-        - --resources=secrets
-{{  end  }}
-{{  if .Values.collectors.services  }}
-        - --resources=services
-{{  end  }}
-{{  if .Values.collectors.statefulsets  }}
-        - --resources=statefulsets
-{{  end  }}
-{{  if .Values.collectors.storageclasses  }}
-        - --resources=storageclasses
-{{  end  }}
-{{  if .Values.collectors.validatingwebhookconfigurations  }}
-        - --resources=validatingwebhookconfigurations
-{{  end  }}
-{{  if .Values.collectors.verticalpodautoscalers  }}
-        - --resources=verticalpodautoscalers
-{{  end  }}
-{{  if .Values.collectors.volumeattachments  }}
-        - --resources=volumeattachments
-{{  end  }}
-{{ if .Values.namespaces }}
-        - --namespaces={{ tpl .Values.namespaces $ | join "," }}
-{{ end }}
-{{ if .Values.autosharding.enabled }}
+        {{-  end  }}
+        {{- if .Values.service.port }}
+        - --port={{ .Values.service.port | default 8080}}
+        {{-  end  }}
+        {{-  if .Values.collectors  }}
+        - --resources={{ .Values.collectors | join "," }}
+        {{-  end  }}
+        {{- if .Values.metricLabelsAllowlist }}
+        - --metric-labels-allowlist={{ .Values.metricLabelsAllowlist | join "," }}
+        {{- end }}
+        {{- if .Values.metricAllowlist }}
+        - --metric-allowlist={{ .Values.metricAllowlist | join "," }}
+        {{- end }}
+        {{- if .Values.metricDenylist }}
+        - --metric-denylist={{ .Values.metricDenylist | join "," }}
+        {{- end }}
+        {{- if .Values.namespaces }}
+        - --namespaces={{ tpl (.Values.namespaces | join ",") $ }}
+        {{- end }}
+        {{- if .Values.autosharding.enabled }}
         - --pod=$(POD_NAME)
         - --pod-namespace=$(POD_NAMESPACE)
-{{ end }}
-{{ if .Values.kubeconfig.enabled }}
+        {{- end }}
+        {{- if .Values.kubeconfig.enabled }}
         - --kubeconfig=/opt/k8s/.kube/config
-{{ end }}
-{{ if .Values.selfMonitor.telemetryHost }}
+        {{- end }}
+        {{- if .Values.selfMonitor.telemetryHost }}
         - --telemetry-host={{ .Values.selfMonitor.telemetryHost }}
-{{ end }}
-        - --telemetry-port=8081
-{{- if .Values.kubeconfig.enabled }}
+        {{- end }}
+        - --telemetry-port={{ .Values.selfMonitor.telemetryPort | default 8081 }}
+        {{- if .Values.kubeconfig.enabled }}
         volumeMounts:
         - name: kubeconfig
           mountPath: /opt/k8s/.kube/
           readOnly: true
-{{- end }}
+        {{- end }}
         imagePullPolicy: {{ .Values.image.pullPolicy }}
         image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
         ports:
-        - containerPort: 8080
-{{- if .Values.selfMonitor.enabled }}
-        - containerPort: 8081
-{{- end }}
+        - containerPort: {{ .Values.service.port | default 8080}}
+        {{- if .Values.selfMonitor.enabled }}
+        - containerPort: {{ .Values.selfMonitor.telemetryPort | default 8081 }}
+        {{- end }}
         livenessProbe:
           httpGet:
             path: /healthz
-            port: 8080
+            port: {{ .Values.service.port | default 8080}}
           initialDelaySeconds: 5
           timeoutSeconds: 5
         readinessProbe:
           httpGet:
             path: /
-            port: 8080
+            port: {{ .Values.service.port | default 8080}}
           initialDelaySeconds: 5
           timeoutSeconds: 5
-{{- if .Values.resources }}
+        {{- if .Values.resources }}
         resources:
 {{ toYaml .Values.resources | indent 10 }}
+{{- end }}
+{{- if .Values.containerSecurityContext }}
+        securityContext:
+{{ toYaml .Values.containerSecurityContext | indent 10 }}
 {{- end }}
 {{- if .Values.imagePullSecrets }}
       imagePullSecrets:
 {{ toYaml .Values.imagePullSecrets | indent 8 }}
-{{- end }}
-{{- if .Values.affinity }}
+      {{- end }}
+      {{- if .Values.affinity }}
       affinity:
 {{ toYaml .Values.affinity | indent 8 }}
-{{- end }}
-{{- if .Values.nodeSelector }}
+      {{- end }}
+      {{- if .Values.nodeSelector }}
       nodeSelector:
 {{ toYaml .Values.nodeSelector | indent 8 }}
-{{- end }}
-{{- if .Values.tolerations }}
+      {{- end }}
+      {{- if .Values.tolerations }}
       tolerations:
 {{ toYaml .Values.tolerations | indent 8 }}
-{{- end }}
-{{- if .Values.kubeconfig.enabled}}
+      {{- end }}
+      {{- if .Values.kubeconfig.enabled}}
       volumes:
         - name: kubeconfig
           secret:
             secretName: {{ template "kube-state-metrics.fullname" . }}-kubeconfig
-{{- end }}
+      {{- end }}
