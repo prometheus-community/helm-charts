@@ -18,8 +18,11 @@ spec:
     metadata:
       labels:
         {{- include "alertmanager.selectorLabels" . | nindent 8 }}
-{{- if .Values.podAnnotations }}
       annotations:
+      {{- if not .Values.configmapReload.enabled }}
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+      {{- end }}
+{{- if .Values.podAnnotations }}
         {{- toYaml .Values.podAnnotations | nindent 8 }}
 {{- end }}
     spec:
