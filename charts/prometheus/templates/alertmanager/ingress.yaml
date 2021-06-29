@@ -1,7 +1,12 @@
 {{- if and .Values.alertmanager.enabled .Values.alertmanager.ingress.enabled -}}
+{{- $ingressApiIsStable := eq (include "ingress.isStable" .) "true" -}}
+{{- $ingressSupportsIngressClassName := eq (include "ingress.supportsIngressClassName" .) "true" -}}
+{{- $ingressSupportsPathType := eq (include "ingress.supportsPathType" .) "true" -}}
 {{- $releaseName := .Release.Name -}}
 {{- $serviceName := include "prometheus.alertmanager.fullname" . }}
 {{- $servicePort := .Values.alertmanager.service.servicePort -}}
+{{- $ingressPath := .Values.alertmanager.ingress.path -}}
+{{- $ingressPathType := .Values.alertmanager.ingress.pathType -}}
 {{- $extraPaths := .Values.alertmanager.ingress.extraPaths -}}
 apiVersion: {{ template "ingress.apiVersion" . }}
 kind: Ingress
@@ -18,10 +23,8 @@ metadata:
   name: {{ template "prometheus.alertmanager.fullname" . }}
 {{ include "prometheus.namespace" . | indent 2 }}
 spec:
-  {{- if or (.Capabilities.APIVersions.Has "networking.k8s.io/v1/IngressClass") (.Capabilities.APIVersions.Has "networking.k8s.io/v1beta1/IngressClass") }}
-  {{- if .Values.alertmanager.ingress.ingressClassName }}
+  {{- if and $ingressSupportsIngressClassName .Values.alertmanager.ingress.ingressClassName }}
   ingressClassName: {{ .Values.alertmanager.ingress.ingressClassName }}
-  {{- end }}
   {{- end }}
   rules:
   {{- range .Values.alertmanager.ingress.hosts }}
@@ -32,10 +35,20 @@ spec:
 {{ if $extraPaths }}
 {{ toYaml $extraPaths | indent 10 }}
 {{- end }}
-          - path: /{{ rest $url | join "/" }}
+          - path: {{ $ingressPath }}
+            {{- if $ingressSupportsPathType }}
+            pathType: {{ $ingressPathType }}
+            {{- end }}
             backend:
+              {{- if $ingressApiIsStable }}
+              service:
+                name: {{ $serviceName }}
+                port:
+                  number: {{ $servicePort }}
+              {{- else }}
               serviceName: {{ $serviceName }}
               servicePort: {{ $servicePort }}
+              {{- end }}
   {{- end -}}
 {{- if .Values.alertmanager.ingress.tls }}
   tls:
