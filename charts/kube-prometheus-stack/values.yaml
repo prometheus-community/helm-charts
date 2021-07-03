@@ -396,7 +396,7 @@ alertmanager:
     ##
     image:
       repository: quay.io/prometheus/alertmanager
-      tag: v0.22.0
+      tag: v0.22.2
       sha: ""
 
     ## If true then the user will be responsible to provide a secret with alertmanager configuration
@@ -613,6 +613,14 @@ grafana:
   enabled: true
   namespaceOverride: ""
 
+  ## ForceDeployDatasources Create datasource configmap even if grafana deployment has been disabled
+  ##
+  forceDeployDatasources: false
+
+  ## ForceDeployDashboard Create dashboard configmap even if grafana deployment has been disabled
+  ##
+  forceDeployDashboards: false
+
   ## Deploy default dashboards.
   ##
   defaultDashboardsEnabled: true
@@ -664,6 +672,10 @@ grafana:
     datasources:
       enabled: true
       defaultDatasourceEnabled: true
+
+      ## URL of prometheus datasource
+      ##
+      # url: http://prometheus-stack-prometheus:9090/
 
       # If not defined, will use prometheus.prometheusSpec.scrapeInterval or its default
       # defaultDatasourceScrapeInterval: 15s
@@ -742,19 +754,6 @@ kubeApiServer:
   tlsConfig:
     serverName: kubernetes
     insecureSkipVerify: false
-
-  ## If your API endpoint address is not reachable (as in AKS) you can replace it with the kubernetes service
-  ##
-  relabelings: []
-  # - sourceLabels:
-  #     - __meta_kubernetes_namespace
-  #     - __meta_kubernetes_service_name
-  #     - __meta_kubernetes_endpoint_port_name
-  #   action: keep
-  #   regex: default;kubernetes;https
-  # - targetLabel: __address__
-  #   replacement: kubernetes.default.svc:443
-
   serviceMonitor:
     ## Scrape interval. If not set, the Prometheus default scrape interval is used.
     ##
@@ -775,6 +774,15 @@ kubeApiServer:
     # - action: keep
     #   regex: 'kube_(daemonset|deployment|pod|namespace|node|statefulset).+'
     #   sourceLabels: [__name__]
+    relabelings: []
+    # - sourceLabels:
+    #     - __meta_kubernetes_namespace
+    #     - __meta_kubernetes_service_name
+    #     - __meta_kubernetes_endpoint_port_name
+    #   action: keep
+    #   regex: default;kubernetes;https
+    # - targetLabel: __address__
+    #   replacement: kubernetes.default.svc:443
 
 ## Component scraping the kubelet and kubelet-hosted cAdvisor
 ##
@@ -1250,6 +1258,10 @@ kubeStateMetrics:
     #   replacement: $1
     #   action: replace
 
+    # Enable self metrics configuration for Service Monitor
+    selfMonitor:
+      enabled: false
+
 ## Configuration for kube-state-metrics subchart
 ##
 kube-state-metrics:
@@ -1353,6 +1365,16 @@ prometheusOperator:
       nodeSelector: {}
       affinity: {}
       tolerations: []
+
+      ## SecurityContext holds pod-level security attributes and common container settings.
+      ## This defaults to non root user with uid 2000 and gid 2000.	*v1.PodSecurityContext	false
+      ## ref: https://kubernetes.io/docs/tasks/configure-pod-container/security-context/
+      ##
+      securityContext:
+        runAsGroup: 2000
+        runAsNonRoot: true
+        runAsUser: 2000
+
     # Use certmanager to generate webhook certs
     certManager:
       enabled: false
@@ -1540,7 +1562,7 @@ prometheusOperator:
   ##
   image:
     repository: quay.io/prometheus-operator/prometheus-operator
-    tag: v0.48.0
+    tag: v0.48.1
     sha: ""
     pullPolicy: IfNotPresent
 
@@ -1556,7 +1578,7 @@ prometheusOperator:
   ##
   prometheusConfigReloaderImage:
     repository: quay.io/prometheus-operator/prometheus-config-reloader
-    tag: v0.48.0
+    tag: v0.48.1
     sha: ""
 
   ## Set the prometheus config reloader side-car CPU limit
@@ -1566,6 +1588,13 @@ prometheusOperator:
   ## Set the prometheus config reloader side-car memory limit
   ##
   configReloaderMemory: 50Mi
+
+  ## Thanos side-car image when configured
+  ##
+  thanosImage:
+    repository: quay.io/thanos/thanos
+    tag: v0.17.2
+    sha: ""
 
   ## Set a Field Selector to filter watched secrets
   ##
