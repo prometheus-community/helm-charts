@@ -127,3 +127,28 @@ Allow the release namespace to be overridden for multi-namespace deployments in 
 {{- define "kube-prometheus-stack.ingress.supportsPathType" -}}
   {{- or (eq (include "kube-prometheus-stack.ingress.isStable" .) "true") (and (eq (include "kube-prometheus-stack.ingress.apiVersion" .) "networking.k8s.io/v1beta1") (semverCompare ">= 1.18.x" (include "kube-prometheus-stack.ingress.kubeVersion" .))) -}}
 {{- end -}}
+
+{{/*
+To help compatibility with other charts which use global.imagePullSecrets.
+Allow either an array of {name: pullSecret} maps (k8s-style), or an array of strings (more common helm-style).
+global:
+  imagePullSecrets:
+  - name: pullSecret1
+  - name: pullSecret2
+
+or
+
+global:
+  imagePullSecrets:
+  - pullSecret1
+  - pullSecret2
+*/}}
+{{- define "kube-prometheus-stack.imagePullSecrets" -}}
+{{- range .Values.global.imagePullSecrets }}
+  {{- if eq (typeOf .) "map[string]interface {}" }} 
+- {{ toYaml . | trim }}
+  {{- else }}
+- name: {{ . }}
+  {{- end }}
+{{- end }}
+{{- end -}}
