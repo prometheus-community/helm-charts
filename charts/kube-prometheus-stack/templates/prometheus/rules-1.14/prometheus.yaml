@@ -273,6 +273,18 @@ spec:
 {{- if .Values.defaultRules.additionalRuleLabels }}
 {{ toYaml .Values.defaultRules.additionalRuleLabels | indent 8 }}
 {{- end }}
+    - alert: PrometheusTargetSyncFailure
+      annotations:
+        description: '{{`{{`}} printf "%.0f" $value {{`}}`}} targets in Prometheus {{`{{`}}$labels.namespace{{`}}`}}/{{`{{`}}$labels.pod{{`}}`}} have failed to sync because invalid configuration was supplied.'
+        runbook_url: {{ .Values.defaultRules.runbookUrl }}alert-name-prometheustargetsyncfailure
+        summary: Prometheus has failed to sync targets.
+      expr: increase(prometheus_target_sync_failed_total{job="{{ $prometheusJob }}",namespace="{{ $namespace }}"}[30m]) > 0
+      for: 5m
+      labels:
+        severity: critical
+{{- if .Values.defaultRules.additionalRuleLabels }}
+{{ toYaml .Values.defaultRules.additionalRuleLabels | indent 8 }}
+{{- end }}
     - alert: PrometheusErrorSendingAlertsToAnyAlertmanager
       annotations:
         description: '{{`{{`}} printf "%.1f" $value {{`}}`}}% minimum errors while sending alerts from Prometheus {{`{{`}}$labels.namespace{{`}}`}}/{{`{{`}}$labels.pod{{`}}`}} to any Alertmanager.'
