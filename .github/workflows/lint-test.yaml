@@ -26,6 +26,11 @@ jobs:
           if [[ -n "$changed" ]]; then
             echo "::set-output name=changed::true"
           fi
+      - name: install helm unittest plugin
+        if: steps.list-changed.outputs.changed == 'true'
+        run: |
+          helm env
+          helm plugin install https://github.com/quintush/helm-unittest --version 0.2.6
       - name: Run chart-testing (lint)
         run: ct lint --config ct.yaml
       - name: Create kind cluster
