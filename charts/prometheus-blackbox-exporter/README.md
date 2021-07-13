@@ -9,6 +9,7 @@ This chart creates a Blackbox-Exporter deployment on a [Kubernetes](http://kuber
 ## Prerequisites
 
 - Kubernetes 1.8+ with Beta APIs enabled
+- Helm >= 3.0
 
 ## Get Repo Info
 
@@ -22,11 +23,7 @@ _See [helm repo](https://helm.sh/docs/helm/helm_repo/) for command documentation
 ## Install Chart
 
 ```console
-# Helm 3
-$ helm install [RELEASE_NAME] prometheus-community/prometheus-blackbox-exporter
-
-# Helm 2
-$ helm install --name [RELEASE_NAME] prometheus-community/prometheus-blackbox-exporter
+helm install [RELEASE_NAME] prometheus-community/prometheus-blackbox-exporter
 ```
 
 _See [configuration](#configuration) below._
@@ -36,11 +33,7 @@ _See [helm install](https://helm.sh/docs/helm/helm_install/) for command documen
 ## Uninstall Chart
 
 ```console
-# Helm 3
-$ helm uninstall [RELEASE_NAME]
-
-# Helm 2
-# helm delete --purge [RELEASE_NAME]
+helm uninstall [RELEASE_NAME]
 ```
 
 This removes all the Kubernetes components associated with the chart and deletes the release.
@@ -50,11 +43,14 @@ _See [helm uninstall](https://helm.sh/docs/helm/helm_uninstall/) for command doc
 ## Upgrading Chart
 
 ```console
-# Helm 3 or 2
-$ helm upgrade [RELEASE_NAME] [CHART] --install
+helm upgrade [RELEASE_NAME] [CHART] --install
 ```
 
 _See [helm upgrade](https://helm.sh/docs/helm/helm_upgrade/) for command documentation._
+
+### To 5.0.0
+
+This version removes Helm 2 support. Also the ingress config has changed, so you have to adapt to the example in the values.yaml.
 
 ### To 4.0.0
 
@@ -88,9 +84,5 @@ Note that this will cause downtime of the blackbox.
 See [Customizing the Chart Before Installing](https://helm.sh/docs/intro/using_helm/#customizing-the-chart-before-installing). To see all configurable options with detailed comments, visit the chart's [values.yaml](./values.yaml), or run these configuration commands:
 
 ```console
-# Helm 2
-$ helm inspect values prometheus-community/prometheus-blackbox-exporter
-
-# Helm 3
-$ helm show values prometheus-community/prometheus-blackbox-exporter
+helm show values prometheus-community/prometheus-blackbox-exporter
 ```
