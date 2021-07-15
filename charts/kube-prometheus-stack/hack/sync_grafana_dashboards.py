@@ -116,7 +116,7 @@ def patch_json_for_multicluster_configuration(content):
         content_array = []
         original_content_lines = content.split('\n')
         for i, line in enumerate(json.dumps(content_struct, indent=4).split('\n')):
-            if ('[]' not in line and '{}' not in line) or line == original_content_lines[i]:
+            if (' []' not in line and ' {}' not in line) or line == original_content_lines[i]:
                 content_array.append(line)
                 continue
 
