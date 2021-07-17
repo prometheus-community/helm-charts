@@ -200,13 +200,13 @@ def yaml_str_repr(struct, indent=4):
     return text
 
 
-def add_rules_conditions(rules, indent=4):
-    """Add if wrapper for rules, listed in alert_condition_map"""
+def add_rules_conditions(rules, rules_map, indent=4):
+    """Add if wrapper for rules, listed in rules_map"""
     rule_condition = '{{- if %s }}\n'
-    for alert_name in alert_condition_map:
+    for alert_name in rules_map:
         line_start = ' ' * indent + '- alert: '
         if line_start + alert_name in rules:
-            rule_text = rule_condition % alert_condition_map[alert_name]
+            rule_text = rule_condition % rules_map[alert_name]
             # add if condition
             index = rules.index(line_start + alert_name)
             rules = rules[:index] + rule_text + rules[index:]
@@ -217,7 +217,7 @@ def add_rules_conditions(rules, indent=4):
                 # we found the last alert in file if there are no alerts after it
                 next_index = len(rules)
 
-            # depending on the rule ordering in alert_condition_map it's possible that an if statement from another rule is present at the end of this block.
+            # depending on the rule ordering in rules_map it's possible that an if statement from another rule is present at the end of this block.
             found_block_end = False
             last_line_index = next_index
             while not found_block_end:
@@ -231,6 +231,23 @@ def add_rules_conditions(rules, indent=4):
                 found_block_end = True
 
             rules = rules[:next_index] + '{{- end }}\n' + rules[next_index:]
+    return rules
+
+
+def add_rules_conditions_from_condition_map(rules, indent=4):
+    """Add if wrapper for rules, listed in alert_condition_map"""
+    rules = add_rules_conditions(rules, alert_condition_map, indent)
+    return rules
+
+
+def add_rules_per_rule_conditions(rules, group, indent=4):
+    """Add if wrapper for rules, listed in alert_condition_map"""
+    rules_condition_map = {}
+    for rule in group['rules']:
+        if 'alert' in rule:
+            rules_condition_map[rule['alert']] = f"not (.Values.defaultRules.disabled.{rule['alert']} | default false)"
+
+    rules = add_rules_conditions(rules, rules_condition_map, indent)
     return rules
 
 
@@ -270,7 +287,8 @@ def write_group_to_file(group, url, destination, min_kubernetes, max_kubernetes)
                 init_line += '\n' + replacement_map[line]['init']
     # append per-alert rules
     rules = add_custom_labels(rules)
-    rules = add_rules_conditions(rules)
+    rules = add_rules_conditions_from_condition_map(rules)
+    rules = add_rules_per_rule_conditions(rules, group)
     # initialize header
     lines = header % {
         'name': group['name'],
