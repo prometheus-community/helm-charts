@@ -3,7 +3,7 @@ affinity: {}
 
 image:
   repository: directxman12/k8s-prometheus-adapter-amd64
-  tag: v0.8.3
+  tag: v0.8.4
   pullPolicy: IfNotPresent
 
 logLevel: 4
@@ -25,6 +25,11 @@ prometheus:
 
 replicas: 1
 
+# k8s 1.21 needs fsGroup to be set for non root deployments
+# ref: https://github.com/kubernetes/kubernetes/issues/70679
+podSecurityContext:
+  fsGroup: 10001
+
 rbac:
   # Specifies whether RBAC resources should be created
   create: true
@@ -39,6 +44,11 @@ serviceAccount:
   # The name of the service account to use.
   # If not set and create is true, a name is generated using the fullname template
   name:
+  # ServiceAccount annotations.
+  # Use case: AWS EKS IAM roles for service accounts
+  # ref: https://docs.aws.amazon.com/eks/latest/userguide/specify-service-account-role.html
+  annotations: {}
+
 # Custom DNS configuration to be added to prometheus-adapter pods
 dnsConfig: {}
 # nameservers:
@@ -81,11 +91,11 @@ rules:
 #   metricsQuery: sum(<<.Series>>{<<.LabelMatchers>>}) by (<<.GroupBy>>)
   resource: {}
 #   cpu:
-#     containerQuery: sum(rate(container_cpu_usage_seconds_total{<<.LabelMatchers>>}[3m])) by (<<.GroupBy>>)
+#     containerQuery: sum(rate(container_cpu_usage_seconds_total{<<.LabelMatchers>>, container!=""}[3m])) by (<<.GroupBy>>)
 #     nodeQuery: sum(rate(container_cpu_usage_seconds_total{<<.LabelMatchers>>, id='/'}[3m])) by (<<.GroupBy>>)
 #     resources:
 #       overrides:
-#         instance:
+#         node:
 #           resource: node
 #         namespace:
 #           resource: namespace
@@ -93,11 +103,11 @@ rules:
 #           resource: pod
 #     containerLabel: container
 #   memory:
-#     containerQuery: sum(container_memory_working_set_bytes{<<.LabelMatchers>>}) by (<<.GroupBy>>)
+#     containerQuery: sum(container_memory_working_set_bytes{<<.LabelMatchers>>, container!=""}) by (<<.GroupBy>>)
 #     nodeQuery: sum(container_memory_working_set_bytes{<<.LabelMatchers>>,id='/'}) by (<<.GroupBy>>)
 #     resources:
 #       overrides:
-#         instance:
+#         node:
 #           resource: node
 #         namespace:
 #           resource: namespace
@@ -162,6 +172,13 @@ hostNetwork:
 
 # When hostNetwork is enabled, you probably want to set this to ClusterFirstWithHostNet
 # dnsPolicy: ClusterFirstWithHostNet
+
+# Deployment strategy type
+strategy:
+  type: RollingUpdate
+  rollingUpdate:
+    maxUnavailable: 25%
+    maxSurge: 25%
 
 podDisruptionBudget:
   # Specifies if PodDisruptionBudget should be enabled

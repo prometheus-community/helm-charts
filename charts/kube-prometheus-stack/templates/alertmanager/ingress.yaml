@@ -4,11 +4,9 @@
 {{- $servicePort := .Values.alertmanager.service.port -}}
 {{- $routePrefix := list .Values.alertmanager.alertmanagerSpec.routePrefix }}
 {{- $paths := .Values.alertmanager.ingress.paths | default $routePrefix -}}
-{{- if .Capabilities.APIVersions.Has "networking.k8s.io/v1beta1" }}
-apiVersion: networking.k8s.io/v1beta1
-{{ else }}
-apiVersion: extensions/v1beta1
-{{ end -}}
+{{- $apiIsStable := eq (include "kube-prometheus-stack.ingress.isStable" .) "true" -}}
+{{- $ingressSupportsPathType := eq (include "kube-prometheus-stack.ingress.supportsPathType" .) "true" -}}
+apiVersion: {{ include "kube-prometheus-stack.ingress.apiVersion" . }}
 kind: Ingress
 metadata:
   name: {{ $serviceName }}
@@ -24,7 +22,7 @@ metadata:
 {{- end }}
 {{ include "kube-prometheus-stack.labels" . | indent 4 }}
 spec:
-  {{- if or (.Capabilities.APIVersions.Has "networking.k8s.io/v1") (.Capabilities.APIVersions.Has "networking.k8s.io/v1beta1") }}
+  {{- if $apiIsStable }}
   {{- if .Values.alertmanager.ingress.ingressClassName }}
   ingressClassName: {{ .Values.alertmanager.ingress.ingressClassName }}
   {{- end }}
@@ -37,25 +35,39 @@ spec:
         paths:
   {{- range $p := $paths }}
           - path: {{ tpl $p $ }}
-            {{- if $pathType }}
+            {{- if and $pathType $ingressSupportsPathType }}
             pathType: {{ $pathType }}
             {{- end }}
             backend:
+              {{- if $apiIsStable }}
+              service:
+                name: {{ $serviceName }}
+                port:
+                  number: {{ $servicePort }}
+              {{- else }}
               serviceName: {{ $serviceName }}
               servicePort: {{ $servicePort }}
-  {{- end -}}
+    {{- end }}
+    {{- end -}}
   {{- end -}}
   {{- else }}
     - http:
         paths:
   {{- range $p := $paths }}
           - path: {{ tpl $p $ }}
-            {{- if $pathType }}
+            {{- if and $pathType $ingressSupportsPathType }}
             pathType: {{ $pathType }}
             {{- end }}
             backend:
+              {{- if $apiIsStable }}
+              service:
+                name: {{ $serviceName }}
+                port:
+                  number: {{ $servicePort }}
+              {{- else }}
               serviceName: {{ $serviceName }}
               servicePort: {{ $servicePort }}
+  {{- end }}
   {{- end -}}
   {{- end -}}
   {{- if .Values.alertmanager.ingress.tls }}

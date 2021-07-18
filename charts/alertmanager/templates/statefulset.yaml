@@ -18,8 +18,11 @@ spec:
     metadata:
       labels:
         {{- include "alertmanager.selectorLabels" . | nindent 8 }}
-{{- if .Values.podAnnotations }}
       annotations:
+      {{- if not .Values.configmapReload.enabled }}
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+      {{- end }}
+{{- if .Values.podAnnotations }}
         {{- toYaml .Values.podAnnotations | nindent 8 }}
 {{- end }}
     spec:
@@ -30,6 +33,18 @@ spec:
       serviceAccountName: {{ include "alertmanager.serviceAccountName" . }}
     {{- with .Values.dnsConfig }}
       dnsConfig:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}
+    {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+    {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}
+    {{- with .Values.tolerations }}
+      tolerations:
         {{- toYaml . | nindent 8 }}
     {{- end }}
       securityContext:
@@ -43,7 +58,7 @@ spec:
             - --volume-dir=/etc/alertmanager
             - --webhook-url=http://127.0.0.1:{{ .Values.service.port }}/-/reload
           resources:
-            {{ toYaml .Values.configmapReload.resources | indent 12 }}
+            {{- toYaml .Values.configmapReload.resources | nindent 12 }}
           volumeMounts:
             - name: config
               mountPath: /etc/alertmanager
@@ -71,8 +86,9 @@ spec:
             - --cluster.listen-address=0.0.0.0:9094
             {{- end }}
             {{- if gt .Values.replicaCount 1.0}}
+            {{- $fullName := include "alertmanager.fullname" . }}
             {{- range $i := until (int .Values.replicaCount) }}
-            - --cluster.peer={{ tpl $.Release.Name $ }}-{{ tpl $.Chart.Name $ }}-{{ $i }}.{{ tpl $.Release.Name $ }}-{{ tpl $.Chart.Name $ }}-headless:9094
+            - --cluster.peer={{ $fullName }}-{{ $i }}.{{ $fullName }}-headless:9094
             {{- end }}
             {{- end }}
             {{- if .Values.additionalPeers }}
@@ -110,7 +126,7 @@ spec:
           configMap:
             name: {{ include "alertmanager.fullname" . }}
       {{- end }}
-{{- if .Values.persistence.enabled }}
+      {{- if .Values.persistence.enabled }}
   volumeClaimTemplates:
     - metadata:
         name: storage
@@ -131,15 +147,3 @@ spec:
         - name: storage
           emptyDir: {}
 {{- end -}}
-      {{- with .Values.nodeSelector }}
-      nodeSelector:
-        {{- toYaml . | nindent 8 }}
-      {{- end }}
-    {{- with .Values.affinity }}
-      affinity:
-        {{- toYaml . | nindent 8 }}
-    {{- end }}
-    {{- with .Values.tolerations }}
-      tolerations:
-        {{- toYaml . | nindent 8 }}
-    {{- end }}

@@ -1,10 +1,10 @@
 {{- /*
-Generated from 'workload-total' from https://raw.githubusercontent.com/prometheus-operator/kube-prometheus/master/manifests/grafana-dashboardDefinitions.yaml
+Generated from 'workload-total' from https://raw.githubusercontent.com/prometheus-operator/kube-prometheus/main/manifests/grafana-dashboardDefinitions.yaml
 Do not change in-place! In order to change this file first read following link:
 https://github.com/prometheus-community/helm-charts/tree/main/charts/kube-prometheus-stack/hack
 */ -}}
 {{- $kubeTargetVersion := default .Capabilities.KubeVersion.GitVersion .Values.kubeTargetVersionOverride }}
-{{- if and (semverCompare ">=1.14.0-0" $kubeTargetVersion) (semverCompare "<9.9.9-9" $kubeTargetVersion) .Values.grafana.enabled .Values.grafana.defaultDashboardsEnabled }}
+{{- if and (or .Values.grafana.enabled .Values.grafana.forceDeployDashboards) (semverCompare ">=1.14.0-0" $kubeTargetVersion) (semverCompare "<9.9.9-9" $kubeTargetVersion) .Values.grafana.defaultDashboardsEnabled }}
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -1212,7 +1212,7 @@ data:
 
                     ],
                     "query": "label_values(kube_pod_info, cluster)",
-                    "refresh": 1,
+                    "refresh": 2,
                     "regex": "",
                     "sort": 0,
                     "tagValuesQuery": "",
@@ -1243,7 +1243,7 @@ data:
 
                     ],
                     "query": "label_values(container_network_receive_packets_total{cluster=\"$cluster\"}, namespace)",
-                    "refresh": 1,
+                    "refresh": 2,
                     "regex": "",
                     "skipUrlSync": false,
                     "sort": 1,
@@ -1275,7 +1275,7 @@ data:
 
                     ],
                     "query": "label_values(namespace_workload_pod:kube_pod_owner:relabel{cluster=\"$cluster\",namespace=~\"$namespace\"}, workload)",
-                    "refresh": 1,
+                    "refresh": 2,
                     "regex": "",
                     "skipUrlSync": false,
                     "sort": 1,
@@ -1307,7 +1307,7 @@ data:
 
                     ],
                     "query": "label_values(namespace_workload_pod:kube_pod_owner:relabel{cluster=\"$cluster\",namespace=~\"$namespace\", workload=~\"$workload\"}, workload_type)",
-                    "refresh": 1,
+                    "refresh": 2,
                     "regex": "",
                     "skipUrlSync": false,
                     "sort": 0,

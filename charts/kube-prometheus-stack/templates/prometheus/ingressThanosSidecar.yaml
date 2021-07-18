@@ -4,11 +4,9 @@
 {{- $thanosPort := .Values.prometheus.thanosIngress.servicePort -}}
 {{- $routePrefix := list .Values.prometheus.prometheusSpec.routePrefix }}
 {{- $paths := .Values.prometheus.thanosIngress.paths | default $routePrefix -}}
-{{- if .Capabilities.APIVersions.Has "networking.k8s.io/v1beta1" }}
-apiVersion: networking.k8s.io/v1beta1
-{{ else }}
-apiVersion: extensions/v1beta1
-{{ end -}}
+{{- $apiIsStable := eq (include "kube-prometheus-stack.ingress.isStable" .) "true" -}}
+{{- $ingressSupportsPathType := eq (include "kube-prometheus-stack.ingress.supportsPathType" .) "true" -}}
+apiVersion: {{ include "kube-prometheus-stack.ingress.apiVersion" . }}
 kind: Ingress
 metadata:
 {{- if .Values.prometheus.thanosIngress.annotations }}
@@ -23,7 +21,7 @@ metadata:
 {{ toYaml .Values.prometheus.thanosIngress.labels | indent 4 }}
 {{- end }}
 spec:
-  {{- if or (.Capabilities.APIVersions.Has "networking.k8s.io/v1") (.Capabilities.APIVersions.Has "networking.k8s.io/v1beta1") }}
+  {{- if $apiIsStable }}
   {{- if .Values.prometheus.thanosIngress.ingressClassName }}
   ingressClassName: {{ .Values.prometheus.thanosIngress.ingressClassName }}
   {{- end }}
@@ -36,25 +34,39 @@ spec:
         paths:
   {{- range $p := $paths }}
           - path: {{ tpl $p $ }}
-            {{- if $pathType }}
+            {{- if and $pathType $ingressSupportsPathType }}
             pathType: {{ $pathType }}
             {{- end }}
             backend:
+              {{- if $apiIsStable }}
+              service:
+                name: {{ $serviceName }}
+                port:
+                  number: {{ $thanosPort }}
+              {{- else }}
               serviceName: {{ $serviceName }}
               servicePort: {{ $thanosPort }}
-  {{- end -}}
+    {{- end }}
+    {{- end -}}
   {{- end -}}
   {{- else }}
     - http:
         paths:
   {{- range $p := $paths }}
           - path: {{ tpl $p $ }}
-            {{- if $pathType }}
+            {{- if and $pathType $ingressSupportsPathType }}
             pathType: {{ $pathType }}
             {{- end }}
             backend:
+              {{- if $apiIsStable }}
+              service:
+                name: {{ $serviceName }}
+                port:
+                  number: {{ $thanosPort }}
+              {{- else }}
               serviceName: {{ $serviceName }}
               servicePort: {{ $thanosPort }}
+  {{- end }}
   {{- end -}}
   {{- end -}}
   {{- if .Values.prometheus.thanosIngress.tls }}

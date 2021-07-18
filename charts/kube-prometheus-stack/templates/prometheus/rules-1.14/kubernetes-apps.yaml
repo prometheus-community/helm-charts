@@ -1,5 +1,5 @@
 {{- /*
-Generated from 'kubernetes-apps' group from https://raw.githubusercontent.com/prometheus-operator/kube-prometheus/master/manifests/kubernetes-prometheusRule.yaml
+Generated from 'kubernetes-apps' group from https://raw.githubusercontent.com/prometheus-operator/kube-prometheus/main/manifests/kubernetes-prometheusRule.yaml
 Do not change in-place! In order to change this file first read following link:
 https://github.com/prometheus-community/helm-charts/tree/main/charts/kube-prometheus-stack/hack
 */ -}}
@@ -30,7 +30,10 @@ spec:
         description: Pod {{`{{`}} $labels.namespace {{`}}`}}/{{`{{`}} $labels.pod {{`}}`}} ({{`{{`}} $labels.container {{`}}`}}) is restarting {{`{{`}} printf "%.2f" $value {{`}}`}} times / 10 minutes.
         runbook_url: {{ .Values.defaultRules.runbookUrl }}alert-name-kubepodcrashlooping
         summary: Pod is crash looping.
-      expr: rate(kube_pod_container_status_restarts_total{job="kube-state-metrics", namespace=~"{{ $targetNamespace }}"}[10m]) * 60 * 5 > 0
+      expr: |-
+        increase(kube_pod_container_status_restarts_total{job="kube-state-metrics", namespace=~"{{ $targetNamespace }}"}[10m]) > 0
+        and
+        kube_pod_container_status_waiting{job="kube-state-metrics", namespace=~"{{ $targetNamespace }}"} == 1
       for: 15m
       labels:
         severity: warning
@@ -79,10 +82,10 @@ spec:
       expr: |-
         (
           kube_deployment_spec_replicas{job="kube-state-metrics", namespace=~"{{ $targetNamespace }}"}
-            !=
+            >
           kube_deployment_status_replicas_available{job="kube-state-metrics", namespace=~"{{ $targetNamespace }}"}
         ) and (
-          changes(kube_deployment_status_replicas_updated{job="kube-state-metrics", namespace=~"{{ $targetNamespace }}"}[5m])
+          changes(kube_deployment_status_replicas_updated{job="kube-state-metrics", namespace=~"{{ $targetNamespace }}"}[10m])
             ==
           0
         )
@@ -103,7 +106,7 @@ spec:
             !=
           kube_statefulset_status_replicas{job="kube-state-metrics", namespace=~"{{ $targetNamespace }}"}
         ) and (
-          changes(kube_statefulset_status_replicas_updated{job="kube-state-metrics", namespace=~"{{ $targetNamespace }}"}[5m])
+          changes(kube_statefulset_status_replicas_updated{job="kube-state-metrics", namespace=~"{{ $targetNamespace }}"}[10m])
             ==
           0
         )
@@ -257,23 +260,23 @@ spec:
 {{- end }}
     - alert: KubeHpaReplicasMismatch
       annotations:
-        description: HPA {{`{{`}} $labels.namespace {{`}}`}}/{{`{{`}} $labels.hpa {{`}}`}} has not matched the desired number of replicas for longer than 15 minutes.
+        description: HPA {{`{{`}} $labels.namespace {{`}}`}}/{{`{{`}} $labels.horizontalpodautoscaler  {{`}}`}} has not matched the desired number of replicas for longer than 15 minutes.
         runbook_url: {{ .Values.defaultRules.runbookUrl }}alert-name-kubehpareplicasmismatch
         summary: HPA has not matched descired number of replicas.
       expr: |-
-        (kube_hpa_status_desired_replicas{job="kube-state-metrics", namespace=~"{{ $targetNamespace }}"}
+        (kube_horizontalpodautoscaler_status_desired_replicas{job="kube-state-metrics", namespace=~"{{ $targetNamespace }}"}
           !=
-        kube_hpa_status_current_replicas{job="kube-state-metrics", namespace=~"{{ $targetNamespace }}"})
+        kube_horizontalpodautoscaler_status_current_replicas{job="kube-state-metrics", namespace=~"{{ $targetNamespace }}"})
           and
-        (kube_hpa_status_current_replicas{job="kube-state-metrics", namespace=~"{{ $targetNamespace }}"}
+        (kube_horizontalpodautoscaler_status_current_replicas{job="kube-state-metrics", namespace=~"{{ $targetNamespace }}"}
           >
-        kube_hpa_spec_min_replicas{job="kube-state-metrics", namespace=~"{{ $targetNamespace }}"})
+        kube_horizontalpodautoscaler_spec_min_replicas{job="kube-state-metrics", namespace=~"{{ $targetNamespace }}"})
           and
-        (kube_hpa_status_current_replicas{job="kube-state-metrics", namespace=~"{{ $targetNamespace }}"}
+        (kube_horizontalpodautoscaler_status_current_replicas{job="kube-state-metrics", namespace=~"{{ $targetNamespace }}"}
           <
-        kube_hpa_spec_max_replicas{job="kube-state-metrics", namespace=~"{{ $targetNamespace }}"})
+        kube_horizontalpodautoscaler_spec_max_replicas{job="kube-state-metrics", namespace=~"{{ $targetNamespace }}"})
           and
-        changes(kube_hpa_status_current_replicas[15m]) == 0
+        changes(kube_horizontalpodautoscaler_status_current_replicas{job="kube-state-metrics", namespace=~"{{ $targetNamespace }}"}[15m]) == 0
       for: 15m
       labels:
         severity: warning
@@ -282,13 +285,13 @@ spec:
 {{- end }}
     - alert: KubeHpaMaxedOut
       annotations:
-        description: HPA {{`{{`}} $labels.namespace {{`}}`}}/{{`{{`}} $labels.hpa {{`}}`}} has been running at max replicas for longer than 15 minutes.
+        description: HPA {{`{{`}} $labels.namespace {{`}}`}}/{{`{{`}} $labels.horizontalpodautoscaler  {{`}}`}} has been running at max replicas for longer than 15 minutes.
         runbook_url: {{ .Values.defaultRules.runbookUrl }}alert-name-kubehpamaxedout
         summary: HPA is running at max replicas
       expr: |-
-        kube_hpa_status_current_replicas{job="kube-state-metrics", namespace=~"{{ $targetNamespace }}"}
+        kube_horizontalpodautoscaler_status_current_replicas{job="kube-state-metrics", namespace=~"{{ $targetNamespace }}"}
           ==
-        kube_hpa_spec_max_replicas{job="kube-state-metrics", namespace=~"{{ $targetNamespace }}"}
+        kube_horizontalpodautoscaler_spec_max_replicas{job="kube-state-metrics", namespace=~"{{ $targetNamespace }}"}
       for: 15m
       labels:
         severity: warning

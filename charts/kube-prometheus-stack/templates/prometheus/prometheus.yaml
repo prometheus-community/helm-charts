@@ -70,6 +70,12 @@ spec:
   logFormat:  {{ .Values.prometheus.prometheusSpec.logFormat }}
   listenLocal: {{ .Values.prometheus.prometheusSpec.listenLocal }}
   enableAdminAPI: {{ .Values.prometheus.prometheusSpec.enableAdminAPI }}
+{{- if .Values.prometheus.prometheusSpec.enableFeatures }}
+  enableFeatures:
+{{- range $enableFeatures := .Values.prometheus.prometheusSpec.enableFeatures }}
+  - {{ tpl $enableFeatures $ }}
+{{- end }}
+{{- end }}
 {{- if .Values.prometheus.prometheusSpec.scrapeInterval }}
   scrapeInterval: {{ .Values.prometheus.prometheusSpec.scrapeInterval }}
 {{- end }}
@@ -153,7 +159,7 @@ spec:
 {{- if (or .Values.prometheus.prometheusSpec.remoteRead .Values.prometheus.prometheusSpec.additionalRemoteRead) }}
   remoteRead:
 {{- if .Values.prometheus.prometheusSpec.remoteRead }}
-{{ toYaml .Values.prometheus.prometheusSpec.remoteRead | indent 4 }}
+{{ tpl (toYaml .Values.prometheus.prometheusSpec.remoteRead | indent 4) . }}
 {{- end }}
 {{- if .Values.prometheus.prometheusSpec.additionalRemoteRead }}
 {{ toYaml .Values.prometheus.prometheusSpec.additionalRemoteRead | indent 4 }}
@@ -162,7 +168,7 @@ spec:
 {{- if (or .Values.prometheus.prometheusSpec.remoteWrite .Values.prometheus.prometheusSpec.additionalRemoteWrite) }}
   remoteWrite:
 {{- if .Values.prometheus.prometheusSpec.remoteWrite }}
-{{ toYaml .Values.prometheus.prometheusSpec.remoteWrite | indent 4 }}
+{{ tpl (toYaml .Values.prometheus.prometheusSpec.remoteWrite | indent 4) . }}
 {{- end }}
 {{- if .Values.prometheus.prometheusSpec.additionalRemoteWrite }}
 {{ toYaml .Values.prometheus.prometheusSpec.additionalRemoteWrite | indent 4 }}
@@ -212,7 +218,7 @@ spec:
       - topologyKey: {{ .Values.prometheus.prometheusSpec.podAntiAffinityTopologyKey }}
         labelSelector:
           matchExpressions:
-            - {key: app, operator: In, values: [prometheus]}
+            - {key: app.kubernetes.io/name, operator: In, values: [prometheus]}
             - {key: prometheus, operator: In, values: [{{ template "kube-prometheus-stack.fullname" . }}-prometheus]}
 {{- else if eq .Values.prometheus.prometheusSpec.podAntiAffinity "soft" }}
     podAntiAffinity:
@@ -222,7 +228,7 @@ spec:
           topologyKey: {{ .Values.prometheus.prometheusSpec.podAntiAffinityTopologyKey }}
           labelSelector:
             matchExpressions:
-              - {key: app, operator: In, values: [prometheus]}
+              - {key: app.kubernetes.io/name, operator: In, values: [prometheus]}
               - {key: prometheus, operator: In, values: [{{ template "kube-prometheus-stack.fullname" . }}-prometheus]}
 {{- end }}
 {{- end }}
@@ -248,10 +254,16 @@ spec:
     name: {{ .Values.prometheus.prometheusSpec.additionalScrapeConfigsSecret.name }}
     key: {{ .Values.prometheus.prometheusSpec.additionalScrapeConfigsSecret.key }}
 {{- end }}
-{{- if .Values.prometheus.prometheusSpec.additionalAlertManagerConfigs }}
+{{- if or .Values.prometheus.prometheusSpec.additionalAlertManagerConfigs .Values.prometheus.prometheusSpec.additionalAlertManagerConfigsSecret }}
   additionalAlertManagerConfigs:
+{{- if .Values.prometheus.prometheusSpec.additionalAlertManagerConfigs }}
     name: {{ template "kube-prometheus-stack.fullname" . }}-prometheus-am-confg
     key: additional-alertmanager-configs.yaml
+{{- end }}
+{{- if .Values.prometheus.prometheusSpec.additionalAlertManagerConfigsSecret }}
+    name: {{ .Values.prometheus.prometheusSpec.additionalAlertManagerConfigsSecret.name }}
+    key: {{ .Values.prometheus.prometheusSpec.additionalAlertManagerConfigsSecret.key }}
+{{- end }}
 {{- end }}
 {{- if .Values.prometheus.prometheusSpec.additionalAlertRelabelConfigs }}
   additionalAlertRelabelConfigs:

@@ -3,6 +3,8 @@
 {{- $count := .Values.prometheus.prometheusSpec.replicas | int -}}
 {{- $servicePort := .Values.prometheus.servicePerReplica.port -}}
 {{- $ingressValues := .Values.prometheus.ingressPerReplica -}}
+{{- $apiIsStable := eq (include "kube-prometheus-stack.ingress.isStable" .) "true" -}}
+{{- $ingressSupportsPathType := eq (include "kube-prometheus-stack.ingress.supportsPathType" .) "true" -}}
 apiVersion: v1
 kind: List
 metadata:
@@ -11,17 +13,13 @@ metadata:
 items:
 {{ range $i, $e := until $count }}
   - kind: Ingress
-    {{- if $.Capabilities.APIVersions.Has "networking.k8s.io/v1beta1" }}
-    apiVersion: networking.k8s.io/v1beta1
-    {{ else }}
-    apiVersion: extensions/v1beta1
-    {{ end -}}
+    apiVersion: {{ include "kube-prometheus-stack.ingress.apiVersion" $ }}
     metadata:
       name: {{ include "kube-prometheus-stack.fullname" $ }}-prometheus-{{ $i }}
       namespace: {{ template "kube-prometheus-stack.namespace" $ }}
       labels:
         app: {{ include "kube-prometheus-stack.name" $ }}-prometheus
-{{ include "kube-prometheus-stack.labels" $ | indent 8 }}
+      {{ include "kube-prometheus-stack.labels" $ | indent 8 }}
       {{- if $ingressValues.labels }}
 {{ toYaml $ingressValues.labels | indent 8 }}
       {{- end }}
@@ -30,7 +28,7 @@ items:
 {{ toYaml $ingressValues.annotations | indent 8 }}
       {{- end }}
     spec:
-      {{- if or ($.Capabilities.APIVersions.Has "networking.k8s.io/v1") ($.Capabilities.APIVersions.Has "networking.k8s.io/v1beta1") }}
+      {{- if $apiIsStable }}
       {{- if $ingressValues.ingressClassName }}
       ingressClassName: {{ $ingressValues.ingressClassName }}
       {{- end }}
@@ -41,12 +39,19 @@ items:
             paths:
       {{- range $p := $ingressValues.paths }}
               - path: {{ tpl $p $ }}
-                {{- if $pathType }}
+                {{- if and $pathType $ingressSupportsPathType }}
                 pathType: {{ $pathType }}
                 {{- end }}
                 backend:
+                  {{- if $apiIsStable }}
+                  service:
+                    name: {{ include "kube-prometheus-stack.fullname" $ }}-prometheus-{{ $i }}
+                    port:
+                      number: {{ $servicePort }}
+                  {{- else }}
                   serviceName: {{ include "kube-prometheus-stack.fullname" $ }}-prometheus-{{ $i }}
                   servicePort: {{ $servicePort }}
+      {{- end }}
       {{- end -}}
       {{- if or $ingressValues.tlsSecretName $ingressValues.tlsSecretPerReplica.enabled }}
       tls:

@@ -13,10 +13,18 @@ spec:
     matchLabels:
       app: prometheus-node-exporter
       release: {{ $.Release.Name }}
+  {{- if (index .Values "prometheus-node-exporter" "namespaceOverride") }}
+  namespaceSelector:
+    matchNames:
+      - {{ index .Values "prometheus-node-exporter" "namespaceOverride" }}
+  {{- end }}
   endpoints:
   - port: metrics
     {{- if .Values.nodeExporter.serviceMonitor.interval }}
     interval: {{ .Values.nodeExporter.serviceMonitor.interval }}
+    {{- end }}
+    {{- if .Values.nodeExporter.serviceMonitor.proxyUrl }}
+    proxyUrl: {{ .Values.nodeExporter.serviceMonitor.proxyUrl}}
     {{- end }}
     {{- if .Values.nodeExporter.serviceMonitor.scrapeTimeout }}
     scrapeTimeout: {{ .Values.nodeExporter.serviceMonitor.scrapeTimeout }}
