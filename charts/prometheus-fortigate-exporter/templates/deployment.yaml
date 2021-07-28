@@ -1,0 +1,143 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ template "prometheus-fortigate-exporter.fullname" . }}
+  labels:
+    app: {{ template "prometheus-fortigate-exporter.name" . }}
+    chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app: {{ template "prometheus-fortigate-exporter.name" . }}
+      release: {{ .Release.Name }}
+  template:
+    metadata:
+      annotations:
+{{ toYaml .Values.annotations | indent 8 }}
+      labels:
+        app: {{ template "prometheus-fortigate-exporter.name" . }}
+        release: {{ .Release.Name }}
+        {{- if .Values.labels }}
+{{ toYaml .Values.labels | indent 8 }}
+        {{- end }}
+    spec:
+      serviceAccountName: {{ template "prometheus-fortigate-exporter.serviceAccountName" . }}
+      {{- if .Values.image.pullSecrets }}
+      imagePullSecrets:
+      {{- range .Values.image.pullSecrets }}
+        - name: {{ . }}
+      {{- end}}
+      {{- end }}
+      {{- with .Values.initContainers }}
+      initContainers: {{ toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: {{ .Chart.Name }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          {{- if .Values.command }}
+          command: {{ toYaml .Values.command | nindent 10 }}
+          {{- else }}
+          command: ["./fortigate-exporter"]
+          {{- end }}
+          args:
+          {{- with .Values.fortigate.authFile }}
+          - "-auth-file={{ . }}"
+          {{- end }}
+          {{- with .Values.fortigate.listen }}
+          - "-listen=:{{ . }}"
+          {{- end }}
+          {{- with .Values.fortigate.scrapeTimeout }}
+          - "-scrape-timeout={{ . }}"
+          {{- end }}
+          {{- with .Values.fortigate.httpsTimeout }}
+          - "-https-timeout={{ . }}"
+          {{- end }}
+          {{- with .Values.fortigate.inSecure }}
+          - "-insecure={{ . }}"
+          {{- end }}
+          {{- with .Values.fortigate.extraCaCerts }}
+          - "-extra-ca-certs={{ . }}"
+          {{- end }}
+          {{- with .Values.fortigate.maxBgpPaths }}
+          - "-max-bgp-paths={{ . }}"
+          {{- end }}
+          {{- range $key, $value := .Values.extraArgs }}
+          - "-{{ $key }}={{ $value }}"
+          {{- end }}
+          ports:
+            - name: exporter-port
+              containerPort: {{ .Values.fortigate.listen }}
+          env:
+{{- if .Values.env }}
+{{ toYaml .Values.env | indent 12 }}
+{{- end }}
+          volumeMounts:
+            {{- if and .Values.fortigate.targets (eq .Values.fortigate.useExistingSecrets false) }}
+            - mountPath: /config
+              name: api-keys
+            {{- end }}
+            {{- range .Values.secretMounts }}
+            - name: {{ .name }}
+              mountPath: {{ .path }}
+              {{- if .subPath }}
+              subPath: {{ .subPath }}
+              {{- end }}
+            {{- end }}
+            {{- range .Values.extraConfigmapMounts }}
+            - name: {{ .name }}
+              mountPath: {{ .mountPath }}
+              subPath: {{ .subPath | default "" }}
+              readOnly: {{ .readOnly }}
+          {{- end }}
+            {{- if .Values.extraVolumeMounts }}
+            {{- toYaml .Values.extraVolumeMounts | nindent 12 }}
+            {{- end }}
+          livenessProbe:
+            httpGet:
+              path: /metrics
+              port: exporter-port
+          readinessProbe:
+            httpGet:
+              path: /metrics
+              port: exporter-port
+          resources:
+{{ toYaml .Values.resources | indent 12 }}
+        {{- with .Values.extraContainers }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      volumes:
+        {{- if and .Values.fortigate.targets (eq .Values.fortigate.useExistingSecrets false) }}
+        - name: api-keys
+          secret:
+            secretName: {{ template "prometheus-fortigate-exporter.fullname" . }}-secret
+        {{- end }}
+        {{- range .Values.secretMounts }}
+        - name: {{ .name }}
+          secret:
+            secretName: {{ .secretName }}
+        {{- end }}
+        {{- range .Values.extraConfigmapMounts }}
+        - name: {{ .name }}
+          configMap:
+            name: {{ tpl .configMap $ }}
+            defaultMode: {{ .defaultMode }}
+        {{- end }}
+        {{- if .Values.extraVolumes }}
+        {{- toYaml .Values.extraVolumes | nindent 8 }}
+        {{- end }}
+    {{- if .Values.nodeSelector }}
+      nodeSelector:
+{{ toYaml .Values.nodeSelector | indent 8 }}
+    {{- end }}
+    {{- with .Values.affinity }}
+      affinity:
+{{ toYaml . | indent 8 }}
+    {{- end }}
+    {{- with .Values.tolerations }}
+      tolerations:
+{{ toYaml . | indent 8 }}
+    {{- end }}

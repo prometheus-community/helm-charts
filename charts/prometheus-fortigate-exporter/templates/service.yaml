@@ -1,0 +1,24 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ template "prometheus-fortigate-exporter.fullname" . }}
+  labels:
+    app: {{ template "prometheus-fortigate-exporter.name" . }}
+    chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+{{- if .Values.service.labels }}
+{{ toYaml .Values.service.labels | indent 4 }}
+{{- end }}
+  annotations:
+{{ toYaml .Values.service.annotations | indent 4 }}
+spec:
+  type: {{ .Values.service.type }}
+  ports:
+    - name: fortigate-exporter
+      port: {{ .Values.service.port }}
+      targetPort: exporter-port
+      protocol: TCP
+  selector:
+    app: {{ template "prometheus-fortigate-exporter.name" . }}
+    release: {{ .Release.Name }}

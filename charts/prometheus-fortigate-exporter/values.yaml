@@ -1,0 +1,158 @@
+rbac:
+  # Specifies whether RBAC resources should be created
+  create: true
+  # Specifies whether a PodSecurityPolicy should be created
+  pspEnabled: true
+serviceAccount:
+  # Specifies whether a ServiceAccount should be created
+  create: true
+  # The name of the ServiceAccount to use.
+  # If not set and create is true, a name is generated using the fullname template
+  name:
+
+replicaCount: 1
+image:
+  repository: quay.io/bluecmd/fortigate_exporter
+  tag: v1.8.0
+  pullPolicy: IfNotPresent
+
+extraArgs: {}
+
+# Additional Environment variables
+env: {}
+# - name: TARGET1_API_TOKEN
+#   valueFrom:
+#     secretKeyRef:
+#       key: target1-apitoken
+#       name: fortigate-config-0.0.2
+service:
+  type: ClusterIP
+  port: 9710
+  annotations: {}
+  labels: {}
+    # prometheus.io/path: /metrics
+    # prometheus.io/port: "9710"
+    # prometheus.io/scrape: "true"
+resources: {}
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
+
+annotations: {}
+
+labels: {}
+#  prometheus.io/path: /metrics
+#  prometheus.io/port: "9710"
+#  prometheus.io/scrape: "true"
+
+# Init Containers for Exporter Pod
+initContainers: []
+
+# Extra Containers for Exporter Pod
+extraContainers: []
+
+serviceMonitor:
+  # When set true then use a ServiceMonitor to configure scraping
+  enabled: false
+  # Set the namespace the ServiceMonitor should be deployed
+  # namespace: prometheus-operator
+  # Set how frequently Prometheus should scrape
+  # interval: 1m
+  # Set path to redis-exporter telemtery-path
+  # telemetryPath: /probe
+  # Set labels for the ServiceMonitor, use this to define your scrape label for Prometheus Operator
+  # labels:
+  # Set timeout for scrape
+  # timeout: 10s
+  # Set relabel_configs as per https://prometheus.io/docs/prometheus/latest/configuration/configuration/#relabel_config
+  # relabelings: []
+  #   - sourceLabels: 
+  #     - __param_target
+  #     targetLabel: instance
+  #     # Drop the https:// and port (if specified) for the 'instance=' label
+  #     regex: '(?:.+)(?::\/\/)([^:]*).*'
+  #     replacement: ${1} 
+  # Set of labels to transfer on the Kubernetes Service onto the target.
+  # targetLabels: []
+  # metricRelabelings: []
+
+## Custom PrometheusRules to be defined
+## The value is evaluated as a template, so, for example, the value can depend on .Release or .Chart
+## ref: https://github.com/coreos/prometheus-operator#customresourcedefinitions
+prometheusRule:
+  enabled: false
+  additionalLabels: {}
+  namespace: "prometheus-operator"
+  rules: []
+  # - alert: FortigateLinkDown
+  #   expr: |
+  #     fortigate_interface_link_up{service="{{ template "ceres-dpl-fortigate-prometheus-helm.fullname" . }}"} == 0
+  #   for: 2m
+  #   labels:
+  #     severity: error
+  #   annotations:
+  #     summary: "Fortigate interface link {{ `{{ $labels.name `}} }} for {{ `{{ $labels.instance `}} }} down"
+  #     description: "Fortigate interface link {{ `{{ $labels.name `}} }} for instance {{ `{{ $labels.instance `}} }} is down."
+  ## These are just examples rules, please adapt them to your needs.
+  ## Make sure to constraint the rules to the current service.
+    
+
+# A list of secrets and their paths to mount inside the pod
+# This is useful for mounting certificates for security
+secretMounts: []
+#  - name: fortigate-certs
+#    secretName: fortigate-certs
+#    path: /ssl
+
+# A list of additional Volume to add to the deployment
+# this is useful if the volume you need is not a secret (csi volume etc.)
+extraVolumes: []
+#  - name: csi-volume
+#    csi:
+#      driver: secrets-store.csi.k8s.io
+#      readOnly: true
+#      volumeAttributes:
+#        secretProviderClass: my-spc
+
+#  A list of additional VolumeMounts to add to the deployment
+#  this is useful for mounting any other needed resource into
+#  the fortigate-exporter pod
+extraVolumeMounts: []
+#  - name: csi-volume
+#    mountPath: /csi/volume
+#    readOnly: true
+
+extraConfigmapMounts: []
+  # - name: fortigate-exporter-configmap
+  #   mountPath: /run/secrets/fortigate-exporter
+  #   subPath: fortigate.yaml # (optional)
+  #   configMap: fortigate-exporter-configmap-configmap
+  #   readOnly: true
+  #   defaultMode: 420
+
+fortigate:
+  # Path to the location of the key file
+  authFile: "/config/fortigate-key.yaml" 
+  # Whether to use an existing secret for the api keys or set to true to use a custom mounted secret
+  useExistingSecrets: false
+  # Port to listen for incoming requests
+  listen: 9710
+  # Scrape timeout in seconds
+  scrapeTimeout: 30
+  # Timeout in seconds for establishment of HTTPS connections
+  httpsTimeout: 10
+  # Allows to turn off security validation of TLS certificates
+  inSecure: true
+  # Comma-separated files containing extra PEMs to trust for TLS connections in addition to the system trust store
+  extraCaCerts: 
+  # Sets maximum amount of BGP paths to fetch, value is per IP stack version (IPv4 a& IPv6)
+  maxBgpPaths: 10000
+  # Pairs of FortiGate targets and API keys in the following format:
+  # "https://my-fortigate":
+  #   token: api-key-goes-here
+  # "https://my-other-fortigate:8443":
+  #   token: api-key-goes-here
+  targets: {}
