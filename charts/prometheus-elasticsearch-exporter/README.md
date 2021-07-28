@@ -2,7 +2,7 @@
 
 Prometheus exporter for various metrics about ElasticSearch, written in Go.
 
-Learn more: <https://github.com/justwatchcom/elasticsearch_exporter>
+Learn more: <https://github.com/prometheus-community/elasticsearch_exporter>
 
 This chart creates an Elasticsearch-Exporter deployment on a [Kubernetes](http://kubernetes.io)
 cluster using the [Helm](https://helm.sh) package manager.
