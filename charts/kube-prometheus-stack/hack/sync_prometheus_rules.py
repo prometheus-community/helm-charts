@@ -111,6 +111,7 @@ alert_condition_map = {
     'NodeExporterDown': '.Values.nodeExporter.enabled',
     'CoreDNSDown': '.Values.kubeDns.enabled',
     'AlertmanagerDown': '.Values.alertmanager.enabled',
+    'AggregatedAPIDown': 'semverCompare ">=1.18.0-0" $kubeTargetVersion',
 }
 
 replacement_map = {
