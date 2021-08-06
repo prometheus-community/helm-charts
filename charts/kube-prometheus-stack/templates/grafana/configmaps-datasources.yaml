@@ -1,4 +1,4 @@
-{{- if and .Values.grafana.enabled .Values.grafana.sidecar.datasources.enabled }}
+{{- if or (and .Values.grafana.enabled .Values.grafana.sidecar.datasources.enabled) .Values.grafana.forceDeployDatasources }}
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -20,7 +20,11 @@ data:
 {{- if .Values.grafana.sidecar.datasources.defaultDatasourceEnabled }}
     - name: Prometheus
       type: prometheus
+      {{- if .Values.grafana.sidecar.datasources.url }}
+      url: {{ .Values.grafana.sidecar.datasources.url }}
+      {{- else }}
       url: http://{{ template "kube-prometheus-stack.fullname" . }}-prometheus:{{ .Values.prometheus.service.port }}/{{ trimPrefix "/" .Values.prometheus.prometheusSpec.routePrefix }}
+      {{- end }}
       access: proxy
       isDefault: true
       jsonData:

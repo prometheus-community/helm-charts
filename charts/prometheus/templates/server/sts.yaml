@@ -78,6 +78,7 @@ spec:
               readOnly: {{ .readOnly }}
           {{- end }}
         {{- end }}
+
         - name: {{ template "prometheus.name" . }}-{{ .Values.server.name }}
           image: "{{ .Values.server.image.repository }}:{{ .Values.server.image.tag }}"
           imagePullPolicy: "{{ .Values.server.image.pullPolicy }}"
@@ -86,11 +87,18 @@ spec:
 {{ toYaml .Values.server.env | indent 12}}
           {{- end }}
           args:
+          {{- if .Values.server.prefixURL }}
+            - --web.route-prefix={{ .Values.server.prefixURL }}
+          {{- end }}
           {{- if .Values.server.retention }}
             - --storage.tsdb.retention.time={{ .Values.server.retention }}
           {{- end }}
             - --config.file={{ .Values.server.configPath }}
+          {{- if .Values.server.storagePath }}
+            - --storage.tsdb.path={{ .Values.server.storagePath }}
+          {{- else }}
             - --storage.tsdb.path={{ .Values.server.persistentVolume.mountPath }}
+          {{- end }}
             - --web.console.libraries=/etc/prometheus/console_libraries
             - --web.console.templates=/etc/prometheus/consoles
           {{- range .Values.server.extraFlags }}
@@ -154,8 +162,16 @@ spec:
     {{- if .Values.server.sidecarContainers }}
       {{- range $name, $spec :=  .Values.server.sidecarContainers }}
         - name: {{ $name }}
-          {{- toYaml $spec | nindent 10 }}
+          {{- if kindIs "string" $spec }}
+            {{- tpl $spec $ | nindent 10 }}
+          {{- else }}
+            {{- toYaml $spec | nindent 10 }}
+          {{- end }}
       {{- end }}
+    {{- end }}
+      hostNetwork: {{ .Values.server.hostNetwork }}
+    {{- if .Values.server.dnsPolicy }}
+      dnsPolicy: {{ .Values.server.dnsPolicy }}
     {{- end }}
     {{- if .Values.imagePullSecrets }}
       imagePullSecrets:
@@ -168,6 +184,10 @@ spec:
     {{- if .Values.server.hostAliases }}
       hostAliases:
 {{ toYaml .Values.server.hostAliases | indent 8 }}
+    {{- end }}
+    {{- if .Values.server.dnsConfig }}
+      dnsConfig:
+{{ toYaml .Values.server.dnsConfig | indent 8 }}
     {{- end }}
     {{- if .Values.server.securityContext }}
       securityContext:
@@ -205,11 +225,17 @@ spec:
         - name: {{ .name }}
           secret:
             secretName: {{ .secretName }}
+            {{- with .optional }}
+            optional: {{ . }}
+            {{- end }}
       {{- end }}
       {{- range .Values.configmapReload.prometheus.extraConfigmapMounts }}
         - name: {{ .name }}
           configMap:
             name: {{ .configMap }}
+            {{- with .optional }}
+            optional: {{ . }}
+            {{- end }}
       {{- end }}
 {{- if .Values.server.extraVolumes }}
 {{ toYaml .Values.server.extraVolumes | indent 8}}
