@@ -116,18 +116,26 @@ spec:
           ports:
             - containerPort: 9090
           readinessProbe:
+          {{- if .Values.server.customReadinessProbe }}
+{{ toYaml .Values.server.customReadinessProbe | indent 12}}
+          {{- else }}
             httpGet:
               path: {{ .Values.server.prefixURL }}/-/ready
               port: 9090
+          {{- end }}
             initialDelaySeconds: {{ .Values.server.readinessProbeInitialDelay }}
             periodSeconds: {{ .Values.server.readinessProbePeriodSeconds }}
             timeoutSeconds: {{ .Values.server.readinessProbeTimeout }}
             failureThreshold: {{ .Values.server.readinessProbeFailureThreshold }}
             successThreshold: {{ .Values.server.readinessProbeSuccessThreshold }}
           livenessProbe:
+          {{- if .Values.server.customLivenessProbe }}
+{{ toYaml .Values.server.customLivenessProbe | indent 12}}
+          {{- else }}
             httpGet:
               path: {{ .Values.server.prefixURL }}/-/healthy
               port: 9090
+          {{- end }}
             initialDelaySeconds: {{ .Values.server.livenessProbeInitialDelay }}
             periodSeconds: {{ .Values.server.livenessProbePeriodSeconds }}
             timeoutSeconds: {{ .Values.server.livenessProbeTimeout }}
