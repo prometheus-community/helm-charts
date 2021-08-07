@@ -1,0 +1,97 @@
+suite: test ingress
+templates:
+  - alertmanager/ingress.yaml
+tests:
+  - it: should be empty if alertmanager is not enabled
+    set:
+      alertmanager.enabled: false
+      alertmanager.ingress.enabled: true
+    asserts:
+      - hasDocuments:
+          count: 0
+  - it: should be empty if ingress is not enabled
+    set:
+      alertmanager.enabled: true
+      alertmanager.ingress.enabled: false
+    asserts:
+      - hasDocuments:
+          count: 0
+  - it: should have apiVersion extensions/v1beta1 for k8s < 1.16
+    set:
+      alertmanager.enabled: true
+      alertmanager.ingress.enabled: true
+    capabilities:
+      majorVersion: 1
+      minorVersion: 15
+    asserts:
+      - hasDocuments:
+          count: 1
+      - isKind:
+          of: Ingress
+      - isAPIVersion:
+          of: extensions/v1beta1
+  - it: should have apiVersion networking.k8s.io/v1beta1 for k8s >= 1.16 < 1.19
+    set:
+      alertmanager.enabled: true
+      alertmanager.ingress.enabled: true
+    capabilities:
+      majorVersion: 1
+      minorVersion: 16
+      apiVersions:
+        - networking.k8s.io/v1beta1
+    asserts:
+      - hasDocuments:
+          count: 1
+      - isKind:
+          of: Ingress
+      - isAPIVersion:
+          of: networking.k8s.io/v1beta1
+  - it: should have apiVersion networking.k8s.io/v1 for k8s >= 1.19 < 1.22
+    set:
+      alertmanager.enabled: true
+      alertmanager.ingress.enabled: true
+    capabilities:
+      majorVersion: 1
+      minorVersion: 10
+      apiVersions:
+        - networking.k8s.io/v1
+        - networking.k8s.io/v1beta1
+    asserts:
+      - hasDocuments:
+          count: 1
+      - isKind:
+          of: Ingress
+      - isAPIVersion:
+          of: networking.k8s.io/v1beta1
+  - it: should have apiVersion networking.k8s.io/v1 for k8s >= 1.22
+    set:
+      alertmanager.enabled: true
+      alertmanager.ingress.enabled: true
+    capabilities:
+      majorVersion: 1
+      minorVersion: 22
+      apiVersions:
+        - networking.k8s.io/v1
+    asserts:
+      - hasDocuments:
+          count: 1
+      - isKind:
+          of: Ingress
+      - isAPIVersion:
+          of: networking.k8s.io/v1
+
+  - it: should have explicit pathType ImplementationSpecific for networking.k8s.io/v1 by default
+    set:
+      alertmanager.enabled: true
+      alertmanager.ingress.enabled: true
+    capabilities:
+      majorVersion: 1
+      minorVersion: 19
+      apiVersions:
+        - networking.k8s.io/v1
+    asserts:
+      - hasDocuments:
+          count: 1
+      - equal:
+          path: spec.rules[0].http.paths[0].pathType
+          value: ImplementationSpecific
