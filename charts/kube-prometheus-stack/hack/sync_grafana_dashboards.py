@@ -29,13 +29,15 @@ charts = [
         'source': 'https://raw.githubusercontent.com/prometheus-operator/kube-prometheus/main/manifests/grafana-dashboardDefinitions.yaml',
         'destination': '../templates/grafana/dashboards-1.14',
         'type': 'yaml',
-        'min_kubernetes': '1.14.0-0'
+        'min_kubernetes': '1.14.0-0',
+        'multicluster_key': '.Values.grafana.sidecar.dashboards.multicluster.global.enabled',
     },
     {
         'source': 'https://raw.githubusercontent.com/etcd-io/website/master/content/en/docs/v3.4/op-guide/grafana.json',
         'destination': '../templates/grafana/dashboards-1.14',
         'type': 'json',
-        'min_kubernetes': '1.14.0-0'
+        'min_kubernetes': '1.14.0-0',
+        'multicluster_key': '(or .Values.grafana.sidecar.dashboards.multicluster.global.enabled .Values.grafana.sidecar.dashboards.multicluster.etcd.enabled)'
     },
 ]
 
@@ -104,7 +106,7 @@ def yaml_str_repr(struct, indent=2):
     return text
 
 
-def patch_json_for_multicluster_configuration(content):
+def patch_json_for_multicluster_configuration(content, multicluster_key):
     try:
         content_struct = json.loads(content)
         overwrite_list = []
@@ -136,7 +138,7 @@ def patch_json_for_multicluster_configuration(content):
         if multicluster != -1:
             content = ''.join((
                 content[:multicluster-1],
-                '\{\{ if .Values.grafana.sidecar.dashboards.multicluster \}\}0\{\{ else \}\}2\{\{ end \}\}',
+                '\{\{ if %s \}\}0\{\{ else \}\}2\{\{ end \}\}' % multicluster_key,
                 content[multicluster + 15:]
             ))
     except (ValueError, KeyError):
@@ -145,7 +147,7 @@ def patch_json_for_multicluster_configuration(content):
     return content
 
 
-def write_group_to_file(resource_name, content, url, destination, min_kubernetes, max_kubernetes):
+def write_group_to_file(resource_name, content, url, destination, min_kubernetes, max_kubernetes, multicluster_key):
     # initialize header
     lines = header % {
         'name': resource_name,
@@ -155,7 +157,7 @@ def write_group_to_file(resource_name, content, url, destination, min_kubernetes
         'max_kubernetes': max_kubernetes
     }
 
-    content = patch_json_for_multicluster_configuration(content)
+    content = patch_json_for_multicluster_configuration(content, multicluster_key)
 
     filename_struct = {resource_name + '.json': (LiteralStr(content))}
     # rules themselves
@@ -196,17 +198,17 @@ def main():
             groups = yaml_text['items']
             for group in groups:
                 for resource, content in group['data'].items():
-                    write_group_to_file(resource.replace('.json', ''), content, chart['source'], chart['destination'], chart['min_kubernetes'], chart['max_kubernetes'])
+                    write_group_to_file(resource.replace('.json', ''), content, chart['source'], chart['destination'], chart['min_kubernetes'], chart['max_kubernetes'], chart['multicluster_key'])
         elif chart['type'] == 'json':
             json_text = json.loads(raw_text)
             # is it already a dashboard structure or is it nested (etcd case)?
             flat_structure = bool(json_text.get('annotations'))
             if flat_structure:
                 resource = path.basename(chart['source']).replace('.json', '')
-                write_group_to_file(resource, json.dumps(json_text, indent=4), chart['source'], chart['destination'], chart['min_kubernetes'], chart['max_kubernetes'])
+                write_group_to_file(resource, json.dumps(json_text, indent=4), chart['source'], chart['destination'], chart['min_kubernetes'], chart['max_kubernetes'], chart['multicluster_key'])
             else:
                 for resource, content in json_text.items():
-                    write_group_to_file(resource.replace('.json', ''), json.dumps(content, indent=4), chart['source'], chart['destination'], chart['min_kubernetes'], chart['max_kubernetes'])
+                    write_group_to_file(resource.replace('.json', ''), json.dumps(content, indent=4), chart['source'], chart['destination'], chart['min_kubernetes'], chart['max_kubernetes'], chart['multicluster_key'])
     print("Finished")
 
 
