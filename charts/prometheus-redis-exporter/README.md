@@ -67,7 +67,8 @@ For more information please refer to the [redis_exporter](https://github.com/oli
 
 ### Redis Connection
 
-- To configure Redis connection set `redisAddress` string (example format: `redis://myredis:6379`)
+- To configure Redis connection by value set `redisAddress` string (example format: `redis://myredis:6379`)
+- To configure Redis connection by configmap set `redisAddressConfig.enabled` to `true`, set `redisAddressConfig.configmap.name` and `redisAddressConfig.configmap.key` values
 - To configure auth by value, set `auth.enabled` to `true`, and `auth.redisPassword` value
 - To configure auth by secret, set `auth.secret.name` and `auth.secret.key` values
 

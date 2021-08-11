@@ -39,6 +39,13 @@ spec:
 {{- if .Values.server.schedulerName }}
       schedulerName: "{{ .Values.server.schedulerName }}"
 {{- end }}
+{{- if semverCompare ">=1.13-0" .Capabilities.KubeVersion.GitVersion }}
+      {{- if or (.Values.server.enableServiceLinks) (eq (.Values.server.enableServiceLinks | toString) "<nil>") }}
+      enableServiceLinks: true
+      {{- else }}
+      enableServiceLinks: false
+      {{- end }}
+{{- end }}
       serviceAccountName: {{ template "prometheus.serviceAccountName.server" . }}
       {{- if .Values.server.extraInitContainers }}
       initContainers:
@@ -80,6 +87,9 @@ spec:
 {{ toYaml .Values.server.env | indent 12}}
           {{- end }}
           args:
+          {{- if .Values.server.prefixURL }}
+            - --web.route-prefix={{ .Values.server.prefixURL }}
+          {{- end }}
           {{- if .Values.server.retention }}
             - --storage.tsdb.retention.time={{ .Values.server.retention }}
           {{- end }}
@@ -94,12 +104,11 @@ spec:
           {{- range .Values.server.extraFlags }}
             - --{{ . }}
           {{- end }}
-          {{- if .Values.server.baseURL }}
-            - --web.external-url={{ .Values.server.baseURL }}
-          {{- end }}
-
           {{- range $key, $value := .Values.server.extraArgs }}
             - --{{ $key }}={{ $value }}
+          {{- end }}
+          {{- if .Values.server.baseURL }}
+            - --web.external-url={{ .Values.server.baseURL }}
           {{- end }}
           ports:
             - containerPort: 9090
@@ -197,21 +206,6 @@ spec:
         - name: config-volume
           configMap:
             name: {{ if .Values.server.configMapOverrideName }}{{ .Release.Name }}-{{ .Values.server.configMapOverrideName }}{{- else }}{{ template "prometheus.server.fullname" . }}{{- end }}
-        - name: storage-volume
-        {{- if .Values.server.persistentVolume.enabled }}
-          persistentVolumeClaim:
-            claimName: {{ if .Values.server.persistentVolume.existingClaim }}{{ .Values.server.persistentVolume.existingClaim }}{{- else }}{{ template "prometheus.server.fullname" . }}{{- end }}
-        {{- else }}
-          emptyDir:
-          {{- if .Values.server.emptyDir.sizeLimit }}
-            sizeLimit: {{ .Values.server.emptyDir.sizeLimit }}
-          {{- else }}
-            {}
-          {{- end -}}
-        {{- end -}}
-{{- if .Values.server.extraVolumes }}
-{{ toYaml .Values.server.extraVolumes | indent 8}}
-{{- end }}
       {{- range .Values.server.extraHostPathMounts }}
         - name: {{ .name }}
           hostPath:
@@ -243,5 +237,20 @@ spec:
             optional: {{ . }}
             {{- end }}
       {{- end }}
+{{- if .Values.server.extraVolumes }}
+{{ toYaml .Values.server.extraVolumes | indent 8}}
+{{- end }}
+        - name: storage-volume
+        {{- if .Values.server.persistentVolume.enabled }}
+          persistentVolumeClaim:
+            claimName: {{ if .Values.server.persistentVolume.existingClaim }}{{ .Values.server.persistentVolume.existingClaim }}{{- else }}{{ template "prometheus.server.fullname" . }}{{- end }}
+        {{- else }}
+          emptyDir:
+          {{- if .Values.server.emptyDir.sizeLimit }}
+            sizeLimit: {{ .Values.server.emptyDir.sizeLimit }}
+          {{- else }}
+            {}
+          {{- end -}}
+        {{- end -}}
 {{- end -}}
 {{- end -}}

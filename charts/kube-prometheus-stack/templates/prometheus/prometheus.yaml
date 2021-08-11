@@ -70,6 +70,10 @@ spec:
   logFormat:  {{ .Values.prometheus.prometheusSpec.logFormat }}
   listenLocal: {{ .Values.prometheus.prometheusSpec.listenLocal }}
   enableAdminAPI: {{ .Values.prometheus.prometheusSpec.enableAdminAPI }}
+{{- if .Values.prometheus.prometheusSpec.web }}
+  web:
+{{ toYaml .Values.prometheus.prometheusSpec.web | indent 4 }}
+{{- end }}
 {{- if .Values.prometheus.prometheusSpec.enableFeatures }}
   enableFeatures:
 {{- range $enableFeatures := .Values.prometheus.prometheusSpec.enableFeatures }}
@@ -254,10 +258,16 @@ spec:
     name: {{ .Values.prometheus.prometheusSpec.additionalScrapeConfigsSecret.name }}
     key: {{ .Values.prometheus.prometheusSpec.additionalScrapeConfigsSecret.key }}
 {{- end }}
-{{- if .Values.prometheus.prometheusSpec.additionalAlertManagerConfigs }}
+{{- if or .Values.prometheus.prometheusSpec.additionalAlertManagerConfigs .Values.prometheus.prometheusSpec.additionalAlertManagerConfigsSecret }}
   additionalAlertManagerConfigs:
+{{- if .Values.prometheus.prometheusSpec.additionalAlertManagerConfigs }}
     name: {{ template "kube-prometheus-stack.fullname" . }}-prometheus-am-confg
     key: additional-alertmanager-configs.yaml
+{{- end }}
+{{- if .Values.prometheus.prometheusSpec.additionalAlertManagerConfigsSecret }}
+    name: {{ .Values.prometheus.prometheusSpec.additionalAlertManagerConfigsSecret.name }}
+    key: {{ .Values.prometheus.prometheusSpec.additionalAlertManagerConfigsSecret.key }}
+{{- end }}
 {{- end }}
 {{- if .Values.prometheus.prometheusSpec.additionalAlertRelabelConfigs }}
   additionalAlertRelabelConfigs:
