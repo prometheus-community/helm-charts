@@ -122,3 +122,12 @@ Allow the release namespace to be overridden for multi-namespace deployments in 
 {{- define "kube-prometheus-stack.ingress.supportsPathType" -}}
   {{- or (eq (include "kube-prometheus-stack.ingress.isStable" .) "true") (and (eq (include "kube-prometheus-stack.ingress.apiVersion" .) "networking.k8s.io/v1beta1") (semverCompare ">= 1.18-0" (include "kube-prometheus-stack.kubeVersion" .))) -}}
 {{- end -}}
+
+{{/* Get Policy API Version */}}
+{{- define "kube-prometheus-stack.pdb.apiVersion" -}}
+  {{- if and (.Capabilities.APIVersions.Has "policy/v1") (semverCompare ">= 1.21-0" (include "kube-prometheus-stack.kubeVersion" .)) -}}
+      {{- print "policy/v1" -}}
+  {{- else -}}
+    {{- print "policy/v1beta1" -}}
+  {{- end -}}
+{{- end -}}
