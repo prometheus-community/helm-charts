@@ -31,6 +31,7 @@ spec:
         runbook_url: {{ .Values.defaultRules.runbookUrl }}alert-name-kubepersistentvolumefillingup
         summary: PersistentVolume is filling up.
       expr: |-
+        {{ .Values.defaultRules.expressionPrefix }}
         (
           kubelet_volume_stats_available_bytes{job="kubelet", namespace=~"{{ $targetNamespace }}", metrics_path="/metrics"}
             /
@@ -38,6 +39,7 @@ spec:
         ) < 0.03
         and
         kubelet_volume_stats_used_bytes{job="kubelet", namespace=~"{{ $targetNamespace }}", metrics_path="/metrics"} > 0
+        {{ .Values.defaultRules.expressionSufix }}
       for: 1m
       labels:
         severity: critical
@@ -50,6 +52,7 @@ spec:
         runbook_url: {{ .Values.defaultRules.runbookUrl }}alert-name-kubepersistentvolumefillingup
         summary: PersistentVolume is filling up.
       expr: |-
+        {{ .Values.defaultRules.expressionPrefix }}
         (
           kubelet_volume_stats_available_bytes{job="kubelet", namespace=~"{{ $targetNamespace }}", metrics_path="/metrics"}
             /
@@ -59,6 +62,7 @@ spec:
         kubelet_volume_stats_used_bytes{job="kubelet", namespace=~"{{ $targetNamespace }}", metrics_path="/metrics"} > 0
         and
         predict_linear(kubelet_volume_stats_available_bytes{job="kubelet", namespace=~"{{ $targetNamespace }}", metrics_path="/metrics"}[6h], 4 * 24 * 3600) < 0
+        {{ .Values.defaultRules.expressionSufix }}
       for: 1h
       labels:
         severity: warning
@@ -70,7 +74,10 @@ spec:
         description: The persistent volume {{`{{`}} $labels.persistentvolume {{`}}`}} has status {{`{{`}} $labels.phase {{`}}`}}.
         runbook_url: {{ .Values.defaultRules.runbookUrl }}alert-name-kubepersistentvolumeerrors
         summary: PersistentVolume is having issues with provisioning.
-      expr: kube_persistentvolume_status_phase{phase=~"Failed|Pending",job="kube-state-metrics"} > 0
+      expr: |-
+        {{ .Values.defaultRules.expressionPrefix }}
+        kube_persistentvolume_status_phase{phase=~"Failed|Pending",job="kube-state-metrics"} > 0
+        {{ .Values.defaultRules.expressionSufix }}
       for: 5m
       labels:
         severity: critical

@@ -31,9 +31,11 @@ spec:
         runbook_url: {{ .Values.defaultRules.runbookUrl }}alert-name-kubepodcrashlooping
         summary: Pod is crash looping.
       expr: |-
+        {{ .Values.defaultRules.expressionPrefix }}
         increase(kube_pod_container_status_restarts_total{job="kube-state-metrics", namespace=~"{{ $targetNamespace }}"}[10m]) > 0
         and
         kube_pod_container_status_waiting{job="kube-state-metrics", namespace=~"{{ $targetNamespace }}"} == 1
+        {{ .Values.defaultRules.expressionSufix }}
       for: 15m
       labels:
         severity: warning
@@ -46,6 +48,7 @@ spec:
         runbook_url: {{ .Values.defaultRules.runbookUrl }}alert-name-kubepodnotready
         summary: Pod has been in a non-ready state for more than 15 minutes.
       expr: |-
+        {{ .Values.defaultRules.expressionPrefix }}
         sum by (namespace, pod) (
           max by(namespace, pod) (
             kube_pod_status_phase{job="kube-state-metrics", namespace=~"{{ $targetNamespace }}", phase=~"Pending|Unknown"}
@@ -53,6 +56,7 @@ spec:
             1, max by(namespace, pod, owner_kind) (kube_pod_owner{owner_kind!="Job"})
           )
         ) > 0
+        {{ .Values.defaultRules.expressionSufix }}
       for: 15m
       labels:
         severity: warning
@@ -65,9 +69,11 @@ spec:
         runbook_url: {{ .Values.defaultRules.runbookUrl }}alert-name-kubedeploymentgenerationmismatch
         summary: Deployment generation mismatch due to possible roll-back
       expr: |-
+        {{ .Values.defaultRules.expressionPrefix }}
         kube_deployment_status_observed_generation{job="kube-state-metrics", namespace=~"{{ $targetNamespace }}"}
           !=
         kube_deployment_metadata_generation{job="kube-state-metrics", namespace=~"{{ $targetNamespace }}"}
+        {{ .Values.defaultRules.expressionSufix }}
       for: 15m
       labels:
         severity: warning
@@ -80,6 +86,7 @@ spec:
         runbook_url: {{ .Values.defaultRules.runbookUrl }}alert-name-kubedeploymentreplicasmismatch
         summary: Deployment has not matched the expected number of replicas.
       expr: |-
+        {{ .Values.defaultRules.expressionPrefix }}
         (
           kube_deployment_spec_replicas{job="kube-state-metrics", namespace=~"{{ $targetNamespace }}"}
             >
@@ -89,6 +96,7 @@ spec:
             ==
           0
         )
+        {{ .Values.defaultRules.expressionSufix }}
       for: 15m
       labels:
         severity: warning
@@ -101,6 +109,7 @@ spec:
         runbook_url: {{ .Values.defaultRules.runbookUrl }}alert-name-kubestatefulsetreplicasmismatch
         summary: Deployment has not matched the expected number of replicas.
       expr: |-
+        {{ .Values.defaultRules.expressionPrefix }}
         (
           kube_statefulset_status_replicas_ready{job="kube-state-metrics", namespace=~"{{ $targetNamespace }}"}
             !=
@@ -110,6 +119,7 @@ spec:
             ==
           0
         )
+        {{ .Values.defaultRules.expressionSufix }}
       for: 15m
       labels:
         severity: warning
@@ -122,9 +132,11 @@ spec:
         runbook_url: {{ .Values.defaultRules.runbookUrl }}alert-name-kubestatefulsetgenerationmismatch
         summary: StatefulSet generation mismatch due to possible roll-back
       expr: |-
+        {{ .Values.defaultRules.expressionPrefix }}
         kube_statefulset_status_observed_generation{job="kube-state-metrics", namespace=~"{{ $targetNamespace }}"}
           !=
         kube_statefulset_metadata_generation{job="kube-state-metrics", namespace=~"{{ $targetNamespace }}"}
+        {{ .Values.defaultRules.expressionSufix }}
       for: 15m
       labels:
         severity: warning
@@ -137,6 +149,7 @@ spec:
         runbook_url: {{ .Values.defaultRules.runbookUrl }}alert-name-kubestatefulsetupdatenotrolledout
         summary: StatefulSet update has not been rolled out.
       expr: |-
+        {{ .Values.defaultRules.expressionPrefix }}
         (
           max without (revision) (
             kube_statefulset_status_current_revision{job="kube-state-metrics", namespace=~"{{ $targetNamespace }}"}
@@ -154,6 +167,7 @@ spec:
             ==
           0
         )
+        {{ .Values.defaultRules.expressionSufix }}
       for: 15m
       labels:
         severity: warning
@@ -166,6 +180,7 @@ spec:
         runbook_url: {{ .Values.defaultRules.runbookUrl }}alert-name-kubedaemonsetrolloutstuck
         summary: DaemonSet rollout is stuck.
       expr: |-
+        {{ .Values.defaultRules.expressionPrefix }}
         (
           (
             kube_daemonset_status_current_number_scheduled{job="kube-state-metrics", namespace=~"{{ $targetNamespace }}"}
@@ -189,6 +204,7 @@ spec:
             ==
           0
         )
+        {{ .Values.defaultRules.expressionSufix }}
       for: 15m
       labels:
         severity: warning
@@ -200,7 +216,10 @@ spec:
         description: Pod {{`{{`}} $labels.namespace {{`}}`}}/{{`{{`}} $labels.pod {{`}}`}} container {{`{{`}} $labels.container{{`}}`}} has been in waiting state for longer than 1 hour.
         runbook_url: {{ .Values.defaultRules.runbookUrl }}alert-name-kubecontainerwaiting
         summary: Pod container waiting longer than 1 hour
-      expr: sum by (namespace, pod, container) (kube_pod_container_status_waiting_reason{job="kube-state-metrics", namespace=~"{{ $targetNamespace }}"}) > 0
+      expr: |-
+        {{ .Values.defaultRules.expressionPrefix }}
+        sum by (namespace, pod, container) (kube_pod_container_status_waiting_reason{job="kube-state-metrics", namespace=~"{{ $targetNamespace }}"}) > 0
+        {{ .Values.defaultRules.expressionSufix }}
       for: 1h
       labels:
         severity: warning
@@ -213,9 +232,11 @@ spec:
         runbook_url: {{ .Values.defaultRules.runbookUrl }}alert-name-kubedaemonsetnotscheduled
         summary: DaemonSet pods are not scheduled.
       expr: |-
+        {{ .Values.defaultRules.expressionPrefix }}
         kube_daemonset_status_desired_number_scheduled{job="kube-state-metrics", namespace=~"{{ $targetNamespace }}"}
           -
         kube_daemonset_status_current_number_scheduled{job="kube-state-metrics", namespace=~"{{ $targetNamespace }}"} > 0
+        {{ .Values.defaultRules.expressionSufix }}
       for: 10m
       labels:
         severity: warning
@@ -227,7 +248,10 @@ spec:
         description: '{{`{{`}} $value {{`}}`}} Pods of DaemonSet {{`{{`}} $labels.namespace {{`}}`}}/{{`{{`}} $labels.daemonset {{`}}`}} are running where they are not supposed to run.'
         runbook_url: {{ .Values.defaultRules.runbookUrl }}alert-name-kubedaemonsetmisscheduled
         summary: DaemonSet pods are misscheduled.
-      expr: kube_daemonset_status_number_misscheduled{job="kube-state-metrics", namespace=~"{{ $targetNamespace }}"} > 0
+      expr: |-
+        {{ .Values.defaultRules.expressionPrefix }}
+        kube_daemonset_status_number_misscheduled{job="kube-state-metrics", namespace=~"{{ $targetNamespace }}"} > 0
+        {{ .Values.defaultRules.expressionSufix }}
       for: 15m
       labels:
         severity: warning
@@ -239,7 +263,10 @@ spec:
         description: Job {{`{{`}} $labels.namespace {{`}}`}}/{{`{{`}} $labels.job_name {{`}}`}} is taking more than 12 hours to complete.
         runbook_url: {{ .Values.defaultRules.runbookUrl }}alert-name-kubejobcompletion
         summary: Job did not complete in time
-      expr: kube_job_spec_completions{job="kube-state-metrics", namespace=~"{{ $targetNamespace }}"} - kube_job_status_succeeded{job="kube-state-metrics", namespace=~"{{ $targetNamespace }}"}  > 0
+      expr: |-
+        {{ .Values.defaultRules.expressionPrefix }}
+        kube_job_spec_completions{job="kube-state-metrics", namespace=~"{{ $targetNamespace }}"} - kube_job_status_succeeded{job="kube-state-metrics", namespace=~"{{ $targetNamespace }}"}  > 0
+        {{ .Values.defaultRules.expressionSufix }}
       for: 12h
       labels:
         severity: warning
@@ -251,7 +278,10 @@ spec:
         description: Job {{`{{`}} $labels.namespace {{`}}`}}/{{`{{`}} $labels.job_name {{`}}`}} failed to complete. Removing failed job after investigation should clear this alert.
         runbook_url: {{ .Values.defaultRules.runbookUrl }}alert-name-kubejobfailed
         summary: Job failed to complete.
-      expr: kube_job_failed{job="kube-state-metrics", namespace=~"{{ $targetNamespace }}"}  > 0
+      expr: |-
+        {{ .Values.defaultRules.expressionPrefix }}
+        kube_job_failed{job="kube-state-metrics", namespace=~"{{ $targetNamespace }}"}  > 0
+        {{ .Values.defaultRules.expressionSufix }}
       for: 15m
       labels:
         severity: warning
@@ -264,6 +294,7 @@ spec:
         runbook_url: {{ .Values.defaultRules.runbookUrl }}alert-name-kubehpareplicasmismatch
         summary: HPA has not matched descired number of replicas.
       expr: |-
+        {{ .Values.defaultRules.expressionPrefix }}
         (kube_horizontalpodautoscaler_status_desired_replicas{job="kube-state-metrics", namespace=~"{{ $targetNamespace }}"}
           !=
         kube_horizontalpodautoscaler_status_current_replicas{job="kube-state-metrics", namespace=~"{{ $targetNamespace }}"})
@@ -277,6 +308,7 @@ spec:
         kube_horizontalpodautoscaler_spec_max_replicas{job="kube-state-metrics", namespace=~"{{ $targetNamespace }}"})
           and
         changes(kube_horizontalpodautoscaler_status_current_replicas{job="kube-state-metrics", namespace=~"{{ $targetNamespace }}"}[15m]) == 0
+        {{ .Values.defaultRules.expressionSufix }}
       for: 15m
       labels:
         severity: warning
@@ -289,9 +321,11 @@ spec:
         runbook_url: {{ .Values.defaultRules.runbookUrl }}alert-name-kubehpamaxedout
         summary: HPA is running at max replicas
       expr: |-
+        {{ .Values.defaultRules.expressionPrefix }}
         kube_horizontalpodautoscaler_status_current_replicas{job="kube-state-metrics", namespace=~"{{ $targetNamespace }}"}
           ==
         kube_horizontalpodautoscaler_spec_max_replicas{job="kube-state-metrics", namespace=~"{{ $targetNamespace }}"}
+        {{ .Values.defaultRules.expressionSufix }}
       for: 15m
       labels:
         severity: warning
