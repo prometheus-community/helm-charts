@@ -24,6 +24,10 @@ spec:
       serviceAccountName: {{ template "prometheus-kafka-exporter.serviceAccountName" . }}
       containers:
         - args:
+            - '--log.level={{ .Values.logLevel }}'
+          {{- if .Values.sarama.logEnabled }}
+            - '--log.enable-sarama'
+          {{- end }}
           {{- range $server := .Values.kafkaServer }}
             - '--kafka.server={{ $server }}'
           {{- end }}
@@ -35,6 +39,14 @@ spec:
             - '--tls.ca-file={{ .Values.tls.mountPath }}/ca.crt'
             - '--tls.cert-file={{ .Values.tls.mountPath }}/tls.crt'
             - '--tls.key-file={{ .Values.tls.mountPath }}/tls.key'
+          {{- if .Values.tls.insecureSkipVerify }}
+            - '--tls.insecure-skip-tls-verify'
+          {{- end }}
+          {{- end }}
+          {{- if .Values.extraArgs }}
+          {{- range .Values.extraArgs  }}
+            - {{ . }}
+          {{- end }}
           {{- end }}
           env:
 {{- toYaml .Values.env | trim | nindent 12 }}
