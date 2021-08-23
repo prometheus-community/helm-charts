@@ -44,7 +44,14 @@ spec:
               containerPort: 9121
           env:
             - name: REDIS_ADDR
+            {{- if .Values.redisAddressConfig.enabled }}
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ .Values.redisAddressConfig.configmap.name }}
+                  key: {{ .Values.redisAddressConfig.configmap.key }}
+            {{- else }}
               value: {{ .Values.redisAddress }}
+            {{- end }}
           {{- if .Values.auth.enabled }}
             - name: REDIS_PASSWORD
             {{- if .Values.auth.secret.name }}
