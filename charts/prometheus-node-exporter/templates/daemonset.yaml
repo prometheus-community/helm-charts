@@ -44,7 +44,7 @@ spec:
             {{- if .Values.hostRootFsMount }}
             - --path.rootfs=/host/root
             {{- end }}
-            - --web.listen-address=$(HOST_IP):{{ .Values.service.port }}
+            - --web.listen-address=$(HOST_IP):{{ .Values.service.targetPort }}
 {{- if .Values.extraArgs }}
 {{ toYaml .Values.extraArgs | indent 12 }}
 {{- end }}
@@ -63,16 +63,16 @@ spec:
             {{- end }}
           ports:
             - name: metrics
-              containerPort: {{ .Values.service.port }}
+              containerPort: {{ .Values.service.targetPort }}
               protocol: TCP
           livenessProbe:
             httpGet:
               path: /
-              port: {{ .Values.service.port }}
+              port: {{ .Values.service.targetPort }}
           readinessProbe:
             httpGet:
               path: /
-              port: {{ .Values.service.port }}
+              port: {{ .Values.service.targetPort }}
           resources:
 {{ toYaml .Values.resources | indent 12 }}
           volumeMounts:
