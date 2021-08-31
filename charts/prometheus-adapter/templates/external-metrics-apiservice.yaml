@@ -6,10 +6,13 @@ apiVersion: apiregistration.k8s.io/v1beta1
 {{- end }}
 kind: APIService
 metadata:
-{{- if .Values.certManager.enabled }}
+{{- if or .Values.certManager.enabled .Values.customAnnotations }}
   annotations:
     certmanager.k8s.io/inject-ca-from: {{ printf "%s/%s-root-cert" .Release.Namespace (include "k8s-prometheus-adapter.fullname" .) | quote }}
     cert-manager.io/inject-ca-from: {{ printf "%s/%s-root-cert" .Release.Namespace (include "k8s-prometheus-adapter.fullname" .) | quote }}
+    {{- if .Values.customAnnotations }}
+    {{- toYaml .Values.customAnnotations | nindent 4 }}
+    {{- end }}
 {{- end }}
   labels:
     app: {{ template "k8s-prometheus-adapter.name" . }}
