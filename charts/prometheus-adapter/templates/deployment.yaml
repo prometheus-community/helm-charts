@@ -3,9 +3,7 @@ kind: Deployment
 metadata:
   labels:
     app: {{ template "k8s-prometheus-adapter.name" . }}
-    chart: {{ template "k8s-prometheus-adapter.chart" . }}
-    release: {{ .Release.Name }}
-    heritage: {{ .Release.Service }}
+    {{- include "k8s-prometheus-adapter.labels" . | indent 4 }}
   name: {{ template "k8s-prometheus-adapter.fullname" . }}
   namespace: {{ .Release.Namespace }}
 spec:
@@ -14,14 +12,12 @@ spec:
   selector:
     matchLabels:
       app: {{ template "k8s-prometheus-adapter.name" . }}
-      release: {{ .Release.Name }}
+      {{- include "k8s-prometheus-adapter.selectorLabels" . | indent 6 }}
   template:
     metadata:
       labels:
         app: {{ template "k8s-prometheus-adapter.name" . }}
-        chart: {{ template "k8s-prometheus-adapter.chart" . }}
-        release: {{ .Release.Name }}
-        heritage: {{ .Release.Service }}
+        {{- include "k8s-prometheus-adapter.labels" . | indent 8 }}
         {{- with .Values.podLabels }}
         {{- toYaml . | trim | nindent 8 }}
         {{- end }}
