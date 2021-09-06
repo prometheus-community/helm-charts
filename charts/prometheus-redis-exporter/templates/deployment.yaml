@@ -3,26 +3,21 @@ kind: Deployment
 metadata:
   name: {{ template "prometheus-redis-exporter.fullname" . }}
   labels:
-    app: {{ template "prometheus-redis-exporter.name" . }}
-    chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
-    release: {{ .Release.Name }}
-    heritage: {{ .Release.Service }}
+{{ include "prometheus-redis-exporter.labels" . | indent 4 }}
 spec:
   replicas: {{ .Values.replicaCount }}
   selector:
     matchLabels:
-      app: {{ template "prometheus-redis-exporter.name" . }}
-      release: {{ .Release.Name }}
+{{ include "prometheus-redis-exporter.labels" . | indent 6 }}
   template:
     metadata:
       annotations:
 {{ toYaml .Values.annotations | indent 8 }}
       labels:
-        app: {{ template "prometheus-redis-exporter.name" . }}
-        release: {{ .Release.Name }}
-        {{- if .Values.labels }}
+{{ include "prometheus-redis-exporter.labels" . | indent 8 }}
+      {{- if .Values.labels }}
 {{ toYaml .Values.labels | indent 8 }}
-        {{- end }}
+      {{- end }}
     spec:
       serviceAccountName: {{ template "prometheus-redis-exporter.serviceAccountName" . }}
       {{- if .Values.image.pullSecrets }}
