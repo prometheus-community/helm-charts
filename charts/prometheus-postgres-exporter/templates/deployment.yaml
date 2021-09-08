@@ -70,9 +70,13 @@ spec:
           - "--log.level={{ .Values.config.logLevel }}"
           {{- end}}
           env:
-          {{- if .Values.config.datasourceUriFile }}
-          - name: DATA_SOURCE_URI_FILE
-            value: {{ .Values.config.datasourceUriFile }}
+          {{- if and .Values.config.datasourceUserVaultFile .Values.config.datasourcePassVaultFile }}
+          - name: DATA_SOURCE_USER_FILE
+            value: {{ default "/vault/secrets/database-user.txt" .Values.config.datasourceUserVaultFile }}
+          - name: DATA_SOURCE_PASS_FILE
+            value: {{ default "/vault/secrets/database-pass.txt" .Values.config.datasourcePassVaultFile }}
+          - name: DATA_SOURCE_URI
+            value: {{ template "prometheus-postgres-exporter.data_source_uri" . }}
           {{- else }}
           {{- if .Values.config.datasourceSecret }}
           - name: DATA_SOURCE_NAME
