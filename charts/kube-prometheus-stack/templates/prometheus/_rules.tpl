@@ -9,6 +9,8 @@ rules:
   - "k8s.rules"
   - "kube-apiserver.rules"
   - "kube-apiserver-availability.rules"
+  - "kube-apiserver-burnrate.rules"
+  - "kube-apiserver-histogram.rules"
   - "kube-apiserver-error"
   - "kube-apiserver-slos"
   - "kube-prometheus-general.rules"
