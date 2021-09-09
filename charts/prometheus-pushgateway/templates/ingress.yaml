@@ -2,7 +2,10 @@
 {{- $serviceName := include "prometheus-pushgateway.fullname" . }}
 {{- $servicePort := .Values.service.port -}}
 {{- $ingressPath := .Values.ingress.path -}}
-{{- if semverCompare ">=1.14.0-0" .Capabilities.KubeVersion.GitVersion }}
+{{- $ingressPathType := .Values.ingress.pathType -}}
+{{- if .Capabilities.APIVersions.Has "networking.k8s.io/v1" }}
+apiVersion: networking.k8s.io/v1
+{{- else if .Capabilities.APIVersions.Has "networking.k8s.io/v1beta1" }}
 apiVersion: networking.k8s.io/v1beta1
 {{- else }}
 apiVersion: extensions/v1beta1
@@ -23,9 +26,21 @@ spec:
       http:
         paths:
           - path: {{ $ingressPath }}
+            pathType: {{ $ingressPathType }}
             backend:
+              {{- if $.Capabilities.APIVersions.Has "networking.k8s.io/v1" }}
+              service:
+                name: {{ $serviceName }}
+                port:
+                  {{- if $servicePort | kindIs "string" }}
+                  name: {{ $servicePort }}
+                  {{- else }}
+                  number: {{ $servicePort }}
+                  {{- end }}
+              {{- else }}
               serviceName: {{ $serviceName }}
               servicePort: {{ $servicePort }}
+              {{- end }}
     {{- end -}}
 {{- if .Values.ingress.tls }}
   tls:
