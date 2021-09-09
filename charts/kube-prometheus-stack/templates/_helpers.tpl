@@ -124,8 +124,9 @@ Allow the release namespace to be overridden for multi-namespace deployments in 
 {{- end -}}
 
 {{/* Check Ingress supports className */}}
+{{/* className was added to networking.k8s.io/v1beta1 in Kubernetes 1.18 */}}
 {{- define "kube-prometheus-stack.ingress.supportsClassName" -}}
-  {{- or (eq (include "kube-prometheus-stack.ingress.isStable" .) "true") (and (eq (include "kube-prometheus-stack.ingress.apiVersion" .) "networking.k8s.io/v1beta1") (semverCompare ">= 1.18.x" .Capabilities.KubeVersion.Version)) -}}
+  {{- or (eq (include "kube-prometheus-stack.ingress.isStable" .) "true") (and (eq (include "kube-prometheus-stack.ingress.apiVersion" .) "networking.k8s.io/v1beta1") (semverCompare ">= 1.18-0" (include "kube-prometheus-stack.kubeVersion" .))) -}}
 {{- end -}}
 
 {{/* Get Policy API Version */}}
