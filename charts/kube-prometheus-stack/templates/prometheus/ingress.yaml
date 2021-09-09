@@ -6,6 +6,7 @@
   {{- $paths := .Values.prometheus.ingress.paths | default $routePrefix -}}
   {{- $apiIsStable := eq (include "kube-prometheus-stack.ingress.isStable" .) "true" -}}
   {{- $ingressSupportsPathType := eq (include "kube-prometheus-stack.ingress.supportsPathType" .) "true" -}}
+  {{- $ingressSupportsClassName := eq (include "kube-prometheus-stack.ingress.supportsClassName" .) "true" -}}
 apiVersion: {{ include "kube-prometheus-stack.ingress.apiVersion" . }}
 kind: Ingress
 metadata:
@@ -22,10 +23,8 @@ metadata:
 {{ toYaml .Values.prometheus.ingress.labels | indent 4 }}
 {{- end }}
 spec:
-  {{- if $apiIsStable }}
-  {{- if .Values.prometheus.ingress.ingressClassName }}
+  {{- if and $ingressSupportsClassName .Values.prometheus.ingress.ingressClassName }}
   ingressClassName: {{ .Values.prometheus.ingress.ingressClassName }}
-  {{- end }}
   {{- end }}
   rules:
   {{- if .Values.prometheus.ingress.hosts }}

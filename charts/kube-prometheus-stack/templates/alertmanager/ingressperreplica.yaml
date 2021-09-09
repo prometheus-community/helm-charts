@@ -5,6 +5,7 @@
 {{- $ingressValues := .Values.alertmanager.ingressPerReplica -}}
 {{- $apiIsStable := eq (include "kube-prometheus-stack.ingress.isStable" .) "true" -}}
 {{- $ingressSupportsPathType := eq (include "kube-prometheus-stack.ingress.supportsPathType" .) "true" -}}
+{{- $ingressSupportsClassName := eq (include "kube-prometheus-stack.ingress.supportsClassName" .) "true" -}}
 apiVersion: v1
 kind: List
 metadata:
@@ -28,10 +29,8 @@ items:
 {{ toYaml $ingressValues.annotations | indent 8 }}
       {{- end }}
     spec:
-      {{- if $apiIsStable }}
-      {{- if $ingressValues.ingressClassName }}
+      {{- if and $ingressSupportsClassName $ingressValues.ingressClassName }}
       ingressClassName: {{ $ingressValues.ingressClassName }}
-      {{- end }}
       {{- end }}
       rules:
         - host: {{ $ingressValues.hostPrefix }}-{{ $i }}.{{ $ingressValues.hostDomain }}

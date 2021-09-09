@@ -6,6 +6,7 @@
 {{- $paths := .Values.alertmanager.ingress.paths | default $routePrefix -}}
 {{- $apiIsStable := eq (include "kube-prometheus-stack.ingress.isStable" .) "true" -}}
 {{- $ingressSupportsPathType := eq (include "kube-prometheus-stack.ingress.supportsPathType" .) "true" -}}
+{{- $ingressSupportsClassName := eq (include "kube-prometheus-stack.ingress.supportsClassName" .) "true" -}}
 apiVersion: {{ include "kube-prometheus-stack.ingress.apiVersion" . }}
 kind: Ingress
 metadata:
@@ -22,10 +23,8 @@ metadata:
 {{- end }}
 {{ include "kube-prometheus-stack.labels" . | indent 4 }}
 spec:
-  {{- if $apiIsStable }}
-  {{- if .Values.alertmanager.ingress.ingressClassName }}
+  {{- if and $ingressSupportsClassName .Values.alertmanager.ingress.ingressClassName }}
   ingressClassName: {{ .Values.alertmanager.ingress.ingressClassName }}
-  {{- end }}
   {{- end }}
   rules:
   {{- if .Values.alertmanager.ingress.hosts }}
