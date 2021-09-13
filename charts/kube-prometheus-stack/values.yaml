@@ -1649,18 +1649,50 @@ prometheus:
     enabled: false
     annotations: {}
     labels: {}
-    portName: grpc
-    port: 10901
-    targetPort: "grpc"
-    clusterIP: "None"
 
     ## Service type
     ##
     type: ClusterIP
 
-    ## Port to expose on each node
+    ## gRPC port config
+    portName: grpc
+    port: 10901
+    targetPort: "grpc"
+
+    ## HTTP port config (for metrics)
+    httpPortName: http
+    httpPort: 10902
+    targetHttpPort: "http"
+
+    ## ClusterIP to assign
+    # Default is to make this a headless service ("None")
+    clusterIP: "None"
+
+    ## Port to expose on each node, if service type is NodePort
     ##
     nodePort: 30901
+    httpNodePort: 30902
+
+  # ServiceMonitor to scrape Sidecar metrics
+  # Needs thanosService to be enabled as well
+  thanosServiceMonitor:
+    enabled: false
+    interval: ""
+
+    ## scheme: HTTP scheme to use for scraping. Can be used with `tlsConfig` for example if using istio mTLS.
+    scheme: ""
+
+    ## tlsConfig: TLS configuration to use when scraping the endpoint. For example if using istio mTLS.
+    ## Of type: https://github.com/coreos/prometheus-operator/blob/master/Documentation/api.md#tlsconfig
+    tlsConfig: {}
+
+    bearerTokenFile:
+
+    ## Metric relabel configs to apply to samples before ingestion.
+    metricRelabelings: []
+
+    ## relabel configs to apply to samples before ingestion.
+    relabelings: []
 
   # Service for external access to sidecar
   # Enabling this creates a service to expose thanos-sidecar outside the cluster.
@@ -1668,11 +1700,18 @@ prometheus:
     enabled: false
     annotations: {}
     labels: {}
+    loadBalancerIP: ""
+    loadBalancerSourceRanges: []
+
+    ## gRPC port config
     portName: grpc
     port: 10901
     targetPort: "grpc"
-    loadBalancerIP: ""
-    loadBalancerSourceRanges: []
+
+    ## HTTP port config (for metrics)
+    httpPortName: http
+    httpPort: 10902
+    targetHttpPort: "http"
 
     ## Service type
     ##
@@ -1681,6 +1720,7 @@ prometheus:
     ## Port to expose on each node
     ##
     nodePort: 30901
+    httpNodePort: 30902
 
   ## Configuration for Prometheus service
   ##
