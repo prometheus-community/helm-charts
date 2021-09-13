@@ -4,11 +4,14 @@ metadata:
   name: {{ template "prometheus-redis-exporter.fullname" . }}
   labels:
 {{ include "prometheus-redis-exporter.labels" . | indent 4 }}
+  annotations:
+{{ toYaml .Values.annotations | indent 8 }}
 spec:
   replicas: {{ .Values.replicaCount }}
   selector:
     matchLabels:
-{{ include "prometheus-redis-exporter.labels" . | indent 6 }}
+      app: {{ template "prometheus-redis-exporter.name" . }}
+      release: {{ .Release.Name }}
   template:
     metadata:
       annotations:
@@ -33,6 +36,10 @@ spec:
           args:
           {{- range $key, $value := .Values.extraArgs }}
             - --{{ $key }}={{ $value }}
+          {{- end }}
+          securityContext:
+          {{- range $key, $value := .Values.securityContext }}
+            {{ $key }}: {{ $value }}
           {{- end }}
           ports:
             - name: exporter-port
