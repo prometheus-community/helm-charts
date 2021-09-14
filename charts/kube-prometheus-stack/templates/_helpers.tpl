@@ -96,6 +96,17 @@ Allow the release namespace to be overridden for multi-namespace deployments in 
   {{- end -}}
 {{- end -}}
 
+{{/*
+Use the grafana namespace override for multi-namespace deployments in combined charts
+*/}}
+{{- define "kube-prometheus-stack-grafana.namespace" -}}
+  {{- if .Values.grafana.namespaceOverride -}}
+    {{- .Values.grafana.namespaceOverride -}}
+  {{- else -}}
+    {{- .Release.Namespace -}}
+  {{- end -}}
+{{- end -}}
+
 {{/* Allow KubeVersion to be overridden. */}}
 {{- define "kube-prometheus-stack.kubeVersion" -}}
   {{- default .Capabilities.KubeVersion.Version .Values.kubeVersionOverride -}}
