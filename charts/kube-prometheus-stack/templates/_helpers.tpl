@@ -118,6 +118,17 @@ Use the kube-state-metrics namespace override for multi-namespace deployments in
   {{- end -}}
 {{- end -}}
 
+{{/*
+Use the prometheus-node-exporter namespace override for multi-namespace deployments in combined charts
+*/}}
+{{- define "kube-prometheus-stack-prometheus-node-exporter.namespace" -}}
+  {{- if index .Values "prometheus-node-exporter" "namespaceOverride" -}}
+    {{- index .Values "prometheus-node-exporter" "namespaceOverride" -}}
+  {{- else -}}
+    {{- .Release.Namespace -}}
+  {{- end -}}
+{{- end -}}
+
 {{/* Allow KubeVersion to be overridden. */}}
 {{- define "kube-prometheus-stack.kubeVersion" -}}
   {{- default .Capabilities.KubeVersion.Version .Values.kubeVersionOverride -}}
