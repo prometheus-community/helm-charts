@@ -150,7 +150,7 @@ def patch_json_for_multicluster_configuration(content, multicluster_key):
 
 def patch_json_set_timezone_as_variable(content):
     # content is no more in json format, so we have to replace using regex
-    return re.sub(r'\"timezone\"\s*:\s*\"[^"]*\"\s*,', '"timezone": "\{\{ .Value.grafana.defaultDashboardsTimezone \}\}",', content, flags=re.IGNORECASE|re.MULTILINE)
+    return re.sub(r'\"timezone\"\s*:\s*\"[^"]*\"', '"timezone": "\{\{ .Value.grafana.defaultDashboardsTimezone \}\}"', content, flags=re.IGNORECASE|re.MULTILINE)
 
 
 def write_group_to_file(resource_name, content, url, destination, min_kubernetes, max_kubernetes, multicluster_key):
