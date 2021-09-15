@@ -26,6 +26,8 @@ _See [helm repo](https://helm.sh/docs/helm/helm_repo/) for command documentation
 helm install [RELEASE_NAME] prometheus-community/prometheus-blackbox-exporter
 ```
 
+Use `--skip-crds` not to install prometheus custom resources definitions.
+
 _See [configuration](#configuration) below._
 
 _See [helm install](https://helm.sh/docs/helm/helm_install/) for command documentation._
