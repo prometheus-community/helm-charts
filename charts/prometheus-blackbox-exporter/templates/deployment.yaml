@@ -4,25 +4,18 @@ kind: Deployment
 metadata:
   name: {{ template "prometheus-blackbox-exporter.fullname" . }}
   labels:
-    app.kubernetes.io/name: {{ include "prometheus-blackbox-exporter.name" . }}
-    app.kubernetes.io/instance: {{ .Release.Name }}
-    app.kubernetes.io/managed-by: {{ .Release.Service }}
-    helm.sh/chart: {{ include "prometheus-blackbox-exporter.chart" . }}
+    {{- include "prometheus-blackbox-exporter.labels" . | nindent 4 }}
 spec:
   replicas: {{ .Values.replicas }}
   selector:
     matchLabels:
-      app.kubernetes.io/name: {{ include "prometheus-blackbox-exporter.name" . }}
-      app.kubernetes.io/instance: {{ .Release.Name }}
+      {{- include "prometheus-blackbox-exporter.selectorLabels" . | nindent 6 }}
   strategy:
 {{ toYaml .Values.strategy | indent 4 }}
   template:
     metadata:
       labels:
-        app.kubernetes.io/name: {{ include "prometheus-blackbox-exporter.name" . }}
-        app.kubernetes.io/instance: {{ .Release.Name }}
-        app.kubernetes.io/managed-by: {{ .Release.Service }}
-        helm.sh/chart: {{ include "prometheus-blackbox-exporter.chart" . }}
+        {{- include "prometheus-blackbox-exporter.labels" . | nindent 8 }}
         {{- if .Values.pod.labels }}
 {{ toYaml .Values.pod.labels | indent 8 }}
         {{- end }}
@@ -32,6 +25,7 @@ spec:
 {{ toYaml .Values.podAnnotations | indent 8 }}
         {{- end }}
     spec:
+      automountServiceAccountToken: false
       serviceAccountName: {{ template "prometheus-blackbox-exporter.serviceAccountName" . }}
     {{- if .Values.nodeSelector }}
       nodeSelector:
@@ -66,6 +60,10 @@ spec:
       {{- if .Values.priorityClassName }}
       priorityClassName: "{{ .Values.priorityClassName }}"
       {{- end }}
+      {{- if .Values.extraInitContainers }}
+      initContainers:
+{{ toYaml .Values.extraInitContainers | indent 8 }}
+      {{- end }}
       containers:
         {{- if .Values.extraContainers }}
 {{ toYaml .Values.extraContainers | indent 8 }}
@@ -89,7 +87,11 @@ spec:
           {{- end }}
           args:
 {{- if .Values.config }}
+   {{- if .Values.configPath }}
+            - "--config.file={{ .Values.configPath }}"
+   {{- else }}
             - "--config.file=/config/blackbox.yaml"
+   {{- end }}
 {{- else }}
             - "--config.file=/etc/blackbox_exporter/config.yml"
 {{- end }}
@@ -119,6 +121,9 @@ spec:
               mountPath: {{ .mountPath }}
               subPath: {{ .subPath }}
               readOnly: {{ .readOnly }}
+          {{- end }}
+          {{- if .Values.extraVolumeMounts }}
+{{ toYaml .Values.extraVolumeMounts | indent 12 }}
           {{- end }}
 {{- if .Values.dnsPolicy }}
       dnsPolicy: {{ .Values.dnsPolicy | toString }}

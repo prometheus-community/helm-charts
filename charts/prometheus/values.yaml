@@ -107,6 +107,10 @@ alertmanager:
     ##
     enabled: false
 
+    # For Kubernetes >= 1.18 you should specify the ingress-controller via the field ingressClassName
+    # See https://kubernetes.io/blog/2020/04/02/improvements-to-the-ingress-api-in-kubernetes-1.18/#specifying-the-class-of-an-ingress
+    # ingressClassName: nginx
+
     ## alertmanager Ingress annotations
     ##
     annotations: {}
@@ -123,6 +127,11 @@ alertmanager:
     hosts: []
     #   - alertmanager.domain.com
     #   - domain.com/alertmanager
+
+    path: /
+
+    # pathType is only for k8s >= 1.18
+    pathType: Prefix
 
     ## Extra paths to prepend to every host configuration. This is useful when working with annotation based services.
     extraPaths: []
@@ -425,7 +434,7 @@ kubeStateMetrics:
   enabled: true
 
 ## kube-state-metrics sub-chart configurable values
-## Please see https://github.com/kubernetes/kube-state-metrics/tree/master/charts/kube-state-metrics
+## Please see https://github.com/prometheus-community/helm-charts/tree/main/charts/kube-state-metrics
 ##
 # kube-state-metrics:
 
@@ -611,7 +620,19 @@ server:
   #   sidecarContainers:
   #      webserver:
   #        image: nginx
-  sidecarContainers: {}
+  sidecarContainers: []
+
+  # sidecarTemplateValues - context to be used in template for sidecarContainers
+  # Example:
+  #   sidecarTemplateValues: *your-custom-globals
+  #   sidecarContainers:
+  #     webserver: |-
+  #       {{ include "webserver-container-template" . }}
+  # Template for `webserver-container-template` might looks like this:
+  #   image: "{{ .Values.server.sidecarTemplateValues.repository }}:{{ .Values.server.sidecarTemplateValues.tag }}"
+  #   ...
+  #
+  sidecarTemplateValues: {}
 
   ## Prometheus server container image
   ##
@@ -670,6 +691,10 @@ server:
 
   ## Path to a configuration file on prometheus server container FS
   configPath: /etc/config/prometheus.yml
+
+  ### The data directory used by prometheus to set --storage.tsdb.path
+  ### When empty server.persistentVolume.mountPath is used instead
+  storagePath: ""
 
   global:
     ## How frequently to scrape targets by default
@@ -740,6 +765,10 @@ server:
     ##
     enabled: false
 
+    # For Kubernetes >= 1.18 you should specify the ingress-controller via the field ingressClassName
+    # See https://kubernetes.io/blog/2020/04/02/improvements-to-the-ingress-api-in-kubernetes-1.18/#specifying-the-class-of-an-ingress
+    # ingressClassName: nginx
+
     ## Prometheus server Ingress annotations
     ##
     annotations: {}
@@ -756,6 +785,11 @@ server:
     hosts: []
     #   - prometheus.domain.com
     #   - domain.com/prometheus
+
+    path: /
+
+    # pathType is only for k8s >= 1.18
+    pathType: Prefix
 
     ## Extra paths to prepend to every host configuration. This is useful when working with annotation based services.
     extraPaths: []
@@ -1062,6 +1096,10 @@ pushgateway:
     ##
     enabled: false
 
+    # For Kubernetes >= 1.18 you should specify the ingress-controller via the field ingressClassName
+    # See https://kubernetes.io/blog/2020/04/02/improvements-to-the-ingress-api-in-kubernetes-1.18/#specifying-the-class-of-an-ingress
+    # ingressClassName: nginx
+
     ## pushgateway Ingress annotations
     ##
     annotations: {}
@@ -1074,6 +1112,11 @@ pushgateway:
     hosts: []
     #   - pushgateway.domain.com
     #   - domain.com/pushgateway
+
+    path: /
+
+    # pathType is only for k8s >= 1.18
+    pathType: Prefix
 
     ## Extra paths to prepend to every host configuration. This is useful when working with annotation based services.
     extraPaths: []
@@ -1436,6 +1479,8 @@ serverFiles:
       # * `prometheus.io/path`: If the metrics path is not `/metrics` override this.
       # * `prometheus.io/port`: If the metrics are exposed on a different port to the
       # service then set this appropriately.
+      # * `prometheus.io/param_<parameter>`: If the metrics endpoint uses parameters
+      # then you can set any parameter
       - job_name: 'kubernetes-service-endpoints'
 
         kubernetes_sd_configs:
@@ -1458,6 +1503,9 @@ serverFiles:
             target_label: __address__
             regex: ([^:]+)(?::\d+)?;(\d+)
             replacement: $1:$2
+          - action: labelmap
+            regex: __meta_kubernetes_service_annotation_prometheus_io_param_(.+)
+            replacement: __param_$1
           - action: labelmap
             regex: __meta_kubernetes_service_label_(.+)
           - source_labels: [__meta_kubernetes_namespace]
@@ -1482,6 +1530,8 @@ serverFiles:
       # * `prometheus.io/path`: If the metrics path is not `/metrics` override this.
       # * `prometheus.io/port`: If the metrics are exposed on a different port to the
       # service then set this appropriately.
+      # * `prometheus.io/param_<parameter>`: If the metrics endpoint uses parameters
+      # then you can set any parameter
       - job_name: 'kubernetes-service-endpoints-slow'
 
         scrape_interval: 5m
@@ -1507,6 +1557,9 @@ serverFiles:
             target_label: __address__
             regex: ([^:]+)(?::\d+)?;(\d+)
             replacement: $1:$2
+          - action: labelmap
+            regex: __meta_kubernetes_service_annotation_prometheus_io_param_(.+)
+            replacement: __param_$1
           - action: labelmap
             regex: __meta_kubernetes_service_label_(.+)
           - source_labels: [__meta_kubernetes_namespace]
@@ -1595,6 +1648,9 @@ serverFiles:
             replacement: $1:$2
             target_label: __address__
           - action: labelmap
+            regex: __meta_kubernetes_pod_annotation_prometheus_io_param_(.+)
+            replacement: __param_$1
+          - action: labelmap
             regex: __meta_kubernetes_pod_label_(.+)
           - source_labels: [__meta_kubernetes_namespace]
             action: replace
@@ -1603,7 +1659,7 @@ serverFiles:
             action: replace
             target_label: kubernetes_pod_name
           - source_labels: [__meta_kubernetes_pod_phase]
-            regex: Pending|Succeeded|Failed
+            regex: Pending|Succeeded|Failed|Completed
             action: drop
 
       # Example Scrape config for pods which should be scraped slower. An useful example
@@ -1643,6 +1699,9 @@ serverFiles:
             replacement: $1:$2
             target_label: __address__
           - action: labelmap
+            regex: __meta_kubernetes_pod_annotation_prometheus_io_param_(.+)
+            replacement: __param_$1
+          - action: labelmap
             regex: __meta_kubernetes_pod_label_(.+)
           - source_labels: [__meta_kubernetes_namespace]
             action: replace
@@ -1651,7 +1710,7 @@ serverFiles:
             action: replace
             target_label: kubernetes_pod_name
           - source_labels: [__meta_kubernetes_pod_phase]
-            regex: Pending|Succeeded|Failed
+            regex: Pending|Succeeded|Failed|Completed
             action: drop
 
 # adds additional scrape configs to prometheus.yml

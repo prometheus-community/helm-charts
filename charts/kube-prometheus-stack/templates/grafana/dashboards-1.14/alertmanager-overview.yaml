@@ -1,15 +1,15 @@
 {{- /*
-Generated from 'pods' from https://raw.githubusercontent.com/prometheus-operator/kube-prometheus/release-0.1/manifests/grafana-dashboardDefinitions.yaml
+Generated from 'alertmanager-overview' from https://raw.githubusercontent.com/prometheus-operator/kube-prometheus/main/manifests/grafana-dashboardDefinitions.yaml
 Do not change in-place! In order to change this file first read following link:
 https://github.com/prometheus-community/helm-charts/tree/main/charts/kube-prometheus-stack/hack
 */ -}}
 {{- $kubeTargetVersion := default .Capabilities.KubeVersion.GitVersion .Values.kubeTargetVersionOverride }}
-{{- if and (semverCompare ">=1.10.0-0" $kubeTargetVersion) (semverCompare "<1.14.0-0" $kubeTargetVersion) .Values.grafana.enabled .Values.grafana.defaultDashboardsEnabled }}
+{{- if and (or .Values.grafana.enabled .Values.grafana.forceDeployDashboards) (semverCompare ">=1.14.0-0" $kubeTargetVersion) (semverCompare "<9.9.9-9" $kubeTargetVersion) .Values.grafana.defaultDashboardsEnabled }}
 apiVersion: v1
 kind: ConfigMap
 metadata:
   namespace: {{ template "kube-prometheus-stack.namespace" . }}
-  name: {{ printf "%s-%s" (include "kube-prometheus-stack.fullname" $) "pods" | trunc 63 | trimSuffix "-" }}
+  name: {{ printf "%s-%s" (include "kube-prometheus-stack.fullname" $) "alertmanager-overview" | trunc 63 | trimSuffix "-" }}
   annotations:
 {{ toYaml .Values.grafana.sidecar.dashboards.annotations | indent 4 }}
   labels:
@@ -19,7 +19,7 @@ metadata:
     app: {{ template "kube-prometheus-stack.name" $ }}-grafana
 {{ include "kube-prometheus-stack.labels" $ | indent 4 }}
 data:
-  pods.json: |-
+  alertmanager-overview.json: |-
     {
         "__inputs": [
 
@@ -29,31 +29,18 @@ data:
         ],
         "annotations": {
             "list": [
-                {
-                    "builtIn": 1,
-                    "datasource": "$datasource",
-                    "enable": true,
-                    "expr": "time() == BOOL timestamp(rate(kube_pod_container_status_restarts_total{job=\"kube-state-metrics\", cluster=\"$cluster\", namespace=\"$namespace\", pod=\"$pod\"}[2m]) > 0)",
-                    "hide": false,
-                    "iconColor": "rgba(215, 44, 44, 1)",
-                    "name": "Restarts",
-                    "showIn": 0,
-                    "tags": [
-                        "restart"
-                    ],
-                    "type": "rows"
-                }
+
             ]
         },
         "editable": false,
         "gnetId": null,
-        "graphTooltip": 0,
+        "graphTooltip": 1,
         "hideControls": false,
         "id": null,
         "links": [
 
         ],
-        "refresh": "",
+        "refresh": "30s",
         "rows": [
             {
                 "collapse": false,
@@ -68,18 +55,20 @@ data:
                         "dashes": false,
                         "datasource": "$datasource",
                         "fill": 1,
+                        "fillGradient": 0,
                         "gridPos": {
 
                         },
                         "id": 2,
                         "legend": {
-                            "alignAsTable": true,
-                            "avg": true,
-                            "current": true,
+                            "alignAsTable": false,
+                            "avg": false,
+                            "current": false,
                             "max": false,
                             "min": false,
-                            "rightSide": true,
-                            "show": true,
+                            "rightSide": false,
+                            "show": false,
+                            "sideWidth": null,
                             "total": false,
                             "values": false
                         },
@@ -98,37 +87,16 @@ data:
 
                         ],
                         "spaceLength": 10,
-                        "span": 12,
-                        "stack": false,
+                        "span": 6,
+                        "stack": true,
                         "steppedLine": false,
                         "targets": [
                             {
-                                "expr": "sum by(container_name) (container_memory_usage_bytes{job=\"kubelet\", cluster=\"$cluster\", namespace=\"$namespace\", pod_name=\"$pod\", container_name=~\"$container\", container_name!=\"POD\"})",
+                                "expr": "sum(alertmanager_alerts{namespace=\"$namespace\",service=\"$service\"}) by (namespace,service,instance)",
                                 "format": "time_series",
                                 "intervalFactor": 2,
-                                "legendFormat": "Current: {{`{{`}} container_name {{`}}`}}",
+                                "legendFormat": "{{`{{`}}instance{{`}}`}}",
                                 "refId": "A"
-                            },
-                            {
-                                "expr": "sum by(container) (kube_pod_container_resource_requests{job=\"kube-state-metrics\", cluster=\"$cluster\", namespace=\"$namespace\", resource=\"memory\", pod=\"$pod\", container=~\"$container\"})",
-                                "format": "time_series",
-                                "intervalFactor": 2,
-                                "legendFormat": "Requested: {{`{{`}} container {{`}}`}}",
-                                "refId": "B"
-                            },
-                            {
-                                "expr": "sum by(container) (kube_pod_container_resource_limits{job=\"kube-state-metrics\", cluster=\"$cluster\", namespace=\"$namespace\", resource=\"memory\", pod=\"$pod\", container=~\"$container\"})",
-                                "format": "time_series",
-                                "intervalFactor": 2,
-                                "legendFormat": "Limit: {{`{{`}} container {{`}}`}}",
-                                "refId": "C"
-                            },
-                            {
-                                "expr": "sum by(container_name) (container_memory_cache{job=\"kubelet\", namespace=\"$namespace\", pod_name=~\"$pod\", container_name=~\"$container\", container_name!=\"POD\"})",
-                                "format": "time_series",
-                                "intervalFactor": 2,
-                                "legendFormat": "Cache: {{`{{`}} container_name {{`}}`}}",
-                                "refId": "D"
                             }
                         ],
                         "thresholds": [
@@ -136,9 +104,9 @@ data:
                         ],
                         "timeFrom": null,
                         "timeShift": null,
-                        "title": "Memory Usage",
+                        "title": "Alerts",
                         "tooltip": {
-                            "shared": false,
+                            "shared": true,
                             "sort": 0,
                             "value_type": "individual"
                         },
@@ -154,36 +122,23 @@ data:
                         },
                         "yaxes": [
                             {
-                                "format": "bytes",
+                                "format": "none",
                                 "label": null,
                                 "logBase": 1,
                                 "max": null,
-                                "min": 0,
+                                "min": null,
                                 "show": true
                             },
                             {
-                                "format": "bytes",
+                                "format": "none",
                                 "label": null,
                                 "logBase": 1,
                                 "max": null,
-                                "min": 0,
+                                "min": null,
                                 "show": true
                             }
                         ]
-                    }
-                ],
-                "repeat": null,
-                "repeatIteration": null,
-                "repeatRowId": null,
-                "showTitle": false,
-                "title": "Dashboard Row",
-                "titleSize": "h6",
-                "type": "row"
-            },
-            {
-                "collapse": false,
-                "collapsed": false,
-                "panels": [
+                    },
                     {
                         "aliasColors": {
 
@@ -193,18 +148,20 @@ data:
                         "dashes": false,
                         "datasource": "$datasource",
                         "fill": 1,
+                        "fillGradient": 0,
                         "gridPos": {
 
                         },
                         "id": 3,
                         "legend": {
-                            "alignAsTable": true,
-                            "avg": true,
-                            "current": true,
+                            "alignAsTable": false,
+                            "avg": false,
+                            "current": false,
                             "max": false,
                             "min": false,
-                            "rightSide": true,
-                            "show": true,
+                            "rightSide": false,
+                            "show": false,
+                            "sideWidth": null,
                             "total": false,
                             "values": false
                         },
@@ -223,29 +180,240 @@ data:
 
                         ],
                         "spaceLength": 10,
-                        "span": 12,
+                        "span": 6,
+                        "stack": true,
+                        "steppedLine": false,
+                        "targets": [
+                            {
+                                "expr": "sum(rate(alertmanager_alerts_received_total{namespace=\"$namespace\",service=\"$service\"}[5m])) by (namespace,service,instance)",
+                                "format": "time_series",
+                                "intervalFactor": 2,
+                                "legendFormat": "{{`{{`}}instance{{`}}`}} Received",
+                                "refId": "A"
+                            },
+                            {
+                                "expr": "sum(rate(alertmanager_alerts_invalid_total{namespace=\"$namespace\",service=\"$service\"}[5m])) by (namespace,service,instance)",
+                                "format": "time_series",
+                                "intervalFactor": 2,
+                                "legendFormat": "{{`{{`}}instance{{`}}`}} Invalid",
+                                "refId": "B"
+                            }
+                        ],
+                        "thresholds": [
+
+                        ],
+                        "timeFrom": null,
+                        "timeShift": null,
+                        "title": "Alerts receive rate",
+                        "tooltip": {
+                            "shared": true,
+                            "sort": 0,
+                            "value_type": "individual"
+                        },
+                        "type": "graph",
+                        "xaxis": {
+                            "buckets": null,
+                            "mode": "time",
+                            "name": null,
+                            "show": true,
+                            "values": [
+
+                            ]
+                        },
+                        "yaxes": [
+                            {
+                                "format": "ops",
+                                "label": null,
+                                "logBase": 1,
+                                "max": null,
+                                "min": null,
+                                "show": true
+                            },
+                            {
+                                "format": "ops",
+                                "label": null,
+                                "logBase": 1,
+                                "max": null,
+                                "min": null,
+                                "show": true
+                            }
+                        ]
+                    }
+                ],
+                "repeat": null,
+                "repeatIteration": null,
+                "repeatRowId": null,
+                "showTitle": true,
+                "title": "Alerts",
+                "titleSize": "h6",
+                "type": "row"
+            },
+            {
+                "collapse": false,
+                "collapsed": false,
+                "panels": [
+                    {
+                        "aliasColors": {
+
+                        },
+                        "bars": false,
+                        "dashLength": 10,
+                        "dashes": false,
+                        "datasource": "$datasource",
+                        "fill": 1,
+                        "fillGradient": 0,
+                        "gridPos": {
+
+                        },
+                        "id": 4,
+                        "legend": {
+                            "alignAsTable": false,
+                            "avg": false,
+                            "current": false,
+                            "max": false,
+                            "min": false,
+                            "rightSide": false,
+                            "show": false,
+                            "sideWidth": null,
+                            "total": false,
+                            "values": false
+                        },
+                        "lines": true,
+                        "linewidth": 1,
+                        "links": [
+
+                        ],
+                        "nullPointMode": "null",
+                        "percentage": false,
+                        "pointradius": 5,
+                        "points": false,
+                        "renderer": "flot",
+                        "repeat": "integration",
+                        "seriesOverrides": [
+
+                        ],
+                        "spaceLength": 10,
+                        "stack": true,
+                        "steppedLine": false,
+                        "targets": [
+                            {
+                                "expr": "sum(rate(alertmanager_notifications_total{namespace=\"$namespace\",service=\"$service\", integration=\"$integration\"}[5m])) by (integration,namespace,service,instance)",
+                                "format": "time_series",
+                                "intervalFactor": 2,
+                                "legendFormat": "{{`{{`}}instance{{`}}`}} Total",
+                                "refId": "A"
+                            },
+                            {
+                                "expr": "sum(rate(alertmanager_notifications_failed_total{namespace=\"$namespace\",service=\"$service\", integration=\"$integration\"}[5m])) by (integration,namespace,service,instance)",
+                                "format": "time_series",
+                                "intervalFactor": 2,
+                                "legendFormat": "{{`{{`}}instance{{`}}`}} Failed",
+                                "refId": "B"
+                            }
+                        ],
+                        "thresholds": [
+
+                        ],
+                        "timeFrom": null,
+                        "timeShift": null,
+                        "title": "$integration: Notifications Send Rate",
+                        "tooltip": {
+                            "shared": true,
+                            "sort": 0,
+                            "value_type": "individual"
+                        },
+                        "type": "graph",
+                        "xaxis": {
+                            "buckets": null,
+                            "mode": "time",
+                            "name": null,
+                            "show": true,
+                            "values": [
+
+                            ]
+                        },
+                        "yaxes": [
+                            {
+                                "format": "ops",
+                                "label": null,
+                                "logBase": 1,
+                                "max": null,
+                                "min": null,
+                                "show": true
+                            },
+                            {
+                                "format": "ops",
+                                "label": null,
+                                "logBase": 1,
+                                "max": null,
+                                "min": null,
+                                "show": true
+                            }
+                        ]
+                    },
+                    {
+                        "aliasColors": {
+
+                        },
+                        "bars": false,
+                        "dashLength": 10,
+                        "dashes": false,
+                        "datasource": "$datasource",
+                        "fill": 1,
+                        "fillGradient": 0,
+                        "gridPos": {
+
+                        },
+                        "id": 5,
+                        "legend": {
+                            "alignAsTable": false,
+                            "avg": false,
+                            "current": false,
+                            "max": false,
+                            "min": false,
+                            "rightSide": false,
+                            "show": false,
+                            "sideWidth": null,
+                            "total": false,
+                            "values": false
+                        },
+                        "lines": true,
+                        "linewidth": 1,
+                        "links": [
+
+                        ],
+                        "nullPointMode": "null",
+                        "percentage": false,
+                        "pointradius": 5,
+                        "points": false,
+                        "renderer": "flot",
+                        "repeat": "integration",
+                        "seriesOverrides": [
+
+                        ],
+                        "spaceLength": 10,
                         "stack": false,
                         "steppedLine": false,
                         "targets": [
                             {
-                                "expr": "sum by (container_name) (rate(container_cpu_usage_seconds_total{job=\"kubelet\", cluster=\"$cluster\", namespace=\"$namespace\", image!=\"\", pod_name=\"$pod\", container_name=~\"$container\", container_name!=\"POD\"}[1m]))",
+                                "expr": "histogram_quantile(0.99,\n  sum(rate(alertmanager_notification_latency_seconds_bucket{namespace=\"$namespace\",service=\"$service\", integration=\"$integration\"}[5m])) by (le,namespace,service,instance)\n) \n",
                                 "format": "time_series",
                                 "intervalFactor": 2,
-                                "legendFormat": "Current: {{`{{`}} container_name {{`}}`}}",
+                                "legendFormat": "{{`{{`}}instance{{`}}`}} 99th Percentile",
                                 "refId": "A"
                             },
                             {
-                                "expr": "sum by(container) (kube_pod_container_resource_requests{job=\"kube-state-metrics\", cluster=\"$cluster\", namespace=\"$namespace\", resource=\"cpu\", pod=\"$pod\", container=~\"$container\"})",
+                                "expr": "histogram_quantile(0.50,\n  sum(rate(alertmanager_notification_latency_seconds_bucket{namespace=\"$namespace\",service=\"$service\", integration=\"$integration\"}[5m])) by (le,namespace,service,instance)\n) \n",
                                 "format": "time_series",
                                 "intervalFactor": 2,
-                                "legendFormat": "Requested: {{`{{`}} container {{`}}`}}",
+                                "legendFormat": "{{`{{`}}instance{{`}}`}} Median",
                                 "refId": "B"
                             },
                             {
-                                "expr": "sum by(container) (kube_pod_container_resource_limits{job=\"kube-state-metrics\", cluster=\"$cluster\", namespace=\"$namespace\", resource=\"cpu\", pod=\"$pod\", container=~\"$container\"})",
+                                "expr": "sum(rate(alertmanager_notification_latency_seconds_sum{namespace=\"$namespace\",service=\"$service\", integration=\"$integration\"}[5m])) by (namespace,service,instance)\n/\nsum(rate(alertmanager_notification_latency_seconds_count{namespace=\"$namespace\",service=\"$service\", integration=\"$integration\"}[5m])) by (namespace,service,instance)\n",
                                 "format": "time_series",
                                 "intervalFactor": 2,
-                                "legendFormat": "Limit: {{`{{`}} container {{`}}`}}",
+                                "legendFormat": "{{`{{`}}instance{{`}}`}} Average",
                                 "refId": "C"
                             }
                         ],
@@ -254,9 +422,9 @@ data:
                         ],
                         "timeFrom": null,
                         "timeShift": null,
-                        "title": "CPU Usage",
+                        "title": "$integration: Notification Duration",
                         "tooltip": {
-                            "shared": false,
+                            "shared": true,
                             "sort": 0,
                             "value_type": "individual"
                         },
@@ -272,19 +440,19 @@ data:
                         },
                         "yaxes": [
                             {
-                                "format": "short",
+                                "format": "s",
                                 "label": null,
                                 "logBase": 1,
                                 "max": null,
-                                "min": 0,
+                                "min": null,
                                 "show": true
                             },
                             {
-                                "format": "short",
+                                "format": "s",
                                 "label": null,
                                 "logBase": 1,
                                 "max": null,
-                                "min": 0,
+                                "min": null,
                                 "show": true
                             }
                         ]
@@ -293,223 +461,8 @@ data:
                 "repeat": null,
                 "repeatIteration": null,
                 "repeatRowId": null,
-                "showTitle": false,
-                "title": "Dashboard Row",
-                "titleSize": "h6",
-                "type": "row"
-            },
-            {
-                "collapse": false,
-                "collapsed": false,
-                "panels": [
-                    {
-                        "aliasColors": {
-
-                        },
-                        "bars": false,
-                        "dashLength": 10,
-                        "dashes": false,
-                        "datasource": "$datasource",
-                        "fill": 1,
-                        "gridPos": {
-
-                        },
-                        "id": 4,
-                        "legend": {
-                            "alignAsTable": true,
-                            "avg": true,
-                            "current": true,
-                            "max": false,
-                            "min": false,
-                            "rightSide": true,
-                            "show": true,
-                            "total": false,
-                            "values": false
-                        },
-                        "lines": true,
-                        "linewidth": 1,
-                        "links": [
-
-                        ],
-                        "nullPointMode": "null",
-                        "percentage": false,
-                        "pointradius": 5,
-                        "points": false,
-                        "renderer": "flot",
-                        "repeat": null,
-                        "seriesOverrides": [
-
-                        ],
-                        "spaceLength": 10,
-                        "span": 12,
-                        "stack": false,
-                        "steppedLine": false,
-                        "targets": [
-                            {
-                                "expr": "sort_desc(sum by (pod_name) (rate(container_network_receive_bytes_total{job=\"kubelet\", cluster=\"$cluster\", namespace=\"$namespace\", pod_name=\"$pod\"}[1m])))",
-                                "format": "time_series",
-                                "intervalFactor": 2,
-                                "legendFormat": "RX: {{`{{`}} pod_name {{`}}`}}",
-                                "refId": "A"
-                            },
-                            {
-                                "expr": "sort_desc(sum by (pod_name) (rate(container_network_transmit_bytes_total{job=\"kubelet\", cluster=\"$cluster\", namespace=\"$namespace\", pod_name=\"$pod\"}[1m])))",
-                                "format": "time_series",
-                                "intervalFactor": 2,
-                                "legendFormat": "TX: {{`{{`}} pod_name {{`}}`}}",
-                                "refId": "B"
-                            }
-                        ],
-                        "thresholds": [
-
-                        ],
-                        "timeFrom": null,
-                        "timeShift": null,
-                        "title": "Network I/O",
-                        "tooltip": {
-                            "shared": false,
-                            "sort": 0,
-                            "value_type": "individual"
-                        },
-                        "type": "graph",
-                        "xaxis": {
-                            "buckets": null,
-                            "mode": "time",
-                            "name": null,
-                            "show": true,
-                            "values": [
-
-                            ]
-                        },
-                        "yaxes": [
-                            {
-                                "format": "bytes",
-                                "label": null,
-                                "logBase": 1,
-                                "max": null,
-                                "min": 0,
-                                "show": true
-                            },
-                            {
-                                "format": "bytes",
-                                "label": null,
-                                "logBase": 1,
-                                "max": null,
-                                "min": 0,
-                                "show": true
-                            }
-                        ]
-                    }
-                ],
-                "repeat": null,
-                "repeatIteration": null,
-                "repeatRowId": null,
-                "showTitle": false,
-                "title": "Dashboard Row",
-                "titleSize": "h6",
-                "type": "row"
-            },
-            {
-                "collapse": false,
-                "collapsed": false,
-                "panels": [
-                    {
-                        "aliasColors": {
-
-                        },
-                        "bars": false,
-                        "dashLength": 10,
-                        "dashes": false,
-                        "datasource": "$datasource",
-                        "fill": 1,
-                        "gridPos": {
-
-                        },
-                        "id": 5,
-                        "legend": {
-                            "alignAsTable": true,
-                            "avg": true,
-                            "current": true,
-                            "max": false,
-                            "min": false,
-                            "rightSide": true,
-                            "show": true,
-                            "total": false,
-                            "values": false
-                        },
-                        "lines": true,
-                        "linewidth": 1,
-                        "links": [
-
-                        ],
-                        "nullPointMode": "null",
-                        "percentage": false,
-                        "pointradius": 5,
-                        "points": false,
-                        "renderer": "flot",
-                        "repeat": null,
-                        "seriesOverrides": [
-
-                        ],
-                        "spaceLength": 10,
-                        "span": 12,
-                        "stack": false,
-                        "steppedLine": false,
-                        "targets": [
-                            {
-                                "expr": "max by (container) (kube_pod_container_status_restarts_total{job=\"kube-state-metrics\", cluster=\"$cluster\", namespace=\"$namespace\", pod=\"$pod\", container=~\"$container\"})",
-                                "format": "time_series",
-                                "intervalFactor": 2,
-                                "legendFormat": "Restarts: {{`{{`}} container {{`}}`}}",
-                                "refId": "A"
-                            }
-                        ],
-                        "thresholds": [
-
-                        ],
-                        "timeFrom": null,
-                        "timeShift": null,
-                        "title": "Total Restarts Per Container",
-                        "tooltip": {
-                            "shared": false,
-                            "sort": 0,
-                            "value_type": "individual"
-                        },
-                        "type": "graph",
-                        "xaxis": {
-                            "buckets": null,
-                            "mode": "time",
-                            "name": null,
-                            "show": true,
-                            "values": [
-
-                            ]
-                        },
-                        "yaxes": [
-                            {
-                                "format": "short",
-                                "label": null,
-                                "logBase": 1,
-                                "max": null,
-                                "min": 0,
-                                "show": true
-                            },
-                            {
-                                "format": "short",
-                                "label": null,
-                                "logBase": 1,
-                                "max": null,
-                                "min": 0,
-                                "show": true
-                            }
-                        ]
-                    }
-                ],
-                "repeat": null,
-                "repeatIteration": null,
-                "repeatRowId": null,
-                "showTitle": false,
-                "title": "Dashboard Row",
+                "showTitle": true,
+                "title": "Notifications",
                 "titleSize": "h6",
                 "type": "row"
             }
@@ -517,7 +470,7 @@ data:
         "schemaVersion": 14,
         "style": "dark",
         "tags": [
-            "kubernetes-mixin"
+            "alertmanager-mixin"
         ],
         "templating": {
             "list": [
@@ -540,47 +493,22 @@ data:
                 {
                     "allValue": null,
                     "current": {
-
-                    },
-                    "datasource": "$datasource",
-                    "hide": {{ if .Values.grafana.sidecar.dashboards.multicluster }}0{{ else }}2{{ end }},
-                    "includeAll": false,
-                    "label": "cluster",
-                    "multi": false,
-                    "name": "cluster",
-                    "options": [
-
-                    ],
-                    "query": "label_values(kube_pod_info, cluster)",
-                    "refresh": 2,
-                    "regex": "",
-                    "sort": 0,
-                    "tagValuesQuery": "",
-                    "tags": [
-
-                    ],
-                    "tagsQuery": "",
-                    "type": "query",
-                    "useTags": false
-                },
-                {
-                    "allValue": null,
-                    "current": {
-
+                        "text": "",
+                        "value": ""
                     },
                     "datasource": "$datasource",
                     "hide": 0,
                     "includeAll": false,
-                    "label": "Namespace",
+                    "label": null,
                     "multi": false,
                     "name": "namespace",
                     "options": [
 
                     ],
-                    "query": "label_values(kube_pod_info{cluster=\"$cluster\"}, namespace)",
+                    "query": "label_values(alertmanager_alerts, namespace)",
                     "refresh": 2,
                     "regex": "",
-                    "sort": 0,
+                    "sort": 1,
                     "tagValuesQuery": "",
                     "tags": [
 
@@ -592,21 +520,22 @@ data:
                 {
                     "allValue": null,
                     "current": {
-
+                        "text": "",
+                        "value": ""
                     },
                     "datasource": "$datasource",
                     "hide": 0,
                     "includeAll": false,
-                    "label": "Pod",
+                    "label": null,
                     "multi": false,
-                    "name": "pod",
+                    "name": "service",
                     "options": [
 
                     ],
-                    "query": "label_values(kube_pod_info{cluster=\"$cluster\", namespace=~\"$namespace\"}, pod)",
+                    "query": "label_values(alertmanager_alerts, service)",
                     "refresh": 2,
                     "regex": "",
-                    "sort": 0,
+                    "sort": 1,
                     "tagValuesQuery": "",
                     "tags": [
 
@@ -618,21 +547,22 @@ data:
                 {
                     "allValue": null,
                     "current": {
-
+                        "text": "all",
+                        "value": "$__all"
                     },
                     "datasource": "$datasource",
-                    "hide": 0,
+                    "hide": 2,
                     "includeAll": true,
-                    "label": "Container",
+                    "label": null,
                     "multi": false,
-                    "name": "container",
+                    "name": "integration",
                     "options": [
 
                     ],
-                    "query": "label_values(kube_pod_container_info{cluster=\"$cluster\", namespace=\"$namespace\", pod=\"$pod\"}, container)",
+                    "query": "label_values(alertmanager_notifications_total{integration=~\".*\"}, integration)",
                     "refresh": 2,
                     "regex": "",
-                    "sort": 0,
+                    "sort": 1,
                     "tagValuesQuery": "",
                     "tags": [
 
@@ -672,9 +602,9 @@ data:
                 "30d"
             ]
         },
-        "timezone": "",
-        "title": "Kubernetes / Pods",
-        "uid": "ab4f13a9892a76a4d21ce8c2445bf4ea",
+        "timezone": "utc",
+        "title": "Alertmanager / Overview",
+        "uid": "alertmanager-overview",
         "version": 0
     }
 {{- end }}

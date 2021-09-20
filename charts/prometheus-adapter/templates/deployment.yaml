@@ -10,6 +10,7 @@ metadata:
   namespace: {{ .Release.Namespace }}
 spec:
   replicas: {{ .Values.replicas }}
+  strategy: {{ toYaml .Values.strategy | nindent 4 }}
   selector:
     matchLabels:
       app: {{ template "k8s-prometheus-adapter.name" . }}
@@ -67,12 +68,14 @@ spec:
             port: https
             scheme: HTTPS
           initialDelaySeconds: 30
+          timeoutSeconds: 5
         readinessProbe:
           httpGet:
             path: /healthz
             port: https
             scheme: HTTPS
           initialDelaySeconds: 30
+          timeoutSeconds: 5
         {{- if .Values.resources }}
         resources:
           {{- toYaml .Values.resources | nindent 10 }}
@@ -107,6 +110,10 @@ spec:
       affinity:
         {{- toYaml .Values.affinity | nindent 8 }}
       priorityClassName: {{ .Values.priorityClassName }}
+      {{- if .Values.podSecurityContext }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      {{- end }}
       tolerations:
         {{- toYaml .Values.tolerations | nindent 8 }}
       {{- if .Values.image.pullSecrets }}

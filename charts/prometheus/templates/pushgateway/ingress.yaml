@@ -1,7 +1,12 @@
 {{- if and .Values.pushgateway.enabled .Values.pushgateway.ingress.enabled -}}
+{{- $ingressApiIsStable := eq (include "ingress.isStable" .) "true" -}}
+{{- $ingressSupportsIngressClassName := eq (include "ingress.supportsIngressClassName" .) "true" -}}
+{{- $ingressSupportsPathType := eq (include "ingress.supportsPathType" .) "true" -}}
 {{- $releaseName := .Release.Name -}}
 {{- $serviceName := include "prometheus.pushgateway.fullname" . }}
 {{- $servicePort := .Values.pushgateway.service.servicePort -}}
+{{- $ingressPath := .Values.pushgateway.ingress.path -}}
+{{- $ingressPathType := .Values.pushgateway.ingress.pathType -}}
 {{- $extraPaths := .Values.pushgateway.ingress.extraPaths -}}
 apiVersion: {{ template "ingress.apiVersion" . }}
 kind: Ingress
@@ -15,6 +20,9 @@ metadata:
   name: {{ template "prometheus.pushgateway.fullname" . }}
 {{ include "prometheus.namespace" . | indent 2 }}
 spec:
+  {{- if and $ingressSupportsIngressClassName .Values.pushgateway.ingress.ingressClassName }}
+  ingressClassName: {{ .Values.pushgateway.ingress.ingressClassName }}
+  {{- end }}
   rules:
   {{- range .Values.pushgateway.ingress.hosts }}
     {{- $url := splitList "/" . }}
@@ -24,10 +32,20 @@ spec:
 {{ if $extraPaths }}
 {{ toYaml $extraPaths | indent 10 }}
 {{- end }}
-          - path: /{{ rest $url | join "/" }}
+          - path: {{ $ingressPath }}
+            {{- if $ingressSupportsPathType }}
+            pathType: {{ $ingressPathType }}
+            {{- end }}
             backend:
+              {{- if $ingressApiIsStable }}
+              service:
+                name: {{ $serviceName }}
+                port:
+                  number: {{ $servicePort }}
+              {{- else }}
               serviceName: {{ $serviceName }}
               servicePort: {{ $servicePort }}
+              {{- end }}
   {{- end -}}
 {{- if .Values.pushgateway.ingress.tls }}
   tls:
