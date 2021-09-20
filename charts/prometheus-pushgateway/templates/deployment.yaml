@@ -60,11 +60,12 @@ spec:
             timeoutSeconds: 10
           resources:
 {{ toYaml .Values.resources | indent 12 }}
-          {{- if .Values.persistentVolume.enabled }}
           volumeMounts:
             - name: storage-volume
               mountPath: "{{ .Values.persistentVolume.mountPath }}"
               subPath: "{{ .Values.persistentVolume.subPath }}"
+          {{- if .Values.extraVolumeMounts }}
+{{ toYaml .Values.extraVolumeMounts | indent 12 }}
           {{- end }}
     {{- if .Values.nodeSelector }}
       nodeSelector:
@@ -85,6 +86,12 @@ spec:
     {{- if .Values.persistentVolume.enabled }}
       volumes:
         - name: storage-volume
+      {{- if .Values.persistentVolume.enabled }}
           persistentVolumeClaim:
             claimName: {{ if .Values.persistentVolume.existingClaim }}{{ .Values.persistentVolume.existingClaim }}{{- else }}{{ template "prometheus-pushgateway.fullname" . }}{{- end }}
+      {{- else}}
+          emptyDir: {}
       {{- end -}}
+      {{- if .Values.extraVolumes }}
+{{ toYaml .Values.extraVolumes | indent 8 }}
+      {{- end }}

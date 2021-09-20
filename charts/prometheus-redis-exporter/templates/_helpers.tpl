@@ -31,6 +31,17 @@ Create chart name and version as used by the chart label.
 {{- printf "%s-%s" .Chart.Name .Chart.Version | replace "+" "_" | trunc 63 | trimSuffix "-" -}}
 {{- end -}}
 
+{{/* Create basic labels */}}
+{{- define "prometheus-redis-exporter.labels" -}}
+chart: {{ template "prometheus-redis-exporter.chart" . }}
+release: {{ $.Release.Name | quote }}
+heritage: {{ $.Release.Service | quote }}
+app: {{ template "prometheus-redis-exporter.name" . }}
+{{- if .Values.customLabels}}
+{{ toYaml .Values.customLabels }}
+{{- end }}
+{{- end }}
+
 {{/*
 Create the name of the service account to use
 */}}

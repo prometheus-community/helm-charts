@@ -78,6 +78,7 @@ spec:
               readOnly: {{ .readOnly }}
           {{- end }}
         {{- end }}
+
         - name: {{ template "prometheus.name" . }}-{{ .Values.server.name }}
           image: "{{ .Values.server.image.repository }}:{{ .Values.server.image.tag }}"
           imagePullPolicy: "{{ .Values.server.image.pullPolicy }}"
@@ -86,6 +87,9 @@ spec:
 {{ toYaml .Values.server.env | indent 12}}
           {{- end }}
           args:
+          {{- if .Values.server.prefixURL }}
+            - --web.route-prefix={{ .Values.server.prefixURL }}
+          {{- end }}
           {{- if .Values.server.retention }}
             - --storage.tsdb.retention.time={{ .Values.server.retention }}
           {{- end }}
@@ -165,6 +169,10 @@ spec:
           {{- end }}
       {{- end }}
     {{- end }}
+      hostNetwork: {{ .Values.server.hostNetwork }}
+    {{- if .Values.server.dnsPolicy }}
+      dnsPolicy: {{ .Values.server.dnsPolicy }}
+    {{- end }}
     {{- if .Values.imagePullSecrets }}
       imagePullSecrets:
 {{ toYaml .Values.imagePullSecrets | indent 8 }}
@@ -176,6 +184,10 @@ spec:
     {{- if .Values.server.hostAliases }}
       hostAliases:
 {{ toYaml .Values.server.hostAliases | indent 8 }}
+    {{- end }}
+    {{- if .Values.server.dnsConfig }}
+      dnsConfig:
+{{ toYaml .Values.server.dnsConfig | indent 8 }}
     {{- end }}
     {{- if .Values.server.securityContext }}
       securityContext:
