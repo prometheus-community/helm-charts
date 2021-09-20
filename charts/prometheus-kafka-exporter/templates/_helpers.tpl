@@ -52,3 +52,14 @@ Return the appropriate apiVersion for rbac.
 {{- print "rbac.authorization.k8s.io/v1beta1" -}}
 {{- end -}}
 {{- end -}} 
+
+{{/*
+Create the name of the SASL SCRAM secret to use
+*/}}
+{{- define "prometheus-kafka-exporter.saslScramSecretName" -}}
+{{- if .Values.sasl.scram.secretName -}}
+    {{ .Values.sasl.scram.secretName }}
+{{- else -}}
+    {{ include "prometheus-kafka-exporter.fullname" . }}
+{{- end -}}
+{{- end -}}
