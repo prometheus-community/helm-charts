@@ -24,23 +24,6 @@ If release name contains chart name it will be used as a full name.
 {{- end -}}
 {{- end -}}
 
-{{/* Generate basic labels */}}
-{{- define "prometheus-node-exporter.labels" }}
-app: {{ template "prometheus-node-exporter.name" . }}
-app.kubernetes.io/component: {{ template "prometheus-node-exporter.name" . }}
-app.kubernetes.io/instance: {{ .Release.Name }}
-app.kubernetes.io/managed-by: {{ .Release.Service }}
-app.kubernetes.io/name: {{ template "prometheus-node-exporter.name" . }}
-app.kubernetes.io/version: "{{ .Chart.Version }}"
-app.kubernetes.io/part-of: {{ template "prometheus-node-exporter.name" . }}  
-chart: {{ template "prometheus-node-exporter.chart" . }}
-heritage: {{.Release.Service }}
-release: {{.Release.Name }}
-{{- if .Values.podLabels}}
-{{ toYaml .Values.podLabels }}
-{{- end }}
-{{- end }}
-
 {{/*
 Create chart name and version as used by the chart label.
 */}}
@@ -48,6 +31,26 @@ Create chart name and version as used by the chart label.
 {{- printf "%s-%s" .Chart.Name .Chart.Version | replace "+" "_" | trunc 63 | trimSuffix "-" -}}
 {{- end -}}
 
+{{/* Generate basic labels */}}
+{{- define "prometheus-node-exporter.labels" }}
+helm.sh/chart: {{ include "prometheus-node-exporter.chart" . }}
+app.kubernetes.io/component: {{ template "prometheus-node-exporter.name" . }}
+{{ include "prometheus-node-exporter.selectorLabels" . }}
+app.kubernetes.io/managed-by: {{ .Release.Service }}
+app.kubernetes.io/version: "{{ .Chart.Version }}"
+app.kubernetes.io/part-of: {{ template "prometheus-node-exporter.name" . }}  
+{{- if .Values.podLabels}}
+{{ toYaml .Values.podLabels }}
+{{- end }}
+{{- end }}
+
+{{/*
+Selector labels
+*/}}
+{{- define "prometheus-node-exporter.selectorLabels" -}}
+app.kubernetes.io/name: {{ include "prometheus-node-exporter.name" . }}
+app.kubernetes.io/instance: {{ .Release.Name }}
+{{- end }}
 
 {{/*
 Create the name of the service account to use
