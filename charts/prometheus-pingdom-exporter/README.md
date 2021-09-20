@@ -2,7 +2,7 @@
 
 - **Source:** <https://github.com/giantswarm/prometheus-pingdom-exporter>
 
-[prometheus-pingdom-exporter](https://github.com/giantswarm/prometheus-pingdom-exporter) the prometheus-pingdom-exporter cares about preprocessing the pingdom uptime check results for consumption of by prometheus.
+The [prometheus-pingdom-exporter](https://github.com/giantswarm/prometheus-pingdom-exporter) processes [Pingdom](https://www.pingdom.com/) uptime check results for consumption by Prometheus.
 
 ## Prerequisites
 
@@ -21,10 +21,10 @@ _See [helm repo](https://helm.sh/docs/helm/helm_repo/) for command documentation
 
 ```console
 # Helm 3
-$ helm install [RELEASE_NAME] prometheus-com/pprometheus-pingdom-exporter
+$ helm install [RELEASE_NAME] prometheus-community/prometheus-pingdom-exporter
 
 # Helm 2
-$ helm install --name [RELEASE_NAME] prometheus-com/pprometheus-pingdom-exporter
+$ helm install --name [RELEASE_NAME] prometheus-community/prometheus-pingdom-exporter
 ```
 
 _See [configuration](#configuration) below._
@@ -60,8 +60,8 @@ See [Customizing the Chart Before Installing](https://helm.sh/docs/intro/using_h
 
 ```console
 # Helm 2
-$ helm inspect values prometheus-com/pprometheus-pingdom-exporter
+$ helm inspect values prometheus-community/prometheus-pingdom-exporter
 
 # Helm 3
-$ helm show values prometheus-com/pprometheus-pingdom-exporter
+$ helm show values prometheus-community/prometheus-pingdom-exporter
 ```
