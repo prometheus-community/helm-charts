@@ -41,7 +41,7 @@ helm upgrade [RELEASE_NAME] [CHART] --install
 
 _See [helm upgrade](https://helm.sh/docs/helm/helm_upgrade/) for command documentation._
 
-### To 2.0.0
+### To 3.0.0
 
 ￼Due to a change in DaemonSet labels, the upgrade requires `helm upgrade --force` in order to re-create the daemonset.
 
