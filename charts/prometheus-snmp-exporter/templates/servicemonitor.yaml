@@ -13,28 +13,34 @@ metadata:
     {{- end }}
 spec:
   endpoints:
+  {{- if not (empty .Values.serviceMonitor.endPoints)}}
+  {{ range  .Values.serviceMonitor.endPoints}}
   - port: http
-    {{- if .Values.serviceMonitor.interval }}
-    interval: {{ .Values.serviceMonitor.interval }}
+    {{- if .interval }}
+    interval: {{ .interval }}
     {{- end }}
-    honorLabels: {{ .Values.serviceMonitor.honorLabels }}
-    path: {{ .Values.serviceMonitor.path }}
-    {{- if .Values.serviceMonitor.interval }}
-    interval: {{ .Values.serviceMonitor.interval }}
+    honorLabels: {{ .honorLabels }}
+    path: {{ .path }}
+    {{- if .scrapeTimeout }}
+    scrapeTimeout: {{ .scrapeTimeout }}
     {{- end }}
-    {{- if .Values.serviceMonitor.scrapeTimeout }}
-    scrapeTimeout: {{ .Values.serviceMonitor.scrapeTimeout }}
-    {{- end }}
-    {{- if .Values.serviceMonitor.params.enabled }}
     params:
-{{ toYaml .Values.serviceMonitor.params.conf | indent 6 }}
+      module:
+      - {{ .module }}
+      target:
+      - {{ .target }}
+    {{- if .metricRelabelings }}
+    metricRelabelings: {{ toYaml .metricRelabelings | nindent 8 }}
     {{- end }}
-    {{- if .Values.serviceMonitor.metricRelabelings }}
-    metricRelabelings: {{ toYaml .Values.serviceMonitor.metricRelabelings | nindent 8 }}
+    {{- if .relabelings }}
+    relabelings: {{ toYaml .relabelings | nindent 8 }}
     {{- end }}
-    {{- if .Values.serviceMonitor.relabelings }}
-    relabelings: {{ toYaml .Values.serviceMonitor.relabelings | nindent 8 }}
-    {{- end }}
+  {{- end }}
+  {{- else }}
+  - port: http
+    honorLabels: true
+    path: /snmp
+  {{- end }}
   selector:
     matchLabels:
       {{- include "prometheus-snmp-exporter.selectorLabels" . | indent 6 }}
