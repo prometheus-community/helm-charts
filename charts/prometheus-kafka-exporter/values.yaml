@@ -1,6 +1,6 @@
 image:
   repository: danielqsj/kafka-exporter
-  tag: latest
+  tag: v1.4.1
   pullPolicy: IfNotPresent
 
 replicaCount: 1
@@ -10,6 +10,13 @@ kafkaServer:
 
 # Specifies broker version to use, leave empty for default
 kafkaBrokerVersion:
+
+# Specifies log verbosity
+verbosity: 0
+
+# Sarama logging
+sarama:
+  logEnabled: false
 
 rbac:
   # Specifies whether RBAC resources should be created
@@ -25,10 +32,18 @@ serviceAccount:
   name:
 
 env: []
+# - name: <ENV_VAR_NAME>
+#   value: <value>
+
+# List of additional cli arguments to configure kafka-exporter
+# for example: --log.enable-sarama, --log.level=debug, etc.
+# all the possible args can be found here: https://github.com/danielqsj/kafka_exporter#flags
+extraArgs: []
 
 service:
   type: ClusterIP
   port: 9308
+  labels: {}
   annotations: {}
 
 liveness:
@@ -57,6 +72,7 @@ prometheus:
     # additionalLabels:
     #   release: kube-prometheus
     additionalLabels: {}
+    targetLabels: []
 
 resources: {}
   # We usually recommend not to specify default resources and to leave this as a conscious
@@ -85,10 +101,39 @@ affinity: {}
 # tls.key
 tls:
   enabled: false
+  insecureSkipVerify: false
   # mountPath: /secret/certs
   # secretName: <name of an existing secret>
+
+sasl:
+  enabled: false
+  handshake: true
+  scram:
+    enabled: false
+    # mechanism: <plain|scram-sha512|scram-sha256>
+
+    # add username and password
+    # username:
+    # password:
+
+    # or use an existing secret
+    # secretName: <name of an existing secret>
+
+  kerberos:
+    enabled: false
+    # serviceName:
+    # realm:
+    # kerberosAuthType: <keytabAuth|userAuth>
+    # mountPath: /secret/kerberos
+    # secretName: <name of an existing secret>
 
 # If enabled Kafka dependency chart will be used.
 # This is only needed for the CI job so it should always be disabled.
 kafka:
   enabled: false
+
+# Set security context for the kafka-exporter container. Useful when you need to adapt to an existing PSP
+securityContext: {}
+  # runAsUser:
+  # runAsGroup:
+  # fsGroup:
