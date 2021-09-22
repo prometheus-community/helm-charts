@@ -631,9 +631,14 @@ grafana:
   ##
   forceDeployDashboards: false
 
-  ## Deploy default dashboards.
+  ## Deploy default dashboards
   ##
   defaultDashboardsEnabled: true
+
+  ## Timezone for the default dashboards
+  ## Other options are: browser or a specific timezone, i.e. Europe/Luxembourg
+  ##
+  defaultDashboardsTimezone: utc
 
   adminPassword: prom-operator
 
@@ -683,6 +688,8 @@ grafana:
           enabled: false
         etcd:
           enabled: false
+      provider:
+        allowUiUpdates: false
     datasources:
       enabled: true
       defaultDatasourceEnabled: true
@@ -1245,6 +1252,9 @@ kubeStateMetrics:
     ## Scrape interval. If not set, the Prometheus default scrape interval is used.
     ##
     interval: ""
+    ## Scrape Timeout. If not set, the Prometheus default scrape timeout is used.
+    ##
+    scrapeTimeout: ""
     ## proxyUrl: URL of a proxy that should be used for scraping.
     ##
     proxyUrl: ""
@@ -1271,6 +1281,9 @@ kubeStateMetrics:
     #   targetLabel: nodename
     #   replacement: $1
     #   action: replace
+
+    # Keep labels from scraped data, overriding server-side labels
+    honorLabels: true
 
     # Enable self metrics configuration for Service Monitor
     selfMonitor:
@@ -1367,9 +1380,9 @@ prometheusOperator:
     patch:
       enabled: true
       image:
-        repository: jettech/kube-webhook-certgen
-        tag: v1.5.2
-        sha: ""
+        repository: k8s.gcr.io/ingress-nginx/kube-webhook-certgen
+        tag: v1.0
+        sha: "f3b6b39a6062328c095337b4cadcefd1612348fdd5190b1dcbcb9b9e90bd8068"
         pullPolicy: IfNotPresent
       resources: {}
       ## Provide a priority class name to the webhook patching job
@@ -1641,18 +1654,50 @@ prometheus:
     enabled: false
     annotations: {}
     labels: {}
-    portName: grpc
-    port: 10901
-    targetPort: "grpc"
-    clusterIP: "None"
 
     ## Service type
     ##
     type: ClusterIP
 
-    ## Port to expose on each node
+    ## gRPC port config
+    portName: grpc
+    port: 10901
+    targetPort: "grpc"
+
+    ## HTTP port config (for metrics)
+    httpPortName: http
+    httpPort: 10902
+    targetHttpPort: "http"
+
+    ## ClusterIP to assign
+    # Default is to make this a headless service ("None")
+    clusterIP: "None"
+
+    ## Port to expose on each node, if service type is NodePort
     ##
     nodePort: 30901
+    httpNodePort: 30902
+
+  # ServiceMonitor to scrape Sidecar metrics
+  # Needs thanosService to be enabled as well
+  thanosServiceMonitor:
+    enabled: false
+    interval: ""
+
+    ## scheme: HTTP scheme to use for scraping. Can be used with `tlsConfig` for example if using istio mTLS.
+    scheme: ""
+
+    ## tlsConfig: TLS configuration to use when scraping the endpoint. For example if using istio mTLS.
+    ## Of type: https://github.com/coreos/prometheus-operator/blob/master/Documentation/api.md#tlsconfig
+    tlsConfig: {}
+
+    bearerTokenFile:
+
+    ## Metric relabel configs to apply to samples before ingestion.
+    metricRelabelings: []
+
+    ## relabel configs to apply to samples before ingestion.
+    relabelings: []
 
   # Service for external access to sidecar
   # Enabling this creates a service to expose thanos-sidecar outside the cluster.
@@ -1660,11 +1705,18 @@ prometheus:
     enabled: false
     annotations: {}
     labels: {}
+    loadBalancerIP: ""
+    loadBalancerSourceRanges: []
+
+    ## gRPC port config
     portName: grpc
     port: 10901
     targetPort: "grpc"
-    loadBalancerIP: ""
-    loadBalancerSourceRanges: []
+
+    ## HTTP port config (for metrics)
+    httpPortName: http
+    httpPort: 10902
+    targetHttpPort: "http"
 
     ## Service type
     ##
@@ -1673,6 +1725,7 @@ prometheus:
     ## Port to expose on each node
     ##
     nodePort: 30901
+    httpNodePort: 30902
 
   ## Configuration for Prometheus service
   ##
