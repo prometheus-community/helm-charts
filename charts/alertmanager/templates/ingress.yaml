@@ -1,10 +1,11 @@
 {{- if .Values.ingress.enabled -}}
 {{- $fullName := include "alertmanager.fullname" . -}}
 {{- $svcPort := .Values.service.port -}}
-{{- if semverCompare ">=1.14-0" .Capabilities.KubeVersion.GitVersion -}}
-apiVersion: networking.k8s.io/v1beta1
+{{- $stableAPI := semverCompare ">=1.19-0" .Capabilities.KubeVersion.GitVersion -}}
+{{- if $stableAPI -}}
+apiVersion: networking.k8s.io/v1
 {{- else -}}
-apiVersion: extensions/v1beta1
+apiVersion: networking.k8s.io/v1beta1
 {{- end }}
 kind: Ingress
 metadata:
@@ -16,6 +17,9 @@ metadata:
     {{- toYaml . | nindent 4 }}
   {{- end }}
 spec:
+{{- if and .Values.ingress.ingressClassName $stableAPI }}
+  ingressClassName: {{ .Values.ingress.ingressClassName }}
+{{- end }}
 {{- if .Values.ingress.tls }}
   tls:
   {{- range .Values.ingress.tls }}
@@ -32,10 +36,20 @@ spec:
       http:
         paths:
         {{- range .paths }}
-          - path: {{ . }}
+          - path: {{ .path }}
+            {{- if $stableAPI }}
+            pathType: {{ .pathType }}
+            {{- end }}
             backend:
+            {{- if $stableAPI }}
+              service:
+                name: {{ $fullName }}
+                port:
+                  number: {{ $svcPort }}
+            {{- else }}
               serviceName: {{ $fullName }}
               servicePort: {{ $svcPort }}
+            {{- end }}
         {{- end }}
   {{- end }}
 {{- end }}
