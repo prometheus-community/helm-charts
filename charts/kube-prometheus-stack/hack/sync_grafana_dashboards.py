@@ -106,16 +106,25 @@ def yaml_str_repr(struct, indent=2):
     text = textwrap.indent(text, ' ' * indent)
     return text
 
-
-def patch_json_for_multicluster_configuration(content, multicluster_key):
+def patch_dashboards_json(content, multicluster_key):
     try:
         content_struct = json.loads(content)
+
+        # multicluster
         overwrite_list = []
         for variable in content_struct['templating']['list']:
             if variable['name'] == 'cluster':
                 variable['hide'] = ':multicluster:'
             overwrite_list.append(variable)
         content_struct['templating']['list'] = overwrite_list
+
+        # fix drilldown links. See https://github.com/kubernetes-monitoring/kubernetes-mixin/issues/659
+        for row in content_struct['rows']:
+            for panel in row['panels']:
+                for style in panel.get('styles', []):
+                    if 'linkUrl' in style and style['linkUrl'].startswith('./d'):
+                        style['linkUrl'] = style['linkUrl'].replace('./d', '/d')
+
         content_array = []
         original_content_lines = content.split('\n')
         for i, line in enumerate(json.dumps(content_struct, indent=4).split('\n')):
@@ -163,7 +172,7 @@ def write_group_to_file(resource_name, content, url, destination, min_kubernetes
         'max_kubernetes': max_kubernetes
     }
 
-    content = patch_json_for_multicluster_configuration(content, multicluster_key)
+    content = patch_dashboards_json(content, multicluster_key)
     content = patch_json_set_timezone_as_variable(content)
 
     filename_struct = {resource_name + '.json': (LiteralStr(content))}
