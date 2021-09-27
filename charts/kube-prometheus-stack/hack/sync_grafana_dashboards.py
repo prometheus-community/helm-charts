@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Fetch dashboards from provided urls into this chart."""
 import json
+import re
 import textwrap
 from os import makedirs, path
 
@@ -147,6 +148,11 @@ def patch_json_for_multicluster_configuration(content, multicluster_key):
     return content
 
 
+def patch_json_set_timezone_as_variable(content):
+    # content is no more in json format, so we have to replace using regex
+    return re.sub(r'"timezone"\s*:\s*"(?:\\.|[^\"])*"', '"timezone": "\{\{ .Values.grafana.defaultDashboardsTimezone \}\}"', content, flags=re.IGNORECASE)
+
+
 def write_group_to_file(resource_name, content, url, destination, min_kubernetes, max_kubernetes, multicluster_key):
     # initialize header
     lines = header % {
@@ -158,6 +164,7 @@ def write_group_to_file(resource_name, content, url, destination, min_kubernetes
     }
 
     content = patch_json_for_multicluster_configuration(content, multicluster_key)
+    content = patch_json_set_timezone_as_variable(content)
 
     filename_struct = {resource_name + '.json': (LiteralStr(content))}
     # rules themselves
