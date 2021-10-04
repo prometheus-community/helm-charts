@@ -3,7 +3,7 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: {{ template "kube-prometheus-stack.fullname" . }}-grafana-datasource
-  namespace: {{ template "kube-prometheus-stack.namespace" . }}
+  namespace: {{ template "kube-prometheus-stack-grafana.namespace" . }}
 {{- if .Values.grafana.sidecar.datasources.annotations }}
   annotations:
 {{ toYaml .Values.grafana.sidecar.datasources.annotations | indent 4 }}
@@ -23,7 +23,7 @@ data:
       {{- if .Values.grafana.sidecar.datasources.url }}
       url: {{ .Values.grafana.sidecar.datasources.url }}
       {{- else }}
-      url: http://{{ template "kube-prometheus-stack.fullname" . }}-prometheus:{{ .Values.prometheus.service.port }}/{{ trimPrefix "/" .Values.prometheus.prometheusSpec.routePrefix }}
+      url: http://{{ template "kube-prometheus-stack.fullname" . }}-prometheus.{{ template "kube-prometheus-stack.namespace" . }}:{{ .Values.prometheus.service.port }}/{{ trimPrefix "/" .Values.prometheus.prometheusSpec.routePrefix }}
       {{- end }}
       access: proxy
       isDefault: true
