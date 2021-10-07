@@ -132,6 +132,16 @@ spec:
             timeoutSeconds: {{ .Values.server.livenessProbeTimeout }}
             failureThreshold: {{ .Values.server.livenessProbeFailureThreshold }}
             successThreshold: {{ .Values.server.livenessProbeSuccessThreshold }}
+          {{- if .Values.server.startupProbe.enabled }}
+          startupProbe:
+            httpGet:
+              path: {{ .Values.server.prefixURL }}/-/healthy
+              port: 9090
+              scheme: {{ .Values.server.probeScheme }}
+            failureThreshold: {{ .Values.server.startupProbe.failureThreshold }}
+            periodSeconds: {{ .Values.server.startupProbe.periodSeconds }}
+            timeoutSeconds: {{ .Values.server.startupProbe.timeoutSeconds }}
+          {{- end }}
           resources:
 {{ toYaml .Values.server.resources | indent 12 }}
           volumeMounts:
