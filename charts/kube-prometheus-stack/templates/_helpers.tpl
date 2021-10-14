@@ -96,6 +96,39 @@ Allow the release namespace to be overridden for multi-namespace deployments in 
   {{- end -}}
 {{- end -}}
 
+{{/*
+Use the grafana namespace override for multi-namespace deployments in combined charts
+*/}}
+{{- define "kube-prometheus-stack-grafana.namespace" -}}
+  {{- if .Values.grafana.namespaceOverride -}}
+    {{- .Values.grafana.namespaceOverride -}}
+  {{- else -}}
+    {{- .Release.Namespace -}}
+  {{- end -}}
+{{- end -}}
+
+{{/*
+Use the kube-state-metrics namespace override for multi-namespace deployments in combined charts
+*/}}
+{{- define "kube-prometheus-stack-kube-state-metrics.namespace" -}}
+  {{- if index .Values "kube-state-metrics" "namespaceOverride" -}}
+    {{- index .Values "kube-state-metrics" "namespaceOverride" -}}
+  {{- else -}}
+    {{- .Release.Namespace -}}
+  {{- end -}}
+{{- end -}}
+
+{{/*
+Use the prometheus-node-exporter namespace override for multi-namespace deployments in combined charts
+*/}}
+{{- define "kube-prometheus-stack-prometheus-node-exporter.namespace" -}}
+  {{- if index .Values "prometheus-node-exporter" "namespaceOverride" -}}
+    {{- index .Values "prometheus-node-exporter" "namespaceOverride" -}}
+  {{- else -}}
+    {{- .Release.Namespace -}}
+  {{- end -}}
+{{- end -}}
+
 {{/* Allow KubeVersion to be overridden. */}}
 {{- define "kube-prometheus-stack.kubeVersion" -}}
   {{- default .Capabilities.KubeVersion.Version .Values.kubeVersionOverride -}}

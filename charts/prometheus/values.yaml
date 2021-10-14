@@ -347,6 +347,10 @@ alertmanager:
     sessionAffinity: None
     type: ClusterIP
 
+  ## List of initial peers
+  ## Ref: https://github.com/prometheus/alertmanager/blob/main/README.md#high-availability
+  clusterPeers: []
+
 ## Monitors ConfigMap changes and POSTs to a URL
 ## Ref: https://github.com/jimmidyson/configmap-reload
 ##
@@ -713,6 +717,11 @@ server:
   ##
   remoteRead: []
 
+  ## Custom HTTP headers for Liveness/Readiness/Startup Probe
+  ##
+  ## Useful for providing HTTP Basic Auth to healthchecks
+  probeHeaders: []
+
   ## Additional Prometheus server container arguments
   ##
   extraArgs: {}
@@ -962,6 +971,8 @@ server:
   ## Prometheus server readiness and liveness probe initial delay and timeout
   ## Ref: https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/
   ##
+  tcpSocketProbeEnabled: false
+  probeScheme: HTTP
   readinessProbeInitialDelay: 30
   readinessProbePeriodSeconds: 5
   readinessProbeTimeout: 4
@@ -972,6 +983,11 @@ server:
   livenessProbeTimeout: 10
   livenessProbeFailureThreshold: 3
   livenessProbeSuccessThreshold: 1
+  startupProbe:
+    enabled: false
+    periodSeconds: 5
+    failureThreshold: 30
+    timeoutSeconds: 10
 
   ## Prometheus server resource requests and limits
   ## Ref: http://kubernetes.io/docs/user-guide/compute-resources/
@@ -1192,6 +1208,15 @@ pushgateway:
     # requests:
     #   cpu: 10m
     #   memory: 32Mi
+
+  ## Vertical Pod Autoscaler config
+  ## Ref: https://github.com/kubernetes/autoscaler/tree/master/vertical-pod-autoscaler
+  verticalAutoscaler:
+    ## If true a VPA object will be created for the controller
+    enabled: false
+    # updateMode: "Auto"
+    # containerPolicies:
+    # - containerName: 'prometheus-pushgateway'
 
   # Custom DNS configuration to be added to push-gateway pods
   dnsConfig: {}
