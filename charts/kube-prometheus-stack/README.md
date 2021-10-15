@@ -81,7 +81,22 @@ _See [helm upgrade](https://helm.sh/docs/helm/helm_upgrade/) for command documen
 
 ### Upgrading an existing Release to a new major version
 
-A major chart version change (like v1.2.3 -> v2.0.0) indicates that there is an incompatible breaking change needing manual actions.
+A major chart version change (like v2.2.3 -> v2.0.0) indicates that there is an incompatible breaking change needing manual actions.
+
+### From 19.x to 20.x
+
+Version 20 upgrades prometheus-operator from 0.50.x to 0.51.x. Helm does not automatically upgrade or install new CRDs on a chart upgrade, so you have to install the CRDs manually before updating:
+
+```console
+kubectl apply -f https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/v0.51.2/example/prometheus-operator-crd/monitoring.coreos.com_alertmanagerconfigs.yaml
+kubectl apply -f https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/v0.51.2/example/prometheus-operator-crd/monitoring.coreos.com_alertmanagers.yaml
+kubectl apply -f https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/v0.51.2/example/prometheus-operator-crd/monitoring.coreos.com_podmonitors.yaml
+kubectl apply -f https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/v0.51.2/example/prometheus-operator-crd/monitoring.coreos.com_probes.yaml
+kubectl apply -f https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/v0.51.2/example/prometheus-operator-crd/monitoring.coreos.com_prometheuses.yaml
+kubectl apply -f https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/v0.51.2/example/prometheus-operator-crd/monitoring.coreos.com_prometheusrules.yaml
+kubectl apply -f https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/v0.51.2/example/prometheus-operator-crd/monitoring.coreos.com_servicemonitors.yaml
+kubectl apply -f https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/v0.51.2/example/prometheus-operator-crd/monitoring.coreos.com_thanosrulers.yaml
+```
 
 ### From 18.x to 19.x
 
