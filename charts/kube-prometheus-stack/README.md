@@ -83,6 +83,13 @@ _See [helm upgrade](https://helm.sh/docs/helm/helm_upgrade/) for command documen
 
 A major chart version change (like v1.2.3 -> v2.0.0) indicates that there is an incompatible breaking change needing manual actions.
 
+### From 19.x to 20.x
+
+`defaultRules.rules.kubeApiserver` default value was removed, as well as the `templates/prometheus/rules-1.14/kube-apiserver.rules.yaml` rules.
+They have been split in several rule files, and can now be controlled individually with
+`defaultRules.rules.kubeApiserverAvailability`, `defaultRules.rules.kubeApiserverBurnrate`, `defaultRules.rules.kubeApiserverHistogram`
+and `defaultRules.rules.kubeApiserverSlos` values.
+
 ### From 18.x to 19.x
 
 `kubeStateMetrics.serviceMonitor.namespaceOverride` was removed.
