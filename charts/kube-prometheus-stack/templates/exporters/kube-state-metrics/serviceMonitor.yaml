@@ -27,7 +27,7 @@ spec:
 {{- end }}
 {{- if .Values.kubeStateMetrics.serviceMonitor.relabelings }}
     relabelings:
-{{ toYaml .Values.kubeStateMetrics.serviceMonitor.relabelings | indent 4 }}
+{{ tpl (toYaml .Values.kubeStateMetrics.serviceMonitor.relabelings | indent 4) . }}
 {{- end }}
 {{- if .Values.kubeStateMetrics.serviceMonitor.selfMonitor.enabled }}
   - port: metrics
@@ -44,14 +44,14 @@ spec:
 {{- end }}
 {{- if .Values.kubeStateMetrics.serviceMonitor.relabelings }}
     relabelings:
-{{ toYaml .Values.kubeStateMetrics.serviceMonitor.relabelings | indent 4 }}
+{{ tpl (toYaml .Values.kubeStateMetrics.serviceMonitor.relabelings | indent 4) . }}
 {{- end }}
 {{- end }}
-{{- if .Values.kubeStateMetrics.serviceMonitor.namespaceOverride }}
+  {{- if ne (include "kube-prometheus-stack.namespace" .) (include "kube-prometheus-stack-kube-state-metrics.namespace" .) }}
   namespaceSelector:
     matchNames:
-      - {{ .Values.kubeStateMetrics.serviceMonitor.namespaceOverride }}
-{{- end }}
+      - {{ printf "%s" (include "kube-prometheus-stack-kube-state-metrics.namespace" .) | quote }}
+  {{- end }}
   selector:
     matchLabels:
 {{- if .Values.kubeStateMetrics.serviceMonitor.selectorOverride }}

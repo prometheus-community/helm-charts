@@ -60,12 +60,20 @@ spec:
           args:
             - --config.file=/etc/config/{{ .Values.alertmanager.configFileName }}
             - --storage.path={{ .Values.alertmanager.persistentVolume.mountPath }}
+          {{- if .Values.alertmanager.service.enableMeshPeer }}
+            - --cluster.listen-address=0.0.0.0:6783
             - --cluster.advertise-address=[$(POD_IP)]:6783
+          {{- else }}
+            - --cluster.listen-address=
+          {{- end }}
           {{- range $key, $value := .Values.alertmanager.extraArgs }}
             - --{{ $key }}={{ $value }}
           {{- end }}
           {{- if .Values.alertmanager.baseURL }}
             - --web.external-url={{ .Values.alertmanager.baseURL }}
+          {{- end }}
+          {{- range .Values.alertmanager.clusterPeers }}
+            - --cluster.peer={{ . }}
           {{- end }}
 
           ports:
@@ -98,6 +106,9 @@ spec:
           args:
             - --volume-dir=/etc/config
             - --webhook-url=http://127.0.0.1:9093{{ .Values.alertmanager.prefixURL }}/-/reload
+          {{- range $key, $value := .Values.configmapReload.alertmanager.extraArgs }}
+            - --{{ $key }}={{ $value }}
+          {{- end }}
           resources:
 {{ toYaml .Values.configmapReload.alertmanager.resources | indent 12 }}
           volumeMounts:

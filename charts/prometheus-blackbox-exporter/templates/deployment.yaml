@@ -25,7 +25,7 @@ spec:
 {{ toYaml .Values.podAnnotations | indent 8 }}
         {{- end }}
     spec:
-      automountServiceAccountToken: false
+      automountServiceAccountToken: {{ .Values.automountServiceAccountToken }}
       serviceAccountName: {{ template "prometheus-blackbox-exporter.serviceAccountName" . }}
     {{- if .Values.nodeSelector }}
       nodeSelector:
@@ -78,7 +78,9 @@ spec:
               add: ["NET_RAW"]
             {{- else }}
             runAsNonRoot: {{ .Values.runAsNonRoot  }}
+              {{- if .Values.runAsUser }}
             runAsUser: {{ .Values.runAsUser }}
+              {{- end }}
             {{- end }}
           env:
           {{- range $key, $value := .Values.extraEnv }}
