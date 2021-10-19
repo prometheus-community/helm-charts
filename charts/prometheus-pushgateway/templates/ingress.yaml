@@ -2,6 +2,8 @@
 {{- $serviceName := include "prometheus-pushgateway.fullname" . }}
 {{- $servicePort := .Values.service.port -}}
 {{- $ingressPath := .Values.ingress.path -}}
+{{- $ingressClassName := .Values.ingress.className -}}
+{{- $ingressPathType := .Values.ingress.pathType -}}
 {{- if semverCompare ">=1.19-0" .Capabilities.KubeVersion.GitVersion -}}
 apiVersion: networking.k8s.io/v1
 {{- else if semverCompare ">=1.14-0" .Capabilities.KubeVersion.GitVersion -}}
@@ -19,8 +21,8 @@ metadata:
 {{ template "prometheus-pushgateway.defaultLabels" merge (dict "extraLabels" dict) .  }}
   name: {{ template "prometheus-pushgateway.fullname" . }}
 spec:
-  {{- if and .Values.ingress.className (semverCompare ">=1.18-0" .Capabilities.KubeVersion.GitVersion) }}
-  ingressClassName: {{ .Values.ingress.className }}
+  {{- if semverCompare ">=1.19-0" .Capabilities.KubeVersion.GitVersion }}
+  ingressClassName: {{ $ingressClassName }}
   {{- end }}
   rules:
     {{- range $host := .Values.ingress.hosts }}
@@ -28,8 +30,8 @@ spec:
       http:
         paths:
           - path: {{ $ingressPath }}
-            {{- if and .Values.ingress.pathType (semverCompare ">=1.18-0" $.Capabilities.KubeVersion.GitVersion) }}
-            pathType: {{ .Values.ingress.pathType }}
+            {{- if semverCompare ">=1.19-0" $.Capabilities.KubeVersion.GitVersion }}
+            pathType: {{ $ingressPathType }}
             {{- end }}
             backend:
               {{- if semverCompare ">=1.19-0" $.Capabilities.KubeVersion.GitVersion }}
