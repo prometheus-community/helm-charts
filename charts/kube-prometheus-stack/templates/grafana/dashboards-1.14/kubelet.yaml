@@ -8,7 +8,7 @@ https://github.com/prometheus-community/helm-charts/tree/main/charts/kube-promet
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  namespace: {{ template "kube-prometheus-stack.namespace" . }}
+  namespace: {{ template "kube-prometheus-stack-grafana.namespace" . }}
   name: {{ printf "%s-%s" (include "kube-prometheus-stack.fullname" $) "kubelet" | trunc 63 | trimSuffix "-" }}
   annotations:
 {{ toYaml .Values.grafana.sidecar.dashboards.annotations | indent 4 }}
@@ -81,7 +81,8 @@ data:
                         ],
                         "fields": "",
                         "values": false
-                    }
+                    },
+                    "textMode": "auto"
                 },
                 "pluginVersion": "7",
                 "targets": [
@@ -137,7 +138,8 @@ data:
                         ],
                         "fields": "",
                         "values": false
-                    }
+                    },
+                    "textMode": "auto"
                 },
                 "pluginVersion": "7",
                 "targets": [
@@ -193,7 +195,8 @@ data:
                         ],
                         "fields": "",
                         "values": false
-                    }
+                    },
+                    "textMode": "auto"
                 },
                 "pluginVersion": "7",
                 "targets": [
@@ -249,7 +252,8 @@ data:
                         ],
                         "fields": "",
                         "values": false
-                    }
+                    },
+                    "textMode": "auto"
                 },
                 "pluginVersion": "7",
                 "targets": [
@@ -305,7 +309,8 @@ data:
                         ],
                         "fields": "",
                         "values": false
-                    }
+                    },
+                    "textMode": "auto"
                 },
                 "pluginVersion": "7",
                 "targets": [
@@ -361,7 +366,8 @@ data:
                         ],
                         "fields": "",
                         "values": false
-                    }
+                    },
+                    "textMode": "auto"
                 },
                 "pluginVersion": "7",
                 "targets": [
@@ -2171,7 +2177,7 @@ data:
                     "options": [
 
                     ],
-                    "query": "label_values(kube_pod_info, cluster)",
+                    "query": "label_values(up{job=\"kubelet\", metrics_path=\"/metrics\"}, cluster)",
                     "refresh": 2,
                     "regex": "",
                     "sort": 1,
@@ -2240,7 +2246,7 @@ data:
                 "30d"
             ]
         },
-        "timezone": "UTC",
+        "timezone": "{{ .Values.grafana.defaultDashboardsTimezone }}",
         "title": "Kubernetes / Kubelet",
         "uid": "3138fa155d5915769fbded898ac09fd9",
         "version": 0

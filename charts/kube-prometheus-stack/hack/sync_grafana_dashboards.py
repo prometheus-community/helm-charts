@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Fetch dashboards from provided urls into this chart."""
 import json
+import re
 import textwrap
 from os import makedirs, path
 
@@ -66,7 +67,7 @@ https://github.com/prometheus-community/helm-charts/tree/main/charts/kube-promet
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  namespace: {{ template "kube-prometheus-stack.namespace" . }}
+  namespace: {{ template "kube-prometheus-stack-grafana.namespace" . }}
   name: {{ printf "%%s-%%s" (include "kube-prometheus-stack.fullname" $) "%(name)s" | trunc 63 | trimSuffix "-" }}
   annotations:
 {{ toYaml .Values.grafana.sidecar.dashboards.annotations | indent 4 }}
@@ -105,16 +106,25 @@ def yaml_str_repr(struct, indent=2):
     text = textwrap.indent(text, ' ' * indent)
     return text
 
-
-def patch_json_for_multicluster_configuration(content, multicluster_key):
+def patch_dashboards_json(content, multicluster_key):
     try:
         content_struct = json.loads(content)
+
+        # multicluster
         overwrite_list = []
         for variable in content_struct['templating']['list']:
             if variable['name'] == 'cluster':
                 variable['hide'] = ':multicluster:'
             overwrite_list.append(variable)
         content_struct['templating']['list'] = overwrite_list
+
+        # fix drilldown links. See https://github.com/kubernetes-monitoring/kubernetes-mixin/issues/659
+        for row in content_struct['rows']:
+            for panel in row['panels']:
+                for style in panel.get('styles', []):
+                    if 'linkUrl' in style and style['linkUrl'].startswith('./d'):
+                        style['linkUrl'] = style['linkUrl'].replace('./d', '/d')
+
         content_array = []
         original_content_lines = content.split('\n')
         for i, line in enumerate(json.dumps(content_struct, indent=4).split('\n')):
@@ -147,6 +157,11 @@ def patch_json_for_multicluster_configuration(content, multicluster_key):
     return content
 
 
+def patch_json_set_timezone_as_variable(content):
+    # content is no more in json format, so we have to replace using regex
+    return re.sub(r'"timezone"\s*:\s*"(?:\\.|[^\"])*"', '"timezone": "\{\{ .Values.grafana.defaultDashboardsTimezone \}\}"', content, flags=re.IGNORECASE)
+
+
 def write_group_to_file(resource_name, content, url, destination, min_kubernetes, max_kubernetes, multicluster_key):
     # initialize header
     lines = header % {
@@ -157,7 +172,8 @@ def write_group_to_file(resource_name, content, url, destination, min_kubernetes
         'max_kubernetes': max_kubernetes
     }
 
-    content = patch_json_for_multicluster_configuration(content, multicluster_key)
+    content = patch_dashboards_json(content, multicluster_key)
+    content = patch_json_set_timezone_as_variable(content)
 
     filename_struct = {resource_name + '.json': (LiteralStr(content))}
     # rules themselves

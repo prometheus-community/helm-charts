@@ -113,18 +113,30 @@ spec:
           ports:
             - containerPort: 9090
           readinessProbe:
+            {{- if not .Values.server.tcpSocketProbeEnabled }}
             httpGet:
               path: {{ .Values.server.prefixURL }}/-/ready
               port: 9090
+              scheme: {{ .Values.server.probeScheme }}
+            {{- else }}
+            tcpSocket:
+              port: 9090
+            {{- end }}
             initialDelaySeconds: {{ .Values.server.readinessProbeInitialDelay }}
             periodSeconds: {{ .Values.server.readinessProbePeriodSeconds }}
             timeoutSeconds: {{ .Values.server.readinessProbeTimeout }}
             failureThreshold: {{ .Values.server.readinessProbeFailureThreshold }}
             successThreshold: {{ .Values.server.readinessProbeSuccessThreshold }}
           livenessProbe:
+            {{- if not .Values.server.tcpSocketProbeEnabled }}
             httpGet:
               path: {{ .Values.server.prefixURL }}/-/healthy
               port: 9090
+              scheme: {{ .Values.server.probeScheme }}
+            {{- else }}
+            tcpSocket:
+              port: 9090
+            {{- end }}
             initialDelaySeconds: {{ .Values.server.livenessProbeInitialDelay }}
             periodSeconds: {{ .Values.server.livenessProbePeriodSeconds }}
             timeoutSeconds: {{ .Values.server.livenessProbeTimeout }}
