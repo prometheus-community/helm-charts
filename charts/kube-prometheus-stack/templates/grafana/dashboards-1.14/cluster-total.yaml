@@ -8,7 +8,7 @@ https://github.com/prometheus-community/helm-charts/tree/main/charts/kube-promet
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  namespace: {{ template "kube-prometheus-stack.namespace" . }}
+  namespace: {{ template "kube-prometheus-stack-grafana.namespace" . }}
   name: {{ printf "%s-%s" (include "kube-prometheus-stack.fullname" $) "cluster-total" | trunc 63 | trimSuffix "-" }}
   annotations:
 {{ toYaml .Values.grafana.sidecar.dashboards.annotations | indent 4 }}
@@ -1831,7 +1831,7 @@ data:
                     "options": [
 
                     ],
-                    "query": "label_values(kube_pod_info, cluster)",
+                    "query": "label_values(up{job=\"kubelet\", metrics_path=\"/metrics/cadvisor\"}, cluster)",
                     "refresh": 2,
                     "regex": "",
                     "sort": 0,
@@ -1874,7 +1874,7 @@ data:
                 "30d"
             ]
         },
-        "timezone": "UTC",
+        "timezone": "{{ .Values.grafana.defaultDashboardsTimezone }}",
         "title": "Kubernetes / Networking / Cluster",
         "uid": "ff635a025bcfea7bc3dd4f508990a3e9",
         "version": 0
