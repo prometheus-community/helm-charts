@@ -83,7 +83,13 @@ _See [helm upgrade](https://helm.sh/docs/helm/helm_upgrade/) for command documen
 
 A major chart version change (like v1.2.3 -> v2.0.0) indicates that there is an incompatible breaking change needing manual actions.
 
+### From 18.x to 19.x
+
+`kubeStateMetrics.serviceMonitor.namespaceOverride` was removed.
+Please use `kube-state-metrics.namespaceOverride` instead.
+
 ### From 17.x to 18.x
+
 Version 18 upgrades prometheus-operator from 0.49.x to 0.50.x. Helm does not automatically upgrade or install new CRDs on a chart upgrade, so you have to install the CRDs manually before updating:
 
 ```console
@@ -98,6 +104,7 @@ kubectl apply -f https://raw.githubusercontent.com/prometheus-operator/prometheu
 ```
 
 ### From 16.x to 17.x
+
 Version 17 upgrades prometheus-operator from 0.48.x to 0.49.x. Helm does not automatically upgrade or install new CRDs on a chart upgrade, so you have to install the CRDs manually before updating:
 
 ```console
@@ -111,11 +118,12 @@ kubectl apply -f https://raw.githubusercontent.com/prometheus-operator/prometheu
 kubectl apply -f https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/v0.49.0/example/prometheus-operator-crd/monitoring.coreos.com_thanosrulers.yaml
 ```
 
-
 ### From 15.x to 16.x
+
 Version 16 upgrades kube-state-metrics to v2.0.0. This includes changed command-line arguments and removed metrics, see this [blog post](https://kubernetes.io/blog/2021/04/13/kube-state-metrics-v-2-0/). This version also removes Grafana dashboards that supported Kubernetes 1.14 or earlier.
 
 ### From 14.x to 15.x
+
 Version 15 upgrades prometheus-operator from 0.46.x to 0.47.x. Helm does not automatically upgrade or install new CRDs on a chart upgrade, so you have to install the CRDs manually before updating:
 
 ```console

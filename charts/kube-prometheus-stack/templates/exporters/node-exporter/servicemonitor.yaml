@@ -13,10 +13,10 @@ spec:
     matchLabels:
       app: prometheus-node-exporter
       release: {{ $.Release.Name }}
-  {{- if (index .Values "prometheus-node-exporter" "namespaceOverride") }}
+  {{- if ne (include "kube-prometheus-stack.namespace" .) (include "kube-prometheus-stack-prometheus-node-exporter.namespace" .) }}
   namespaceSelector:
     matchNames:
-      - {{ index .Values "prometheus-node-exporter" "namespaceOverride" }}
+      - {{ printf "%s" (include "kube-prometheus-stack-prometheus-node-exporter.namespace" .) | quote }}
   {{- end }}
   endpoints:
   - port: metrics
@@ -35,6 +35,6 @@ spec:
 {{- end }}
 {{- if .Values.nodeExporter.serviceMonitor.relabelings }}
     relabelings:
-{{ toYaml .Values.nodeExporter.serviceMonitor.relabelings | indent 4 }}
+{{ tpl (toYaml .Values.nodeExporter.serviceMonitor.relabelings | indent 4) . }}
 {{- end }}
 {{- end }}
