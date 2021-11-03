@@ -32,6 +32,31 @@ Create chart name and version as used by the chart label.
 {{- end -}}
 
 {{/*
+Generate basic labels
+*/}}
+{{- define "k8s-prometheus-adapter.labels" }}
+helm.sh/chart: {{ include "k8s-prometheus-adapter.chart" . }}
+app.kubernetes.io/managed-by: {{ .Release.Service }}
+app.kubernetes.io/component: metrics
+app.kubernetes.io/part-of: {{ template "k8s-prometheus-adapter.name" . }}
+{{- include "k8s-prometheus-adapter.selectorLabels" . }}
+{{- if .Chart.AppVersion }}
+app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
+{{- end }}
+{{- if .Values.customLabels }}
+{{ toYaml .Values.customLabels }}
+{{- end }}
+{{- end }}
+
+{{/*
+Selector labels
+*/}}
+{{- define "k8s-prometheus-adapter.selectorLabels" }}
+app.kubernetes.io/name: {{ include "k8s-prometheus-adapter.name" . }}
+app.kubernetes.io/instance: {{ .Release.Name }}
+{{- end }}
+
+{{/*
 Create the name of the service account to use
 */}}
 {{- define "k8s-prometheus-adapter.serviceAccountName" -}}

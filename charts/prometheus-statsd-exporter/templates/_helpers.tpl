@@ -66,7 +66,7 @@ Check if there is any mappings available
 */}}
 {{- define "prometheus-statsd-exporter.configMapName"}}
 {{- if .Values.statsd.mappingConfigMapName }}
-{{ default .Values.statsd.mappingConfigMapName }}
+{{- default .Values.statsd.mappingConfigMapName }}
 {{- else }}
 {{- template "prometheus-statsd-exporter.fullname" . -}}
 {{- end }}

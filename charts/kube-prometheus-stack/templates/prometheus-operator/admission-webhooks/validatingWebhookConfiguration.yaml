@@ -1,12 +1,12 @@
-{{- if and .Values.prometheusOperator.admissionWebhooks.enabled }}
+{{- if and .Values.prometheusOperator.enabled .Values.prometheusOperator.admissionWebhooks.enabled }}
 apiVersion: admissionregistration.k8s.io/v1
 kind: ValidatingWebhookConfiguration
 metadata:
   name:  {{ template "kube-prometheus-stack.fullname" . }}-admission
 {{- if .Values.prometheusOperator.admissionWebhooks.certManager.enabled }}
   annotations:
-    certmanager.k8s.io/inject-ca-from: {{ printf "%s/%s-root-cert" .Release.Namespace (include "kube-prometheus-stack.fullname" .) | quote }}
-    cert-manager.io/inject-ca-from: {{ printf "%s/%s-root-cert" .Release.Namespace (include "kube-prometheus-stack.fullname" .) | quote }}
+    certmanager.k8s.io/inject-ca-from: {{ printf "%s/%s-admission" .Release.Namespace (include "kube-prometheus-stack.fullname" .) | quote }}
+    cert-manager.io/inject-ca-from: {{ printf "%s/%s-admission" .Release.Namespace (include "kube-prometheus-stack.fullname" .) | quote }}
 {{- end }}
   labels:
     app: {{ template "kube-prometheus-stack.name" $ }}-admission

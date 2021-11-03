@@ -6,7 +6,7 @@ replicaCount: 1
 
 image:
   repository: quay.io/prometheuscommunity/postgres-exporter
-  tag: v0.9.0
+  tag: v0.10.0
   pullPolicy: IfNotPresent
 
   ## Optionally specify an array of imagePullSecrets.
@@ -115,6 +115,7 @@ config:
   disableSettingsMetrics: false
   autoDiscoverDatabases: false
   excludeDatabases: []
+  includeDatabases: []
   constantLabels: {}
   # possible values debug, info, warn, error, fatal
   logLevel: ""
@@ -281,7 +282,7 @@ config:
             description: "Disk space used by the database"
 
     pg_stat_statements:
-      query: "SELECT t2.rolname, t3.datname, queryid, calls, total_time / 1000 as total_time_seconds, min_time / 1000 as min_time_seconds, max_time / 1000 as max_time_seconds, mean_time / 1000 as mean_time_seconds, stddev_time / 1000 as stddev_time_seconds, rows, shared_blks_hit, shared_blks_read, shared_blks_dirtied, shared_blks_written, local_blks_hit, local_blks_read, local_blks_dirtied, local_blks_written, temp_blks_read, temp_blks_written, blk_read_time / 1000 as blk_read_time_seconds, blk_write_time / 1000 as blk_write_time_seconds FROM pg_stat_statements t1 JOIN pg_roles t2 ON (t1.userid=t2.oid) JOIN pg_database t3 ON (t1.dbid=t3.oid) WHERE t2.rolname != 'rdsadmin'"
+      query: "SELECT t2.rolname, t3.datname, queryid, calls, total_time / 1000 as total_time_seconds, min_time / 1000 as min_time_seconds, max_time / 1000 as max_time_seconds, mean_time / 1000 as mean_time_seconds, stddev_time / 1000 as stddev_time_seconds, rows, shared_blks_hit, shared_blks_read, shared_blks_dirtied, shared_blks_written, local_blks_hit, local_blks_read, local_blks_dirtied, local_blks_written, temp_blks_read, temp_blks_written, blk_read_time / 1000 as blk_read_time_seconds, blk_write_time / 1000 as blk_write_time_seconds FROM pg_stat_statements t1 JOIN pg_roles t2 ON (t1.userid=t2.oid) JOIN pg_database t3 ON (t1.dbid=t3.oid) WHERE t2.rolname != 'rdsadmin' AND queryid IS NOT NULL"
       master: true
       metrics:
         - rolname:
@@ -351,14 +352,14 @@ config:
             usage: "COUNTER"
             description: "Total time the statement spent writing blocks, in milliseconds (if track_io_timing is enabled, otherwise zero)"
 
-    pg_stat_activity:
+    pg_stat_activity_idle:
       query: |
         WITH
           metrics AS (
             SELECT
               application_name,
-              SUM(EXTRACT(EPOCH FROM (CURRENT_TIMESTAMP - state_change))::bigint)::float AS process_idle_seconds_sum,
-              COUNT(*) AS process_idle_seconds_count
+              SUM(EXTRACT(EPOCH FROM (CURRENT_TIMESTAMP - state_change))::bigint)::float AS process_seconds_sum,
+              COUNT(*) AS process_seconds_count
             FROM pg_stat_activity
             WHERE state = 'idle'
             GROUP BY application_name
@@ -381,17 +382,17 @@ config:
           )
         SELECT
           application_name,
-          process_idle_seconds_sum,
-          process_idle_seconds_count,
-          ARRAY_AGG(le) AS process_idle_seconds,
-          ARRAY_AGG(bucket) AS process_idle_seconds_bucket
+          process_seconds_sum,
+          process_seconds_count,
+          ARRAY_AGG(le) AS process_seconds,
+          ARRAY_AGG(bucket) AS process_seconds_bucket
         FROM metrics JOIN buckets USING (application_name)
         GROUP BY 1, 2, 3
       metrics:
         - application_name:
             usage: "LABEL"
             description: "Application Name"
-        - process_idle_seconds:
+        - process_seconds:
             usage: "HISTOGRAM"
             description: "Idle time of server processes"
 

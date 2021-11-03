@@ -2,9 +2,13 @@
 {{- $serviceName := include "prometheus-pushgateway.fullname" . }}
 {{- $servicePort := .Values.service.port -}}
 {{- $ingressPath := .Values.ingress.path -}}
-{{- if semverCompare ">=1.14.0-0" .Capabilities.KubeVersion.GitVersion }}
+{{- $ingressClassName := .Values.ingress.className -}}
+{{- $ingressPathType := .Values.ingress.pathType -}}
+{{- if semverCompare ">=1.19-0" .Capabilities.KubeVersion.GitVersion -}}
+apiVersion: networking.k8s.io/v1
+{{- else if semverCompare ">=1.14-0" .Capabilities.KubeVersion.GitVersion -}}
 apiVersion: networking.k8s.io/v1beta1
-{{- else }}
+{{- else -}}
 apiVersion: extensions/v1beta1
 {{- end }}
 kind: Ingress
@@ -17,15 +21,28 @@ metadata:
 {{ template "prometheus-pushgateway.defaultLabels" merge (dict "extraLabels" dict) .  }}
   name: {{ template "prometheus-pushgateway.fullname" . }}
 spec:
+  {{- if semverCompare ">=1.19-0" .Capabilities.KubeVersion.GitVersion }}
+  ingressClassName: {{ $ingressClassName }}
+  {{- end }}
   rules:
     {{- range $host := .Values.ingress.hosts }}
     - host: {{ $host }}
       http:
         paths:
           - path: {{ $ingressPath }}
+            {{- if semverCompare ">=1.19-0" $.Capabilities.KubeVersion.GitVersion }}
+            pathType: {{ $ingressPathType }}
+            {{- end }}
             backend:
+              {{- if semverCompare ">=1.19-0" $.Capabilities.KubeVersion.GitVersion }}
+              service:
+                name: {{ $serviceName }}
+                port:
+                  number: {{ $servicePort }}
+              {{- else }}
               serviceName: {{ $serviceName }}
               servicePort: {{ $servicePort }}
+              {{- end }}
     {{- end -}}
 {{- if .Values.ingress.tls }}
   tls:

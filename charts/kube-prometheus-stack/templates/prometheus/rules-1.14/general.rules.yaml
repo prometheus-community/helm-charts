@@ -1,5 +1,5 @@
 {{- /*
-Generated from 'general.rules' group from https://raw.githubusercontent.com/prometheus-operator/kube-prometheus/master/manifests/prometheus-rules.yaml
+Generated from 'general.rules' group from https://raw.githubusercontent.com/prometheus-operator/kube-prometheus/main/manifests/kube-prometheus-prometheusRule.yaml
 Do not change in-place! In order to change this file first read following link:
 https://github.com/prometheus-community/helm-charts/tree/main/charts/kube-prometheus-stack/hack
 */ -}}
@@ -26,7 +26,9 @@ spec:
     rules:
     - alert: TargetDown
       annotations:
-        message: '{{`{{`}} printf "%.4g" $value {{`}}`}}% of the {{`{{`}} $labels.job {{`}}`}}/{{`{{`}} $labels.service {{`}}`}} targets in {{`{{`}} $labels.namespace {{`}}`}} namespace are down.'
+        description: '{{`{{`}} printf "%.4g" $value {{`}}`}}% of the {{`{{`}} $labels.job {{`}}`}}/{{`{{`}} $labels.service {{`}}`}} targets in {{`{{`}} $labels.namespace {{`}}`}} namespace are down.'
+        runbook_url: {{ .Values.defaultRules.runbookUrl }}alert-name-targetdown
+        summary: One or more targets are unreachable.
       expr: 100 * (count(up == 0) BY (job, namespace, service) / count(up) BY (job, namespace, service)) > 10
       for: 10m
       labels:
@@ -36,7 +38,7 @@ spec:
 {{- end }}
     - alert: Watchdog
       annotations:
-        message: 'This is an alert meant to ensure that the entire alerting pipeline is functional.
+        description: 'This is an alert meant to ensure that the entire alerting pipeline is functional.
 
           This alert is always firing, therefore it should always be firing in Alertmanager
 
@@ -47,6 +49,8 @@ spec:
           "DeadMansSnitch" integration in PagerDuty.
 
           '
+        runbook_url: {{ .Values.defaultRules.runbookUrl }}alert-name-watchdog
+        summary: An alert that should always be firing to certify that Alertmanager is working properly.
       expr: vector(1)
       labels:
         severity: none

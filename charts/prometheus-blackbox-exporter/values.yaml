@@ -5,6 +5,9 @@ kind: Deployment
 podDisruptionBudget: {}
   # maxUnavailable: 0
 
+## Allow automount the serviceaccount token for sidecar container (eg: oauthproxy)
+automountServiceAccountToken: false
+
 ## Additional blackbox-exporter container environment variables
 ## For instance to add a http_proxy
 ##
@@ -21,6 +24,15 @@ extraVolumes: []
   # - name: storage-volume
   #   persistentVolumeClaim:
   #     claimName: example
+
+## Additional volumes that will be attached to the blackbox-exporter container
+extraVolumeMounts:
+  # - name: ca-certs
+  #   mountPath: /etc/ssl/certs/ca-certificates.crt
+
+## Additional InitContainers to initialize the pod
+##
+extraInitContainers: []
 
 extraContainers: []
   # - name: oAuth2-proxy
@@ -56,7 +68,7 @@ strategy:
 
 image:
   repository: prom/blackbox-exporter
-  tag: v0.18.0
+  tag: v0.19.0
   pullPolicy: IfNotPresent
 
   ## Optionally specify an array of imagePullSecrets.
@@ -70,7 +82,6 @@ image:
 runAsUser: 1000
 readOnlyRootFilesystem: true
 runAsNonRoot: true
-
 
 livenessProbe:
   httpGet:
@@ -99,8 +110,11 @@ config:
       timeout: 5s
       http:
         valid_http_versions: ["HTTP/1.1", "HTTP/2.0"]
-        no_follow_redirects: false
+        follow_redirects: true
         preferred_ip_protocol: "ip4"
+
+# Set custom config path, other than default /config/blackbox.yaml. If let empty, path will be "/config/blackbox.yaml"
+# configPath: "/foo/bar"
 
 extraConfigmapMounts: []
   # - name: certs-configmap
@@ -153,17 +167,19 @@ serviceAccount:
 ## ref: https://kubernetes.io/docs/concepts/services-networking/ingress/
 ingress:
   enabled: false
-  hosts: []
-     # - chart-example.local
-  path: '/'
+  className: ""
   annotations: {}
     # kubernetes.io/ingress.class: nginx
     # kubernetes.io/tls-acme: "true"
+  hosts:
+    - host: chart-example.local
+      paths:
+        - path: /
+          pathType: ImplementationSpecific
   tls: []
-    # Secrets must be manually created in the namespace.
-    # - secretName: chart-example-tls
-    #   hosts:
-    #     - chart-example.local
+  #  - secretName: chart-example-tls
+  #    hosts:
+  #      - chart-example.local
 
 podAnnotations: {}
 
@@ -179,7 +195,7 @@ pod:
   labels: {}
 
 extraArgs: []
-#  --history.limit=1000
+  # - --history.limit=1000
 
 replicas: 1
 

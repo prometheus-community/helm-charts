@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Fetch dashboards from provided urls into this chart."""
 import json
+import re
 import textwrap
 from os import makedirs, path
 
@@ -26,30 +27,18 @@ def change_style(style, representer):
 # Source files list
 charts = [
     {
-        'source': 'https://raw.githubusercontent.com/prometheus-operator/kube-prometheus/master/manifests/grafana-dashboardDefinitions.yaml',
+        'source': 'https://raw.githubusercontent.com/prometheus-operator/kube-prometheus/main/manifests/grafana-dashboardDefinitions.yaml',
         'destination': '../templates/grafana/dashboards-1.14',
         'type': 'yaml',
-        'min_kubernetes': '1.14.0-0'
+        'min_kubernetes': '1.14.0-0',
+        'multicluster_key': '.Values.grafana.sidecar.dashboards.multicluster.global.enabled',
     },
     {
-        'source': 'https://raw.githubusercontent.com/etcd-io/website/master/content/docs/current/op-guide/grafana.json',
+        'source': 'https://raw.githubusercontent.com/etcd-io/website/master/content/en/docs/v3.4/op-guide/grafana.json',
         'destination': '../templates/grafana/dashboards-1.14',
         'type': 'json',
-        'min_kubernetes': '1.14.0-0'
-    },
-    {
-        'source': 'https://raw.githubusercontent.com/prometheus-operator/kube-prometheus/release-0.1/manifests/grafana-dashboardDefinitions.yaml',
-        'destination': '../templates/grafana/dashboards',
-        'type': 'yaml',
-        'min_kubernetes': '1.10.0-0',
-        'max_kubernetes': '1.14.0-0'
-    },
-    {
-        'source': 'https://raw.githubusercontent.com/etcd-io/website/master/content/docs/current/op-guide/grafana.json',
-        'destination': '../templates/grafana/dashboards',
-        'type': 'json',
-        'min_kubernetes': '1.10.0-0',
-        'max_kubernetes': '1.14.0-0'
+        'min_kubernetes': '1.14.0-0',
+        'multicluster_key': '(or .Values.grafana.sidecar.dashboards.multicluster.global.enabled .Values.grafana.sidecar.dashboards.multicluster.etcd.enabled)'
     },
 ]
 
@@ -74,11 +63,11 @@ Do not change in-place! In order to change this file first read following link:
 https://github.com/prometheus-community/helm-charts/tree/main/charts/kube-prometheus-stack/hack
 */ -}}
 {{- $kubeTargetVersion := default .Capabilities.KubeVersion.GitVersion .Values.kubeTargetVersionOverride }}
-{{- if and (semverCompare ">=%(min_kubernetes)s" $kubeTargetVersion) (semverCompare "<%(max_kubernetes)s" $kubeTargetVersion) .Values.grafana.enabled .Values.grafana.defaultDashboardsEnabled%(condition)s }}
+{{- if and (or .Values.grafana.enabled .Values.grafana.forceDeployDashboards) (semverCompare ">=%(min_kubernetes)s" $kubeTargetVersion) (semverCompare "<%(max_kubernetes)s" $kubeTargetVersion) .Values.grafana.defaultDashboardsEnabled%(condition)s }}
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  namespace: {{ template "kube-prometheus-stack.namespace" . }}
+  namespace: {{ template "kube-prometheus-stack-grafana.namespace" . }}
   name: {{ printf "%%s-%%s" (include "kube-prometheus-stack.fullname" $) "%(name)s" | trunc 63 | trimSuffix "-" }}
   annotations:
 {{ toYaml .Values.grafana.sidecar.dashboards.annotations | indent 4 }}
@@ -117,20 +106,29 @@ def yaml_str_repr(struct, indent=2):
     text = textwrap.indent(text, ' ' * indent)
     return text
 
-
-def patch_json_for_multicluster_configuration(content):
+def patch_dashboards_json(content, multicluster_key):
     try:
         content_struct = json.loads(content)
+
+        # multicluster
         overwrite_list = []
         for variable in content_struct['templating']['list']:
             if variable['name'] == 'cluster':
                 variable['hide'] = ':multicluster:'
             overwrite_list.append(variable)
         content_struct['templating']['list'] = overwrite_list
+
+        # fix drilldown links. See https://github.com/kubernetes-monitoring/kubernetes-mixin/issues/659
+        for row in content_struct['rows']:
+            for panel in row['panels']:
+                for style in panel.get('styles', []):
+                    if 'linkUrl' in style and style['linkUrl'].startswith('./d'):
+                        style['linkUrl'] = style['linkUrl'].replace('./d', '/d')
+
         content_array = []
         original_content_lines = content.split('\n')
         for i, line in enumerate(json.dumps(content_struct, indent=4).split('\n')):
-            if ('[]' not in line and '{}' not in line) or line == original_content_lines[i]:
+            if (' []' not in line and ' {}' not in line) or line == original_content_lines[i]:
                 content_array.append(line)
                 continue
 
@@ -150,7 +148,7 @@ def patch_json_for_multicluster_configuration(content):
         if multicluster != -1:
             content = ''.join((
                 content[:multicluster-1],
-                '\{\{ if .Values.grafana.sidecar.dashboards.multicluster \}\}0\{\{ else \}\}2\{\{ end \}\}',
+                '\{\{ if %s \}\}0\{\{ else \}\}2\{\{ end \}\}' % multicluster_key,
                 content[multicluster + 15:]
             ))
     except (ValueError, KeyError):
@@ -159,7 +157,12 @@ def patch_json_for_multicluster_configuration(content):
     return content
 
 
-def write_group_to_file(resource_name, content, url, destination, min_kubernetes, max_kubernetes):
+def patch_json_set_timezone_as_variable(content):
+    # content is no more in json format, so we have to replace using regex
+    return re.sub(r'"timezone"\s*:\s*"(?:\\.|[^\"])*"', '"timezone": "\{\{ .Values.grafana.defaultDashboardsTimezone \}\}"', content, flags=re.IGNORECASE)
+
+
+def write_group_to_file(resource_name, content, url, destination, min_kubernetes, max_kubernetes, multicluster_key):
     # initialize header
     lines = header % {
         'name': resource_name,
@@ -169,7 +172,8 @@ def write_group_to_file(resource_name, content, url, destination, min_kubernetes
         'max_kubernetes': max_kubernetes
     }
 
-    content = patch_json_for_multicluster_configuration(content)
+    content = patch_dashboards_json(content, multicluster_key)
+    content = patch_json_set_timezone_as_variable(content)
 
     filename_struct = {resource_name + '.json': (LiteralStr(content))}
     # rules themselves
@@ -210,17 +214,17 @@ def main():
             groups = yaml_text['items']
             for group in groups:
                 for resource, content in group['data'].items():
-                    write_group_to_file(resource.replace('.json', ''), content, chart['source'], chart['destination'], chart['min_kubernetes'], chart['max_kubernetes'])
+                    write_group_to_file(resource.replace('.json', ''), content, chart['source'], chart['destination'], chart['min_kubernetes'], chart['max_kubernetes'], chart['multicluster_key'])
         elif chart['type'] == 'json':
             json_text = json.loads(raw_text)
             # is it already a dashboard structure or is it nested (etcd case)?
             flat_structure = bool(json_text.get('annotations'))
             if flat_structure:
                 resource = path.basename(chart['source']).replace('.json', '')
-                write_group_to_file(resource, json.dumps(json_text, indent=4), chart['source'], chart['destination'], chart['min_kubernetes'], chart['max_kubernetes'])
+                write_group_to_file(resource, json.dumps(json_text, indent=4), chart['source'], chart['destination'], chart['min_kubernetes'], chart['max_kubernetes'], chart['multicluster_key'])
             else:
                 for resource, content in json_text.items():
-                    write_group_to_file(resource.replace('.json', ''), json.dumps(content, indent=4), chart['source'], chart['destination'], chart['min_kubernetes'], chart['max_kubernetes'])
+                    write_group_to_file(resource.replace('.json', ''), json.dumps(content, indent=4), chart['source'], chart['destination'], chart['min_kubernetes'], chart['max_kubernetes'], chart['multicluster_key'])
     print("Finished")
 
 
