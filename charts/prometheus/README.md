@@ -13,7 +13,6 @@ This chart bootstraps a [Prometheus](https://prometheus.io/) deployment on a [Ku
 
 ```console
 helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
-helm repo add kube-state-metrics https://kubernetes.github.io/kube-state-metrics
 helm repo update
 ```
 
@@ -34,7 +33,7 @@ _See [helm install](https://helm.sh/docs/helm/helm_install/) for command documen
 
 By default this chart installs additional, dependent charts:
 
-- [stable/kube-state-metrics](https://github.com/helm/charts/tree/master/stable/kube-state-metrics)
+- [kube-state-metrics](https://github.com/prometheus-community/helm-charts/tree/main/charts/kube-state-metrics)
 
 To disable the dependency during installation, set `kubeStateMetrics.enabled` to `false`.
 
