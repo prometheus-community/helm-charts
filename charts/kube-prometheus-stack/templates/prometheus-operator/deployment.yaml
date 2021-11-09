@@ -1,4 +1,5 @@
 {{- $namespace := printf "%s" (include "kube-prometheus-stack.namespace" .) }}
+{{- $defaultKubeletSvcName := printf "%s-kubelet" (include "kube-prometheus-stack.fullname" .) }}
 {{- if .Values.prometheusOperator.enabled }}
 apiVersion: apps/v1
 kind: Deployment
@@ -40,7 +41,7 @@ spec:
           imagePullPolicy: "{{ .Values.prometheusOperator.image.pullPolicy }}"
           args:
             {{- if .Values.prometheusOperator.kubeletService.enabled }}
-            - --kubelet-service={{ .Values.prometheusOperator.kubeletService.namespace }}/{{ template "kube-prometheus-stack.fullname" . }}-kubelet
+            - --kubelet-service={{ .Values.prometheusOperator.kubeletService.namespace }}/{{ default $defaultKubeletSvcName .Values.prometheusOperator.kubeletService.name  }}
             {{- end }}
             {{- if .Values.prometheusOperator.logFormat }}
             - --log-format={{ .Values.prometheusOperator.logFormat }}
