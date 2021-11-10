@@ -83,6 +83,14 @@ _See [helm upgrade](https://helm.sh/docs/helm/helm_upgrade/) for command documen
 
 A major chart version change (like v1.2.3 -> v2.0.0) indicates that there is an incompatible breaking change needing manual actions.
 
+### From 20.x to 21.x
+
+Version 21 upgrades prometheus-operator and allows it scraping IPv6 Kuberenets pods. Helm does not automatically upgrade or install new CRDs on a chart upgrade, so you have to install the CRDs manually before updating:
+
+```console
+helm upgrade --install kube-prometheus-stack -n <NAMESPACE> --set ipv6=true
+```
+
 ### From 19.x to 20.x
 
 Version 20 upgrades prometheus-operator from 0.50.x to 0.52.x. Helm does not automatically upgrade or install new CRDs on a chart upgrade, so you have to install the CRDs manually before updating:
