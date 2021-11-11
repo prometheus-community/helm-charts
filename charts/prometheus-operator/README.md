@@ -23,7 +23,7 @@ _See [helm repo](https://helm.sh/docs/helm/helm_repo/) for command documentation
 
 ```console
 # Helm
-$ helm install [RELEASE_NAME] prometheus-community/kube-prometheus-stack
+$ helm install [RELEASE_NAME] prometheus-community/prometheus-operator
 ```
 
 _See [configuration](#configuration) below._
@@ -58,7 +58,7 @@ kubectl delete crd thanosrulers.monitoring.coreos.com
 
 ```console
 # Helm
-$ helm upgrade [RELEASE_NAME] prometheus-community/kube-prometheus-stack
+$ helm upgrade [RELEASE_NAME] prometheus-community/prometheus-operator
 ```
 
 With Helm v3, CRDs created by this chart are not updated by default and should be manually updated.
