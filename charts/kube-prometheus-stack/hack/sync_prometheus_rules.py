@@ -114,7 +114,8 @@ alert_condition_map = {
     'AggregatedAPIDown': 'semverCompare ">=1.18.0-0" $kubeTargetVersion',
 }
 
-replacement_map = {
+# defines replacements of strings in any field of the alerts groups
+alert_groups_replacement_map = {
     'job="prometheus-operator"': {
         'replacement': 'job="{{ $operatorJob }}"',
         'init': '{{- $operatorJob := printf "%s-%s" (include "kube-prometheus-stack.fullname" .) "operator" }}'},
@@ -144,6 +145,14 @@ replacement_map = {
         'replacement': 'job="kubelet", namespace=~"{{ $targetNamespace }}"',
         'limitGroup': ['kubernetes-storage'],
         'init': '{{- $targetNamespace := .Values.defaultRules.appNamespacesTarget }}'},
+}
+
+# defines replacements of strings in the alert expressions
+alert_expressions_replacement_map = {
+    '> 0.9 < 1': {
+        'limitGroup': ['kubernetes-resources'],
+        'limitAlert': ['KubeQuotaAlmostFull'],
+        'replacement': '[[ .Values.defaultRules.thresholds.kubernetesResources.KubeQuotaAlmostFull ]]'},
 }
 
 # standard header
@@ -180,8 +189,9 @@ def init_yaml_styles():
 
 
 def escape(s):
-    return s.replace("{{", "{{`{{").replace("}}", "}}`}}").replace("{{`{{", "{{`{{`}}").replace("}}`}}", "{{`}}`}}")
-
+    s = s.replace("{{", "{{`{{").replace("}}", "}}`}}").replace("{{`{{", "{{`{{`}}").replace("}}`}}", "{{`}}`}}")
+    # update alert expression replacement sections
+    return re.sub(r"\[\[ \.Values\.(.+) \]\]", r"{{ .Values.\1 }}", s)
 
 def fix_expr(rules):
     """Remove trailing whitespaces and line breaks, which happen to creep in
@@ -191,6 +201,20 @@ def fix_expr(rules):
         rule['expr'] = rule['expr'].rstrip()
         if '\n' in rule['expr']:
             rule['expr'] = LiteralStr(rule['expr'])
+
+def replace_expr(group):
+    """Replace rules expressions based on alert_expressions_replacement_map"""
+    group_name = group['name']
+
+    for line in alert_expressions_replacement_map:
+        alert_expr_replacement = alert_expressions_replacement_map[line]
+        if not alert_expr_replacement.get('limitAlert', None) or not alert_expr_replacement.get('replacement', None):
+            print("WARNING: %s alert_expressions_replacement_map entry requires both limitAlert and replacement rules" % alert_expr_replacement)
+            continue
+        if group_name in alert_expr_replacement.get('limitGroup', [group_name]):
+            for rule in group['rules']:
+                if rule['alert'] in alert_expr_replacement['limitAlert']:
+                    rule['expr'] = rule['expr'].replace(line, alert_expr_replacement['replacement'])
 
 
 def yaml_str_repr(struct, indent=4):
@@ -261,6 +285,7 @@ def add_custom_labels(rules, indent=4):
     return rules
 
 def write_group_to_file(group, url, destination, min_kubernetes, max_kubernetes):
+    replace_expr(group)
     fix_expr(group['rules'])
     group_name = group['name']
 
@@ -268,11 +293,11 @@ def write_group_to_file(group, url, destination, min_kubernetes, max_kubernetes)
     rules = yaml_str_repr(group)
     # add replacements of custom variables and include their initialisation in case it's needed
     init_line = ''
-    for line in replacement_map:
-        if group_name in replacement_map[line].get('limitGroup', [group_name]) and line in rules:
-            rules = rules.replace(line, replacement_map[line]['replacement'])
-            if replacement_map[line]['init']:
-                init_line += '\n' + replacement_map[line]['init']
+    for line in alert_groups_replacement_map:
+        if group_name in alert_groups_replacement_map[line].get('limitGroup', [group_name]) and line in rules:
+            rules = rules.replace(line, alert_groups_replacement_map[line]['replacement'])
+            if alert_groups_replacement_map[line]['init']:
+                init_line += '\n' + alert_groups_replacement_map[line]['init']
     # append per-alert rules
     rules = add_custom_labels(rules)
     rules = add_rules_conditions(rules)
