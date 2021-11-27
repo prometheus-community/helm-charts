@@ -118,7 +118,7 @@ Assuming you have an existing release of the prometheus chart, named `prometheus
 See [Customizing the Chart Before Installing](https://helm.sh/docs/intro/using_helm/#customizing-the-chart-before-installing). To see all configurable options with detailed comments, visit the chart's [values.yaml](./values.yaml), or run these configuration commands:
 
 ```console
-$ helm show values prometheus-community/prometheus
+helm show values prometheus-community/prometheus
 ```
 
 You may similarly use the above configuration commands on each chart [dependency](#dependencies) to see it's configurations.
