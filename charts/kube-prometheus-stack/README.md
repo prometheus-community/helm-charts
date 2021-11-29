@@ -86,11 +86,11 @@ A major chart version change (like v1.2.3 -> v2.0.0) indicates that there is an 
 ### From 21.x to 22.x
 
 Due to the upgrade of the `kube-state-metrics` chart, removal of its deployment/stateful needs to done manually prior to upgrading:
-```
+```console
 kubectl delete deployments.apps -l app.kubernetes.io/instance=prometheus-operator,app.kubernetes.io/name=kube-state-metrics --cascade=orphan
 ```
 or
-```
+```console
 kubectl delete statefulsets.apps -l app.kubernetes.io/instance=prometheus-operator,app.kubernetes.io/name=kube-state-metrics --cascade=orphan
 ```
 
