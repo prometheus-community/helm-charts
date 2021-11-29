@@ -82,7 +82,7 @@ http://druid.opstreelabs.in
 
 ### Service Monitor
 
-The chart comes with a ServiceMonitor for use with the [kube-pometheus-stack](https://github.com/prometheus-community/helm-charts/tree/main/charts/kube-prometheus-stack). If you're not using the Prometheus Operator, you can disable the ServiceMonitor by setting `serviceMonitor.enabled` to `false` and it will auto generate the following `podAnnotations` into deployment.yaml:
+The chart comes with a ServiceMonitor for use with the [kube-pometheus-stack](https://github.com/prometheus-community/helm-charts/tree/main/charts/kube-prometheus-stack). If you're not using the Prometheus Operator, you can disable the ServiceMonitor by setting `serviceMonitor.enabled` to `false` and instead populate the `podAnnotations` as below:
 
 ```yaml
 podAnnotations:

@@ -42,12 +42,34 @@ spec:
           value: {{ .Values.logLevel }}
         - name: LOG_FORMAT
           value: {{ .Values.logFormat }}
+        - name: NO_HISTOGRAM
+          value: {{ .Values.noHistogram | quote}}
+{{- if .Values.extraEnv }}
+{{ toYaml .Values.extraEnv | indent 8 }}
+{{- end }}
+{{- if .Values.security.enabled }}
+        - name: DRUID_USER
+          value: {{ .Values.security.druidUser }}
+        - name: DRUID_PASSWORD
+{{- if not .Values.security.druidPassword.secretKeyRef.enabled }}
+          value: {{ .Values.security.druidPassword.value }}
+{{- else }}
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Values.security.druidPassword.secretKeyRef.secretName }}
+              key: {{ .Values.security.druidPassword.secretKeyRef.secretKey }}
+{{- end }}
+{{- end }}
         image: "{{ .Values.image.name }}:{{ .Values.image.tag }}"
         imagePullPolicy: {{ .Values.image.pullPolicy }}
         name: {{ include "prometheus-druid-exporter.fullname" . }}
         ports:
         - containerPort: {{ .Values.exporterPort }}
           protocol: TCP
+        {{- with .Values.resources }}
+        resources:
+          {{- toYaml . | nindent 10 }}
+        {{- end}}
         {{- with .Values.containerSecurityContext}}
         securityContext:
           {{- toYaml . | nindent 10}}
