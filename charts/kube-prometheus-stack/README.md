@@ -89,7 +89,7 @@ Due to the upgrade of the `kube-state-metrics` chart, removal of its deployment/
 ```console
 kubectl delete deployments.apps -l app.kubernetes.io/instance=prometheus-operator,app.kubernetes.io/name=kube-state-metrics --cascade=orphan
 ```
-or
+or if you use autosharding:
 ```console
 kubectl delete statefulsets.apps -l app.kubernetes.io/instance=prometheus-operator,app.kubernetes.io/name=kube-state-metrics --cascade=orphan
 ```
