@@ -132,12 +132,6 @@ replacement_map = {
     'alertmanager-$1': {
         'replacement': '$1',
         'init': ''},
-    'https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#': {
-        'replacement': '{{ .Values.defaultRules.runbookUrl }}',
-        'init': ''},
-    'https://github.com/prometheus-operator/kube-prometheus/wiki/': {
-        'replacement': '{{ .Values.defaultRules.runbookUrl }}alert-name-',
-        'init': ''},
     'job="kube-state-metrics"': {
         'replacement': 'job="kube-state-metrics", namespace=~"{{ $targetNamespace }}"',
         'limitGroup': ['kubernetes-apps'],
