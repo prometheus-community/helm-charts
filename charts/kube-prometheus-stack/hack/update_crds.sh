@@ -22,5 +22,9 @@ for line in "${FILES[@]}" ; do
     URL="https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/$VERSION/example/prometheus-operator-crd/$SOURCE"
     echo "# ${URL}" > ../crds/"${DESTINATION}"
     curl -L "${URL}" >> ../crds/"${DESTINATION}"
-
+    # CRD is too long
+    # https://github.com/prometheus-community/helm-charts/issues/1500
+    if [ "$SOURCE" = monitoring.coreos.com_prometheuses.yaml ]; then
+      sed -i 's@^  annotations:@  annotations:\n    argocd.argoproj.io/sync-options: Replace=true@' ../crds/"${DESTINATION}"
+    fi
 done
