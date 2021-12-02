@@ -64,3 +64,18 @@ Allow the release namespace to be overridden for multi-namespace deployments in 
     {{- .Release.Namespace -}}
   {{- end -}}
 {{- end -}}
+
+{{/*
+Create the namespace name of the service monitor
+*/}}
+{{- define "prometheus-node-exporter.monitor-namespace" -}}
+  {{- if .Values.namespaceOverride -}}
+    {{- .Values.namespaceOverride -}}
+  {{- else -}}
+    {{- if .Values.prometheus.monitor.namespace -}}
+      {{- .Values.prometheus.monitor.namespace -}}
+    {{- else -}}
+      {{- .Release.Namespace -}}
+    {{- end -}}
+  {{- end -}}
+{{- end -}}
