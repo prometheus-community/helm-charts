@@ -21,8 +21,7 @@ _See [helm repo](https://helm.sh/docs/helm/helm_repo/) for command documentation
 ## Install Chart
 
 ```console
-# Helm
-$ helm install [RELEASE_NAME] prometheus-community/prometheus
+helm install [RELEASE_NAME] prometheus-community/prometheus
 ```
 
 _See [configuration](#configuration) below._
@@ -42,8 +41,7 @@ _See [helm dependency](https://helm.sh/docs/helm/helm_dependency/) for command d
 ## Uninstall Chart
 
 ```console
-# Helm
-$ helm uninstall [RELEASE_NAME]
+helm uninstall [RELEASE_NAME]
 ```
 
 This removes all the Kubernetes components associated with the chart and deletes the release.
@@ -53,11 +51,20 @@ _See [helm uninstall](https://helm.sh/docs/helm/helm_uninstall/) for command doc
 ## Upgrading Chart
 
 ```console
-# Helm
-$ helm upgrade [RELEASE_NAME] [CHART] --install
+helm upgrade [RELEASE_NAME] [CHART] --install
 ```
 
 _See [helm upgrade](https://helm.sh/docs/helm/helm_upgrade/) for command documentation._
+
+### To 15.0
+
+Version 15.0.0 changes the relabeling config, aligning it with the [Prometheus community conventions](https://github.com/prometheus/prometheus/pull/9832). If you've made manual changes to the relabeling config, you have to adapt your changes.
+
+Before you update please execute the following command, to be able to update kube-state-metrics:
+
+```bash
+kubectl delete deployments.apps -l app.kubernetes.io/instance=prometheus,app.kubernetes.io/name=kube-state-metrics --cascade=orphan
+```
 
 ### To 9.0
 
@@ -114,11 +121,7 @@ Assuming you have an existing release of the prometheus chart, named `prometheus
 See [Customizing the Chart Before Installing](https://helm.sh/docs/intro/using_helm/#customizing-the-chart-before-installing). To see all configurable options with detailed comments, visit the chart's [values.yaml](./values.yaml), or run these configuration commands:
 
 ```console
-# Helm 2
-$ helm inspect values prometheus-community/prometheus
-
-# Helm 3
-$ helm show values prometheus-community/prometheus
+helm show values prometheus-community/prometheus
 ```
 
 You may similarly use the above configuration commands on each chart [dependency](#dependencies) to see it's configurations.
