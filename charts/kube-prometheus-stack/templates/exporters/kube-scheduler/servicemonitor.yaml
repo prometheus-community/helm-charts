@@ -25,13 +25,13 @@ spec:
     {{- if .Values.kubeScheduler.serviceMonitor.proxyUrl }}
     proxyUrl: {{ .Values.kubeScheduler.serviceMonitor.proxyUrl}}
     {{- end }}
-    {{- if .Values.kubeScheduler.serviceMonitor.https }}
+    {{- if eq (include "kube-prometheus-stack.kubeScheduler.insecureScrape" (list . false true .Values.kubeScheduler.serviceMonitor.https )) "true" }}
     scheme: https
     tlsConfig:
       caFile: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
-      {{- if .Values.kubeScheduler.serviceMonitor.insecureSkipVerify }}
-      insecureSkipVerify: {{ .Values.kubeScheduler.serviceMonitor.insecureSkipVerify }}
-      {{- end}}
+      {{- if eq (include "kube-prometheus-stack.kubeScheduler.insecureScrape" (list . nil true .Values.kubeScheduler.serviceMonitor.insecureSkipVerify)) "true" }}
+      insecureSkipVerify: true
+      {{- end }}
       {{- if .Values.kubeScheduler.serviceMonitor.serverName }}
       serverName: {{ .Values.kubeScheduler.serviceMonitor.serverName }}
       {{- end}}
