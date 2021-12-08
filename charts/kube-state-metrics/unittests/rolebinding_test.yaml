@@ -1,0 +1,39 @@
+suite: test role binding
+templates:
+  - rolebinding.yaml
+tests:
+  - it: should be empty if no namespaces are defined
+    set:
+      rbac.useClusterRole: false
+    asserts:
+      - hasDocuments:
+          count: 0
+  - it: should generate one rolebinding
+    set:
+      rbac.useClusterRole: false
+      namespaces: ns1
+    asserts:
+      - hasDocuments:
+          count: 1
+      - equal:
+          path: metadata.namespace
+          value: ns1
+  - it: should generate one rolebinding per namespace
+    set:
+      rbac.useClusterRole: false
+      namespaces: ns1,ns2,ns3
+    asserts:
+      - hasDocuments:
+          count: 3
+      - equal:
+          path: metadata.namespace
+          value: ns1
+        documentIndex: 0
+      - equal:
+          path: metadata.namespace
+          value: ns2
+        documentIndex: 1
+      - equal:
+          path: metadata.namespace
+          value: ns3
+        documentIndex: 2
