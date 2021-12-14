@@ -83,6 +83,36 @@ _See [helm upgrade](https://helm.sh/docs/helm/helm_upgrade/) for command documen
 
 A major chart version change (like v1.2.3 -> v2.0.0) indicates that there is an incompatible breaking change needing manual actions.
 
+### From 22.x to 23.x
+
+Port names have been renamed for Istio's
+[explicit protocol selection](https://istio.io/latest/docs/ops/configuration/traffic-management/protocol-selection/#explicit-protocol-selection).
+
+| | old value | new value |
+|-|-----------|-----------|
+| `alertmanager.alertmanagerSpec.portName` | `web` | `http-web` |
+| `grafana.service.portName` | `service` | `http-web` |
+| `prometheus-node-exporter.service.portName` | `metrics` (hardcoded) | `http-metrics` |
+| `prometheus.prometheusSpec.portName` | `web` | `http-web` |
+
+### From 21.x to 22.x
+
+Due to the upgrade of the `kube-state-metrics` chart, removal of its deployment/stateful needs to done manually prior to upgrading:
+
+```console
+kubectl delete deployments.apps -l app.kubernetes.io/instance=prometheus-operator,app.kubernetes.io/name=kube-state-metrics --cascade=orphan
+```
+
+or if you use autosharding:
+
+```console
+kubectl delete statefulsets.apps -l app.kubernetes.io/instance=prometheus-operator,app.kubernetes.io/name=kube-state-metrics --cascade=orphan
+```
+
+### From 20.x to 21.x
+
+The config reloader values have been refactored. All the values have been moved to the key `prometheusConfigReloader` and the limits and requests can now be set separately.
+
 ### From 19.x to 20.x
 
 Version 20 upgrades prometheus-operator from 0.50.x to 0.52.x. Helm does not automatically upgrade or install new CRDs on a chart upgrade, so you have to install the CRDs manually before updating:
