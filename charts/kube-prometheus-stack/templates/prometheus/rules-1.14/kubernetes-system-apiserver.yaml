@@ -1,5 +1,5 @@
 {{- /*
-Generated from 'kubernetes-system-apiserver' group from https://raw.githubusercontent.com/prometheus-operator/kube-prometheus/main/manifests/kubernetes-prometheusRule.yaml
+Generated from 'kubernetes-system-apiserver' group from https://raw.githubusercontent.com/prometheus-operator/kube-prometheus/main/manifests/kubernetesControlPlane-prometheusRule.yaml
 Do not change in-place! In order to change this file first read following link:
 https://github.com/prometheus-community/helm-charts/tree/main/charts/kube-prometheus-stack/hack
 */ -}}
@@ -26,8 +26,8 @@ spec:
     rules:
     - alert: KubeClientCertificateExpiration
       annotations:
-        description: A client certificate used to authenticate to the apiserver is expiring in less than 7.0 days.
-        runbook_url: {{ .Values.defaultRules.runbookUrl }}alert-name-kubeclientcertificateexpiration
+        description: A client certificate used to authenticate to kubernetes apiserver is expiring in less than 7.0 days.
+        runbook_url: https://runbooks.prometheus-operator.dev/runbooks/kubernetes/kubeclientcertificateexpiration
         summary: Client certificate is about to expire.
       expr: apiserver_client_certificate_expiration_seconds_count{job="apiserver"} > 0 and on(job) histogram_quantile(0.01, sum by (job, le) (rate(apiserver_client_certificate_expiration_seconds_bucket{job="apiserver"}[5m]))) < 604800
       labels:
@@ -37,8 +37,8 @@ spec:
 {{- end }}
     - alert: KubeClientCertificateExpiration
       annotations:
-        description: A client certificate used to authenticate to the apiserver is expiring in less than 24.0 hours.
-        runbook_url: {{ .Values.defaultRules.runbookUrl }}alert-name-kubeclientcertificateexpiration
+        description: A client certificate used to authenticate to kubernetes apiserver is expiring in less than 24.0 hours.
+        runbook_url: https://runbooks.prometheus-operator.dev/runbooks/kubernetes/kubeclientcertificateexpiration
         summary: Client certificate is about to expire.
       expr: apiserver_client_certificate_expiration_seconds_count{job="apiserver"} > 0 and on(job) histogram_quantile(0.01, sum by (job, le) (rate(apiserver_client_certificate_expiration_seconds_bucket{job="apiserver"}[5m]))) < 86400
       labels:
@@ -46,23 +46,22 @@ spec:
 {{- if .Values.defaultRules.additionalRuleLabels }}
 {{ toYaml .Values.defaultRules.additionalRuleLabels | indent 8 }}
 {{- end }}
-    - alert: AggregatedAPIErrors
+    - alert: KubeAggregatedAPIErrors
       annotations:
-        description: An aggregated API {{`{{`}} $labels.name {{`}}`}}/{{`{{`}} $labels.namespace {{`}}`}} has reported errors. It has appeared unavailable {{`{{`}} $value | humanize {{`}}`}} times averaged over the past 10m.
-        runbook_url: {{ .Values.defaultRules.runbookUrl }}alert-name-aggregatedapierrors
-        summary: An aggregated API has reported errors.
+        description: Kubernetes aggregated API {{`{{`}} $labels.name {{`}}`}}/{{`{{`}} $labels.namespace {{`}}`}} has reported errors. It has appeared unavailable {{`{{`}} $value | humanize {{`}}`}} times averaged over the past 10m.
+        runbook_url: https://runbooks.prometheus-operator.dev/runbooks/kubernetes/kubeaggregatedapierrors
+        summary: Kubernetes aggregated API has reported errors.
       expr: sum by(name, namespace)(increase(aggregator_unavailable_apiservice_total[10m])) > 4
       labels:
         severity: warning
 {{- if .Values.defaultRules.additionalRuleLabels }}
 {{ toYaml .Values.defaultRules.additionalRuleLabels | indent 8 }}
 {{- end }}
-{{- if semverCompare ">=1.18.0-0" $kubeTargetVersion }}
-    - alert: AggregatedAPIDown
+    - alert: KubeAggregatedAPIDown
       annotations:
-        description: An aggregated API {{`{{`}} $labels.name {{`}}`}}/{{`{{`}} $labels.namespace {{`}}`}} has been only {{`{{`}} $value | humanize {{`}}`}}% available over the last 10m.
-        runbook_url: {{ .Values.defaultRules.runbookUrl }}alert-name-aggregatedapidown
-        summary: An aggregated API is down.
+        description: Kubernetes aggregated API {{`{{`}} $labels.name {{`}}`}}/{{`{{`}} $labels.namespace {{`}}`}} has been only {{`{{`}} $value | humanize {{`}}`}}% available over the last 10m.
+        runbook_url: https://runbooks.prometheus-operator.dev/runbooks/kubernetes/kubeaggregatedapidown
+        summary: Kubernetes aggregated API is down.
       expr: (1 - max by(name, namespace)(avg_over_time(aggregator_unavailable_apiservice[10m]))) * 100 < 85
       for: 5m
       labels:
@@ -70,12 +69,11 @@ spec:
 {{- if .Values.defaultRules.additionalRuleLabels }}
 {{ toYaml .Values.defaultRules.additionalRuleLabels | indent 8 }}
 {{- end }}
-{{- end }}
 {{- if .Values.kubeApiServer.enabled }}
     - alert: KubeAPIDown
       annotations:
         description: KubeAPI has disappeared from Prometheus target discovery.
-        runbook_url: {{ .Values.defaultRules.runbookUrl }}alert-name-kubeapidown
+        runbook_url: https://runbooks.prometheus-operator.dev/runbooks/kubernetes/kubeapidown
         summary: Target disappeared from Prometheus target discovery.
       expr: absent(up{job="apiserver"} == 1)
       for: 15m
@@ -87,9 +85,9 @@ spec:
 {{- end }}
     - alert: KubeAPITerminatedRequests
       annotations:
-        description: The apiserver has terminated {{`{{`}} $value | humanizePercentage {{`}}`}} of its incoming requests.
-        runbook_url: {{ .Values.defaultRules.runbookUrl }}alert-name-kubeapiterminatedrequests
-        summary: The apiserver has terminated {{`{{`}} $value | humanizePercentage {{`}}`}} of its incoming requests.
+        description: The kubernetes apiserver has terminated {{`{{`}} $value | humanizePercentage {{`}}`}} of its incoming requests.
+        runbook_url: https://runbooks.prometheus-operator.dev/runbooks/kubernetes/kubeapiterminatedrequests
+        summary: The kubernetes apiserver has terminated {{`{{`}} $value | humanizePercentage {{`}}`}} of its incoming requests.
       expr: sum(rate(apiserver_request_terminations_total{job="apiserver"}[10m]))  / (  sum(rate(apiserver_request_total{job="apiserver"}[10m])) + sum(rate(apiserver_request_terminations_total{job="apiserver"}[10m])) ) > 0.20
       for: 5m
       labels:
