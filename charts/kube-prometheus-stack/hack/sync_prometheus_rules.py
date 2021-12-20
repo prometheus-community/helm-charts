@@ -30,22 +30,22 @@ charts = [
         'min_kubernetes': '1.14.0-0'
     },
     {
-        'source': 'https://raw.githubusercontent.com/prometheus-operator/kube-prometheus/main/manifests/kube-prometheus-prometheusRule.yaml',
+        'source': 'https://raw.githubusercontent.com/prometheus-operator/kube-prometheus/main/manifests/kubePrometheus-prometheusRule.yaml',
         'destination': '../templates/prometheus/rules-1.14',
         'min_kubernetes': '1.14.0-0'
     },
     {
-        'source': 'https://raw.githubusercontent.com/prometheus-operator/kube-prometheus/main/manifests/kubernetes-prometheusRule.yaml',
+        'source': 'https://raw.githubusercontent.com/prometheus-operator/kube-prometheus/main/manifests/kubernetesControlPlane-prometheusRule.yaml',
         'destination': '../templates/prometheus/rules-1.14',
         'min_kubernetes': '1.14.0-0'
     },
     {
-        'source': 'https://raw.githubusercontent.com/prometheus-operator/kube-prometheus/main/manifests/kube-state-metrics-prometheusRule.yaml',
+        'source': 'https://raw.githubusercontent.com/prometheus-operator/kube-prometheus/main/manifests/kubeStateMetrics-prometheusRule.yaml',
         'destination': '../templates/prometheus/rules-1.14',
         'min_kubernetes': '1.14.0-0'
     },
     {
-        'source': 'https://raw.githubusercontent.com/prometheus-operator/kube-prometheus/main/manifests/node-exporter-prometheusRule.yaml',
+        'source': 'https://raw.githubusercontent.com/prometheus-operator/kube-prometheus/main/manifests/nodeExporter-prometheusRule.yaml',
         'destination': '../templates/prometheus/rules-1.14',
         'min_kubernetes': '1.14.0-0'
     },
@@ -55,7 +55,7 @@ charts = [
         'min_kubernetes': '1.14.0-0'
     },
     {
-        'source': 'https://raw.githubusercontent.com/prometheus-operator/kube-prometheus/main/manifests/prometheus-operator-prometheusRule.yaml',
+        'source': 'https://raw.githubusercontent.com/prometheus-operator/kube-prometheus/main/manifests/prometheusOperator-prometheusRule.yaml',
         'destination': '../templates/prometheus/rules-1.14',
         'min_kubernetes': '1.14.0-0'
     },
@@ -129,12 +129,6 @@ replacement_map = {
         'init': '{{- $namespace := printf "%s" (include "kube-prometheus-stack.namespace" .) }}'},
     'alertmanager-$1': {
         'replacement': '$1',
-        'init': ''},
-    'https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#': {
-        'replacement': '{{ .Values.defaultRules.runbookUrl }}',
-        'init': ''},
-    'https://github.com/prometheus-operator/kube-prometheus/wiki/': {
-        'replacement': '{{ .Values.defaultRules.runbookUrl }}alert-name-',
         'init': ''},
     'job="kube-state-metrics"': {
         'replacement': 'job="kube-state-metrics", namespace=~"{{ $targetNamespace }}"',

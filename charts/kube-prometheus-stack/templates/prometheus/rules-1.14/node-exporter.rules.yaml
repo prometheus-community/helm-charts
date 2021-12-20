@@ -1,5 +1,5 @@
 {{- /*
-Generated from 'node-exporter.rules' group from https://raw.githubusercontent.com/prometheus-operator/kube-prometheus/main/manifests/node-exporter-prometheusRule.yaml
+Generated from 'node-exporter.rules' group from https://raw.githubusercontent.com/prometheus-operator/kube-prometheus/main/manifests/nodeExporter-prometheusRule.yaml
 Do not change in-place! In order to change this file first read following link:
 https://github.com/prometheus-community/helm-charts/tree/main/charts/kube-prometheus-stack/hack
 */ -}}
@@ -25,15 +25,13 @@ spec:
   - name: node-exporter.rules
     rules:
     - expr: |-
-        count without (cpu) (
-          count without (mode) (
-            node_cpu_seconds_total{job="node-exporter"}
-          )
+        count without (cpu, mode) (
+          node_cpu_seconds_total{job="node-exporter",mode="idle"}
         )
       record: instance:node_num_cpu:sum
     - expr: |-
-        1 - avg without (cpu, mode) (
-          rate(node_cpu_seconds_total{job="node-exporter", mode="idle"}[5m])
+        1 - avg without (cpu) (
+          sum without (mode) (rate(node_cpu_seconds_total{job="node-exporter", mode=~"idle|iowait|steal"}[5m]))
         )
       record: instance:node_cpu_utilisation:rate5m
     - expr: |-
@@ -45,7 +43,19 @@ spec:
       record: instance:node_load1_per_cpu:ratio
     - expr: |-
         1 - (
-          node_memory_MemAvailable_bytes{job="node-exporter"}
+          (
+            node_memory_MemAvailable_bytes{job="node-exporter"}
+            or
+            (
+              node_memory_Buffers_bytes{job="node-exporter"}
+              +
+              node_memory_Cached_bytes{job="node-exporter"}
+              +
+              node_memory_MemFree_bytes{job="node-exporter"}
+              +
+              node_memory_Slab_bytes{job="node-exporter"}
+            )
+          )
         /
           node_memory_MemTotal_bytes{job="node-exporter"}
         )
