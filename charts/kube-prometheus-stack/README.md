@@ -97,6 +97,11 @@ kubectl apply --server-side -f https://raw.githubusercontent.com/prometheus-oper
 kubectl apply --server-side -f https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/v0.53.1/example/prometheus-operator-crd/monitoring.coreos.com_thanosrulers.yaml
 ```
 
+Starting with v25.2.0 the ability to set a rubookUrl was reintroduced. Note the trailing slash in the new default prefix, it is needed to make the generated URLs valid.
+
+| | old default | new default |
+|-|-------------|-------------|
+| `defaultRules.runbookUrl` | `https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#` | `https://runbooks.prometheus-operator.dev/runbooks/` |
 
 ### From 23.x to 24.x
 

@@ -5,6 +5,7 @@ https://github.com/prometheus-community/helm-charts/tree/main/charts/kube-promet
 */ -}}
 {{- $kubeTargetVersion := default .Capabilities.KubeVersion.GitVersion .Values.kubeTargetVersionOverride }}
 {{- if and (semverCompare ">=1.14.0-0" $kubeTargetVersion) (semverCompare "<9.9.9-9" $kubeTargetVersion) .Values.defaultRules.create .Values.defaultRules.rules.general }}
+{{- $runbookUrl := default "https://runbooks.prometheus-operator.dev/runbooks/" .Values.defaultRules.runbookUrl }}
 apiVersion: monitoring.coreos.com/v1
 kind: PrometheusRule
 metadata:
@@ -27,7 +28,7 @@ spec:
     - alert: TargetDown
       annotations:
         description: '{{`{{`}} printf "%.4g" $value {{`}}`}}% of the {{`{{`}} $labels.job {{`}}`}}/{{`{{`}} $labels.service {{`}}`}} targets in {{`{{`}} $labels.namespace {{`}}`}} namespace are down.'
-        runbook_url: https://runbooks.prometheus-operator.dev/runbooks/general/targetdown
+        runbook_url: {{ $runbookUrl }}general/targetdown
         summary: One or more targets are unreachable.
       expr: 100 * (count(up == 0) BY (job, namespace, service) / count(up) BY (job, namespace, service)) > 10
       for: 10m
@@ -49,7 +50,7 @@ spec:
           "DeadMansSnitch" integration in PagerDuty.
 
           '
-        runbook_url: https://runbooks.prometheus-operator.dev/runbooks/general/watchdog
+        runbook_url: {{ $runbookUrl }}general/watchdog
         summary: An alert that should always be firing to certify that Alertmanager is working properly.
       expr: vector(1)
       labels:

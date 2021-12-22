@@ -138,6 +138,9 @@ replacement_map = {
         'replacement': 'job="kubelet", namespace=~"{{ $targetNamespace }}"',
         'limitGroup': ['kubernetes-storage'],
         'init': '{{- $targetNamespace := .Values.defaultRules.appNamespacesTarget }}'},
+    'runbook_url: https://runbooks.prometheus-operator.dev/runbooks/': {
+        'replacement': 'runbook_url: {{ $runbookUrl }}',
+        'init': '{{- $runbookUrl := default "https://runbooks.prometheus-operator.dev/runbooks/" .Values.defaultRules.runbookUrl }}'}
 }
 
 # standard header
