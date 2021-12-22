@@ -55,6 +55,13 @@ Create the name of the service account to use
 {{- end -}}
 
 {{/*
+The image to use
+*/}}
+{{- define "prometheus-node-exporter.image" -}}
+{{- printf "%s:%s" .Values.image.repository (default (printf "v%s" .Chart.AppVersion) .Values.image.tag) }}
+{{- end }}
+
+{{/*
 Allow the release namespace to be overridden for multi-namespace deployments in combined charts
 */}}
 {{- define "prometheus-node-exporter.namespace" -}}
