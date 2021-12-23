@@ -17,6 +17,7 @@ rules:
   - "kube-scheduler.rules"
   - "kube-state-metrics"
   - "kubelet.rules"
+  - "kubernetes-system-kube-proxy"
   - "kubernetes-absent"
   - "kubernetes-resources"
   - "kubernetes-storage"
