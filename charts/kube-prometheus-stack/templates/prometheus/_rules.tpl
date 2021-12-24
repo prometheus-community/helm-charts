@@ -24,6 +24,7 @@ rules:
   - "kubernetes-system-apiserver"
   - "kubernetes-system-kubelet"
   - "kubernetes-system-controller-manager"
+  - "kubernetes-system-kube-proxy"
   - "kubernetes-system-scheduler"
   - "node-exporter.rules"
   - "node-exporter"
