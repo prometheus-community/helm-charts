@@ -18,7 +18,7 @@ metadata:
   namespace: {{ template "kube-prometheus-stack.namespace" . }}
 spec:
   secretName: {{ template "kube-prometheus-stack.fullname" . }}-root-cert
-  duration: 43800h0m0s # 5y
+  duration: {{ .Values.prometheusOperator.admissionWebhooks.certManager.rootCert.duration | default "43800h0m0s" | quote }}
   issuerRef:
     name: {{ template "kube-prometheus-stack.fullname" . }}-self-signed-issuer
   commonName: "ca.webhook.kube-prometheus-stack"
@@ -35,7 +35,7 @@ spec:
     secretName: {{ template "kube-prometheus-stack.fullname" . }}-root-cert
 {{- end }}
 ---
-# generate a serving certificate for the apiservices to use
+# generate a server certificate for the apiservices to use
 apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
@@ -43,7 +43,7 @@ metadata:
   namespace: {{ template "kube-prometheus-stack.namespace" . }}
 spec:
   secretName: {{ template "kube-prometheus-stack.fullname" . }}-admission
-  duration: 8760h0m0s # 1y
+  duration: {{ .Values.prometheusOperator.admissionWebhooks.certManager.admissionCert.duration | default "8760h0m0s" | quote }}
   issuerRef:
     {{- if .Values.prometheusOperator.admissionWebhooks.certManager.issuerRef }}
     {{- toYaml .Values.prometheusOperator.admissionWebhooks.certManager.issuerRef | nindent 4 }}
