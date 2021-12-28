@@ -113,7 +113,6 @@ alert_condition_map = {
     'CoreDNSDown': '.Values.kubeDns.enabled',
     'AlertmanagerDown': '.Values.alertmanager.enabled',
     'AggregatedAPIDown': 'semverCompare ">=1.18.0-0" $kubeTargetVersion',
-    'KubeProxyDown': '.Values.kubeProxy.enabled',
 }
 
 replacement_map = {
