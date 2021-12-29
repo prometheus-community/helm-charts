@@ -90,6 +90,8 @@ Instead of `defaultRules.rules.node` the 2 new variables `defaultRules.rules.nod
 
 Also the following defaultRules.rules has been removed as they had no effect: `kubeApiserver`, `kubeApiserverError`, `kubePrometheusNodeAlerting`, `kubernetesAbsent`, `time`.
 
+The ability to set a rubookUrl via `defaultRules.rules.rubookUrl` was reintroduced.
+
 ### From 25.x to 26.x
 
 This version enables the prometheus-node-exporter subchart servicemonitor by default again, by setting `prometheus-node-exporter.prometheus.monitor.enabled` to `true`.
