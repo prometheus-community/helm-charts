@@ -85,6 +85,7 @@ condition_map = {
     'kubernetes-resources': ' .Values.defaultRules.rules.kubernetesResources',
     'kubernetes-storage': ' .Values.defaultRules.rules.kubernetesStorage',
     'kubernetes-system': ' .Values.defaultRules.rules.kubernetesSystem',
+    'kubernetes-system-kube-proxy': ' .Values.kubeProxy.enabled .Values.defaultRules.rules.kubeProxy',
     'kubernetes-system-apiserver': ' .Values.defaultRules.rules.kubernetesSystem', # kubernetes-system was split into more groups in 1.14, one of them is kubernetes-system-apiserver
     'kubernetes-system-kubelet': ' .Values.defaultRules.rules.kubernetesSystem', # kubernetes-system was split into more groups in 1.14, one of them is kubernetes-system-kubelet
     'kubernetes-system-controller-manager': ' .Values.kubeControllerManager.enabled',

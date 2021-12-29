@@ -21,6 +21,7 @@ rules:
   - "kubernetes-resources"
   - "kubernetes-storage"
   - "kubernetes-system"
+  - "kubernetes-system-kube-proxy"
   - "kubernetes-system-apiserver"
   - "kubernetes-system-kubelet"
   - "kubernetes-system-controller-manager"
