@@ -24,6 +24,7 @@ spec:
   groups:
   - name: kubernetes-system-apiserver
     rules:
+{{- if not (.Values.defaultRules.disabled.KubeClientCertificateExpiration | default false) }}
     - alert: KubeClientCertificateExpiration
       annotations:
         description: A client certificate used to authenticate to kubernetes apiserver is expiring in less than 7.0 days.
@@ -34,6 +35,7 @@ spec:
         severity: warning
 {{- if .Values.defaultRules.additionalRuleLabels }}
 {{ toYaml .Values.defaultRules.additionalRuleLabels | indent 8 }}
+{{- end }}
 {{- end }}
     - alert: KubeClientCertificateExpiration
       annotations:
@@ -46,6 +48,7 @@ spec:
 {{- if .Values.defaultRules.additionalRuleLabels }}
 {{ toYaml .Values.defaultRules.additionalRuleLabels | indent 8 }}
 {{- end }}
+{{- if not (.Values.defaultRules.disabled.KubeAggregatedAPIErrors | default false) }}
     - alert: KubeAggregatedAPIErrors
       annotations:
         description: Kubernetes aggregated API {{`{{`}} $labels.name {{`}}`}}/{{`{{`}} $labels.namespace {{`}}`}} has reported errors. It has appeared unavailable {{`{{`}} $value | humanize {{`}}`}} times averaged over the past 10m.
@@ -57,6 +60,8 @@ spec:
 {{- if .Values.defaultRules.additionalRuleLabels }}
 {{ toYaml .Values.defaultRules.additionalRuleLabels | indent 8 }}
 {{- end }}
+{{- end }}
+{{- if not (.Values.defaultRules.disabled.KubeAggregatedAPIDown | default false) }}
     - alert: KubeAggregatedAPIDown
       annotations:
         description: Kubernetes aggregated API {{`{{`}} $labels.name {{`}}`}}/{{`{{`}} $labels.namespace {{`}}`}} has been only {{`{{`}} $value | humanize {{`}}`}}% available over the last 10m.
@@ -69,7 +74,9 @@ spec:
 {{- if .Values.defaultRules.additionalRuleLabels }}
 {{ toYaml .Values.defaultRules.additionalRuleLabels | indent 8 }}
 {{- end }}
+{{- end }}
 {{- if .Values.kubeApiServer.enabled }}
+{{- if not (.Values.defaultRules.disabled.KubeAPIDown | default false) }}
     - alert: KubeAPIDown
       annotations:
         description: KubeAPI has disappeared from Prometheus target discovery.
@@ -83,6 +90,8 @@ spec:
 {{ toYaml .Values.defaultRules.additionalRuleLabels | indent 8 }}
 {{- end }}
 {{- end }}
+{{- end }}
+{{- if not (.Values.defaultRules.disabled.KubeAPITerminatedRequests | default false) }}
     - alert: KubeAPITerminatedRequests
       annotations:
         description: The kubernetes apiserver has terminated {{`{{`}} $value | humanizePercentage {{`}}`}} of its incoming requests.
@@ -94,5 +103,6 @@ spec:
         severity: warning
 {{- if .Values.defaultRules.additionalRuleLabels }}
 {{ toYaml .Values.defaultRules.additionalRuleLabels | indent 8 }}
+{{- end }}
 {{- end }}
 {{- end }}
