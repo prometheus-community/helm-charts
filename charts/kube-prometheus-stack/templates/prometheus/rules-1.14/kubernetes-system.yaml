@@ -24,6 +24,7 @@ spec:
   groups:
   - name: kubernetes-system
     rules:
+{{- if not (.Values.defaultRules.disabled.KubeVersionMismatch | default false) }}
     - alert: KubeVersionMismatch
       annotations:
         description: There are {{`{{`}} $value {{`}}`}} different semantic versions of Kubernetes components running.
@@ -36,6 +37,8 @@ spec:
 {{- if .Values.defaultRules.additionalRuleLabels }}
 {{ toYaml .Values.defaultRules.additionalRuleLabels | indent 8 }}
 {{- end }}
+{{- end }}
+{{- if not (.Values.defaultRules.disabled.KubeClientErrors | default false) }}
     - alert: KubeClientErrors
       annotations:
         description: Kubernetes API server client '{{`{{`}} $labels.job {{`}}`}}/{{`{{`}} $labels.instance {{`}}`}}' is experiencing {{`{{`}} $value | humanizePercentage {{`}}`}} errors.'
@@ -51,5 +54,6 @@ spec:
         severity: warning
 {{- if .Values.defaultRules.additionalRuleLabels }}
 {{ toYaml .Values.defaultRules.additionalRuleLabels | indent 8 }}
+{{- end }}
 {{- end }}
 {{- end }}
