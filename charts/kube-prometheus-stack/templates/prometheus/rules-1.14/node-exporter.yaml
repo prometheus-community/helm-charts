@@ -4,7 +4,7 @@ Do not change in-place! In order to change this file first read following link:
 https://github.com/prometheus-community/helm-charts/tree/main/charts/kube-prometheus-stack/hack
 */ -}}
 {{- $kubeTargetVersion := default .Capabilities.KubeVersion.GitVersion .Values.kubeTargetVersionOverride }}
-{{- if and (semverCompare ">=1.14.0-0" $kubeTargetVersion) (semverCompare "<9.9.9-9" $kubeTargetVersion) .Values.defaultRules.create .Values.defaultRules.rules.node }}
+{{- if and (semverCompare ">=1.14.0-0" $kubeTargetVersion) (semverCompare "<9.9.9-9" $kubeTargetVersion) .Values.defaultRules.create .Values.defaultRules.rules.nodeExporterAlerting }}
 apiVersion: monitoring.coreos.com/v1
 kind: PrometheusRule
 metadata:
@@ -28,7 +28,7 @@ spec:
     - alert: NodeFilesystemSpaceFillingUp
       annotations:
         description: Filesystem on {{`{{`}} $labels.device {{`}}`}} at {{`{{`}} $labels.instance {{`}}`}} has only {{`{{`}} printf "%.2f" $value {{`}}`}}% available space left and is filling up.
-        runbook_url: https://runbooks.prometheus-operator.dev/runbooks/node/nodefilesystemspacefillingup
+        runbook_url: {{ .Values.defaultRules.runbookUrl }}/node/nodefilesystemspacefillingup
         summary: Filesystem is predicted to run out of space within the next 24 hours.
       expr: |-
         (
@@ -48,7 +48,7 @@ spec:
     - alert: NodeFilesystemSpaceFillingUp
       annotations:
         description: Filesystem on {{`{{`}} $labels.device {{`}}`}} at {{`{{`}} $labels.instance {{`}}`}} has only {{`{{`}} printf "%.2f" $value {{`}}`}}% available space left and is filling up fast.
-        runbook_url: https://runbooks.prometheus-operator.dev/runbooks/node/nodefilesystemspacefillingup
+        runbook_url: {{ .Values.defaultRules.runbookUrl }}/node/nodefilesystemspacefillingup
         summary: Filesystem is predicted to run out of space within the next 4 hours.
       expr: |-
         (
@@ -68,7 +68,7 @@ spec:
     - alert: NodeFilesystemAlmostOutOfSpace
       annotations:
         description: Filesystem on {{`{{`}} $labels.device {{`}}`}} at {{`{{`}} $labels.instance {{`}}`}} has only {{`{{`}} printf "%.2f" $value {{`}}`}}% available space left.
-        runbook_url: https://runbooks.prometheus-operator.dev/runbooks/node/nodefilesystemalmostoutofspace
+        runbook_url: {{ .Values.defaultRules.runbookUrl }}/node/nodefilesystemalmostoutofspace
         summary: Filesystem has less than 5% space left.
       expr: |-
         (
@@ -86,7 +86,7 @@ spec:
     - alert: NodeFilesystemAlmostOutOfSpace
       annotations:
         description: Filesystem on {{`{{`}} $labels.device {{`}}`}} at {{`{{`}} $labels.instance {{`}}`}} has only {{`{{`}} printf "%.2f" $value {{`}}`}}% available space left.
-        runbook_url: https://runbooks.prometheus-operator.dev/runbooks/node/nodefilesystemalmostoutofspace
+        runbook_url: {{ .Values.defaultRules.runbookUrl }}/node/nodefilesystemalmostoutofspace
         summary: Filesystem has less than 3% space left.
       expr: |-
         (
@@ -104,7 +104,7 @@ spec:
     - alert: NodeFilesystemFilesFillingUp
       annotations:
         description: Filesystem on {{`{{`}} $labels.device {{`}}`}} at {{`{{`}} $labels.instance {{`}}`}} has only {{`{{`}} printf "%.2f" $value {{`}}`}}% available inodes left and is filling up.
-        runbook_url: https://runbooks.prometheus-operator.dev/runbooks/node/nodefilesystemfilesfillingup
+        runbook_url: {{ .Values.defaultRules.runbookUrl }}/node/nodefilesystemfilesfillingup
         summary: Filesystem is predicted to run out of inodes within the next 24 hours.
       expr: |-
         (
@@ -124,7 +124,7 @@ spec:
     - alert: NodeFilesystemFilesFillingUp
       annotations:
         description: Filesystem on {{`{{`}} $labels.device {{`}}`}} at {{`{{`}} $labels.instance {{`}}`}} has only {{`{{`}} printf "%.2f" $value {{`}}`}}% available inodes left and is filling up fast.
-        runbook_url: https://runbooks.prometheus-operator.dev/runbooks/node/nodefilesystemfilesfillingup
+        runbook_url: {{ .Values.defaultRules.runbookUrl }}/node/nodefilesystemfilesfillingup
         summary: Filesystem is predicted to run out of inodes within the next 4 hours.
       expr: |-
         (
@@ -144,7 +144,7 @@ spec:
     - alert: NodeFilesystemAlmostOutOfFiles
       annotations:
         description: Filesystem on {{`{{`}} $labels.device {{`}}`}} at {{`{{`}} $labels.instance {{`}}`}} has only {{`{{`}} printf "%.2f" $value {{`}}`}}% available inodes left.
-        runbook_url: https://runbooks.prometheus-operator.dev/runbooks/node/nodefilesystemalmostoutoffiles
+        runbook_url: {{ .Values.defaultRules.runbookUrl }}/node/nodefilesystemalmostoutoffiles
         summary: Filesystem has less than 5% inodes left.
       expr: |-
         (
@@ -162,7 +162,7 @@ spec:
     - alert: NodeFilesystemAlmostOutOfFiles
       annotations:
         description: Filesystem on {{`{{`}} $labels.device {{`}}`}} at {{`{{`}} $labels.instance {{`}}`}} has only {{`{{`}} printf "%.2f" $value {{`}}`}}% available inodes left.
-        runbook_url: https://runbooks.prometheus-operator.dev/runbooks/node/nodefilesystemalmostoutoffiles
+        runbook_url: {{ .Values.defaultRules.runbookUrl }}/node/nodefilesystemalmostoutoffiles
         summary: Filesystem has less than 3% inodes left.
       expr: |-
         (
@@ -180,7 +180,7 @@ spec:
     - alert: NodeNetworkReceiveErrs
       annotations:
         description: '{{`{{`}} $labels.instance {{`}}`}} interface {{`{{`}} $labels.device {{`}}`}} has encountered {{`{{`}} printf "%.0f" $value {{`}}`}} receive errors in the last two minutes.'
-        runbook_url: https://runbooks.prometheus-operator.dev/runbooks/node/nodenetworkreceiveerrs
+        runbook_url: {{ .Values.defaultRules.runbookUrl }}/node/nodenetworkreceiveerrs
         summary: Network interface is reporting many receive errors.
       expr: rate(node_network_receive_errs_total[2m]) / rate(node_network_receive_packets_total[2m]) > 0.01
       for: 1h
@@ -194,7 +194,7 @@ spec:
     - alert: NodeNetworkTransmitErrs
       annotations:
         description: '{{`{{`}} $labels.instance {{`}}`}} interface {{`{{`}} $labels.device {{`}}`}} has encountered {{`{{`}} printf "%.0f" $value {{`}}`}} transmit errors in the last two minutes.'
-        runbook_url: https://runbooks.prometheus-operator.dev/runbooks/node/nodenetworktransmiterrs
+        runbook_url: {{ .Values.defaultRules.runbookUrl }}/node/nodenetworktransmiterrs
         summary: Network interface is reporting many transmit errors.
       expr: rate(node_network_transmit_errs_total[2m]) / rate(node_network_transmit_packets_total[2m]) > 0.01
       for: 1h
@@ -208,7 +208,7 @@ spec:
     - alert: NodeHighNumberConntrackEntriesUsed
       annotations:
         description: '{{`{{`}} $value | humanizePercentage {{`}}`}} of conntrack entries are used.'
-        runbook_url: https://runbooks.prometheus-operator.dev/runbooks/node/nodehighnumberconntrackentriesused
+        runbook_url: {{ .Values.defaultRules.runbookUrl }}/node/nodehighnumberconntrackentriesused
         summary: Number of conntrack are getting close to the limit.
       expr: (node_nf_conntrack_entries / node_nf_conntrack_entries_limit) > 0.75
       labels:
@@ -221,7 +221,7 @@ spec:
     - alert: NodeTextFileCollectorScrapeError
       annotations:
         description: Node Exporter text file collector failed to scrape.
-        runbook_url: https://runbooks.prometheus-operator.dev/runbooks/node/nodetextfilecollectorscrapeerror
+        runbook_url: {{ .Values.defaultRules.runbookUrl }}/node/nodetextfilecollectorscrapeerror
         summary: Node Exporter text file collector failed to scrape.
       expr: node_textfile_scrape_error{job="node-exporter"} == 1
       labels:
@@ -234,7 +234,7 @@ spec:
     - alert: NodeClockSkewDetected
       annotations:
         description: Clock on {{`{{`}} $labels.instance {{`}}`}} is out of sync by more than 300s. Ensure NTP is configured correctly on this host.
-        runbook_url: https://runbooks.prometheus-operator.dev/runbooks/node/nodeclockskewdetected
+        runbook_url: {{ .Values.defaultRules.runbookUrl }}/node/nodeclockskewdetected
         summary: Clock skew detected.
       expr: |-
         (
@@ -259,7 +259,7 @@ spec:
     - alert: NodeClockNotSynchronising
       annotations:
         description: Clock on {{`{{`}} $labels.instance {{`}}`}} is not synchronising. Ensure NTP is configured on this host.
-        runbook_url: https://runbooks.prometheus-operator.dev/runbooks/node/nodeclocknotsynchronising
+        runbook_url: {{ .Values.defaultRules.runbookUrl }}/node/nodeclocknotsynchronising
         summary: Clock not synchronising.
       expr: |-
         min_over_time(node_timex_sync_status[5m]) == 0
@@ -276,7 +276,7 @@ spec:
     - alert: NodeRAIDDegraded
       annotations:
         description: RAID array '{{`{{`}} $labels.device {{`}}`}}' on {{`{{`}} $labels.instance {{`}}`}} is in degraded state due to one or more disks failures. Number of spare drives is insufficient to fix issue automatically.
-        runbook_url: https://runbooks.prometheus-operator.dev/runbooks/node/noderaiddegraded
+        runbook_url: {{ .Values.defaultRules.runbookUrl }}/node/noderaiddegraded
         summary: RAID Array is degraded
       expr: node_md_disks_required - ignoring (state) (node_md_disks{state="active"}) > 0
       for: 15m
@@ -290,7 +290,7 @@ spec:
     - alert: NodeRAIDDiskFailure
       annotations:
         description: At least one device in RAID array on {{`{{`}} $labels.instance {{`}}`}} failed. Array '{{`{{`}} $labels.device {{`}}`}}' needs attention and possibly a disk swap.
-        runbook_url: https://runbooks.prometheus-operator.dev/runbooks/node/noderaiddiskfailure
+        runbook_url: {{ .Values.defaultRules.runbookUrl }}/node/noderaiddiskfailure
         summary: Failed device in RAID array
       expr: node_md_disks{state="failed"} > 0
       labels:
@@ -303,7 +303,7 @@ spec:
     - alert: NodeFileDescriptorLimit
       annotations:
         description: File descriptors limit at {{`{{`}} $labels.instance {{`}}`}} is currently at {{`{{`}} printf "%.2f" $value {{`}}`}}%.
-        runbook_url: https://runbooks.prometheus-operator.dev/runbooks/node/nodefiledescriptorlimit
+        runbook_url: {{ .Values.defaultRules.runbookUrl }}/node/nodefiledescriptorlimit
         summary: Kernel is predicted to exhaust file descriptors limit soon.
       expr: |-
         (
@@ -319,7 +319,7 @@ spec:
     - alert: NodeFileDescriptorLimit
       annotations:
         description: File descriptors limit at {{`{{`}} $labels.instance {{`}}`}} is currently at {{`{{`}} printf "%.2f" $value {{`}}`}}%.
-        runbook_url: https://runbooks.prometheus-operator.dev/runbooks/node/nodefiledescriptorlimit
+        runbook_url: {{ .Values.defaultRules.runbookUrl }}/node/nodefiledescriptorlimit
         summary: Kernel is predicted to exhaust file descriptors limit soon.
       expr: |-
         (

@@ -83,6 +83,15 @@ _See [helm upgrade](https://helm.sh/docs/helm/helm_upgrade/) for command documen
 
 A major chart version change (like v1.2.3 -> v2.0.0) indicates that there is an incompatible breaking change needing manual actions.
 
+### From 26.x to 27.x
+
+This version splits Node Exporter recording and altering rules in separate config values.
+Instead of `defaultRules.rules.node` the 2 new variables `defaultRules.rules.nodeExporterAlerting` and `defaultRules.rules.nodeExporterRecording` are used.
+
+Also the following defaultRules.rules has been removed as they had no effect: `kubeApiserver`, `kubeApiserverError`, `kubePrometheusNodeAlerting`, `kubernetesAbsent`, `time`.
+
+The ability to set a rubookUrl via `defaultRules.rules.rubookUrl` was reintroduced.
+
 ### From 25.x to 26.x
 
 This version enables the prometheus-node-exporter subchart servicemonitor by default again, by setting `prometheus-node-exporter.prometheus.monitor.enabled` to `true`.

@@ -69,19 +69,18 @@ charts = [
 # Additional conditions map
 condition_map = {
     'alertmanager.rules': ' .Values.defaultRules.rules.alertmanager',
+    'config-reloaders': ' .Values.defaultRules.rules.configReloaders',
+    'etcd': ' .Values.kubeEtcd.enabled .Values.defaultRules.rules.etcd',
     'general.rules': ' .Values.defaultRules.rules.general',
     'k8s.rules': ' .Values.defaultRules.rules.k8s',
-    'kube-apiserver.rules': ' .Values.kubeApiServer.enabled .Values.defaultRules.rules.kubeApiserver',
     'kube-apiserver-availability.rules': ' .Values.kubeApiServer.enabled .Values.defaultRules.rules.kubeApiserverAvailability',
-    'kube-apiserver-error': ' .Values.kubeApiServer.enabled .Values.defaultRules.rules.kubeApiserverError',
     'kube-apiserver-slos': ' .Values.kubeApiServer.enabled .Values.defaultRules.rules.kubeApiserverSlos',
     'kube-prometheus-general.rules': ' .Values.defaultRules.rules.kubePrometheusGeneral',
-    'kube-prometheus-node-alerting.rules': ' .Values.defaultRules.rules.kubePrometheusNodeAlerting',
     'kube-prometheus-node-recording.rules': ' .Values.defaultRules.rules.kubePrometheusNodeRecording',
     'kube-scheduler.rules': ' .Values.kubeScheduler.enabled .Values.defaultRules.rules.kubeScheduler',
     'kube-state-metrics': ' .Values.defaultRules.rules.kubeStateMetrics',
     'kubelet.rules': ' .Values.kubelet.enabled .Values.defaultRules.rules.kubelet',
-    'kubernetes-absent': ' .Values.defaultRules.rules.kubernetesAbsent',
+    'kubernetes-apps': ' .Values.defaultRules.rules.kubernetesApps',
     'kubernetes-resources': ' .Values.defaultRules.rules.kubernetesResources',
     'kubernetes-storage': ' .Values.defaultRules.rules.kubernetesStorage',
     'kubernetes-system': ' .Values.defaultRules.rules.kubernetesSystem',
@@ -90,29 +89,25 @@ condition_map = {
     'kubernetes-system-kubelet': ' .Values.defaultRules.rules.kubernetesSystem', # kubernetes-system was split into more groups in 1.14, one of them is kubernetes-system-kubelet
     'kubernetes-system-controller-manager': ' .Values.kubeControllerManager.enabled',
     'kubernetes-system-scheduler': ' .Values.kubeScheduler.enabled .Values.defaultRules.rules.kubeScheduler',
-    'node-exporter.rules': ' .Values.defaultRules.rules.node',
-    'node-exporter': ' .Values.defaultRules.rules.node',
+    'node-exporter.rules': ' .Values.defaultRules.rules.nodeExporterRecording',
+    'node-exporter': ' .Values.defaultRules.rules.nodeExporterAlerting',
     'node.rules': ' .Values.defaultRules.rules.node',
     'node-network': ' .Values.defaultRules.rules.network',
-    'node-time': ' .Values.defaultRules.rules.time',
     'prometheus-operator': ' .Values.defaultRules.rules.prometheusOperator',
-    'prometheus.rules': ' .Values.defaultRules.rules.prometheus',
     'prometheus': ' .Values.defaultRules.rules.prometheus', # kube-prometheus >= 1.14 uses prometheus as group instead of prometheus.rules
-    'kubernetes-apps': ' .Values.defaultRules.rules.kubernetesApps',
-    'etcd': ' .Values.kubeEtcd.enabled .Values.defaultRules.rules.etcd',
 }
 
 alert_condition_map = {
+    'AggregatedAPIDown': 'semverCompare ">=1.18.0-0" $kubeTargetVersion',
+    'AlertmanagerDown': '.Values.alertmanager.enabled',
+    'CoreDNSDown': '.Values.kubeDns.enabled',
     'KubeAPIDown': '.Values.kubeApiServer.enabled',  # there are more alerts which are left enabled, because they'll never fire without metrics
     'KubeControllerManagerDown': '.Values.kubeControllerManager.enabled',
+    'KubeletDown': '.Values.prometheusOperator.kubeletService.enabled',  # there are more alerts which are left enabled, because they'll never fire without metrics
     'KubeSchedulerDown': '.Values.kubeScheduler.enabled',
     'KubeStateMetricsDown': '.Values.kubeStateMetrics.enabled',  # there are more alerts which are left enabled, because they'll never fire without metrics
-    'KubeletDown': '.Values.prometheusOperator.kubeletService.enabled',  # there are more alerts which are left enabled, because they'll never fire without metrics
-    'PrometheusOperatorDown': '.Values.prometheusOperator.enabled',
     'NodeExporterDown': '.Values.nodeExporter.enabled',
-    'CoreDNSDown': '.Values.kubeDns.enabled',
-    'AlertmanagerDown': '.Values.alertmanager.enabled',
-    'AggregatedAPIDown': 'semverCompare ">=1.18.0-0" $kubeTargetVersion',
+    'PrometheusOperatorDown': '.Values.prometheusOperator.enabled',
 }
 
 replacement_map = {
@@ -139,6 +134,9 @@ replacement_map = {
         'replacement': 'job="kubelet", namespace=~"{{ $targetNamespace }}"',
         'limitGroup': ['kubernetes-storage'],
         'init': '{{- $targetNamespace := .Values.defaultRules.appNamespacesTarget }}'},
+    'runbook_url: https://runbooks.prometheus-operator.dev/runbooks/': {
+        'replacement': 'runbook_url: {{ .Values.defaultRules.runbookUrl }}/',
+        'init': ''}
 }
 
 # standard header
