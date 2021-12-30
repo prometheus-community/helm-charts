@@ -24,6 +24,7 @@ spec:
   groups:
   - name: general.rules
     rules:
+{{- if not (.Values.defaultRules.disabled.TargetDown | default false) }}
     - alert: TargetDown
       annotations:
         description: '{{`{{`}} printf "%.4g" $value {{`}}`}}% of the {{`{{`}} $labels.job {{`}}`}}/{{`{{`}} $labels.service {{`}}`}} targets in {{`{{`}} $labels.namespace {{`}}`}} namespace are down.'
@@ -36,6 +37,8 @@ spec:
 {{- if .Values.defaultRules.additionalRuleLabels }}
 {{ toYaml .Values.defaultRules.additionalRuleLabels | indent 8 }}
 {{- end }}
+{{- end }}
+{{- if not (.Values.defaultRules.disabled.Watchdog | default false) }}
     - alert: Watchdog
       annotations:
         description: 'This is an alert meant to ensure that the entire alerting pipeline is functional.
@@ -56,5 +59,6 @@ spec:
         severity: none
 {{- if .Values.defaultRules.additionalRuleLabels }}
 {{ toYaml .Values.defaultRules.additionalRuleLabels | indent 8 }}
+{{- end }}
 {{- end }}
 {{- end }}
