@@ -69,19 +69,18 @@ charts = [
 # Additional conditions map
 condition_map = {
     'alertmanager.rules': ' .Values.defaultRules.rules.alertmanager',
+    'config-reloaders': ' .Values.defaultRules.rules.configReloaders',
+    'etcd': ' .Values.kubeEtcd.enabled .Values.defaultRules.rules.etcd',
     'general.rules': ' .Values.defaultRules.rules.general',
     'k8s.rules': ' .Values.defaultRules.rules.k8s',
-    'kube-apiserver.rules': ' .Values.kubeApiServer.enabled .Values.defaultRules.rules.kubeApiserver',
     'kube-apiserver-availability.rules': ' .Values.kubeApiServer.enabled .Values.defaultRules.rules.kubeApiserverAvailability',
-    'kube-apiserver-error': ' .Values.kubeApiServer.enabled .Values.defaultRules.rules.kubeApiserverError',
     'kube-apiserver-slos': ' .Values.kubeApiServer.enabled .Values.defaultRules.rules.kubeApiserverSlos',
     'kube-prometheus-general.rules': ' .Values.defaultRules.rules.kubePrometheusGeneral',
-    'kube-prometheus-node-alerting.rules': ' .Values.defaultRules.rules.kubePrometheusNodeAlerting',
     'kube-prometheus-node-recording.rules': ' .Values.defaultRules.rules.kubePrometheusNodeRecording',
     'kube-scheduler.rules': ' .Values.kubeScheduler.enabled .Values.defaultRules.rules.kubeScheduler',
     'kube-state-metrics': ' .Values.defaultRules.rules.kubeStateMetrics',
     'kubelet.rules': ' .Values.kubelet.enabled .Values.defaultRules.rules.kubelet',
-    'kubernetes-absent': ' .Values.defaultRules.rules.kubernetesAbsent',
+    'kubernetes-apps': ' .Values.defaultRules.rules.kubernetesApps',
     'kubernetes-resources': ' .Values.defaultRules.rules.kubernetesResources',
     'kubernetes-storage': ' .Values.defaultRules.rules.kubernetesStorage',
     'kubernetes-system': ' .Values.defaultRules.rules.kubernetesSystem',
@@ -90,29 +89,25 @@ condition_map = {
     'kubernetes-system-kubelet': ' .Values.defaultRules.rules.kubernetesSystem', # kubernetes-system was split into more groups in 1.14, one of them is kubernetes-system-kubelet
     'kubernetes-system-controller-manager': ' .Values.kubeControllerManager.enabled',
     'kubernetes-system-scheduler': ' .Values.kubeScheduler.enabled .Values.defaultRules.rules.kubeScheduler',
-    'node-exporter.rules': ' .Values.defaultRules.rules.node',
-    'node-exporter': ' .Values.defaultRules.rules.node',
+    'node-exporter.rules': ' .Values.defaultRules.rules.nodeExporterRecording',
+    'node-exporter': ' .Values.defaultRules.rules.nodeExporterAlerting',
     'node.rules': ' .Values.defaultRules.rules.node',
     'node-network': ' .Values.defaultRules.rules.network',
-    'node-time': ' .Values.defaultRules.rules.time',
     'prometheus-operator': ' .Values.defaultRules.rules.prometheusOperator',
-    'prometheus.rules': ' .Values.defaultRules.rules.prometheus',
     'prometheus': ' .Values.defaultRules.rules.prometheus', # kube-prometheus >= 1.14 uses prometheus as group instead of prometheus.rules
-    'kubernetes-apps': ' .Values.defaultRules.rules.kubernetesApps',
-    'etcd': ' .Values.kubeEtcd.enabled .Values.defaultRules.rules.etcd',
 }
 
 alert_condition_map = {
+    'AggregatedAPIDown': 'semverCompare ">=1.18.0-0" $kubeTargetVersion',
+    'AlertmanagerDown': '.Values.alertmanager.enabled',
+    'CoreDNSDown': '.Values.kubeDns.enabled',
     'KubeAPIDown': '.Values.kubeApiServer.enabled',  # there are more alerts which are left enabled, because they'll never fire without metrics
     'KubeControllerManagerDown': '.Values.kubeControllerManager.enabled',
+    'KubeletDown': '.Values.prometheusOperator.kubeletService.enabled',  # there are more alerts which are left enabled, because they'll never fire without metrics
     'KubeSchedulerDown': '.Values.kubeScheduler.enabled',
     'KubeStateMetricsDown': '.Values.kubeStateMetrics.enabled',  # there are more alerts which are left enabled, because they'll never fire without metrics
-    'KubeletDown': '.Values.prometheusOperator.kubeletService.enabled',  # there are more alerts which are left enabled, because they'll never fire without metrics
-    'PrometheusOperatorDown': '.Values.prometheusOperator.enabled',
     'NodeExporterDown': '.Values.nodeExporter.enabled',
-    'CoreDNSDown': '.Values.kubeDns.enabled',
-    'AlertmanagerDown': '.Values.alertmanager.enabled',
-    'AggregatedAPIDown': 'semverCompare ">=1.18.0-0" $kubeTargetVersion',
+    'PrometheusOperatorDown': '.Values.prometheusOperator.enabled',
 }
 
 replacement_map = {
@@ -139,6 +134,9 @@ replacement_map = {
         'replacement': 'job="kubelet", namespace=~"{{ $targetNamespace }}"',
         'limitGroup': ['kubernetes-storage'],
         'init': '{{- $targetNamespace := .Values.defaultRules.appNamespacesTarget }}'},
+    'runbook_url: https://runbooks.prometheus-operator.dev/runbooks/': {
+        'replacement': 'runbook_url: {{ .Values.defaultRules.runbookUrl }}/',
+        'init': ''}
 }
 
 # standard header
@@ -200,13 +198,13 @@ def yaml_str_repr(struct, indent=4):
     return text
 
 
-def add_rules_conditions(rules, indent=4):
-    """Add if wrapper for rules, listed in alert_condition_map"""
+def add_rules_conditions(rules, rules_map, indent=4):
+    """Add if wrapper for rules, listed in rules_map"""
     rule_condition = '{{- if %s }}\n'
-    for alert_name in alert_condition_map:
+    for alert_name in rules_map:
         line_start = ' ' * indent + '- alert: '
         if line_start + alert_name in rules:
-            rule_text = rule_condition % alert_condition_map[alert_name]
+            rule_text = rule_condition % rules_map[alert_name]
             # add if condition
             index = rules.index(line_start + alert_name)
             rules = rules[:index] + rule_text + rules[index:]
@@ -217,7 +215,7 @@ def add_rules_conditions(rules, indent=4):
                 # we found the last alert in file if there are no alerts after it
                 next_index = len(rules)
 
-            # depending on the rule ordering in alert_condition_map it's possible that an if statement from another rule is present at the end of this block.
+            # depending on the rule ordering in rules_map it's possible that an if statement from another rule is present at the end of this block.
             found_block_end = False
             last_line_index = next_index
             while not found_block_end:
@@ -231,6 +229,23 @@ def add_rules_conditions(rules, indent=4):
                 found_block_end = True
 
             rules = rules[:next_index] + '{{- end }}\n' + rules[next_index:]
+    return rules
+
+
+def add_rules_conditions_from_condition_map(rules, indent=4):
+    """Add if wrapper for rules, listed in alert_condition_map"""
+    rules = add_rules_conditions(rules, alert_condition_map, indent)
+    return rules
+
+
+def add_rules_per_rule_conditions(rules, group, indent=4):
+    """Add if wrapper for rules, listed in alert_condition_map"""
+    rules_condition_map = {}
+    for rule in group['rules']:
+        if 'alert' in rule:
+            rules_condition_map[rule['alert']] = f"not (.Values.defaultRules.disabled.{rule['alert']} | default false)"
+
+    rules = add_rules_conditions(rules, rules_condition_map, indent)
     return rules
 
 
@@ -270,7 +285,8 @@ def write_group_to_file(group, url, destination, min_kubernetes, max_kubernetes)
                 init_line += '\n' + replacement_map[line]['init']
     # append per-alert rules
     rules = add_custom_labels(rules)
-    rules = add_rules_conditions(rules)
+    rules = add_rules_conditions_from_condition_map(rules)
+    rules = add_rules_per_rule_conditions(rules, group)
     # initialize header
     lines = header % {
         'name': group['name'],
