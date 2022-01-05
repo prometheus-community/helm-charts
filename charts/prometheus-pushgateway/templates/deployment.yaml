@@ -40,7 +40,14 @@ spec:
         {{- end }}
         {{- if .Values.extraArgs }}
           args:
-{{ toYaml .Values.extraArgs | indent 12 }}
+          {{- range $key, $value := .Values.extraArgs }}
+          {{- $stringvalue := toString $value }}
+          {{- if eq $stringvalue "true" }}
+            - --{{ $key }}
+          {{- else }}
+            - --{{ $key }}={{ $value }}
+          {{- end }}
+          {{- end }}
         {{- end }}
           ports:
             - name: metrics
@@ -48,13 +55,21 @@ spec:
               protocol: TCP
           livenessProbe:
             httpGet:
+            {{- if (index .Values "extraArgs" "web.route-prefix") }}
+              path: {{ index .Values "extraArgs" "web.route-prefix" }}/-/healthy
+            {{- else }}
               path: /-/healthy
+            {{- end }}
               port: 9091
             initialDelaySeconds: 10
             timeoutSeconds: 10
           readinessProbe:
             httpGet:
+            {{- if (index .Values "extraArgs" "web.route-prefix") }}
+              path: {{ index .Values "extraArgs" "web.route-prefix" }}/-/ready
+            {{- else }}
               path: /-/ready
+            {{- end }}
               port: 9091
             initialDelaySeconds: 10
             timeoutSeconds: 10
