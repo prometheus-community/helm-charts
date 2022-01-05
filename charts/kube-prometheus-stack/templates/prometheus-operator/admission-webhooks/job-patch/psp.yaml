@@ -6,21 +6,14 @@ metadata:
   annotations:
     "helm.sh/hook": pre-install,pre-upgrade,post-install,post-upgrade
     "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
-  labels:
-    app: {{ template "kube-prometheus-stack.name" . }}-admission
 {{- if .Values.global.rbac.pspAnnotations }}
-  annotations:
 {{ toYaml .Values.global.rbac.pspAnnotations | indent 4 }}
 {{- end }}
+  labels:
+    app: {{ template "kube-prometheus-stack.name" . }}-admission
 {{ include "kube-prometheus-stack.labels" . | indent 4 }}
 spec:
   privileged: false
-  # Required to prevent escalations to root.
-  # allowPrivilegeEscalation: false
-  # This is redundant with non-root + disallow privilege escalation,
-  # but we can provide it for defense in depth.
-  #requiredDropCapabilities:
-  #  - ALL
   # Allow core volume types.
   volumes:
     - 'configMap'
@@ -41,13 +34,13 @@ spec:
   supplementalGroups:
     rule: 'MustRunAs'
     ranges:
-      # Forbid adding the root group.
+      # Allow adding the root group.
       - min: 0
         max: 65535
   fsGroup:
     rule: 'MustRunAs'
     ranges:
-      # Forbid adding the root group.
+      # Allow adding the root group.
       - min: 0
         max: 65535
   readOnlyRootFilesystem: false
