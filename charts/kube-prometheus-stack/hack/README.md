@@ -6,10 +6,10 @@ This script generates prometheus rules set for alertmanager from any properly fo
 
 Currently following imported:
 
-- [prometheus-operator/kube-prometheus rules set](https://github.com/prometheus-operator/kube-prometheus/tree/master/manifests/kubernetes-prometheusRule.yaml)
+- [prometheus-operator/kube-prometheus rules set](https://github.com/prometheus-operator/kube-prometheus/tree/main/manifests/kubernetes-prometheusRule.yaml)
   - In order to modify these rules:
     - prepare and merge PR into [kubernetes-mixin](https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/rules) master and/or release branch
-    - run import inside your fork of [prometheus-operator/kube-prometheus](https://github.com/prometheus-operator/kube-prometheus/tree/master)
+    - run import inside your fork of [prometheus-operator/kube-prometheus](https://github.com/prometheus-operator/kube-prometheus/tree/main)
 
      ```bash
      jb update
@@ -31,10 +31,10 @@ This script generates grafana dashboards from json files, splitting them to sepa
 
 Currently following imported:
 
-- [prometheus-operator/kube-prometheus dashboards](https://github.com/prometheus-operator/kube-prometheus/tree/master/manifests/grafana-deployment.yaml)
+- [prometheus-operator/kube-prometheus dashboards](https://github.com/prometheus-operator/kube-prometheus/tree/main/manifests/grafana-deployment.yaml)
   - In order to modify these dashboards:
     - prepare and merge PR into [kubernetes-mixin](https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/dashboards) master and/or release branch
-    - run import inside your fork of [prometheus-operator/kube-prometheus](https://github.com/prometheus-operator/kube-prometheus/tree/master)
+    - run import inside your fork of [prometheus-operator/kube-prometheus](https://github.com/prometheus-operator/kube-prometheus/tree/main)
 
      ```bash
      jb update
