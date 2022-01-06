@@ -157,7 +157,7 @@ Use the prometheus-node-exporter namespace override for multi-namespace deployme
 {{- end -}}
 
 {{/* Get Policy API Version */}}
-{{- define "kube-prometheus-stack.pdb.apiVersion" -}}
+{{- define "kube-prometheus-stack.policy.apiVersion" -}}
   {{- if and (.Capabilities.APIVersions.Has "policy/v1") (semverCompare ">= 1.21-0" (include "kube-prometheus-stack.kubeVersion" .)) -}}
       {{- print "policy/v1" -}}
   {{- else -}}
