@@ -205,30 +205,36 @@ def add_rules_conditions(rules, rules_map, indent=4):
         line_start = ' ' * indent + '- alert: '
         if line_start + alert_name in rules:
             rule_text = rule_condition % rules_map[alert_name]
-            # add if condition
-            index = rules.index(line_start + alert_name)
-            rules = rules[:index] + rule_text + rules[index:]
-            # add end of if
-            try:
-                next_index = rules.index(line_start, index + len(rule_text) + 1)
-            except ValueError:
-                # we found the last alert in file if there are no alerts after it
-                next_index = len(rules)
+            start = 0
+            # to modify all alerts with same name
+            while True:
+                try:
+                    # add if condition
+                    index = rules.index(line_start + alert_name, start)
+                    start = index + len(rule_text) + 1
+                    rules = rules[:index] + rule_text + rules[index:]
+                    # add end of if
+                    try:
+                        next_index = rules.index(line_start, index + len(rule_text) + 1)
+                    except ValueError:
+                        # we found the last alert in file if there are no alerts after it
+                        next_index = len(rules)
 
-            # depending on the rule ordering in rules_map it's possible that an if statement from another rule is present at the end of this block.
-            found_block_end = False
-            last_line_index = next_index
-            while not found_block_end:
-                last_line_index = rules.rindex('\n', index, last_line_index - 1)  # find the starting position of the last line
-                last_line = rules[last_line_index + 1:next_index]
+                    # depending on the rule ordering in rules_map it's possible that an if statement from another rule is present at the end of this block.
+                    found_block_end = False
+                    last_line_index = next_index
+                    while not found_block_end:
+                        last_line_index = rules.rindex('\n', index, last_line_index - 1)  # find the starting position of the last line
+                        last_line = rules[last_line_index + 1:next_index]
 
-                if last_line.startswith('{{- if'):
-                    next_index = last_line_index + 1  # move next_index back if the current block ends in an if statement
-                    continue
+                        if last_line.startswith('{{- if'):
+                            next_index = last_line_index + 1  # move next_index back if the current block ends in an if statement
+                            continue
 
-                found_block_end = True
-
-            rules = rules[:next_index] + '{{- end }}\n' + rules[next_index:]
+                        found_block_end = True
+                    rules = rules[:next_index] + '{{- end }}\n' + rules[next_index:]
+                except ValueError:
+                    break
     return rules
 
 
