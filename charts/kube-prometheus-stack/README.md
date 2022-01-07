@@ -83,6 +83,15 @@ _See [helm upgrade](https://helm.sh/docs/helm/helm_upgrade/) for command documen
 
 A major chart version change (like v1.2.3 -> v2.0.0) indicates that there is an incompatible breaking change needing manual actions.
 
+### From 28.x to 29.x
+
+This version makes scraping port for kube-controller-manager and kube-scheduler dynamic to reflect changes to default serving ports
+for those components in Kubernetes versions v1.22 and v1.23 respectively.
+
+If you deploy on clusters using version v1.22+, kube-controller-manager will be scraped over HTTPS on port 10257.
+
+If you deploy on clusters running ersion v1.23+, kube-scheduler will be scraped over HTTPS on port 10259.
+
 ### From 27.x to 28.x
 
 This version disables PodSecurityPolicies by default because they are deprecated in Kubernetes 1.21 and will be removed in Kubernetes 1.25.

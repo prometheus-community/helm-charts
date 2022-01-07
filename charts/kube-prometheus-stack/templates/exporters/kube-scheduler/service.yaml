@@ -12,9 +12,11 @@ spec:
   clusterIP: None
   ports:
     - name: http-metrics
-      port: {{ .Values.kubeScheduler.service.port}}
+      {{- $kubeSchedulerDefaultInsecurePort := 10251 }}
+      {{- $kubeSchedulerDefaultSecurePort := 10259 }}
+      port: {{ include "kube-prometheus-stack.kubeScheduler.insecureScrape" (list . $kubeSchedulerDefaultInsecurePort $kubeSchedulerDefaultSecurePort .Values.kubeScheduler.service.port)  }}
       protocol: TCP
-      targetPort: {{ .Values.kubeScheduler.service.targetPort}}
+      targetPort: {{ include "kube-prometheus-stack.kubeScheduler.insecureScrape" (list . $kubeSchedulerDefaultInsecurePort $kubeSchedulerDefaultSecurePort .Values.kubeScheduler.service.targetPort)  }}
 {{- if .Values.kubeScheduler.endpoints }}{{- else }}
   selector:
     {{- if .Values.kubeScheduler.service.selector }}
