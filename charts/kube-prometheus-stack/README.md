@@ -90,7 +90,7 @@ for those components in Kubernetes versions v1.22 and v1.23 respectively.
 
 If you deploy on clusters using version v1.22+, kube-controller-manager will be scraped over HTTPS on port 10257.
 
-If you deploy on clusters running ersion v1.23+, kube-scheduler will be scraped over HTTPS on port 10259.
+If you deploy on clusters running version v1.23+, kube-scheduler will be scraped over HTTPS on port 10259.
 
 ### From 27.x to 28.x
 
