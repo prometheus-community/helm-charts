@@ -68,6 +68,9 @@ app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
 {{- if .Values.customLabels }}
 {{ toYaml .Values.customLabels }}
 {{- end }}
+{{- if .Values.releaseLabel }}
+release: {{ .Release.Name }}
+{{- end }}
 {{- end }}
 
 {{/*
