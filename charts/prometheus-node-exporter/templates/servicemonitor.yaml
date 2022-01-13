@@ -12,8 +12,12 @@ spec:
   jobLabel: {{ default "app.kubernetes.io/name" .Values.prometheus.monitor.jobLabel }}
   selector:
     matchLabels:
+    {{- if .Values.prometheus.monitor.selectorOverride }}
+      {{ toYaml .Values.prometheus.monitor.selectorOverride | indent 6 }}
+    {{ else }}
       app: {{ template "prometheus-node-exporter.name" . }}
       release: {{ .Release.Name }}
+    {{- end }}
   endpoints:
     - port: {{ .Values.service.portName }}
       scheme: {{ .Values.prometheus.monitor.scheme }}
