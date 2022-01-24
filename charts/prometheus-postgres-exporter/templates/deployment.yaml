@@ -69,6 +69,9 @@ spec:
           {{- if .Values.config.logLevel }}
           - "--log.level={{ .Values.config.logLevel }}"
           {{- end}}
+          {{- if .Values.config.logFormat }}
+          - "--log.format={{ .Values.config.logFormat }}"
+          {{- end}}
           env:
           {{- if .Values.config.datasourceSecret }}
           - name: DATA_SOURCE_NAME
@@ -139,7 +142,11 @@ spec:
       volumes:
       - configMap:
           defaultMode: 420
+          {{- if not .Values.config.externalQueries.enabled }}
           name: {{ template "prometheus-postgres-exporter.fullname" . }}
+          {{- else }}
+          name: {{ .Values.config.externalQueries.configmap }}
+          {{- end }}
         name: queries
 {{- with .Values.extraVolumes }}
 {{ toYaml . | indent 6 }}

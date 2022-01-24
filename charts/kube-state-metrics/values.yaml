@@ -2,7 +2,7 @@
 prometheusScrape: true
 image:
   repository: k8s.gcr.io/kube-state-metrics/kube-state-metrics
-  tag: v2.1.0
+  tag: v2.3.0
   pullPolicy: IfNotPresent
 
 imagePullSecrets: []
@@ -30,7 +30,12 @@ service:
   loadBalancerIP: ""
   annotations: {}
 
+## Additional labels to add to all resources
 customLabels: {}
+  # app: kube-state-metrics
+
+## set to true to add the release label so scraping of the servicemonitor with kube-prometheus-stack works out of the box
+releaseLabel: false
 
 hostNetwork: false
 
@@ -63,7 +68,14 @@ prometheus:
     enabled: false
     additionalLabels: {}
     namespace: ""
+    jobLabel: ""
+    interval: ""
+    scrapeTimeout: ""
+    proxyUrl: ""
+    selectorOverride: {}
     honorLabels: false
+    metricRelabelings: []
+    relabelings: []
 
 ## Specify if a Pod Security Policy for kube-state-metrics must be created
 ## Ref: https://kubernetes.io/docs/concepts/policy/pod-security-policy/
@@ -133,6 +145,15 @@ metricDenylist: []
 metricLabelsAllowlist: []
   # - namespaces=[k8s-label-1,k8s-label-n]
 
+# Comma-separated list of Kubernetes annotations keys that will be used in the resource'
+# labels metric. By default the metric contains only name and namespace labels.
+# To include additional annotations provide a list of resource names in their plural form and Kubernetes
+# annotation keys you would like to allow for them (Example: '=namespaces=[kubernetes.io/team,...],pods=[kubernetes.io/team],...)'.
+# A single '*' can be provided per resource instead to allow any annotations, but that has
+# severe performance implications (Example: '=pods=[*]').
+metricAnnotationsAllowList: []
+  # - pods=[k8s-annotation-1,k8s-annotation-n]
+
 # Available collectors for kube-state-metrics.
 # By default, all available resources are enabled, comment out to disable.
 collectors:
@@ -162,8 +183,8 @@ collectors:
   - statefulsets
   - storageclasses
   - validatingwebhookconfigurations
-  - verticalpodautoscalers
   - volumeattachments
+  # - verticalpodautoscalers # not a default resource, see also: https://github.com/kubernetes/kube-state-metrics#enabling-verticalpodautoscalers
 
 # Enabling kubeconfig will pass the --kubeconfig argument to the container
 kubeconfig:

@@ -3,7 +3,8 @@
 # Declare variables to be passed into your templates.
 image:
   repository: quay.io/prometheus/node-exporter
-  tag: v1.1.2
+  # Overrides the image tag whose default is {{ printf "v%s" .Chart.AppVersion }}
+  tag: ""
   pullPolicy: IfNotPresent
 
 service:
@@ -11,6 +12,7 @@ service:
   port: 9100
   targetPort: 9100
   nodePort:
+  portName: metrics
   listenOnAllInterfaces: true
   annotations:
     prometheus.io/scrape: "true"
@@ -20,6 +22,9 @@ prometheus:
     enabled: false
     additionalLabels: {}
     namespace: ""
+
+    jobLabel: ""
+
     scheme: http
     bearerTokenFile:
     tlsConfig: {}
@@ -28,7 +33,13 @@ prometheus:
     ##
     proxyUrl: ""
 
+    ## Override serviceMonitor selector
+    ##
+    selectorOverride: {}
+
     relabelings: []
+    metricRelabelings: []
+    interval: ""
     scrapeTimeout: 10s
 
 ## Customize the updateStrategy if set
@@ -57,6 +68,7 @@ serviceAccount:
   name:
   annotations: {}
   imagePullSecrets: []
+  automountServiceAccountToken: false
 
 securityContext:
   fsGroup: 65534
@@ -84,6 +96,9 @@ endpoints: []
 
 # Expose the service to the host network
 hostNetwork: true
+
+# Share the host process ID namespace
+hostPID: true
 
 ## If true, node-exporter pods mounts host / at /host/root
 ##

@@ -1,0 +1,48 @@
+{{- if .Values.prometheus.monitor.enabled }}
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: {{ template "prometheus-node-exporter.fullname" . }}
+  namespace: {{ template "prometheus-node-exporter.monitor-namespace" . }}
+  labels: {{ include "prometheus-node-exporter.labels" . | indent 4 }}
+  {{- if .Values.prometheus.monitor.additionalLabels }}
+    {{- toYaml .Values.prometheus.monitor.additionalLabels | nindent 4 }}
+  {{- end }}
+spec:
+  jobLabel: {{ default "app.kubernetes.io/name" .Values.prometheus.monitor.jobLabel }}
+  selector:
+    matchLabels:
+    {{- if .Values.prometheus.monitor.selectorOverride }}
+      {{ toYaml .Values.prometheus.monitor.selectorOverride | indent 6 }}
+    {{ else }}
+      app: {{ template "prometheus-node-exporter.name" . }}
+      release: {{ .Release.Name }}
+    {{- end }}
+  endpoints:
+    - port: {{ .Values.service.portName }}
+      scheme: {{ .Values.prometheus.monitor.scheme }}
+    {{- with .Values.prometheus.monitor.bearerTokenFile }}
+      bearerTokenFile: {{ . }}
+    {{- end }}
+    {{- with .Values.prometheus.monitor.tlsConfig }}
+      tlsConfig:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}
+    {{- with .Values.prometheus.monitor.proxyUrl }}
+      proxyUrl: {{ . }}
+    {{- end }}
+    {{- with .Values.prometheus.monitor.interval }}
+      interval: {{ . }}
+    {{- end }}
+    {{- with .Values.prometheus.monitor.scrapeTimeout }}
+      scrapeTimeout: {{ . }}
+    {{- end }}
+    {{- with .Values.prometheus.monitor.relabelings }}
+      relabelings:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}
+    {{- with .Values.prometheus.monitor.metricRelabelings }}
+      metricRelabelings:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}
+{{- end }}

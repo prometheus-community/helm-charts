@@ -17,6 +17,7 @@ spec:
 {{ toYaml .Values.podLabels | trim | indent 8 }}
 {{- end }}
       annotations:
+        checksum/credentials: {{ include (print .Template.BasePath "/secret-env.yaml") . | sha256sum }}
       {{- if .Values.cloudsqlproxy.enabled }}
         checksum/config: {{ include (print .Template.BasePath "/secret.yaml") . | sha256sum }}
         {{- if .Values.annotations }}
@@ -112,5 +113,5 @@ spec:
       volumes:
         - name: cloudsql-proxy-sa-credentials
           secret:
-            secretName: {{ template "prometheus-mysql-exporter.cloudsqlsecret" . }}
+            secretName: {{ if .Values.cloudsqlproxy.credentialsSecret }}{{ .Values.cloudsqlproxy.credentialsSecret }}{{ else }}{{ template "prometheus-mysql-exporter.cloudsqlsecret" . }}{{ end }}
     {{- end }}

@@ -8,7 +8,7 @@ https://github.com/prometheus-community/helm-charts/tree/main/charts/kube-promet
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  namespace: {{ template "kube-prometheus-stack.namespace" . }}
+  namespace: {{ template "kube-prometheus-stack-grafana.namespace" . }}
   name: {{ printf "%s-%s" (include "kube-prometheus-stack.fullname" $) "nodes" | trunc 63 | trimSuffix "-" }}
   annotations:
 {{ toYaml .Values.grafana.sidecar.dashboards.annotations | indent 4 }}
@@ -34,13 +34,13 @@ data:
         },
         "editable": false,
         "gnetId": null,
-        "graphTooltip": 0,
+        "graphTooltip": 1,
         "hideControls": false,
         "id": null,
         "links": [
 
         ],
-        "refresh": "",
+        "refresh": "30s",
         "rows": [
             {
                 "collapse": false,
@@ -92,7 +92,7 @@ data:
                         "steppedLine": false,
                         "targets": [
                             {
-                                "expr": "(\n  (1 - rate(node_cpu_seconds_total{job=\"node-exporter\", mode=\"idle\", instance=\"$instance\"}[$__rate_interval]))\n/ ignoring(cpu) group_left\n  count without (cpu)( node_cpu_seconds_total{job=\"node-exporter\", mode=\"idle\", instance=\"$instance\"})\n)\n",
+                                "expr": "(\n  (1 - sum without (mode) (rate(node_cpu_seconds_total{job=\"node-exporter\", mode=~\"idle|iowait|steal\", instance=\"$instance\"}[$__rate_interval])))\n/ ignoring(cpu) group_left\n  count without (cpu, mode) (node_cpu_seconds_total{job=\"node-exporter\", mode=\"idle\", instance=\"$instance\"})\n)\n",
                                 "format": "time_series",
                                 "intervalFactor": 5,
                                 "legendFormat": "{{`{{`}}cpu{{`}}`}}",
@@ -907,7 +907,7 @@ data:
         "schemaVersion": 14,
         "style": "dark",
         "tags": [
-
+            "node-exporter-mixin"
         ],
         "templating": {
             "list": [
@@ -917,7 +917,7 @@ data:
                         "value": "Prometheus"
                     },
                     "hide": 0,
-                    "label": null,
+                    "label": "Data Source",
                     "name": "datasource",
                     "options": [
 
@@ -984,8 +984,8 @@ data:
                 "30d"
             ]
         },
-        "timezone": "browser",
-        "title": "Nodes",
+        "timezone": "{{ .Values.grafana.defaultDashboardsTimezone }}",
+        "title": "Node Exporter / Nodes",
         "version": 0
     }
 {{- end }}

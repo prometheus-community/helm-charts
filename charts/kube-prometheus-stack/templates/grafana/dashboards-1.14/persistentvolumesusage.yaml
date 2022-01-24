@@ -8,7 +8,7 @@ https://github.com/prometheus-community/helm-charts/tree/main/charts/kube-promet
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  namespace: {{ template "kube-prometheus-stack.namespace" . }}
+  namespace: {{ template "kube-prometheus-stack-grafana.namespace" . }}
   name: {{ printf "%s-%s" (include "kube-prometheus-stack.fullname" $) "persistentvolumesusage" | trunc 63 | trimSuffix "-" }}
   annotations:
 {{ toYaml .Values.grafana.sidecar.dashboards.annotations | indent 4 }}
@@ -60,13 +60,14 @@ data:
 
                         },
                         "id": 2,
+                        "interval": "1m",
                         "legend": {
                             "alignAsTable": true,
                             "avg": true,
                             "current": true,
                             "max": true,
                             "min": true,
-                            "rightSide": false,
+                            "rightSide": true,
                             "show": true,
                             "sideWidth": null,
                             "total": false,
@@ -168,7 +169,11 @@ data:
 
                         },
                         "id": 3,
-                        "interval": null,
+                        "interval": "1m",
+                        "legend": {
+                            "alignAsTable": true,
+                            "rightSide": true
+                        },
                         "links": [
 
                         ],
@@ -257,13 +262,14 @@ data:
 
                         },
                         "id": 4,
+                        "interval": "1m",
                         "legend": {
                             "alignAsTable": true,
                             "avg": true,
                             "current": true,
                             "max": true,
                             "min": true,
-                            "rightSide": false,
+                            "rightSide": true,
                             "show": true,
                             "sideWidth": null,
                             "total": false,
@@ -365,7 +371,11 @@ data:
 
                         },
                         "id": 5,
-                        "interval": null,
+                        "interval": "1m",
+                        "legend": {
+                            "alignAsTable": true,
+                            "rightSide": true
+                        },
                         "links": [
 
                         ],
@@ -450,7 +460,7 @@ data:
                         "value": "default"
                     },
                     "hide": 0,
-                    "label": null,
+                    "label": "Data Source",
                     "name": "datasource",
                     "options": [
 
@@ -466,7 +476,7 @@ data:
 
                     },
                     "datasource": "$datasource",
-                    "hide": {{ if .Values.grafana.sidecar.dashboards.multicluster }}0{{ else }}2{{ end }},
+                    "hide": {{ if .Values.grafana.sidecar.dashboards.multicluster.global.enabled }}0{{ else }}2{{ end }},
                     "includeAll": false,
                     "label": "cluster",
                     "multi": false,
@@ -474,7 +484,7 @@ data:
                     "options": [
 
                     ],
-                    "query": "label_values(kubelet_volume_stats_capacity_bytes, cluster)",
+                    "query": "label_values(kubelet_volume_stats_capacity_bytes{job=\"kubelet\", metrics_path=\"/metrics\"}, cluster)",
                     "refresh": 2,
                     "regex": "",
                     "sort": 1,
@@ -569,7 +579,7 @@ data:
                 "30d"
             ]
         },
-        "timezone": "UTC",
+        "timezone": "{{ .Values.grafana.defaultDashboardsTimezone }}",
         "title": "Kubernetes / Persistent Volumes",
         "uid": "919b92a8e8041bd567af9edab12c840c",
         "version": 0

@@ -3,10 +3,9 @@ kind: Deployment
 metadata:
   name: {{ template "prometheus-redis-exporter.fullname" . }}
   labels:
-    app: {{ template "prometheus-redis-exporter.name" . }}
-    chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
-    release: {{ .Release.Name }}
-    heritage: {{ .Release.Service }}
+{{ include "prometheus-redis-exporter.labels" . | indent 4 }}
+  annotations:
+{{ toYaml .Values.annotations | indent 8 }}
 spec:
   replicas: {{ .Values.replicaCount }}
   selector:
@@ -18,11 +17,10 @@ spec:
       annotations:
 {{ toYaml .Values.annotations | indent 8 }}
       labels:
-        app: {{ template "prometheus-redis-exporter.name" . }}
-        release: {{ .Release.Name }}
-        {{- if .Values.labels }}
+{{ include "prometheus-redis-exporter.labels" . | indent 8 }}
+      {{- if .Values.labels }}
 {{ toYaml .Values.labels | indent 8 }}
-        {{- end }}
+      {{- end }}
     spec:
       serviceAccountName: {{ template "prometheus-redis-exporter.serviceAccountName" . }}
       {{- if .Values.image.pullSecrets }}
@@ -39,12 +37,23 @@ spec:
           {{- range $key, $value := .Values.extraArgs }}
             - --{{ $key }}={{ $value }}
           {{- end }}
+          securityContext:
+          {{- range $key, $value := .Values.securityContext }}
+            {{ $key }}: {{ $value }}
+          {{- end }}
           ports:
             - name: exporter-port
               containerPort: 9121
           env:
             - name: REDIS_ADDR
+            {{- if .Values.redisAddressConfig.enabled }}
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ .Values.redisAddressConfig.configmap.name }}
+                  key: {{ .Values.redisAddressConfig.configmap.key }}
+            {{- else }}
               value: {{ .Values.redisAddress }}
+            {{- end }}
           {{- if .Values.auth.enabled }}
             - name: REDIS_PASSWORD
             {{- if .Values.auth.secret.name }}

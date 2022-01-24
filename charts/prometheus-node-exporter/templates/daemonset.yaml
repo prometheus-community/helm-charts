@@ -21,6 +21,7 @@ spec:
       {{- toYaml .Values.podAnnotations | nindent 8 }}
       {{- end }}
     spec:
+      automountServiceAccountToken: {{ .Values.serviceAccount.automountServiceAccountToken }}
       serviceAccountName: {{ template "prometheus-node-exporter.serviceAccountName" . }}
 {{- if .Values.securityContext }}
       securityContext:
@@ -35,7 +36,7 @@ spec:
       {{- end }}
       containers:
         - name: node-exporter
-          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          image: {{ include "prometheus-node-exporter.image" . }}
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           args:
             - --path.procfs=/host/proc
@@ -61,7 +62,7 @@ spec:
                 fieldPath: status.hostIP
             {{- end }}
           ports:
-            - name: metrics
+            - name: {{ .Values.service.portName }}
               containerPort: {{ .Values.service.port }}
               protocol: TCP
           livenessProbe:
@@ -128,7 +129,7 @@ spec:
           {{- end }}
 {{- end }}
       hostNetwork: {{ .Values.hostNetwork }}
-      hostPID: true
+      hostPID: {{ .Values.hostPID }}
 {{- if .Values.affinity }}
       affinity:
 {{ toYaml .Values.affinity | indent 8 }}

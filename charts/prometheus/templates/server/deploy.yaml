@@ -39,6 +39,13 @@ spec:
 {{- if .Values.server.schedulerName }}
       schedulerName: "{{ .Values.server.schedulerName }}"
 {{- end }}
+{{- if semverCompare ">=1.13-0" .Capabilities.KubeVersion.GitVersion }}
+      {{- if or (.Values.server.enableServiceLinks) (eq (.Values.server.enableServiceLinks | toString) "<nil>") }}
+      enableServiceLinks: true
+      {{- else }}
+      enableServiceLinks: false
+      {{- end }}
+{{- end }}
       serviceAccountName: {{ template "prometheus.serviceAccountName.server" . }}
       {{- if .Values.server.extraInitContainers }}
       initContainers:
@@ -80,6 +87,9 @@ spec:
 {{ toYaml .Values.server.env | indent 12}}
           {{- end }}
           args:
+          {{- if .Values.server.prefixURL }}
+            - --web.route-prefix={{ .Values.server.prefixURL }}
+          {{- end }}
           {{- if .Values.server.retention }}
             - --storage.tsdb.retention.time={{ .Values.server.retention }}
           {{- end }}
@@ -94,33 +104,80 @@ spec:
           {{- range .Values.server.extraFlags }}
             - --{{ . }}
           {{- end }}
-          {{- if .Values.server.baseURL }}
-            - --web.external-url={{ .Values.server.baseURL }}
-          {{- end }}
-
           {{- range $key, $value := .Values.server.extraArgs }}
             - --{{ $key }}={{ $value }}
+          {{- end }}
+          {{- if .Values.server.baseURL }}
+            - --web.external-url={{ .Values.server.baseURL }}
           {{- end }}
           ports:
             - containerPort: 9090
           readinessProbe:
+            {{- if not .Values.server.tcpSocketProbeEnabled }}
             httpGet:
               path: {{ .Values.server.prefixURL }}/-/ready
               port: 9090
+              scheme: {{ .Values.server.probeScheme }}
+              {{- if .Values.server.probeHeaders }}
+              httpHeaders:
+              {{- range .Values.server.probeHeaders}}
+              - name: {{ .name }}
+                value: {{ .value }}
+              {{- end }}
+              {{- end }}
+            {{- else }}
+            tcpSocket:
+              port: 9090
+            {{- end }}
             initialDelaySeconds: {{ .Values.server.readinessProbeInitialDelay }}
             periodSeconds: {{ .Values.server.readinessProbePeriodSeconds }}
             timeoutSeconds: {{ .Values.server.readinessProbeTimeout }}
             failureThreshold: {{ .Values.server.readinessProbeFailureThreshold }}
             successThreshold: {{ .Values.server.readinessProbeSuccessThreshold }}
           livenessProbe:
+            {{- if not .Values.server.tcpSocketProbeEnabled }}
             httpGet:
               path: {{ .Values.server.prefixURL }}/-/healthy
               port: 9090
+              scheme: {{ .Values.server.probeScheme }}
+              {{- if .Values.server.probeHeaders }}
+              httpHeaders:
+              {{- range .Values.server.probeHeaders}}
+              - name: {{ .name }}
+                value: {{ .value }}
+              {{- end }}
+              {{- end }}
+            {{- else }}
+            tcpSocket:
+              port: 9090
+            {{- end }}
             initialDelaySeconds: {{ .Values.server.livenessProbeInitialDelay }}
             periodSeconds: {{ .Values.server.livenessProbePeriodSeconds }}
             timeoutSeconds: {{ .Values.server.livenessProbeTimeout }}
             failureThreshold: {{ .Values.server.livenessProbeFailureThreshold }}
             successThreshold: {{ .Values.server.livenessProbeSuccessThreshold }}
+          {{- if .Values.server.startupProbe.enabled }}
+          startupProbe:
+            {{- if not .Values.server.tcpSocketProbeEnabled }}
+            httpGet:
+              path: {{ .Values.server.prefixURL }}/-/healthy
+              port: 9090
+              scheme: {{ .Values.server.probeScheme }}
+              {{- if .Values.server.probeHeaders }}
+              httpHeaders:
+              {{- range .Values.server.probeHeaders}}
+              - name: {{ .name }}
+                value: {{ .value }}
+              {{- end }}
+              {{- end }}
+            {{- else }}
+            tcpSocket:
+              port: 9090
+            {{- end }}
+            failureThreshold: {{ .Values.server.startupProbe.failureThreshold }}
+            periodSeconds: {{ .Values.server.startupProbe.periodSeconds }}
+            timeoutSeconds: {{ .Values.server.startupProbe.timeoutSeconds }}
+          {{- end }}
           resources:
 {{ toYaml .Values.server.resources | indent 12 }}
           volumeMounts:
@@ -197,21 +254,6 @@ spec:
         - name: config-volume
           configMap:
             name: {{ if .Values.server.configMapOverrideName }}{{ .Release.Name }}-{{ .Values.server.configMapOverrideName }}{{- else }}{{ template "prometheus.server.fullname" . }}{{- end }}
-        - name: storage-volume
-        {{- if .Values.server.persistentVolume.enabled }}
-          persistentVolumeClaim:
-            claimName: {{ if .Values.server.persistentVolume.existingClaim }}{{ .Values.server.persistentVolume.existingClaim }}{{- else }}{{ template "prometheus.server.fullname" . }}{{- end }}
-        {{- else }}
-          emptyDir:
-          {{- if .Values.server.emptyDir.sizeLimit }}
-            sizeLimit: {{ .Values.server.emptyDir.sizeLimit }}
-          {{- else }}
-            {}
-          {{- end -}}
-        {{- end -}}
-{{- if .Values.server.extraVolumes }}
-{{ toYaml .Values.server.extraVolumes | indent 8}}
-{{- end }}
       {{- range .Values.server.extraHostPathMounts }}
         - name: {{ .name }}
           hostPath:
@@ -243,5 +285,20 @@ spec:
             optional: {{ . }}
             {{- end }}
       {{- end }}
+{{- if .Values.server.extraVolumes }}
+{{ toYaml .Values.server.extraVolumes | indent 8}}
+{{- end }}
+        - name: storage-volume
+        {{- if .Values.server.persistentVolume.enabled }}
+          persistentVolumeClaim:
+            claimName: {{ if .Values.server.persistentVolume.existingClaim }}{{ .Values.server.persistentVolume.existingClaim }}{{- else }}{{ template "prometheus.server.fullname" . }}{{- end }}
+        {{- else }}
+          emptyDir:
+          {{- if .Values.server.emptyDir.sizeLimit }}
+            sizeLimit: {{ .Values.server.emptyDir.sizeLimit }}
+          {{- else }}
+            {}
+          {{- end -}}
+        {{- end -}}
 {{- end -}}
 {{- end -}}

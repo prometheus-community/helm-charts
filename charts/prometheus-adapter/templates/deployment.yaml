@@ -1,26 +1,28 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
+  {{- if .Values.customAnnotations }}
+  annotations:
+  {{- toYaml .Values.customAnnotations | nindent 4 }}
+  {{- end }}
   labels:
-    app: {{ template "k8s-prometheus-adapter.name" . }}
-    chart: {{ template "k8s-prometheus-adapter.chart" . }}
-    release: {{ .Release.Name }}
-    heritage: {{ .Release.Service }}
+    {{- include "k8s-prometheus-adapter.labels" . | indent 4 }}
   name: {{ template "k8s-prometheus-adapter.fullname" . }}
   namespace: {{ .Release.Namespace }}
 spec:
   replicas: {{ .Values.replicas }}
+  strategy: {{ toYaml .Values.strategy | nindent 4 }}
   selector:
     matchLabels:
-      app: {{ template "k8s-prometheus-adapter.name" . }}
-      release: {{ .Release.Name }}
+      {{- include "k8s-prometheus-adapter.selectorLabels" . | indent 6 }}
   template:
     metadata:
+      {{- if .Values.customAnnotations }}
+      annotations:
+      {{- toYaml .Values.customAnnotations | nindent 8 }}
+      {{- end }}
       labels:
-        app: {{ template "k8s-prometheus-adapter.name" . }}
-        chart: {{ template "k8s-prometheus-adapter.chart" . }}
-        release: {{ .Release.Name }}
-        heritage: {{ .Release.Service }}
+        {{- include "k8s-prometheus-adapter.labels" . | indent 8 }}
         {{- with .Values.podLabels }}
         {{- toYaml . | trim | nindent 8 }}
         {{- end }}
@@ -109,6 +111,10 @@ spec:
       affinity:
         {{- toYaml .Values.affinity | nindent 8 }}
       priorityClassName: {{ .Values.priorityClassName }}
+      {{- if .Values.podSecurityContext }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      {{- end }}
       tolerations:
         {{- toYaml .Values.tolerations | nindent 8 }}
       {{- if .Values.image.pullSecrets }}
