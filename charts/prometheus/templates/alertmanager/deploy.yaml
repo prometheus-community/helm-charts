@@ -115,12 +115,21 @@ spec:
           {{- range $key, $value := .Values.configmapReload.alertmanager.extraArgs }}
             - --{{ $key }}={{ $value }}
           {{- end }}
+          {{- range .Values.configmapReload.alertmanager.extraVolumeDirs }}
+            - --volume-dir={{ . }}
+          {{- end }}
           resources:
 {{ toYaml .Values.configmapReload.alertmanager.resources | indent 12 }}
           volumeMounts:
             - name: config-volume
               mountPath: /etc/config
               readOnly: true
+            {{- range .Values.configmapReload.alertmanager.extraConfigmapMounts }}
+            - name: {{ $.Values.configmapReload.alertmanager.name }}-{{ .name }}
+              mountPath: {{ .mountPath }}
+              subPath: {{ .subPath }}
+              readOnly: {{ .readOnly }}
+            {{- end }}
         {{- end }}
     {{- if .Values.imagePullSecrets }}
       imagePullSecrets:
@@ -165,6 +174,11 @@ spec:
       {{- end }}
       {{- range .Values.alertmanager.extraConfigmapMounts }}
         - name: {{ .name }}
+          configMap:
+            name: {{ .configMap }}
+      {{- end }}
+      {{- range .Values.configmapReload.alertmanager.extraConfigmapMounts }}
+        - name: {{ $.Values.configmapReload.alertmanager.name }}-{{ .name }}
           configMap:
             name: {{ .configMap }}
       {{- end }}
