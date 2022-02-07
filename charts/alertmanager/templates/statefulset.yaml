@@ -121,14 +121,28 @@ spec:
             - name: config
               mountPath: /etc/alertmanager
             {{- end }}
+            {{- range .Values.extraSecretMounts }}
+            - name: {{ .name }}
+              mountPath: {{ .mountPath }}
+              subPath: {{ .subPath }}
+              readOnly: {{ .readOnly }}
+            {{- end }}
             - name: storage
               mountPath: /alertmanager
-      {{- if .Values.config }}
       volumes:
+        {{- if .Values.config }}
         - name: config
           configMap:
             name: {{ include "alertmanager.fullname" . }}
-      {{- end }}
+        {{- end }}
+        {{- range .Values.extraSecretMounts }}
+        - name: {{ .name }}
+          secret:
+            secretName: {{ .secretName }}
+            {{- with .optional }}
+            optional: {{ . }}
+            {{- end }}
+        {{- end }}
       {{- if .Values.persistence.enabled }}
   volumeClaimTemplates:
     - metadata:
