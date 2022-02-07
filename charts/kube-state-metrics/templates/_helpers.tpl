@@ -57,7 +57,7 @@ Create chart name and version as used by the chart label.
 Generate basic labels
 */}}
 {{- define "kube-state-metrics.labels" }}
-helm.sh/chart: {{ include "kube-state-metrics.chart" . }}
+helm.sh/chart: {{ template "kube-state-metrics.chart" . }}
 app.kubernetes.io/managed-by: {{ .Release.Service }}
 app.kubernetes.io/component: metrics
 app.kubernetes.io/part-of: {{ template "kube-state-metrics.name" . }}
