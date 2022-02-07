@@ -7,6 +7,7 @@ import requests
 import yaml
 from yaml.representer import SafeRepresenter
 import re
+import json
 
 # https://stackoverflow.com/a/20863889/961092
 class LiteralStr(str):
@@ -333,8 +334,30 @@ https://github.com/prometheus-community/helm-charts/tree/main/charts/kube-promet
             f.write('  - "%s"\n' % rule)
         f.write('{{- end }}')
 
+
+def write_recording_rules(recordingrules):
+    # Serialize recordingrules into file:
+
+    with open('../templates/prometheus/_recording_rules.json', 'w', encoding='utf-8') as f:
+        json.dump(recordingrules, f, indent=4, ensure_ascii=False)
+    
+    print("Wrote recording rules to file")
+    
+def parse_recordingrule_expression(expr):
+    
+    lines = expr.splitlines()
+    e = []
+    for line in lines:
+        if not line.lstrip().startswith('#'):
+            e.append(line.strip())
+    
+    return ''.join(e)
+
 def main():
     init_yaml_styles()
+
+    recordingrules = {}
+
     # read the rules, create a new template file per group
     for chart in charts:
         print("Generating rules from %s" % chart['source'])
@@ -353,8 +376,15 @@ def main():
         for group in groups:
             write_group_to_file(group, chart['source'], chart['destination'], chart['min_kubernetes'], chart['max_kubernetes'])
 
+            for rule in group["rules"]:
+                if 'record' in rule:
+                    recordingrules[rule['record']] = parse_recordingrule_expression(rule['expr'])
+
     # write rules.names named template
     write_rules_names_template()
+
+    # write recodingrules to disk
+    write_recording_rules(recordingrules)
 
     print("Finished")
 

@@ -157,6 +157,33 @@ def patch_dashboards_json(content, multicluster_key):
     return content
 
 
+def patch_recording_rules(content):
+    recordingrules = json.load(
+        open("../templates/prometheus/_recording_rules.json", "r"))
+    
+    content_array = []
+
+    for rule in recordingrules:
+        # check if rule exists in content
+        if rule in content:
+            # if yes, split up the content
+            original_content_lines = content.split('\n')
+            for line in original_content_lines:
+                # and find the lines where it occurs
+                index = line.find(rule)
+                if index != -1:
+                    # then patch them with Helm syntax
+                    escaped_rule = recordingrules[rule].replace("\"", "\\\"")
+                    content_array.append("\{\{ if .Values.grafana.recordingRules \}\}")
+                    content_array.append(line) 
+                    content_array.append("\{\{ else \}\}")
+                    content_array.append(line.replace(rule, escaped_rule))
+                    content_array.append("\{\{ end \}\}")
+                else:
+                    content_array.append(line)
+ 
+    return '\n'.join(content_array)
+
 def patch_json_set_timezone_as_variable(content):
     # content is no more in json format, so we have to replace using regex
     return re.sub(r'"timezone"\s*:\s*"(?:\\.|[^\"])*"', '"timezone": "\{\{ .Values.grafana.defaultDashboardsTimezone \}\}"', content, flags=re.IGNORECASE)
@@ -172,6 +199,7 @@ def write_group_to_file(resource_name, content, url, destination, min_kubernetes
         'max_kubernetes': max_kubernetes
     }
 
+    content = patch_recording_rules(content)
     content = patch_dashboards_json(content, multicluster_key)
     content = patch_json_set_timezone_as_variable(content)
 
