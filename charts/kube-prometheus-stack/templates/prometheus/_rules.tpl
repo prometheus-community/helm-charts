@@ -10,6 +10,8 @@ rules:
   - "general.rules"
   - "k8s.rules"
   - "kube-apiserver-availability.rules"
+  - "kube-apiserver-burnrate.rules"
+  - "kube-apiserver-histogram.rules"
   - "kube-apiserver-slos"
   - "kube-prometheus-general.rules"
   - "kube-prometheus-node-recording.rules"
