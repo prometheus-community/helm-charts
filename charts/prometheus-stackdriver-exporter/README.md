@@ -68,6 +68,8 @@ $ helm upgrade [RELEASE_NAME] [CHART] --install
 
 _See [helm upgrade](https://helm.sh/docs/helm/helm_upgrade/) for command documentation._
 
+**WARNING:** since chart version 2.0.0, the exporter is configured via flags/arguments instead of environment variables due to a [breaking change in the exporter](https://github.com/prometheus-community/stackdriver_exporter/pull/142).
+
 ## Configuration
 
 See [Customizing the Chart Before Installing](https://helm.sh/docs/intro/using_helm/#customizing-the-chart-before-installing).
