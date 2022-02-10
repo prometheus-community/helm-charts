@@ -10,7 +10,7 @@ metadata:
 {{ toYaml .Values.grafana.sidecar.dashboards.annotations | indent 4 }}
   labels:
     {{- if $.Values.grafana.sidecar.dashboards.label }}
-    {{ $.Values.grafana.sidecar.dashboards.label }}: "1"
+    {{ $.Values.grafana.sidecar.dashboards.label }}: {{ ternary $.Values.grafana.sidecar.dashboards.labelValue "1" (not (empty $.Values.grafana.sidecar.dashboards.labelValue)) | quote }}
     {{- end }}
     app: {{ template "kube-prometheus-stack.name" $ }}-grafana
 {{ include "kube-prometheus-stack.labels" $ | indent 4 }}
@@ -118,7 +118,7 @@ data:
           "steppedLine": false,
           "targets": [
             {
-              "expr": "sum(rate(coredns_dns_request_count_total{instance=~\"$instance\"}[5m])) by (proto) or\nsum(rate(coredns_dns_requests_total{instance=~\"$instance\"}[5m])) by (proto)",
+              "expr": "sum(rate(coredns_dns_request_count_total{job=\"coredns\",instance=~\"$instance\"}[5m])) by (proto) or\nsum(rate(coredns_dns_requests_total{job=\"coredns\",instance=~\"$instance\"}[5m])) by (proto)",
               "format": "time_series",
               "interval": "",
               "intervalFactor": 2,
@@ -228,7 +228,7 @@ data:
           "steppedLine": false,
           "targets": [
             {
-              "expr": "sum(rate(coredns_dns_request_type_count_total{instance=~\"$instance\"}[5m])) by (type) or \nsum(rate(coredns_dns_requests_total{instance=~\"$instance\"}[5m])) by (type)",
+              "expr": "sum(rate(coredns_dns_request_type_count_total{job=\"coredns\",instance=~\"$instance\"}[5m])) by (type) or \nsum(rate(coredns_dns_requests_total{job=\"coredns\",instance=~\"$instance\"}[5m])) by (type)",
               "interval": "",
               "intervalFactor": 2,
               "legendFormat": "{{"{{type}}"}}",
@@ -333,7 +333,7 @@ data:
           "steppedLine": false,
           "targets": [
             {
-              "expr": "sum(rate(coredns_dns_request_count_total{instance=~\"$instance\"}[5m])) by (zone) or\nsum(rate(coredns_dns_requests_total{instance=~\"$instance\"}[5m])) by (zone)",
+              "expr": "sum(rate(coredns_dns_request_count_total{job=\"coredns\",instance=~\"$instance\"}[5m])) by (zone) or\nsum(rate(coredns_dns_requests_total{job=\"coredns\",instance=~\"$instance\"}[5m])) by (zone)",
               "interval": "",
               "intervalFactor": 2,
               "legendFormat": "{{"{{zone}}"}}",
@@ -438,7 +438,7 @@ data:
           "steppedLine": false,
           "targets": [
             {
-              "expr": "sum(rate(coredns_dns_request_do_count_total{instance=~\"$instance\"}[5m])) or\nsum(rate(coredns_dns_do_requests_total{instance=~\"$instance\"}[5m]))",
+              "expr": "sum(rate(coredns_dns_request_do_count_total{job=\"coredns\",instance=~\"$instance\"}[5m])) or\nsum(rate(coredns_dns_do_requests_total{job=\"coredns\",instance=~\"$instance\"}[5m]))",
               "interval": "",
               "intervalFactor": 2,
               "legendFormat": "DO",
@@ -446,7 +446,7 @@ data:
               "step": 40
             },
             {
-              "expr": "sum(rate(coredns_dns_request_count_total{instance=~\"$instance\"}[5m])) or\nsum(rate(coredns_dns_requests_total{instance=~\"$instance\"}[5m]))",
+              "expr": "sum(rate(coredns_dns_request_count_total{job=\"coredns\",instance=~\"$instance\"}[5m])) or\nsum(rate(coredns_dns_requests_total{job=\"coredns\",instance=~\"$instance\"}[5m]))",
               "interval": "",
               "intervalFactor": 2,
               "legendFormat": "total",
@@ -559,7 +559,7 @@ data:
           "steppedLine": false,
           "targets": [
             {
-              "expr": "histogram_quantile(0.99, sum(rate(coredns_dns_request_size_bytes_bucket{instance=~\"$instance\",proto=\"udp\"}[5m])) by (le,proto))",
+              "expr": "histogram_quantile(0.99, sum(rate(coredns_dns_request_size_bytes_bucket{job=\"coredns\",instance=~\"$instance\",proto=\"udp\"}[5m])) by (le,proto))",
               "interval": "",
               "intervalFactor": 2,
               "legendFormat": "{{"{{proto}}"}}:99 ",
@@ -567,14 +567,14 @@ data:
               "step": 60
             },
             {
-              "expr": "histogram_quantile(0.90, sum(rate(coredns_dns_request_size_bytes_bucket{instance=~\"$instance\",proto=\"udp\"}[5m])) by (le,proto))",
+              "expr": "histogram_quantile(0.90, sum(rate(coredns_dns_request_size_bytes_bucket{job=\"coredns\",instance=~\"$instance\",proto=\"udp\"}[5m])) by (le,proto))",
               "intervalFactor": 2,
               "legendFormat": "{{"{{proto}}"}}:90",
               "refId": "B",
               "step": 60
             },
             {
-              "expr": "histogram_quantile(0.50, sum(rate(coredns_dns_request_size_bytes_bucket{instance=~\"$instance\",proto=\"udp\"}[5m])) by (le,proto))",
+              "expr": "histogram_quantile(0.50, sum(rate(coredns_dns_request_size_bytes_bucket{job=\"coredns\",instance=~\"$instance\",proto=\"udp\"}[5m])) by (le,proto))",
               "intervalFactor": 2,
               "legendFormat": "{{"{{proto}}"}}:50",
               "refId": "C",
@@ -686,7 +686,7 @@ data:
           "steppedLine": false,
           "targets": [
             {
-              "expr": "histogram_quantile(0.99, sum(rate(coredns_dns_request_size_bytes_bucket{instance=~\"$instance\",proto=\"tcp\"}[5m])) by (le,proto))",
+              "expr": "histogram_quantile(0.99, sum(rate(coredns_dns_request_size_bytes_bucket{job=\"coredns\",instance=~\"$instance\",proto=\"tcp\"}[5m])) by (le,proto))",
               "format": "time_series",
               "interval": "",
               "intervalFactor": 2,
@@ -695,7 +695,7 @@ data:
               "step": 60
             },
             {
-              "expr": "histogram_quantile(0.90, sum(rate(coredns_dns_request_size_bytes_bucket{instance=~\"$instance\",proto=\"tcp\"}[5m])) by (le,proto))",
+              "expr": "histogram_quantile(0.90, sum(rate(coredns_dns_request_size_bytes_bucket{job=\"coredns\",instance=~\"$instance\",proto=\"tcp\"}[5m])) by (le,proto))",
               "format": "time_series",
               "interval": "",
               "intervalFactor": 2,
@@ -704,7 +704,7 @@ data:
               "step": 60
             },
             {
-              "expr": "histogram_quantile(0.50, sum(rate(coredns_dns_request_size_bytes_bucket{instance=~\"$instance\",proto=\"tcp\"}[5m])) by (le,proto))",
+              "expr": "histogram_quantile(0.50, sum(rate(coredns_dns_request_size_bytes_bucket{job=\"coredns\",instance=~\"$instance\",proto=\"tcp\"}[5m])) by (le,proto))",
               "format": "time_series",
               "interval": "",
               "intervalFactor": 2,
@@ -805,7 +805,7 @@ data:
           "steppedLine": false,
           "targets": [
             {
-              "expr": "sum(rate(coredns_dns_response_rcode_count_total{instance=~\"$instance\"}[5m])) by (rcode) or\nsum(rate(coredns_dns_responses_total{instance=~\"$instance\"}[5m])) by (rcode)",
+              "expr": "sum(rate(coredns_dns_response_rcode_count_total{job=\"coredns\",instance=~\"$instance\"}[5m])) by (rcode) or\nsum(rate(coredns_dns_responses_total{job=\"coredns\",instance=~\"$instance\"}[5m])) by (rcode)",
               "interval": "",
               "intervalFactor": 2,
               "legendFormat": "{{"{{rcode}}"}}",
@@ -905,7 +905,7 @@ data:
           "steppedLine": false,
           "targets": [
             {
-              "expr": "histogram_quantile(0.99, sum(rate(coredns_dns_request_duration_seconds_bucket{instance=~\"$instance\"}[5m])) by (le, job))",
+              "expr": "histogram_quantile(0.99, sum(rate(coredns_dns_request_duration_seconds_bucket{job=\"coredns\",instance=~\"$instance\"}[5m])) by (le, job))",
               "format": "time_series",
               "intervalFactor": 2,
               "legendFormat": "99%",
@@ -913,7 +913,7 @@ data:
               "step": 40
             },
             {
-              "expr": "histogram_quantile(0.90, sum(rate(coredns_dns_request_duration_seconds_bucket{instance=~\"$instance\"}[5m])) by (le))",
+              "expr": "histogram_quantile(0.90, sum(rate(coredns_dns_request_duration_seconds_bucket{job=\"coredns\",instance=~\"$instance\"}[5m])) by (le))",
               "format": "time_series",
               "intervalFactor": 2,
               "legendFormat": "90%",
@@ -921,7 +921,7 @@ data:
               "step": 40
             },
             {
-              "expr": "histogram_quantile(0.50, sum(rate(coredns_dns_request_duration_seconds_bucket{instance=~\"$instance\"}[5m])) by (le))",
+              "expr": "histogram_quantile(0.50, sum(rate(coredns_dns_request_duration_seconds_bucket{job=\"coredns\",instance=~\"$instance\"}[5m])) by (le))",
               "format": "time_series",
               "intervalFactor": 2,
               "legendFormat": "50%",
@@ -1038,7 +1038,7 @@ data:
           "steppedLine": false,
           "targets": [
             {
-              "expr": "histogram_quantile(0.99, sum(rate(coredns_dns_response_size_bytes_bucket{instance=~\"$instance\",proto=\"udp\"}[5m])) by (le,proto)) ",
+              "expr": "histogram_quantile(0.99, sum(rate(coredns_dns_response_size_bytes_bucket{job=\"coredns\",instance=~\"$instance\",proto=\"udp\"}[5m])) by (le,proto)) ",
               "interval": "",
               "intervalFactor": 2,
               "legendFormat": "{{"{{proto}}"}}:99%",
@@ -1046,7 +1046,7 @@ data:
               "step": 40
             },
             {
-              "expr": "histogram_quantile(0.90, sum(rate(coredns_dns_response_size_bytes_bucket{instance=~\"$instance\",proto=\"udp\"}[5m])) by (le,proto)) ",
+              "expr": "histogram_quantile(0.90, sum(rate(coredns_dns_response_size_bytes_bucket{job=\"coredns\",instance=~\"$instance\",proto=\"udp\"}[5m])) by (le,proto)) ",
               "interval": "",
               "intervalFactor": 2,
               "legendFormat": "{{"{{proto}}"}}:90%",
@@ -1054,7 +1054,7 @@ data:
               "step": 40
             },
             {
-              "expr": "histogram_quantile(0.50, sum(rate(coredns_dns_response_size_bytes_bucket{instance=~\"$instance\",proto=\"udp\"}[5m])) by (le,proto)) ",
+              "expr": "histogram_quantile(0.50, sum(rate(coredns_dns_response_size_bytes_bucket{job=\"coredns\",instance=~\"$instance\",proto=\"udp\"}[5m])) by (le,proto)) ",
               "hide": false,
               "intervalFactor": 2,
               "legendFormat": "{{"{{proto}}"}}:50%",
@@ -1172,7 +1172,7 @@ data:
           "steppedLine": false,
           "targets": [
             {
-              "expr": "histogram_quantile(0.99, sum(rate(coredns_dns_response_size_bytes_bucket{instance=~\"$instance\",proto=\"tcp\"}[5m])) by (le,proto)) ",
+              "expr": "histogram_quantile(0.99, sum(rate(coredns_dns_response_size_bytes_bucket{job=\"coredns\",instance=~\"$instance\",proto=\"tcp\"}[5m])) by (le,proto)) ",
               "format": "time_series",
               "intervalFactor": 2,
               "legendFormat": "{{"{{proto}}"}}:99%",
@@ -1180,7 +1180,7 @@ data:
               "step": 40
             },
             {
-              "expr": "histogram_quantile(0.90, sum(rate(coredns_dns_response_size_bytes_bucket{instance=~\"$instance\",proto=\"tcp\"}[5m])) by (le,proto)) ",
+              "expr": "histogram_quantile(0.90, sum(rate(coredns_dns_response_size_bytes_bucket{job=\"coredns\",instance=~\"$instance\",proto=\"tcp\"}[5m])) by (le,proto)) ",
               "format": "time_series",
               "intervalFactor": 2,
               "legendFormat": "{{"{{proto}}"}}:90%",
@@ -1188,7 +1188,7 @@ data:
               "step": 40
             },
             {
-              "expr": "histogram_quantile(0.50, sum(rate(coredns_dns_response_size_bytes_bucket{instance=~\"$instance\",proto=\"tcp\"}[5m])) by (le, proto)) ",
+              "expr": "histogram_quantile(0.50, sum(rate(coredns_dns_response_size_bytes_bucket{job=\"coredns\",instance=~\"$instance\",proto=\"tcp\"}[5m])) by (le, proto)) ",
               "format": "time_series",
               "intervalFactor": 2,
               "legendFormat": "{{"{{proto}}"}}:50%",
@@ -1289,7 +1289,7 @@ data:
           "steppedLine": false,
           "targets": [
             {
-              "expr": "sum(coredns_cache_size{instance=~\"$instance\"}) by (type) or\nsum(coredns_cache_entries{instance=~\"$instance\"}) by (type)",
+              "expr": "sum(coredns_cache_size{job=\"coredns\",instance=~\"$instance\"}) by (type) or\nsum(coredns_cache_entries{job=\"coredns\",instance=~\"$instance\"}) by (type)",
               "interval": "",
               "intervalFactor": 2,
               "legendFormat": "{{"{{type}}"}}",
@@ -1394,7 +1394,7 @@ data:
           "steppedLine": false,
           "targets": [
             {
-              "expr": "sum(rate(coredns_cache_hits_total{instance=~\"$instance\"}[5m])) by (type)",
+              "expr": "sum(rate(coredns_cache_hits_total{job=\"coredns\",instance=~\"$instance\"}[5m])) by (type)",
               "hide": false,
               "intervalFactor": 2,
               "legendFormat": "hits:{{"{{type}}"}}",
@@ -1402,7 +1402,7 @@ data:
               "step": 40
             },
             {
-              "expr": "sum(rate(coredns_cache_misses_total{instance=~\"$instance\"}[5m])) by (type)",
+              "expr": "sum(rate(coredns_cache_misses_total{job=\"coredns\",instance=~\"$instance\"}[5m])) by (type)",
               "hide": false,
               "intervalFactor": 2,
               "legendFormat": "misses",
