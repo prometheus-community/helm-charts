@@ -46,18 +46,30 @@ spec:
             - name: metrics
               containerPort: 9091
               protocol: TCP
+{{- if .Values.liveness.enabled }}
           livenessProbe:
             httpGet:
+        {{- if .Values.liveness.httpHeaders }}
+              httpHeaders:
+{{ toYaml .Values.liveness.httpHeaders | indent 16 }}
+        {{- end }}
               path: /-/healthy
               port: 9091
             initialDelaySeconds: 10
             timeoutSeconds: 10
+        {{- end }}
+{{- if .Values.readiness.enabled }}
           readinessProbe:
             httpGet:
+        {{- if .Values.readiness.httpHeaders }}
+              httpHeaders:
+{{ toYaml .Values.readiness.httpHeaders | indent 16 }}
+        {{- end }}
               path: /-/ready
               port: 9091
             initialDelaySeconds: 10
             timeoutSeconds: 10
+        {{- end }}
           resources:
 {{ toYaml .Values.resources | indent 12 }}
         {{- if .Values.containerSecurityContext }}
