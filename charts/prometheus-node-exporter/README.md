@@ -41,6 +41,22 @@ helm upgrade [RELEASE_NAME] [CHART] --install
 
 _See [helm upgrade](https://helm.sh/docs/helm/helm_upgrade/) for command documentation._
 
+### From 2.x to 3.x
+
+Change the following:
+
+```yaml
+hostRootFsMount: true
+```
+
+to:
+
+```yaml
+hostRootFsMount:
+  enabled: true
+  mountPropagation: HostToContainer
+```
+
 ## Configuring
 
 See [Customizing the Chart Before Installing](https://helm.sh/docs/intro/using_helm/#customizing-the-chart-before-installing). To see all configurable options with detailed comments, visit the chart's [values.yaml](./values.yaml), or run these configuration commands:
