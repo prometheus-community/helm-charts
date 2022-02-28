@@ -9,6 +9,9 @@ metadata:
 {{ include "prometheus.namespace" . | indent 2 }}
 data:
 {{- $root := . -}}
+{{- range $key, $value := .Values.ruleFiles }}
+  {{ $key }}: {{- toYaml $value | indent 2 }}
+{{- end }}
 {{- range $key, $value := .Values.serverFiles }}
   {{ $key }}: |
 {{- if eq $key "prometheus.yml" }}
@@ -39,7 +42,7 @@ data:
 {{- end }}
 {{- if eq $key "prometheus.yml" -}}
 {{- if $root.Values.extraScrapeConfigs }}
-{{ tpl $root.Values.extraScrapeConfigs $root | indent 4 }}
+{{ toYaml $root.Values.extraScrapeConfigs | indent 4 }}
 {{- end -}}
 {{- if or ($root.Values.alertmanager.enabled) ($root.Values.server.alertmanagers) }}
     alerting:
