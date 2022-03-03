@@ -46,20 +46,20 @@ spec:
             - name: metrics
               containerPort: 9091
               protocol: TCP
+{{- if .Values.liveness.enabled }}
           livenessProbe:
-            httpGet:
-              path: /-/healthy
-              port: 9091
-            initialDelaySeconds: 10
-            timeoutSeconds: 10
+{{ toYaml .Values.liveness.probe | indent 12 }}
+        {{- end }}
+{{- if .Values.readiness.enabled }}
           readinessProbe:
-            httpGet:
-              path: /-/ready
-              port: 9091
-            initialDelaySeconds: 10
-            timeoutSeconds: 10
+{{ toYaml .Values.readiness.probe | indent 12 }}
+        {{- end }}
           resources:
 {{ toYaml .Values.resources | indent 12 }}
+        {{- if .Values.containerSecurityContext }}
+          securityContext:
+{{ toYaml .Values.containerSecurityContext | indent 12 }}
+        {{- end }}
           volumeMounts:
             - name: storage-volume
               mountPath: "{{ .Values.persistentVolume.mountPath }}"

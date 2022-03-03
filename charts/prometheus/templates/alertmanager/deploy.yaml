@@ -82,6 +82,13 @@ spec:
             httpGet:
               path: {{ .Values.alertmanager.prefixURL }}/-/ready
               port: 9093
+              {{- if .Values.alertmanager.probeHeaders }}
+              httpHeaders:
+              {{- range .Values.alertmanager.probeHeaders }}
+              - name: {{ .name }}
+                value: {{ .value }}
+              {{- end }}
+              {{- end }}
             initialDelaySeconds: 30
             timeoutSeconds: 30
           resources:
@@ -98,6 +105,12 @@ spec:
               subPath: {{ .subPath }}
               readOnly: {{ .readOnly }}
           {{- end }}
+          {{- range .Values.alertmanager.extraConfigmapMounts }}
+            - name: {{ .name }}
+              mountPath: {{ .mountPath }}
+              subPath: {{ .subPath }}
+              readOnly: {{ .readOnly }}
+          {{- end }}
 
         {{- if .Values.configmapReload.alertmanager.enabled }}
         - name: {{ template "prometheus.name" . }}-{{ .Values.alertmanager.name }}-{{ .Values.configmapReload.alertmanager.name }}
@@ -109,12 +122,21 @@ spec:
           {{- range $key, $value := .Values.configmapReload.alertmanager.extraArgs }}
             - --{{ $key }}={{ $value }}
           {{- end }}
+          {{- range .Values.configmapReload.alertmanager.extraVolumeDirs }}
+            - --volume-dir={{ . }}
+          {{- end }}
           resources:
 {{ toYaml .Values.configmapReload.alertmanager.resources | indent 12 }}
           volumeMounts:
             - name: config-volume
               mountPath: /etc/config
               readOnly: true
+            {{- range .Values.configmapReload.alertmanager.extraConfigmapMounts }}
+            - name: {{ $.Values.configmapReload.alertmanager.name }}-{{ .name }}
+              mountPath: {{ .mountPath }}
+              subPath: {{ .subPath }}
+              readOnly: {{ .readOnly }}
+            {{- end }}
         {{- end }}
     {{- if .Values.imagePullSecrets }}
       imagePullSecrets:
@@ -156,6 +178,16 @@ spec:
             {{- with .optional }}
             optional: {{ . }}
             {{- end }}
+      {{- end }}
+      {{- range .Values.alertmanager.extraConfigmapMounts }}
+        - name: {{ .name }}
+          configMap:
+            name: {{ .configMap }}
+      {{- end }}
+      {{- range .Values.configmapReload.alertmanager.extraConfigmapMounts }}
+        - name: {{ $.Values.configmapReload.alertmanager.name }}-{{ .name }}
+          configMap:
+            name: {{ .configMap }}
       {{- end }}
         - name: storage-volume
         {{- if .Values.alertmanager.persistentVolume.enabled }}

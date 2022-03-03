@@ -83,6 +83,31 @@ _See [helm upgrade](https://helm.sh/docs/helm/helm_upgrade/) for command documen
 
 A major chart version change (like v1.2.3 -> v2.0.0) indicates that there is an incompatible breaking change needing manual actions.
 
+### From 32.x to 33.x
+This upgrades the node exporter Chart to v3.0.0. Please review the changes to this subchart if you make customizations to hostMountPropagation.
+
+### From 31.x to 32.x
+This upgrades to prometheus-operator to v0.54.0 and prometheus to v2.33.1. It also changes the default for `grafana.serviceMonitor.enabled` to `true.
+
+Run these commands to update the CRDs before applying the upgrade.
+```console
+kubectl apply --server-side -f https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/v0.54.0/example/prometheus-operator-crd/monitoring.coreos.com_alertmanagerconfigs.yaml
+kubectl apply --server-side -f https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/v0.54.0/example/prometheus-operator-crd/monitoring.coreos.com_alertmanagers.yaml
+kubectl apply --server-side -f https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/v0.54.0/example/prometheus-operator-crd/monitoring.coreos.com_podmonitors.yaml
+kubectl apply --server-side -f https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/v0.54.0/example/prometheus-operator-crd/monitoring.coreos.com_probes.yaml
+kubectl apply --server-side -f https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/v0.54.0/example/prometheus-operator-crd/monitoring.coreos.com_prometheuses.yaml
+kubectl apply --server-side -f https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/v0.54.0/example/prometheus-operator-crd/monitoring.coreos.com_prometheusrules.yaml
+kubectl apply --server-side -f https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/v0.54.0/example/prometheus-operator-crd/monitoring.coreos.com_servicemonitors.yaml
+kubectl apply --server-side -f https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/v0.54.0/example/prometheus-operator-crd/monitoring.coreos.com_thanosrulers.yaml
+```
+
+
+### From 30.x to 31.x
+
+This version removes the built-in grafana ServiceMonitor and instead relies on the ServiceMonitor of the sub-chart.
+`grafana.serviceMonitor.enabled` must be set instead of `grafana.serviceMonitor.selfMonitor` and the old ServiceMonitor may
+need to be manually cleaned up after deploying the new release.
+
 ### From 29.x to 30.x
 
 This version updates kube-state-metrics to 4.3.0 and uses the new option `kube-state-metrics.releaseLabel=true` which adds the "release" label to kube-state-metrics labels, making scraping of the metrics by kube-prometheus-stack work out of the box again, independent of the used kube-prometheus-stack release name. If you already set the "release" label via `kube-state-metrics.customLabels` you might have to remove that and use it via the new option.

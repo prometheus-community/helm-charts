@@ -87,6 +87,9 @@ spec:
 {{ toYaml .Values.server.env | indent 12}}
           {{- end }}
           args:
+        {{- if .Values.server.defaultFlagsOverride }}
+        {{ toYaml .Values.server.defaultFlagsOverride | nindent 12}}
+        {{- else }}
           {{- if .Values.server.prefixURL }}
             - --web.route-prefix={{ .Values.server.prefixURL }}
           {{- end }}
@@ -110,8 +113,12 @@ spec:
           {{- if .Values.server.baseURL }}
             - --web.external-url={{ .Values.server.baseURL }}
           {{- end }}
+        {{- end }}
           ports:
             - containerPort: 9090
+          {{- if .Values.server.hostPort }}
+              hostPort: {{ .Values.server.hostPort }}
+          {{- end }}
           readinessProbe:
             {{- if not .Values.server.tcpSocketProbeEnabled }}
             httpGet:
@@ -216,8 +223,13 @@ spec:
       terminationGracePeriodSeconds: {{ .Values.server.terminationGracePeriodSeconds }}
       volumes:
         - name: config-volume
+        {{- if empty .Values.server.configFromSecret }}
           configMap:
             name: {{ if .Values.server.configMapOverrideName }}{{ .Release.Name }}-{{ .Values.server.configMapOverrideName }}{{- else }}{{ template "prometheus.server.fullname" . }}{{- end }}
+        {{- else }}
+          secret:
+            secretName: {{ .Values.server.configFromSecret }}
+        {{- end }}
       {{- range .Values.server.extraHostPathMounts }}
         - name: {{ .name }}
           hostPath:

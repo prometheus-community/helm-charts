@@ -41,7 +41,7 @@ spec:
           args:
             - --path.procfs=/host/proc
             - --path.sysfs=/host/sys
-            {{- if .Values.hostRootFsMount }}
+            {{- if .Values.hostRootFsMount.enabled }}
             - --path.rootfs=/host/root
             {{- end }}
             - --web.listen-address=$(HOST_IP):{{ .Values.service.port }}
@@ -82,10 +82,12 @@ spec:
             - name: sys
               mountPath: /host/sys
               readOnly: true
-            {{- if .Values.hostRootFsMount }}
+            {{- if .Values.hostRootFsMount.enabled }}
             - name: root
               mountPath: /host/root
-              mountPropagation: HostToContainer
+              {{- with .Values.hostRootFsMount.mountPropagation }}
+              mountPropagation: {{ . }}
+              {{- end }}
               readOnly: true
             {{- end }}
             {{- if .Values.extraHostVolumeMounts }}
@@ -153,7 +155,7 @@ spec:
         - name: sys
           hostPath:
             path: /sys
-        {{- if .Values.hostRootFsMount }}
+        {{- if .Values.hostRootFsMount.enabled }}
         - name: root
           hostPath:
             path: /
