@@ -83,6 +83,9 @@ _See [helm upgrade](https://helm.sh/docs/helm/helm_upgrade/) for command documen
 
 A major chart version change (like v1.2.3 -> v2.0.0) indicates that there is an incompatible breaking change needing manual actions.
 
+### From 32.x to 33.x
+This upgrades the node exporter Chart to v3.0.0. Please review the changes to this subchart if you make customizations to hostMountPropagation.
+
 ### From 31.x to 32.x
 This upgrades to prometheus-operator to v0.54.0 and prometheus to v2.33.1. It also changes the default for `grafana.serviceMonitor.enabled` to `true.
 
