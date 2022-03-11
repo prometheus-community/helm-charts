@@ -48,7 +48,7 @@ Create the name of the service account to use
 Set DATA_SOURCE_URI environment variable
 */}}
 {{- define "prometheus-postgres-exporter.data_source_uri" -}}
-{{ printf "%s:%s/%s?sslmode=%s&%s" .Values.config.datasource.host .Values.config.datasource.port .Values.config.datasource.database .Values.config.datasource.sslmode .Values.config.datasource.extraParams | quote }}
+{{ printf "%s:%s/%s?sslmode=%s&%s" .Values.config.datasource.host .Values.config.datasource.port .Values.config.datasource.database .Values.config.datasource.sslmode .Values.config.datasource.extraParams | trimSuffix "&" | quote }}
 {{- end }}
 
 {{/*
