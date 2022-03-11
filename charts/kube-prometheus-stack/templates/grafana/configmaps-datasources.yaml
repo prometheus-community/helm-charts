@@ -24,6 +24,7 @@ data:
 {{- if .Values.grafana.sidecar.datasources.defaultDatasourceEnabled }}
     - name: Prometheus
       type: prometheus
+      uid: prometheus
       {{- if .Values.grafana.sidecar.datasources.url }}
       url: {{ .Values.grafana.sidecar.datasources.url }}
       {{- else }}
@@ -37,6 +38,7 @@ data:
 {{- range until (int .Values.prometheus.prometheusSpec.replicas) }}
     - name: Prometheus-{{ . }}
       type: prometheus
+      uid: prometheus-replica-{{ . }}
       url: http://prometheus-{{ template "kube-prometheus-stack.fullname" $ }}-prometheus-{{ . }}.prometheus-operated:9090/{{ trimPrefix "/" $.Values.prometheus.prometheusSpec.routePrefix }}
       access: proxy
       isDefault: false

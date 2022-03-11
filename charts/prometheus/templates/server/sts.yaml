@@ -223,8 +223,13 @@ spec:
       terminationGracePeriodSeconds: {{ .Values.server.terminationGracePeriodSeconds }}
       volumes:
         - name: config-volume
+        {{- if empty .Values.server.configFromSecret }}
           configMap:
             name: {{ if .Values.server.configMapOverrideName }}{{ .Release.Name }}-{{ .Values.server.configMapOverrideName }}{{- else }}{{ template "prometheus.server.fullname" . }}{{- end }}
+        {{- else }}
+          secret:
+            secretName: {{ .Values.server.configFromSecret }}
+        {{- end }}
       {{- range .Values.server.extraHostPathMounts }}
         - name: {{ .name }}
           hostPath:
