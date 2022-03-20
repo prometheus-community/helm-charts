@@ -36,6 +36,12 @@ spec:
       affinity:
         {{- toYaml .Values.affinity | nindent 8 }}
       {{- end }}
+      {{- if .Values.image.pullSecrets }}
+      imagePullSecrets:
+      {{- range .Values.image.pullSecrets }}
+        - name: {{ . }}
+      {{- end }}
+      {{- end }}
       serviceAccount: {{ template "stackdriver-exporter.serviceAccountName" . }}
       restartPolicy: {{ .Values.restartPolicy }}
       volumes:
@@ -77,6 +83,9 @@ spec:
             - --web.telemetry-path={{ .Values.web.path }}
           {{- if .Values.stackdriver.dropDelegatedProjects }}
             - --monitoring.drop-delegated-projects
+          {{- end }}
+          {{- if .Values.stackdriver.metrics.ingestDelay }}
+            - --monitoring.metrics-ingest-delay
           {{- end }}
           {{- if .Values.extraArgs }}
           {{- range $key, $value := .Values.extraArgs }}

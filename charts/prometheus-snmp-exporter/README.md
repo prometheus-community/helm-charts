@@ -54,6 +54,34 @@ $ helm upgrade [RELEASE_NAME] [CHART] --install
 
 _See [helm upgrade](https://helm.sh/docs/helm/helm_upgrade/) for command documentation._
 
+### To 1.0.0
+
+This version allows multiple Targets to be specified when using ServiceMonitor. When you use ServiceMonitor, please rewrite below:
+
+```yaml
+serviceMonitor:
+  enabled: true
+  params:
+    enabled: true
+    conf:
+      module:
+      - if_mib
+      target:
+      - 127.0.0.1
+```
+
+to this:
+```yaml
+serviceMonitor:
+  enabled: true
+  params:
+    module:
+    - if_mib
+    name: device1
+    target: 127.0.0.1
+```
+
+
 ## Configuration
 
 See [Customizing the Chart Before Installing](https://helm.sh/docs/intro/using_helm/#customizing-the-chart-before-installing). To see all configurable options with detailed comments, visit the chart's [values.yaml](./values.yaml), or run these configuration commands:

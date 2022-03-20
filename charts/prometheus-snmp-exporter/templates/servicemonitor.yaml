@@ -1,41 +1,48 @@
 {{- if .Values.serviceMonitor.enabled }}
+{{- range .Values.serviceMonitor.params }}
+---
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
-  name: {{ template "prometheus-snmp-exporter.fullname" .  }}
-  {{- if .Values.serviceMonitor.namespace }}
-  namespace: {{ .Values.serviceMonitor.namespace }}
+  name: {{ template "prometheus-snmp-exporter.fullname" $  }}-{{ .name }}
+  {{- if $.Values.serviceMonitor.namespace }}
+  namespace: {{ $.Values.serviceMonitor.namespace }}
   {{- end }}
   labels:
-    {{- include "prometheus-snmp-exporter.labels" . | indent 4 }}
-    {{- range $key, $value := .Values.serviceMonitor.selector }}
+    {{- include "prometheus-snmp-exporter.labels" $ | indent 4 }}
+    {{- range $key, $value := .labels | default $.Values.serviceMonitor.selector }}
     {{ $key }}: {{ $value | quote }}
     {{- end }}
 spec:
   endpoints:
   - port: http
-    {{- if .Values.serviceMonitor.interval }}
-    interval: {{ .Values.serviceMonitor.interval }}
+    honorLabels: {{ $.Values.serviceMonitor.honorLabels }}
+    path: {{ $.Values.serviceMonitor.path }}
+    {{- if or .interval $.Values.serviceMonitor.interval }}
+    interval: {{ .interval | default $.Values.serviceMonitor.interval }}
     {{- end }}
-    honorLabels: {{ .Values.serviceMonitor.honorLabels }}
-    path: {{ .Values.serviceMonitor.path }}
-    {{- if .Values.serviceMonitor.interval }}
-    interval: {{ .Values.serviceMonitor.interval }}
-    {{- end }}
-    {{- if .Values.serviceMonitor.scrapeTimeout }}
-    scrapeTimeout: {{ .Values.serviceMonitor.scrapeTimeout }}
-    {{- end }}
-    {{- if .Values.serviceMonitor.params.enabled }}
+    scrapeTimeout: {{ .scrapeTimeout | default $.Values.serviceMonitor.scrapeTimeout }}
     params:
-{{ toYaml .Values.serviceMonitor.params.conf | indent 6 }}
+      module: {{ .module | default $.Values.serviceMonitor.module }}
+      target:
+      - {{ .target }}
+    metricRelabelings:
+      - sourceLabels: [instance]
+        targetLabel: instance
+        replacement: {{ .target }}
+      - sourceLabels: [target]
+        targetLabel: target
+        replacement: {{ .name }}
+        {{- range $targetLabel, $replacement := .additionalMetricsRelabels | default $.Values.serviceMonitor.additionalMetricsRelabels }}
+      - targetLabel: {{ $targetLabel }}
+        replacement: {{ $replacement }}
+        {{- end }}
+    {{- if or .relabelings }}
+    relabelings: {{ toYaml .relabelings | default $.Values.serviceMonitor.relabelings | nindent 8 }}
     {{- end }}
-    {{- if .Values.serviceMonitor.metricRelabelings }}
-    metricRelabelings: {{ toYaml .Values.serviceMonitor.metricRelabelings | nindent 8 }}
-    {{- end }}
-    {{- if .Values.serviceMonitor.relabelings }}
-    relabelings: {{ toYaml .Values.serviceMonitor.relabelings | nindent 8 }}
-    {{- end }}
+  jobLabel: "{{ $.Release.Name }}"
   selector:
     matchLabels:
-      {{- include "prometheus-snmp-exporter.selectorLabels" . | indent 6 }}
+      {{- include "prometheus-snmp-exporter.selectorLabels" $ | indent 6 }}
+{{- end }}
 {{- end -}}
