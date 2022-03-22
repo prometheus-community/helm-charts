@@ -32,6 +32,34 @@ Create chart name and version as used by the chart label.
 {{- end -}}
 
 {{/*
+Generate basic labels
+*/}}
+{{- define "prometheus-cloudwatch-exporter.labels" }}
+helm.sh/chart: {{ template "prometheus-cloudwatch-exporter.chart" . }}
+app.kubernetes.io/managed-by: {{ .Release.Service }}
+app.kubernetes.io/component: metrics
+app.kubernetes.io/part-of: {{ template "prometheus-cloudwatch-exporter.name" . }}
+{{- include "prometheus-cloudwatch-exporter.selectorLabels" . }}
+{{- if .Chart.AppVersion }}
+app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
+{{- end }}
+{{- if .Values.customLabels }}
+{{ toYaml .Values.customLabels }}
+{{- end }}
+{{- if .Values.releaseLabel }}
+release: {{ .Release.Name }}
+{{- end }}
+{{- end }}
+
+{{/*
+Selector labels
+*/}}
+{{- define "prometheus-cloudwatch-exporter.selectorLabels" }}
+app.kubernetes.io/name: {{ include "prometheus-cloudwatch-exporter.name" . }}
+app.kubernetes.io/instance: {{ .Release.Name }}
+{{- end }}
+
+{{/*
 Create serviceAccountName for deployment.
 */}}
 {{- define "prometheus-cloudwatch-exporter.serviceAccountName" -}}
