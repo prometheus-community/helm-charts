@@ -8,8 +8,8 @@ kind: APIService
 metadata:
 {{- if or .Values.certManager.enabled .Values.customAnnotations }}
   annotations:
-    certmanager.k8s.io/inject-ca-from: {{ printf "%s/%s-root-cert" .Release.Namespace (include "k8s-prometheus-adapter.fullname" .) | quote }}
-    cert-manager.io/inject-ca-from: {{ printf "%s/%s-root-cert" .Release.Namespace (include "k8s-prometheus-adapter.fullname" .) | quote }}
+    certmanager.k8s.io/inject-ca-from: {{ printf "%s/%s-root-cert" (include "k8s-prometheus-adapter.namespace" .) (include "k8s-prometheus-adapter.fullname" .) | quote }}
+    cert-manager.io/inject-ca-from: {{ printf "%s/%s-root-cert" (include "k8s-prometheus-adapter.namespace" .) (include "k8s-prometheus-adapter.fullname" .) | quote }}
     {{- if .Values.customAnnotations }}
     {{- toYaml .Values.customAnnotations | nindent 4 }}
     {{- end }}
@@ -20,7 +20,7 @@ metadata:
 spec:
   service:
     name: {{ template "k8s-prometheus-adapter.fullname" . }}
-    namespace: {{ .Release.Namespace | quote }}
+    namespace: {{ include "k8s-prometheus-adapter.namespace" . | quote }}
   {{- if .Values.tls.enable }}
   caBundle: {{ b64enc .Values.tls.ca }}
   {{- end }}
