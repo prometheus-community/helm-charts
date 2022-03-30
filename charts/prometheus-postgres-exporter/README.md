@@ -9,14 +9,14 @@ This chart bootstraps a prometheus [postgres exporter](https://github.com/promet
 - Kubernetes 1.16+
 - Helm 3+
 
-## Get Repo Info
+## Add Helm Chart Repository
 
 ```console
 helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
 helm repo update
 ```
 
-_See [helm repo](https://helm.sh/docs/helm/helm_repo/) for command documentation._
+_See [`helm repo`](https://helm.sh/docs/helm/helm_repo/) for command documentation._
 
 ## Install Chart
 
