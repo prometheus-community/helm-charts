@@ -8,7 +8,7 @@ This chart creates a [SNMP Exporter](https://github.com/prometheus/snmp_exporter
 
 - Kubernetes 1.8+ with Beta APIs enabled
 
-## Get Repo Info
+## Add Helm repository
 
 ```console
 helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
