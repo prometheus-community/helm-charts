@@ -20,11 +20,7 @@ _See [helm repo](https://helm.sh/docs/helm/helm_repo/) for command documentation
 ## Install Chart
 
 ```console
-# Helm 3
-$ helm install [RELEASE_NAME] prometheus-community/prometheus-snmp-exporter
-
-# Helm 2
-$ helm install --name [RELEASE_NAME] prometheus-community/prometheus-snmp-exporter
+helm install [RELEASE_NAME] prometheus-community/prometheus-snmp-exporter
 ```
 
 _See [configuration](#configuration) below._
@@ -34,11 +30,7 @@ _See [helm install](https://helm.sh/docs/helm/helm_install/) for command documen
 ## Uninstall Chart
 
 ```console
-# Helm 3
-$ helm uninstall [RELEASE_NAME]
-
-# Helm 2
-# helm delete --purge [RELEASE_NAME]
+helm uninstall [RELEASE_NAME]
 ```
 
 This removes all the Kubernetes components associated with the chart and deletes the release.
@@ -48,8 +40,7 @@ _See [helm uninstall](https://helm.sh/docs/helm/helm_uninstall/) for command doc
 ## Upgrading Chart
 
 ```console
-# Helm 3 or 2
-$ helm upgrade [RELEASE_NAME] [CHART] --install
+helm upgrade [RELEASE_NAME] [CHART] --install
 ```
 
 _See [helm upgrade](https://helm.sh/docs/helm/helm_upgrade/) for command documentation._
@@ -71,6 +62,7 @@ serviceMonitor:
 ```
 
 to this:
+
 ```yaml
 serviceMonitor:
   enabled: true
@@ -80,7 +72,6 @@ serviceMonitor:
     name: device1
     target: 127.0.0.1
 ```
-
 
 ## Configuration
 
@@ -121,6 +112,7 @@ scrape_configs:
 ```
 
 Example configuration via a ServiceMonitor
+
 ```yaml
 serviceMonitor:
   enabled: true
