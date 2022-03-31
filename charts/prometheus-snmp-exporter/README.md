@@ -120,7 +120,7 @@ scrape_configs:
         replacement: my-service-name:9116  # The SNMP exporter's Service name and port.
 ```
 
-Eaxample configuration via a ServiceMonitor
+Example configuration via a ServiceMonitor
 ```yaml
 serviceMonitor:
   enabled: true
