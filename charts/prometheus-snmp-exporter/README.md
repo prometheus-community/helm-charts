@@ -75,7 +75,7 @@ to this:
 serviceMonitor:
   enabled: true
   params:
-    module:
+  - module:
     - if_mib
     name: device1
     target: 127.0.0.1
@@ -128,10 +128,8 @@ serviceMonitor:
     - sourceLabels: [__param_target]
       targetLabel: instance
   params:
-    enabled: true
-    conf:
-      module:
+    - module:
         - fortigate_snmp
-      target:
-        - 192.168.1.2 # SNMP device
+      name: device1
+      target: 192.168.1.2 # SNMP device
 ```
