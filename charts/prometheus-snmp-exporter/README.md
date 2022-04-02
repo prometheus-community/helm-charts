@@ -8,23 +8,19 @@ This chart creates a [SNMP Exporter](https://github.com/prometheus/snmp_exporter
 
 - Kubernetes 1.8+ with Beta APIs enabled
 
-## Get Repo Info
+## Add Helm repository
 
 ```console
 helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
 helm repo update
 ```
 
-_See [helm repo](https://helm.sh/docs/helm/helm_repo/) for command documentation._
+_See [`helm repo`](https://helm.sh/docs/helm/helm_repo/) for command documentation._
 
 ## Install Chart
 
 ```console
-# Helm 3
-$ helm install [RELEASE_NAME] prometheus-community/prometheus-snmp-exporter
-
-# Helm 2
-$ helm install --name [RELEASE_NAME] prometheus-community/prometheus-snmp-exporter
+helm install [RELEASE_NAME] prometheus-community/prometheus-snmp-exporter
 ```
 
 _See [configuration](#configuration) below._
@@ -34,11 +30,7 @@ _See [helm install](https://helm.sh/docs/helm/helm_install/) for command documen
 ## Uninstall Chart
 
 ```console
-# Helm 3
-$ helm uninstall [RELEASE_NAME]
-
-# Helm 2
-# helm delete --purge [RELEASE_NAME]
+helm uninstall [RELEASE_NAME]
 ```
 
 This removes all the Kubernetes components associated with the chart and deletes the release.
@@ -48,11 +40,38 @@ _See [helm uninstall](https://helm.sh/docs/helm/helm_uninstall/) for command doc
 ## Upgrading Chart
 
 ```console
-# Helm 3 or 2
-$ helm upgrade [RELEASE_NAME] [CHART] --install
+helm upgrade [RELEASE_NAME] [CHART] --install
 ```
 
 _See [helm upgrade](https://helm.sh/docs/helm/helm_upgrade/) for command documentation._
+
+### To 1.0.0
+
+This version allows multiple Targets to be specified when using ServiceMonitor. When you use ServiceMonitor, please rewrite below:
+
+```yaml
+serviceMonitor:
+  enabled: true
+  params:
+    enabled: true
+    conf:
+      module:
+      - if_mib
+      target:
+      - 127.0.0.1
+```
+
+to this:
+
+```yaml
+serviceMonitor:
+  enabled: true
+  params:
+  - module:
+    - if_mib
+    name: device1
+    target: 127.0.0.1
+```
 
 ## Configuration
 
@@ -92,7 +111,8 @@ scrape_configs:
         replacement: my-service-name:9116  # The SNMP exporter's Service name and port.
 ```
 
-Eaxample configuration via a ServiceMonitor
+Example configuration via a ServiceMonitor
+
 ```yaml
 serviceMonitor:
   enabled: true
@@ -100,10 +120,8 @@ serviceMonitor:
     - sourceLabels: [__param_target]
       targetLabel: instance
   params:
-    enabled: true
-    conf:
-      module:
+    - module:
         - fortigate_snmp
-      target:
-        - 192.168.1.2 # SNMP device
+      name: device1
+      target: 192.168.1.2 # SNMP device
 ```

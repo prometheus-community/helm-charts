@@ -4,10 +4,12 @@
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
-  name: {{ template "prometheus-blackbox-exporter.fullname" $ }}-{{ .name }}
-  namespace: {{ template "prometheus-blackbox-exporter.namespace" $ }}
+  name: {{ template "prometheus-json-exporter.fullname" $ }}
+  {{- if $.Values.serviceMonitor.namespace }}
+  namespace: {{ $.Values.serviceMonitor.namespace }}
+  {{- end }}
   labels:
-    {{- include "prometheus-blackbox-exporter.labels" $ | nindent 4 }}
+    {{- include "prometheus-json-exporter.labels" $ | nindent 4 }}
     {{- if or $.Values.serviceMonitor.defaults.labels .labels }}
     {{- toYaml (.labels | default $.Values.serviceMonitor.defaults.labels) | nindent 4 }}
     {{- end }}
@@ -15,18 +17,12 @@ spec:
   endpoints:
   - port: http
     scheme: {{ $.Values.serviceMonitor.scheme }}
-    {{- if $.Values.serviceMonitor.bearerTokenFile }}
-    bearerTokenFile: {{ $.Values.serviceMonitor.bearerTokenFile }}
-    {{- end }}
-    {{- if $.Values.serviceMonitor.tlsConfig }}
-    tlsConfig: {{ toYaml $.Values.serviceMonitor.tlsConfig | nindent 6 }}
-    {{- end }}
     path: "/probe"
     interval: {{ .interval | default $.Values.serviceMonitor.defaults.interval }}
+    {{- if $.Values.serviceMonitor.scrapeTimeout }}
     scrapeTimeout: {{ .scrapeTimeout | default $.Values.serviceMonitor.defaults.scrapeTimeout }}
+    {{- end }}
     params:
-      module:
-      - {{ .module | default $.Values.serviceMonitor.defaults.module }}
       target:
       - {{ .url }}
     metricRelabelings:
@@ -43,9 +39,9 @@ spec:
   jobLabel: "{{ $.Release.Name }}"
   selector:
     matchLabels:
-      {{- include "prometheus-blackbox-exporter.selectorLabels" $ | nindent 6 }}
+      {{- include "prometheus-json-exporter.selectorLabels" $ | nindent 6 }}
   namespaceSelector:
     matchNames:
-      - {{ template "prometheus-blackbox-exporter.namespace" $ }}
+      - {{ $.Release.Namespace }}
 {{- end }}
 {{- end }}

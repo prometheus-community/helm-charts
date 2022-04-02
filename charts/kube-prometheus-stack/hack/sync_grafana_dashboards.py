@@ -34,7 +34,7 @@ charts = [
         'multicluster_key': '.Values.grafana.sidecar.dashboards.multicluster.global.enabled',
     },
     {
-        'source': 'https://raw.githubusercontent.com/etcd-io/website/master/content/en/docs/v3.4/op-guide/grafana.json',
+        'source': 'https://raw.githubusercontent.com/etcd-io/website/master/content/en/docs/v3.5/op-guide/grafana.json',
         'destination': '../templates/grafana/dashboards-1.14',
         'type': 'json',
         'min_kubernetes': '1.14.0-0',
@@ -53,6 +53,7 @@ condition_map = {
     'scheduler': ' .Values.kubeScheduler.enabled',
     'node-rsrc-use': ' .Values.nodeExporter.enabled',
     'node-cluster-rsrc-use': ' .Values.nodeExporter.enabled',
+    'nodes': ' .Values.nodeExporter.enabled',
     'prometheus-remote-write': ' .Values.prometheus.prometheusSpec.remoteWriteDashboards'
 }
 
@@ -73,7 +74,7 @@ metadata:
 {{ toYaml .Values.grafana.sidecar.dashboards.annotations | indent 4 }}
   labels:
     {{- if $.Values.grafana.sidecar.dashboards.label }}
-    {{ $.Values.grafana.sidecar.dashboards.label }}: "1"
+    {{ $.Values.grafana.sidecar.dashboards.label }}: {{ ternary $.Values.grafana.sidecar.dashboards.labelValue "1" (not (empty $.Values.grafana.sidecar.dashboards.labelValue)) | quote }}
     {{- end }}
     app: {{ template "kube-prometheus-stack.name" $ }}-grafana
 {{ include "kube-prometheus-stack.labels" $ | indent 4 }}

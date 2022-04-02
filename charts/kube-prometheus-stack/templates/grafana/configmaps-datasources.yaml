@@ -9,7 +9,7 @@ metadata:
 {{ toYaml .Values.grafana.sidecar.datasources.annotations | indent 4 }}
 {{- end }}
   labels:
-    {{ $.Values.grafana.sidecar.datasources.label }}: "1"
+    {{ $.Values.grafana.sidecar.datasources.label }}: {{ $.Values.grafana.sidecar.datasources.labelValue | quote }}
     app: {{ template "kube-prometheus-stack.name" $ }}-grafana
 {{ include "kube-prometheus-stack.labels" $ | indent 4 }}
 data:
@@ -24,6 +24,7 @@ data:
 {{- if .Values.grafana.sidecar.datasources.defaultDatasourceEnabled }}
     - name: Prometheus
       type: prometheus
+      uid: {{ .Values.grafana.sidecar.datasources.uid }}
       {{- if .Values.grafana.sidecar.datasources.url }}
       url: {{ .Values.grafana.sidecar.datasources.url }}
       {{- else }}
@@ -37,6 +38,7 @@ data:
 {{- range until (int .Values.prometheus.prometheusSpec.replicas) }}
     - name: Prometheus-{{ . }}
       type: prometheus
+      uid: {{ .Values.grafana.sidecar.datasources.uid }}-replica-{{ . }}
       url: http://prometheus-{{ template "kube-prometheus-stack.fullname" $ }}-prometheus-{{ . }}.prometheus-operated:9090/{{ trimPrefix "/" $.Values.prometheus.prometheusSpec.routePrefix }}
       access: proxy
       isDefault: false

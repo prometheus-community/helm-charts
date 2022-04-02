@@ -36,6 +36,12 @@ spec:
       affinity:
         {{- toYaml .Values.affinity | nindent 8 }}
       {{- end }}
+      {{- if .Values.image.pullSecrets }}
+      imagePullSecrets:
+      {{- range .Values.image.pullSecrets }}
+        - name: {{ . }}
+      {{- end }}
+      {{- end }}
       serviceAccount: {{ template "stackdriver-exporter.serviceAccountName" . }}
       restartPolicy: {{ .Values.restartPolicy }}
       volumes:
@@ -63,43 +69,36 @@ spec:
             - name: stackdriver-service-account
               mountPath: /etc/secrets/service-account/
           {{- end}}
-          {{- if .Values.extraArgs }}
           args:
+            - --google.project-id={{ .Values.stackdriver.projectId }}
+            - --monitoring.metrics-interval={{ .Values.stackdriver.metrics.interval }}
+            - --monitoring.metrics-offset={{ .Values.stackdriver.metrics.offset }}
+            - --monitoring.metrics-type-prefixes={{ .Values.stackdriver.metrics.typePrefixes }}
+            - --stackdriver.backoff-jitter={{ .Values.stackdriver.backoffJitter }}
+            - --stackdriver.http-timeout={{ .Values.stackdriver.httpTimeout }}
+            - --stackdriver.max-backoff={{ .Values.stackdriver.maxBackoff }}
+            - --stackdriver.max-retries={{ .Values.stackdriver.maxRetries }}
+            - --stackdriver.retry-statuses={{ .Values.stackdriver.retryStatuses }}
+            - --web.listen-address={{ .Values.web.listenAddress }}
+            - --web.telemetry-path={{ .Values.web.path }}
+          {{- if .Values.stackdriver.dropDelegatedProjects }}
+            - --monitoring.drop-delegated-projects
+          {{- end }}
+          {{- if .Values.stackdriver.metrics.ingestDelay }}
+            - --monitoring.metrics-ingest-delay
+          {{- end }}
+          {{- if .Values.extraArgs }}
           {{- range $key, $value := .Values.extraArgs }}
             {{- if $value }}
             - --{{ $key }}={{ $value }}
             {{- end }}
           {{- end }}
           {{- end }}
-          env:
           {{- if or .Values.stackdriver.serviceAccountSecret .Values.stackdriver.serviceAccountKey }}
+          env:
             - name: GOOGLE_APPLICATION_CREDENTIALS
               value: /etc/secrets/service-account/credentials.json
           {{- end }}
-            - name: STACKDRIVER_EXPORTER_GOOGLE_PROJECT_ID
-              value: {{ .Values.stackdriver.projectId | quote }}
-            - name: STACKDRIVER_EXPORTER_MONITORING_METRICS_TYPE_PREFIXES
-              value: {{ .Values.stackdriver.metrics.typePrefixes | quote }}
-            - name: STACKDRIVER_EXPORTER_MONITORING_METRICS_INTERVAL
-              value: {{ .Values.stackdriver.metrics.interval | quote }}
-            - name: STACKDRIVER_EXPORTER_MONITORING_METRICS_OFFSET
-              value: {{ .Values.stackdriver.metrics.offset | quote }}
-            - name: STACKDRIVER_EXPORTER_WEB_LISTEN_ADDRESS
-              value: {{ .Values.web.listenAddress | quote }}
-            - name: STACKDRIVER_EXPORTER_WEB_TELEMETRY_PATH
-              value: {{ .Values.web.path | quote }}
-            - name: STACKDRIVER_EXPORTER_MAX_RETRIES
-              value: {{ .Values.stackdriver.maxRetries | quote }}
-            - name: STACKDRIVER_EXPORTER_HTTP_TIMEOUT
-              value: {{ .Values.stackdriver.httpTimeout | quote }}
-            - name: STACKDRIVER_EXPORTER_MAX_BACKOFF_DURATION
-              value: {{ .Values.stackdriver.maxBackoff | quote }}
-            - name: STACKDRIVER_EXPORTER_BACKODFF_JITTER_BASE
-              value: {{ .Values.stackdriver.backoffJitter | quote }}
-            - name: STACKDRIVER_EXPORTER_RETRY_STATUSES
-              value: {{ .Values.stackdriver.retryStatuses | quote}}
-            - name: STACKDRIVER_EXPORTER_DROP_DELEGATED_PROJECTS
-              value: {{ .Values.stackdriver.dropDelegatedProjects | quote}}
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
           ports:

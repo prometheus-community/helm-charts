@@ -12,6 +12,15 @@ image:
 
 extraArgs: {}
 
+## Additional Alertmanager Secret mounts
+# Defines additional mounts with secrets. Secrets must be manually created in the namespace.
+extraSecretMounts: []
+  # - name: secret-files
+  #   mountPath: /etc/secrets
+  #   subPath: ""
+  #   secretName: alertmanager-secret-files
+  #   readOnly: true
+
 imagePullSecrets: []
 nameOverride: ""
 fullnameOverride: ""
@@ -47,6 +56,16 @@ securityContext:
   runAsGroup: 65534
 
 additionalPeers: []
+
+livenessProbe:
+  httpGet:
+    path: /
+    port: http
+
+readinessProbe:
+  httpGet:
+    path: /
+    port: http
 
 service:
   annotations: {}
@@ -152,6 +171,8 @@ configmapReload:
     repository: jimmidyson/configmap-reload
     tag: v0.5.0
     pullPolicy: IfNotPresent
+
+  # containerPort: 9533
 
   ## configmap-reload resource requests and limits
   ## Ref: http://kubernetes.io/docs/user-guide/compute-resources/
