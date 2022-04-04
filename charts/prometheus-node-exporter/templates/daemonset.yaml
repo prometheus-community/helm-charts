@@ -44,7 +44,7 @@ spec:
             {{- if .Values.hostRootFsMount.enabled }}
             - --path.rootfs=/host/root
             {{- end }}
-            - --web.listen-address=$(HOST_IP):{{ .Values.service.port }}
+            - --web.listen-address=[$(HOST_IP)]:{{ .Values.service.port }}
 {{- if .Values.extraArgs }}
 {{ toYaml .Values.extraArgs | indent 12 }}
 {{- end }}
@@ -61,6 +61,10 @@ spec:
                 apiVersion: v1
                 fieldPath: status.hostIP
             {{- end }}
+          {{- range $key, $value := .Values.env }}
+          - name: {{ $key }}
+            value: {{ $value | quote }}
+          {{- end }}
           ports:
             - name: {{ .Values.service.portName }}
               containerPort: {{ .Values.service.port }}
