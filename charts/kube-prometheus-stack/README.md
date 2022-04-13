@@ -11,20 +11,19 @@ _Note: This chart was formerly named `prometheus-operator` chart, now renamed to
 - Kubernetes 1.16+
 - Helm 3+
 
-## Get Repo Info
+## Get Helm Repository Info
 
 ```console
 helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
 helm repo update
 ```
 
-_See [helm repo](https://helm.sh/docs/helm/helm_repo/) for command documentation._
+_See [`helm repo`](https://helm.sh/docs/helm/helm_repo/) for command documentation._
 
-## Install Chart
+## Install Helm Chart
 
 ```console
-# Helm
-$ helm install [RELEASE_NAME] prometheus-community/kube-prometheus-stack
+helm install [RELEASE_NAME] prometheus-community/kube-prometheus-stack
 ```
 
 _See [configuration](#configuration) below._
@@ -43,11 +42,10 @@ To disable dependencies during installation, see [multiple releases](#multiple-r
 
 _See [helm dependency](https://helm.sh/docs/helm/helm_dependency/) for command documentation._
 
-## Uninstall Chart
+## Uninstall Helm Chart
 
 ```console
-# Helm
-$ helm uninstall [RELEASE_NAME]
+helm uninstall [RELEASE_NAME]
 ```
 
 This removes all the Kubernetes components associated with the chart and deletes the release.
@@ -70,8 +68,7 @@ kubectl delete crd thanosrulers.monitoring.coreos.com
 ## Upgrading Chart
 
 ```console
-# Helm
-$ helm upgrade [RELEASE_NAME] prometheus-community/kube-prometheus-stack
+helm upgrade [RELEASE_NAME] prometheus-community/kube-prometheus-stack
 ```
 
 With Helm v3, CRDs created by this chart are not updated by default and should be manually updated.
@@ -84,9 +81,11 @@ _See [helm upgrade](https://helm.sh/docs/helm/helm_upgrade/) for command documen
 A major chart version change (like v1.2.3 -> v2.0.0) indicates that there is an incompatible breaking change needing manual actions.
 
 ### From 33.x to 34.x
+
 This upgrades to prometheus-operator to v0.55.0 and prometheus to v2.33.5.
 
 Run these commands to update the CRDs before applying the upgrade.
+
 ```console
 kubectl apply --server-side -f https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/v0.55.0/example/prometheus-operator-crd/monitoring.coreos.com_alertmanagerconfigs.yaml
 kubectl apply --server-side -f https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/v0.55.0/example/prometheus-operator-crd/monitoring.coreos.com_alertmanagers.yaml
@@ -98,14 +97,16 @@ kubectl apply --server-side -f https://raw.githubusercontent.com/prometheus-oper
 kubectl apply --server-side -f https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/v0.55.0/example/prometheus-operator-crd/monitoring.coreos.com_thanosrulers.yaml
 ```
 
-
 ### From 32.x to 33.x
-This upgrades the node exporter Chart to v3.0.0. Please review the changes to this subchart if you make customizations to hostMountPropagation.
+
+This upgrades the prometheus-node-exporter Chart to v3.0.0. Please review the changes to this subchart if you make customizations to hostMountPropagation.
 
 ### From 31.x to 32.x
+
 This upgrades to prometheus-operator to v0.54.0 and prometheus to v2.33.1. It also changes the default for `grafana.serviceMonitor.enabled` to `true.
 
 Run these commands to update the CRDs before applying the upgrade.
+
 ```console
 kubectl apply --server-side -f https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/v0.54.0/example/prometheus-operator-crd/monitoring.coreos.com_alertmanagerconfigs.yaml
 kubectl apply --server-side -f https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/v0.54.0/example/prometheus-operator-crd/monitoring.coreos.com_alertmanagers.yaml
@@ -116,7 +117,6 @@ kubectl apply --server-side -f https://raw.githubusercontent.com/prometheus-oper
 kubectl apply --server-side -f https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/v0.54.0/example/prometheus-operator-crd/monitoring.coreos.com_servicemonitors.yaml
 kubectl apply --server-side -f https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/v0.54.0/example/prometheus-operator-crd/monitoring.coreos.com_thanosrulers.yaml
 ```
-
 
 ### From 30.x to 31.x
 
@@ -145,7 +145,7 @@ If you are using PodSecurityPolicies you can enable the previous behaviour by se
 
 ### From 26.x to 27.x
 
-This version splits Node Exporter recording and altering rules in separate config values.
+This version splits prometheus-node-exporter chart recording and altering rules in separate config values.
 Instead of `defaultRules.rules.node` the 2 new variables `defaultRules.rules.nodeExporterAlerting` and `defaultRules.rules.nodeExporterRecording` are used.
 
 Also the following defaultRules.rules has been removed as they had no effect: `kubeApiserverError`, `kubePrometheusNodeAlerting`, `kubernetesAbsent`, `time`.
@@ -173,7 +173,7 @@ kubectl apply --server-side -f https://raw.githubusercontent.com/prometheus-oper
 
 ### From 23.x to 24.x
 
-The custom `ServiceMonitor` for the _kube-state-metrics_ & _prometheus-node-exporter_ charts have been removed in favour of the built in sub-chart `ServiceMonitor`; for both sub-charts this means that `ServiceMonitor` customisations happen via the values passed to the chart. If you haven't directly customised this behaviour then there are no changes required to upgrade, but if you have please read the following.
+The custom `ServiceMonitor` for the _kube-state-metrics_ & _prometheus-node-exporter_ charts have been removed in favour of the built-in sub-chart `ServiceMonitor`; for both sub-charts this means that `ServiceMonitor` customisations happen via the values passed to the chart. If you haven't directly customised this behaviour then there are no changes required to upgrade, but if you have please read the following.
 
 For _kube-state-metrics_ the `ServiceMonitor` customisation is now set via `kube-state-metrics.prometheus.monitor` and the `kubeStateMetrics.serviceMonitor.selfMonitor.enabled` value has moved to `kube-state-metrics.selfMonitor.enabled`.
 
@@ -395,7 +395,7 @@ With Prometheus Operator version 0.30+, the core Prometheus Operator pod exposes
 
 A validating and mutating webhook configuration requires the endpoint to which the request is sent to use TLS. It is possible to set up custom certificates to do this, but in most cases, a self-signed certificate is enough. The setup of this component requires some more complex orchestration when using helm. The steps are created to be idempotent and to allow turning the feature on and off without running into helm quirks.
 
-1. A pre-install hook provisions a certificate into the same namespace using a format compatible with provisioning using end-user certificates. If the certificate already exists, the hook exits.
+1. A pre-install hook provisions a certificate into the same namespace using a format compatible with provisioning using end user certificates. If the certificate already exists, the hook exits.
 2. The prometheus operator pod is configured to use a TLS proxy container, which will load that certificate.
 3. Validating and Mutating webhook configurations are created in the cluster, with their failure mode set to Ignore. This allows rules to be created by the same chart at the same time, even though the webhook has not yet been fully set up - it does not have the correct CA field set.
 4. A post-install hook reads the CA from the secret created by step 1 and patches the Validating and Mutating webhook configurations. This process will allow a custom CA provisioned by some other process to also be patched into the webhook configurations. The chosen failure policy is also patched into the webhook configurations
@@ -412,7 +412,7 @@ Because the operator can only run as a single pod, there is potential for this c
 
 ## Developing Prometheus Rules and Grafana Dashboards
 
-This chart Grafana Dashboards and Prometheus Rules are just a copy from [prometheus-operator/prometheus-operator](https://github.com/prometheus-operator/prometheus-operator) and other sources, synced (with alterations) by scripts in [hack](hack) folder. In order to introduce any changes you need to first [add them to the original repo](https://github.com/prometheus-operator/kube-prometheus/blob/master/docs/developing-prometheus-rules-and-grafana-dashboards.md) and then sync there by scripts.
+This chart Grafana Dashboards and Prometheus Rules are just a copy from [prometheus-operator/prometheus-operator](https://github.com/prometheus-operator/prometheus-operator) and other sources, synced (with alterations) by scripts in [hack](hack) folder. In order to introduce any changes you need to first [add them to the original repository](https://github.com/prometheus-operator/kube-prometheus/blob/master/docs/developing-prometheus-rules-and-grafana-dashboards.md) and then sync there by scripts.
 
 ## Further Information
 
