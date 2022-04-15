@@ -39,6 +39,11 @@ The longest name that gets created adds and extra 37 characters, so truncation s
 {{- printf "%s-alertmanager" (include "kube-prometheus-stack.fullname" .) -}}
 {{- end }}
 
+{{/* Fullname suffixed with thanos-ruler */}}
+{{- define "kube-prometheus-stack.thanosRuler.fullname" -}}
+{{- printf "%s-alertmanager" (include "kube-prometheus-stack.fullname" .) -}}
+{{- end }}
+
 {{/* Create chart name and version as used by the chart label. */}}
 {{- define "kube-prometheus-stack.chartref" -}}
 {{- replace "+" "_" .Chart.Version | printf "%s-%s" .Chart.Name -}}
@@ -82,6 +87,15 @@ heritage: {{ $.Release.Service | quote }}
     {{ default (include "kube-prometheus-stack.alertmanager.fullname" .) .Values.alertmanager.serviceAccount.name }}
 {{- else -}}
     {{ default "default" .Values.alertmanager.serviceAccount.name }}
+{{- end -}}
+{{- end -}}
+
+{{/* Create the name of thanosRuler service account to use */}}
+{{- define "kube-prometheus-stack.thanosRuler.serviceAccountName" -}}
+{{- if .Values.thanosRuler.serviceAccount.create -}}
+    {{ default (include "kube-prometheus-stack.thanosRuler.fullname" .) .Values.thanosRuler.serviceAccount.name }}
+{{- else -}}
+    {{ default "default" .Values.thanosRuler.serviceAccount.name }}
 {{- end -}}
 {{- end -}}
 
