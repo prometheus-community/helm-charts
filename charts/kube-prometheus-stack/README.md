@@ -17,11 +17,7 @@ The compatibility is based on the Kubernetes API resources addition, deprecation
 <!-- START COMPATIBILITY MATRIX -->
 | **Chart Version** | **Kubernetes 1.19** | **Kubernetes 1.20** | **Kubernetes 1.21** | **Kubernetes 1.22** | **Kubernetes 1.23** |
 |-------------------|:-------------------:|:-------------------:|:-------------------:|:-------------------:|:-------------------:|
-| **v34.10.0+** | ✅ | ✅ | ✅ | ✅ | ✅ |
-| **v34.9.0+** | ✅ | ✅ | ✅ | ✅ | ✅ |
-| **v34.8.0+** | ✅ | ✅ | ✅ | ✅ | ✅ |
-| **v34.7.0+** | ✅ | ✅ | ✅ | ✅ | ✅ |
-| **v34.6.0+** | ✅ | ✅ | ✅ | ✅ | ✅ |
+NODATA
 <!-- END COMPATIBILITY MATRIX -->
 
 * ✅ : Fully compatible version
