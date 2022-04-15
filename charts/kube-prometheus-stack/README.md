@@ -6,12 +6,31 @@ See the [kube-prometheus](https://github.com/prometheus-operator/kube-prometheus
 
 _Note: This chart was formerly named `prometheus-operator` chart, now renamed to more clearly reflect that it installs the `kube-prometheus` project stack, within which Prometheus Operator is only one component._
 
-## Prerequisites
+## Compatibility matrix
 
-- Kubernetes 1.16+
-- Helm 3+
+### Helm Chart versions
 
-## Get Helm Repository Info
+This matrix shows the compatibility between the 5 latest chart releases with the 5 latest [Kubernetes releases](https://github.com/kubernetes/kubernetes/releases).
+
+The compatibility is based on the Kubernetes API resources addition, deprecation and deletion.
+
+<!-- START COMPATIBILITY MATRIX -->
+| **Chart Version** | **Kubernetes 1.19** | **Kubernetes 1.20** | **Kubernetes 1.21** | **Kubernetes 1.22** | **Kubernetes 1.23** |
+|-------------------|:-------------------:|:-------------------:|:-------------------:|:-------------------:|:-------------------:|
+| **v34.10.0+** | ✅ | ✅ | ✅ | ✅ | ✅ |
+| **v34.9.0+** | ✅ | ✅ | ✅ | ✅ | ✅ |
+| **v34.8.0+** | ✅ | ✅ | ✅ | ✅ | ✅ |
+| **v34.7.0+** | ✅ | ✅ | ✅ | ✅ | ✅ |
+| **v34.6.0+** | ✅ | ✅ | ✅ | ✅ | ✅ |
+<!-- END COMPATIBILITY MATRIX -->
+
+* ✅ : Fully compatible version
+* ☑️ : Fully compatible version with deprecation warning(s)
+* ⛔️ : Unsupported version
+
+This chart may be compatible with older versions of Kubernetes, you can use [kubepug](https://github.com/rikatz/kubepug) to test the compatibility.
+
+## Get Repo Info
 
 ```console
 helm repo add prometheus-community https://prometheus-community.github.io/helm-charts

@@ -19,17 +19,18 @@ This matrix shows the compatibility between the 5 latest chart releases with the
 
 The compatibility is based on the Kubernetes API resources addition, deprecation and deletion.
 
+<!-- START COMPATIBILITY MATRIX -->
 | **Chart Version** | **Kubernetes 1.19** | **Kubernetes 1.20** | **Kubernetes 1.21** | **Kubernetes 1.22** | **Kubernetes 1.23** |
 |-------------------|:-------------------:|:-------------------:|:-------------------:|:-------------------:|:-------------------:|
-| **v4.7.x**        |         ✅          |         ✅          |         ✅          |         ✅          |         ✅          |
-| **v4.6.x**        |         ✅          |         ✅          |         ✅          |         ✅          |         ✅          |
-| **v4.5.x**        |         ✅          |         ✅          |         ✅          |         ✅          |         ✅          |
-| **v4.4.x**        |         ✅          |         ✅          |         ✅          |         ✅          |         ✅          |
-| **v4.3.x**        |         ✅          |         ✅          |         ✅          |         ✅          |         ✅          |
+| **v4.7.0+** | ✅ | ✅ | ✅ | ✅ | ✅ |
+| **v4.6.0+** | ✅ | ✅ | ✅ | ✅ | ✅ |
+| **v4.5.0+** | ✅ | ✅ | ✅ | ✅ | ✅ |
+| **v4.4.0+** | ✅ | ✅ | ✅ | ✅ | ✅ |
+| **v4.3.0+** | ✅ | ✅ | ✅ | ✅ | ✅ |
+<!-- END COMPATIBILITY MATRIX -->
 
 * ✅ : Fully compatible version
 * ☑️ : Fully compatible version with deprecation warning(s)
-* ⚠️ : Partially supported version
 * ⛔️ : Unsupported version
 
 This chart may be compatible with older versions of Kubernetes, you can use [kubepug](https://github.com/rikatz/kubepug) to test the compatibility.
