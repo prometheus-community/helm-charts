@@ -305,6 +305,34 @@ spec:
 {{ toYaml .Values.defaultRules.additionalRuleLabels | indent 8 }}
 {{- end }}
 {{- end }}
+{{- if not (.Values.defaultRules.disabled.PrometheusScrapeBodySizeLimitHit | default false) }}
+    - alert: PrometheusScrapeBodySizeLimitHit
+      annotations:
+        description: Prometheus {{`{{`}}$labels.namespace{{`}}`}}/{{`{{`}}$labels.pod{{`}}`}} has failed {{`{{`}} printf "%.0f" $value {{`}}`}} scrapes in the last 5m because some targets exceeded the configured body_size_limit.
+        runbook_url: {{ .Values.defaultRules.runbookUrl }}/prometheus/prometheusscrapebodysizelimithit
+        summary: Prometheus has dropped some targets that exceeded body size limit.
+      expr: increase(prometheus_target_scrapes_exceeded_body_size_limit_total{job="{{ $prometheusJob }}",namespace="{{ $namespace }}"}[5m]) > 0
+      for: 15m
+      labels:
+        severity: warning
+{{- if .Values.defaultRules.additionalRuleLabels }}
+{{ toYaml .Values.defaultRules.additionalRuleLabels | indent 8 }}
+{{- end }}
+{{- end }}
+{{- if not (.Values.defaultRules.disabled.PrometheusScrapeSampleLimitHit | default false) }}
+    - alert: PrometheusScrapeSampleLimitHit
+      annotations:
+        description: Prometheus {{`{{`}}$labels.namespace{{`}}`}}/{{`{{`}}$labels.pod{{`}}`}} has failed {{`{{`}} printf "%.0f" $value {{`}}`}} scrapes in the last 5m because some targets exceeded the configured sample_limit.
+        runbook_url: {{ .Values.defaultRules.runbookUrl }}/prometheus/prometheusscrapesamplelimithit
+        summary: Prometheus has failed scrapes that have exceeded the configured sample limit.
+      expr: increase(prometheus_target_scrapes_exceeded_sample_limit_total{job="{{ $prometheusJob }}",namespace="{{ $namespace }}"}[5m]) > 0
+      for: 15m
+      labels:
+        severity: warning
+{{- if .Values.defaultRules.additionalRuleLabels }}
+{{ toYaml .Values.defaultRules.additionalRuleLabels | indent 8 }}
+{{- end }}
+{{- end }}
 {{- if not (.Values.defaultRules.disabled.PrometheusTargetSyncFailure | default false) }}
     - alert: PrometheusTargetSyncFailure
       annotations:
