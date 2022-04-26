@@ -253,14 +253,16 @@ spec:
 {{ toYaml .Values.defaultRules.additionalRuleLabels | indent 8 }}
 {{- end }}
 {{- end }}
-{{- if not (.Values.defaultRules.disabled.KubeJobCompletion | default false) }}
-    - alert: KubeJobCompletion
+{{- if not (.Values.defaultRules.disabled.KubeJobNotCompleted | default false) }}
+    - alert: KubeJobNotCompleted
       annotations:
-        description: Job {{`{{`}} $labels.namespace {{`}}`}}/{{`{{`}} $labels.job_name {{`}}`}} is taking more than 12 hours to complete.
-        runbook_url: {{ .Values.defaultRules.runbookUrl }}/kubernetes/kubejobcompletion
+        description: Job {{`{{`}} $labels.namespace {{`}}`}}/{{`{{`}} $labels.job_name {{`}}`}} is taking more than {{`{{`}} "43200" | humanizeDuration {{`}}`}} to complete.
+        runbook_url: {{ .Values.defaultRules.runbookUrl }}/kubernetes/kubejobnotcompleted
         summary: Job did not complete in time
-      expr: kube_job_spec_completions{job="kube-state-metrics", namespace=~"{{ $targetNamespace }}"} - kube_job_status_succeeded{job="kube-state-metrics", namespace=~"{{ $targetNamespace }}"}  > 0
-      for: 12h
+      expr: |-
+        time() - max by(namespace, job_name) (kube_job_status_start_time{job="kube-state-metrics", namespace=~"{{ $targetNamespace }}"}
+          and
+        kube_job_status_active{job="kube-state-metrics", namespace=~"{{ $targetNamespace }}"} > 0) > 43200
       labels:
         severity: warning
 {{- if .Values.defaultRules.additionalRuleLabels }}
