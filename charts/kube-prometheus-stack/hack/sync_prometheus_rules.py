@@ -278,6 +278,27 @@ def add_custom_labels(rules, indent=4):
         rules = rules[:index] + "\n" + rule_condition + rules[index:]
     return rules
 
+
+def add_custom_annotations(rules, indent=4):
+    """Add if wrapper for additional rules annotations"""
+    rule_condition = '{{- if .Values.defaultRules.additionalRuleAnnotations }}\n{{ toYaml .Values.defaultRules.additionalRuleAnnotations | indent 8 }}\n{{- end }}'
+    annotations = "      annotations:"
+    annotations_len = len(annotations) + 1
+    rule_condition_len = len(rule_condition) + 1
+
+    separator = " " * indent + "- alert:.*"
+    alerts_positions = re.finditer(separator,rules)
+    alert = 0
+
+    for alert_position in alerts_positions:
+        # Add rule_condition after 'annotations:' statement
+        index = alert_position.end() + annotations_len + rule_condition_len * alert
+        rules = rules[:index] + "\n" + rule_condition + rules[index:]
+        alert += 1
+
+    return rules
+
+
 def write_group_to_file(group, url, destination, min_kubernetes, max_kubernetes):
     fix_expr(group['rules'])
     group_name = group['name']
@@ -293,6 +314,7 @@ def write_group_to_file(group, url, destination, min_kubernetes, max_kubernetes)
                 init_line += '\n' + replacement_map[line]['init']
     # append per-alert rules
     rules = add_custom_labels(rules)
+    rules = add_custom_annotations(rules)
     rules = add_rules_conditions_from_condition_map(rules)
     rules = add_rules_per_rule_conditions(rules, group)
     # initialize header
