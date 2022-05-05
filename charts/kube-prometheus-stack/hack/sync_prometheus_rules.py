@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
 """Fetch alerting and aggregation rules from provided urls into this chart."""
+import re
 import textwrap
 from os import makedirs
 
 import requests
 import yaml
 from yaml.representer import SafeRepresenter
-import re
+
 
 # https://stackoverflow.com/a/20863889/961092
 class LiteralStr(str):
