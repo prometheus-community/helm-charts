@@ -50,7 +50,8 @@ Create default labels
 {{- $labelChart := include "prometheus-pushgateway.chart" $ -}}
 {{- $labelApp := include "prometheus-pushgateway.name" $ -}}
 {{- $labels := dict "app" $labelApp "chart" $labelChart "release" .Release.Name "heritage" .Release.Service -}}
-{{ merge .extraLabels $labels | toYaml | indent 4 }}
+{{- $indent := .indent | default 4 -}}
+{{ merge .extraLabels $labels | toYaml | indent $indent }}
 {{- end -}}
 
 {{/*
