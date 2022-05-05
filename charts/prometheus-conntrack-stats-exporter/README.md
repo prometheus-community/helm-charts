@@ -10,14 +10,14 @@ This chart creates an Conntrack-Stats-Exporter daemonset on a [Kubernetes](http:
 
 - Kubernetes 1.10+
 
-## Get Repo Info
+## Get Helm Repository Info
 
 ```console
 helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
 helm repo update
 ```
 
-_See [helm repo](https://helm.sh/docs/helm/helm_repo/) for command documentation._
+_See [`helm repo`](https://helm.sh/docs/helm/helm_repo/) for command documentation._
 
 ## Install Chart
 
@@ -29,7 +29,7 @@ The command deploys Conntrack-Stats Exporter on the Kubernetes cluster using the
 
 _See [configuration](#configuration) below._
 
-_See [helm install](https://helm.sh/docs/helm/helm_install/) for command documentation._
+_See [`helm install`](https://helm.sh/docs/helm/helm_install/) for command documentation._
 
 ## Uninstall Chart
 
@@ -39,7 +39,7 @@ helm uninstall [RELEASE_NAME]
 
 This removes all the Kubernetes components associated with the chart and deletes the release.
 
-_See [helm uninstall](https://helm.sh/docs/helm/helm_uninstall/) for command documentation._
+_See [`helm uninstall`](https://helm.sh/docs/helm/helm_uninstall/) for command documentation._
 
 ## Upgrading Chart
 
