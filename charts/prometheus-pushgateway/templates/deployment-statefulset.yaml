@@ -1,16 +1,15 @@
-{{- if not .Values.runAsStatefulSet }}
 apiVersion: apps/v1
+{{- if .Values.runAsStatefulSet }}
+kind: StatefulSet
+{{- else }}
 kind: Deployment
+{{- end }}
 metadata:
   name: {{ template "prometheus-pushgateway.fullname" . }}
   labels:
 {{ template "prometheus-pushgateway.defaultLabels" merge (dict "extraLabels" .Values.podLabels) .  }}
 spec:
   replicas: {{ .Values.replicaCount }}
-  {{- if .Values.strategy }}
-  strategy:
-{{ toYaml .Values.strategy | indent 4 }}
-  {{- end }}
   selector:
     matchLabels:
       app: {{ template "prometheus-pushgateway.name" . }}
@@ -87,15 +86,8 @@ spec:
       securityContext:
 {{ toYaml .Values.securityContext | indent 8 }}
     {{- end }}
-      volumes:
-        - name: storage-volume
-      {{- if .Values.persistentVolume.enabled }}
-          persistentVolumeClaim:
-            claimName: {{ if .Values.persistentVolume.existingClaim }}{{ .Values.persistentVolume.existingClaim }}{{- else }}{{ template "prometheus-pushgateway.fullname" . }}{{- end }}
-      {{- else}}
-          emptyDir: {}
-      {{- end -}}
-      {{- if .Values.extraVolumes }}
-{{ toYaml .Values.extraVolumes | indent 8 }}
-      {{- end }}
-{{- end -}}
+  {{- if .Values.runAsStatefulSet -}}
+{{ include "prometheus-pushgateway.statefulsetOnlySpec" . }}
+  {{- else -}}
+{{ include "prometheus-pushgateway.deploymentOnlySpec" . }}
+  {{- end }}

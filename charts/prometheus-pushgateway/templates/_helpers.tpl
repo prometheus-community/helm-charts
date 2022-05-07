@@ -64,3 +64,59 @@ Return the appropriate apiVersion for networkpolicy.
 {{- print "networking.k8s.io/v1" -}}
 {{- end -}}
 {{- end -}}
+
+{{/*
+Returns the Deployment only spec fields
+*/}}
+{{- define "prometheus-pushgateway.deploymentOnlySpec" -}}
+{{- if .Values.strategy }}
+  strategy:
+{{ toYaml .Values.strategy | indent 4 }}
+  volumes:
+  - name: storage-volume
+{{- if .Values.persistentVolume.enabled }}
+    persistentVolumeClaim:
+    claimName: {{ if .Values.persistentVolume.existingClaim }}{{ .Values.persistentVolume.existingClaim }}{{- else }}{{ template "prometheus-pushgateway.fullname" . }}{{- end }}
+{{- else}}
+    emptyDir: {}
+    {{- if .Values.extraVolumes }}
+{{ toYaml .Values.extraVolumes | indent 2 }}
+    {{- end }}
+{{- end -}}
+{{- end }}
+{{- end -}}
+{{- if .Values.extraVolumes }}
+  volumes:
+{{ toYaml .Values.extraVolumes | indent 2 }}
+{{- end }}
+
+{{/*
+Returns the StatefulSet only spec fields
+*/}}
+{{- define "prometheus-pushgateway.statefulsetOnlySpec" }}
+  serviceName: {{ template "prometheus-pushgateway.fullname" . }}
+  {{- if .Values.persistentVolume.enabled }}
+  volumeClaimTemplates:
+    - metadata:
+        {{- if .Values.persistentVolume.annotations }}
+        annotations:
+      {{ toYaml .Values.persistentVolume.annotations | indent 10 }}
+        {{- end }}
+        labels:
+{{ template "prometheus-pushgateway.defaultLabels" merge (dict "extraLabels" .Values.persistentVolumeLabels "indent" 10) . }}
+        name: storage-volume
+      spec:
+        accessModes:
+          {{ toYaml .Values.persistentVolume.accessModes }}
+      {{- if .Values.persistentVolume.storageClass }}
+      {{- if (eq "-" .Values.persistentVolume.storageClass) }}
+        storageClassName: ""
+      {{- else }}
+        storageClassName: "{{ .Values.persistentVolume.storageClass }}"
+      {{- end }}
+      {{- end }}
+        resources:
+          requests:
+            storage: "{{ .Values.persistentVolume.size }}"
+  {{- end }}
+{{- end }}
