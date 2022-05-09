@@ -34,10 +34,50 @@ Create chart name and version as used by the chart label.
 {{/*
 Return the appropriate apiVersion for rbac.
 */}}
-{{- define "rbac.apiVersion" -}}
 {{- if .Capabilities.APIVersions.Has "rbac.authorization.k8s.io/v1" }}
 {{- print "rbac.authorization.k8s.io/v1" -}}
 {{- else -}}
 {{- print "rbac.authorization.k8s.io/v1beta1" -}}
 {{- end -}}
+
+{{/*
+Renders a value that contains a template.
+Usage:
+{{ include "elasticsearch-exporter.tplvalue.render" ( dict "value" .Values.path.to.the.Value "context" $) }}
+*/}}
+{{- define "elasticsearch-exporter.tplvalue.render" -}}
+    {{- if typeIs "string" .value }}
+        {{- tpl .value .context }}
+    {{- else }}
+        {{- tpl (.value | toYaml) .context }}
+    {{- end }}
+{{- end -}}
+
+
+{{/*
+Return the proper Docker Image Registry Secret Names evaluating values as templates
+{{ include "elasticsearch-exporter.image.pullSecret.name" ( dict "images" (list .Values.path.to.the.image1, .Values.path.to.the.image2) "context" $) }}
+*/}}
+{{- define "elasticsearch-exporter.image.pullSecret.name" -}}
+  {{- $pullSecrets := list }}
+  {{- $context := .context }}
+
+  {{- if $context.Values.global }}
+    {{- range $context.Values.global.imagePullSecrets -}}
+      {{/* Is plain array of strings, compatible with all bitnami charts */}}
+      {{- $pullSecrets = append $pullSecrets (include "elasticsearch-exporter.tplvalue.render" (dict "value" . "context" $context)) -}}
+    {{- end -}}
+  {{- end -}}
+  {{- range .images -}}
+    {{- if .pullSecret -}}
+      {{- $pullSecrets = append $pullSecrets (include "elasticsearch-exporter.tplvalue.render" (dict "value" .pullSecret "context" $context)) -}}
+    {{- end -}}
+  {{- end -}}
+
+  {{- if (not (empty $pullSecrets)) }}
+imagePullSecrets:
+    {{- range $pullSecrets | uniq }}
+  - name: {{ . }}
+    {{- end }}
+  {{- end }}
 {{- end -}}
