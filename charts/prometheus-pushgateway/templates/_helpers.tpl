@@ -133,7 +133,6 @@ Returns pod spec
       securityContext:
 {{ toYaml .Values.securityContext | indent 8 }}
     {{- end }}
-
       volumes:
       {{- if not .Values.runAsStatefulSet }}
         - name: storage-volume
