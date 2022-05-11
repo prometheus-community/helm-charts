@@ -134,4 +134,20 @@ Returns pod spec
 {{ toYaml .Values.securityContext | indent 8 }}
     {{- end }}
 
+      volumes:
+      {{- if not .Values.runAsStatefulSet }}
+        - name: storage-volume
+        {{- if .Values.persistentVolume.enabled }}
+          persistentVolumeClaim:
+            claimName: {{ if .Values.persistentVolume.existingClaim }}{{ .Values.persistentVolume.existingClaim }}{{- else }}{{ template "prometheus-pushgateway.fullname" . }}{{- end }}
+        {{- else }}
+          emptyDir: {}
+        {{- end -}}
+      {{- end -}}
+      {{- if .Values.extraVolumes }}
+{{ toYaml .Values.extraVolumes | indent 8 }}
+      {{- else if .Values.runAsStatefulSet }}
+        []
+      {{- end }}
+
 {{- end }}
