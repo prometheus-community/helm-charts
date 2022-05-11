@@ -66,57 +66,72 @@ Return the appropriate apiVersion for networkpolicy.
 {{- end -}}
 
 {{/*
-Returns the Deployment only spec fields
+Returns pod spec
 */}}
-{{- define "prometheus-pushgateway.deploymentOnlySpec" -}}
-{{- if .Values.strategy }}
-  strategy:
-{{ toYaml .Values.strategy | indent 4 }}
-  volumes:
-  - name: storage-volume
-{{- if .Values.persistentVolume.enabled }}
-    persistentVolumeClaim:
-    claimName: {{ if .Values.persistentVolume.existingClaim }}{{ .Values.persistentVolume.existingClaim }}{{- else }}{{ template "prometheus-pushgateway.fullname" . }}{{- end }}
-{{- else}}
-    emptyDir: {}
-    {{- if .Values.extraVolumes }}
-{{ toYaml .Values.extraVolumes | indent 2 }}
+{{- define "prometheus-pushgateway.podSpec" -}}
+      serviceAccountName: {{ template "prometheus-pushgateway.serviceAccountName" . }}
+      {{- if .Values.priorityClassName }}
+      priorityClassName: {{ .Values.priorityClassName | quote }}
+      {{- end }}
+    {{- if .Values.imagePullSecrets }}
+      imagePullSecrets:
+{{ toYaml .Values.imagePullSecrets | indent 8 }}
     {{- end }}
-{{- end -}}
-{{- end }}
-{{- end -}}
-{{- if .Values.extraVolumes }}
-  volumes:
-{{ toYaml .Values.extraVolumes | indent 2 }}
-{{- end }}
-
-{{/*
-Returns the StatefulSet only spec fields
-*/}}
-{{- define "prometheus-pushgateway.statefulsetOnlySpec" }}
-  serviceName: {{ template "prometheus-pushgateway.fullname" . }}
-  {{- if .Values.persistentVolume.enabled }}
-  volumeClaimTemplates:
-    - metadata:
-        {{- if .Values.persistentVolume.annotations }}
-        annotations:
-      {{ toYaml .Values.persistentVolume.annotations | indent 10 }}
+      containers:
+        {{- if .Values.extraContainers }}
+{{ toYaml .Values.extraContainers | indent 8 }}
         {{- end }}
-        labels:
-{{ template "prometheus-pushgateway.defaultLabels" merge (dict "extraLabels" .Values.persistentVolumeLabels "indent" 10) . }}
-        name: storage-volume
-      spec:
-        accessModes:
-          {{ toYaml .Values.persistentVolume.accessModes }}
-      {{- if .Values.persistentVolume.storageClass }}
-      {{- if (eq "-" .Values.persistentVolume.storageClass) }}
-        storageClassName: ""
-      {{- else }}
-        storageClassName: "{{ .Values.persistentVolume.storageClass }}"
-      {{- end }}
-      {{- end }}
-        resources:
-          requests:
-            storage: "{{ .Values.persistentVolume.size }}"
-  {{- end }}
+        - name: pushgateway
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+        {{- if .Values.extraVars }}
+          env:
+{{ toYaml .Values.extraVars | indent 12 }}
+        {{- end }}
+        {{- if .Values.extraArgs }}
+          args:
+{{ toYaml .Values.extraArgs | indent 12 }}
+        {{- end }}
+          ports:
+            - name: metrics
+              containerPort: 9091
+              protocol: TCP
+{{- if .Values.liveness.enabled }}
+          livenessProbe:
+{{ toYaml .Values.liveness.probe | indent 12 }}
+        {{- end }}
+{{- if .Values.readiness.enabled }}
+          readinessProbe:
+{{ toYaml .Values.readiness.probe | indent 12 }}
+        {{- end }}
+          resources:
+{{ toYaml .Values.resources | indent 12 }}
+        {{- if .Values.containerSecurityContext }}
+          securityContext:
+{{ toYaml .Values.containerSecurityContext | indent 12 }}
+        {{- end }}
+          volumeMounts:
+            - name: storage-volume
+              mountPath: "{{ .Values.persistentVolume.mountPath }}"
+              subPath: "{{ .Values.persistentVolume.subPath }}"
+          {{- if .Values.extraVolumeMounts }}
+{{ toYaml .Values.extraVolumeMounts | indent 12 }}
+          {{- end }}
+    {{- if .Values.nodeSelector }}
+      nodeSelector:
+{{ toYaml .Values.nodeSelector | indent 8 }}
+    {{- end }}
+    {{- if .Values.tolerations }}
+      tolerations:
+{{ toYaml .Values.tolerations | indent 8 }}
+    {{- end }}
+    {{- if .Values.affinity }}
+      affinity:
+{{ toYaml .Values.affinity | indent 8 }}
+    {{- end }}
+    {{- if .Values.securityContext }}
+      securityContext:
+{{ toYaml .Values.securityContext | indent 8 }}
+    {{- end }}
+
 {{- end }}
