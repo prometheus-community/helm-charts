@@ -134,7 +134,8 @@ Returns pod spec
 {{ toYaml .Values.securityContext | indent 8 }}
     {{- end }}
       volumes:
-      {{- if not .Values.runAsStatefulSet }}
+      {{- $storageVolumeAsPVCTemplate := and .Values.runAsStatefulSet .Values.persistentVolume.enabled -}}
+      {{- if not $storageVolumeAsPVCTemplate }}
         - name: storage-volume
         {{- if .Values.persistentVolume.enabled }}
           persistentVolumeClaim:
@@ -145,7 +146,7 @@ Returns pod spec
       {{- end -}}
       {{- if .Values.extraVolumes }}
 {{ toYaml .Values.extraVolumes | indent 8 }}
-      {{- else if .Values.runAsStatefulSet }}
+      {{- else if $storageVolumeAsPVCTemplate }}
         []
       {{- end }}
 
