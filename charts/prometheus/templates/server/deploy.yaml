@@ -65,6 +65,10 @@ spec:
           {{- range .Values.configmapReload.prometheus.extraVolumeDirs }}
             - --volume-dir={{ . }}
           {{- end }}
+          {{- if .Values.configmapReload.prometheus.containerPort }}
+          ports:
+            - containerPort: {{ .Values.configmapReload.prometheus.containerPort }}
+          {{- end }}
           resources:
 {{ toYaml .Values.configmapReload.prometheus.resources | indent 12 }}
           volumeMounts:
@@ -87,9 +91,9 @@ spec:
 {{ toYaml .Values.server.env | indent 12}}
           {{- end }}
           args:
-          {{- if .Values.server.prefixURL }}
-            - --web.route-prefix={{ .Values.server.prefixURL }}
-          {{- end }}
+        {{- if .Values.server.defaultFlagsOverride }}
+        {{ toYaml .Values.server.defaultFlagsOverride | nindent 12}}
+        {{- else }}
           {{- if .Values.server.retention }}
             - --storage.tsdb.retention.time={{ .Values.server.retention }}
           {{- end }}
@@ -107,11 +111,18 @@ spec:
           {{- range $key, $value := .Values.server.extraArgs }}
             - --{{ $key }}={{ $value }}
           {{- end }}
+          {{- if .Values.server.prefixURL }}
+            - --web.route-prefix={{ .Values.server.prefixURL }}
+          {{- end }}
           {{- if .Values.server.baseURL }}
             - --web.external-url={{ .Values.server.baseURL }}
           {{- end }}
+        {{- end }}
           ports:
             - containerPort: 9090
+          {{- if .Values.server.hostPort }}
+              hostPort: {{ .Values.server.hostPort }}
+          {{- end }}
           readinessProbe:
             {{- if not .Values.server.tcpSocketProbeEnabled }}
             httpGet:
@@ -207,6 +218,10 @@ spec:
           {{- if .Values.server.extraVolumeMounts }}
             {{ toYaml .Values.server.extraVolumeMounts | nindent 12 }}
           {{- end }}
+          {{- if .Values.server.containerSecurityContext }}
+          securityContext:
+            {{- toYaml .Values.server.containerSecurityContext | nindent 12 }}
+          {{- end }}
       {{- if .Values.server.sidecarContainers }}
         {{- range $name, $spec :=  .Values.server.sidecarContainers }}
         - name: {{ $name }}
@@ -252,8 +267,13 @@ spec:
       terminationGracePeriodSeconds: {{ .Values.server.terminationGracePeriodSeconds }}
       volumes:
         - name: config-volume
+        {{- if empty .Values.server.configFromSecret }}
           configMap:
             name: {{ if .Values.server.configMapOverrideName }}{{ .Release.Name }}-{{ .Values.server.configMapOverrideName }}{{- else }}{{ template "prometheus.server.fullname" . }}{{- end }}
+        {{- else }}
+          secret:
+            secretName: {{ .Values.server.configFromSecret }}
+        {{- end }}
       {{- range .Values.server.extraHostPathMounts }}
         - name: {{ .name }}
           hostPath:

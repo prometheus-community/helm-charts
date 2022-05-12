@@ -1,3 +1,4 @@
+{{- $svcClusterPort := .Values.service.clusterPort -}}
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
@@ -62,6 +63,10 @@ spec:
             - --webhook-url=http://127.0.0.1:{{ .Values.service.port }}/-/reload
           resources:
             {{- toYaml .Values.configmapReload.resources | nindent 12 }}
+          {{- if .Values.configmapReload.containerPort }}
+          ports:
+            - containerPort: {{ .Values.configmapReload.containerPort }}
+          {{- end }}
           volumeMounts:
             - name: config
               mountPath: /etc/alertmanager
@@ -85,13 +90,13 @@ spec:
             - --storage.path=/alertmanager
             - --config.file=/etc/alertmanager/alertmanager.yml
             {{- if or (gt .Values.replicaCount 1.0) (.Values.additionalPeers) }}
-            - --cluster.advertise-address=$(POD_IP):9094
-            - --cluster.listen-address=0.0.0.0:9094
+            - --cluster.advertise-address=$(POD_IP):{{ $svcClusterPort }}
+            - --cluster.listen-address=0.0.0.0:{{ $svcClusterPort }}
             {{- end }}
             {{- if gt .Values.replicaCount 1.0}}
             {{- $fullName := include "alertmanager.fullname" . }}
             {{- range $i := until (int .Values.replicaCount) }}
-            - --cluster.peer={{ $fullName }}-{{ $i }}.{{ $fullName }}-headless:9094
+            - --cluster.peer={{ $fullName }}-{{ $i }}.{{ $fullName }}-headless:{{ $svcClusterPort }}
             {{- end }}
             {{- end }}
             {{- if .Values.additionalPeers }}
@@ -107,13 +112,9 @@ spec:
               containerPort: 9093
               protocol: TCP
           livenessProbe:
-            httpGet:
-              path: /
-              port: http
+            {{- toYaml .Values.livenessProbe | nindent 12 }}
           readinessProbe:
-            httpGet:
-              path: /
-              port: http
+            {{- toYaml .Values.readinessProbe | nindent 12 }}
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
           volumeMounts:
@@ -121,14 +122,28 @@ spec:
             - name: config
               mountPath: /etc/alertmanager
             {{- end }}
+            {{- range .Values.extraSecretMounts }}
+            - name: {{ .name }}
+              mountPath: {{ .mountPath }}
+              subPath: {{ .subPath }}
+              readOnly: {{ .readOnly }}
+            {{- end }}
             - name: storage
               mountPath: /alertmanager
-      {{- if .Values.config }}
       volumes:
+        {{- if .Values.config }}
         - name: config
           configMap:
             name: {{ include "alertmanager.fullname" . }}
-      {{- end }}
+        {{- end }}
+        {{- range .Values.extraSecretMounts }}
+        - name: {{ .name }}
+          secret:
+            secretName: {{ .secretName }}
+            {{- with .optional }}
+            optional: {{ . }}
+            {{- end }}
+        {{- end }}
       {{- if .Values.persistence.enabled }}
   volumeClaimTemplates:
     - metadata:

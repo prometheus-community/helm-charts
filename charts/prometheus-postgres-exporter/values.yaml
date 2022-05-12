@@ -6,7 +6,7 @@ replicaCount: 1
 
 image:
   repository: quay.io/prometheuscommunity/postgres-exporter
-  tag: v0.10.0
+  tag: v0.10.1
   pullPolicy: IfNotPresent
 
   ## Optionally specify an array of imagePullSecrets.
@@ -41,6 +41,8 @@ serviceMonitor:
   # targetLabels: []
   # MetricRelabelConfigs to apply to samples before ingestion
   # metricRelabelings: []
+  # Set relabel_configs as per https://prometheus.io/docs/prometheus/latest/configuration/configuration/#relabel_config
+  # relabelings: []
 
 prometheusRule:
   enabled: false
@@ -84,6 +86,14 @@ serviceAccount:
   # Add annotations to the ServiceAccount, useful for EKS IAM Roles for Service Accounts or Google Workload Identity.
   annotations: {}
 
+# Add a default ingress to allow namespace access to service.targetPort
+# Helpful if other NetworkPolicies are configured in the namespace
+networkPolicy:
+  # Specifies whether a NetworkPolicy should be created
+  enabled: false
+  # Set labels for the NetworkPolicy
+  labels: {}
+
 securityContext: {}
   # The securityContext this Pod should use. See https://kubernetes.io/docs/concepts/policy/security-context/ for more.
   # runAsUser: 65534
@@ -93,7 +103,7 @@ config:
     # Specify one of both datasource or datasourceSecret
     host:
     user: postgres
-    # Only one of password and passwordSecret can be specified
+    # Only one of password, passwordSecret and pgpassfile can be specified
     password:
     # Specify passwordSecret if DB password is stored in secret.
     passwordSecret: {}
@@ -101,9 +111,13 @@ config:
     #  name:
     # Password key inside secret
     #  key:
+    pgpassfile: ''
+    # If pgpassfile is set, it is used to initialize the PGPASSFILE environment variable.
+    # See https://www.postgresql.org/docs/14/libpq-pgpass.html for more info.
     port: "5432"
     database: ''
     sslmode: disable
+    extraParams: ''
   datasourceSecret: {}
     # Specifies if datasource should be sourced from secret value in format: postgresql://login:password@hostname:port/dbname?sslmode=disable
     # Multiple Postgres databases can be configured by comma separated postgres connection strings
@@ -288,7 +302,7 @@ config:
             description: "Disk space used by the database"
 
     pg_stat_statements:
-      query: "SELECT t2.rolname, t3.datname, queryid, calls, total_time / 1000 as total_time_seconds, min_time / 1000 as min_time_seconds, max_time / 1000 as max_time_seconds, mean_time / 1000 as mean_time_seconds, stddev_time / 1000 as stddev_time_seconds, rows, shared_blks_hit, shared_blks_read, shared_blks_dirtied, shared_blks_written, local_blks_hit, local_blks_read, local_blks_dirtied, local_blks_written, temp_blks_read, temp_blks_written, blk_read_time / 1000 as blk_read_time_seconds, blk_write_time / 1000 as blk_write_time_seconds FROM pg_stat_statements t1 JOIN pg_roles t2 ON (t1.userid=t2.oid) JOIN pg_database t3 ON (t1.dbid=t3.oid) WHERE t2.rolname != 'rdsadmin' AND queryid IS NOT NULL"
+      query: "SELECT t2.rolname, t3.datname, queryid, calls, ( total_plan_time + total_exec_time ) / 1000 as total_time_seconds, ( min_plan_time + min_exec_time ) / 1000 as min_time_seconds, ( max_plan_time + max_exec_time ) / 1000 as max_time_seconds, ( mean_plan_time + mean_exec_time ) / 1000 as mean_time_seconds, ( stddev_plan_time + stddev_exec_time )  / 1000 as stddev_time_seconds, rows, shared_blks_hit, shared_blks_read, shared_blks_dirtied, shared_blks_written, local_blks_hit, local_blks_read, local_blks_dirtied, local_blks_written, temp_blks_read, temp_blks_written, blk_read_time / 1000 as blk_read_time_seconds, blk_write_time / 1000 as blk_write_time_seconds FROM pg_stat_statements t1 JOIN pg_roles t2 ON (t1.userid=t2.oid) JOIN pg_database t3 ON (t1.dbid=t3.oid) WHERE t2.rolname != 'rdsadmin' AND queryid IS NOT NULL"
       master: true
       metrics:
         - rolname:
@@ -452,3 +466,7 @@ extraVolumeMounts: []
 #  - name: ssl-certs
 #    mountPath: /etc/ssl/certs/ca-certificates.crt
 #    subPath: ca-certificates.crt
+
+podDisruptionBudget:
+  enabled: false
+  maxUnavailable: 1

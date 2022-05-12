@@ -12,5 +12,9 @@ metadata:
     app: {{ template "kube-prometheus-stack.name" . }}-prometheus-scrape-confg
 {{ include "kube-prometheus-stack.labels" . | indent 4 }}
 data:
+{{- if  eq ( typeOf .Values.prometheus.prometheusSpec.additionalScrapeConfigs ) "string" }}
+  additional-scrape-configs.yaml: {{ tpl .Values.prometheus.prometheusSpec.additionalScrapeConfigs $ | b64enc | quote }}
+{{- else }}
   additional-scrape-configs.yaml: {{ tpl (toYaml .Values.prometheus.prometheusSpec.additionalScrapeConfigs) $ | b64enc | quote }}
+{{- end }}
 {{- end }}

@@ -2,6 +2,10 @@ restartPolicy: Always
 
 kind: Deployment
 
+## Override the namespace
+##
+namespaceOverride: ""
+
 podDisruptionBudget: {}
   # maxUnavailable: 0
 
@@ -68,7 +72,7 @@ strategy:
 
 image:
   repository: prom/blackbox-exporter
-  tag: v0.19.0
+  tag: v0.20.0
   pullPolicy: IfNotPresent
 
   ## Optionally specify an array of imagePullSecrets.
@@ -78,10 +82,12 @@ image:
   # pullSecrets:
   #   - myRegistrKeySecretName
 
-## User to run blackbox-exporter container as
+## User and Group to run blackbox-exporter container as
 runAsUser: 1000
+runAsGroup: 1000
 readOnlyRootFilesystem: true
 runAsNonRoot: true
+allowPrivilegeEscalation: false
 
 livenessProbe:
   httpGet:
@@ -168,6 +174,7 @@ serviceAccount:
 ingress:
   enabled: false
   className: ""
+  labels: {}
   annotations: {}
     # kubernetes.io/ingress.class: nginx
     # kubernetes.io/tls-acme: "true"
@@ -208,6 +215,7 @@ serviceMonitor:
   # Default values that will be used for all ServiceMonitors created by `targets`
   defaults:
     additionalMetricsRelabels: {}
+    additionalRelabeling: []
     labels: {}
     interval: 30s
     scrapeTimeout: 30s
@@ -227,6 +235,7 @@ serviceMonitor:
 #      scrapeTimeout: 60s               # Scrape timeout. Overrides value set in `defaults`
 #      module: http_2xx                 # Module used for scraping. Overrides value set in `defaults`
 #      additionalMetricsRelabels: {}    # Map of metric labels and values to add
+#      additionalRelabeling: []         # List of metric relabeling actions to run
 
 ## Custom PrometheusRules to be defined
 ## ref: https://github.com/coreos/prometheus-operator#customresourcedefinitions

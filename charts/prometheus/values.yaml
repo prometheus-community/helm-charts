@@ -55,6 +55,11 @@ alertmanager:
   ##
   priorityClassName: ""
 
+  ## Custom HTTP headers for Readiness Probe
+  ##
+  ## Useful for providing HTTP Basic Auth to healthchecks
+  probeHeaders: []
+
   ## Additional alertmanager container arguments
   ##
   extraArgs: {}
@@ -83,6 +88,13 @@ alertmanager:
     #   mountPath: /etc/secrets
     #   subPath: ""
     #   secretName: alertmanager-secret-files
+    #   readOnly: true
+
+  ## Additional alertmanager Configmap mounts
+  extraConfigmapMounts: []
+    # - name: template-files
+    #   mountPath: /etc/config/templates.d
+    #   configMap: alertmanager-template-files
     #   readOnly: true
 
   ## ConfigMap override where fullname is {{.Release.Name}}-{{.Values.alertmanager.configMapOverrideName}}
@@ -381,6 +393,8 @@ configmapReload:
       tag: v0.5.0
       pullPolicy: IfNotPresent
 
+    # containerPort: 9533
+
     ## Additional configmap-reload container arguments
     ##
     extraArgs: {}
@@ -418,6 +432,8 @@ configmapReload:
       repository: jimmidyson/configmap-reload
       tag: v0.5.0
       pullPolicy: IfNotPresent
+
+    # containerPort: 9533
 
     ## Additional configmap-reload container arguments
     ##
@@ -566,7 +582,9 @@ nodeExporter:
     # requests:
     #   cpu: 100m
     #   memory: 30Mi
-
+  container:
+    securityContext:
+      allowPrivilegeEscalation: false
   # Custom DNS configuration to be added to node-exporter pods
   dnsConfig: {}
     # nameservers:
@@ -594,7 +612,7 @@ nodeExporter:
 
     # Exposed as a headless service:
     # https://kubernetes.io/docs/concepts/services-networking/service/#headless-services
-    clusterIP: None
+    clusterIP: ""
 
     ## List of IP addresses at which the node-exporter service is available
     ## Ref: https://kubernetes.io/docs/user-guide/services/#external-ips
@@ -652,7 +670,7 @@ server:
   ##
   image:
     repository: quay.io/prometheus/prometheus
-    tag: v2.31.1
+    tag: v2.34.0
     pullPolicy: IfNotPresent
 
   ## prometheus server priorityClassName
@@ -690,6 +708,11 @@ server:
   ##       name: mysecret
   ##       key: username
   env: []
+
+  # List of flags to override default parameters, e.g:
+  # - --enable-feature=agent
+  # - --storage.agent.retention.max-time=30m
+  defaultFlagsOverride: []
 
   extraFlags:
     - web.enable-lifecycle
@@ -1028,6 +1051,9 @@ server:
   # When hostNetwork is enabled, you probably want to set this to ClusterFirstWithHostNet
   dnsPolicy: ClusterFirst
 
+  # Use hostPort
+  # hostPort: 9090
+
   ## Vertical Pod Autoscaler config
   ## Ref: https://github.com/kubernetes/autoscaler/tree/master/vertical-pod-autoscaler
   verticalAutoscaler:
@@ -1057,6 +1083,10 @@ server:
     fsGroup: 65534
 
   service:
+    ## If false, no Service will be created for the Prometheus server
+    ##
+    enabled: true
+
     annotations: {}
     labels: {}
     clusterIP: ""
@@ -1092,6 +1122,9 @@ server:
   ## Prometheus data retention period (default if not specified is 15 days)
   ##
   retention: "15d"
+
+  ## Array of extra Kubernetes manifests, if you want to deploy
+  extraObjects: []
 
 pushgateway:
   ## If false, pushgateway will not be installed
@@ -1346,6 +1379,9 @@ alertmanagerFiles:
       receiver: default-receiver
       repeat_interval: 3h
 
+## Prometheus server ConfigMap entries for rule files (allow prometheus labels interpolation)
+ruleFiles: {}
+
 ## Prometheus server ConfigMap entries
 ##
 serverFiles:
@@ -1528,6 +1564,7 @@ serverFiles:
       # * `prometheus.io/param_<parameter>`: If the metrics endpoint uses parameters
       # then you can set any parameter
       - job_name: 'kubernetes-service-endpoints'
+        honor_labels: true
 
         kubernetes_sd_configs:
           - role: endpoints
@@ -1582,6 +1619,7 @@ serverFiles:
       # * `prometheus.io/param_<parameter>`: If the metrics endpoint uses parameters
       # then you can set any parameter
       - job_name: 'kubernetes-service-endpoints-slow'
+        honor_labels: true
 
         scrape_interval: 5m
         scrape_timeout: 30s
@@ -1639,6 +1677,7 @@ serverFiles:
       #
       # * `prometheus.io/probe`: Only probe services that have a value of `true`
       - job_name: 'kubernetes-services'
+        honor_labels: true
 
         metrics_path: /probe
         params:
@@ -1676,6 +1715,7 @@ serverFiles:
       # * `prometheus.io/path`: If the metrics path is not `/metrics` override this.
       # * `prometheus.io/port`: Scrape the pod on the indicated port instead of the default of `9102`.
       - job_name: 'kubernetes-pods'
+        honor_labels: true
 
         kubernetes_sd_configs:
           - role: pod
@@ -1727,6 +1767,7 @@ serverFiles:
       # * `prometheus.io/path`: If the metrics path is not `/metrics` override this.
       # * `prometheus.io/port`: Scrape the pod on the indicated port instead of the default of `9102`.
       - job_name: 'kubernetes-pods-slow'
+        honor_labels: true
 
         scrape_interval: 5m
         scrape_timeout: 30s

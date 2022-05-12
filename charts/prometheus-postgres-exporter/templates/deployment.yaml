@@ -84,6 +84,12 @@ spec:
             value: {{ template "prometheus-postgres-exporter.data_source_uri" . }}
           - name: DATA_SOURCE_USER
             value: {{ .Values.config.datasource.user }}
+          {{- if .Values.config.datasource.pgpassfile }}
+          - name: PGPASSFILE
+            value: {{ .Values.config.datasource.pgpassfile }}
+          - name: DATA_SOURCE_PASS
+            value: ""
+          {{- else }}
           - name: DATA_SOURCE_PASS
             valueFrom:
               secretKeyRef:
@@ -93,6 +99,7 @@ spec:
           {{- else }}
                 name: {{ template "prometheus-postgres-exporter.fullname" . }}
                 key: data_source_password
+          {{- end }}
           {{- end }}
           {{- end }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"

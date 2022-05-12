@@ -5,9 +5,22 @@ image:
   tag: v0.19.0
   pullPolicy: IfNotPresent
 
+imagePullSecrets: []
 nodeSelector: {}
 tolerations: []
 affinity: {}
+
+## Security context to be added to snmp-exporter pods
+securityContext: {}
+  # fsGroup: 1000
+  # runAsUser: 1000
+  # runAsNonRoot: true
+
+## Security context to be added to snmp-exporter containers
+containerSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 1000
+  readOnlyRootFilesystem: true
 
 ## Additional labels to add to all resources
 customLabels: {}
@@ -72,7 +85,7 @@ service:
 ingress:
   enabled: false
   hosts: []
-     # - chart-example.local
+    # - chart-example.local
   annotations: {}
     # kubernetes.io/ingress.class: nginx
     # kubernetes.io/tls-acme: "true"
@@ -113,8 +126,15 @@ serviceMonitor:
   enabled: false
   namespace: monitoring
 
+  path: /snmp
+
   # fallback to the prometheus default unless specified
   # interval: 10s
+  scrapeTimeout: 10s
+  module:
+    - if_mib
+  # relabelings: []
+  additionalMetricsRelabels: {}
 
   ## Defaults to what's used if you follow CoreOS [Prometheus Install Instructions](https://github.com/helm/charts/tree/master/stable/prometheus-operator#tldr)
   ## [Prometheus Selector Label](https://github.com/helm/charts/tree/master/stable/prometheus-operator#prometheus-operator-1)
@@ -126,12 +146,12 @@ serviceMonitor:
   honorLabels: true
 
   params:
-    enabled: false
-    conf:
-      module:
-      - if_mib
-      target:
-      - 127.0.0.1
-
-  path: /snmp
-  scrapeTimeout: 10s
+    # - name: localhost                 # Human readable URL that will appear in Prometheus / AlertManager
+    #   target: 127.0.0.1               # The target that snmp will scrape
+    #   module:                         # Module used for scraping. Overrides value set in `serviceMonitor.module`
+    #     - if_mib
+    #   labels: {}                      # Map of labels for ServiceMonitor. Overrides value set in `serviceMonitor.selector`
+    #   interval: 30s                   # Scraping interval. Overrides value set in `serviceMonitor.interval`
+    #   scrapeTimeout: 30s              # Scrape timeout. Overrides value set in `serviceMonitor.scrapeTimeout`
+    #   relabelings: []                 # MetricRelabelConfigs to apply to samples before ingestion. Overrides value set in `serviceMonitor.relabelings`
+    #   additionalMetricsRelabels: {}   # Map of metric labels and values to add

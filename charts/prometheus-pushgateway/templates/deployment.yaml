@@ -1,3 +1,4 @@
+{{- if not .Values.runAsStatefulSet }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -22,75 +23,5 @@ spec:
       annotations:
 {{ toYaml .Values.podAnnotations | indent 8 }}
     spec:
-      serviceAccountName: {{ template "prometheus-pushgateway.serviceAccountName" . }}
-      {{- if .Values.priorityClassName }}
-      priorityClassName: {{ .Values.priorityClassName | quote }}
-      {{- end }}
-    {{- if .Values.imagePullSecrets }}
-      imagePullSecrets:
-{{ toYaml .Values.imagePullSecrets | indent 8 }}
-    {{- end }}
-      containers:
-        - name: pushgateway
-          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
-          imagePullPolicy: {{ .Values.image.pullPolicy }}
-        {{- if .Values.extraVars }}
-          env:
-{{ toYaml .Values.extraVars | indent 12 }}
-        {{- end }}
-        {{- if .Values.extraArgs }}
-          args:
-{{ toYaml .Values.extraArgs | indent 12 }}
-        {{- end }}
-          ports:
-            - name: metrics
-              containerPort: 9091
-              protocol: TCP
-          livenessProbe:
-            httpGet:
-              path: /-/healthy
-              port: 9091
-            initialDelaySeconds: 10
-            timeoutSeconds: 10
-          readinessProbe:
-            httpGet:
-              path: /-/ready
-              port: 9091
-            initialDelaySeconds: 10
-            timeoutSeconds: 10
-          resources:
-{{ toYaml .Values.resources | indent 12 }}
-          volumeMounts:
-            - name: storage-volume
-              mountPath: "{{ .Values.persistentVolume.mountPath }}"
-              subPath: "{{ .Values.persistentVolume.subPath }}"
-          {{- if .Values.extraVolumeMounts }}
-{{ toYaml .Values.extraVolumeMounts | indent 12 }}
-          {{- end }}
-    {{- if .Values.nodeSelector }}
-      nodeSelector:
-{{ toYaml .Values.nodeSelector | indent 8 }}
-    {{- end }}
-    {{- if .Values.tolerations }}
-      tolerations:
-{{ toYaml .Values.tolerations | indent 8 }}
-    {{- end }}
-    {{- if .Values.affinity }}
-      affinity:
-{{ toYaml .Values.affinity | indent 8 }}
-    {{- end }}
-    {{- if .Values.securityContext }}
-      securityContext:
-{{ toYaml .Values.securityContext | indent 8 }}
-    {{- end }}
-      volumes:
-        - name: storage-volume
-      {{- if .Values.persistentVolume.enabled }}
-          persistentVolumeClaim:
-            claimName: {{ if .Values.persistentVolume.existingClaim }}{{ .Values.persistentVolume.existingClaim }}{{- else }}{{ template "prometheus-pushgateway.fullname" . }}{{- end }}
-      {{- else}}
-          emptyDir: {}
-      {{- end -}}
-      {{- if .Values.extraVolumes }}
-{{ toYaml .Values.extraVolumes | indent 8 }}
-      {{- end }}
+      {{ include "prometheus-pushgateway.podSpec" . }}
+{{- end -}}

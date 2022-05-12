@@ -3,6 +3,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: {{ template "prometheus-blackbox-exporter.fullname" . }}
+  namespace: {{ template "prometheus-blackbox-exporter.namespace" . }}
   labels:
     {{- include "prometheus-blackbox-exporter.labels" . | nindent 4 }}
 spec:
@@ -73,6 +74,7 @@ spec:
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           securityContext:
             readOnlyRootFilesystem: {{ .Values.readOnlyRootFilesystem }}
+            allowPrivilegeEscalation: {{ .Values.allowPrivilegeEscalation }}
             {{- if .Values.allowIcmp }}
             capabilities:
               add: ["NET_RAW"]
@@ -80,6 +82,9 @@ spec:
             runAsNonRoot: {{ .Values.runAsNonRoot  }}
               {{- if .Values.runAsUser }}
             runAsUser: {{ .Values.runAsUser }}
+              {{- end }}
+              {{- if .Values.runAsGroup }}
+            runAsGroup: {{ .Values.runAsGroup }}
               {{- end }}
             {{- end }}
           env:

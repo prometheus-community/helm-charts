@@ -41,10 +41,10 @@ spec:
           args:
             - --path.procfs=/host/proc
             - --path.sysfs=/host/sys
-            {{- if .Values.hostRootFsMount }}
+            {{- if .Values.hostRootFsMount.enabled }}
             - --path.rootfs=/host/root
             {{- end }}
-            - --web.listen-address=$(HOST_IP):{{ .Values.service.port }}
+            - --web.listen-address=[$(HOST_IP)]:{{ .Values.service.port }}
 {{- if .Values.extraArgs }}
 {{ toYaml .Values.extraArgs | indent 12 }}
 {{- end }}
@@ -61,6 +61,10 @@ spec:
                 apiVersion: v1
                 fieldPath: status.hostIP
             {{- end }}
+          {{- range $key, $value := .Values.env }}
+          - name: {{ $key }}
+            value: {{ $value | quote }}
+          {{- end }}
           ports:
             - name: {{ .Values.service.portName }}
               containerPort: {{ .Values.service.port }}
@@ -82,10 +86,12 @@ spec:
             - name: sys
               mountPath: /host/sys
               readOnly: true
-            {{- if .Values.hostRootFsMount }}
+            {{- if .Values.hostRootFsMount.enabled }}
             - name: root
               mountPath: /host/root
-              mountPropagation: HostToContainer
+              {{- with .Values.hostRootFsMount.mountPropagation }}
+              mountPropagation: {{ . }}
+              {{- end }}
               readOnly: true
             {{- end }}
             {{- if .Values.extraHostVolumeMounts }}
@@ -128,6 +134,10 @@ spec:
             {{- end }}
           {{- end }}
 {{- end }}
+{{- if .Values.imagePullSecrets }}
+      imagePullSecrets:
+{{ toYaml .Values.imagePullSecrets | indent 8 }}
+      {{- end }}
       hostNetwork: {{ .Values.hostNetwork }}
       hostPID: {{ .Values.hostPID }}
 {{- if .Values.affinity }}
@@ -153,7 +163,7 @@ spec:
         - name: sys
           hostPath:
             path: /sys
-        {{- if .Values.hostRootFsMount }}
+        {{- if .Values.hostRootFsMount.enabled }}
         - name: root
           hostPath:
             path: /
