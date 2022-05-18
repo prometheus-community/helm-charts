@@ -37,9 +37,12 @@ spec:
         targetLabel: target
         replacement: {{ .name }}
         {{- range $targetLabel, $replacement := .additionalMetricsRelabels | default $.Values.serviceMonitor.defaults.additionalMetricsRelabels }}
-      - targetLabel: {{ $targetLabel }}
-        replacement: {{ $replacement }}
+      - targetLabel: {{ $targetLabel | quote }}
+        replacement: {{ $replacement | quote }}
         {{- end }}
+{{- if concat (.additionalRelabeling | default list) $.Values.serviceMonitor.defaults.additionalRelabeling }}
+{{ toYaml (concat (.additionalRelabeling | default list) $.Values.serviceMonitor.defaults.additionalRelabeling) | indent 6 }}
+{{- end }}
   jobLabel: "{{ $.Release.Name }}"
   selector:
     matchLabels:
