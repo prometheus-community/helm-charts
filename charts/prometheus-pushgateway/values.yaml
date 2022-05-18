@@ -56,6 +56,28 @@ extraVars: []
 ##  - --persistence.interval=5m
 extraArgs: []
 
+# Optional additional containers (sidecar)
+extraContainers: []
+  # - name: oAuth2-proxy
+  #   args:
+  #     - -https-address=:9092
+  #     - -upstream=http://localhost:9091
+  #     - -skip-auth-regex=^/metrics
+  #     - -openshift-delegate-urls={"/":{"group":"monitoring.coreos.com","resource":"prometheuses","verb":"get"}}
+  #   image: openshift/oauth-proxy:v1.1.0
+  #   ports:
+  #       - containerPort: 9092
+  #         name: proxy
+  #   resources:
+  #       limits:
+  #         memory: 16Mi
+  #       requests:
+  #         memory: 4Mi
+  #         cpu: 20m
+  #   volumeMounts:
+  #     - mountPath: /etc/prometheus/secrets/pushgateway-tls
+  #       name: secret-pushgateway-tls
+
 resources: {}
   # We usually recommend not to specify default resources and to leave this as a conscious
   # choice for the user. This also increases chances charts run on environments with little
@@ -137,6 +159,12 @@ nodeSelector: {}
 
 replicaCount: 1
 
+## When running more than one replica alongside with persistence, different volumes are needed
+## per replica, since sharing a `persistence.file` across replicas does not keep metrics synced.
+## For this purpose, you can enable the `runAsStatefulSet` to deploy the pushgateway as a
+## StatefulSet instead of as a Deployment.
+runAsStatefulSet: false
+
 ## Security context to be added to push-gateway pods
 ##
 securityContext:
@@ -164,6 +192,14 @@ serviceMonitor:
   # Fallback to the prometheus default unless specified
   # interval: 10s
 
+  ## scheme: HTTP scheme to use for scraping. Can be used with `tlsConfig` for example if using istio mTLS.
+  # scheme: ""
+
+  ## tlsConfig: TLS configuration to use when scraping the endpoint. For example if using istio mTLS.
+  ## Of type: https://github.com/coreos/prometheus-operator/blob/master/Documentation/api.md#tlsconfig
+  # tlsConfig: {}
+
+  # bearerTokenFile:
   # Fallback to the prometheus default unless specified
   # scrapeTimeout: 30s
 

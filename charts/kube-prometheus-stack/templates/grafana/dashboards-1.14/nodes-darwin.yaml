@@ -1,15 +1,15 @@
 {{- /*
-Generated from 'nodes' from https://raw.githubusercontent.com/prometheus-operator/kube-prometheus/main/manifests/grafana-dashboardDefinitions.yaml
+Generated from 'nodes-darwin' from https://raw.githubusercontent.com/prometheus-operator/kube-prometheus/main/manifests/grafana-dashboardDefinitions.yaml
 Do not change in-place! In order to change this file first read following link:
 https://github.com/prometheus-community/helm-charts/tree/main/charts/kube-prometheus-stack/hack
 */ -}}
 {{- $kubeTargetVersion := default .Capabilities.KubeVersion.GitVersion .Values.kubeTargetVersionOverride }}
-{{- if and (or .Values.grafana.enabled .Values.grafana.forceDeployDashboards) (semverCompare ">=1.14.0-0" $kubeTargetVersion) (semverCompare "<9.9.9-9" $kubeTargetVersion) .Values.grafana.defaultDashboardsEnabled .Values.nodeExporter.enabled }}
+{{- if and (or .Values.grafana.enabled .Values.grafana.forceDeployDashboards) (semverCompare ">=1.14.0-0" $kubeTargetVersion) (semverCompare "<9.9.9-9" $kubeTargetVersion) .Values.grafana.defaultDashboardsEnabled }}
 apiVersion: v1
 kind: ConfigMap
 metadata:
   namespace: {{ template "kube-prometheus-stack-grafana.namespace" . }}
-  name: {{ printf "%s-%s" (include "kube-prometheus-stack.fullname" $) "nodes" | trunc 63 | trimSuffix "-" }}
+  name: {{ printf "%s-%s" (include "kube-prometheus-stack.fullname" $) "nodes-darwin" | trunc 63 | trimSuffix "-" }}
   annotations:
 {{ toYaml .Values.grafana.sidecar.dashboards.annotations | indent 4 }}
   labels:
@@ -19,7 +19,7 @@ metadata:
     app: {{ template "kube-prometheus-stack.name" $ }}-grafana
 {{ include "kube-prometheus-stack.labels" $ | indent 4 }}
 data:
-  nodes.json: |-
+  nodes-darwin.json: |-
     {
         "__inputs": [
 
@@ -308,36 +308,43 @@ data:
                         ],
                         "spaceLength": 10,
                         "span": 9,
-                        "stack": true,
+                        "stack": false,
                         "steppedLine": false,
                         "targets": [
                             {
-                                "expr": "(\n  node_memory_MemTotal_bytes{job=\"node-exporter\", instance=\"$instance\"}\n-\n  node_memory_MemFree_bytes{job=\"node-exporter\", instance=\"$instance\"}\n-\n  node_memory_Buffers_bytes{job=\"node-exporter\", instance=\"$instance\"}\n-\n  node_memory_Cached_bytes{job=\"node-exporter\", instance=\"$instance\"}\n)\n",
+                                "expr": "node_memory_total_bytes{job=\"node-exporter\", instance=\"$instance\"}",
                                 "format": "time_series",
                                 "intervalFactor": 2,
-                                "legendFormat": "memory used",
+                                "legendFormat": "Physical Memory",
                                 "refId": "A"
                             },
                             {
-                                "expr": "node_memory_Buffers_bytes{job=\"node-exporter\", instance=\"$instance\"}",
+                                "expr": "(\n    node_memory_internal_bytes{job=\"node-exporter\", instance=\"$instance\"} -\n    node_memory_purgeable_bytes{job=\"node-exporter\", instance=\"$instance\"} +\n    node_memory_wired_bytes{job=\"node-exporter\", instance=\"$instance\"} +\n    node_memory_compressed_bytes{job=\"node-exporter\", instance=\"$instance\"}\n)\n",
                                 "format": "time_series",
                                 "intervalFactor": 2,
-                                "legendFormat": "memory buffers",
+                                "legendFormat": "Memory Used",
                                 "refId": "B"
                             },
                             {
-                                "expr": "node_memory_Cached_bytes{job=\"node-exporter\", instance=\"$instance\"}",
+                                "expr": "(\n    node_memory_internal_bytes{job=\"node-exporter\", instance=\"$instance\"} -\n    node_memory_purgeable_bytes{job=\"node-exporter\", instance=\"$instance\"}\n)\n",
                                 "format": "time_series",
                                 "intervalFactor": 2,
-                                "legendFormat": "memory cached",
+                                "legendFormat": "App Memory",
                                 "refId": "C"
                             },
                             {
-                                "expr": "node_memory_MemFree_bytes{job=\"node-exporter\", instance=\"$instance\"}",
+                                "expr": "node_memory_wired_bytes{job=\"node-exporter\", instance=\"$instance\"}",
                                 "format": "time_series",
                                 "intervalFactor": 2,
-                                "legendFormat": "memory free",
+                                "legendFormat": "Wired Memory",
                                 "refId": "D"
+                            },
+                            {
+                                "expr": "node_memory_compressed_bytes{job=\"node-exporter\", instance=\"$instance\"}",
+                                "format": "time_series",
+                                "intervalFactor": 2,
+                                "legendFormat": "Compressed",
+                                "refId": "E"
                             }
                         ],
                         "thresholds": [
@@ -412,7 +419,7 @@ data:
                         "span": 3,
                         "targets": [
                             {
-                                "expr": "100 -\n(\n  avg(node_memory_MemAvailable_bytes{job=\"node-exporter\", instance=\"$instance\"}) /\n  avg(node_memory_MemTotal_bytes{job=\"node-exporter\", instance=\"$instance\"})\n* 100\n)\n",
+                                "expr": "(\n    (\n      avg(node_memory_internal_bytes{job=\"node-exporter\", instance=\"$instance\"}) -\n      avg(node_memory_purgeable_bytes{job=\"node-exporter\", instance=\"$instance\"}) +\n      avg(node_memory_wired_bytes{job=\"node-exporter\", instance=\"$instance\"}) +\n      avg(node_memory_compressed_bytes{job=\"node-exporter\", instance=\"$instance\"})\n    ) /\n    avg(node_memory_total_bytes{job=\"node-exporter\", instance=\"$instance\"})\n)\n*\n100\n",
                                 "format": "time_series",
                                 "intervalFactor": 2,
                                 "legendFormat": ""
@@ -902,7 +909,7 @@ data:
                     "options": [
 
                     ],
-                    "query": "label_values(node_uname_info{job=\"node-exporter\", sysname!=\"Darwin\"}, instance)",
+                    "query": "label_values(node_uname_info{job=\"node-exporter\", sysname=\"Darwin\"}, instance)",
                     "refresh": 2,
                     "regex": "",
                     "sort": 0,
@@ -946,7 +953,7 @@ data:
             ]
         },
         "timezone": "{{ .Values.grafana.defaultDashboardsTimezone }}",
-        "title": "Node Exporter / Nodes",
+        "title": "Node Exporter / MacOS",
         "version": 0
     }
 {{- end }}
