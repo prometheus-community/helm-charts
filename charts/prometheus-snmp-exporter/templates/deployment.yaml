@@ -34,17 +34,16 @@ spec:
       tolerations:
 {{ toYaml .Values.tolerations | indent 6 }}
     {{- end }}
-
       restartPolicy: {{ .Values.restartPolicy }}
       serviceAccountName: {{ template "prometheus-snmp-exporter.serviceAccountName" . }}
       containers:
         - name: snmp-exporter
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
+{{- if .Values.containerSecurityContext }}
           securityContext:
-            runAsNonRoot: true
-            runAsUser: 1000
-            readOnlyRootFilesystem: true
+{{ toYaml .Values.containerSecurityContext | indent 12 }}
+        {{- end }}
           args:
 {{- if .Values.config }}
             - "--config.file=/config/snmp.yaml"
@@ -95,6 +94,10 @@ spec:
       {{- if .Values.imagePullSecrets }}
       imagePullSecrets:
 {{ toYaml .Values.imagePullSecrets | indent 8 }}
+      {{- end }}
+      {{- if .Values.securityContext }}
+      securityContext:
+{{ toYaml .Values.securityContext | indent 8 }}
       {{- end }}
       volumes:
       {{- if .Values.config }}
