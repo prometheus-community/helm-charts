@@ -1,0 +1,50 @@
+{{- if .Values.podMonitoring.enabled }}
+---
+apiVersion: monitoring.googleapis.com/v1
+kind: PodMonitoring
+metadata:
+  name: {{ template "elasticsearch-exporter.fullname" . }}
+  {{- if .Values.podMonitoring.namespace }}
+  namespace: {{ .Values.podMonitoring.namespace }}
+  {{- end }}
+  labels:
+    chart: {{ template "elasticsearch-exporter.chart" . }}
+    app: {{ template "elasticsearch-exporter.name" . }}
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
+    {{- if .Values.podMonitoring.labels }}
+    {{- toYaml .Values.podMonitoring.labels | nindent 4 }}
+    {{- end }}
+spec:
+  endpoints:
+  - interval: {{ .Values.podMonitoring.interval }}
+    {{- if .Values.podMonitoring.timeout }}
+    timeout: {{ .Values.podMonitoring.timeout }}
+    {{- end }}
+    port: {{ .Values.service.metricsPort.name }}
+    path: {{ .Values.web.path }}
+    scheme: {{ .Values.podMonitoring.scheme }}
+    {{- if .Values.podMonitoring.params }}
+    params:
+    {{- toYaml .Values.podMonitoring.params | nindent 6 }}
+    {{- end }}
+    {{- if .Values.podMonitoring.metricRelabeling }}
+    metricRelabeling:
+    {{- toYaml .Values.podMonitoring.metricRelabeling | nindent 4 }}
+    {{- end }}
+    {{- if .Values.podMonitoring.proxyUrl }}
+    proxyUrl: {{ .Values.podMonitoring.proxyUrl }}
+    {{- end }}
+  selector:
+    matchLabels:
+      app: {{ template "elasticsearch-exporter.name" . }}
+      release: "{{ .Release.Name }}"
+{{- if .Values.podMonitoring.targetLabels }}
+  targetLabels:
+  {{- toYaml .Values.podMonitoring.targetLabels | nindent 4 }}
+{{- end }}
+  {{- if .Values.podMonitoring.limits }}
+  limits:
+  {{- toYaml .Values.podMonitoring.limits | nindent 4 }}
+  {{- end }}
+{{- end }}
