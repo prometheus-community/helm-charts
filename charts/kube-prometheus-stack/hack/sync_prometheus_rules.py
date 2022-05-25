@@ -60,7 +60,7 @@ charts = [
         'min_kubernetes': '1.14.0-0'
     },
     {
-        'source': 'https://raw.githubusercontent.com/etcd-io/website/master/content/en/docs/v3.4/op-guide/etcd3_alert.rules.yml',
+        'source': 'https://raw.githubusercontent.com/prometheus-operator/kube-prometheus/main/manifests/etcd-prometheusRule.yaml',
         'destination': '../templates/prometheus/rules-1.14',
         'min_kubernetes': '1.14.0-0'
     },
