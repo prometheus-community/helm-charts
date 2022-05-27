@@ -200,3 +200,28 @@ Use the prometheus-node-exporter namespace override for multi-namespace deployme
   {{- $userValue := index . 3 -}}
   {{- include "kube-prometheus-stack.kubeVersionDefaultValue" (list $values ">= 1.23-0" $insecure $secure $userValue) -}}
 {{- end -}}
+
+{{/*
+To help compatibility with other charts which use global.imagePullSecrets.
+Allow either an array of {name: pullSecret} maps (k8s-style), or an array of strings (more common helm-style).
+global:
+  imagePullSecrets:
+  - name: pullSecret1
+  - name: pullSecret2
+
+or
+
+global:
+  imagePullSecrets:
+  - pullSecret1
+  - pullSecret2
+*/}}
+{{- define "kube-prometheus-stack.imagePullSecrets" -}}
+{{- range .Values.global.imagePullSecrets }}
+  {{- if eq (typeOf .) "map[string]interface {}" }} 
+- {{ toYaml . | trim }}
+  {{- else }}
+- name: {{ . }}
+  {{- end }}
+{{- end }}
+{{- end -}}
