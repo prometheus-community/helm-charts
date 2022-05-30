@@ -36,18 +36,23 @@ spec:
             {{- toYaml .Values.securityContext | nindent 12 }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
+          args:
+          {{- if .Values.config.logLevel }}
+          - "--log.level={{ .Values.config.logLevel }}"
+          {{- end}}
+          {{- if .Values.config.logFormat }}
+          - "--log.format={{ .Values.config.logFormat }}"
+          {{- end}}
 {{- with .Values.collectors }}
-          args: [
 {{- range $index, $element := . }}
 {{- if and (typeIs "bool" $element) $element }}
-{{ printf "--collect.%s" $index | quote | indent 12 }},
+{{ printf "- --collect.%s" $index | quote | indent 12 }},
 {{- else if and (typeIs "bool" $element) (not $element) }}
-{{ printf "--no-collect.%s" $index | quote | indent 12 }},
+{{ printf "- --no-collect.%s" $index | quote | indent 12 }}
 {{- else }}
-{{ printf "--collect.%s" $index | quote | indent 12 }}, {{ $element | quote }},
+{{ printf "- --collect.%s" $index | quote | indent 12 }}, {{ $element | quote }},
 {{- end }}
 {{- end }}
-          ]
 {{- end }}
           {{- if not .Values.mysql.existingSecret }}
           env:
