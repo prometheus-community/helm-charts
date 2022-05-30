@@ -36,21 +36,23 @@ spec:
             {{- toYaml .Values.securityContext | nindent 12 }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
+          {{- if or .Values.config .Values.collectors }}
           args:
           {{- if .Values.config.logLevel }}
-          - "--log.level={{ .Values.config.logLevel }}"
+            - "--log.level={{ .Values.config.logLevel }}"
           {{- end}}
           {{- if .Values.config.logFormat }}
-          - "--log.format={{ .Values.config.logFormat }}"
+            - "--log.format={{ .Values.config.logFormat }}"
           {{- end}}
           {{- with .Values.collectors }}
           {{- range $index, $element := . }}
           {{- if and (typeIs "bool" $element) $element }}
-          - "--collect.{{ $index }}"
+            - "--collect.{{ $index }}"
           {{- else if and (typeIs "bool" $element) (not $element) }}
-          - "--no-collect.{{ $index }}"
+            - "--no-collect.{{ $index }}"
           {{- else }}
-          - "--collect.{{ $index }}"
+            - "--collect.{{ $index }}"
+          {{- end }}
           {{- end }}
           {{- end }}
           {{- end }}
