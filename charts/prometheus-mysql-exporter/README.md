@@ -4,14 +4,14 @@ A Prometheus exporter for [MySQL](https://www.mysql.com/) metrics.
 
 This chart bootstraps a Prometheus [MySQL Exporter](https://github.com/prometheus/mysqld_exporter) deployment on a [Kubernetes](http://kubernetes.io) cluster using the [Helm](https://helm.sh) package manager.
 
-## Get Repo Info
+## Get Helm Repository Info
 
 ```console
 helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
 helm repo update
 ```
 
-_See [helm repo](https://helm.sh/docs/helm/helm_repo/) for command documentation._
+_See [`helm repo`](https://helm.sh/docs/helm/helm_repo/) for command documentation._
 
 ## Install Chart
 
