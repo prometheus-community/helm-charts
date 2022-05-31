@@ -340,6 +340,15 @@ spec:
 {{- if .Values.prometheus.prometheusSpec.prometheusRulesExcludedFromEnforce }}
 {{ toYaml .Values.prometheus.prometheusSpec.prometheusRulesExcludedFromEnforce | indent 4 }}
 {{- end }}
+  excludedFromEnforcement:
+{{- range $prometheusDefaultRulesExcludedFromEnforce.rules }}
+    - resource: PrometheusRule
+      namespace: "{{ template "kube-prometheus-stack.namespace" $ }}"
+      name: "{{ printf "%s-%s" (include "kube-prometheus-stack.fullname" $) . | trunc 63 | trimSuffix "-" }}"
+{{- end }}
+{{- if .Values.prometheus.prometheusSpec.excludedFromEnforcement }}
+{{ toYaml .Values.prometheus.prometheusSpec.excludedFromEnforcement | indent 4 }}
+{{- end }}
 {{- end }}
 {{- if .Values.prometheus.prometheusSpec.queryLogFile }}
   queryLogFile: {{ .Values.prometheus.prometheusSpec.queryLogFile }}
