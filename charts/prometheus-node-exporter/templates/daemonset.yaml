@@ -70,13 +70,35 @@ spec:
               containerPort: {{ .Values.service.port }}
               protocol: TCP
           livenessProbe:
+            failureThreshold: {{ .Values.livenessProbe.failureThreshold }}
             httpGet:
+              httpHeaders:
+              {{- range $_, $header := .Values.livenessProbe.httpGet.httpHeaders }}
+              - name: {{ $header.name }}
+                value: {{ $header.value }}
+              {{- end }}
               path: /
               port: {{ .Values.service.port }}
+              scheme: {{ upper .Values.livenessProbe.httpGet.scheme }}
+            initialDelaySeconds: {{ .Values.livenessProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.livenessProbe.periodSeconds }}
+            successThreshold: {{ .Values.livenessProbe.successThreshold }}
+            timeoutSeconds: {{ .Values.livenessProbe.timeoutSeconds }}
           readinessProbe:
+            failureThreshold: {{ .Values.readinessProbe.failureThreshold }}
             httpGet:
+              httpHeaders:
+              {{- range $_, $header := .Values.readinessProbe.httpGet.httpHeaders }}
+              - name: {{ $header.name }}
+                value: {{ $header.value }}
+              {{- end }}
               path: /
               port: {{ .Values.service.port }}
+              scheme: {{ upper .Values.readinessProbe.httpGet.scheme }}
+            initialDelaySeconds: {{ .Values.readinessProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.readinessProbe.periodSeconds }}
+            successThreshold: {{ .Values.readinessProbe.successThreshold }}
+            timeoutSeconds: {{ .Values.readinessProbe.timeoutSeconds }}
           resources:
 {{ toYaml .Values.resources | indent 12 }}
           volumeMounts:
