@@ -47,6 +47,8 @@ spec:
           {{- end }}
           {{- if .Values.tls.insecureSkipVerify }}
             - '--tls.insecure-skip-tls-verify'
+          {{- else if .Values.tls.serverName }}
+            - '--tls.server-name={{ .Values.tls.serverName }}'
           {{- end }}
           {{- end }}
           {{- if .Values.sasl.enabled }}
@@ -65,6 +67,12 @@ spec:
             - '--sasl.realm={{ .Values.sasl.kerberos.realm }}'
             - '--sasl.keytab-path={{ .Values.sasl.kerberos.mountPath }}/kerberos.keytab'
             - '--sasl.kerberos-auth-type={{ .Values.sasl.kerberos.kerberosAuthType }}'
+          {{- end }}
+          {{- if .Values.server.tls.enabled }}
+            - '--server.tls.ca-file={{ .Values.server.tls.mountPath }}/ca.crt'
+            - '--server.tls.cert-file={{ .Values.server.tls.mountPath }}/tls.crt'
+            - '--server.tls.key-file={{ .Values.server.tls.mountPath }}/tls.key'
+            - '--server.tls.mutual-auth-enabled={{ .Values.server.tls.mutualAuthEnabled }}'
           {{- end }}
           {{- end }}
           {{- if .Values.extraArgs }}
@@ -118,6 +126,11 @@ spec:
               name: kerberos
               readOnly: true
             {{- end }}
+            {{- if .Values.server.tls.mountPath }}
+            - mountPath: {{ .Values.server.tls.mountPath }}
+              name: server-certs
+              readOnly: true
+            {{- end }}
           {{- end }}
     {{- with .Values.nodeSelector }}
       nodeSelector:
@@ -142,5 +155,10 @@ spec:
         - name: kerberos
           secret:
             secretName: {{ .Values.sasl.kerberos.secretName }}
+        {{- end }}
+        {{- if .Values.server.tls.mountPath }}
+        - name: server-certs
+          secret:
+            secretName: {{ .Values.server.tls.secretName }}
         {{- end }}
       {{- end }}
