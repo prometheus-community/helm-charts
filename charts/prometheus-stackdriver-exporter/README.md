@@ -82,7 +82,7 @@ kubectl delete deployments.apps -l app=prometheus-stackdriver-exporter --cascade
 
 If this is not done, when upgrading via helm (even with `helm upgrade --force`) an error will occur indicating that the deployment cannot be modified:
 
-```
+```console
 invalid: spec.selector: Invalid value: v1.LabelSelector{MatchLabels:map[string]string{"app.kubernetes.io/instance":"example", "app.kubernetes.io/name":"prometheus-stackdriver-exporter"}, MatchExpressions:[]v1.LabelSelectorRequirement(nil)}: field is immutable
 ```
 
