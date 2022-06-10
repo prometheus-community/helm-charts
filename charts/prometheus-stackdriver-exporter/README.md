@@ -72,6 +72,32 @@ _See [helm upgrade](https://helm.sh/docs/helm/helm_upgrade/) for command documen
 
 A major chart version change (like v1.2.3 -> v2.0.0) indicates that there is an incompatible breaking change needing manual actions.
 
+#### 2.x to 3.x
+
+Since chart version 2.x, [Kubernetes recommended labels](https://kubernetes.io/docs/concepts/overview/working-with-objects/common-labels/) have been **added**.
+
+The following labels are now **removed** in all manifests (including labels used as selector for `Deployment` kind):
+
+```yaml
+...
+metadata:
+  labels:
+    app: prometheus-stackdriver-exporter
+    chart: prometheus-stackdriver-exporter-2.X.X
+    heritage: Helm
+    release: example
+...
+spec:
+  ...
+  selector:
+    matchLabels:
+      app: prometheus-stackdriver-exporter
+      release: example
+...
+```
+
+If you use your own custom [ServiceMonitor](https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/api.md#servicemonitor) or [PodMonitor](https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/api.md#podmonitor), please ensure to upgrade their `selector` fields accordingly to the new labels.
+
 #### 1.x to 2.x
 
 Since chart version 2.0.0, the exporter is configured via flags/arguments instead of environment variables due to a [breaking change in the exporter](https://github.com/prometheus-community/stackdriver_exporter/pull/142).
