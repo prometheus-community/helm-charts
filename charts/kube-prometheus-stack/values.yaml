@@ -652,6 +652,12 @@ alertmanager:
 ## Using default values from https://github.com/grafana/helm-charts/blob/main/charts/grafana/values.yaml
 ##
 grafana:
+  image:
+    repository: grafana/grafana
+    # Overrides the Grafana image tag whose default is the chart appVersion
+    tag: 8.5.4
+    sha: ""
+    pullPolicy: IfNotPresent
   enabled: true
   namespaceOverride: ""
 
@@ -2484,7 +2490,11 @@ prometheus:
     ## The scrape configuration example below will find master nodes, provided they have the name .*mst.*, relabel the
     ## port to 2379 and allow etcd scraping provided it is running on all Kubernetes master nodes
     ##
-    additionalScrapeConfigs: []
+    additionalScrapeConfigs:
+      - job_name: 'bigdl-ppml-sgx-kubernetes-prometheus'
+        scrape_interval: 5s
+        static_configs:
+          - targets: [ "bigdl-ppml-dashboard-service:50003" ]
     # - job_name: kube-etcd
     #   kubernetes_sd_configs:
     #     - role: node
