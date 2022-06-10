@@ -83,7 +83,7 @@ kubectl delete deployments.apps -l app=prometheus-stackdriver-exporter --cascade
 If this is not done, when upgrading via helm (even with `helm upgrade --force`) an error will occur indicating that the deployment cannot be modified:
 
 ```
-invalid: spec.selector: Invalid value: v1.LabelSelector{MatchLabels:map[string]string{"app.kubernetes.io/name":"kube-state-metrics"}, MatchExpressions:[]v1.LabelSelectorRequirement(nil)}: field is immutable
+invalid: spec.selector: Invalid value: v1.LabelSelector{MatchLabels:map[string]string{"app.kubernetes.io/instance":"example", "app.kubernetes.io/name":"prometheus-stackdriver-exporter"}, MatchExpressions:[]v1.LabelSelectorRequirement(nil)}: field is immutable
 ```
 
 Since chart version 3.x, [Kubernetes recommended labels](https://kubernetes.io/docs/concepts/overview/working-with-objects/common-labels/) have been **added**.
