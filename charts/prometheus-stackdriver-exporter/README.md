@@ -74,7 +74,7 @@ A major chart version change (like v1.2.3 -> v2.0.0) indicates that there is an 
 
 #### 2.x to 3.x
 
-Due to a change in deployment labels, the upgrade requires to **delete** the deployment manifest in order to re-create the deployment:
+Due to a change in deployment labels, **removal** of its deployment needs to done manually prior to upgrading:
 
 ```console
 kubectl delete deployments.apps -l app=prometheus-stackdriver-exporter --cascade=orphan
