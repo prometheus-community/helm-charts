@@ -74,7 +74,19 @@ A major chart version change (like v1.2.3 -> v2.0.0) indicates that there is an 
 
 #### 2.x to 3.x
 
-Since chart version 2.x, [Kubernetes recommended labels](https://kubernetes.io/docs/concepts/overview/working-with-objects/common-labels/) have been **added**.
+Due to a change in deployment labels, the upgrade requires to **delete** the deployment manifest in order to re-create the deployment:
+
+```console
+kubectl delete deployments.apps -l app=prometheus-stackdriver-exporter --cascade=orphan
+```
+
+If this is not done, when upgrading via helm (even with `helm upgrade --force`) an error will occur indicating that the deployment cannot be modified:
+
+```
+invalid: spec.selector: Invalid value: v1.LabelSelector{MatchLabels:map[string]string{"app.kubernetes.io/name":"kube-state-metrics"}, MatchExpressions:[]v1.LabelSelectorRequirement(nil)}: field is immutable
+```
+
+Since chart version 3.x, [Kubernetes recommended labels](https://kubernetes.io/docs/concepts/overview/working-with-objects/common-labels/) have been **added**.
 
 The following labels are now **removed** in all manifests (including labels used as selector for `Deployment` kind):
 
