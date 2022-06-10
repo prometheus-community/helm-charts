@@ -348,6 +348,9 @@ alertmanager:
     runAsGroup: 65534
     fsGroup: 65534
 
+  ## Security context to be added to alertmanager container
+  containerSecurityContext: {}
+
   service:
     annotations: {}
     labels: {}
@@ -412,6 +415,8 @@ configmapReload:
       #   configMap: prometheus-alerts
       #   readOnly: true
 
+    ## Security context to be added to configmap-reload container
+    containerSecurityContext: {}
 
     ## configmap-reload resource requests and limits
     ## Ref: http://kubernetes.io/docs/user-guide/compute-resources/
@@ -452,6 +457,8 @@ configmapReload:
       #   configMap: prometheus-alerts
       #   readOnly: true
 
+    ## Security context to be added to configmap-reload container
+    containerSecurityContext: {}
 
     ## configmap-reload resource requests and limits
     ## Ref: http://kubernetes.io/docs/user-guide/compute-resources/
@@ -612,7 +619,7 @@ nodeExporter:
 
     # Exposed as a headless service:
     # https://kubernetes.io/docs/concepts/services-networking/service/#headless-services
-    clusterIP: None
+    clusterIP: ""
 
     ## List of IP addresses at which the node-exporter service is available
     ## Ref: https://kubernetes.io/docs/user-guide/services/#external-ips
@@ -1082,6 +1089,9 @@ server:
     runAsGroup: 65534
     fsGroup: 65534
 
+  ## Security context to be added to server container
+  containerSecurityContext: {}
+
   service:
     ## If false, no Service will be created for the Prometheus server
     ##
@@ -1122,6 +1132,9 @@ server:
   ## Prometheus data retention period (default if not specified is 15 days)
   ##
   retention: "15d"
+
+  ## Array of extra Kubernetes manifests, if you want to deploy
+  extraObjects: []
 
 pushgateway:
   ## If false, pushgateway will not be installed
@@ -1285,6 +1298,9 @@ pushgateway:
   securityContext:
     runAsUser: 65534
     runAsNonRoot: true
+
+  ## Security context to be added to push-gateway container
+  containerSecurityContext: {}
 
   service:
     annotations:
@@ -1584,7 +1600,7 @@ serverFiles:
           - source_labels: [__address__, __meta_kubernetes_service_annotation_prometheus_io_port]
             action: replace
             target_label: __address__
-            regex: ([^:]+)(?::\d+)?;(\d+)
+            regex: (.+?)(?::\d+)?;(\d+)
             replacement: $1:$2
           - action: labelmap
             regex: __meta_kubernetes_service_annotation_prometheus_io_param_(.+)
@@ -1639,7 +1655,7 @@ serverFiles:
           - source_labels: [__address__, __meta_kubernetes_service_annotation_prometheus_io_port]
             action: replace
             target_label: __address__
-            regex: ([^:]+)(?::\d+)?;(\d+)
+            regex: (.+?)(?::\d+)?;(\d+)
             replacement: $1:$2
           - action: labelmap
             regex: __meta_kubernetes_service_annotation_prometheus_io_param_(.+)
@@ -1734,7 +1750,7 @@ serverFiles:
             regex: (.+)
           - source_labels: [__address__, __meta_kubernetes_pod_annotation_prometheus_io_port]
             action: replace
-            regex: ([^:]+)(?::\d+)?;(\d+)
+            regex: (.+?)(?::\d+)?;(\d+)
             replacement: $1:$2
             target_label: __address__
           - action: labelmap
@@ -1786,7 +1802,7 @@ serverFiles:
             regex: (.+)
           - source_labels: [__address__, __meta_kubernetes_pod_annotation_prometheus_io_port]
             action: replace
-            regex: ([^:]+)(?::\d+)?;(\d+)
+            regex: (.+?)(?::\d+)?;(\d+)
             replacement: $1:$2
             target_label: __address__
           - action: labelmap

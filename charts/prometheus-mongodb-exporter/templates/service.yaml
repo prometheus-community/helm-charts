@@ -3,10 +3,7 @@ kind: Service
 metadata:
   name: {{ include "prometheus-mongodb-exporter.fullname" . }}
   labels:
-    app.kubernetes.io/name: {{ include "prometheus-mongodb-exporter.name" . }}
-    app.kubernetes.io/instance: {{ .Release.Name }}
-    app.kubernetes.io/managed-by: {{ .Release.Service }}
-    helm.sh/chart: {{ include "prometheus-mongodb-exporter.chart" . }}
+    {{- include "prometheus-mongodb-exporter.labels" . | nindent 4 }}
 {{- if .Values.service.labels }}
 {{ toYaml .Values.service.labels | indent 4 }}
 {{- end }}
@@ -19,6 +16,5 @@ spec:
       protocol: TCP
       name: metrics
   selector:
-    app.kubernetes.io/name: {{ include "prometheus-mongodb-exporter.name" . }}
-    app.kubernetes.io/instance: {{ .Release.Name }}
+    {{- include "prometheus-mongodb-exporter.selectorLabels" . | nindent 4 }}
   type: {{ .Values.service.type }}

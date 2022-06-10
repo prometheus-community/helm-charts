@@ -60,6 +60,9 @@ spec:
 {{- else if .Values.prometheus.prometheusSpec.replicaExternalLabelName }}
   replicaExternalLabelName: "{{ .Values.prometheus.prometheusSpec.replicaExternalLabelName }}"
 {{- end }}
+{{- if .Values.prometheus.prometheusSpec.enableRemoteWriteReceiver }}
+  enableRemoteWriteReceiver: {{ .Values.prometheus.prometheusSpec.enableRemoteWriteReceiver }}
+{{- end }}
 {{- if .Values.prometheus.prometheusSpec.externalUrl }}
   externalUrl: "{{ tpl .Values.prometheus.prometheusSpec.externalUrl . }}"
 {{- else if and .Values.prometheus.ingress.enabled .Values.prometheus.ingress.hosts }}
@@ -253,7 +256,7 @@ spec:
 {{- end }}
 {{- if .Values.global.imagePullSecrets }}
   imagePullSecrets:
-{{ toYaml .Values.global.imagePullSecrets | indent 4 }}
+{{ include "kube-prometheus-stack.imagePullSecrets" . | trim | indent 4 }}
 {{- end }}
 {{- if .Values.prometheus.prometheusSpec.additionalScrapeConfigs }}
   additionalScrapeConfigs:
@@ -336,6 +339,15 @@ spec:
 {{- end }}
 {{- if .Values.prometheus.prometheusSpec.prometheusRulesExcludedFromEnforce }}
 {{ toYaml .Values.prometheus.prometheusSpec.prometheusRulesExcludedFromEnforce | indent 4 }}
+{{- end }}
+  excludedFromEnforcement:
+{{- range $prometheusDefaultRulesExcludedFromEnforce.rules }}
+    - resource: prometheusrules
+      namespace: "{{ template "kube-prometheus-stack.namespace" $ }}"
+      name: "{{ printf "%s-%s" (include "kube-prometheus-stack.fullname" $) . | trunc 63 | trimSuffix "-" }}"
+{{- end }}
+{{- if .Values.prometheus.prometheusSpec.excludedFromEnforcement }}
+{{ toYaml .Values.prometheus.prometheusSpec.excludedFromEnforcement | indent 4 }}
 {{- end }}
 {{- end }}
 {{- if .Values.prometheus.prometheusSpec.queryLogFile }}
