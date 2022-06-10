@@ -41,3 +41,28 @@ Create the name of the service account to use
     {{ default "default" .Values.serviceAccount.name }}
 {{- end -}}
 {{- end -}}
+
+{{/*
+Generate basic labels
+*/}}
+{{- define "stackdriver-exporter.labels" }}
+helm.sh/chart: {{ template "stackdriver-exporter.chart" . }}
+app.kubernetes.io/managed-by: {{ .Release.Service }}
+app.kubernetes.io/component: metrics
+app.kubernetes.io/part-of: {{ template "stackdriver-exporter.name" . }}
+{{- include "stackdriver-exporter.selectorLabels" . }}
+{{- if .Chart.AppVersion }}
+app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
+{{- end }}
+{{- if .Values.customLabels }}
+{{ toYaml .Values.customLabels }}
+{{- end }}
+{{- end }}
+
+{{/*
+Selector labels
+*/}}
+{{- define "stackdriver-exporter.selectorLabels" }}
+app.kubernetes.io/name: {{ include "stackdriver-exporter.name" . }}
+app.kubernetes.io/instance: {{ .Release.Name }}
+{{- end }}

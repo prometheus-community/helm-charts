@@ -3,16 +3,12 @@ kind: Deployment
 metadata:
   name: {{ template "stackdriver-exporter.fullname" . }}
   labels:
-    chart: {{ template "stackdriver-exporter.chart" . }}
-    app: {{ template "stackdriver-exporter.name" . }}
-    release: "{{ .Release.Name }}"
-    heritage: "{{ .Release.Service }}"
+    {{- include "stackdriver-exporter.labels" . | indent 4 }}
 spec:
   replicas: {{ .Values.replicaCount }}
   selector:
     matchLabels:
-      app: {{ template "stackdriver-exporter.name" . }}
-      release: "{{ .Release.Name }}"
+      {{- include "stackdriver-exporter.selectorLabels" . | indent 6 }}
   strategy:
     rollingUpdate:
       maxSurge: 1
@@ -21,8 +17,7 @@ spec:
   template:
     metadata:
       labels:
-        app: {{ template "stackdriver-exporter.name" . }}
-        release: "{{ .Release.Name }}"
+        {{- include "stackdriver-exporter.labels" . | indent 8 }}
       {{- if .Values.annotations }}
       annotations:
         {{- toYaml .Values.annotations | nindent 8 }}
