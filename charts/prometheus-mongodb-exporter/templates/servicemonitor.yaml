@@ -4,10 +4,7 @@ kind: ServiceMonitor
 metadata:
   name: {{ include "prometheus-mongodb-exporter.fullname" . }}
   labels:
-    app.kubernetes.io/name: {{ include "prometheus-mongodb-exporter.name" . }}
-    app.kubernetes.io/instance: {{ .Release.Name }}
-    app.kubernetes.io/managed-by: {{ .Release.Service }}
-    helm.sh/chart: {{ include "prometheus-mongodb-exporter.chart" . }}
+    {{- include "prometheus-mongodb-exporter.labels" . | nindent 4 }}
     {{- range $key, $value := .Values.serviceMonitor.additionalLabels }}
     {{ $key }}: {{ $value | quote }}
     {{- end }}
@@ -27,8 +24,7 @@ spec:
     - {{ .Release.Namespace }}
   selector:
     matchLabels:
-      app.kubernetes.io/name: {{ include "prometheus-mongodb-exporter.name" . }}
-      app.kubernetes.io/instance: {{ .Release.Name }}
+      {{- include "prometheus-mongodb-exporter.selectorLabels" . | nindent 6 }}
 {{- if .Values.serviceMonitor.targetLabels }}
   targetLabels:
 {{- range .Values.serviceMonitor.targetLabels }}
@@ -36,4 +32,3 @@ spec:
 {{- end }}
 {{- end }}
 {{- end }}
-
