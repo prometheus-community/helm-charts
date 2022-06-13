@@ -80,6 +80,18 @@ _See [helm upgrade](https://helm.sh/docs/helm/helm_upgrade/) for command documen
 
 A major chart version change (like v1.2.3 -> v2.0.0) indicates that there is an incompatible breaking change needing manual actions.
 
+### From 36.x to 37.x
+This upgrade renames 3 secrets, see below to see if you have deployed any of these manually, then you might have to adjust the names of the secrets
+
+1. [additionalScrapeConfigs.yaml](./templates/prometheus/additionalScrapeConfigs.yaml)
+1. [additionalAlertmanagerConfigs.yaml](./templates/prometheus/additionalAlertmanagerConfigs.yaml)
+1. [additionalAlertRelabelConfigs.yaml](./templates/prometheus/additionalAlertRelabelConfigs.yaml)
+
+If you have simply enabled the following keys in [values.yaml](./values.yaml) then no changes are necessary
+* `additionalScrapeConfigs`
+* `additionalAlertManagerConfigs`
+* `additionalAlertRelabelConfigs`
+
 ### From 35.x to 36.x
 
 This upgraded prometheus-operator to v0.57.0 and prometheus to v2.36.1
