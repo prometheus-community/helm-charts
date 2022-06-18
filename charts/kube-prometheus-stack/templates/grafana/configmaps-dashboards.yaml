@@ -1,0 +1,24 @@
+{{- $kubeTargetVersion := default .Capabilities.KubeVersion.GitVersion .Values.kubeTargetVersionOverride }}
+{{- if and (or .Values.grafana.enabled .Values.grafana.forceDeployDashboards) (semverCompare ">=1.14.0-0" $kubeTargetVersion) (semverCompare "<9.9.9-9" $kubeTargetVersion) }}
+{{- range $path, $fileContent := .Files.Glob "dashboards-1.14/*.jtpl" }}
+{{- $dashboardName := regexReplaceAll "(^.*/)(.*)\\.jtpl$" $path "${2}" }}
+{{- if or (and (eq $dashboardName "grafana-coredns-k8s") $.Values.coreDns.enabled) (and (eq $dashboardName "etcd") $.Values.kubeEtcd.enabled) (and (eq $dashboardName "apiserver") $.Values.kubeApiServer.enabled) (and (eq $dashboardName "controller-manager") $.Values.kubeControllerManager.enabled) (and (eq $dashboardName "kubelet") $.Values.kubelet.enabled) (and (eq $dashboardName "proxy") $.Values.kubeProxy.enabled) (and (eq $dashboardName "scheduler") $.Values.kubeScheduler.enabled) (and (eq $dashboardName "node-rsrc-use") $.Values.nodeExporter.enabled) (and (eq $dashboardName "node-cluster-rsrc-use") $.Values.nodeExporter.enabled) (and (eq $dashboardName "nodes") $.Values.nodeExporter.enabled) (and (eq $dashboardName "prometheus-remote-write") $.Values.prometheus.prometheusSpec.remoteWriteDashboards) $.Values.grafana.defaultDashboardsEnabled }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  namespace: {{ template "kube-prometheus-stack-grafana.namespace" $ }}
+  name: {{ printf "%s-%s" (include "kube-prometheus-stack.fullname" $) $dashboardName | trunc 63 | trimSuffix "-" }}
+  annotations: {{- toYaml $.Values.grafana.sidecar.dashboards.annotations | nindent 4 }}
+  labels:
+    {{- if $.Values.grafana.sidecar.dashboards.label }}
+    {{ $.Values.grafana.sidecar.dashboards.label }}: {{ ternary $.Values.grafana.sidecar.dashboards.labelValue "1" (not (empty $.Values.grafana.sidecar.dashboards.labelValue)) | quote }}
+    {{- end }}
+    app: {{ template "kube-prometheus-stack.name" $ }}-grafana
+    {{- include "kube-prometheus-stack.labels" $ | nindent 4 }}
+data:
+  {{ $dashboardName }}.json: |-
+    {{- tpl (toString $fileContent) $ | nindent 4 }}
+{{- end }}
+{{- end }}
+{{- end }}

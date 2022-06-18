@@ -1,0 +1,44 @@
+{{- if or (and (index .Values "grafana-operator" "enabled") (index .Values "grafana-operator" "grafana" "datasources" "enabled") (or (index .Values "grafana-operator" "grafana" "datasources" "defaultDatasourceEnabled") (index .Values "grafana-operator" "grafana" "additionalDataSources"))) (index .Values  "grafana-operator" "forceDeployDatasources") }}
+{{- $scrapeInterval := (index .Values "grafana-operator" "grafana" "datasources" "defaultDatasourceScrapeInterval") | default .Values.prometheus.prometheusSpec.scrapeInterval | default "30s" }}
+apiVersion: integreatly.org/v1alpha1
+kind: GrafanaDataSource
+metadata:
+  name: {{ template "kube-prometheus-stack.fullname" . }}-grafana-datasource
+  namespace: {{ template "kube-prometheus-stack-grafana.namespace" . }}
+  {{- with (index .Values "grafana-operator" "grafana" "datasources" "annotations") }}
+  annotations: {{- toYaml . | nindent 4 }}
+  {{- end }}
+  labels:
+    app: {{ template "kube-prometheus-stack.name" . }}-grafana
+    {{- include "kube-prometheus-stack.labels" . | nindent 4 }}
+spec:
+  name: datasource.yaml
+  datasources:
+  {{- if (index .Values "grafana-operator" "grafana" "datasources" "defaultDatasourceEnabled") }}
+    - name: Prometheus
+      type: prometheus
+      uid: {{ index .Values "grafana-operator" "grafana" "datasources" "uid" }}
+      {{- if (index .Values "grafana-operator" "grafana" "datasources" "url") }}
+      url: {{ index .Values "grafana-operator" "grafana" "datasources" "url" }}
+      {{- else }}
+      url: http://{{ template "kube-prometheus-stack.fullname" . }}-prometheus.{{ template "kube-prometheus-stack.namespace" . }}:{{ .Values.prometheus.service.port }}/{{ trimPrefix "/" .Values.prometheus.prometheusSpec.routePrefix }}
+      {{- end }}
+      access: proxy
+      isDefault: true
+    {{- if (index .Values "grafana-operator" "grafana" "datasources" "createPrometheusReplicasDatasources") }}
+      {{- range until (int .Values.prometheus.prometheusSpec.replicas) }}
+    - name: Prometheus-{{ . }}
+      type: prometheus
+      uid: {{ index $.Values "grafana-operator" "grafana" "datasources" "uid" }}-replica-{{ . }}
+      url: http://prometheus-{{ template "kube-prometheus-stack.fullname" $ }}-prometheus-{{ . }}.prometheus-operated:9090/{{ trimPrefix "/" $.Values.prometheus.prometheusSpec.routePrefix }}
+      access: proxy
+      isDefault: false
+      jsonData:
+        timeInterval: {{ $scrapeInterval }}
+      {{- end }}
+    {{- end }}
+  {{- end }}
+  {{- if (index .Values "grafana-operator" "grafana" "additionalDataSources") }}
+    {{- tpl (toYaml (index .Values "grafana-operator" "grafana" "additionalDataSources")) . | nindent 4 }}
+  {{- end }}
+{{- end }}
