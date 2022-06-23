@@ -8,13 +8,45 @@ on:
   workflow_dispatch:
 
 jobs:
-  sync-app-repository:
+  sync-kube-state-metrics-app-repository:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v2
 
-      - name: Sync from upstream
+      - name: Sync kube-state-metrics from upstream
+        uses: giantswarm/subtree-util@v0.1.1
+        with:
+          target_github_token: ${{ secrets.ARCHITECT_BOT_GITHUB_REPO_SYNC_TOKEN }}
+          target_repository: giantswarm/kube-state-metrics-app
+          target_path: helm/kube-state-metrics-app
+          source_tag_wildcard: "kube-state-metrics-*"
+          source_path: charts/kube-state-metrics
+
+  sync-node-exporter-app-repository:
+    runs-on: ubuntu-latest
+    needs: sync-kube-state-metrics-app-repository
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Sync node-exporter from upstream
+        uses: giantswarm/subtree-util@v0.1.1
+        with:
+          target_github_token: ${{ secrets.ARCHITECT_BOT_GITHUB_REPO_SYNC_TOKEN }}
+          target_repository: giantswarm/node-exporter-app
+          target_path: helm/node-exporter-app
+          source_tag_wildcard: "prometheus-node-exporter-*"
+          source_path: charts/prometheus-node-exporter
+
+  sync-prometheus-operator-app-repository:
+    runs-on: ubuntu-latest
+    needs: sync-node-exporter-app-repository
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Sync prometheus operator app from upstream
         uses: giantswarm/subtree-util@v0.2.0
         with:
           target_github_token: ${{ secrets.ARCHITECT_BOT_GITHUB_REPO_SYNC_TOKEN }}
