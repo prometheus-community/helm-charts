@@ -55,22 +55,21 @@ spec:
 {{- end }}
 {{- if and ($.Values.serviceMonitor) ($.Values.serviceMonitor.multipleTarget)}}
 {{- if and ( .Capabilities.APIVersions.Has "monitoring.coreos.com/v1" ) ( .Values.serviceMonitor.enabled ) }}
-{{- range  .Values.serviceMonitor.targets }}
----
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
-  name: {{ template "prometheus-redis-exporter.fullname" $ }}-{{ .name }}
+  name: {{ template "prometheus-redis-exporter.fullname" $ }}
 {{- if $.Values.serviceMonitor.namespace }}
   namespace: {{ $.Values.serviceMonitor.namespace }}
 {{- end }}
   labels:
     {{- include "prometheus-redis-exporter.labels" $ | nindent 4 }}
-    {{- if or $.Values.serviceMonitor.labels .labels }}
-    {{- toYaml (.labels | default $.Values.serviceMonitor.labels) | nindent 4 }}
+    {{- if .Values.serviceMonitor.labels }}
+    {{- toYaml .Values.serviceMonitor.labels | nindent 4 }}
     {{- end }}
 spec:
   endpoints:
+  {{- range  .Values.serviceMonitor.targets }}
   - port: {{ $.Values.service.portName }}
     scheme: {{ $.Values.serviceMonitor.scheme }}
     {{- if $.Values.serviceMonitor.bearerTokenFile }}
@@ -103,6 +102,7 @@ spec:
 {{- if concat (.additionalRelabeling | default list) $.Values.serviceMonitor.additionalRelabeling }}
 {{ toYaml (concat (.additionalRelabeling | default list) $.Values.serviceMonitor.additionalRelabeling) | indent 6 }}
 {{- end }}
+  {{- end }}
   jobLabel: "{{ $.Release.Name }}"
   selector:
     matchLabels:
@@ -110,6 +110,5 @@ spec:
   namespaceSelector:
     matchNames:
     - {{ $.Release.Namespace }}
-{{- end }}
 {{- end }}
 {{- end }}
