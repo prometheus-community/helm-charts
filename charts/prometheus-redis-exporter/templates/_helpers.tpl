@@ -31,17 +31,6 @@ Create chart name and version as used by the chart label.
 {{- printf "%s-%s" .Chart.Name .Chart.Version | replace "+" "_" | trunc 63 | trimSuffix "-" -}}
 {{- end -}}
 
-{{/* Create basic labels */}}
-{{- define "prometheus-redis-exporter.labels" -}}
-chart: {{ template "prometheus-redis-exporter.chart" . }}
-release: {{ $.Release.Name | quote }}
-heritage: {{ $.Release.Service | quote }}
-app: {{ template "prometheus-redis-exporter.name" . }}
-{{- if .Values.customLabels}}
-{{ toYaml .Values.customLabels }}
-{{- end }}
-{{- end }}
-
 {{/*
 Create the name of the service account to use
 */}}
@@ -63,3 +52,23 @@ Return the appropriate apiVersion for rbac.
 {{- print "rbac.authorization.k8s.io/v1beta1" -}}
 {{- end -}}
 {{- end -}}
+
+{{/*
+Common labels
+*/}}
+{{- define "prometheus-redis-exporter.labels" -}}
+helm.sh/chart: {{ include "prometheus-redis-exporter.chart" . }}
+{{ include "prometheus-redis-exporter.selectorLabels" . }}
+{{- if .Chart.AppVersion }}
+app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
+{{- end }}
+app.kubernetes.io/managed-by: {{ .Release.Service }}
+{{- end }}
+
+{{/*
+Selector labels
+*/}}
+{{- define "prometheus-redis-exporter.selectorLabels" -}}
+app.kubernetes.io/name: {{ include "prometheus-redis-exporter.name" . }}
+app.kubernetes.io/instance: {{ .Release.Name }}
+{{- end }}
