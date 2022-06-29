@@ -52,6 +52,19 @@ _See [helm upgrade](https://helm.sh/docs/helm/helm_upgrade/) for command documen
 
 ### To 5.0.0
 
+From 5.0.0 redis exporter is using this above as selector labels in service and deployments
+```
+app.kubernetes.io/name: {{ include "prometheus-redis-exporter.name" . }}
+app.kubernetes.io/instance: {{ .Release.Name }}
+```
+
+selector labels is immutable in kubernetes, so uninstall is needed if you're upgrading from 4.8.0 and below
+
+
+```console
+helm uninstall {{ .Release.Name }}
+```
+
 From 5.0.0 redis exporter helm chart supports multiple targets.
 
 By enabling `serviceMonitor.multipleTarget` and settings the targets in `serviceMonitor.targets`, multiple redis instance can be scraped.
@@ -72,13 +85,6 @@ serviceMonitor:
       replacement: cluster
 ```
 
-From 5.0.0 redis exporter is using this above as selector labels in service and deployments
-```
-app.kubernetes.io/name: {{ include "prometheus-redis-exporter.name" . }}
-app.kubernetes.io/instance: {{ .Release.Name }}
-```
-
-please change accordingly if your code is using these labels.
 
 ### To 3.0.1
 
