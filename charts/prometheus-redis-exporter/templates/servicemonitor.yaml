@@ -1,4 +1,3 @@
-{{- if $.Values.serviceMonitor }}
 {{- if and ( .Capabilities.APIVersions.Has "monitoring.coreos.com/v1" ) ( .Values.serviceMonitor.enabled ) }}
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
@@ -13,7 +12,43 @@ metadata:
 {{- end }}
 spec:
   endpoints:
-  - targetPort: {{ .Values.service.port }}
+{{- if .Values.serviceMonitor.multipleTarget }}
+{{- range  .Values.serviceMonitor.targets }}
+  - port: {{ $.Values.service.portName }}
+    scheme: {{ $.Values.serviceMonitor.scheme }}
+    {{- if $.Values.serviceMonitor.bearerTokenFile }}
+    bearerTokenFile: {{ $.Values.serviceMonitor.bearerTokenFile }}
+    {{- end }}
+    {{- if $.Values.serviceMonitor.tlsConfig }}
+    tlsConfig: {{ toYaml $.Values.serviceMonitor.tlsConfig | nindent 6 }}
+    {{- end }}
+    path: {{ $.Values.serviceMonitor.telemetryPath }}
+    interval: {{ .interval | default $.Values.serviceMonitor.interval }}
+    scrapeTimeout: {{ .scrapeTimeout | default $.Values.serviceMonitor.scrapeTimeout }}
+    params:
+      target:
+      - {{ .url }}
+{{- if $.Values.serviceMonitor.relabelings }}
+    relabelings:
+{{ toYaml $.Values.serviceMonitor.relabelings | indent 4 }}
+{{- end }}
+    metricRelabelings:
+      - sourceLabels: [instance]
+        targetLabel: instance
+        replacement: {{ .url }}
+      - sourceLabels: [target]
+        targetLabel: target
+        replacement: {{ .name }}
+        {{- range $targetLabel, $replacement := .additionalMetricsRelabels | default $.Values.serviceMonitor.additionalMetricsRelabels }}
+      - targetLabel: {{ $targetLabel | quote }}
+        replacement: {{ $replacement | quote }}
+        {{- end }}
+{{- if concat (.additionalRelabeling | default list) $.Values.serviceMonitor.additionalRelabeling }}
+{{ toYaml (concat (.additionalRelabeling | default list) $.Values.serviceMonitor.additionalRelabeling) | indent 6 }}
+{{- end }}
+{{- end }}
+{{- else }}
+  - port: {{ .Values.service.portName }}
 {{- if .Values.serviceMonitor.interval }}
     interval: {{ .Values.serviceMonitor.interval }}
 {{- end }}
@@ -38,19 +73,18 @@ spec:
     tlsConfig:
 {{ toYaml .Values.serviceMonitor.tlsConfig | indent 6 }}
 {{- end }}
+{{- end }}
   jobLabel: {{ template "prometheus-redis-exporter.fullname" . }}
   namespaceSelector:
     matchNames:
     - {{ .Release.Namespace }}
   selector:
     matchLabels:
-      app: {{ template "prometheus-redis-exporter.name" . }}
-      release: {{ .Release.Name }}
+      {{- include "prometheus-redis-exporter.selectorLabels" . | nindent 6 }}
 {{- if .Values.serviceMonitor.targetLabels }}
   targetLabels:
 {{- range .Values.serviceMonitor.targetLabels }}
     - {{ . }}
-{{- end }}
 {{- end }}
 {{- end }}
 {{- end }}
