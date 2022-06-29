@@ -77,7 +77,7 @@ serviceMonitor:
 
 ### To 3.0.1
 
- The default tag for the exporter image is now `v1.x.x`. This major release includes changes to the names of various metrics and no longer directly supports the configuration (and scraping) of multiple redis instances; that is now the Prometheus server's responsibility. You'll want to use [this dashboard](https://github.com/oliver006/redis_exporter/blob/master/contrib/grafana_prometheus_redis_dashboard.json) now. Please see the [redis_exporter github page](https://github.com/oliver006/redis_exporter#upgrading-from-0x-to-1x) for more details.
+ The default tag for the exporter image is now `v1.x.x`. This major release includes changes to the names of various metrics and no longer directly supports the configuration (and scraping) of multiple redis instances; that is now the Prometheus server's responsibility. You'll want to use [this dashboard](https://github.com/oliver006/redis_exporter/blob/master/contrib/grafana_prometheus_redis_dashboard.json) now. Please see the [redis_exporter Github page](https://github.com/oliver006/redis_exporter#upgrading-from-0x-to-1x) for more details.
 
 ## Configuring
 
