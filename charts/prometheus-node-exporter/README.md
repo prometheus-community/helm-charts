@@ -1,17 +1,17 @@
-# Prometheus Node Exporter
+# Prometheus `Node Exporter`
 
 Prometheus exporter for hardware and OS metrics exposed by *NIX kernels, written in Go with pluggable metric collectors.
 
-This chart bootstraps a prometheus [Node Exporter](http://github.com/prometheus/node_exporter) deployment on a [Kubernetes](http://kubernetes.io) cluster using the [Helm](https://helm.sh) package manager.
+This chart bootstraps a prometheus [`Node Exporter`](http://github.com/prometheus/node_exporter) deployment on a [Kubernetes](http://kubernetes.io) cluster using the [Helm](https://helm.sh) package manager.
 
-## Get Repo Info
+## Get Repository Info
 
 ```console
 helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
 helm repo update
 ```
 
-_See [helm repo](https://helm.sh/docs/helm/helm_repo/) for command documentation._
+_See [`helm repo`](https://helm.sh/docs/helm/helm_repo/) for command documentation._
 
 ## Install Chart
 
@@ -41,40 +41,13 @@ helm upgrade [RELEASE_NAME] [CHART] --install
 
 _See [helm upgrade](https://helm.sh/docs/helm/helm_upgrade/) for command documentation._
 
-#### 3.x to 4.x
+### 3.x to 4.x
 
-Due to a change in deployment labels, **removal** of its deployment needs to done manually prior to upgrading:
-
-```console
-kubectl delete deployments.apps -l app=prometheus-node-exporter --cascade=orphan
-```
-
-If this is not done, when upgrading via helm (even with `helm upgrade --force`) an error will occur indicating that the deployment cannot be modified:
+Starting from version 4.0.0, the `node exporter` chart is using the [Kubernetes recommended labels](https://kubernetes.io/docs/concepts/overview/working-with-objects/common-labels/). Therefore you have to delete the deployment before you upgrade.
 
 ```console
-invalid: spec.selector: Invalid value: v1.LabelSelector{MatchLabels:map[string]string{"app.kubernetes.io/instance":"example", "app.kubernetes.io/name":"prometheus-node-exporter"}, MatchExpressions:[]v1.LabelSelectorRequirement(nil)}: field is immutable
-```
-
-Since chart version 4.x, [Kubernetes recommended labels](https://kubernetes.io/docs/concepts/overview/working-with-objects/common-labels/) have been **added**.
-
-The following labels are now **removed** in all manifests (including labels used as selector for `Deployment` kind):
-
-```yaml
-...
-metadata:
-  labels:
-    app: prometheus-node-exporter
-    chart: prometheus-node-exporter-2.X.X
-    heritage: Helm
-    release: example
-...
-spec:
-  ...
-  selector:
-    matchLabels:
-      app: prometheus-node-exporter
-      release: example
-...
+kubectl delete deployment -l app=prometheus-node-exporter
+helm upgrade -i prometheus-node-exporter prometheus-community/prometheus-node-exporter
 ```
 
 If you use your own custom [ServiceMonitor](https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/api.md#servicemonitor) or [PodMonitor](https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/api.md#podmonitor), please ensure to upgrade their `selector` fields accordingly to the new labels.
