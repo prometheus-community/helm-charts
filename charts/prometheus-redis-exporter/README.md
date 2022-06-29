@@ -53,7 +53,8 @@ _See [helm upgrade](https://helm.sh/docs/helm/helm_upgrade/) for command documen
 ### To 5.0.0
 
 From 5.0.0 redis exporter is using this above as selector labels in service and deployments
-```
+
+```yaml
 app.kubernetes.io/name: {{ include "prometheus-redis-exporter.name" . }}
 app.kubernetes.io/instance: {{ .Release.Name }}
 ```
@@ -69,7 +70,7 @@ From 5.0.0 redis exporter helm chart supports multiple targets.
 
 By enabling `serviceMonitor.multipleTarget` and settings the targets in `serviceMonitor.targets`, multiple redis instance can be scraped.
 
-```
+```yaml
 serviceMonitor:
   enabled: true
   multipleTarget: true
@@ -84,7 +85,6 @@ serviceMonitor:
       targetLabel: type
       replacement: cluster
 ```
-
 
 ### To 3.0.1
 
