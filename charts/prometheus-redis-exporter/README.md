@@ -52,7 +52,7 @@ _See [helm upgrade](https://helm.sh/docs/helm/helm_upgrade/) for command documen
 
 ### To 5.0.0
 
-From 5.0.0 redis exporter is using the [Kubernetes recommended labels](https://kubernetes.io/docs/concepts/overview/working-with-objects/common-labels/). Therfore youl have to delete the deployment before your upgrade.
+From 5.0.0 redis exporter is using the [Kubernetes recommended labels](https://kubernetes.io/docs/concepts/overview/working-with-objects/common-labels/). Therefore you have to delete the deployment before you upgrade.
 
 ```console
 kubectl delete deployment -l app=prometheus-redis-exporter
