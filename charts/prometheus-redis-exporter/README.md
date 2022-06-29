@@ -52,7 +52,7 @@ _See [helm upgrade](https://helm.sh/docs/helm/helm_upgrade/) for command documen
 
 ### To 5.0.0
 
-From 5.0.0 redis exporter is using this above as selector labels in service and deployments
+From 5.0.0 redis exporter is using the [Kubernetes recommended labels](https://kubernetes.io/docs/concepts/overview/working-with-objects/common-labels/). Therfore youl have to delete the deployment before your upgrade.
 
 ```yaml
 app.kubernetes.io/name: {{ include "prometheus-redis-exporter.name" . }}
@@ -63,7 +63,8 @@ selector labels is immutable in kubernetes, so uninstall is needed if you're upg
 
 
 ```console
-helm uninstall {{ .Release.Name }}
+kubectl delete deployment -l app=prometheus-redis-exporter
+helm upgrade -i prometheus-redis-exporter prometheus-community/prometheus-redis-exporter
 ```
 
 From 5.0.0 redis exporter helm chart supports multiple targets.
