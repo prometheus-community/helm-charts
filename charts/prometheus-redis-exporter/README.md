@@ -50,6 +50,36 @@ $ helm upgrade [RELEASE_NAME] [CHART] --install
 
 _See [helm upgrade](https://helm.sh/docs/helm/helm_upgrade/) for command documentation._
 
+### To 5.0.0
+
+From 5.0.0 redis exporter helm chart supports multiple targets.
+
+By enabling `serviceMonitor.multipleTarget` and settings the targets in `serviceMonitor.targets`, multiple redis instance can be scraped.
+
+```
+serviceMonitor:
+  enabled: true
+  multipleTarget: true
+  telemetryPath: /scrape
+  targets:
+  - url: redis://my-redis:6379
+    name: foo
+  - url: redis://my-redis-cluster:6379
+    name: bar
+    additionalRelabeling:
+    - sourceLabels: [type]
+      targetLabel: type
+      replacement: cluster
+```
+
+From 5.0.0 redis exporter is using this above as selector labels in service and deployments
+```
+app.kubernetes.io/name: {{ include "prometheus-redis-exporter.name" . }}
+app.kubernetes.io/instance: {{ .Release.Name }}
+```
+
+please change accordingly if your code is using these labels.
+
 ### To 3.0.1
 
  The default tag for the exporter image is now `v1.x.x`. This major release includes changes to the names of various metrics and no longer directly supports the configuration (and scraping) of multiple redis instances; that is now the Prometheus server's responsibility. You'll want to use [this dashboard](https://github.com/oliver006/redis_exporter/blob/master/contrib/grafana_prometheus_redis_dashboard.json) now. Please see the [redis_exporter github page](https://github.com/oliver006/redis_exporter#upgrading-from-0x-to-1x) for more details.

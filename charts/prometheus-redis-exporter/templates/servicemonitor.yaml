@@ -1,4 +1,3 @@
-{{- if and ($.Values.serviceMonitor) (not $.Values.serviceMonitor.multipleTarget) }}
 {{- if and ( .Capabilities.APIVersions.Has "monitoring.coreos.com/v1" ) ( .Values.serviceMonitor.enabled ) }}
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
@@ -13,63 +12,8 @@ metadata:
 {{- end }}
 spec:
   endpoints:
-  - port: {{ $.Values.service.portName }}
-{{- if .Values.serviceMonitor.interval }}
-    interval: {{ .Values.serviceMonitor.interval }}
-{{- end }}
-{{- if .Values.serviceMonitor.telemetryPath }}
-    path: {{ .Values.serviceMonitor.telemetryPath }}
-{{- end }}
-{{- if .Values.serviceMonitor.timeout }}
-    scrapeTimeout: {{ .Values.serviceMonitor.timeout }}
-{{- end }}
-{{- if .Values.serviceMonitor.metricRelabelings }}
-    metricRelabelings:
-{{ toYaml .Values.serviceMonitor.metricRelabelings | indent 4 }}
-{{- end }}
-{{- if .Values.serviceMonitor.relabelings }}
-    relabelings:
-{{ toYaml .Values.serviceMonitor.relabelings | indent 4 }}
-{{- end }}
-{{- if .Values.serviceMonitor.scheme }}
-    scheme: {{ .Values.serviceMonitor.scheme }}
-{{- end }}
-{{- if .Values.serviceMonitor.tlsConfig }}
-    tlsConfig:
-{{ toYaml .Values.serviceMonitor.tlsConfig | indent 6 }}
-{{- end }}
-  jobLabel: {{ template "prometheus-redis-exporter.fullname" . }}
-  namespaceSelector:
-    matchNames:
-    - {{ .Release.Namespace }}
-  selector:
-    matchLabels:
-      {{- include "prometheus-redis-exporter.selectorLabels" . | nindent 6 }}
-{{- if .Values.serviceMonitor.targetLabels }}
-  targetLabels:
-{{- range .Values.serviceMonitor.targetLabels }}
-    - {{ . }}
-{{- end }}
-{{- end }}
-{{- end }}
-{{- end }}
-{{- if and ($.Values.serviceMonitor) ($.Values.serviceMonitor.multipleTarget)}}
-{{- if and ( .Capabilities.APIVersions.Has "monitoring.coreos.com/v1" ) ( .Values.serviceMonitor.enabled ) }}
-apiVersion: monitoring.coreos.com/v1
-kind: ServiceMonitor
-metadata:
-  name: {{ template "prometheus-redis-exporter.fullname" $ }}
-{{- if $.Values.serviceMonitor.namespace }}
-  namespace: {{ $.Values.serviceMonitor.namespace }}
-{{- end }}
-  labels:
-    {{- include "prometheus-redis-exporter.labels" $ | nindent 4 }}
-    {{- if .Values.serviceMonitor.labels }}
-    {{- toYaml .Values.serviceMonitor.labels | nindent 4 }}
-    {{- end }}
-spec:
-  endpoints:
-  {{- range  .Values.serviceMonitor.targets }}
+{{- if .Values.serviceMonitor.multipleTarget }}
+{{- range  .Values.serviceMonitor.targets }}
   - port: {{ $.Values.service.portName }}
     scheme: {{ $.Values.serviceMonitor.scheme }}
     {{- if $.Values.serviceMonitor.bearerTokenFile }}
@@ -102,13 +46,45 @@ spec:
 {{- if concat (.additionalRelabeling | default list) $.Values.serviceMonitor.additionalRelabeling }}
 {{ toYaml (concat (.additionalRelabeling | default list) $.Values.serviceMonitor.additionalRelabeling) | indent 6 }}
 {{- end }}
-  {{- end }}
-  jobLabel: "{{ $.Release.Name }}"
-  selector:
-    matchLabels:
-      {{- include "prometheus-redis-exporter.selectorLabels" $ | nindent 6 }}
+{{- end }}
+{{- else }}
+  - port: {{ .Values.service.portName }}
+{{- if .Values.serviceMonitor.interval }}
+    interval: {{ .Values.serviceMonitor.interval }}
+{{- end }}
+{{- if .Values.serviceMonitor.telemetryPath }}
+    path: {{ .Values.serviceMonitor.telemetryPath }}
+{{- end }}
+{{- if .Values.serviceMonitor.timeout }}
+    scrapeTimeout: {{ .Values.serviceMonitor.timeout }}
+{{- end }}
+{{- if .Values.serviceMonitor.metricRelabelings }}
+    metricRelabelings:
+{{ toYaml .Values.serviceMonitor.metricRelabelings | indent 4 }}
+{{- end }}
+{{- if .Values.serviceMonitor.relabelings }}
+    relabelings:
+{{ toYaml .Values.serviceMonitor.relabelings | indent 4 }}
+{{- end }}
+{{- if .Values.serviceMonitor.scheme }}
+    scheme: {{ .Values.serviceMonitor.scheme }}
+{{- end }}
+{{- if .Values.serviceMonitor.tlsConfig }}
+    tlsConfig:
+{{ toYaml .Values.serviceMonitor.tlsConfig | indent 6 }}
+{{- end }}
+{{- end }}
+  jobLabel: {{ template "prometheus-redis-exporter.fullname" . }}
   namespaceSelector:
     matchNames:
-    - {{ $.Release.Namespace }}
+    - {{ .Release.Namespace }}
+  selector:
+    matchLabels:
+      {{- include "prometheus-redis-exporter.selectorLabels" . | nindent 6 }}
+{{- if .Values.serviceMonitor.targetLabels }}
+  targetLabels:
+{{- range .Values.serviceMonitor.targetLabels }}
+    - {{ . }}
+{{- end }}
 {{- end }}
 {{- end }}
