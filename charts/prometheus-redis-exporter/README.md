@@ -54,14 +54,6 @@ _See [helm upgrade](https://helm.sh/docs/helm/helm_upgrade/) for command documen
 
 From 5.0.0 redis exporter is using the [Kubernetes recommended labels](https://kubernetes.io/docs/concepts/overview/working-with-objects/common-labels/). Therfore youl have to delete the deployment before your upgrade.
 
-```yaml
-app.kubernetes.io/name: {{ include "prometheus-redis-exporter.name" . }}
-app.kubernetes.io/instance: {{ .Release.Name }}
-```
-
-selector labels is immutable in kubernetes, so uninstall is needed if you're upgrading from 4.8.0 and below
-
-
 ```console
 kubectl delete deployment -l app=prometheus-redis-exporter
 helm upgrade -i prometheus-redis-exporter prometheus-community/prometheus-redis-exporter
