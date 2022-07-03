@@ -17,6 +17,7 @@ image:
   pullPolicy: IfNotPresent
 extraArgs: {}
 
+# global custom labels, applied to all resrouces
 customLabels: {}
 
 securityContext: {}
@@ -45,7 +46,10 @@ tolerations: []
 
 affinity: {}
 
+# If serviceMonitor.multipleTarget is enabled, this configuration is actually not used
 redisAddress: redis://myredis:6379
+
+# deployment additional annotations and labels
 annotations: {}
 labels: {}
 #  prometheus.io/path: /metrics
@@ -63,11 +67,29 @@ redisAddressConfig:
 serviceMonitor:
   # When set true then use a ServiceMonitor to configure scraping
   enabled: false
+  multipleTarget: false
+  targets: []
+  # for every targets, url and name must be set,
+  # an individual additionalRelabeling can be set for every target
+  # - url: "redis://myredis:6379"
+  #   name: "my-redis"
+  # - url: "redis://my-redis-cluster:6379"
+  #   name: "bar"
+  #   additionalRelabeling:
+  #   - sourceLabels: [type]
+  #     targetLabel: type
+  #     replacement: cluster
+  #   additionalMetricsRelabels:
+  #     type: cluster
+  additionalMetricsRelabels: {}
+  additionalRelabeling: []
+
   # Set the namespace the ServiceMonitor should be deployed
   # namespace: monitoring
   # Set how frequently Prometheus should scrape
   # interval: 30s
   # Set path to redis-exporter telemtery-path
+  # Please set telemetryPath to /scrape if you are using multiple targets
   # telemetryPath: /metrics
   # Set labels for the ServiceMonitor, use this to define your scrape label for Prometheus Operator
   # labels:
