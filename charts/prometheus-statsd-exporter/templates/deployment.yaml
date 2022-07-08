@@ -32,6 +32,13 @@ spec:
         - name: {{ .Chart.Name }}
           securityContext:
             {{- toYaml .Values.securityContext | nindent 12 }}
+          {{- with .Values.extraEnv }}
+          env:
+            {{- range $key, $value := . }}
+            - name: {{ $key }}
+              value: {{ $value | quote }}
+            {{- end }}
+          {{- end }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           args:
@@ -53,7 +60,10 @@ spec:
             - --statsd.event-flush-interval={{ .Values.statsd.eventFlushInterval }}
             {{- if or .Values.statsd.mappingConfigMapName .Values.statsd.mappingConfig }}
             - --statsd.mapping-config=/etc/prometheus-statsd-exporter/statsd-mapping.conf
-          {{- end }}
+            {{- end }}
+            {{- if .Values.extraArgs }}
+              {{- toYaml .Values.extraArgs | nindent 12 }}
+            {{- end }}
           ports:
             - name: http
               containerPort: {{ .Values.service.port }}
