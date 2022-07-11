@@ -46,7 +46,7 @@ _See [helm upgrade](https://helm.sh/docs/helm/helm_upgrade/) for command documen
 Starting from version 4.0.0, the `node exporter` chart is using the [Kubernetes recommended labels](https://kubernetes.io/docs/concepts/overview/working-with-objects/common-labels/). Therefore you have to delete the deployment before you upgrade.
 
 ```console
-kubectl delete deployment -l app=prometheus-node-exporter
+kubectl delete daemonset -l app=prometheus-node-exporter
 helm upgrade -i prometheus-node-exporter prometheus-community/prometheus-node-exporter
 ```
 
