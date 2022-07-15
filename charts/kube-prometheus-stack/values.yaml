@@ -982,14 +982,17 @@ kubelet:
       - sourceLabels: [__name__]
         action: drop
         regex: 'container_spec.*'
-      # Drop cgroup metrics with no pod.
-      - sourceLabels: [id, pod]
-        action: drop
-        regex: '.+;'
-      # Drop cgroup metrics with no container.
-      - sourceLabels: [id, container]
-        action: drop
-        regex: '.+;'
+      # Theses rules will drop all metrics with no pods and/or no containers labels.
+      # This will make queries likes `container_cpu_usage_seconds_total{id="/"}` to fail out of the box.
+      #
+      # # Drop cgroup metrics with no pod.
+      # - sourceLabels: [id, pod]
+      #   action: drop
+      #   regex: '.+;'
+      # # Drop cgroup metrics with no container.
+      # - sourceLabels: [id, container]
+      #   action: drop
+      #   regex: '.+;'
     # - sourceLabels: [__name__, image]
     #   separator: ;
     #   regex: container_([a-z_]+);
