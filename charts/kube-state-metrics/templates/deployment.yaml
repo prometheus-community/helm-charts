@@ -91,11 +91,16 @@ spec:
         - --telemetry-host={{ .Values.selfMonitor.telemetryHost }}
         {{- end }}
         - --telemetry-port={{ .Values.selfMonitor.telemetryPort | default 8081 }}
-        {{- if .Values.kubeconfig.enabled }}
+        {{- if or (.Values.kubeconfig.enabled) (.Values.volumeMounts) }}
         volumeMounts:
+        {{- if .Values.kubeconfig.enabled }}
         - name: kubeconfig
           mountPath: /opt/k8s/.kube/
           readOnly: true
+        {{- end }}
+        {{- if .Values.volumeMounts }}
+{{ toYaml .Values.volumeMounts | indent 8 }}
+{{- end }}
         {{- end }}
         imagePullPolicy: {{ .Values.image.pullPolicy }}
         image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
@@ -146,9 +151,14 @@ spec:
       topologySpreadConstraints:
 {{ toYaml .Values.topologySpreadConstraints | indent 8 }}
       {{- end }}
-      {{- if .Values.kubeconfig.enabled}}
+      {{- if or (.Values.kubeconfig.enabled) (.Values.volumes) }}
       volumes:
+      {{- if .Values.kubeconfig.enabled}}
         - name: kubeconfig
           secret:
             secretName: {{ template "kube-state-metrics.fullname" . }}-kubeconfig
+      {{- end }}
+      {{- if .Values.volumes }}
+{{ toYaml .Values.volumes | indent 8 }}
+{{- end }}
       {{- end }}
