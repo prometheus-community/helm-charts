@@ -16,6 +16,7 @@ helm repo update
 ```
 
 _See [`helm repo`](https://helm.sh/docs/helm/helm_repo/) for command documentation._
+
 ## Install Chart
 
 ```console
