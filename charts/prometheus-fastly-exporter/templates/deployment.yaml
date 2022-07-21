@@ -32,16 +32,17 @@ spec:
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           args:
-            {{- if not .Values.envTokenFromSecret }}
-            - "-token={{ .Values.token }}"
-            {{- end }}
             {{- range $key, $value := .Values.options }}
             - "-{{ $key }}{{ if $value }}={{ $value }}{{ end }}"
             {{- end }}
-          {{- if .Values.envTokenFromSecret }}
+          {{- if .Values.existingSecret }}
           envFrom:
           - secretRef:
-              name: {{ .Values.envTokenFromSecret }}
+              name: {{ .Values.existingSecret }}
+          {{- else }}
+          env:
+            - name: FASTLY_API_TOKEN
+              value: {{ .Values.token }}
           {{- end }}
           ports:
             - name: http
