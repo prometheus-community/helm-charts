@@ -8,7 +8,7 @@ This chart creates a [Fastly Exporter](https://github.com/fastly/fastly-exporter
 
 - Kubernetes 1.8+ with Beta APIs enabled
 
-## Get Repo Info
+## Get Repository Info
 
 ```console
 helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
