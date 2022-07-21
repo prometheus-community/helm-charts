@@ -32,10 +32,17 @@ spec:
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           args:
+            {{ - if not .Values.envTokenFromSecret }}
             - "-token={{ .Values.token }}"
+            {{- end }}
             {{- range $key, $value := .Values.options }}
             - "-{{ $key }}{{ if $value }}={{ $value }}{{ end }}"
             {{- end }}
+          {{- if .Values.envTokenFromSecret }}
+          envFrom:
+          - secretRef:
+              name: {{ .Values.envTokenFromSecret }}
+          {{- end }}
           ports:
             - name: http
               containerPort: {{ .Values.service.port }}
