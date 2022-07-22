@@ -9,6 +9,10 @@ metadata:
   namespace: {{ template "kube-state-metrics.namespace" . }}
   labels:
     {{- include "kube-state-metrics.labels" . | indent 4 }}
+  {{- if .Values.annotations }}
+  annotations:
+{{ toYaml .Values.annotations | indent 4 }}
+  {{- end }}
 spec:
   selector:
     matchLabels:
@@ -36,7 +40,7 @@ spec:
       priorityClassName: {{ .Values.priorityClassName }}
     {{- end }}
       containers:
-      - name: {{ .Chart.Name }}
+      - name: {{ template "kube-state-metrics.name" . }}
         {{- if .Values.autosharding.enabled }}
         env:
         - name: POD_NAME
@@ -50,9 +54,7 @@ spec:
         {{- end }}
         args:
         {{-  if .Values.extraArgs  }}
-        {{- range .Values.extraArgs  }}
-        - {{ . }}
-        {{- end  }}
+        {{- .Values.extraArgs | toYaml | nindent 8 }}
         {{-  end  }}
         {{- if .Values.service.port }}
         - --port={{ .Values.service.port | default 8080}}
@@ -139,6 +141,10 @@ spec:
       {{- if .Values.tolerations }}
       tolerations:
 {{ toYaml .Values.tolerations | indent 8 }}
+      {{- end }}
+      {{- if .Values.topologySpreadConstraints }}
+      topologySpreadConstraints:
+{{ toYaml .Values.topologySpreadConstraints | indent 8 }}
       {{- end }}
       {{- if .Values.kubeconfig.enabled}}
       volumes:

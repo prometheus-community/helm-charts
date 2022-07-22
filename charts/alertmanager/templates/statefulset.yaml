@@ -47,6 +47,9 @@ spec:
       affinity:
         {{- toYaml . | nindent 8 }}
     {{- end }}
+    {{- with .Values.topologySpreadConstraints }}
+      topologySpreadConstraints: {{- toYaml . | nindent 8 }}
+    {{- end }}
     {{- with .Values.tolerations }}
       tolerations:
         {{- toYaml . | nindent 8 }}
@@ -89,11 +92,11 @@ spec:
           args:
             - --storage.path=/alertmanager
             - --config.file=/etc/alertmanager/alertmanager.yml
-            {{- if or (gt .Values.replicaCount 1.0) (.Values.additionalPeers) }}
+            {{- if or (gt (int .Values.replicaCount) 1) (.Values.additionalPeers) }}
             - --cluster.advertise-address=[$(POD_IP)]:{{ $svcClusterPort }}
             - --cluster.listen-address=0.0.0.0:{{ $svcClusterPort }}
             {{- end }}
-            {{- if gt .Values.replicaCount 1.0}}
+            {{- if gt (int .Values.replicaCount) 1}}
             {{- $fullName := include "alertmanager.fullname" . }}
             {{- range $i := until (int .Values.replicaCount) }}
             - --cluster.peer={{ $fullName }}-{{ $i }}.{{ $fullName }}-headless:{{ $svcClusterPort }}
