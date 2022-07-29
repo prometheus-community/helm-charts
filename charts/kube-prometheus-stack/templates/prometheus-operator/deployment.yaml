@@ -89,7 +89,7 @@ spec:
             - --thanos-default-base-image={{ .Values.prometheusOperator.thanosImage.repository }}:{{ .Values.prometheusOperator.thanosImage.tag }}@sha256:{{ .Values.prometheusOperator.thanosImage.sha }}
             {{- else }}
             - --thanos-default-base-image={{ .Values.prometheusOperator.thanosImage.repository }}:{{ .Values.prometheusOperator.thanosImage.tag }}
-            {{- end }} 
+            {{- end }}
             {{- if .Values.prometheusOperator.thanosRulerInstanceNamespaces }}
             - --thanos-ruler-instance-namespaces={{ .Values.prometheusOperator.thanosRulerInstanceNamespaces | join "," }}
             {{- end }}
@@ -112,6 +112,10 @@ spec:
           ports:
             - containerPort: 8080
               name: http
+          {{- end }}
+          {{- if .Values.prometheusOperator.containersSecurityContext }}
+          securityContext:
+          {{ toYaml .Values.prometheusOperator.containersSecurityContext | indent 12 }}
           {{- end }}
           resources:
 {{ toYaml .Values.prometheusOperator.resources | indent 12 }}
