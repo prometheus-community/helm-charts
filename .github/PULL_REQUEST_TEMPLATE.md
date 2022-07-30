@@ -20,9 +20,12 @@ Thanks.
 For fast feedback, please @-mention maintainers that are listed in the Chart.yaml file.
 
 Please make sure you test your changes before you push them.
-Once pushed, GitHub Actions will run across your changes and do some initial checks and linting.
+Once the PR is opened, GitHub Actions will run across your changes and do some initial checks and linting.
 These checks run very quickly.
 Please check the results.
+If you are contributing to this repository for the first time, a maintainer will need to approve those checks to run.
+They are automatically requested as reviewers and will approve the workflows or ask you for changes once they get to it.
+
 We would like these checks to pass before we even continue reviewing your changes.
 -->
 #### What this PR does / why we need it:
