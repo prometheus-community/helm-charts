@@ -29,6 +29,7 @@ They are automatically requested as reviewers and will approve the workflows or 
 We would like these checks to pass before we even continue reviewing your changes.
 -->
 
+<!-- markdownlint-disable-next-line first-line-heading -->
 #### What this PR does / why we need it
 
 #### Which issue this PR fixes
@@ -40,6 +41,7 @@ We would like these checks to pass before we even continue reviewing your change
 #### Special notes for your reviewer
 
 #### Checklist
+
 <!-- [Place an '[x]' (no spaces) in all applicable fields. Please remove unrelated fields.] -->
 - [ ] [DCO](https://github.com/prometheus-community/helm-charts/blob/main/CONTRIBUTING.md#sign-off-your-work) signed
 - [ ] Chart Version bumped
