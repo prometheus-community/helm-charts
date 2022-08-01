@@ -82,7 +82,6 @@ stackdriver:
     filters:
       - filter-1
       - filter-2
-
 ```
 
 #### 2.x to 3.x
