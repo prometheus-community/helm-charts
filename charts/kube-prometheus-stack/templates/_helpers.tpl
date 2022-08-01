@@ -29,14 +29,22 @@ The longest name that gets created adds and extra 37 characters, so truncation s
 {{- printf "%s-operator" (include "kube-prometheus-stack.fullname" .) -}}
 {{- end }}
 
-{{/* Fullname suffixed with prometheus */}}
-{{- define "kube-prometheus-stack.prometheus.fullname" -}}
-{{- printf "%s-prometheus" (include "kube-prometheus-stack.fullname" .) -}}
+{{/* Prometheus custom resource instance name */}}
+{{- define "kube-prometheus-stack.prometheus.crname" -}}
+{{- if .Values.cleanPrometheusOperatorObjectNames }}
+{{- include "kube-prometheus-stack.fullname" . }}
+{{- else }}
+{{- print (include "kube-prometheus-stack.fullname" .) "-prometheus" }}
+{{- end }}
 {{- end }}
 
-{{/* Fullname suffixed with alertmanager */}}
-{{- define "kube-prometheus-stack.alertmanager.fullname" -}}
-{{- printf "%s-alertmanager" (include "kube-prometheus-stack.fullname" .) -}}
+{{/* Alertmanager custom resource instance name */}}
+{{- define "kube-prometheus-stack.alertmanager.crname" -}}
+{{- if .Values.cleanPrometheusOperatorObjectNames }}
+{{- include "kube-prometheus-stack.fullname" . }}
+{{- else }}
+{{- print (include "kube-prometheus-stack.fullname" .) "-alertmanager" -}}
+{{- end }}
 {{- end }}
 
 {{/* Fullname suffixed with thanos-ruler */}}
@@ -75,7 +83,7 @@ heritage: {{ $.Release.Service | quote }}
 {{/* Create the name of prometheus service account to use */}}
 {{- define "kube-prometheus-stack.prometheus.serviceAccountName" -}}
 {{- if .Values.prometheus.serviceAccount.create -}}
-    {{ default (include "kube-prometheus-stack.prometheus.fullname" .) .Values.prometheus.serviceAccount.name }}
+    {{ default (print (include "kube-prometheus-stack.fullname" .) "-prometheus") .Values.prometheus.serviceAccount.name }}
 {{- else -}}
     {{ default "default" .Values.prometheus.serviceAccount.name }}
 {{- end -}}
@@ -84,7 +92,7 @@ heritage: {{ $.Release.Service | quote }}
 {{/* Create the name of alertmanager service account to use */}}
 {{- define "kube-prometheus-stack.alertmanager.serviceAccountName" -}}
 {{- if .Values.alertmanager.serviceAccount.create -}}
-    {{ default (include "kube-prometheus-stack.alertmanager.fullname" .) .Values.alertmanager.serviceAccount.name }}
+    {{ default (print (include "kube-prometheus-stack.fullname" .) "-alertmanager") .Values.alertmanager.serviceAccount.name }}
 {{- else -}}
     {{ default "default" .Values.alertmanager.serviceAccount.name }}
 {{- end -}}
@@ -232,7 +240,7 @@ global:
 */}}
 {{- define "kube-prometheus-stack.imagePullSecrets" -}}
 {{- range .Values.global.imagePullSecrets }}
-  {{- if eq (typeOf .) "map[string]interface {}" }} 
+  {{- if eq (typeOf .) "map[string]interface {}" }}
 - {{ toYaml . | trim }}
   {{- else }}
 - name: {{ . }}
