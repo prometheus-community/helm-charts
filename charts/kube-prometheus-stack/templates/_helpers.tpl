@@ -83,8 +83,7 @@ heritage: {{ $.Release.Service | quote }}
 {{/* Create the name of prometheus service account to use */}}
 {{- define "kube-prometheus-stack.prometheus.serviceAccountName" -}}
 {{- if .Values.prometheus.serviceAccount.create -}}
-    {{ default (print (include "kube-prometheus-stack.fullname" .) "-prometheus")
-        .Values.prometheus.serviceAccount.name }}
+    {{ default (print (include "kube-prometheus-stack.fullname" .) "-prometheus") .Values.prometheus.serviceAccount.name }}
 {{- else -}}
     {{ default "default" .Values.prometheus.serviceAccount.name }}
 {{- end -}}
@@ -93,8 +92,7 @@ heritage: {{ $.Release.Service | quote }}
 {{/* Create the name of alertmanager service account to use */}}
 {{- define "kube-prometheus-stack.alertmanager.serviceAccountName" -}}
 {{- if .Values.alertmanager.serviceAccount.create -}}
-    {{ default (print (include "kube-prometheus-stack.fullname" .) "-alertmanager")
-        .Values.alertmanager.serviceAccount.name }}
+    {{ default (print (include "kube-prometheus-stack.fullname" .) "-alertmanager") .Values.alertmanager.serviceAccount.name }}
 {{- else -}}
     {{ default "default" .Values.alertmanager.serviceAccount.name }}
 {{- end -}}
