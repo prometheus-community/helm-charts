@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
 """Fetch alerting and aggregation rules from provided urls into this chart."""
+import json
 import re
 import textwrap
 from os import makedirs
 
+import _jsonnet
 import requests
 import yaml
 from yaml.representer import SafeRepresenter
@@ -61,9 +63,10 @@ charts = [
         'min_kubernetes': '1.14.0-0'
     },
     {
-        'source': 'https://raw.githubusercontent.com/etcd-io/website/master/content/en/docs/v3.4/op-guide/etcd3_alert.rules.yml',
+        'source': 'https://raw.githubusercontent.com/etcd-io/etcd/main/contrib/mixin/mixin.libsonnet',
         'destination': '../templates/prometheus/rules-1.14',
-        'min_kubernetes': '1.14.0-0'
+        'min_kubernetes': '1.14.0-0',
+        'is_mixin': True
     },
 ]
 
@@ -368,13 +371,16 @@ def main():
             print('Skipping the file, response code %s not equals 200' % response.status_code)
             continue
         raw_text = response.text
-        yaml_text = yaml.full_load(raw_text)
+        if chart.get('is_mixin'):
+            alerts = json.loads(_jsonnet.evaluate_snippet(chart['source'], raw_text + '.prometheusAlerts'))
+        else:
+            alerts = yaml.full_load(raw_text)
 
         if ('max_kubernetes' not in chart):
             chart['max_kubernetes']="9.9.9-9"
 
         # etcd workaround, their file don't have spec level
-        groups = yaml_text['spec']['groups'] if yaml_text.get('spec') else yaml_text['groups']
+        groups = alerts['spec']['groups'] if alerts.get('spec') else alerts['groups']
         for group in groups:
             write_group_to_file(group, chart['source'], chart['destination'], chart['min_kubernetes'], chart['max_kubernetes'])
 
