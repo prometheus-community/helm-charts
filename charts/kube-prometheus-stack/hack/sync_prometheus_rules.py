@@ -93,7 +93,7 @@ condition_map = {
     'kubernetes-system-kube-proxy': ' .Values.kubeProxy.enabled .Values.defaultRules.rules.kubeProxy',
     'kubernetes-system-apiserver': ' .Values.defaultRules.rules.kubernetesSystem', # kubernetes-system was split into more groups in 1.14, one of them is kubernetes-system-apiserver
     'kubernetes-system-kubelet': ' .Values.defaultRules.rules.kubernetesSystem', # kubernetes-system was split into more groups in 1.14, one of them is kubernetes-system-kubelet
-    'kubernetes-system-controller-manager': ' .Values.kubeControllerManager.enabled',
+    'kubernetes-system-controller-manager': ' .Values.kubeControllerManager.enabled .Values.defaultRules.rules.kubeControllerManager',
     'kubernetes-system-scheduler': ' .Values.kubeScheduler.enabled .Values.defaultRules.rules.kubeScheduler',
     'node-exporter.rules': ' .Values.defaultRules.rules.nodeExporterRecording',
     'node-exporter': ' .Values.defaultRules.rules.nodeExporterAlerting',
