@@ -45,6 +45,10 @@ helm upgrade [RELEASE_NAME] [CHART] --install
 
 _See [helm upgrade](https://helm.sh/docs/helm/helm_upgrade/) for command documentation._
 
+### Fastly token
+
+To use the chart, ensure the `fastly.token` is populated with a valid [Fastly API token](https://docs.fastly.com/guides/account-management-and-security/using-api-tokens#creating-api-tokens) or an existing secret (in the releases namespace) containing the key defined on `existingSecret.key`, with the token is referred via `existingSecret.name`. If no secret key is defined, the default value is `fastly-api-token`.
+
 ## Configuration
 
 See [Customizing the Chart Before Installing](https://helm.sh/docs/intro/using_helm/#customizing-the-chart-before-installing). To see all configurable options with detailed comments, visit the chart's [values.yaml](./values.yaml), or run these configuration commands:
