@@ -72,6 +72,18 @@ _See [helm upgrade](https://helm.sh/docs/helm/helm_upgrade/) for command documen
 
 A major chart version change (like v1.2.3 -> v2.0.0) indicates that there is an incompatible breaking change needing manual actions.
 
+#### 3.x to 4.x
+
+The Helm parameter `stackdriver.metrics.filters` is changed to support multiple values instead of a single value. If you are using this parameter, please adjust.
+
+```console
+stackdriver:
+  metrics:
+    filters:
+      - filter-1
+      - filter-2
+```
+
 #### 2.x to 3.x
 
 Due to a change in deployment labels, **removal** of its deployment needs to done manually prior to upgrading:
