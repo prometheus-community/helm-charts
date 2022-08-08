@@ -37,11 +37,11 @@ Common labels
 {{- define "prometheus-fastly-exporter.labels" -}}
 helm.sh/chart: {{ include "prometheus-fastly-exporter.chart" . }}
 {{ include "prometheus-fastly-exporter.selectorLabels" . }}
-{{- if .Chart.AppVersion -}}
+{{- if .Chart.AppVersion }}
 app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
-{{- end -}}
+{{- end }}
 app.kubernetes.io/managed-by: {{ .Release.Service }}
-{{- end -}}
+{{- end }}
 
 {{/*
 Selector labels
@@ -49,7 +49,7 @@ Selector labels
 {{- define "prometheus-fastly-exporter.selectorLabels" -}}
 app.kubernetes.io/name: {{ include "prometheus-fastly-exporter.name" . }}
 app.kubernetes.io/instance: {{ .Release.Name }}
-{{- end -}}
+{{- end }}
 
 {{/*
 Create the name of the service account to use
