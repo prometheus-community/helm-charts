@@ -1,0 +1,77 @@
+{{- $global := . }}
+{{- $base := dict "resources" .Values.resources "nodeSelector" .Values.nodeSelector "affinity" .Values.affinity "tolerations" .Values.tolerations "config" .Values.config }}
+{{- $items := prepend .Values.extraInstances $base }}
+{{- range $idx, $item := $items }}
+{{- $config := mergeOverwrite $item.config $global.Values.common.config }}
+{{- $res := set $item "config" $config }}
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: {{ template "prometheus-smartctl-exporter.fullname" $global }}-{{ $idx }}
+  labels:
+    {{- include "prometheus-smartctl-exporter.labels" $global | nindent 4 }}
+    idx: i{{ $idx }}
+spec:
+  updateStrategy:
+    rollingUpdate:
+      maxUnavailable: 1
+    type: RollingUpdate
+  selector:
+    matchLabels:
+      {{- include "prometheus-smartctl-exporter.selectorLabels" $global | nindent 6 }}
+      idx: i{{ $idx }}
+  template:
+    metadata:
+      {{- with $global.Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "prometheus-smartctl-exporter.selectorLabels" $global | nindent 8 }}
+        idx: i{{ $idx }}
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum | quote }}
+    spec:
+      containers:
+      - image: "{{ $global.Values.image.repository }}:{{ $global.Values.image.tag | default $global.Chart.AppVersion }}"
+        imagePullPolicy: {{ $global.Values.image.pullPolicy }}
+        name: main
+        securityContext:
+          privileged: true
+        ports:
+        - name: http
+          containerPort: 9633
+          protocol: TCP
+        resources:
+{{ toYaml $item.resources | indent 10 }}
+        volumeMounts:
+        - mountPath: /hostdev
+          name: dev
+        - mountPath: /etc/smartctl_exporter.yaml
+          subPath: smartctl_exporter.yaml
+          name: config
+      dnsPolicy: ClusterFirst
+      hostNetwork: true
+      restartPolicy: Always
+      serviceAccountName: {{ template "prometheus-smartctl-exporter.fullname" $global }}
+      volumes:
+      - configMap:
+          name: {{ template "prometheus-smartctl-exporter.fullname" $global }}-{{ $idx }}
+        name: config
+      - hostPath:
+          path: /dev
+        name: dev
+    {{- with $item.nodeSelector }}
+      nodeSelector:
+{{ toYaml . | indent 8 }}
+    {{- end }}
+    {{- with $item.affinity }}
+      affinity:
+{{ toYaml . | indent 8 }}
+    {{- end }}
+    {{- with $item.tolerations }}
+      tolerations:
+{{ toYaml . | indent 8 }}
+    {{- end }}
+{{- end }}
