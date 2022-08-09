@@ -56,6 +56,8 @@ spec:
         - name: {{ template "prometheus.name" . }}-{{ .Values.server.name }}-{{ .Values.configmapReload.prometheus.name }}
           image: "{{ .Values.configmapReload.prometheus.image.repository }}:{{ .Values.configmapReload.prometheus.image.tag }}"
           imagePullPolicy: "{{ .Values.configmapReload.prometheus.image.pullPolicy }}"
+          securityContext:
+            {{- toYaml .Values.configmapReload.prometheus.containerSecurityContext | nindent 12 }}
           args:
             - --volume-dir=/etc/config
             - --webhook-url=http://127.0.0.1:9090{{ .Values.server.prefixURL }}/-/reload
@@ -86,6 +88,8 @@ spec:
         - name: {{ template "prometheus.name" . }}-{{ .Values.server.name }}
           image: "{{ .Values.server.image.repository }}:{{ .Values.server.image.tag }}"
           imagePullPolicy: "{{ .Values.server.image.pullPolicy }}"
+          securityContext:
+            {{- toYaml .Values.server.containerSecurityContext | nindent 12 }}
           {{- if .Values.server.env }}
           env:
 {{ toYaml .Values.server.env | indent 12}}
@@ -129,6 +133,10 @@ spec:
               path: {{ .Values.server.prefixURL }}/-/ready
               port: 9090
               scheme: {{ .Values.server.probeScheme }}
+              {{- with .Values.server.probeHeaders }}
+              httpHeaders:
+{{- toYaml . | nindent 14 }}
+              {{- end }}
             {{- else }}
             tcpSocket:
               port: 9090
@@ -144,6 +152,10 @@ spec:
               path: {{ .Values.server.prefixURL }}/-/healthy
               port: 9090
               scheme: {{ .Values.server.probeScheme }}
+              {{- with .Values.server.probeHeaders }}
+              httpHeaders:
+{{- toYaml . | nindent 14 }}
+              {{- end }}
             {{- else }}
             tcpSocket:
               port: 9090
@@ -275,6 +287,10 @@ spec:
         {{- if .Values.server.persistentVolume.annotations }}
         annotations:
 {{ toYaml .Values.server.persistentVolume.annotations | indent 10 }}
+        {{- end }}
+        {{- if .Values.server.persistentVolume.labels }}
+        labels:
+{{ toYaml .Values.server.persistentVolume.labels | indent 10 }}
         {{- end }}
       spec:
         accessModes:

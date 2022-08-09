@@ -29,6 +29,9 @@ spec:
 {{- if not (.Values.defaultRules.disabled.PrometheusOperatorListErrors | default false) }}
     - alert: PrometheusOperatorListErrors
       annotations:
+{{- if .Values.defaultRules.additionalRuleAnnotations }}
+{{ toYaml .Values.defaultRules.additionalRuleAnnotations | indent 8 }}
+{{- end }}
         description: Errors while performing List operations in controller {{`{{`}}$labels.controller{{`}}`}} in {{`{{`}}$labels.namespace{{`}}`}} namespace.
         runbook_url: {{ .Values.defaultRules.runbookUrl }}/prometheus-operator/prometheusoperatorlisterrors
         summary: Errors while performing list operations in controller.
@@ -43,6 +46,9 @@ spec:
 {{- if not (.Values.defaultRules.disabled.PrometheusOperatorWatchErrors | default false) }}
     - alert: PrometheusOperatorWatchErrors
       annotations:
+{{- if .Values.defaultRules.additionalRuleAnnotations }}
+{{ toYaml .Values.defaultRules.additionalRuleAnnotations | indent 8 }}
+{{- end }}
         description: Errors while performing watch operations in controller {{`{{`}}$labels.controller{{`}}`}} in {{`{{`}}$labels.namespace{{`}}`}} namespace.
         runbook_url: {{ .Values.defaultRules.runbookUrl }}/prometheus-operator/prometheusoperatorwatcherrors
         summary: Errors while performing watch operations in controller.
@@ -57,6 +63,9 @@ spec:
 {{- if not (.Values.defaultRules.disabled.PrometheusOperatorSyncFailed | default false) }}
     - alert: PrometheusOperatorSyncFailed
       annotations:
+{{- if .Values.defaultRules.additionalRuleAnnotations }}
+{{ toYaml .Values.defaultRules.additionalRuleAnnotations | indent 8 }}
+{{- end }}
         description: Controller {{`{{`}} $labels.controller {{`}}`}} in {{`{{`}} $labels.namespace {{`}}`}} namespace fails to reconcile {{`{{`}} $value {{`}}`}} objects.
         runbook_url: {{ .Values.defaultRules.runbookUrl }}/prometheus-operator/prometheusoperatorsyncfailed
         summary: Last controller reconciliation failed
@@ -71,6 +80,9 @@ spec:
 {{- if not (.Values.defaultRules.disabled.PrometheusOperatorReconcileErrors | default false) }}
     - alert: PrometheusOperatorReconcileErrors
       annotations:
+{{- if .Values.defaultRules.additionalRuleAnnotations }}
+{{ toYaml .Values.defaultRules.additionalRuleAnnotations | indent 8 }}
+{{- end }}
         description: '{{`{{`}} $value | humanizePercentage {{`}}`}} of reconciling operations failed for {{`{{`}} $labels.controller {{`}}`}} controller in {{`{{`}} $labels.namespace {{`}}`}} namespace.'
         runbook_url: {{ .Values.defaultRules.runbookUrl }}/prometheus-operator/prometheusoperatorreconcileerrors
         summary: Errors while reconciling controller.
@@ -85,6 +97,9 @@ spec:
 {{- if not (.Values.defaultRules.disabled.PrometheusOperatorNodeLookupErrors | default false) }}
     - alert: PrometheusOperatorNodeLookupErrors
       annotations:
+{{- if .Values.defaultRules.additionalRuleAnnotations }}
+{{ toYaml .Values.defaultRules.additionalRuleAnnotations | indent 8 }}
+{{- end }}
         description: Errors while reconciling Prometheus in {{`{{`}} $labels.namespace {{`}}`}} Namespace.
         runbook_url: {{ .Values.defaultRules.runbookUrl }}/prometheus-operator/prometheusoperatornodelookuperrors
         summary: Errors while reconciling Prometheus.
@@ -99,10 +114,13 @@ spec:
 {{- if not (.Values.defaultRules.disabled.PrometheusOperatorNotReady | default false) }}
     - alert: PrometheusOperatorNotReady
       annotations:
+{{- if .Values.defaultRules.additionalRuleAnnotations }}
+{{ toYaml .Values.defaultRules.additionalRuleAnnotations | indent 8 }}
+{{- end }}
         description: Prometheus operator in {{`{{`}} $labels.namespace {{`}}`}} namespace isn't ready to reconcile {{`{{`}} $labels.controller {{`}}`}} resources.
         runbook_url: {{ .Values.defaultRules.runbookUrl }}/prometheus-operator/prometheusoperatornotready
         summary: Prometheus operator not ready
-      expr: min by(namespace, controller) (max_over_time(prometheus_operator_ready{job="{{ $operatorJob }}",namespace="{{ $namespace }}"}[5m]) == 0)
+      expr: min by (controller,namespace) (max_over_time(prometheus_operator_ready{job="{{ $operatorJob }}",namespace="{{ $namespace }}"}[5m]) == 0)
       for: 5m
       labels:
         severity: warning
@@ -113,6 +131,9 @@ spec:
 {{- if not (.Values.defaultRules.disabled.PrometheusOperatorRejectedResources | default false) }}
     - alert: PrometheusOperatorRejectedResources
       annotations:
+{{- if .Values.defaultRules.additionalRuleAnnotations }}
+{{ toYaml .Values.defaultRules.additionalRuleAnnotations | indent 8 }}
+{{- end }}
         description: Prometheus operator in {{`{{`}} $labels.namespace {{`}}`}} namespace rejected {{`{{`}} printf "%0.0f" $value {{`}}`}} {{`{{`}} $labels.controller {{`}}`}}/{{`{{`}} $labels.resource {{`}}`}} resources.
         runbook_url: {{ .Values.defaultRules.runbookUrl }}/prometheus-operator/prometheusoperatorrejectedresources
         summary: Resources rejected by Prometheus operator

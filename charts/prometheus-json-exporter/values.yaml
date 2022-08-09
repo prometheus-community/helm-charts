@@ -28,6 +28,9 @@ podAnnotations: []
 podSecurityContext: {}
 # fsGroup: 2000
 
+# podLabels:
+  # Custom labels for the pod
+
 securityContext: {}
 # capabilities:
 #   drop:
@@ -107,49 +110,51 @@ affinity: []
 configuration:
   config: |
     ---
-    metrics:
-      - name: example_global_value
-        path: "{ .counter }"
-        help: Example of a top-level global value scrape in the json
-        labels:
-          environment: beta # static label
-          location: "planet-{.location}"          # dynamic label
+    modules:
+      default:
+        metrics:
+          - name: example_global_value
+            path: "{ .counter }"
+            help: Example of a top-level global value scrape in the json
+            labels:
+              environment: beta # static label
+              location: "planet-{.location}"          # dynamic label
 
-      - name: example_value
-        type: object
-        help: Example of sub-level value scrapes from a json
-        path: '{.values[?(@.state == "ACTIVE")]}'
-        labels:
-          environment: beta # static label
-          id: '{.id}'          # dynamic label
-        values:
-          active: 1      # static value
-          count: '{.count}' # dynamic value
-          boolean: '{.some_boolean}'
+          - name: example_value
+            type: object
+            help: Example of sub-level value scrapes from a json
+            path: '{.values[?(@.state == "ACTIVE")]}'
+            labels:
+              environment: beta # static label
+              id: '{.id}'          # dynamic label
+            values:
+              active: 1      # static value
+              count: '{.count}' # dynamic value
+              boolean: '{.some_boolean}'
 
-    headers:
-      X-Dummy: my-test-header
+        headers:
+          X-Dummy: my-test-header
 
-    # If 'body' is set, it will be sent by the exporter as the body content in the scrape request. The HTTP method will also be set as 'POST' in this case.
-    # body:
-    #   content: |
-    #     {"time_diff": "1m25s", "anotherVar": "some value"}
+        # If 'body' is set, it will be sent by the exporter as the body content in the scrape request. The HTTP method will also be set as 'POST' in this case.
+        # body:
+        #   content: |
+        #     {"time_diff": "1m25s", "anotherVar": "some value"}
 
-    # The body content can also be a Go Template (https://golang.org/pkg/text/template), with all the functions from the Sprig library (https://masterminds.github.io/sprig/) available. All the query parameters sent by prometheus in the scrape query to the exporter, are available in the template.
-    # body:
-    #   content: |
-    #     {"time_diff": "{{ duration `95` }}","anotherVar": "{{ .myVal | first }}"}
-    #   templatize: true
+        # The body content can also be a Go Template (https://golang.org/pkg/text/template), with all the functions from the Sprig library (https://masterminds.github.io/sprig/) available. All the query parameters sent by prometheus in the scrape query to the exporter, are available in the template.
+        # body:
+        #   content: |
+        #     {"time_diff": "{{ duration `95` }}","anotherVar": "{{ .myVal | first }}"}
+        #   templatize: true
 
-    # For full http client config parameters, ref: https://pkg.go.dev/github.com/prometheus/common/config?tab=doc#HTTPClientConfig
-    #
-    # http_client_config:
-    #   tls_config:
-    #     insecure_skip_verify: true
-    #   basic_auth:
-    #     username: myuser
-    #     #password: veryverysecret
-    #     password_file: /tmp/mysecret.txt
+        # For full http client config parameters, ref: https://pkg.go.dev/github.com/prometheus/common/config?tab=doc#HTTPClientConfig
+        #
+        # http_client_config:
+        #   tls_config:
+        #     insecure_skip_verify: true
+        #   basic_auth:
+        #     username: myuser
+        #     #password: veryverysecret
+        #     password_file: /tmp/mysecret.txt
 
 ## Custom PrometheusRules to be defined
 ## ref: https://github.com/coreos/prometheus-operator#customresourcedefinitions
@@ -158,3 +163,13 @@ prometheusRule:
   additionalLabels: {}
   namespace: ""
   rules: []
+
+additionalVolumes: []
+  # - name: password-file
+  #   secret:
+  #     secretName: secret-name
+
+additionalVolumeMounts: []
+  # - name: password-file
+  #   mountPath: "/tmp/mysecret.txt"
+  #   subPath: mysecret.txt

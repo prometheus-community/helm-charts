@@ -6,6 +6,9 @@ metadata:
   namespace: {{ template "kube-prometheus-stack.namespace" . }}
   labels:
     app: {{ template "kube-prometheus-stack.name" . }}-kubelet
+  {{- with .Values.kubelet.serviceMonitor.additionalLabels }}
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
 {{- include "kube-prometheus-stack.labels" . | indent 4 }}
 spec:
   endpoints:
@@ -155,6 +158,28 @@ spec:
 {{- if .Values.kubelet.serviceMonitor.cAdvisorRelabelings }}
     relabelings:
 {{ tpl (toYaml .Values.kubelet.serviceMonitor.cAdvisorRelabelings | indent 4) . }}
+{{- end }}
+{{- if .Values.kubelet.serviceMonitor.probes }}
+  - port: http-metrics
+    path: /metrics/probes
+    {{- if .Values.kubelet.serviceMonitor.interval }}
+    interval: {{ .Values.kubelet.serviceMonitor.interval }}
+    {{- end }}
+    {{- if .Values.kubelet.serviceMonitor.proxyUrl }}
+    proxyUrl: {{ .Values.kubelet.serviceMonitor.proxyUrl }}
+    {{- end }}
+    {{- if .Values.kubelet.serviceMonitor.scrapeTimeout }}
+    scrapeTimeout: {{ .Values.kubelet.serviceMonitor.scrapeTimeout }}
+    {{- end }}
+    honorLabels: true
+{{- if .Values.kubelet.serviceMonitor.probesMetricRelabelings }}
+    metricRelabelings:
+{{ tpl (toYaml .Values.kubelet.serviceMonitor.probesMetricRelabelings | indent 4) . }}
+{{- end }}
+{{- if .Values.kubelet.serviceMonitor.probesRelabelings }}
+    relabelings:
+{{ tpl (toYaml .Values.kubelet.serviceMonitor.probesRelabelings | indent 4) . }}
+{{- end }}
 {{- end }}
 {{- if .Values.kubelet.serviceMonitor.resource }}
   - port: http-metrics

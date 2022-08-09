@@ -36,19 +36,27 @@ spec:
             {{- toYaml .Values.securityContext | nindent 12 }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
-{{- with .Values.collectors }}
-          args: [
-{{- range $index, $element := . }}
-{{- if and (typeIs "bool" $element) $element }}
-{{ printf "--collect.%s" $index | quote | indent 12 }},
-{{- else if and (typeIs "bool" $element) (not $element) }}
-{{ printf "--no-collect.%s" $index | quote | indent 12 }},
-{{- else }}
-{{ printf "--collect.%s" $index | quote | indent 12 }}, {{ $element | quote }},
-{{- end }}
-{{- end }}
-          ]
-{{- end }}
+          {{- if or .Values.config .Values.collectors }}
+          args:
+          {{- if .Values.config.logLevel }}
+            - "--log.level={{ .Values.config.logLevel }}"
+          {{- end}}
+          {{- if .Values.config.logFormat }}
+            - "--log.format={{ .Values.config.logFormat }}"
+          {{- end}}
+          {{- with .Values.collectors }}
+          {{- range $index, $element := . }}
+          {{- if and (typeIs "bool" $element) $element }}
+            - "--collect.{{ $index }}"
+          {{- else if and (typeIs "bool" $element) (not $element) }}
+            - "--no-collect.{{ $index }}"
+          {{- else }}
+            - "--collect.{{ $index }}"
+            - {{ $element | quote }}
+          {{- end }}
+          {{- end }}
+          {{- end }}
+          {{- end }}
           {{- if not .Values.mysql.existingSecret }}
           env:
             - name: DB_PASSWORD
@@ -86,6 +94,9 @@ spec:
           imagePullPolicy: "{{ .Values.cloudsqlproxy.image.PullPolicy  }}"
           command: ["/cloud_sql_proxy",
                     "-instances={{ .Values.cloudsqlproxy.instanceConnectionName }}=tcp:{{ .Values.cloudsqlproxy.port }}",
+                    {{- if .Values.cloudsqlproxy.ipAddressTypes }}
+                    "-ip_address_types={{ .Values.cloudsqlproxy.ipAddressTypes }}",
+                    {{- end }}
                     "-credential_file=/secrets/cloudsql/credentials.json"]
           livenessProbe:
             exec:

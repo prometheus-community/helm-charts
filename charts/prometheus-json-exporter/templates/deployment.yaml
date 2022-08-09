@@ -19,6 +19,9 @@ spec:
       {{- end }}
       labels:
         {{- include "prometheus-json-exporter.selectorLabels" . | nindent 8 }}
+        {{- if .Values.podLabels }}
+          {{ toYaml .Values.podLabels | nindent 8 }}
+        {{- end }}
     spec:
       {{- with .Values.imagePullSecrets }}
       imagePullSecrets:
@@ -51,6 +54,9 @@ spec:
             - name: config-configmap-volume
               mountPath: /config.yml
               subPath: config.yml
+          {{- with .Values.additionalVolumeMounts }}
+            {{- toYaml . | nindent 12 }}
+          {{- end  }}
       volumes:
       - name: config-configmap-volume
         configMap:
@@ -58,6 +64,9 @@ spec:
           items:
             - key: config.yml
               path: config.yml
+      {{- with .Values.additionalVolumes }}
+        {{- toYaml . | nindent 6 }}
+      {{- end }}
       {{- with .Values.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}

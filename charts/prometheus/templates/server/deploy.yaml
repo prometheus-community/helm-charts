@@ -56,6 +56,8 @@ spec:
         - name: {{ template "prometheus.name" . }}-{{ .Values.server.name }}-{{ .Values.configmapReload.prometheus.name }}
           image: "{{ .Values.configmapReload.prometheus.image.repository }}:{{ .Values.configmapReload.prometheus.image.tag }}"
           imagePullPolicy: "{{ .Values.configmapReload.prometheus.image.pullPolicy }}"
+          securityContext:
+            {{- toYaml .Values.configmapReload.prometheus.containerSecurityContext | nindent 12 }}
           args:
             - --volume-dir=/etc/config
             - --webhook-url=http://127.0.0.1:9090{{ .Values.server.prefixURL }}/-/reload
@@ -86,6 +88,8 @@ spec:
         - name: {{ template "prometheus.name" . }}-{{ .Values.server.name }}
           image: "{{ .Values.server.image.repository }}:{{ .Values.server.image.tag }}"
           imagePullPolicy: "{{ .Values.server.image.pullPolicy }}"
+          securityContext:
+            {{- toYaml .Values.server.containerSecurityContext | nindent 12 }}
           {{- if .Values.server.env }}
           env:
 {{ toYaml .Values.server.env | indent 12}}
@@ -129,12 +133,9 @@ spec:
               path: {{ .Values.server.prefixURL }}/-/ready
               port: 9090
               scheme: {{ .Values.server.probeScheme }}
-              {{- if .Values.server.probeHeaders }}
+              {{- with .Values.server.probeHeaders }}
               httpHeaders:
-              {{- range .Values.server.probeHeaders}}
-              - name: {{ .name }}
-                value: {{ .value }}
-              {{- end }}
+{{- toYaml . | nindent 14 }}
               {{- end }}
             {{- else }}
             tcpSocket:
@@ -151,12 +152,9 @@ spec:
               path: {{ .Values.server.prefixURL }}/-/healthy
               port: 9090
               scheme: {{ .Values.server.probeScheme }}
-              {{- if .Values.server.probeHeaders }}
+              {{- with .Values.server.probeHeaders }}
               httpHeaders:
-              {{- range .Values.server.probeHeaders}}
-              - name: {{ .name }}
-                value: {{ .value }}
-              {{- end }}
+{{- toYaml . | nindent 14 }}
               {{- end }}
             {{- else }}
             tcpSocket:

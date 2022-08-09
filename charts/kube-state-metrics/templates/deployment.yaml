@@ -9,6 +9,10 @@ metadata:
   namespace: {{ template "kube-state-metrics.namespace" . }}
   labels:
     {{- include "kube-state-metrics.labels" . | indent 4 }}
+  {{- if .Values.annotations }}
+  annotations:
+{{ toYaml .Values.annotations | indent 4 }}
+  {{- end }}
 spec:
   selector:
     matchLabels:
@@ -30,16 +34,13 @@ spec:
       hostNetwork: {{ .Values.hostNetwork }}
       serviceAccountName: {{ template "kube-state-metrics.serviceAccountName" . }}
       {{- if .Values.securityContext.enabled }}
-      securityContext:
-        fsGroup: {{ .Values.securityContext.fsGroup }}
-        runAsGroup: {{ .Values.securityContext.runAsGroup }}
-        runAsUser: {{ .Values.securityContext.runAsUser }}
+      securityContext: {{- omit .Values.securityContext "enabled" | toYaml | nindent 8 }}
       {{- end }}
     {{- if .Values.priorityClassName }}
       priorityClassName: {{ .Values.priorityClassName }}
     {{- end }}
       containers:
-      - name: {{ .Chart.Name }}
+      - name: {{ template "kube-state-metrics.name" . }}
         {{- if .Values.autosharding.enabled }}
         env:
         - name: POD_NAME
@@ -53,9 +54,7 @@ spec:
         {{- end }}
         args:
         {{-  if .Values.extraArgs  }}
-        {{- range .Values.extraArgs  }}
-        - {{ . }}
-        {{- end  }}
+        {{- .Values.extraArgs | toYaml | nindent 8 }}
         {{-  end  }}
         {{- if .Values.service.port }}
         - --port={{ .Values.service.port | default 8080}}
@@ -75,7 +74,9 @@ spec:
         {{- if .Values.metricDenylist }}
         - --metric-denylist={{ .Values.metricDenylist | join "," }}
         {{- end }}
-        {{- if .Values.namespaces }}
+        {{- if .Values.releaseNamespace }}
+        - --namespaces={{ template "kube-state-metrics.namespace" . }}
+        {{- else if .Values.namespaces }}
         - --namespaces={{ tpl (.Values.namespaces | join ",") $ }}
         {{- end }}
         {{- if .Values.namespacesDenylist }}
@@ -92,11 +93,16 @@ spec:
         - --telemetry-host={{ .Values.selfMonitor.telemetryHost }}
         {{- end }}
         - --telemetry-port={{ .Values.selfMonitor.telemetryPort | default 8081 }}
-        {{- if .Values.kubeconfig.enabled }}
+        {{- if or (.Values.kubeconfig.enabled) (.Values.volumeMounts) }}
         volumeMounts:
+        {{- if .Values.kubeconfig.enabled }}
         - name: kubeconfig
           mountPath: /opt/k8s/.kube/
           readOnly: true
+        {{- end }}
+        {{- if .Values.volumeMounts }}
+{{ toYaml .Values.volumeMounts | indent 8 }}
+        {{- end }}
         {{- end }}
         imagePullPolicy: {{ .Values.image.pullPolicy }}
         image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
@@ -143,9 +149,18 @@ spec:
       tolerations:
 {{ toYaml .Values.tolerations | indent 8 }}
       {{- end }}
-      {{- if .Values.kubeconfig.enabled}}
+      {{- if .Values.topologySpreadConstraints }}
+      topologySpreadConstraints:
+{{ toYaml .Values.topologySpreadConstraints | indent 8 }}
+      {{- end }}
+      {{- if or (.Values.kubeconfig.enabled) (.Values.volumes) }}
       volumes:
+      {{- if .Values.kubeconfig.enabled}}
         - name: kubeconfig
           secret:
             secretName: {{ template "kube-state-metrics.fullname" . }}-kubeconfig
+      {{- end }}
+      {{- if .Values.volumes }}
+{{ toYaml .Values.volumes | indent 8 }}
+      {{- end }}
       {{- end }}

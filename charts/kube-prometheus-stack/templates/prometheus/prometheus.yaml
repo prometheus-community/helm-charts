@@ -2,7 +2,7 @@
 apiVersion: monitoring.coreos.com/v1
 kind: Prometheus
 metadata:
-  name: {{ template "kube-prometheus-stack.fullname" . }}-prometheus
+  name: {{ template "kube-prometheus-stack.prometheus.crname" . }}
   namespace: {{ template "kube-prometheus-stack.namespace" . }}
   labels:
     app: {{ template "kube-prometheus-stack.name" . }}-prometheus
@@ -84,6 +84,10 @@ spec:
 {{- if .Values.prometheus.prometheusSpec.web }}
   web:
 {{ toYaml .Values.prometheus.prometheusSpec.web | indent 4 }}
+{{- end }}
+{{- if .Values.prometheus.prometheusSpec.exemplars }}
+  exemplars:
+  {{ toYaml .Values.prometheus.prometheusSpec.exemplars | indent 4 }}
 {{- end }}
 {{- if .Values.prometheus.prometheusSpec.enableFeatures }}
   enableFeatures:
@@ -256,7 +260,7 @@ spec:
 {{- end }}
 {{- if .Values.global.imagePullSecrets }}
   imagePullSecrets:
-{{ toYaml .Values.global.imagePullSecrets | indent 4 }}
+{{ include "kube-prometheus-stack.imagePullSecrets" . | trim | indent 4 }}
 {{- end }}
 {{- if .Values.prometheus.prometheusSpec.additionalScrapeConfigs }}
   additionalScrapeConfigs:
@@ -277,6 +281,9 @@ spec:
 {{- if .Values.prometheus.prometheusSpec.additionalAlertManagerConfigsSecret }}
     name: {{ .Values.prometheus.prometheusSpec.additionalAlertManagerConfigsSecret.name }}
     key: {{ .Values.prometheus.prometheusSpec.additionalAlertManagerConfigsSecret.key }}
+    {{- if hasKey .Values.prometheus.prometheusSpec.additionalAlertManagerConfigsSecret "optional" }}
+    optional: {{ .Values.prometheus.prometheusSpec.additionalAlertManagerConfigsSecret.optional }}
+    {{- end }}
 {{- end }}
 {{- end }}
 {{- if .Values.prometheus.prometheusSpec.additionalAlertRelabelConfigs }}
@@ -339,6 +346,15 @@ spec:
 {{- end }}
 {{- if .Values.prometheus.prometheusSpec.prometheusRulesExcludedFromEnforce }}
 {{ toYaml .Values.prometheus.prometheusSpec.prometheusRulesExcludedFromEnforce | indent 4 }}
+{{- end }}
+  excludedFromEnforcement:
+{{- range $prometheusDefaultRulesExcludedFromEnforce.rules }}
+    - resource: prometheusrules
+      namespace: "{{ template "kube-prometheus-stack.namespace" $ }}"
+      name: "{{ printf "%s-%s" (include "kube-prometheus-stack.fullname" $) . | trunc 63 | trimSuffix "-" }}"
+{{- end }}
+{{- if .Values.prometheus.prometheusSpec.excludedFromEnforcement }}
+{{ toYaml .Values.prometheus.prometheusSpec.excludedFromEnforcement | indent 4 }}
 {{- end }}
 {{- end }}
 {{- if .Values.prometheus.prometheusSpec.queryLogFile }}

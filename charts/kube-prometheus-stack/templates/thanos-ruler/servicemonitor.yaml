@@ -1,0 +1,45 @@
+{{- if and .Values.thanosRuler.enabled .Values.thanosRuler.serviceMonitor.selfMonitor }}
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: {{ template "kube-prometheus-stack.fullname" . }}-thanos-ruler
+  namespace: {{ template "kube-prometheus-stack.namespace" . }}
+  labels:
+    app: {{ template "kube-prometheus-stack.name" . }}-thanos-ruler
+{{ include "kube-prometheus-stack.labels" . | indent 4 }}
+spec:
+  selector:
+    matchLabels:
+      app: {{ template "kube-prometheus-stack.name" . }}-thanos-ruler
+      release: {{ $.Release.Name | quote }}
+      self-monitor: {{ .Values.thanosRuler.serviceMonitor.selfMonitor | quote }}
+  namespaceSelector:
+    matchNames:
+      - {{ printf "%s" (include "kube-prometheus-stack.namespace" .) | quote }}
+  endpoints:
+  - port: {{ .Values.thanosRuler.thanosRulerSpec.portName }}
+    {{- if .Values.thanosRuler.serviceMonitor.interval }}
+    interval: {{ .Values.thanosRuler.serviceMonitor.interval }}
+    {{- end }}
+    {{- if .Values.thanosRuler.serviceMonitor.proxyUrl }}
+    proxyUrl: {{ .Values.thanosRuler.serviceMonitor.proxyUrl}}
+    {{- end }}
+    {{- if .Values.thanosRuler.serviceMonitor.scheme }}
+    scheme: {{ .Values.thanosRuler.serviceMonitor.scheme }}
+    {{- end }}
+    {{- if .Values.thanosRuler.serviceMonitor.bearerTokenFile }}
+    bearerTokenFile: {{ .Values.thanosRuler.serviceMonitor.bearerTokenFile }}
+    {{- end }}
+    {{- if .Values.thanosRuler.serviceMonitor.tlsConfig }}
+    tlsConfig: {{ toYaml .Values.thanosRuler.serviceMonitor.tlsConfig | nindent 6 }}
+    {{- end }}
+    path: "{{ trimSuffix "/" .Values.thanosRuler.thanosRulerSpec.routePrefix }}/metrics"
+{{- if .Values.thanosRuler.serviceMonitor.metricRelabelings }}
+    metricRelabelings:
+{{ tpl (toYaml .Values.thanosRuler.serviceMonitor.metricRelabelings | indent 6) . }}
+{{- end }}
+{{- if .Values.thanosRuler.serviceMonitor.relabelings }}
+    relabelings:
+{{ toYaml .Values.thanosRuler.serviceMonitor.relabelings | indent 6 }}
+{{- end }}
+{{- end }}

@@ -34,16 +34,26 @@ data:
       isDefault: true
       jsonData:
         timeInterval: {{ $scrapeInterval }}
+{{- if .Values.grafana.sidecar.datasources.exemplarTraceIdDestinations }}
+        exemplarTraceIdDestinations:
+        - datasourceUid: {{ .Values.grafana.sidecar.datasources.exemplarTraceIdDestinations.datasourceUid }}
+          name: {{ .Values.grafana.sidecar.datasources.exemplarTraceIdDestinations.traceIdLabelName }}
+{{- end }}
 {{- if .Values.grafana.sidecar.datasources.createPrometheusReplicasDatasources }}
 {{- range until (int .Values.prometheus.prometheusSpec.replicas) }}
     - name: Prometheus-{{ . }}
       type: prometheus
-      uid: {{ .Values.grafana.sidecar.datasources.uid }}-replica-{{ . }}
-      url: http://prometheus-{{ template "kube-prometheus-stack.fullname" $ }}-prometheus-{{ . }}.prometheus-operated:9090/{{ trimPrefix "/" $.Values.prometheus.prometheusSpec.routePrefix }}
+      uid: {{ $.Values.grafana.sidecar.datasources.uid }}-replica-{{ . }}
+      url: http://prometheus-{{ template "kube-prometheus-stack.prometheus.crname" $ }}-{{ . }}.prometheus-operated:9090/{{ trimPrefix "/" $.Values.prometheus.prometheusSpec.routePrefix }}
       access: proxy
       isDefault: false
       jsonData:
         timeInterval: {{ $scrapeInterval }}
+{{- if $.Values.grafana.sidecar.datasources.exemplarTraceIdDestinations }}
+        exemplarTraceIdDestinations:
+        - datasourceUid: {{ .Values.grafana.sidecar.datasources.exemplarTraceIdDestinations.datasourceUid }}
+          name: {{ .Values.grafana.sidecar.datasources.exemplarTraceIdDestinations.traceIdLabelName }}
+{{- end }}
 {{- end }}
 {{- end }}
 {{- end }}

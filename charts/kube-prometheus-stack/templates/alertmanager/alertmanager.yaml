@@ -2,7 +2,7 @@
 apiVersion: monitoring.coreos.com/v1
 kind: Alertmanager
 metadata:
-  name: {{ template "kube-prometheus-stack.fullname" . }}-alertmanager
+  name: {{ template "kube-prometheus-stack.alertmanager.crname" . }}
   namespace: {{ template "kube-prometheus-stack.namespace" . }}
   labels:
     app: {{ template "kube-prometheus-stack.name" . }}-alertmanager
@@ -68,6 +68,10 @@ spec:
 {{ else }}
   alertmanagerConfigNamespaceSelector: {}
 {{- end }}
+{{- if .Values.alertmanager.alertmanagerSpec.web }}
+  web:
+{{ toYaml .Values.alertmanager.alertmanagerSpec.web | indent 4 }}
+{{- end }}
 {{- if .Values.alertmanager.alertmanagerSpec.alertmanagerConfiguration }}
   alertmanagerConfiguration:
 {{ toYaml .Values.alertmanager.alertmanagerSpec.alertmanagerConfiguration | indent 4 }}
@@ -104,7 +108,7 @@ spec:
         labelSelector:
           matchExpressions:
             - {key: app.kubernetes.io/name, operator: In, values: [alertmanager]}
-            - {key: alertmanager, operator: In, values: [{{ template "kube-prometheus-stack.fullname" . }}-alertmanager]}
+            - {key: alertmanager, operator: In, values: [{{ template "kube-prometheus-stack.alertmanager.crname" . }}]}
 {{- else if eq .Values.alertmanager.alertmanagerSpec.podAntiAffinity "soft" }}
     podAntiAffinity:
       preferredDuringSchedulingIgnoredDuringExecution:
@@ -114,7 +118,7 @@ spec:
           labelSelector:
             matchExpressions:
               - {key: app.kubernetes.io/name, operator: In, values: [alertmanager]}
-              - {key: alertmanager, operator: In, values: [{{ template "kube-prometheus-stack.fullname" . }}-alertmanager]}
+              - {key: alertmanager, operator: In, values: [{{ template "kube-prometheus-stack.alertmanager.crname" . }}]}
 {{- end }}
 {{- if .Values.alertmanager.alertmanagerSpec.tolerations }}
   tolerations:
@@ -126,7 +130,7 @@ spec:
 {{- end }}
 {{- if .Values.global.imagePullSecrets }}
   imagePullSecrets:
-{{ toYaml .Values.global.imagePullSecrets | indent 4 }}
+{{ include "kube-prometheus-stack.imagePullSecrets" . | trim | indent 4 }}
 {{- end }}
 {{- if .Values.alertmanager.alertmanagerSpec.containers }}
   containers:

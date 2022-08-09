@@ -1,12 +1,15 @@
 #!/usr/bin/env python3
 """Fetch alerting and aggregation rules from provided urls into this chart."""
+import json
+import re
 import textwrap
 from os import makedirs
 
+import _jsonnet
 import requests
 import yaml
 from yaml.representer import SafeRepresenter
-import re
+
 
 # https://stackoverflow.com/a/20863889/961092
 class LiteralStr(str):
@@ -60,9 +63,10 @@ charts = [
         'min_kubernetes': '1.14.0-0'
     },
     {
-        'source': 'https://raw.githubusercontent.com/etcd-io/website/master/content/en/docs/v3.4/op-guide/etcd3_alert.rules.yml',
+        'source': 'https://raw.githubusercontent.com/etcd-io/etcd/main/contrib/mixin/mixin.libsonnet',
         'destination': '../templates/prometheus/rules-1.14',
-        'min_kubernetes': '1.14.0-0'
+        'min_kubernetes': '1.14.0-0',
+        'is_mixin': True
     },
 ]
 
@@ -89,7 +93,7 @@ condition_map = {
     'kubernetes-system-kube-proxy': ' .Values.kubeProxy.enabled .Values.defaultRules.rules.kubeProxy',
     'kubernetes-system-apiserver': ' .Values.defaultRules.rules.kubernetesSystem', # kubernetes-system was split into more groups in 1.14, one of them is kubernetes-system-apiserver
     'kubernetes-system-kubelet': ' .Values.defaultRules.rules.kubernetesSystem', # kubernetes-system was split into more groups in 1.14, one of them is kubernetes-system-kubelet
-    'kubernetes-system-controller-manager': ' .Values.kubeControllerManager.enabled',
+    'kubernetes-system-controller-manager': ' .Values.kubeControllerManager.enabled .Values.defaultRules.rules.kubeControllerManager',
     'kubernetes-system-scheduler': ' .Values.kubeScheduler.enabled .Values.defaultRules.rules.kubeScheduler',
     'node-exporter.rules': ' .Values.defaultRules.rules.nodeExporterRecording',
     'node-exporter': ' .Values.defaultRules.rules.nodeExporterAlerting',
@@ -278,6 +282,27 @@ def add_custom_labels(rules, indent=4):
         rules = rules[:index] + "\n" + rule_condition + rules[index:]
     return rules
 
+
+def add_custom_annotations(rules, indent=4):
+    """Add if wrapper for additional rules annotations"""
+    rule_condition = '{{- if .Values.defaultRules.additionalRuleAnnotations }}\n{{ toYaml .Values.defaultRules.additionalRuleAnnotations | indent 8 }}\n{{- end }}'
+    annotations = "      annotations:"
+    annotations_len = len(annotations) + 1
+    rule_condition_len = len(rule_condition) + 1
+
+    separator = " " * indent + "- alert:.*"
+    alerts_positions = re.finditer(separator,rules)
+    alert = 0
+
+    for alert_position in alerts_positions:
+        # Add rule_condition after 'annotations:' statement
+        index = alert_position.end() + annotations_len + rule_condition_len * alert
+        rules = rules[:index] + "\n" + rule_condition + rules[index:]
+        alert += 1
+
+    return rules
+
+
 def write_group_to_file(group, url, destination, min_kubernetes, max_kubernetes):
     fix_expr(group['rules'])
     group_name = group['name']
@@ -293,6 +318,7 @@ def write_group_to_file(group, url, destination, min_kubernetes, max_kubernetes)
                 init_line += '\n' + replacement_map[line]['init']
     # append per-alert rules
     rules = add_custom_labels(rules)
+    rules = add_custom_annotations(rules)
     rules = add_rules_conditions_from_condition_map(rules)
     rules = add_rules_per_rule_conditions(rules, group)
     # initialize header
@@ -345,13 +371,16 @@ def main():
             print('Skipping the file, response code %s not equals 200' % response.status_code)
             continue
         raw_text = response.text
-        yaml_text = yaml.full_load(raw_text)
+        if chart.get('is_mixin'):
+            alerts = json.loads(_jsonnet.evaluate_snippet(chart['source'], raw_text + '.prometheusAlerts'))
+        else:
+            alerts = yaml.full_load(raw_text)
 
         if ('max_kubernetes' not in chart):
             chart['max_kubernetes']="9.9.9-9"
 
         # etcd workaround, their file don't have spec level
-        groups = yaml_text['spec']['groups'] if yaml_text.get('spec') else yaml_text['groups']
+        groups = alerts['spec']['groups'] if alerts.get('spec') else alerts['groups']
         for group in groups:
             write_group_to_file(group, chart['source'], chart['destination'], chart['min_kubernetes'], chart['max_kubernetes'])
 
