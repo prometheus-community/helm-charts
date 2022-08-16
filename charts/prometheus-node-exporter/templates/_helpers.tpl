@@ -59,7 +59,6 @@ The image to use
 */}}
 {{- define "prometheus-node-exporter.image" -}}
 {{- if .Values.image.sha -}}
-"{{ .Values.image.repository }}:{{ .Values.image.tag }}@sha256:{{ .Values.image.sha }}"
 {{- printf "%s:%s@%s" .Values.image.repository (default (printf "v%s" .Chart.AppVersion) .Values.image.tag) .Values.image.sha }}
 {{- else -}}
 {{- printf "%s:%s" .Values.image.repository (default (printf "v%s" .Chart.AppVersion) .Values.image.tag) }}
