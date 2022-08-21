@@ -74,7 +74,9 @@ spec:
         {{- if .Values.metricDenylist }}
         - --metric-denylist={{ .Values.metricDenylist | join "," }}
         {{- end }}
-        {{- if .Values.namespaces }}
+        {{- if .Values.releaseNamespace }}
+        - --namespaces={{ template "kube-state-metrics.namespace" . }}
+        {{- else if .Values.namespaces }}
         - --namespaces={{ tpl (.Values.namespaces | join ",") $ }}
         {{- end }}
         {{- if .Values.namespacesDenylist }}
@@ -91,14 +93,23 @@ spec:
         - --telemetry-host={{ .Values.selfMonitor.telemetryHost }}
         {{- end }}
         - --telemetry-port={{ .Values.selfMonitor.telemetryPort | default 8081 }}
-        {{- if .Values.kubeconfig.enabled }}
+        {{- if or (.Values.kubeconfig.enabled) (.Values.volumeMounts) }}
         volumeMounts:
+        {{- if .Values.kubeconfig.enabled }}
         - name: kubeconfig
           mountPath: /opt/k8s/.kube/
           readOnly: true
         {{- end }}
+        {{- if .Values.volumeMounts }}
+{{ toYaml .Values.volumeMounts | indent 8 }}
+        {{- end }}
+        {{- end }}
         imagePullPolicy: {{ .Values.image.pullPolicy }}
+        {{- if .Values.image.sha }}
+        image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}@sha256:{{ .Values.image.sha }}"
+        {{- else }}
         image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+        {{- end }}
         ports:
         - containerPort: {{ .Values.service.port | default 8080}}
           name: "http"
@@ -146,9 +157,14 @@ spec:
       topologySpreadConstraints:
 {{ toYaml .Values.topologySpreadConstraints | indent 8 }}
       {{- end }}
-      {{- if .Values.kubeconfig.enabled}}
+      {{- if or (.Values.kubeconfig.enabled) (.Values.volumes) }}
       volumes:
+      {{- if .Values.kubeconfig.enabled}}
         - name: kubeconfig
           secret:
             secretName: {{ template "kube-state-metrics.fullname" . }}-kubeconfig
+      {{- end }}
+      {{- if .Values.volumes }}
+{{ toYaml .Values.volumes | indent 8 }}
+      {{- end }}
       {{- end }}

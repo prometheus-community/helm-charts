@@ -1,0 +1,79 @@
+config: {}
+#  devices:
+#  - /dev/sda
+
+extraInstances: []
+# - config:
+#     devices:
+#     - /dev/nvme0n1
+#   nodeSelector:
+#     type: other
+
+common:
+  config:
+    bind_to: "0.0.0.0:9633"
+    url_path: "/metrics"
+    smartctl_location: /usr/sbin/smartctl
+    collect_not_more_than_period: 120s
+
+serviceMonitor:
+  enabled: false
+  # Specify namespace to load the monitor if not in the same namespace
+  # namespace: prometheus-operator
+  # Add Extra labels if needed. Prometeus operator may need them to find it.
+  extraLabels: {}
+  # release: prometheus-operator
+
+prometheusRules:
+  enabled: false
+  # Specify namespace to load the monitor if not in the same namespace
+  # namespace: prometheus-operator
+  # Add Extra labels if needed. Prometeus operator may need them to find it.
+  extraLabels: {}
+  # release: prometheus-operator
+
+image:
+  # future location
+  # repository: quay.io/prometheus/smartctl-exporter
+  # temporary location until an offical build exists.
+  repository: prometheuscommunity/smartctl-exporter
+  pullPolicy: IfNotPresent
+  # Overrides the image tag whose default is the chart appVersion.
+  tag: ""
+
+serviceAccount:
+  # Specifies whether a service account should be created
+  create: true
+  # Annotations to add to the service account
+  annotations: {}
+  # The name of the service account to use.
+  # If not set and create is true, a name is generated using the fullname template
+  name: ""
+
+rbac:
+  create: true
+  podSecurityPolicy: unrestricted-psp
+
+resources: {}
+  # We usually recommend not to specify default resources and to leave this as a conscious
+  # choice for the user. This also increases chances charts run on environments with little
+  # resources, such as Minikube. If you do want to specify resources, uncomment the following
+  # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+  # limits:
+  #  cpu: 100m
+  #  memory: 128Mi
+  # requests:
+  #  cpu: 100m
+  #  memory: 128Mi
+
+nodeSelector: {}
+
+tolerations:
+  - effect: NoSchedule
+    operator: Exists
+
+affinity: {}
+
+service:
+  type: ClusterIP
+  port: 80

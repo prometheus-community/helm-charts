@@ -11,14 +11,14 @@ This chart creates a Blackbox-Exporter deployment on a [Kubernetes](http://kuber
 - Kubernetes 1.8+ with Beta APIs enabled
 - Helm >= 3.0
 
-## Get Repo Info
+## Get Repository Info
 
 ```console
 helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
 helm repo update
 ```
 
-_See [helm repo](https://helm.sh/docs/helm/helm_repo/) for command documentation._
+_See [`helm repo`](https://helm.sh/docs/helm/helm_repo/) for command documentation._
 
 ## Install Chart
 
@@ -47,6 +47,25 @@ helm upgrade [RELEASE_NAME] [CHART] --install
 ```
 
 _See [helm upgrade](https://helm.sh/docs/helm/helm_upgrade/) for command documentation._
+
+### To 7.0.0
+
+This version introduces the `securityContext` and `podSecurityContext` and removes `allowICMP`option.
+
+All previous values are setup as default. In case that you want to enable previous functionality for `allowICMP` you need to explicit enabled with the following configuration:
+
+```yaml
+securityContext:
+  readOnlyRootFilesystem: true
+  allowPrivilegeEscalation: false
+  capabilities:
+    add: ["NET_RAW"]
+```
+
+### To 6.0.0
+
+This version introduces the relabeling field for the ServiceMonitor.
+All values in the list ```additionalRelabeling``` will now appear under ```relabelings``` instead of ```metricRelabelings```.
 
 ### To 5.0.0
 
