@@ -19,7 +19,7 @@ _See [`helm repo`](https://helm.sh/docs/helm/helm_repo/) for command documentati
 helm install [RELEASE_NAME] prometheus-community/prometheus-node-exporter
 ```
 
-_See [configuration](#configuration) below._
+_See [configuration](#configuring) below._
 
 _See [helm install](https://helm.sh/docs/helm/helm_install/) for command documentation._
 
@@ -43,7 +43,7 @@ _See [helm upgrade](https://helm.sh/docs/helm/helm_upgrade/) for command documen
 
 ### 3.x to 4.x
 
-Starting from version 4.0.0, the `node exporter` chart is using the [Kubernetes recommended labels](https://kubernetes.io/docs/concepts/overview/working-with-objects/common-labels/). Therefore you have to delete the deployment before you upgrade.
+Starting from version 4.0.0, the `node exporter` chart is using the [Kubernetes recommended labels](https://kubernetes.io/docs/concepts/overview/working-with-objects/common-labels/). Therefore you have to delete the daemonset before you upgrade.
 
 ```console
 kubectl delete daemonset -l app=prometheus-node-exporter
