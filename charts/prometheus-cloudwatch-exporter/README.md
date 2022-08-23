@@ -73,4 +73,4 @@ For Cloudwatch Exporter to operate properly, you must configure either AWS crede
 
 - To configure AWS credentials by value, set `aws.aws_access_key_id` to your [AWS_ACCESS_KEY_ID], and `aws.aws_secret_access_key` to [AWS_SECRET_ACCESS_KEY].
 - To configure AWS credentials by secret, you must store them in a secret (`kubectl create secret generic [SECRET_NAME] --from-literal=access_key=[AWS_ACCESS_KEY_ID] --from-literal=secret_key=[AWS_SECRET_ACCESS_KEY]`) and set `aws.secret.name` to [SECRET_NAME]
-- To configure an AWS role (with correct policy linked above), set `aws.role` to [ROLL_NAME]
+- To configure an AWS role (with correct policy linked above), set `aws.role` to [ROLE_NAME]
