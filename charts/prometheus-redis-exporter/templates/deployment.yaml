@@ -54,6 +54,10 @@ spec:
               value: {{ .Values.redisAddress }}
             {{- end }}
           {{- if .Values.auth.enabled }}
+            {{- if and (.Values.auth.redisPasswordFile.secret.name) (.Values.auth.redisPasswordFile.secret.key) }}
+            - name: REDIS_PASSWORD_FILE
+              value: {{ .Values.auth.redisPasswordFile.mountPath }}/{{ .Values.auth.redisPasswordFile.secret.key }}
+            {{- else }}
             - name: REDIS_PASSWORD
             {{- if .Values.auth.secret.name }}
               valueFrom:
@@ -67,6 +71,7 @@ spec:
             - name: REDIS_USER
               value: {{ .Values.auth.redisUser }}
             {{- end }}
+            {{- end }}
           {{- end }}
 {{- if .Values.script }}
             - name: REDIS_EXPORTER_SCRIPT
@@ -75,11 +80,15 @@ spec:
 {{- if .Values.env }}
 {{ toYaml .Values.env | indent 12 }}
 {{- end }}
-{{- if .Values.script }}
           volumeMounts:
-              - mountPath: /script
-                name: script-mount
-{{- end }}
+            {{- if .Values.script }}
+            - mountPath: /script
+              name: script-mount
+            {{- end }}
+            {{- if and (.Values.auth.enabled) (.Values.auth.redisPasswordFile.secret.name) }}
+            - mountPath: {{ .Values.auth.redisPasswordFile.mountPath }}
+              name: redis-password-file-mount
+            {{- end }}
           livenessProbe:
             httpGet:
               path: /
@@ -90,15 +99,21 @@ spec:
               port: exporter-port
           resources:
 {{ toYaml .Values.resources | indent 12 }}
-    {{- if .Values.script }}
       volumes:
+        {{- if .Values.script }}
         - name: script-mount
           configMap:
              name: {{ .Values.script.configmap }}
              items:
               - key: {{ .Values.script.keyname }}
                 path: script.lua
-    {{- end }}
+        {{- end }}
+        {{- if and (.Values.auth.enabled) (.Values.auth.redisPasswordFile.secret.name) }}
+        - name: redis-password-file-mount
+          secret:
+             secretName: {{ .Values.auth.redisPasswordFile.secret.name }}
+        {{- end }}
+
     {{- if .Values.nodeSelector }}
       nodeSelector:
 {{ toYaml .Values.nodeSelector | indent 8 }}
