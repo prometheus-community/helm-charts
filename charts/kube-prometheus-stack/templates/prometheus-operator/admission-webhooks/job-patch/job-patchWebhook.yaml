@@ -43,6 +43,10 @@ spec:
             - --namespace={{ template "kube-prometheus-stack.namespace" . }}
             - --secret-name={{ template "kube-prometheus-stack.fullname" . }}-admission
             - --patch-failure-policy={{ .Values.prometheusOperator.admissionWebhooks.failurePolicy }}
+          {{- if .Values.controller.admissionWebhooks.patchWebhookJob.securityContext }}
+          securityContext:
+{{ toYaml .Values.controller.admissionWebhooks.patchWebhookJob.securityContext | nindent 12 }}
+          {{- end }}
           resources:
 {{ toYaml .Values.prometheusOperator.admissionWebhooks.patch.resources | indent 12 }}
       restartPolicy: OnFailure
