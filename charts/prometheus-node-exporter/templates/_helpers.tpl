@@ -26,13 +26,25 @@ If release name contains chart name it will be used as a full name.
 
 {{/* Generate basic labels */}}
 {{- define "prometheus-node-exporter.labels" }}
-app: {{ template "prometheus-node-exporter.name" . }}
-heritage: {{.Release.Service }}
-release: {{.Release.Name }}
-chart: {{ template "prometheus-node-exporter.chart" . }}
+helm.sh/chart: {{ template "prometheus-node-exporter.chart" . }}
+app.kubernetes.io/managed-by: {{ .Release.Service }}
+app.kubernetes.io/component: metrics
+app.kubernetes.io/part-of: {{ template "prometheus-node-exporter.name" . }}
+{{- include "prometheus-node-exporter.selectorLabels" . }}
+{{- if .Chart.AppVersion }}
+app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
+{{- end }}
 {{- if .Values.podLabels}}
 {{ toYaml .Values.podLabels }}
 {{- end }}
+{{- end }}
+
+{{/*
+Selector labels
+*/}}
+{{- define "prometheus-node-exporter.selectorLabels" }}
+app.kubernetes.io/instance: {{ .Release.Name }}
+app.kubernetes.io/name: {{ template "prometheus-node-exporter.name" . }}
 {{- end }}
 
 {{/*
