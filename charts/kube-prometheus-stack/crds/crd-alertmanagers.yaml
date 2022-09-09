@@ -1,4 +1,4 @@
-# https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/v0.58.0/example/prometheus-operator-crd/monitoring.coreos.com_alertmanagers.yaml
+# https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/v0.59.1/example/prometheus-operator-crd/monitoring.coreos.com_alertmanagers.yaml
 ---
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
@@ -981,15 +981,365 @@ spec:
                 x-kubernetes-map-type: atomic
               alertmanagerConfiguration:
                 description: 'EXPERIMENTAL: alertmanagerConfiguration specifies the
-                  global Alertmanager configuration. If defined, it takes precedence
-                  over the `configSecret` field. This field may change in future releases.'
+                  configuration of Alertmanager. If defined, it takes precedence over
+                  the `configSecret` field. This field may change in future releases.'
                 properties:
+                  global:
+                    description: Defines the global parameters of the Alertmanager
+                      configuration.
+                    properties:
+                      httpConfig:
+                        description: HTTP client configuration.
+                        properties:
+                          authorization:
+                            description: Authorization header configuration for the
+                              client. This is mutually exclusive with BasicAuth and
+                              is only available starting from Alertmanager v0.22+.
+                            properties:
+                              credentials:
+                                description: The secret's key that contains the credentials
+                                  of the request
+                                properties:
+                                  key:
+                                    description: The key of the secret to select from.  Must
+                                      be a valid secret key.
+                                    type: string
+                                  name:
+                                    description: 'Name of the referent. More info:
+                                      https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                      TODO: Add other useful fields. apiVersion, kind,
+                                      uid?'
+                                    type: string
+                                  optional:
+                                    description: Specify whether the Secret or its
+                                      key must be defined
+                                    type: boolean
+                                required:
+                                - key
+                                type: object
+                                x-kubernetes-map-type: atomic
+                              type:
+                                description: Set the authentication type. Defaults
+                                  to Bearer, Basic will cause an error
+                                type: string
+                            type: object
+                          basicAuth:
+                            description: BasicAuth for the client. This is mutually
+                              exclusive with Authorization. If both are defined, BasicAuth
+                              takes precedence.
+                            properties:
+                              password:
+                                description: The secret in the service monitor namespace
+                                  that contains the password for authentication.
+                                properties:
+                                  key:
+                                    description: The key of the secret to select from.  Must
+                                      be a valid secret key.
+                                    type: string
+                                  name:
+                                    description: 'Name of the referent. More info:
+                                      https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                      TODO: Add other useful fields. apiVersion, kind,
+                                      uid?'
+                                    type: string
+                                  optional:
+                                    description: Specify whether the Secret or its
+                                      key must be defined
+                                    type: boolean
+                                required:
+                                - key
+                                type: object
+                                x-kubernetes-map-type: atomic
+                              username:
+                                description: The secret in the service monitor namespace
+                                  that contains the username for authentication.
+                                properties:
+                                  key:
+                                    description: The key of the secret to select from.  Must
+                                      be a valid secret key.
+                                    type: string
+                                  name:
+                                    description: 'Name of the referent. More info:
+                                      https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                      TODO: Add other useful fields. apiVersion, kind,
+                                      uid?'
+                                    type: string
+                                  optional:
+                                    description: Specify whether the Secret or its
+                                      key must be defined
+                                    type: boolean
+                                required:
+                                - key
+                                type: object
+                                x-kubernetes-map-type: atomic
+                            type: object
+                          bearerTokenSecret:
+                            description: The secret's key that contains the bearer
+                              token to be used by the client for authentication. The
+                              secret needs to be in the same namespace as the Alertmanager
+                              object and accessible by the Prometheus Operator.
+                            properties:
+                              key:
+                                description: The key of the secret to select from.  Must
+                                  be a valid secret key.
+                                type: string
+                              name:
+                                description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                  TODO: Add other useful fields. apiVersion, kind,
+                                  uid?'
+                                type: string
+                              optional:
+                                description: Specify whether the Secret or its key
+                                  must be defined
+                                type: boolean
+                            required:
+                            - key
+                            type: object
+                            x-kubernetes-map-type: atomic
+                          followRedirects:
+                            description: FollowRedirects specifies whether the client
+                              should follow HTTP 3xx redirects.
+                            type: boolean
+                          oauth2:
+                            description: OAuth2 client credentials used to fetch a
+                              token for the targets.
+                            properties:
+                              clientId:
+                                description: The secret or configmap containing the
+                                  OAuth2 client id
+                                properties:
+                                  configMap:
+                                    description: ConfigMap containing data to use
+                                      for the targets.
+                                    properties:
+                                      key:
+                                        description: The key to select.
+                                        type: string
+                                      name:
+                                        description: 'Name of the referent. More info:
+                                          https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                          TODO: Add other useful fields. apiVersion,
+                                          kind, uid?'
+                                        type: string
+                                      optional:
+                                        description: Specify whether the ConfigMap
+                                          or its key must be defined
+                                        type: boolean
+                                    required:
+                                    - key
+                                    type: object
+                                    x-kubernetes-map-type: atomic
+                                  secret:
+                                    description: Secret containing data to use for
+                                      the targets.
+                                    properties:
+                                      key:
+                                        description: The key of the secret to select
+                                          from.  Must be a valid secret key.
+                                        type: string
+                                      name:
+                                        description: 'Name of the referent. More info:
+                                          https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                          TODO: Add other useful fields. apiVersion,
+                                          kind, uid?'
+                                        type: string
+                                      optional:
+                                        description: Specify whether the Secret or
+                                          its key must be defined
+                                        type: boolean
+                                    required:
+                                    - key
+                                    type: object
+                                    x-kubernetes-map-type: atomic
+                                type: object
+                              clientSecret:
+                                description: The secret containing the OAuth2 client
+                                  secret
+                                properties:
+                                  key:
+                                    description: The key of the secret to select from.  Must
+                                      be a valid secret key.
+                                    type: string
+                                  name:
+                                    description: 'Name of the referent. More info:
+                                      https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                      TODO: Add other useful fields. apiVersion, kind,
+                                      uid?'
+                                    type: string
+                                  optional:
+                                    description: Specify whether the Secret or its
+                                      key must be defined
+                                    type: boolean
+                                required:
+                                - key
+                                type: object
+                                x-kubernetes-map-type: atomic
+                              endpointParams:
+                                additionalProperties:
+                                  type: string
+                                description: Parameters to append to the token URL
+                                type: object
+                              scopes:
+                                description: OAuth2 scopes used for the token request
+                                items:
+                                  type: string
+                                type: array
+                              tokenUrl:
+                                description: The URL to fetch the token from
+                                minLength: 1
+                                type: string
+                            required:
+                            - clientId
+                            - clientSecret
+                            - tokenUrl
+                            type: object
+                          proxyURL:
+                            description: Optional proxy URL.
+                            type: string
+                          tlsConfig:
+                            description: TLS configuration for the client.
+                            properties:
+                              ca:
+                                description: Struct containing the CA cert to use
+                                  for the targets.
+                                properties:
+                                  configMap:
+                                    description: ConfigMap containing data to use
+                                      for the targets.
+                                    properties:
+                                      key:
+                                        description: The key to select.
+                                        type: string
+                                      name:
+                                        description: 'Name of the referent. More info:
+                                          https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                          TODO: Add other useful fields. apiVersion,
+                                          kind, uid?'
+                                        type: string
+                                      optional:
+                                        description: Specify whether the ConfigMap
+                                          or its key must be defined
+                                        type: boolean
+                                    required:
+                                    - key
+                                    type: object
+                                    x-kubernetes-map-type: atomic
+                                  secret:
+                                    description: Secret containing data to use for
+                                      the targets.
+                                    properties:
+                                      key:
+                                        description: The key of the secret to select
+                                          from.  Must be a valid secret key.
+                                        type: string
+                                      name:
+                                        description: 'Name of the referent. More info:
+                                          https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                          TODO: Add other useful fields. apiVersion,
+                                          kind, uid?'
+                                        type: string
+                                      optional:
+                                        description: Specify whether the Secret or
+                                          its key must be defined
+                                        type: boolean
+                                    required:
+                                    - key
+                                    type: object
+                                    x-kubernetes-map-type: atomic
+                                type: object
+                              cert:
+                                description: Struct containing the client cert file
+                                  for the targets.
+                                properties:
+                                  configMap:
+                                    description: ConfigMap containing data to use
+                                      for the targets.
+                                    properties:
+                                      key:
+                                        description: The key to select.
+                                        type: string
+                                      name:
+                                        description: 'Name of the referent. More info:
+                                          https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                          TODO: Add other useful fields. apiVersion,
+                                          kind, uid?'
+                                        type: string
+                                      optional:
+                                        description: Specify whether the ConfigMap
+                                          or its key must be defined
+                                        type: boolean
+                                    required:
+                                    - key
+                                    type: object
+                                    x-kubernetes-map-type: atomic
+                                  secret:
+                                    description: Secret containing data to use for
+                                      the targets.
+                                    properties:
+                                      key:
+                                        description: The key of the secret to select
+                                          from.  Must be a valid secret key.
+                                        type: string
+                                      name:
+                                        description: 'Name of the referent. More info:
+                                          https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                          TODO: Add other useful fields. apiVersion,
+                                          kind, uid?'
+                                        type: string
+                                      optional:
+                                        description: Specify whether the Secret or
+                                          its key must be defined
+                                        type: boolean
+                                    required:
+                                    - key
+                                    type: object
+                                    x-kubernetes-map-type: atomic
+                                type: object
+                              insecureSkipVerify:
+                                description: Disable target certificate validation.
+                                type: boolean
+                              keySecret:
+                                description: Secret containing the client key file
+                                  for the targets.
+                                properties:
+                                  key:
+                                    description: The key of the secret to select from.  Must
+                                      be a valid secret key.
+                                    type: string
+                                  name:
+                                    description: 'Name of the referent. More info:
+                                      https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                      TODO: Add other useful fields. apiVersion, kind,
+                                      uid?'
+                                    type: string
+                                  optional:
+                                    description: Specify whether the Secret or its
+                                      key must be defined
+                                    type: boolean
+                                required:
+                                - key
+                                type: object
+                                x-kubernetes-map-type: atomic
+                              serverName:
+                                description: Used to verify the hostname for the targets.
+                                type: string
+                            type: object
+                        type: object
+                      resolveTimeout:
+                        description: ResolveTimeout is the default value used by alertmanager
+                          if the alert does not include EndsAt, after this time passes
+                          it can declare the alert as resolved if it has not been
+                          updated. This has no impact on alerts from Prometheus, as
+                          they always include EndsAt.
+                        pattern: ^(0|(([0-9]+)y)?(([0-9]+)w)?(([0-9]+)d)?(([0-9]+)h)?(([0-9]+)m)?(([0-9]+)s)?(([0-9]+)ms)?)$
+                        type: string
+                    type: object
                   name:
                     description: The name of the AlertmanagerConfig resource which
-                      is used to generate the global configuration. It must be defined
-                      in the same namespace as the Alertmanager object. The operator
-                      will not enforce a `namespace` label for routes and inhibition
-                      rules.
+                      is used to generate the Alertmanager configuration. It must
+                      be defined in the same namespace as the Alertmanager object.
+                      The operator will not enforce a `namespace` label for routes
+                      and inhibition rules.
                     minLength: 1
                     type: string
                 type: object
@@ -1595,13 +1945,13 @@ spec:
                         Cannot be updated.
                       type: string
                     ports:
-                      description: List of ports to expose from the container. Exposing
-                        a port here gives the system additional information about
-                        the network connections a container uses, but is primarily
-                        informational. Not specifying a port here DOES NOT prevent
-                        that port from being exposed. Any port which is listening
-                        on the default "0.0.0.0" address inside a container will be
-                        accessible from the network. Cannot be updated.
+                      description: List of ports to expose from the container. Not
+                        specifying a port here DOES NOT prevent that port from being
+                        exposed. Any port which is listening on the default "0.0.0.0"
+                        address inside a container will be accessible from the network.
+                        Modifying this array with strategic merge patch may corrupt
+                        the data. For more information See https://github.com/kubernetes/kubernetes/issues/108255.
+                        Cannot be updated.
                       items:
                         description: ContainerPort represents a network port in a
                           single container.
@@ -2880,13 +3230,13 @@ spec:
                         Cannot be updated.
                       type: string
                     ports:
-                      description: List of ports to expose from the container. Exposing
-                        a port here gives the system additional information about
-                        the network connections a container uses, but is primarily
-                        informational. Not specifying a port here DOES NOT prevent
-                        that port from being exposed. Any port which is listening
-                        on the default "0.0.0.0" address inside a container will be
-                        accessible from the network. Cannot be updated.
+                      description: List of ports to expose from the container. Not
+                        specifying a port here DOES NOT prevent that port from being
+                        exposed. Any port which is listening on the default "0.0.0.0"
+                        address inside a container will be accessible from the network.
+                        Modifying this array with strategic merge patch may corrupt
+                        the data. For more information See https://github.com/kubernetes/kubernetes/issues/108255.
+                        Cannot be updated.
                       items:
                         description: ContainerPort represents a network port in a
                           single container.
@@ -4509,6 +4859,19 @@ spec:
                           type: object
                       type: object
                       x-kubernetes-map-type: atomic
+                    matchLabelKeys:
+                      description: MatchLabelKeys is a set of pod label keys to select
+                        the pods over which spreading will be calculated. The keys
+                        are used to lookup values from the incoming pod labels, those
+                        key-value labels are ANDed with labelSelector to select the
+                        group of existing pods over which spreading will be calculated
+                        for the incoming pod. Keys that don't exist in the incoming
+                        pod labels will be ignored. A null or empty list means only
+                        match against labelSelector.
+                      items:
+                        type: string
+                      type: array
+                      x-kubernetes-list-type: atomic
                     maxSkew:
                       description: 'MaxSkew describes the degree to which pods may
                         be unevenly distributed. When `whenUnsatisfiable=DoNotSchedule`,
@@ -4549,11 +4912,31 @@ spec:
                         minimum\" is treated as 0. In this situation, new pod with
                         the same labelSelector cannot be scheduled, because computed
                         skew will be 3(3 - 0) if new Pod is scheduled to any of the
-                        three zones, it will violate MaxSkew. \n This is an alpha
-                        field and requires enabling MinDomainsInPodTopologySpread
-                        feature gate."
+                        three zones, it will violate MaxSkew. \n This is a beta field
+                        and requires the MinDomainsInPodTopologySpread feature gate
+                        to be enabled (enabled by default)."
                       format: int32
                       type: integer
+                    nodeAffinityPolicy:
+                      description: "NodeAffinityPolicy indicates how we will treat
+                        Pod's nodeAffinity/nodeSelector when calculating pod topology
+                        spread skew. Options are: - Honor: only nodes matching nodeAffinity/nodeSelector
+                        are included in the calculations. - Ignore: nodeAffinity/nodeSelector
+                        are ignored. All nodes are included in the calculations. \n
+                        If this value is nil, the behavior is equivalent to the Honor
+                        policy. This is a alpha-level feature enabled by the NodeInclusionPolicyInPodTopologySpread
+                        feature flag."
+                      type: string
+                    nodeTaintsPolicy:
+                      description: "NodeTaintsPolicy indicates how we will treat node
+                        taints when calculating pod topology spread skew. Options
+                        are: - Honor: nodes without taints, along with tainted nodes
+                        for which the incoming pod has a toleration, are included.
+                        - Ignore: node taints are ignored. All nodes are included.
+                        \n If this value is nil, the behavior is equivalent to the
+                        Ignore policy. This is a alpha-level feature enabled by the
+                        NodeInclusionPolicyInPodTopologySpread feature flag."
+                      type: string
                     topologyKey:
                       description: TopologyKey is the key of node labels. Nodes that
                         have a label with this key and identical values are considered
@@ -4561,10 +4944,11 @@ spec:
                         as a "bucket", and try to put balanced number of pods into
                         each bucket. We define a domain as a particular instance of
                         a topology. Also, we define an eligible domain as a domain
-                        whose nodes match the node selector. e.g. If TopologyKey is
-                        "kubernetes.io/hostname", each Node is a domain of that topology.
-                        And, if TopologyKey is "topology.kubernetes.io/zone", each
-                        zone is a domain of that topology. It's a required field.
+                        whose nodes meet the requirements of nodeAffinityPolicy and
+                        nodeTaintsPolicy. e.g. If TopologyKey is "kubernetes.io/hostname",
+                        each Node is a domain of that topology. And, if TopologyKey
+                        is "topology.kubernetes.io/zone", each zone is a domain of
+                        that topology. It's a required field.
                       type: string
                     whenUnsatisfiable:
                       description: 'WhenUnsatisfiable indicates how to deal with a
@@ -6153,8 +6537,55 @@ spec:
               web:
                 description: Defines the web command line flags when starting Alertmanager.
                 properties:
+                  httpConfig:
+                    description: Defines HTTP parameters for web server.
+                    properties:
+                      headers:
+                        description: List of headers that can be added to HTTP responses.
+                        properties:
+                          contentSecurityPolicy:
+                            description: Set the Content-Security-Policy header to
+                              HTTP responses. Unset if blank.
+                            type: string
+                          strictTransportSecurity:
+                            description: Set the Strict-Transport-Security header
+                              to HTTP responses. Unset if blank. Please make sure
+                              that you use this with care as this header might force
+                              browsers to load Prometheus and the other applications
+                              hosted on the same domain and subdomains over HTTPS.
+                              https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Strict-Transport-Security
+                            type: string
+                          xContentTypeOptions:
+                            description: Set the X-Content-Type-Options header to
+                              HTTP responses. Unset if blank. Accepted value is nosniff.
+                              https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/X-Content-Type-Options
+                            enum:
+                            - ""
+                            - NoSniff
+                            type: string
+                          xFrameOptions:
+                            description: Set the X-Frame-Options header to HTTP responses.
+                              Unset if blank. Accepted values are deny and sameorigin.
+                              https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/X-Frame-Options
+                            enum:
+                            - ""
+                            - Deny
+                            - SameOrigin
+                            type: string
+                          xXSSProtection:
+                            description: Set the X-XSS-Protection header to all responses.
+                              Unset if blank. https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/X-XSS-Protection
+                            type: string
+                        type: object
+                      http2:
+                        description: Enable HTTP/2 support. Note that HTTP/2 is only
+                          supported with TLS. When TLSConfig is not configured, HTTP/2
+                          will be disabled. Whenever the value of the field changes,
+                          a rolling update will be triggered.
+                        type: boolean
+                    type: object
                   tlsConfig:
-                    description: WebTLSConfig defines the TLS parameters for HTTPS.
+                    description: Defines the TLS parameters for HTTPS.
                     properties:
                       cert:
                         description: Contains the TLS certificate for the server.
