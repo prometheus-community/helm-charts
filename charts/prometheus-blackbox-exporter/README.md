@@ -62,10 +62,14 @@ securityContext:
     add: ["NET_RAW"]
 ```
 
+### To 7.0.0
+
+TODO
+
 ### To 6.0.0
 
 This version introduces the relabeling field for the ServiceMonitor.
-All values in the list ```additionalRelabeling``` will now appear under ```relabelings``` instead of ```metricRelabelings```.
+All values in the list `additionalRelabeling` will now appear under `relabelings` instead of `metricRelabelings`.
 
 ### To 5.0.0
 
