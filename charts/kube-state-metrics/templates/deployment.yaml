@@ -92,7 +92,9 @@ spec:
         {{- if .Values.selfMonitor.telemetryHost }}
         - --telemetry-host={{ .Values.selfMonitor.telemetryHost }}
         {{- end }}
+        {{- if .Values.selfMonitor.telemetryPort }}
         - --telemetry-port={{ .Values.selfMonitor.telemetryPort | default 8081 }}
+        {{- end }}
         {{- if or (.Values.kubeconfig.enabled) (.Values.volumeMounts) }}
         volumeMounts:
         {{- if .Values.kubeconfig.enabled }}
@@ -105,7 +107,11 @@ spec:
         {{- end }}
         {{- end }}
         imagePullPolicy: {{ .Values.image.pullPolicy }}
+        {{- if .Values.image.sha }}
+        image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}@sha256:{{ .Values.image.sha }}"
+        {{- else }}
         image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+        {{- end }}
         ports:
         - containerPort: {{ .Values.service.port | default 8080}}
           name: "http"

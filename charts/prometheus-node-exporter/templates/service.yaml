@@ -3,11 +3,11 @@ kind: Service
 metadata:
   name: {{ template "prometheus-node-exporter.fullname" . }}
   namespace: {{ template "prometheus-node-exporter.namespace" . }}
+  labels: {{ include "prometheus-node-exporter.labels" . | indent 4 }}
 {{- if .Values.service.annotations }}
   annotations:
 {{ toYaml .Values.service.annotations | indent 4 }}
 {{- end }}
-  labels: {{ include "prometheus-node-exporter.labels" . | indent 4 }}
 spec:
   type: {{ .Values.service.type }}
   ports:
@@ -19,5 +19,4 @@ spec:
       protocol: TCP
       name: {{ .Values.service.portName }}
   selector:
-    app: {{ template "prometheus-node-exporter.name" . }}
-    release: {{ .Release.Name }}
+    {{- include "prometheus-node-exporter.selectorLabels" . | indent 4 }}

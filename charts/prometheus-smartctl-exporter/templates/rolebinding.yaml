@@ -1,0 +1,16 @@
+{{- if .Values.rbac.create }}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: {{ template "prometheus-smartctl-exporter.fullname" . }}
+  labels:
+    {{- include "prometheus-smartctl-exporter.labels" . | nindent 4 }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: {{ .Values.rbac.podSecurityPolicy }}
+subjects:
+- kind: ServiceAccount
+  name: {{ template "prometheus-smartctl-exporter.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+{{- end }}

@@ -1,0 +1,18 @@
+{{- if .Values.prometheusRules.enabled }}
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: {{ template "prometheus-smartctl-exporter.fullname" . }}.rules
+  labels:
+    {{- include "prometheus-smartctl-exporter.labels" . | nindent 4 }}
+{{- if ne (len .Values.prometheusRules.extraLabels) 0 }}
+{{ toYaml .Values.prometheusRules.extraLabels | indent 4 }}
+{{- end }}
+{{- if hasKey .Values.prometheusRules "namespace" }}
+  namespace: {{ .Values.prometheusRules.namespace }}
+{{- end }}
+spec:
+  groups:
+  - name: smartctl-exporter.rules
+{{ .Files.Get "rules/rules.txt" | indent 4 }}
+{{- end }}

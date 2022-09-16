@@ -90,6 +90,10 @@ spec:
           - name: DATA_SOURCE_PASS
             value: ""
           {{- else }}
+          {{- if .Values.config.datasource.passwordFile }}
+          - name: DATA_SOURCE_PASS_FILE
+            value: {{ .Values.config.datasource.passwordFile }}
+          {{- else }}
           - name: DATA_SOURCE_PASS
             valueFrom:
               secretKeyRef:
@@ -99,6 +103,7 @@ spec:
           {{- else }}
                 name: {{ template "prometheus-postgres-exporter.fullname" . }}
                 key: data_source_password
+          {{- end }}
           {{- end }}
           {{- end }}
           {{- end }}
@@ -134,6 +139,10 @@ spec:
 {{- end }}
       securityContext:
 {{ toYaml .Values.securityContext | indent 8 }}
+{{- if .Values.hostAliases }}
+      hostAliases:
+{{ toYaml .Values.hostAliases | indent 8 }}
+{{- end }}
      {{- with .Values.nodeSelector }}
       nodeSelector:
 {{ toYaml . | indent 8 }}
