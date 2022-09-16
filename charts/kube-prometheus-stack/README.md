@@ -80,6 +80,10 @@ _See [helm upgrade](https://helm.sh/docs/helm/helm_upgrade/) for command documen
 
 A major chart version change (like v1.2.3 -> v2.0.0) indicates that there is an incompatible breaking change needing manual actions.
 
+### From 40.x to 41.x
+This version splits kubeScheduler recording and altering rules in separate config values.
+Instead of `defaultRules.rules.kubeScheduler` the 2 new variables `defaultRules.rules.kubeSchedulerAlerting` and `defaultRules.rules.kubeSchedulerRecording` are used.
+
 ### From 39.x to 40.x
 
 This version upgrades Prometheus-Operator to v0.59.1, Prometheus to v2.38.0, kube-state-metrics to v2.6.0 and Thanos to v0.28.0.
