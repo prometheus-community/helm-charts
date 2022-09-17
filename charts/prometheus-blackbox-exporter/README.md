@@ -62,10 +62,6 @@ securityContext:
     add: ["NET_RAW"]
 ```
 
-### To 7.0.0
-
-TODO
-
 ### To 6.0.0
 
 This version introduces the relabeling field for the ServiceMonitor.
