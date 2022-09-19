@@ -54,14 +54,19 @@ spec:
             - --log-level={{ .Values.prometheusOperator.logLevel }}
             {{- end }}
             {{- if .Values.prometheusOperator.denyNamespaces }}
-            - --deny-namespaces={{ .Values.prometheusOperator.denyNamespaces | join "," }}
+            - --deny-namespaces={{ tpl (.Values.prometheusOperator.denyNamespaces | join ",") $ }}
             {{- end }}
             {{- with $.Values.prometheusOperator.namespaces }}
-            {{ $ns := default (list nil) .additional }}
+            {{- $namespaces := list }}
             {{- if .releaseNamespace }}
-            {{- $ns = append $ns $namespace }}
+            {{- $namespaces = append $namespaces $namespace }}
             {{- end }}
-            - --namespaces={{ $ns | join "," }}
+            {{- if .additional }}
+            {{- range $ns := .additional }}
+            {{- $namespaces = append $namespaces (tpl $ns $) }}
+            {{- end }}
+            {{- end }}
+            - --namespaces={{ $namespaces | mustUniq | join "," }}
             {{- end }}
             - --localhost=127.0.0.1
             {{- if .Values.prometheusOperator.prometheusDefaultBaseImage }}
