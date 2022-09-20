@@ -1,0 +1,30 @@
+{{- if .Values.serviceMonitor.selfMonitor }}
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: {{ template "prometheus-blackbox-exporter.fullname" $ }}
+  namespace: {{ template "prometheus-blackbox-exporter.namespace" $ }}
+  labels:
+    {{- include "prometheus-blackbox-exporter.labels" $ | nindent 4 }}
+    {{- if or $.Values.serviceMonitor.selfMonitorDefaults.labels .labels }}
+    {{- toYaml (.labels | default $.Values.serviceMonitor.selfMonitorDefaults.labels) | nindent 4 }}
+    {{- end }}
+spec:
+  endpoints:
+  - path: /metrics
+    interval: {{ .interval | default $.Values.serviceMonitor.selfMonitorDefaults.interval }}
+    scrapeTimeout: {{ .scrapeTimeout | default $.Values.serviceMonitor.selfMonitorDefaults.scrapeTimeout }}
+    scheme: http
+    relabelings:
+{{- if concat (.additionalRelabeling | default list) $.Values.serviceMonitor.selfMonitorDefaults.additionalRelabeling }}
+{{ toYaml (concat (.additionalRelabeling | default list) $.Values.serviceMonitor.selfMonitorDefaults.additionalRelabeling) | indent 6 }}
+{{- end }}
+  jobLabel: "{{ $.Release.Name }}"
+  selector:
+    matchLabels:
+      {{- include "prometheus-blackbox-exporter.selectorLabels" $ | nindent 6 }}
+  namespaceSelector:
+    matchNames:
+      - {{ template "prometheus-blackbox-exporter.namespace" $ }}
+{{- end}}
