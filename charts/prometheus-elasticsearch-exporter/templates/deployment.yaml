@@ -7,12 +7,12 @@ metadata:
     app: {{ template "elasticsearch-exporter.name" . }}
     release: "{{ .Release.Name }}"
     heritage: "{{ .Release.Service }}"
-  {{- if .Values.deployment.labels }}
-{{- toYaml .Values.deployment.labels | nindent 4 }}
+  {{- with .Values.deployment.labels }}
+    {{- toYaml . | nindent 4 }}
   {{- end }}
-  {{- if .Values.deployment.annotations }}
+  {{- with .Values.deployment.annotations }}
   annotations:
-{{- toYaml .Values.deployment.annotations | nindent 4 }}
+    {{- toYaml . | nindent 4 }}
   {{- end }}
 spec:
   replicas: {{ .Values.replicaCount }}
@@ -30,12 +30,12 @@ spec:
       labels:
         app: {{ template "elasticsearch-exporter.name" . }}
         release: "{{ .Release.Name }}"
-        {{- if .Values.podLabels }}
-{{ toYaml .Values.podLabels | indent 8 }}
-        {{- end }}
-      {{- if .Values.podAnnotations }}
+      {{- with .Values.podLabels }}
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.podAnnotations }}
       annotations:
-{{ toYaml .Values.podAnnotations | indent 8 }}
+        {{- toYaml . | nindent 8 }}
       {{- end }}
     spec:
       {{- if .Values.serviceAccount.create  }}
@@ -53,10 +53,10 @@ spec:
         runAsNonRoot: true
         runAsUser: {{ .Values.securityContext.runAsUser }}
       {{- end }}
-{{- with .Values.dnsConfig }}
+      {{- with .Values.dnsConfig }}
       dnsConfig:
-{{ toYaml . | indent 8 }}
-{{- end }}
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
       containers:
         - name: exporter
           env:
@@ -143,8 +143,10 @@ spec:
                 - SYS_CHROOT
                 - SETFCAP
             readOnlyRootFilesystem: true
+          {{- with .Values.resources }}
           resources:
-{{ toYaml .Values.resources | indent 12 }}
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
           ports:
             - containerPort: {{ .Values.service.httpPort }}
               name: http
@@ -178,21 +180,21 @@ spec:
               subPath: {{ .subPath }}
               {{- end }}
             {{- end }}
-            {{- if .Values.extraVolumeMounts }}
-            {{- toYaml .Values.extraVolumeMounts | nindent 12 }}
+            {{- with .Values.extraVolumeMounts }}
+            {{- toYaml . | nindent 12 }}
             {{- end }}
-{{- if .Values.nodeSelector }}
+      {{- with .Values.nodeSelector }}
       nodeSelector:
-{{ toYaml .Values.nodeSelector | indent 8 }}
-{{- end }}
-{{- if .Values.tolerations }}
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
       tolerations:
-{{ toYaml .Values.tolerations | indent 8 }}
-{{- end }}
-{{- if .Values.affinity }}
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
       affinity:
-{{ toYaml .Values.affinity | indent 8 }}
-{{- end }}
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
       volumes:
         {{- if and .Values.es.ssl.enabled (eq .Values.es.ssl.useExistingSecrets false) }}
         - name: ssl
@@ -204,6 +206,6 @@ spec:
           secret:
             secretName: {{ .secretName }}
         {{- end }}
-        {{- if .Values.extraVolumes }}
-        {{- toYaml .Values.extraVolumes | nindent 8 }}
+        {{- with .Values.extraVolumes }}
+        {{- toYaml . | nindent 8 }}
         {{- end }}
