@@ -1,0 +1,34 @@
+{{- if and (.Capabilities.APIVersions.Has "autoscaling.k8s.io/v1") (.Values.verticalPodAutoscaler.enabled) }}
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: {{ template "kube-state-metrics.fullname" . }}
+  namespace: {{ template "kube-state-metrics.namespace" . }}
+  labels:
+    {{- include "kube-state-metrics.labels" . | indent 4 }}
+spec:
+  resourcePolicy:
+    containerPolicies:
+    - containerName: {{ template "kube-state-metrics.name" . }}
+      {{- if .Values.verticalPodAutoscaler.controlledResources }}
+      controlledResources: {{ .Values.verticalPodAutoscaler.controlledResources }}
+      {{- end }}
+      {{- if .Values.verticalPodAutoscaler.maxAllowed }}
+      maxAllowed:
+        {{ toYaml .Values.verticalPodAutoscaler.maxAllowed | nindent 8 }}
+      {{- end }}
+      {{- if .Values.verticalPodAutoscaler.minAllowed }}
+      minAllowed:
+        {{ toYaml .Values.verticalPodAutoscaler.minAllowed | nindent 8 }}
+      {{- end }}
+  targetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name:  {{ template "kube-state-metrics.fullname" . }}
+  {{- if .Values.verticalPodAutoscaler.updatePolicy }}
+  updatePolicy:
+    {{- if .Values.verticalPodAutoscaler.updatePolicy.updateMode }}
+    updateMode: {{ .Values.verticalPodAutoscaler.updatePolicy.updateMode  }}
+    {{- end }}
+  {{- end }}
+{{- end }}

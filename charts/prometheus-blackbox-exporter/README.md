@@ -48,10 +48,24 @@ helm upgrade [RELEASE_NAME] [CHART] --install
 
 _See [helm upgrade](https://helm.sh/docs/helm/helm_upgrade/) for command documentation._
 
+### To 7.0.0
+
+This version introduces the `securityContext` and `podSecurityContext` and removes `allowICMP`option.
+
+All previous values are setup as default. In case that you want to enable previous functionality for `allowICMP` you need to explicit enabled with the following configuration:
+
+```yaml
+securityContext:
+  readOnlyRootFilesystem: true
+  allowPrivilegeEscalation: false
+  capabilities:
+    add: ["NET_RAW"]
+```
+
 ### To 6.0.0
 
 This version introduces the relabeling field for the ServiceMonitor.
-All values in the list ```additionalRelabeling``` will now appear under ```relabelings``` instead of ```metricRelabelings```.
+All values in the list `additionalRelabeling` will now appear under `relabelings` instead of `metricRelabelings`.
 
 ### To 5.0.0
 

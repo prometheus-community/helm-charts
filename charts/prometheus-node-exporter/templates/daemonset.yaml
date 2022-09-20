@@ -7,8 +7,7 @@ metadata:
 spec:
   selector:
     matchLabels:
-      app: {{ template "prometheus-node-exporter.name" . }}
-      release: {{ .Release.Name }}
+      {{- include "prometheus-node-exporter.selectorLabels" . | indent 6 }}
   {{- if .Values.updateStrategy }}
   updateStrategy:
 {{ toYaml .Values.updateStrategy | indent 4 }}
@@ -147,12 +146,20 @@ spec:
             {{- end }}
 {{- if .Values.sidecars }}
 {{ toYaml .Values.sidecars | indent 8 }}
-          {{- if .Values.sidecarVolumeMount }}
+          {{- if or .Values.sidecarVolumeMount .Values.sidecarHostVolumeMounts }}
           volumeMounts:
             {{- range $_, $mount := .Values.sidecarVolumeMount }}
             - name: {{ $mount.name }}
               mountPath: {{ $mount.mountPath }}
               readOnly: {{ $mount.readOnly }}
+            {{- end }}
+            {{- range $_, $mount := .Values.sidecarHostVolumeMounts }}
+            - name: {{ $mount.name }}
+              mountPath: {{ $mount.mountPath }}
+              readOnly: {{ $mount.readOnly }}
+            {{- if $mount.mountPropagation }}
+              mountPropagation: {{ $mount.mountPropagation }}
+            {{- end }}
             {{- end }}
           {{- end }}
 {{- end }}
@@ -202,6 +209,13 @@ spec:
         - name: {{ $mount.name }}
           emptyDir:
             medium: Memory
+        {{- end }}
+        {{- end }}
+        {{- if .Values.sidecarHostVolumeMounts }}
+        {{- range $_, $mount := .Values.sidecarHostVolumeMounts }}
+        - name: {{ $mount.name }}
+          hostPath:
+            path: {{ $mount.hostPath }}
         {{- end }}
         {{- end }}
         {{- if .Values.configmaps }}

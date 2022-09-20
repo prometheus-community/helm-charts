@@ -110,8 +110,11 @@ config:
     # Specify one of both datasource or datasourceSecret
     host:
     user: postgres
-    # Only one of password, passwordSecret and pgpassfile can be specified
+    # Only one of password, passwordFile, passwordSecret and pgpassfile can be specified
     password:
+    # Specify passwordFile if DB password is stored in a file.
+    # For example, to use with vault-injector from Hashicorp
+    passwordFile: ''
     # Specify passwordSecret if DB password is stored in secret.
     passwordSecret: {}
     # Secret name
@@ -166,31 +169,31 @@ config:
 
     pg_stat_user_tables:
       query: |
-       SELECT
-         current_database() datname,
-         schemaname,
-         relname,
-         seq_scan,
-         seq_tup_read,
-         idx_scan,
-         idx_tup_fetch,
-         n_tup_ins,
-         n_tup_upd,
-         n_tup_del,
-         n_tup_hot_upd,
-         n_live_tup,
-         n_dead_tup,
-         n_mod_since_analyze,
-         COALESCE(last_vacuum, '1970-01-01Z') as last_vacuum,
-         COALESCE(last_autovacuum, '1970-01-01Z') as last_autovacuum,
-         COALESCE(last_analyze, '1970-01-01Z') as last_analyze,
-         COALESCE(last_autoanalyze, '1970-01-01Z') as last_autoanalyze,
-         vacuum_count,
-         autovacuum_count,
-         analyze_count,
-         autoanalyze_count
-       FROM
-         pg_stat_user_tables
+        SELECT
+          current_database() datname,
+          schemaname,
+          relname,
+          seq_scan,
+          seq_tup_read,
+          idx_scan,
+          idx_tup_fetch,
+          n_tup_ins,
+          n_tup_upd,
+          n_tup_del,
+          n_tup_hot_upd,
+          n_live_tup,
+          n_dead_tup,
+          n_mod_since_analyze,
+          COALESCE(last_vacuum, '1970-01-01Z') as last_vacuum,
+          COALESCE(last_autovacuum, '1970-01-01Z') as last_autovacuum,
+          COALESCE(last_analyze, '1970-01-01Z') as last_analyze,
+          COALESCE(last_autoanalyze, '1970-01-01Z') as last_autoanalyze,
+          vacuum_count,
+          autovacuum_count,
+          analyze_count,
+          autoanalyze_count
+        FROM
+          pg_stat_user_tables
       metrics:
         - datname:
             usage: "LABEL"

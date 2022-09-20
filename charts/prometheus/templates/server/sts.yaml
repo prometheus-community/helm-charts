@@ -88,8 +88,6 @@ spec:
         - name: {{ template "prometheus.name" . }}-{{ .Values.server.name }}
           image: "{{ .Values.server.image.repository }}:{{ .Values.server.image.tag }}"
           imagePullPolicy: "{{ .Values.server.image.pullPolicy }}"
-          securityContext:
-            {{- toYaml .Values.server.containerSecurityContext | nindent 12 }}
           {{- if .Values.server.env }}
           env:
 {{ toYaml .Values.server.env | indent 12}}
@@ -165,6 +163,28 @@ spec:
             timeoutSeconds: {{ .Values.server.livenessProbeTimeout }}
             failureThreshold: {{ .Values.server.livenessProbeFailureThreshold }}
             successThreshold: {{ .Values.server.livenessProbeSuccessThreshold }}
+          {{- if .Values.server.startupProbe.enabled }}
+          startupProbe:
+            {{- if not .Values.server.tcpSocketProbeEnabled }}
+            httpGet:
+              path: {{ .Values.server.prefixURL }}/-/healthy
+              port: 9090
+              scheme: {{ .Values.server.probeScheme }}
+              {{- if .Values.server.probeHeaders }}
+              httpHeaders:
+              {{- range .Values.server.probeHeaders}}
+              - name: {{ .name }}
+                value: {{ .value }}
+              {{- end }}
+              {{- end }}
+            {{- else }}
+            tcpSocket:
+              port: 9090
+            {{- end }}
+            failureThreshold: {{ .Values.server.startupProbe.failureThreshold }}
+            periodSeconds: {{ .Values.server.startupProbe.periodSeconds }}
+            timeoutSeconds: {{ .Values.server.startupProbe.timeoutSeconds }}
+          {{- end }}
           resources:
 {{ toYaml .Values.server.resources | indent 12 }}
           volumeMounts:
@@ -193,6 +213,10 @@ spec:
           {{- end }}
           {{- if .Values.server.extraVolumeMounts }}
           {{ toYaml .Values.server.extraVolumeMounts | nindent 12 }}
+          {{- end }}
+          {{- with .Values.server.containerSecurityContext }}
+          securityContext:
+            {{- toYaml . | nindent 12 }}
           {{- end }}
     {{- if .Values.server.sidecarContainers }}
       {{- range $name, $spec :=  .Values.server.sidecarContainers }}

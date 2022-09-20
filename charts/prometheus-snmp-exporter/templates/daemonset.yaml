@@ -1,0 +1,115 @@
+{{- if (eq .Values.kind "DaemonSet") }}
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: {{ template "prometheus-snmp-exporter.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "prometheus-snmp-exporter.labels" . | indent 4 }}
+spec:
+  selector:
+    matchLabels:
+      {{- include "prometheus-snmp-exporter.selectorLabels" . | indent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "prometheus-snmp-exporter.labels" . | indent 8 }}
+      annotations:
+{{ toYaml .Values.podAnnotations | indent 8 }}
+    spec:
+    {{- if .Values.nodeSelector }}
+      nodeSelector:
+{{ toYaml .Values.nodeSelector | indent 8 }}
+    {{- end }}
+    {{- if .Values.affinity }}
+      affinity:
+{{ toYaml .Values.affinity | indent 8 }}
+    {{- end }}
+    {{- if .Values.tolerations }}
+      tolerations:
+{{ toYaml .Values.tolerations | indent 6 }}
+    {{- end }}
+      restartPolicy: {{ .Values.restartPolicy }}
+      serviceAccountName: {{ template "prometheus-snmp-exporter.serviceAccountName" . }}
+      containers:
+        - name: snmp-exporter
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+{{- if .Values.containerSecurityContext }}
+          securityContext:
+{{ toYaml .Values.containerSecurityContext | indent 12 }}
+        {{- end }}
+          args:
+{{- if .Values.config }}
+            - "--config.file=/config/snmp.yaml"
+{{- end }}
+        {{- if .Values.extraArgs }}
+{{ toYaml .Values.extraArgs | indent 12 }}
+        {{- end }}
+          resources:
+{{ toYaml .Values.resources | indent 12 }}
+          ports:
+            - containerPort: {{ .Values.service.port }}
+              name: http
+          livenessProbe:
+            {{- toYaml .Values.livenessProbe | trim | nindent 12 }}
+          readinessProbe:
+            {{- toYaml .Values.readinessProbe | trim | nindent 12 }}
+          volumeMounts:
+          {{- if .Values.config }}
+            - mountPath: /config
+              name: config
+          {{- end }}
+          {{- range .Values.extraConfigmapMounts }}
+            - name: {{ .name }}
+              mountPath: {{ .mountPath }}
+              subPath: {{ .subPath | default "" }}
+              readOnly: {{ .readOnly }}
+          {{- end }}
+          {{- range .Values.extraSecretMounts }}
+            - name: {{ .name }}
+              mountPath: {{ .mountPath }}
+              subPath: {{ .subPath }}
+              readOnly: {{ .readOnly }}
+          {{- end }}
+      {{- if .Values.config }}
+        - name: configmap-reload
+          image: "{{ .Values.configmapReload.image.repository }}:{{ .Values.configmapReload.image.tag }}"
+          imagePullPolicy: "{{ .Values.configmapReload.image.pullPolicy }}"
+          args:
+            - --volume-dir=/etc/config
+            - --webhook-url=http://localhost:{{ .Values.service.port }}/-/reload
+          resources:
+{{ toYaml .Values.configmapReload.resources | indent 12 }}
+          volumeMounts:
+            - mountPath: /etc/config
+              name: config
+              readOnly: true
+      {{- end }}
+      {{- if .Values.imagePullSecrets }}
+      imagePullSecrets:
+{{ toYaml .Values.imagePullSecrets | indent 8 }}
+      {{- end }}
+      {{- if .Values.securityContext }}
+      securityContext:
+{{ toYaml .Values.securityContext | indent 8 }}
+      {{- end }}
+      volumes:
+      {{- if .Values.config }}
+        - name: config
+          configMap:
+            name: {{ template "prometheus-snmp-exporter.fullname" . }}
+      {{- end }}
+      {{- range .Values.extraConfigmapMounts }}
+        - name: {{ .name }}
+          configMap:
+            name: {{ .configMap }}
+            defaultMode: {{ .defaultMode }}
+      {{- end }}
+      {{- range .Values.extraSecretMounts }}
+        - name: {{ .name }}
+          secret:
+            secretName: {{ .secretName }}
+            defaultMode: {{ .defaultMode }}
+      {{- end }}
+{{- end }}
