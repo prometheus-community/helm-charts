@@ -74,7 +74,9 @@ spec:
         {{- if .Values.metricDenylist }}
         - --metric-denylist={{ .Values.metricDenylist | join "," }}
         {{- end }}
-        {{- if .Values.releaseNamespace }}
+        {{- if and .Values.releaseNamespace .Values.namespaces}}
+        - --namespaces={{ template "kube-state-metrics.namespace" . }},{{ tpl (.Values.namespaces | join ",") $ }}
+        {{- else if .Values.releaseNamespace }}
         - --namespaces={{ template "kube-state-metrics.namespace" . }}
         {{- else if .Values.namespaces }}
         - --namespaces={{ tpl (.Values.namespaces | join ",") $ }}
