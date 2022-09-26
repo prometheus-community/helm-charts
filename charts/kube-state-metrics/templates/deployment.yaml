@@ -74,7 +74,9 @@ spec:
         {{- if .Values.metricDenylist }}
         - --metric-denylist={{ .Values.metricDenylist | join "," }}
         {{- end }}
-        {{- if .Values.releaseNamespace }}
+        {{- if and .Values.releaseNamespace .Values.namespaces}}
+        - --namespaces={{ template "kube-state-metrics.namespace" . }},{{ tpl (.Values.namespaces | join ",") $ }}
+        {{- else if .Values.releaseNamespace }}
         - --namespaces={{ template "kube-state-metrics.namespace" . }}
         {{- else if .Values.namespaces }}
         - --namespaces={{ tpl (.Values.namespaces | join ",") $ }}
@@ -92,7 +94,9 @@ spec:
         {{- if .Values.selfMonitor.telemetryHost }}
         - --telemetry-host={{ .Values.selfMonitor.telemetryHost }}
         {{- end }}
+        {{- if .Values.selfMonitor.telemetryPort }}
         - --telemetry-port={{ .Values.selfMonitor.telemetryPort | default 8081 }}
+        {{- end }}
         {{- if or (.Values.kubeconfig.enabled) (.Values.volumeMounts) }}
         volumeMounts:
         {{- if .Values.kubeconfig.enabled }}
