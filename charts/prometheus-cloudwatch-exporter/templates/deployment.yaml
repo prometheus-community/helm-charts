@@ -39,9 +39,16 @@ spec:
     {{- end }}
       containers:
         - name: {{ .Chart.Name }}
+          env:
+            - name: POD_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
+        {{- if .Values.extraEnv }}
+        {{- .Values.extraEnv  | toYaml | nindent 12 }}
+        {{- end }}
         {{- if not .Values.aws.role }}
         {{- if .Values.aws.secret.name }}
-          env:
             - name: AWS_ACCESS_KEY_ID
               valueFrom:
                 secretKeyRef:
@@ -60,7 +67,6 @@ spec:
                   name: {{ .Values.aws.secret.name }}
           {{- end }}
         {{- else if and .Values.aws.aws_secret_access_key .Values.aws.aws_access_key_id }}
-          env:
             - name: AWS_ACCESS_KEY_ID
               valueFrom:
                 secretKeyRef:
@@ -73,7 +79,6 @@ spec:
                   name: {{ template "prometheus-cloudwatch-exporter.fullname" . }}
         {{- end }}
         {{- else if .Values.aws.stsRegional.enabled }}
-          env:
             - name: AWS_STS_REGIONAL_ENDPOINTS
               value: regional
         {{- end }}
