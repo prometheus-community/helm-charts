@@ -9,14 +9,14 @@ This chart bootstraps a [cloudwatch exporter](http://github.com/prometheus/cloud
 - [kube2iam](../../stable/kube2iam) installed to used the **aws.role** config option otherwise configure **aws.aws_access_key_id** and **aws.aws_secret_access_key** or **aws.secret.name**
 - Or an [IAM Role for service account](https://aws.amazon.com/blogs/opensource/introducing-fine-grained-iam-roles-service-accounts/) attached to a service account with an annotation. If you run the pod as nobody in `securityContext.runAsUser` then also set `securityContext.fsGroup` to the same value so it will be able to access to the mounted secret.
 
-## Get Repo Info
+## Get Repository Info
 
 ```console
 helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
 helm repo update
 ```
 
-_See [helm repo](https://helm.sh/docs/helm/helm_repo/) for command documentation._
+_See [helm repository](https://helm.sh/docs/helm/helm_repo/) for command documentation._
 
 ## Install Chart
 
