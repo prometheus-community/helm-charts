@@ -129,6 +129,10 @@ Returns pod spec
       affinity:
 {{ toYaml .Values.affinity | indent 8 }}
     {{- end }}
+    {{- if .Values.topologySpreadConstraints }}
+      affinity:
+{{ toYaml .Values.topologySpreadConstraints | indent 8 }}
+    {{- end }}
     {{- if .Values.securityContext }}
       securityContext:
 {{ toYaml .Values.securityContext | indent 8 }}
