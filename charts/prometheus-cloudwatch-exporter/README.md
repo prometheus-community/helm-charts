@@ -28,7 +28,7 @@ $ helm install [RELEASE_NAME] prometheus-community/prometheus-cloudwatch-exporte
 $ helm install --name [RELEASE_NAME] prometheus-community/prometheus-cloudwatch-exporter
 ```
 
-_See [configuration](#configuration) below._
+_See [Configuring](#configuring) below._
 
 _See [helm install](https://helm.sh/docs/helm/helm_install/) for command documentation._
 
