@@ -78,7 +78,8 @@ Returns pod spec
 {{ toYaml .Values.imagePullSecrets | indent 8 }}
     {{- end }}
       {{- if .Values.extraInitContainers }}
-      initContainers:{{ toYaml .Values.extraInitContainers | nindent 8 }}      
+      initContainers:
+        {{ toYaml .Values.extraInitContainers | nindent 8 }}      
       {{- end }}
       containers:
         {{- if .Values.extraContainers }}
