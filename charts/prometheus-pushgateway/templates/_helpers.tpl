@@ -77,6 +77,10 @@ Returns pod spec
       imagePullSecrets:
 {{ toYaml .Values.imagePullSecrets | indent 8 }}
     {{- end }}
+      {{- if .Values.extraInitContainers }}
+      initContainers:
+        {{ toYaml .Values.extraInitContainers | nindent 8 }}      
+      {{- end }}
       containers:
         {{- if .Values.extraContainers }}
 {{ toYaml .Values.extraContainers | indent 8 }}
@@ -128,6 +132,10 @@ Returns pod spec
     {{- if .Values.affinity }}
       affinity:
 {{ toYaml .Values.affinity | indent 8 }}
+    {{- end }}
+    {{- if .Values.topologySpreadConstraints }}
+      topologySpreadConstraints:
+{{ toYaml .Values.topologySpreadConstraints | indent 8 }}
     {{- end }}
     {{- if .Values.securityContext }}
       securityContext:
