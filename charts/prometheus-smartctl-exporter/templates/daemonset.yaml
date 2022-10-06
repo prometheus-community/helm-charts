@@ -30,12 +30,18 @@ spec:
       labels:
         {{- include "prometheus-smartctl-exporter.selectorLabels" $global | nindent 8 }}
         idx: i{{ $idx }}
-      annotations:
-        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum | quote }}
     spec:
       containers:
       - image: "{{ $global.Values.image.repository }}:{{ $global.Values.image.tag | default $global.Chart.AppVersion }}"
         imagePullPolicy: {{ $global.Values.image.pullPolicy }}
+        args:
+        - '--smartctl.path={{ $config.smartctl_location }}'
+        - '--smartctl.interval={{ $config.collect_not_more_than_period }}'
+{{ range $config.devices }}
+        - '--smartctl.device={{ . }}'
+{{ end }}
+        - '--web.listen-address="{{ $config.bind_to }}"'
+        - '--web.telemetry-path="{{ $config.url_path }}"'
         name: main
         securityContext:
           privileged: true
@@ -48,17 +54,11 @@ spec:
         volumeMounts:
         - mountPath: /hostdev
           name: dev
-        - mountPath: /etc/smartctl_exporter.yaml
-          subPath: smartctl_exporter.yaml
-          name: config
       dnsPolicy: ClusterFirst
       hostNetwork: true
       restartPolicy: Always
       serviceAccountName: {{ template "prometheus-smartctl-exporter.fullname" $global }}
       volumes:
-      - configMap:
-          name: {{ template "prometheus-smartctl-exporter.fullname" $global }}-{{ $idx }}
-        name: config
       - hostPath:
           path: /dev
         name: dev
