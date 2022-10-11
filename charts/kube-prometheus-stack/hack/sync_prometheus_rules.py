@@ -83,7 +83,7 @@ condition_map = {
     'kube-apiserver-slos': ' .Values.kubeApiServer.enabled .Values.defaultRules.rules.kubeApiserverSlos',
     'kube-prometheus-general.rules': ' .Values.defaultRules.rules.kubePrometheusGeneral',
     'kube-prometheus-node-recording.rules': ' .Values.defaultRules.rules.kubePrometheusNodeRecording',
-    'kube-scheduler.rules': ' .Values.kubeScheduler.enabled .Values.defaultRules.rules.kubeScheduler',
+    'kube-scheduler.rules': ' .Values.kubeScheduler.enabled .Values.defaultRules.rules.kubeSchedulerRecording',
     'kube-state-metrics': ' .Values.defaultRules.rules.kubeStateMetrics',
     'kubelet.rules': ' .Values.kubelet.enabled .Values.defaultRules.rules.kubelet',
     'kubernetes-apps': ' .Values.defaultRules.rules.kubernetesApps',
@@ -94,7 +94,7 @@ condition_map = {
     'kubernetes-system-apiserver': ' .Values.defaultRules.rules.kubernetesSystem', # kubernetes-system was split into more groups in 1.14, one of them is kubernetes-system-apiserver
     'kubernetes-system-kubelet': ' .Values.defaultRules.rules.kubernetesSystem', # kubernetes-system was split into more groups in 1.14, one of them is kubernetes-system-kubelet
     'kubernetes-system-controller-manager': ' .Values.kubeControllerManager.enabled .Values.defaultRules.rules.kubeControllerManager',
-    'kubernetes-system-scheduler': ' .Values.kubeScheduler.enabled .Values.defaultRules.rules.kubeScheduler',
+    'kubernetes-system-scheduler': ' .Values.kubeScheduler.enabled .Values.defaultRules.rules.kubeSchedulerAlerting',
     'node-exporter.rules': ' .Values.defaultRules.rules.nodeExporterRecording',
     'node-exporter': ' .Values.defaultRules.rules.nodeExporterAlerting',
     'node.rules': ' .Values.defaultRules.rules.node',
