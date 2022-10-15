@@ -1,14 +1,15 @@
 {{- if and .Values.server.enabled .Values.rbac.create .Values.podSecurityPolicy.enabled }}
-apiVersion: {{ template "prometheus.podSecurityPolicy.apiVersion" . }}
+{{- if .Capabilities.APIVersions.Has "policy/v1beta1/PodSecurityPolicy" }}
+apiVersion: policy/v1beta1
 kind: PodSecurityPolicy
 metadata:
   name: {{ template "prometheus.server.fullname" . }}
   labels:
     {{- include "prometheus.server.labels" . | nindent 4 }}
+  {{- with .Values.server.podSecurityPolicy.annotations }}
   annotations:
-{{- if .Values.server.podSecurityPolicy.annotations }}
-{{ toYaml .Values.server.podSecurityPolicy.annotations | indent 4 }}
-{{- end }}
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
 spec:
   privileged: false
   allowPrivilegeEscalation: false
@@ -48,4 +49,5 @@ spec:
       - min: 1
         max: 65535
   readOnlyRootFilesystem: false
+{{- end }}
 {{- end }}
