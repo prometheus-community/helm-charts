@@ -74,7 +74,9 @@ If the MongoDB server requires authentication, credentials should be populated i
 
 ### Service Monitor
 
-The chart comes with a ServiceMonitor for use with the [Prometheus Operator](https://github.com/helm/charts/tree/master/stable/prometheus-operator). If you're not using the Prometheus Operator, you can disable the ServiceMonitor by setting `serviceMonitor.enabled` to `false` and instead populate the `podAnnotations` as below:
+The chart comes with a ServiceMonitor for use with the [Prometheus Operator](https://github.com/helm/charts/tree/master/stable/prometheus-operator). By default, the ServiceMonitor is disabled. You can enable the ServiceMonitor by setting `serviceMonitor.enabled` to `true`. For the ServiceMonitor to be detected by the Prometheus Operator, you must add the selector label to `serviceMonitor.additionalLabels`. You can find this label under `spec.serviceMonitorSelector` of the Prometheus CRD.
+
+If you're not using the Prometheus Operator, you can instead populate the `podAnnotations` as below:
 
 ```yaml
 podAnnotations:
