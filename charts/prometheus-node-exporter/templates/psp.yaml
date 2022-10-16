@@ -1,16 +1,14 @@
-{{- if .Values.rbac.create }}
-{{- if .Values.rbac.pspEnabled }}
-{{- if .Capabilities.APIVersions.Has "policy/v1beta1/PodSecurityPolicy" }}
+{{- if and .Values.rbac.create .Values.rbac.pspEnabled (.Capabilities.APIVersions.Has "policy/v1beta1/PodSecurityPolicy") }}
 apiVersion: policy/v1beta1
 kind: PodSecurityPolicy
 metadata:
   name: {{ template "prometheus-node-exporter.fullname" . }}
   namespace: {{ template "prometheus-node-exporter.namespace" . }}
   labels: {{ include "prometheus-node-exporter.labels" . | indent 4 }}
-{{- if .Values.rbac.pspAnnotations }}
+  {{- with .Values.rbac.pspAnnotations }}
   annotations:
-{{ toYaml .Values.rbac.pspAnnotations | indent 4 }}
-{{- end}}
+    {{- toYaml . | nindent 4 }}
+  {{- end}}
 spec:
   privileged: false
   # Allow core volume types.
@@ -47,6 +45,4 @@ spec:
       - min: 0
         max: 65535
   readOnlyRootFilesystem: false
-{{- end }}
-{{- end }}
 {{- end }}
