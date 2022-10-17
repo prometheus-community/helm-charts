@@ -63,6 +63,8 @@ kubectl delete crd prometheuses.monitoring.coreos.com
 kubectl delete crd prometheusrules.monitoring.coreos.com
 kubectl delete crd servicemonitors.monitoring.coreos.com
 kubectl delete crd thanosrulers.monitoring.coreos.com
+kubectl delete validatingwebhookconfigurations.admissionregistration.k8s.io prometheus-kube-prometheus-admission
+kubectl delete mutatingwebhookconfigurations.admissionregistration.k8s.io prometheus-kube-prometheus-admission
 ```
 
 ## Upgrading Chart
