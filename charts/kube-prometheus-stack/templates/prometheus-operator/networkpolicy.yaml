@@ -1,0 +1,21 @@
+{{- if .Values.prometheusOperator.networkPolicy.enabled }}
+apiVersion: {{ template "kube-prometheus-stack.prometheus.networkPolicy.apiVersion" . }}
+kind: NetworkPolicy
+metadata:
+  name: {{ template "kube-prometheus-stack.fullname" . }}-operator
+  namespace: {{ template "kube-prometheus-stack.namespace" . }}
+  labels:
+    app: {{ template "kube-prometheus-stack.name" . }}-operator
+spec:
+  podSelector:
+    matchLabels:
+      app: {{ template "kube-prometheus-stack.name" . }}-operator
+      release: {{ $.Release.Name | quote }}
+  ingress:
+    - ports:
+      {{- if .Values.prometheusOperator.tls.enabled }}
+      - port: {{ .Values.prometheusOperator.tls.internalPort }}
+      {{- else }}
+      - port: 8080
+      {{- end }}
+{{- end }}

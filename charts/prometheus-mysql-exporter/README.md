@@ -67,7 +67,7 @@ helm show values prometheus-community/prometheus-mysql-exporter
 The exporter can connect to mysql directly or using the [Cloud SQL Proxy](https://cloud.google.com/sql/docs/mysql/sql-proxy).
 
 - To configure direct MySQL connection by value, set `mysql.user`, `mysql.pass`, `mysql.host` and `mysql.port` (see additional options in the `mysql` configuration block)
-- To configure direct MySQL connnetion by secret, you must store a connection string in a secret, and set `mysql.existingSecret` to `[SECRET_NAME]`
+- To configure direct MySQL connection by secret, you must store a connection string in a secret, and set `mysql.existingSecret` to `[SECRET_NAME]`
 
 ### Exporter Documentation and Params
 
