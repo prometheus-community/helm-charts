@@ -42,6 +42,28 @@ spec:
 {{ toYaml .Values.defaultRules.additionalRuleLabels | indent 8 }}
 {{- end }}
 {{- end }}
+{{- if not (.Values.defaultRules.disabled.KubePodOOMKilled | default false) }}
+    - alert: KubePodOOMKilled
+      annotations:
+{{- if .Values.defaultRules.additionalRuleAnnotations }}
+{{ toYaml .Values.defaultRules.additionalRuleAnnotations | indent 8 }}
+{{- end }}
+        description: 'Pod {{`{{`}} $labels.namespace {{`}}`}}/{{`{{`}} $labels.pod {{`}}`}} ({{`{{`}} $labels.container {{`}}`}}) got OOMKilled.'
+        runbook_url: {{ .Values.defaultRules.runbookUrl }}/kubernetes/kubepodoomkilled
+        summary: Pod got OOMKilled.
+      expr: |-
+        (
+          kube_pod_container_status_last_terminated_reason{job="kube-state-metrics", namespace=~"{{ $targetNamespace }}", reason="OOMKilled"} == 1
+        ) and on(pod) (
+          increase(kube_pod_container_status_restarts_total{job="kube-state-metrics", namespace=~"{{ $targetNamespace }}"}[5m]) > 0
+        )
+      for: 15m
+      labels:
+        severity: warning
+{{- if .Values.defaultRules.additionalRuleLabels }}
+{{ toYaml .Values.defaultRules.additionalRuleLabels | indent 8 }}
+{{- end }}
+{{- end }}
 {{- if not (.Values.defaultRules.disabled.KubePodNotReady | default false) }}
     - alert: KubePodNotReady
       annotations:
