@@ -56,8 +56,10 @@ spec:
         - name: {{ template "prometheus.name" . }}-{{ .Values.server.name }}-{{ .Values.configmapReload.prometheus.name }}
           image: "{{ .Values.configmapReload.prometheus.image.repository }}:{{ .Values.configmapReload.prometheus.image.tag }}"
           imagePullPolicy: "{{ .Values.configmapReload.prometheus.image.pullPolicy }}"
+          {{- if .Values.configmapReload.prometheus.containerSecurityContext.enabled }}
           securityContext:
-            {{- toYaml .Values.configmapReload.prometheus.containerSecurityContext | nindent 12 }}
+            {{- omit .Values.configmapReload.prometheus.containerSecurityContext "enabled" | toYaml .Values.configmapReload.prometheus.containerSecurityContext | nindent 12 }}
+          {{- end }}
           args:
             - --volume-dir=/etc/config
             - --webhook-url=http://127.0.0.1:9090{{ .Values.server.prefixURL }}/-/reload
@@ -214,9 +216,9 @@ spec:
           {{- if .Values.server.extraVolumeMounts }}
           {{ toYaml .Values.server.extraVolumeMounts | nindent 12 }}
           {{- end }}
-          {{- with .Values.server.containerSecurityContext }}
+          {{- if .Values.server.containerSecurityContext.enabled }}
           securityContext:
-            {{- toYaml . | nindent 12 }}
+            {{- omit .Values.server.containerSecurityContext "enabled" | toYaml | nindent 12 }}
           {{- end }}
     {{- if .Values.server.sidecarContainers }}
       {{- range $name, $spec :=  .Values.server.sidecarContainers }}
@@ -248,9 +250,9 @@ spec:
       dnsConfig:
 {{ toYaml .Values.server.dnsConfig | indent 8 }}
     {{- end }}
-    {{- if .Values.server.securityContext }}
+    {{- if .Values.server.securityContext.enabled }}
       securityContext:
-{{ toYaml .Values.server.securityContext | indent 8 }}
+{{- omit .Values.server.securityContext "enabled" | toYaml | indent 8 }}
     {{- end }}
     {{- if .Values.server.tolerations }}
       tolerations:

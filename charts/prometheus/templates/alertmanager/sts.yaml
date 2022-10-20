@@ -47,8 +47,10 @@ spec:
         - name: {{ template "prometheus.name" . }}-{{ .Values.alertmanager.name }}
           image: "{{ .Values.alertmanager.image.repository }}:{{ .Values.alertmanager.image.tag }}"
           imagePullPolicy: "{{ .Values.alertmanager.image.pullPolicy }}"
+          {{- if .Values.alertmanager.containerSecurityContext.enabled }}
           securityContext:
-            {{- toYaml .Values.alertmanager.containerSecurityContext | nindent 12 }}
+            {{- omit .Values.alertmanager.containerSecurityContext "enabled" | toYaml | nindent 12 }}
+          {{- end }}
           env:
             {{- range $key, $value := .Values.alertmanager.extraEnv }}
             - name: {{ $key }}
@@ -111,8 +113,10 @@ spec:
         - name: {{ template "prometheus.name" . }}-{{ .Values.alertmanager.name }}-{{ .Values.configmapReload.alertmanager.name }}
           image: "{{ .Values.configmapReload.alertmanager.image.repository }}:{{ .Values.configmapReload.alertmanager.image.tag }}"
           imagePullPolicy: "{{ .Values.configmapReload.alertmanager.image.pullPolicy }}"
+          {{- if .Values.configmapReload.alertmanager.containerSecurityContext.enabled }}
           securityContext:
-            {{- toYaml .Values.configmapReload.alertmanager.containerSecurityContext | nindent 12 }}
+            {{- omit .Values.configmapReload.alertmanager.containerSecurityContext "enabled" | toYaml | nindent 12 }}
+          {{- end }}
           args:
             - --volume-dir=/etc/config
             - --webhook-url=http://localhost:9093{{ .Values.alertmanager.prefixURL }}/-/reload
@@ -138,9 +142,9 @@ spec:
       nodeSelector:
 {{ toYaml .Values.alertmanager.nodeSelector | indent 8 }}
     {{- end }}
-    {{- if .Values.alertmanager.securityContext }}
+    {{- if .Values.alertmanager.securityContext.enabled }}
       securityContext:
-{{ toYaml .Values.alertmanager.securityContext | indent 8 }}
+{{ omit .Values.alertmanager.securityContext "enabled" | toYaml | indent 8 }}
     {{- end }}
     {{- if .Values.alertmanager.tolerations }}
       tolerations:
