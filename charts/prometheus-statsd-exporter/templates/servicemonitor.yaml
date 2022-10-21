@@ -1,14 +1,12 @@
-{{- if .Values.serviceMonitor.enabled }}
-apiVersion: monitoring.coreos.com/v1
+{{- if .Values.prometheus.monitor.serviceMonitor }}
+apiVersion: {{ .Values.prometheus.monitor.apiVersion | default "monitoring.coreos.com/v1" }}
 kind: ServiceMonitor
 metadata:
   name: {{ template "prometheus-statsd-exporter.fullname" . }}-metrics
-  {{- if .Values.serviceMonitor.namespace }}
-  namespace: {{ .Values.serviceMonitor.namespace }}
-  {{- end }}
+  namespace: {{ default .Release.Namespace .Values.prometheus.monitor.namespace | quote }}
   labels: {{- include "prometheus-statsd-exporter.labels" . | nindent 4 }}
     app.kubernetes.io/component: metrics
-    {{- range $key, $value := .Values.serviceMonitor.additionalLabels }}
+    {{- range $key, $value := .Values.prometheus.monitor.additionalLabels }}
     {{ $key }}: {{ $value | quote }}
   {{- end }}
 spec:
@@ -16,21 +14,21 @@ spec:
     matchLabels:
       {{- include "prometheus-statsd-exporter.selectorLabels" . | nindent 6 }}
   endpoints:
-    - port: http
-      path: "/metrics"
-      {{- if .Values.serviceMonitor.interval }}
-      interval: {{ .Values.serviceMonitor.interval }}
+    - port: {{ .Values.prometheus.monitor.scheme }}
+      path: {{ .Values.prometheus.monitor.endpoint }}
+      {{- if .Values.prometheus.monitor.interval }}
+      interval: {{ .Values.prometheus.monitor.interval }}
       {{- end }}
-      {{- if .Values.serviceMonitor.scrapeTimeout }}
-      scrapeTimeout: {{ .Values.serviceMonitor.scrapeTimeout }}
+      {{- if .Values.prometheus.monitor.scrapeTimeout }}
+      scrapeTimeout: {{ .Values.prometheus.monitor.scrapeTimeout }}
       {{- end }}
-      {{- with .Values.serviceMonitor.honorLabels }}
+      {{- with .Values.prometheus.monitor.honorLabels }}
       honorLabels: {{ . }}
       {{- end }}
-      {{- with .Values.serviceMonitor.metricRelabelings }}
+      {{- with .Values.prometheus.monitor.metricRelabelings }}
       metricRelabelings: {{ toYaml . | nindent 8 }}
       {{- end }}
-      {{- with .Values.serviceMonitor.relabelings }}
+      {{- with .Values.prometheus.monitor.relabelings }}
       relabelings: {{ toYaml . | nindent 8 }}
       {{- end }}
   namespaceSelector:

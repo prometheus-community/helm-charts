@@ -63,27 +63,49 @@ readinessProbe:
     path: /health
     port: http
 
-serviceMonitor:
-  enabled: false
-  interval: 30s
-  scrapeTimeout: 10s
-  namespace: monitoring
-  honorLabels: false
-  additionalLabels: {}
-  # MetricRelabelConfigs to apply to samples before ingestion
-  metricRelabelings: []
-  # RelabelConfigs to apply to samples before scraping.
-  # More info https://prometheus.io/docs/prometheus/latest/configuration/configuration/#relabel_config
-  relabelings: []
+prometheus:
+  monitor:
+    ## prometheus-operator monitoring
+    serviceMonitor: false
 
-podMonitor:
-  # If enabled, It creates Google Managed Prometheus scraping config
-  enabled: false
-  interval: 30s
-  # Set a custom namespace where to deploy PodMonitoring resource
-  namespace: ""
-  # This is the default endpoint of the metrics
-  endpoint: /metrics
+    ## google managed prometheus monitoring
+    podMonitor: false
+
+    additionalLabels: {}
+    namespace: ""
+
+    jobLabel: ""
+
+    scheme: http
+    basicAuth: {}
+    bearerTokenFile:
+    tlsConfig: {}
+
+    ## proxyUrl: URL of a proxy that should be used for scraping.
+    ##
+    proxyUrl: ""
+
+    ## Override serviceMonitor selector
+    ##
+    selectorOverride: {}
+
+    # RelabelConfigs to apply to samples before scraping.
+    # More info https://prometheus.io/docs/prometheus/latest/configuration/configuration/#relabel_config
+    relabelings: []
+    honorLabels: false
+
+    # MetricRelabelConfigs to apply to samples before ingestion
+    metricRelabelings: []
+    interval: ""
+    scrapeTimeout: 10s
+
+    ## prometheus.monitor.apiVersion
+    # ApiVersion for the serviceMonitor Resource(defaults to "monitoring.coreos.com/v1")
+    # ApiVersion for the podMonitor Resource(defaults to "monitoring.coreos.com/v1")
+    apiVersion: ""
+
+    # metrics exposing endpoint
+    endpoint: "/metrics"
 
 serviceAccount:
   # Specifies whether a service account should be created
