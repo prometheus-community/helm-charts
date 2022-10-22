@@ -1,6 +1,6 @@
-{{- if .Values.prometheus.monitor.podMonitor }}
+{{- if .Values.prometheus.monitor.enabled }}
 apiVersion: {{ .Values.prometheus.monitor.apiVersion | default "monitoring.googleapis.com/v1" }}
-kind: PodMonitoring
+kind: {{ .Values.prometheus.monitor.kind | default "PodMonitoring" }}
 metadata:
   name: {{ template "prometheus-statsd-exporter.fullname" . }}-metrics
   namespace: {{ default .Release.Namespace .Values.prometheus.monitor.namespace | quote }}
@@ -14,9 +14,7 @@ spec:
     matchLabels:
       {{- include "prometheus-statsd-exporter.selectorLabels" . | nindent 6 }}
   endpoints:
-    - port: {{ .Values.prometheus.monitor.scheme }}
+    - port: http
       path: {{ .Values.prometheus.monitor.endpoint }}
-      {{- if .Values.prometheus.monitor.interval }}
       interval: {{ .Values.prometheus.monitor.interval }}
-      {{- end }}
 {{- end }}
