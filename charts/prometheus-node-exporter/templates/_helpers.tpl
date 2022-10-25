@@ -105,3 +105,22 @@ Create the namespace name of the service monitor
     {{- end -}}
   {{- end -}}
 {{- end -}}
+
+{{/* Sets default scrape limits for servicemonitor */}}
+{{- define "servicemonitor.scrapeLimits" -}}
+{{- if .sampleLimit }}
+sampleLimit: {{ .sampleLimit }}
+{{- end }}
+{{- if .targetLimit }}
+targetLimit: {{ .targetLimit }}
+{{- end }}
+{{- if .labelLimit }}
+labelLimit: {{ .labelLimit }}
+{{- end }}
+{{- if .labelNameLengthLimit }}
+labelNameLengthLimit: {{ .labelNameLengthLimit }}
+{{- end }}
+{{- if .labelValueLengthLimit }}
+labelValueLengthLimit: {{ .labelValueLengthLimit }}
+{{- end }}
+{{- end -}}
