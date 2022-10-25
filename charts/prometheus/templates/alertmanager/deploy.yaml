@@ -47,9 +47,11 @@ spec:
         - name: {{ template "prometheus.name" . }}-{{ .Values.alertmanager.name }}
           image: "{{ .Values.alertmanager.image.repository }}:{{ .Values.alertmanager.image.tag }}"
           imagePullPolicy: "{{ .Values.alertmanager.image.pullPolicy }}"
-          {{- if .Values.alertmanager.containerSecurityContext.enabled }}
+          {{- if .Values.alertmanager.containerSecurityContextEnabled }}
+          {{- if .Values.alertmanager.containerSecurityContext }}
           securityContext:
-            {{- omit .Values.alertmanager.containerSecurityContext "enabled" | toYaml | nindent 12 }}
+            {{- toYaml .Values.alertmanager.containerSecurityContext | nindent 12 }}
+          {{- end }}
           {{- end }}
           env:
             {{- range $key, $value := .Values.alertmanager.extraEnv }}
@@ -117,9 +119,11 @@ spec:
         - name: {{ template "prometheus.name" . }}-{{ .Values.alertmanager.name }}-{{ .Values.configmapReload.alertmanager.name }}
           image: "{{ .Values.configmapReload.alertmanager.image.repository }}:{{ .Values.configmapReload.alertmanager.image.tag }}"
           imagePullPolicy: "{{ .Values.configmapReload.alertmanager.image.pullPolicy }}"
-          {{- if .Values.configmapReload.alertmanager.containerSecurityContext.enabled }}
+          {{- if .Values.configmapReload.alertmanager.containerSecurityContextEnabled }}
+          {{- if .Values.configmapReload.alertmanager.containerSecurityContext }}
           securityContext:
-            {{- omit .Values.configmapReload.alertmanager.containerSecurityContext "enabled" | toYaml | nindent 12 }}
+            {{- toYaml .Values.configmapReload.alertmanager.containerSecurityContext | nindent 12 }}
+          {{- end }}
           {{- end }}
           args:
             - --volume-dir=/etc/config

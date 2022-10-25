@@ -56,9 +56,11 @@ spec:
         - name: {{ template "prometheus.name" . }}-{{ .Values.server.name }}-{{ .Values.configmapReload.prometheus.name }}
           image: "{{ .Values.configmapReload.prometheus.image.repository }}:{{ .Values.configmapReload.prometheus.image.tag }}"
           imagePullPolicy: "{{ .Values.configmapReload.prometheus.image.pullPolicy }}"
-          {{- if .Values.configmapReload.prometheus.containerSecurityContext.enabled }}
+          {{- if .Values.server.configmapReload.prometheus.containerSecurityContextEnabled }}
+          {{- if .Values.configmapReload.prometheus.containerSecurityContext }}
           securityContext:
-            {{- omit .Values.configmapReload.prometheus.containerSecurityContext "enabled" | toYaml .Values.configmapReload.prometheus.containerSecurityContext | nindent 12 }}
+            {{- toYaml .Values.configmapReload.prometheus.containerSecurityContext | nindent 12 }}
+          {{- end }}
           {{- end }}
           args:
             - --volume-dir=/etc/config
@@ -216,9 +218,11 @@ spec:
           {{- if .Values.server.extraVolumeMounts }}
           {{ toYaml .Values.server.extraVolumeMounts | nindent 12 }}
           {{- end }}
-          {{- if .Values.server.containerSecurityContext.enabled }}
+          {{- if .Values.server.containerSecurityContextEnabled }}
+          {{- if .Values.server.containerSecurityContext }}
           securityContext:
-            {{- omit .Values.server.containerSecurityContext "enabled" | toYaml | nindent 12 }}
+            {{- toYaml .Values.server.containerSecurityContext | nindent 12 }}
+          {{- end }}
           {{- end }}
     {{- if .Values.server.sidecarContainers }}
       {{- range $name, $spec :=  .Values.server.sidecarContainers }}
