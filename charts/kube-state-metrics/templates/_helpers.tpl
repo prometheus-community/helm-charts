@@ -80,3 +80,22 @@ Selector labels
 app.kubernetes.io/name: {{ include "kube-state-metrics.name" . }}
 app.kubernetes.io/instance: {{ .Release.Name }}
 {{- end }}
+
+{{/* Sets default scrape limits for servicemonitor */}}
+{{- define "servicemonitor.scrapeLimits" -}}
+{{- if .sampleLimit }}
+sampleLimit: {{ .sampleLimit }}
+{{- end }}
+{{- if .targetLimit }}
+targetLimit: {{ .targetLimit }}
+{{- end }}
+{{- if .labelLimit }}
+labelLimit: {{ .labelLimit }}
+{{- end }}
+{{- if .labelNameLengthLimit }}
+labelNameLengthLimit: {{ .labelNameLengthLimit }}
+{{- end }}
+{{- if .labelValueLengthLimit }}
+labelValueLengthLimit: {{ .labelValueLengthLimit }}
+{{- end }}
+{{- end -}}
