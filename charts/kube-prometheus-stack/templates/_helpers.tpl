@@ -228,6 +228,26 @@ Use the prometheus-node-exporter namespace override for multi-namespace deployme
   {{- include "kube-prometheus-stack.kubeVersionDefaultValue" (list $values ">= 1.23-0" $insecure $secure $userValue) -}}
 {{- end -}}
 
+{{/* Sets default scrape limits for servicemonitor */}}
+{{- define "servicemonitor.scrapeLimits" -}}
+{{- if .sampleLimit }}
+sampleLimit: {{ .sampleLimit }}
+{{- end }}
+{{- if .targetLimit }}
+targetLimit: {{ .targetLimit }}
+{{- end }}
+{{- if .labelLimit }}
+labelLimit: {{ .labelLimit }}
+{{- end }}
+{{- if .labelNameLengthLimit }}
+labelNameLengthLimit: {{ .labelNameLengthLimit }}
+{{- end }}
+{{- if .labelValueLengthLimit }}
+labelValueLengthLimit: {{ .labelValueLengthLimit }}
+{{- end }}
+{{- end -}}
+
+
 {{/*
 To help compatibility with other charts which use global.imagePullSecrets.
 Allow either an array of {name: pullSecret} maps (k8s-style), or an array of strings (more common helm-style).
