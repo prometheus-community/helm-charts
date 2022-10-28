@@ -28,14 +28,14 @@ spec:
   ingressClassName: {{ .Values.server.ingress.ingressClassName }}
   {{- end }}
   rules:
-  {{- range .Values.server.ingress.hosts }}
+    {{- range .Values.server.ingress.hosts }}
     {{- $url := splitList "/" . }}
     - host: {{ first $url }}
       http:
         paths:
-{{ if $extraPaths }}
-{{ toYaml $extraPaths | indent 10 }}
-{{- end }}
+          {{- if $extraPaths }}
+          {{- toYaml $extraPaths | nindent 10 }}
+          {{- end }}
           - path: {{ $ingressPath }}
             {{- if $ingressSupportsPathType }}
             pathType: {{ $ingressPathType }}
@@ -51,9 +51,9 @@ spec:
               servicePort: {{ $servicePort }}
               {{- end }}
   {{- end -}}
-{{- if .Values.server.ingress.tls }}
+  {{- with .Values.server.ingress.tls }}
   tls:
-{{ toYaml .Values.server.ingress.tls | indent 4 }}
+    {{- toYaml . | nindent 4 }}
   {{- end -}}
 {{- end -}}
 {{- end -}}

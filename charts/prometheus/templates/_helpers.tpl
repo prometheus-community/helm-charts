@@ -135,6 +135,21 @@ We truncate at 63 chars because some Kubernetes name fields are limited to this 
 {{- end -}}
 {{- end -}}
 
+
+{{/*
+Define enableServiceLinks
+*/}}
+{{- define "prometheus.server.enableServiceLinks" -}}
+{{- if semverCompare ">=1.13-0" .Capabilities.KubeVersion.GitVersion -}}
+{{- if or (.Values.server.enableServiceLinks) (eq (.Values.server.enableServiceLinks | toString) "<nil>") -}}
+{{- printf "enableServiceLinks: true" -}}
+{{- else -}}
+{{- printf "enableServiceLinks: false" -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}
+
+
 {{/*
 Create a fully qualified pushgateway name.
 We truncate at 63 chars because some Kubernetes name fields are limited to this (by the DNS naming spec).
@@ -285,3 +300,4 @@ Define the prometheus.namespace template if set with forceNamespace or .Release.
 {{ printf "namespace: %s" .Release.Namespace }}
 {{- end -}}
 {{- end -}}
+
