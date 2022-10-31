@@ -1,0 +1,147 @@
+global:
+  imagePullSecrets: []
+
+# -- String to partially override jiralert.fullname template (will maintain the release name)
+nameOverride: ""
+
+# -- Override the namespace
+namespaceOverride: ""
+
+# -- String to fully override amazon-eks-pod-identity.fullname template
+fullnameOverride: ""
+
+image:
+  pullPolicy: IfNotPresent
+  # -- jiralert image registry
+  repository: quay.io/jiralert/jiralert-linux-amd64
+  # -- jiralert image tag (immutable tags are recommended).
+  # @default -- `.Chart.AppVersion`
+  tag: ""
+
+extraArgs:
+  - -log.level=debug
+
+# Number of pod replicas
+replicaCount: 1
+
+# Container resources
+resources:
+  # -- The resources limits for the jiralert container
+  ## Example:
+  ## limits:
+  ##    cpu: 100m
+  ##    memory: 128Mi
+  limits:
+    cpu: 200m
+    memory: 128Mi
+  # -- The requested resources for the jiralert container
+  ## Examples:
+  ## requests:
+  ##    cpu: 100m
+  ##    memory: 128Mi
+  requests:
+    cpu: 100m
+    memory: 64Mi
+
+# -- Annotations for jiralert pods
+podAnnotations: {}
+
+# -- jiralert pods' Security Context.
+podSecurityContext: {}
+# fsGroup: 2000
+
+# Container security context
+securityContext:
+  runAsUser: 1001
+  runAsGroup: 1001
+  runAsNonRoot: true
+  readOnlyRootFilesystem: true
+
+livenessProbe:
+  httpGet:
+    path: /healthz
+    port: http
+readinessProbe:
+  httpGet:
+    path: /healthz
+    port: http
+
+serviceAccount:
+  # -- Enable creation of ServiceAccount for nginx pod
+  create: true
+  # -- The name of the ServiceAccount to use.
+  # @default -- A name is generated using the `jiralert.fullname` template
+  name: ''
+  # -- Annotations for service account. Evaluated as a template.
+  annotations: {}
+  # -- Labels for service account. Evaluated as a template.
+  labels: {}
+
+existingConfigSecret: ~
+
+config:
+  # File containing template definitions. Required.
+  template: jiralert.tmpl
+
+  # Example: https://github.com/prometheus-community/jiralert/blob/master/examples/jiralert.yml
+  defaults:
+    # API access fields.
+    api_url: "https://example.atlassian.net"
+    # user: {{ .config.jiraUser }}
+    # password: '{{ .config.jiraToken }}'
+    summary: '{{`{{ template "jira.summary" . }}`}}'
+    description: '{{`{{ template "jira.description" . }}`}}'
+    issue_type: Bug
+    reopen_state: "To Do"
+    reopen_duration: 0h
+
+  # Receiver definitions. At least one must be defined.
+  receivers: []
+  #  - name: 'default'
+  #    # JIRA project to create the issue in. Required.
+  #    project:
+  #    # Copy all Prometheus labels into separate JIRA labels. Optional (default: false).
+  #    add_group_labels: false
+  #    fields:
+  #      # Set the Environment field
+  #      "customfield_10078": { "value": { { .config.receiver.environment | quote } } }
+  #      # Set the Organization field
+  #      "customfield_10002": [ { { .config.receiver.organizationID } } ]
+
+# -- Affinity for pod assignment
+affinity: {}
+
+# -- Node labels for pod assignment. Evaluated as a template.
+nodeSelector: {}
+
+# -- Tolerations for pod assignment. Evaluated as a template.
+tolerations: []
+
+ingress:
+  enabled: false
+  className: ""
+  labels: {}
+  annotations: {}
+    # kubernetes.io/ingress.class: nginx
+  # kubernetes.io/tls-acme: "true"
+  hosts:
+    - host: chart-example.local
+      paths:
+        - path: /
+          pathType: ImplementationSpecific
+  tls: []
+  #  - secretName: chart-example-tls
+  #    hosts:
+  #      - chart-example.local
+
+issueTemplate: |
+  {{`{{ define "jira.summary" }}[{{ .Status | toUpper }}{{ if eq .Status "firing" }}:{{ .Alerts.Firing | len }}{{ end }}] {{ .GroupLabels.SortedPairs.Values | join " " }} {{ if gt (len .CommonLabels) (len .GroupLabels) }}({{ with .CommonLabels.Remove .GroupLabels.Names }}{{ .Values | join " " }}{{ end }}){{ end }}{{ end }}
+
+  {{ define "jira.description" }}{{ range .Alerts.Firing }}Labels:
+  {{ range .Labels.SortedPairs }} - {{ .Name }} = {{ .Value }}
+  {{ end }}
+  Annotations:
+  {{ range .Annotations.SortedPairs }} - {{ .Name }} = {{ .Value }}
+  {{ end }}
+  Source: {{ .GeneratorURL }}
+  {{ end }}{{ end }}`}}
