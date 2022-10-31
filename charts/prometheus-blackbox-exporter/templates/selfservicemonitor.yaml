@@ -7,20 +7,21 @@ metadata:
   namespace: {{ template "prometheus-blackbox-exporter.namespace" $ }}
   labels:
     {{- include "prometheus-blackbox-exporter.labels" $ | nindent 4 }}
-    {{- if or $.Values.serviceMonitor.selfMonitor.labels .labels }}
-    {{- toYaml (.labels | default $.Values.serviceMonitor.selfMonitor.labels) | nindent 4 }}
+    {{- if .Values.serviceMonitor.selfMonitor.labels  }}
+    {{- toYaml (.Values.serviceMonitor.selfMonitor.labels) | nindent 4 }}
     {{- end }}
 spec:
   endpoints:
   - path: /metrics
-    interval: {{ .interval | default $.Values.serviceMonitor.selfMonitor.interval }}
-    scrapeTimeout: {{ .scrapeTimeout | default $.Values.serviceMonitor.selfMonitor.scrapeTimeout }}
+    interval: {{ .Values.serviceMonitor.selfMonitor.interval }}
+    scrapeTimeout: {{ .Values.serviceMonitor.selfMonitor.scrapeTimeout }}
     scheme: http
+
+{{- if .Values.serviceMonitor.selfMonitor.additionalRelabeling }}
     relabelings:
-{{- if concat (.additionalRelabeling | default list) $.Values.serviceMonitor.selfMonitor.additionalRelabeling }}
-{{ toYaml (concat (.additionalRelabeling | default list) $.Values.serviceMonitor.selfMonitor.additionalRelabeling) | indent 6 }}
+{{ toYaml .Values.serviceMonitor.selfMonitor.additionalRelabeling | indent 6 }}
 {{- end }}
-  jobLabel: "{{ $.Release.Name }}"
+  jobLabel: "{{ .Release.Name }}"
   selector:
     matchLabels:
       {{- include "prometheus-blackbox-exporter.selectorLabels" $ | nindent 6 }}

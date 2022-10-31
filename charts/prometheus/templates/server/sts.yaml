@@ -56,8 +56,10 @@ spec:
         - name: {{ template "prometheus.name" . }}-{{ .Values.server.name }}-{{ .Values.configmapReload.prometheus.name }}
           image: "{{ .Values.configmapReload.prometheus.image.repository }}:{{ .Values.configmapReload.prometheus.image.tag }}"
           imagePullPolicy: "{{ .Values.configmapReload.prometheus.image.pullPolicy }}"
+          {{- with .Values.configmapReload.prometheus.containerSecurityContext }}
           securityContext:
-            {{- toYaml .Values.configmapReload.prometheus.containerSecurityContext | nindent 12 }}
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
           args:
             - --volume-dir=/etc/config
             - --webhook-url=http://127.0.0.1:9090{{ .Values.server.prefixURL }}/-/reload
@@ -248,9 +250,9 @@ spec:
       dnsConfig:
 {{ toYaml .Values.server.dnsConfig | indent 8 }}
     {{- end }}
-    {{- if .Values.server.securityContext }}
+    {{- with .Values.server.securityContext }}
       securityContext:
-{{ toYaml .Values.server.securityContext | indent 8 }}
+        {{- toYaml . | nindent 8 }}
     {{- end }}
     {{- if .Values.server.tolerations }}
       tolerations:
