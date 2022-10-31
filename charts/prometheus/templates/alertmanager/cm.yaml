@@ -1,20 +1,23 @@
-{{- if and .Values.alertmanager.enabled (and (empty .Values.alertmanager.configMapOverrideName) (empty .Values.alertmanager.configFromSecret)) -}}
+{{- if and .Values.alertmanager.enabled 
+           (empty .Values.alertmanager.configMapOverrideName)
+           (empty .Values.alertmanager.configFromSecret) -}}
 apiVersion: v1
 kind: ConfigMap
 metadata:
   labels:
-    {{- include "prometheus.alertmanager.labels" . | nindent 4 }}
-  name: {{ template "prometheus.alertmanager.fullname" . }}
-{{ include "prometheus.namespace" . | indent 2 }}
+    {{- include "prometheus.alertmanager.labels" $ | nindent 4 }}
+  name: {{ template "prometheus.alertmanager.fullname" $ }}
+  {{- include "prometheus.namespace" $ | nindent 2 }}
 data:
   allow-snippet-annotations: "false"
 {{- $root := . -}}
 {{- range $key, $value := .Values.alertmanagerFiles }}
   {{- if $key | regexMatch ".*\\.ya?ml$" }}
   {{ $key }}: |
-{{ toYaml $value | default "{}" | indent 4 }}
+    {{- toYaml $value | default "{}" | nindent 4 }}
   {{- else }}
-  {{ $key }}: {{ toYaml $value | indent 4 }}
+  {{ $key }}:
+    {{- toYaml $value | nindent 4 }}
   {{- end }}
 {{- end -}}
 {{- end -}}

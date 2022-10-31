@@ -13,7 +13,7 @@ metadata:
     {{- include "prometheus.server.labels" $ | nindent 4 }}
     {{- with .statefulSet.labels }}
     {{- toYaml . | nindent 4 }}
-    {{- end}}
+    {{- end }}
   name: {{ template "prometheus.server.fullname" $ }}
   {{- include "prometheus.namespace" $ | nindent 2 }}
 spec:
@@ -59,15 +59,15 @@ spec:
           args:
             - --volume-dir=/etc/config
             - --webhook-url=http://127.0.0.1:9090{{ .prefixURL }}/-/reload
-          {{- range $key, $value := $cmReloadProm.extraArgs }}
+            {{- range $key, $value := $cmReloadProm.extraArgs }}
             - --{{ $key }}={{ $value }}
-          {{- end }}
-          {{- range $cmReloadProm.extraVolumeDirs }}
+            {{- end }}
+            {{- range $cmReloadProm.extraVolumeDirs }}
             - --volume-dir={{ . }}
-          {{- end }}
-          {{- if $cmReloadProm.containerPort }}
+            {{- end }}
+          {{- with $cmReloadProm.containerPort }}
           ports:
-            - containerPort: {{ $cmReloadProm.containerPort }}
+            - containerPort: {{ . }}
           {{- end }}
           {{- with $cmReloadProm.resources }}          
           resources:
@@ -265,13 +265,13 @@ spec:
       terminationGracePeriodSeconds: {{ .terminationGracePeriodSeconds }}
       volumes:
         - name: config-volume
-        {{- if empty .configFromSecret }}
-          configMap:
-            name: {{ if .configMapOverrideName }}{{ $.Release.Name }}-{{ .configMapOverrideName }}{{- else }}{{ template "prometheus.server.fullname" $ }}{{- end }}
-        {{- else }}
+          {{- with .configFromSecret }}
           secret:
             secretName: {{ .configFromSecret }}
-        {{- end }}
+          {{- else }}
+          configMap:
+            name: {{ if .configMapOverrideName }}{{ $.Release.Name }}-{{ .configMapOverrideName }}{{- else }}{{ template "prometheus.server.fullname" $ }}{{- end }}
+          {{- end }}
         {{- range .extraHostPathMounts }}
         - name: {{ .name }}
           hostPath:
@@ -324,18 +324,18 @@ spec:
         resources:
           requests:
             storage: "{{ .persistentVolume.size }}"
-      {{- if .persistentVolume.storageClass }}
-      {{- if (eq "-" .persistentVolume.storageClass) }}
+        {{- if .persistentVolume.storageClass }}
+        {{- if (eq "-" .persistentVolume.storageClass) }}
         storageClassName: ""
-      {{- else }}
+        {{- else }}
         storageClassName: "{{ .persistentVolume.storageClass }}"
-      {{- end }}
-      {{- end }}
+        {{- end }}
+        {{- end }}
   {{- else }}
         - name: storage-volume
           emptyDir:
-          {{- if .emptyDir.sizeLimit }}
-            sizeLimit: {{ .emptyDir.sizeLimit }}
+          {{- with .emptyDir.sizeLimit }}
+            sizeLimit: {{ . }}
           {{- else }}
             {}
           {{- end -}}

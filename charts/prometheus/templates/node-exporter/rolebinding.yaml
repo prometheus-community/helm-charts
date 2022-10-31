@@ -1,19 +1,19 @@
-{{- if and .Values.nodeExporter.enabled .Values.rbac.create }}
-{{- if .Values.podSecurityPolicy.enabled }}
-apiVersion: {{ template "rbac.apiVersion" . }}
+{{- if and .Values.nodeExporter.enabled
+           .Values.rbac.create
+           .Values.podSecurityPolicy.enabled }}
+apiVersion: {{ template "rbac.apiVersion" $ }}
 kind: RoleBinding
 metadata:
-  name: {{ template "prometheus.nodeExporter.fullname" . }}
+  name: {{ template "prometheus.nodeExporter.fullname" $ }}
   labels:
-    {{- include "prometheus.nodeExporter.labels" . | nindent 4 }}
-{{ include "prometheus.namespace" . | indent 2 }}
+    {{- include "prometheus.nodeExporter.labels" $ | nindent 4 }}
+  {{- include "prometheus.namespace" $ | nindent 2 }}
 roleRef:
   kind: Role
-  name: {{ template "prometheus.nodeExporter.fullname" . }}
+  name: {{ template "prometheus.nodeExporter.fullname" $ }}
   apiGroup: rbac.authorization.k8s.io
 subjects:
 - kind: ServiceAccount
-  name: {{ template "prometheus.serviceAccountName.nodeExporter" . }}
-{{ include "prometheus.namespace" . | indent 2 }}
-{{- end }}
+  name: {{ template "prometheus.serviceAccountName.nodeExporter" $ }}
+  {{- include "prometheus.namespace" $ | nindent 2 }}
 {{- end }}

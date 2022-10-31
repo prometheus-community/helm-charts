@@ -1,20 +1,22 @@
-{{- if .Values.pushgateway.enabled -}}
-{{- if .Values.pushgateway.verticalAutoscaler.enabled -}}
+{{- if and .Values.pushgateway.enabled .Values.pushgateway.verticalAutoscaler.enabled -}}
+{{- with .Values.pushgateway.verticalAutoscaler }}
 apiVersion: autoscaling.k8s.io/v1beta2
 kind: VerticalPodAutoscaler
 metadata:
   labels:
-    {{- include "prometheus.pushgateway.labels" . | nindent 4 }}
-  name: {{ template "prometheus.pushgateway.fullname" . }}-vpa
-{{ include "prometheus.namespace" . | indent 2 }}
+    {{- include "prometheus.pushgateway.labels" $ | nindent 4 }}
+  name: {{ template "prometheus.pushgateway.fullname" $ }}-vpa
+  {{- include "prometheus.namespace" $ | nindent 2 }}
 spec:
   targetRef:
     apiVersion: "apps/v1"
     kind: Deployment
-    name: {{ template "prometheus.pushgateway.fullname" . }}
+    name: {{ template "prometheus.pushgateway.fullname" $ }}
   updatePolicy:
-    updateMode: {{ .Values.pushgateway.verticalAutoscaler.updateMode | default "Off" | quote }}
+    updateMode: {{ .updateMode | default "Off" | quote }}
+  {{- with .containerPolicies }}
   resourcePolicy:
-    containerPolicies: {{ .Values.pushgateway.verticalAutoscaler.containerPolicies | default list | toYaml | trim | nindent 4 }}
-{{- end -}} {{/* if .Values.pushgateway.verticalAutoscaler.enabled */}}
-{{- end -}} {{/* .Values.pushgateway.enabled */}}
+    containerPolicies: {{ . | default list | toYaml | trim | nindent 4 }}
+  {{- end }}
+{{- end -}}
+{{- end -}}

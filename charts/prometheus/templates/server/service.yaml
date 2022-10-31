@@ -1,60 +1,62 @@
 {{- if and .Values.server.enabled .Values.server.service.enabled -}}
+{{- with .Values.server.service }}
 apiVersion: v1
 kind: Service
 metadata:
-  {{- with .Values.server.service.annotations }}
+  {{- with .annotations }}
   annotations:
     {{- toYaml . | nindent 4 }}
   {{- end }}
   labels:
-    {{- include "prometheus.server.labels" . | nindent 4 }}
-    {{- with .Values.server.service.labels }}
+    {{- include "prometheus.server.labels" $ | nindent 4 }}
+    {{- with .labels }}
     {{- toYaml . | nindent 4 }}
     {{- end }}
-  name: {{ template "prometheus.server.fullname" . }}
-  {{- include "prometheus.namespace" . | nindent 2 }}
+  name: {{ template "prometheus.server.fullname" $ }}
+  {{- include "prometheus.namespace" $ | nindent 2 }}
 spec:
-  {{- with .Values.server.service.clusterIP }}
+  {{- with .clusterIP }}
   clusterIP: {{ . }}
   {{- end }}
-  {{- with .Values.server.service.externalIPs }}
+  {{- with .externalIPs }}
   externalIPs:
     {{- toYaml . | nindent 4 }}
   {{- end }}
-  {{- with .Values.server.service.loadBalancerIP }}
+  {{- with .loadBalancerIP }}
   loadBalancerIP: {{ . }}
   {{- end }}
-  {{- if .Values.server.service.loadBalancerSourceRanges }}
+  {{- with .loadBalancerSourceRanges }}
   loadBalancerSourceRanges:
-  {{- range $cidr := .Values.server.service.loadBalancerSourceRanges }}
+    {{- range $cidr := . }}
     - {{ $cidr }}
-  {{- end }}
+    {{- end }}
   {{- end }}
   ports:
     - name: http
-      port: {{ .Values.server.service.servicePort }}
+      port: {{ .servicePort }}
       protocol: TCP
       targetPort: 9090
-      {{- with .Values.server.service.nodePort }}
+      {{- with .nodePort }}
       nodePort: {{ . }}
       {{- end }}
-    {{- if .Values.server.service.gRPC.enabled }}
+    {{- if .gRPC.enabled }}
     - name: grpc
-      port: {{ .Values.server.service.gRPC.servicePort }}
+      port: {{ .gRPC.servicePort }}
       protocol: TCP
       targetPort: 10901
-      {{- with .Values.server.service.gRPC.nodePort }}
+      {{- with .gRPC.nodePort }}
       nodePort: {{ . }}
       {{- end }}
     {{- end }}
   selector:
-  {{- if and .Values.server.statefulSet.enabled .Values.server.service.statefulsetReplica.enabled }}
-    statefulset.kubernetes.io/pod-name: {{ template "prometheus.server.fullname" . }}-{{ .Values.server.service.statefulsetReplica.replica }}
+  {{- if and $.Values.server.statefulSet.enabled .statefulsetReplica.enabled }}
+    statefulset.kubernetes.io/pod-name: {{ template "prometheus.server.fullname" $ }}-{{ .statefulsetReplica.replica }}
   {{- else -}}
-    {{- include "prometheus.server.matchLabels" . | nindent 4 }}
-  {{- with .Values.server.service.sessionAffinity }}
+    {{- include "prometheus.server.matchLabels" $ | nindent 4 }}
+  {{- with .sessionAffinity }}
   sessionAffinity: {{ . }}
   {{- end }}
   {{- end }}
-  type: "{{ .Values.server.service.type }}"
+  type: "{{ .type }}"
+{{- end -}}
 {{- end -}}

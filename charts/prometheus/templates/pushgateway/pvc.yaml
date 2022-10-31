@@ -1,34 +1,35 @@
-{{- if .Values.pushgateway.persistentVolume.enabled -}}
-{{- if not .Values.pushgateway.persistentVolume.existingClaim -}}
+{{- if and .Values.pushgateway.persistentVolume.enabled 
+           (not .Values.pushgateway.persistentVolume.existingClaim) -}}
+{{- with .Values.pushgateway.persistentVolume }}
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  {{- if .Values.pushgateway.persistentVolume.annotations }}
+  {{- with .annotations }}
   annotations:
-{{ toYaml .Values.pushgateway.persistentVolume.annotations | indent 4 }}
+    {{- toYaml . | nindent 4 }}
   {{- end }}
   labels:
-    {{- include "prometheus.pushgateway.labels" . | nindent 4 }}
-  name: {{ template "prometheus.pushgateway.fullname" . }}
-{{ include "prometheus.namespace" . | indent 2 }}
+    {{- include "prometheus.pushgateway.labels" $ | nindent 4 }}
+  name: {{ template "prometheus.pushgateway.fullname" $ }}
+  {{- include "prometheus.namespace" $ | nindent 2 }}
 spec:
   accessModes:
-{{ toYaml .Values.pushgateway.persistentVolume.accessModes | indent 4 }}
-{{- if .Values.pushgateway.persistentVolume.storageClass }}
-{{- if (eq "-" .Values.pushgateway.persistentVolume.storageClass) }}
+    {{- toYaml .accessModes | nindent 4 }}
+  {{- if .storageClass }}
+  {{- if (eq "-" .storageClass) }}
   storageClassName: ""
-{{- else }}
-  storageClassName: "{{ .Values.pushgateway.persistentVolume.storageClass }}"
-{{- end }}
-{{- end }}
-{{- if .Values.pushgateway.persistentVolume.volumeBindingMode }}
-  volumeBindingMode: "{{ .Values.pushgateway.persistentVolume.volumeBindingMode }}"
-{{- end }}
+  {{- else }}
+  storageClassName: "{{ .storageClass }}"
+  {{- end }}
+  {{- end }}
+  {{- with .volumeBindingMode }}
+  volumeBindingMode: "{{ . }}"
+  {{- end }}
   resources:
     requests:
-      storage: "{{ .Values.pushgateway.persistentVolume.size }}"
-{{- if .Values.pushgateway.persistentVolume.volumeName }}
-  volumeName: "{{ .Values.pushgateway.persistentVolume.volumeName }}"
+      storage: "{{ .size }}"
+  {{- with .volumeName }}
+  volumeName: "{{ . }}"
+  {{- end }}
 {{- end }}
-{{- end -}}
 {{- end -}}

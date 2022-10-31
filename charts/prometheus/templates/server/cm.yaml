@@ -1,5 +1,4 @@
-{{- if .Values.server.enabled -}}
-{{- if (empty .Values.server.configMapOverrideName) -}}
+{{- if and .Values.server.enabled (empty .Values.server.configMapOverrideName) -}}
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -20,50 +19,50 @@ data:
   {{ $key }}: |
 {{- if eq $key "prometheus.yml" }}
     global:
-{{ $root.Values.server.global | toYaml | trimSuffix "\n" | indent 6 }}
-{{- if $root.Values.server.remoteWrite }}
+      {{- $root.Values.server.global | toYaml | trimSuffix "\n" | nindent 6 }}
+    {{- with $root.Values.server.remoteWrite }}
     remote_write:
-{{ $root.Values.server.remoteWrite | toYaml | indent 4 }}
-{{- end }}
-{{- if $root.Values.server.remoteRead }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+    {{- with $root.Values.server.remoteRead }}
     remote_read:
-{{ $root.Values.server.remoteRead | toYaml | indent 4 }}
-{{- end }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
 {{- end }}
 {{- if eq $key "alerts" }}
-{{- if and (not (empty $value)) (empty $value.groups) }}
+  {{- if and (not (empty $value)) (empty $value.groups) }}
     groups:
-{{- range $ruleKey, $ruleValue := $value }}
+    {{- range $ruleKey, $ruleValue := $value }}
     - name: {{ $ruleKey -}}.rules
       rules:
-{{ $ruleValue | toYaml | trimSuffix "\n" | indent 6 }}
-{{- end }}
+      {{- toYaml $ruleValue | trimSuffix "\n" | nindent 6 }}
+    {{- end }}
+  {{- else }}
+    {{- toYaml $value | nindent 4 }}
+  {{- end }}
 {{- else }}
-{{ toYaml $value | indent 4 }}
-{{- end }}
-{{- else }}
-{{ toYaml $value | default "{}" | indent 4 }}
+    {{- toYaml $value | default "{}" | nindent 4 }}
 {{- end }}
 {{- if eq $key "prometheus.yml" -}}
 {{- if $root.Values.extraScrapeConfigs }}
-{{ tpl $root.Values.extraScrapeConfigs $root | indent 4 }}
+    {{- tpl $root.Values.extraScrapeConfigs $root | nindent 4 }}
 {{- end -}}
-{{- if or ($root.Values.alertmanager.enabled) ($root.Values.server.alertmanagers) }}
+{{- if or $root.Values.alertmanager.enabled $root.Values.server.alertmanagers }}
     alerting:
-{{- if $root.Values.alertRelabelConfigs }}
-{{ $root.Values.alertRelabelConfigs | toYaml  | trimSuffix "\n" | indent 6 }}
-{{- end }}
+      {{- with $root.Values.alertRelabelConfigs }}
+      {{- toYaml . | trimSuffix "\n" | nindent 6 }}
+      {{- end }}
       alertmanagers:
-      {{- if $root.Values.server.alertmanagers }}
-        {{- toYaml $root.Values.server.alertmanagers | nindent 8 }}
+      {{- with $root.Values.server.alertmanagers }}
+        {{- toYaml . | nindent 8 }}
       {{- else }}
       - kubernetes_sd_configs:
           - role: pod
         tls_config:
           ca_file: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
         bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
-        {{- if $root.Values.alertmanager.prefixURL }}
-        path_prefix: {{ $root.Values.alertmanager.prefixURL }}
+        {{- with $root.Values.alertmanager.prefixURL }}
+        path_prefix: {{ . }}
         {{- end }}
         relabel_configs:
         - source_labels: [__meta_kubernetes_namespace]
@@ -82,7 +81,6 @@ data:
           regex: "9093"
           action: keep
       {{- end -}}
-{{- end -}}
 {{- end -}}
 {{- end -}}
 {{- end -}}

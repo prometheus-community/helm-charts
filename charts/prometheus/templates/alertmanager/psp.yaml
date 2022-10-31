@@ -1,11 +1,12 @@
-{{- if and .Values.alertmanager.enabled .Values.rbac.create .Values.podSecurityPolicy.enabled }}
-{{- if .Capabilities.APIVersions.Has "policy/v1beta1/PodSecurityPolicy" }}
+{{- if and .Values.alertmanager.enabled
+           .Values.rbac.create .Values.podSecurityPolicy.enabled
+           .Capabilities.APIVersions.Has "policy/v1beta1/PodSecurityPolicy" }}
 apiVersion: policy/v1beta1
 kind: PodSecurityPolicy
 metadata:
-  name: {{ template "prometheus.alertmanager.fullname" . }}
+  name: {{ template "prometheus.alertmanager.fullname" $ }}
   labels:
-    {{- include "prometheus.alertmanager.labels" . | nindent 4 }}
+    {{- include "prometheus.alertmanager.labels" $ | nindent 4 }}
   {{- with .Values.alertmanager.podSecurityPolicy.annotations }}
   annotations:
     {{- toYaml . | nindent 4 }}
@@ -44,5 +45,4 @@ spec:
       - min: 1
         max: 65535
   readOnlyRootFilesystem: true
-{{- end }}
 {{- end }}

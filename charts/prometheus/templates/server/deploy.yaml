@@ -33,7 +33,7 @@ spec:
       {{- end }}
       labels:
         {{- include "prometheus.server.labels" $ | nindent 8 }}
-        {{- with .podLabels}}
+        {{- with .podLabels }}
         {{- toYaml . | nindent 8 }}
         {{- end}}
     spec:
@@ -269,12 +269,12 @@ spec:
       terminationGracePeriodSeconds: {{ .terminationGracePeriodSeconds }}
       volumes:
         - name: config-volume
-          {{- if empty .configFromSecret }}
-          configMap:
-            name: {{ if .configMapOverrideName }}{{ $.Release.Name }}-{{ .configMapOverrideName }}{{- else }}{{ template "prometheus.server.fullname" $ }}{{- end }}
-          {{- else }}
+          {{- if .configFromSecret }}
           secret:
             secretName: {{ .configFromSecret }}
+          {{- else }}
+          configMap:
+            name: {{ if .configMapOverrideName }}{{ $.Release.Name }}-{{ .configMapOverrideName }}{{- else }}{{ template "prometheus.server.fullname" $ }}{{- end }}
           {{- end }}
         {{- range .extraHostPathMounts }}
         - name: {{ .name }}
@@ -316,8 +316,8 @@ spec:
             claimName: {{ if .persistentVolume.existingClaim }}{{ .persistentVolume.existingClaim }}{{- else }}{{ template "prometheus.server.fullname" $ }}{{- end }}
         {{- else }}
           emptyDir:
-          {{- if .emptyDir.sizeLimit }}
-            sizeLimit: {{ .emptyDir.sizeLimit }}
+          {{- with .emptyDir.sizeLimit }}
+            sizeLimit: {{ . }}
           {{- else }}
             {}
           {{- end -}}

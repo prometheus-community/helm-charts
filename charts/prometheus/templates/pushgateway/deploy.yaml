@@ -1,74 +1,79 @@
-{{- if .Values.pushgateway.enabled -}}
-apiVersion: {{ template "prometheus.deployment.apiVersion" . }}
+{{- with .Values.pushgateway }}
+{{- if .enabled -}}
+apiVersion: {{ template "prometheus.deployment.apiVersion" $ }}
 kind: Deployment
 metadata:
-{{- if .Values.pushgateway.deploymentAnnotations }}
+  {{- with .deploymentAnnotations }}
   annotations:
-    {{ toYaml .Values.pushgateway.deploymentAnnotations | nindent 4 }}
-{{- end }}
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
   labels:
-    {{- include "prometheus.pushgateway.labels" . | nindent 4 }}
-  name: {{ template "prometheus.pushgateway.fullname" . }}
-{{ include "prometheus.namespace" . | indent 2 }}
+    {{- include "prometheus.pushgateway.labels" $ | nindent 4 }}
+  name: {{ template "prometheus.pushgateway.fullname" $ }}
+  {{- include "prometheus.namespace" $ | nindent 2 }}
 spec:
   selector:
-    {{- if .Values.schedulerName }}
-    schedulerName: "{{ .Values.schedulerName }}"
+    {{- with $.Values.schedulerName }}
+    schedulerName: "{{ . }}"
     {{- end }}
     matchLabels:
-      {{- include "prometheus.pushgateway.matchLabels" . | nindent 6 }}
-  replicas: {{ .Values.pushgateway.replicaCount }}
-  {{- if .Values.pushgateway.strategy }}
+      {{- include "prometheus.pushgateway.matchLabels" $ | nindent 6 }}
+  replicas: {{ .replicaCount }}
+  {{- with .strategy }}
   strategy:
-{{ toYaml .Values.pushgateway.strategy | trim | indent 4 }}
-    {{ if eq .Values.pushgateway.strategy.type "Recreate" }}rollingUpdate: null{{ end }}
-{{- end }}
+    {{- toYaml . | trim | nindent 4 }}
+    {{- if eq .type "Recreate" }}
+    rollingUpdate: null
+    {{- end }}
+  {{- end }}
   template:
     metadata:
-    {{- if .Values.pushgateway.podAnnotations }}
+      {{- with .podAnnotations }}
       annotations:
-        {{ toYaml .Values.pushgateway.podAnnotations | nindent 8 }}
-    {{- end }}
-      labels:
-        {{- include "prometheus.pushgateway.labels" . | nindent 8 }}
-        {{- if .Values.pushgateway.podLabels }}
-        {{ toYaml .Values.pushgateway.podLabels | nindent 8 }}
-        {{- end }}
-    spec:
-      serviceAccountName: {{ template "prometheus.serviceAccountName.pushgateway" . }}
-      {{- if .Values.pushgateway.extraInitContainers }}
-      initContainers:
-{{ toYaml .Values.pushgateway.extraInitContainers | indent 8 }}
+        {{- toYaml . | nindent 8 }}
       {{- end }}
-{{- if .Values.pushgateway.priorityClassName }}
-      priorityClassName: "{{ .Values.pushgateway.priorityClassName }}"
-{{- end }}
+      labels:
+        {{- include "prometheus.pushgateway.labels" $ | nindent 8 }}
+        {{- with .podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end}}
+    spec:
+      serviceAccountName: {{ template "prometheus.serviceAccountName.pushgateway" $ }}
+      {{- with .extraInitContainers }}
+      initContainers:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .priorityClassName }}
+      priorityClassName: "{{ . }}"
+      {{- end }}
       containers:
-        - name: {{ template "prometheus.name" . }}-{{ .Values.pushgateway.name }}
-          image: "{{ .Values.pushgateway.image.repository }}:{{ .Values.pushgateway.image.tag }}"
-          imagePullPolicy: "{{ .Values.pushgateway.image.pullPolicy }}"
+        - name: {{ template "prometheus.name" $ }}-{{ .name }}
+          image: "{{ .image.repository }}:{{ .image.tag }}"
+          imagePullPolicy: "{{ .image.pullPolicy }}"
+          {{- with .containerSecurityContext }}
           securityContext:
-            {{- toYaml .Values.pushgateway.containerSecurityContext | nindent 12 }}
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
           args:
-          {{- range $key, $value := .Values.pushgateway.extraArgs }}
-          {{- $stringvalue := toString $value }}
-          {{- if eq $stringvalue "true" }}
+            {{- range $key, $value := .extraArgs }}
+            {{- $stringvalue := toString $value }}
+            {{- if eq $stringvalue "true" }}
             - --{{ $key }}
-          {{- else }}
+            {{- else }}
             - --{{ $key }}={{ $value }}
-          {{- end }}
-          {{- end }}
+            {{- end }}
+            {{- end }}
           ports:
             - containerPort: 9091
           livenessProbe:
             httpGet:
-            {{- if (index .Values "pushgateway" "extraArgs" "web.route-prefix") }}
-              path: /{{ index .Values "pushgateway" "extraArgs" "web.route-prefix" }}/-/healthy
-            {{- else }}
+              {{- if (index $.Values "pushgateway" "extraArgs" "web.route-prefix") }}
+              path: /{{ index $.Values "pushgateway" "extraArgs" "web.route-prefix" }}/-/healthy
+              {{- else }}
               path: /-/healthy
-            {{- end }}
+              {{- end }}
               port: 9091
-              {{- with .Values.pushgateway.probeHeaders }}
+              {{- with .probeHeaders }}
               httpHeaders:
                 {{- toYaml . | nindent 16 }}
               {{- end }}
@@ -76,54 +81,64 @@ spec:
             timeoutSeconds: 10
           readinessProbe:
             httpGet:
-            {{- if (index .Values "pushgateway" "extraArgs" "web.route-prefix") }}
-              path: /{{ index .Values "pushgateway" "extraArgs" "web.route-prefix" }}/-/ready
-            {{- else }}
+              {{- if (index $.Values "pushgateway" "extraArgs" "web.route-prefix") }}
+              path: /{{ index $.Values "pushgateway" "extraArgs" "web.route-prefix" }}/-/ready
+              {{- else }}
               path: /-/ready
-            {{- end }}
+              {{- end }}
               port: 9091
-              {{- with .Values.pushgateway.probeHeaders }}
+              {{- with .probeHeaders }}
               httpHeaders:
                 {{- toYaml . | nindent 16 }}
               {{- end }}
             initialDelaySeconds: 10
             timeoutSeconds: 10
+          {{- with .resources }}
           resources:
-{{ toYaml .Values.pushgateway.resources | indent 12 }}
-          {{- if .Values.pushgateway.persistentVolume.enabled }}
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- if .persistentVolume.enabled }}
           volumeMounts:
             - name: storage-volume
-              mountPath: "{{ .Values.pushgateway.persistentVolume.mountPath }}"
-              subPath: "{{ .Values.pushgateway.persistentVolume.subPath }}"
+              mountPath: "{{ .persistentVolume.mountPath }}"
+              subPath: "{{ .persistentVolume.subPath }}"
           {{- end }}
-    {{- if .Values.imagePullSecrets }}
+      {{- with $.Values.imagePullSecrets }}
       imagePullSecrets:
-{{ toYaml .Values.imagePullSecrets | indent 8 }}
-    {{- end }}
-    {{- if .Values.pushgateway.nodeSelector }}
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .nodeSelector }}
       nodeSelector:
-{{ toYaml .Values.pushgateway.nodeSelector | indent 8 }}
-    {{- end }}
-    {{- with .Values.pushgateway.dnsConfig }}
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .dnsConfig }}
       dnsConfig:
-{{ toYaml . | indent 8 }}
-    {{- end }}
-    {{- if .Values.pushgateway.securityContext }}
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .securityContext }}
       securityContext:
-{{ toYaml .Values.pushgateway.securityContext | indent 8 }}
-    {{- end }}
-    {{- if .Values.pushgateway.tolerations }}
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .tolerations }}
       tolerations:
-{{ toYaml .Values.pushgateway.tolerations | indent 8 }}
-    {{- end }}
-    {{- if .Values.pushgateway.affinity }}
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .affinity }}
       affinity:
-{{ toYaml .Values.pushgateway.affinity | indent 8 }}
-    {{- end }}
-      {{- if .Values.pushgateway.persistentVolume.enabled }}
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
       volumes:
         - name: storage-volume
+        {{- if .persistentVolume.enabled }}
           persistentVolumeClaim:
-            claimName: {{ if .Values.pushgateway.persistentVolume.existingClaim }}{{ .Values.pushgateway.persistentVolume.existingClaim }}{{- else }}{{ template "prometheus.pushgateway.fullname" . }}{{- end }}
-      {{- end -}}
+            claimName: {{ if .persistentVolume.existingClaim }}{{ .persistentVolume.existingClaim }}{{- else }}{{ template "prometheus.server.fullname" $ }}{{- end }}
+        {{- else }}
+          emptyDir:
+          {{- with .emptyDir.sizeLimit }}
+            sizeLimit: {{ . }}
+          {{- else }}
+            {}
+          {{- end -}}
+        {{- end -}}
+{{- end -}}
 {{- end }}
