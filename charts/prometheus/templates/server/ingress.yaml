@@ -1,15 +1,14 @@
-{{- if .Values.server.enabled -}}
-{{- if .Values.server.ingress.enabled -}}
-{{- $ingressApiIsStable := eq (include "ingress.isStable" .) "true" -}}
-{{- $ingressSupportsIngressClassName := eq (include "ingress.supportsIngressClassName" .) "true" -}}
-{{- $ingressSupportsPathType := eq (include "ingress.supportsPathType" .) "true" -}}
+{{- if and .Values.server.enabled .Values.server.ingress.enabled -}}
+{{- $ingressApiIsStable := eq (include "ingress.isStable" $) "true" -}}
+{{- $ingressSupportsIngressClassName := eq (include "ingress.supportsIngressClassName" $) "true" -}}
+{{- $ingressSupportsPathType := eq (include "ingress.supportsPathType" $) "true" -}}
 {{- $releaseName := .Release.Name -}}
-{{- $serviceName := include "prometheus.server.fullname" . }}
+{{- $serviceName := include "prometheus.server.fullname" $ }}
 {{- $servicePort := .Values.server.service.servicePort -}}
 {{- $ingressPath := .Values.server.ingress.path -}}
 {{- $ingressPathType := .Values.server.ingress.pathType -}}
 {{- $extraPaths := .Values.server.ingress.extraPaths -}}
-apiVersion: {{ template "ingress.apiVersion" . }}
+apiVersion: {{ template "ingress.apiVersion" $ }}
 kind: Ingress
 metadata:
   {{- with .Values.server.ingress.annotations }}
@@ -17,12 +16,12 @@ metadata:
     {{- toYaml . | nindent 4 }}
   {{- end }}
   labels:
-    {{- include "prometheus.server.labels" . | nindent 4 }}
+    {{- include "prometheus.server.labels" $ | nindent 4 }}
     {{- range $key, $value := .Values.server.ingress.extraLabels }}
     {{ $key }}: {{ $value }}
     {{- end }}
-  name: {{ template "prometheus.server.fullname" . }}
-  {{- include "prometheus.namespace" . | nindent 2 }}
+  name: {{ template "prometheus.server.fullname" $ }}
+  {{- include "prometheus.namespace" $ | nindent 2 }}
 spec:
   {{- if and $ingressSupportsIngressClassName .Values.server.ingress.ingressClassName }}
   ingressClassName: {{ .Values.server.ingress.ingressClassName }}
@@ -50,10 +49,9 @@ spec:
               serviceName: {{ $serviceName }}
               servicePort: {{ $servicePort }}
               {{- end }}
-  {{- end -}}
+    {{- end -}}
   {{- with .Values.server.ingress.tls }}
   tls:
     {{- toYaml . | nindent 4 }}
   {{- end -}}
-{{- end -}}
 {{- end -}}
