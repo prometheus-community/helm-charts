@@ -83,19 +83,19 @@ app.kubernetes.io/instance: {{ .Release.Name }}
 
 {{/* Sets default scrape limits for servicemonitor */}}
 {{- define "servicemonitor.scrapeLimits" -}}
-{{- if .sampleLimit }}
-sampleLimit: {{ .sampleLimit }}
+{{- with .sampleLimit }}
+sampleLimit: {{ . }}
 {{- end }}
-{{- if .targetLimit }}
-targetLimit: {{ .targetLimit }}
+{{- with .targetLimit }}
+targetLimit: {{ . }}
 {{- end }}
-{{- if .labelLimit }}
-labelLimit: {{ .labelLimit }}
+{{- with .labelLimit }}
+labelLimit: {{ . }}
 {{- end }}
-{{- if .labelNameLengthLimit }}
-labelNameLengthLimit: {{ .labelNameLengthLimit }}
+{{- with .labelNameLengthLimit }}
+labelNameLengthLimit: {{ . }}
 {{- end }}
-{{- if .labelValueLengthLimit }}
-labelValueLengthLimit: {{ .labelValueLengthLimit }}
+{{- with .labelValueLengthLimit }}
+labelValueLengthLimit: {{ . }}
 {{- end }}
 {{- end -}}
