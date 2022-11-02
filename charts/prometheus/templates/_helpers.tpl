@@ -17,52 +17,59 @@ Create chart name and version as used by the chart label.
 Create unified labels for prometheus components
 */}}
 {{- define "prometheus.common.matchLabels" -}}
-app: {{ template "prometheus.name" . }}
-release: {{ .Release.Name }}
+app.kubernetes.io/instance: {{ .Release.Name }}
+app.kubernetes.io/part-of: {{ template "prometheus.name" . }}
 {{- end -}}
 
 {{- define "prometheus.common.metaLabels" -}}
-chart: {{ template "prometheus.chart" . }}
-heritage: {{ .Release.Service }}
+helm.sh/chart: {{ template "prometheus.chart" . }}
+app.kubernetes.io/managed-by: {{ .Release.Service }}
+{{- if .Chart.AppVersion }}
+app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
+{{- end }}
 {{- end -}}
 
 {{- define "prometheus.alertmanager.labels" -}}
+app.kubernetes.io/name: {{ .Values.alertmanager.name | quote }}
 {{ include "prometheus.alertmanager.matchLabels" . }}
 {{ include "prometheus.common.metaLabels" . }}
 {{- end -}}
 
 {{- define "prometheus.alertmanager.matchLabels" -}}
-component: {{ .Values.alertmanager.name | quote }}
+app.kubernetes.io/component: {{ .Values.alertmanager.name | quote }}
 {{ include "prometheus.common.matchLabels" . }}
 {{- end -}}
 
 {{- define "prometheus.nodeExporter.labels" -}}
+app.kubernetes.io/name: {{ .Values.nodeExporter.name | quote }}
 {{ include "prometheus.nodeExporter.matchLabels" . }}
 {{ include "prometheus.common.metaLabels" . }}
 {{- end -}}
 
 {{- define "prometheus.nodeExporter.matchLabels" -}}
-component: {{ .Values.nodeExporter.name | quote }}
+app.kubernetes.io/component: {{ .Values.nodeExporter.name | quote }}
 {{ include "prometheus.common.matchLabels" . }}
 {{- end -}}
 
 {{- define "prometheus.pushgateway.labels" -}}
+app.kubernetes.io/name: {{ .Values.pushgateway.name | quote }}
 {{ include "prometheus.pushgateway.matchLabels" . }}
 {{ include "prometheus.common.metaLabels" . }}
 {{- end -}}
 
 {{- define "prometheus.pushgateway.matchLabels" -}}
-component: {{ .Values.pushgateway.name | quote }}
+app.kubernetes.io/component: {{ .Values.pushgateway.name | quote }}
 {{ include "prometheus.common.matchLabels" . }}
 {{- end -}}
 
 {{- define "prometheus.server.labels" -}}
+app.kubernetes.io/name: {{ .Values.server.name | quote }}
 {{ include "prometheus.server.matchLabels" . }}
 {{ include "prometheus.common.metaLabels" . }}
 {{- end -}}
 
 {{- define "prometheus.server.matchLabels" -}}
-component: {{ .Values.server.name | quote }}
+app.kubernetes.io/component: {{ .Values.server.name | quote }}
 {{ include "prometheus.common.matchLabels" . }}
 {{- end -}}
 
