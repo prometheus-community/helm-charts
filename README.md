@@ -34,7 +34,7 @@ Once Helm is set up properly, you may install prometheus-community charts from e
 
 HTTP [Helm repositories](https://helm.sh/docs/topics/charts/#chart-repositories) continue to be supported.
 
-- ☝️ When using this method, you must first add the HTTP repo information to your Helm client:
+- ☝️ When using this method, you must first add the HTTP repository information to your Helm client:
 
   ```console
   helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
