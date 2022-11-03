@@ -19,11 +19,7 @@ _See [helm repo](https://helm.sh/docs/helm/helm_repo/) for command documentation
 ## Install Chart
 
 ```console
-# Helm 3
-$ helm install [RELEASE_NAME] prometheus-community/prometheus-to-sd
-
-# Helm 2
-$ helm install --name [RELEASE_NAME] prometheus-community/prometheus-to-sd
+helm install [RELEASE_NAME] prometheus-community/prometheus-to-sd
 ```
 
 _See [configuration](#configuration) below._
@@ -33,11 +29,7 @@ _See [helm install](https://helm.sh/docs/helm/helm_install/) for command documen
 ## Uninstall Chart
 
 ```console
-# Helm 3
-$ helm uninstall [RELEASE_NAME]
-
-# Helm 2
-# helm delete --purge [RELEASE_NAME]
+helm uninstall [RELEASE_NAME]
 ```
 
 This removes all the Kubernetes components associated with the chart and deletes the release.
@@ -58,11 +50,7 @@ _See [helm upgrade](https://helm.sh/docs/helm/helm_upgrade/) for command documen
 See [Customizing the Chart Before Installing](https://helm.sh/docs/intro/using_helm/#customizing-the-chart-before-installing). To see all configurable options with detailed comments, visit the chart's [values.yaml](./values.yaml), or run these configuration commands:
 
 ```console
-# Helm 2
-$ helm inspect values prometheus-community/prometheus-to-sd
-
-# Helm 3
-$ helm show values prometheus-community/prometheus-to-sd
+helm show values prometheus-community/prometheus-to-sd
 ```
 
 For more information please refer to the [prometheus-to-sd](https://github.com/GoogleCloudPlatform/k8s-stackdriver/tree/master/prometheus-to-sd) documentation.
