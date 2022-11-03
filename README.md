@@ -9,13 +9,43 @@ This functionality is in beta and is subject to change. The code is provided as-
 [Helm](https://helm.sh) must be installed to use the charts.
 Please refer to Helm's [documentation](https://helm.sh/docs/) to get started.
 
-Once Helm is set up properly, add the repo as follows:
+Once Helm is set up properly, you may install prometheus-community charts from either [OCI](#install-from-oci) or [HTTP](#install-from-http) repos.
 
-```console
-helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
-```
+## Install From OCI
 
-You can then run `helm search repo prometheus-community` to see the charts.
+[OCI support](https://helm.sh/docs/topics/registries/#using-an-oci-based-registry) is enabled by default as of of Helm `v3.8.0`.
+
+- 👀 To see the prometheus-community charts in OCI, [browse the registry](https://github.com/orgs/prometheus-community/packages?repo_name=helm-charts)
+- 🚀 To install a chart from the OCI registry:
+
+  ```console
+  helm install [RELEASE_NAME] oci://ghcr.io/prometheus-community/charts/[CHART_NAME]
+  ```
+
+- 🔐 Our OCI charts are secured with [cosign keyless signing](https://github.com/sigstore/cosign/blob/main/KEYLESS.md). You may verify a chart's authenticity with the [cosign CLI](https://github.com/sigstore/cosign/blob/main/README.md):
+
+  ```console
+  COSIGN_EXPERIMENTAL=1 cosign verify ghcr.io/prometheus-community/charts/[CHART_NAME]:[VERSION]
+  ```
+
+## Install From HTTP
+
+HTTP [Helm repositories](https://helm.sh/docs/topics/charts/#chart-repositories) continue to be supported.
+
+- ☝️ When using this method, you must first add the HTTP repo information to your Helm client:
+
+  ```console
+  helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+  helm repo update
+  ```
+
+- 👀 To see the prometheus-community charts in HTTP, run `helm search repo prometheus-community`
+
+- 🚀 To install a chart from the HTTP repo:
+
+  ```console
+  helm install [RELEASE_NAME] prometheus-community/[CHART_NAME]
+  ```
 
 ## Contributing
 
