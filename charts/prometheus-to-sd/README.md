@@ -7,14 +7,16 @@
 - a service exposing metrics in prometheus format
 - k8s cluster should run on GCE or GKE
 
-## Get Repo Info
+## Get Repository Info
 
 ```console
 helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
 helm repo update
 ```
 
+<!-- textlint-disable terminology -->
 _See [helm repo](https://helm.sh/docs/helm/helm_repo/) for command documentation._
+<!-- textlint-enable -->
 
 ## Install Chart
 
