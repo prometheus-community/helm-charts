@@ -1,41 +1,43 @@
 apiVersion: apps/v1
 kind: DaemonSet
 metadata:
-  name: {{ template "prometheus-node-exporter.fullname" . }}
-  namespace: {{ template "prometheus-node-exporter.namespace" . }}
-  labels: {{ include "prometheus-node-exporter.labels" . | indent 4 }}
+  name: {{ template "prometheus-node-exporter.fullname" $ }}
+  namespace: {{ template "prometheus-node-exporter.namespace" $ }}
+  labels:
+    {{- include "prometheus-node-exporter.labels" $ | indent 4 }}
 spec:
   selector:
     matchLabels:
-      {{- include "prometheus-node-exporter.selectorLabels" . | indent 6 }}
-  {{- if .Values.updateStrategy }}
+      {{- include "prometheus-node-exporter.selectorLabels" $ | indent 6 }}
+  {{- with .Values.updateStrategy }}
   updateStrategy:
-{{ toYaml .Values.updateStrategy | indent 4 }}
+    {{- toYaml . | nindent 4 }}
   {{- end }}
   template:
     metadata:
-      labels: {{ include "prometheus-node-exporter.labels" . | indent 8 }}
-      {{- if .Values.podAnnotations }}
+      labels:
+        {{- include "prometheus-node-exporter.labels" $ | indent 8 }}
+      {{- with .Values.podAnnotations }}
       annotations:
-      {{- toYaml .Values.podAnnotations | nindent 8 }}
+        {{- toYaml . | nindent 8 }}
       {{- end }}
     spec:
       automountServiceAccountToken: {{ .Values.serviceAccount.automountServiceAccountToken }}
-      serviceAccountName: {{ template "prometheus-node-exporter.serviceAccountName" . }}
-{{- if .Values.securityContext }}
+      serviceAccountName: {{ template "prometheus-node-exporter.serviceAccountName" $ }}
+      {{- with .Values.securityContext }}
       securityContext:
-{{ toYaml .Values.securityContext | indent 8 }}
-{{- end }}
-{{- if .Values.priorityClassName }}
-      priorityClassName: {{ .Values.priorityClassName }}
-{{- end }}
-      {{- if .Values.extraInitContainers }}
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.priorityClassName }}
+      priorityClassName: {{ . }}
+      {{- end }}
+      {{- with .Values.extraInitContainers }}
       initContainers:
-      {{ toYaml .Values.extraInitContainers | nindent 6 }}
+        {{- toYaml . | nindent 8 }}
       {{- end }}
       containers:
         - name: node-exporter
-          image: {{ include "prometheus-node-exporter.image" . }}
+          image: {{ include "prometheus-node-exporter.image" $ }}
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           args:
             - --path.procfs=/host/proc
@@ -44,22 +46,23 @@ spec:
             - --path.rootfs=/host/root
             {{- end }}
             - --web.listen-address=[$(HOST_IP)]:{{ .Values.service.port }}
-{{- if .Values.extraArgs }}
-{{ toYaml .Values.extraArgs | indent 12 }}
-{{- end }}
+            {{- with .Values.extraArgs }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
           {{- with .Values.containerSecurityContext }}
-          securityContext: {{ toYaml . | nindent 12 }}
+          securityContext:
+            {{- toYaml . | nindent 12 }}
           {{- end }}
           env:
-          - name: HOST_IP
-            {{- if .Values.service.listenOnAllInterfaces }}
-            value: 0.0.0.0
-            {{- else }}
-            valueFrom:
-              fieldRef:
-                apiVersion: v1
-                fieldPath: status.hostIP
-            {{- end }}
+            - name: HOST_IP
+              {{- if .Values.service.listenOnAllInterfaces }}
+              value: 0.0.0.0
+              {{- else }}
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: status.hostIP
+              {{- end }}
           {{- range $key, $value := .Values.env }}
           - name: {{ $key }}
             value: {{ $value | quote }}
@@ -98,8 +101,10 @@ spec:
             periodSeconds: {{ .Values.readinessProbe.periodSeconds }}
             successThreshold: {{ .Values.readinessProbe.successThreshold }}
             timeoutSeconds: {{ .Values.readinessProbe.timeoutSeconds }}
+          {{- with .Values.resources }}
           resources:
-{{ toYaml .Values.resources | indent 12 }}
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
           volumeMounts:
             - name: proc
               mountPath: /host/proc
@@ -115,37 +120,29 @@ spec:
               {{- end }}
               readOnly: true
             {{- end }}
-            {{- if .Values.extraHostVolumeMounts }}
             {{- range $_, $mount := .Values.extraHostVolumeMounts }}
             - name: {{ $mount.name }}
               mountPath: {{ $mount.mountPath }}
               readOnly: {{ $mount.readOnly }}
-            {{- if $mount.mountPropagation }}
-              mountPropagation: {{ $mount.mountPropagation }}
+              {{- with $mount.mountPropagation }}
+              mountPropagation: {{ . }}
+              {{- end }}
             {{- end }}
-            {{- end }}
-            {{- end }}
-            {{- if .Values.sidecarVolumeMount }}
             {{- range $_, $mount := .Values.sidecarVolumeMount }}
             - name: {{ $mount.name }}
               mountPath: {{ $mount.mountPath }}
               readOnly: true
             {{- end }}
-            {{- end }}
-            {{- if .Values.configmaps }}
             {{- range $_, $mount := .Values.configmaps }}
             - name: {{ $mount.name }}
               mountPath: {{ $mount.mountPath }}
             {{- end }}
-            {{- if .Values.secrets }}
             {{- range $_, $mount := .Values.secrets }}
             - name: {{ .name }}
               mountPath: {{ .mountPath }}
             {{- end }}
-            {{- end }}
-            {{- end }}
-{{- if .Values.sidecars }}
-{{ toYaml .Values.sidecars | indent 8 }}
+        {{- with .Values.sidecars }}
+        {{- toYaml . | nindent 8 }}
           {{- if or .Values.sidecarVolumeMount .Values.sidecarHostVolumeMounts }}
           volumeMounts:
             {{- range $_, $mount := .Values.sidecarVolumeMount }}
@@ -162,29 +159,29 @@ spec:
             {{- end }}
             {{- end }}
           {{- end }}
-{{- end }}
-{{- if .Values.imagePullSecrets }}
+        {{- end }}
+      {{- with .Values.imagePullSecrets }}
       imagePullSecrets:
-{{ toYaml .Values.imagePullSecrets | indent 8 }}
+        {{ toYaml . | nindent 8 }}
       {{- end }}
       hostNetwork: {{ .Values.hostNetwork }}
       hostPID: {{ .Values.hostPID }}
-{{- if .Values.affinity }}
+      {{- with .Values.affinity }}
       affinity:
-{{ toYaml .Values.affinity | indent 8 }}
-{{- end }}
-{{- with .Values.dnsConfig }}
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.dnsConfig }}
       dnsConfig:
-{{ toYaml . | indent 8 }}
-{{- end }}
-{{- if .Values.nodeSelector }}
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.nodeSelector }}
       nodeSelector:
-{{ toYaml .Values.nodeSelector | indent 8 }}
-{{- end }}
-    {{- with .Values.tolerations }}
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
       tolerations:
-{{ toYaml . | indent 8 }}
-    {{- end }}
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
       volumes:
         - name: proc
           hostPath:
@@ -197,38 +194,28 @@ spec:
           hostPath:
             path: /
         {{- end }}
-        {{- if .Values.extraHostVolumeMounts }}
         {{- range $_, $mount := .Values.extraHostVolumeMounts }}
         - name: {{ $mount.name }}
           hostPath:
             path: {{ $mount.hostPath }}
         {{- end }}
-        {{- end }}
-        {{- if .Values.sidecarVolumeMount }}
         {{- range $_, $mount := .Values.sidecarVolumeMount }}
         - name: {{ $mount.name }}
           emptyDir:
             medium: Memory
         {{- end }}
-        {{- end }}
-        {{- if .Values.sidecarHostVolumeMounts }}
         {{- range $_, $mount := .Values.sidecarHostVolumeMounts }}
         - name: {{ $mount.name }}
           hostPath:
             path: {{ $mount.hostPath }}
         {{- end }}
-        {{- end }}
-        {{- if .Values.configmaps }}
         {{- range $_, $mount := .Values.configmaps }}
         - name: {{ $mount.name }}
           configMap:
             name: {{ $mount.name }}
         {{- end }}
-        {{- end }}
-        {{- if .Values.secrets }}
         {{- range $_, $mount := .Values.secrets }}
         - name: {{ $mount.name }}
           secret:
             secretName: {{ $mount.name }}
-        {{- end }}
         {{- end }}
