@@ -2,10 +2,10 @@
 apiVersion: {{ .Values.prometheus.monitor.apiVersion | default "monitoring.coreos.com/v1" }}
 kind: ServiceMonitor
 metadata:
-  name: {{ template "prometheus-node-exporter.fullname" $ }}
-  namespace: {{ template "prometheus-node-exporter.monitor-namespace" $ }}
+  name: {{ include "prometheus-node-exporter.fullname" . }}
+  namespace: {{ include "prometheus-node-exporter.monitor-namespace" . }}
   labels:
-    {{- include "prometheus-node-exporter.labels" $ | indent 4 }}
+    {{- include "prometheus-node-exporter.labels" . | nindent 4 }}
     {{- with .Values.prometheus.monitor.additionalLabels }}
     {{- toYaml . | nindent 4 }}
     {{- end }}
@@ -15,9 +15,9 @@ spec:
   selector:
     matchLabels:
     {{- with .Values.prometheus.monitor.selectorOverride }}
-    {{- toYaml . | nindent 6 }}
+      {{- toYaml . | nindent 6 }}
     {{- else }}
-    {{ include "prometheus-node-exporter.selectorLabels" $ | indent 6 }}
+      {{- include "prometheus-node-exporter.selectorLabels" . | nindent 6 }}
     {{- end }}
   endpoints:
     - port: {{ .Values.service.portName }}

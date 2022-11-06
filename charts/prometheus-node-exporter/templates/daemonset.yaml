@@ -1,29 +1,28 @@
 apiVersion: apps/v1
 kind: DaemonSet
 metadata:
-  name: {{ template "prometheus-node-exporter.fullname" $ }}
-  namespace: {{ template "prometheus-node-exporter.namespace" $ }}
+  name: {{ include "prometheus-node-exporter.fullname" . }}
+  namespace: {{ include "prometheus-node-exporter.namespace" . }}
   labels:
-    {{- include "prometheus-node-exporter.labels" $ | indent 4 }}
+    {{- include "prometheus-node-exporter.labels" . | nindent 4 }}
 spec:
   selector:
     matchLabels:
-      {{- include "prometheus-node-exporter.selectorLabels" $ | indent 6 }}
+      {{- include "prometheus-node-exporter.selectorLabels" . | nindent 6 }}
   {{- with .Values.updateStrategy }}
   updateStrategy:
     {{- toYaml . | nindent 4 }}
   {{- end }}
   template:
     metadata:
-      labels:
-        {{- include "prometheus-node-exporter.labels" $ | indent 8 }}
       {{- with .Values.podAnnotations }}
       annotations:
         {{- toYaml . | nindent 8 }}
       {{- end }}
+      labels:
+        {{- include "prometheus-node-exporter.labels" . | nindent 8 }}
     spec:
       automountServiceAccountToken: {{ .Values.serviceAccount.automountServiceAccountToken }}
-      serviceAccountName: {{ template "prometheus-node-exporter.serviceAccountName" $ }}
       {{- with .Values.securityContext }}
       securityContext:
         {{- toYaml . | nindent 8 }}
@@ -35,9 +34,10 @@ spec:
       initContainers:
         {{- toYaml . | nindent 8 }}
       {{- end }}
+      serviceAccountName: {{ include "prometheus-node-exporter.serviceAccountName" . }}
       containers:
         - name: node-exporter
-          image: {{ include "prometheus-node-exporter.image" $ }}
+          image: {{ include "prometheus-node-exporter.image" . }}
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           args:
             - --path.procfs=/host/proc

@@ -2,14 +2,14 @@
 apiVersion: autoscaling.k8s.io/v1
 kind: VerticalPodAutoscaler
 metadata:
-  name: {{ template "prometheus-node-exporter.fullname" $ }}
-  namespace: {{ template "prometheus-node-exporter.namespace" $ }}
+  name: {{ include "prometheus-node-exporter.fullname" . }}
+  namespace: {{ include "prometheus-node-exporter.namespace" . }}
   labels:
-    {{- include "prometheus-node-exporter.labels" $ | indent 4 }}
+    {{- include "prometheus-node-exporter.labels" . | nindent 4 }}
 spec:
   resourcePolicy:
     containerPolicies:
-    - containerName: {{ template "prometheus-node-exporter.name" $ }}
+    - containerName: {{ include "prometheus-node-exporter.name" . }}
       {{- with .Values.verticalPodAutoscaler.controlledResources }}
       controlledResources: {{ . }}
       {{- end }}
@@ -24,7 +24,7 @@ spec:
   targetRef:
     apiVersion: apps/v1
     kind: DaemonSet
-    name:  {{ template "prometheus-node-exporter.fullname" $ }}
+    name:  {{ include "prometheus-node-exporter.fullname" . }}
   {{- if .Values.verticalPodAutoscaler.updatePolicy }}
   updatePolicy:
     {{- with .Values.verticalPodAutoscaler.updatePolicy.updateMode }}
