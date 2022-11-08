@@ -53,7 +53,33 @@ spec:
             {{- else }}
               value: {{ .Values.redisAddress }}
             {{- end }}
-          {{- if .Values.auth.enabled }}
+            {{- if .Values.redisTlsConfig.enabled }}
+            {{- if .Values.redisTlsConfig.skipTlsVerification }}
+            - name: REDIS_EXPORTER_SKIP_TLS_VERIFICATION
+              value: "true"
+            {{- end }}
+            {{- if and (.Values.redisTlsConfig.caCertFile.secret.name) (.Values.redisTlsConfig.caCertFile.secret.key) }}
+            - name: REDIS_EXPORTER_TLS_CA_CERT_FILE
+              value: {{ .Values.redisTlsConfig.mountPath }}/tls-ca-cert.crt
+            {{- end }}
+            {{- if and (.Values.redisTlsConfig.clientKeyFile.secret.name) (.Values.redisTlsConfig.clientKeyFile.secret.key) }}
+            - name: REDIS_EXPORTER_TLS_CLIENT_KEY_FILE
+              value: {{ .Values.redisTlsConfig.mountPath }}/tls-client-key.key
+            {{- end }}
+            {{- if and (.Values.redisTlsConfig.clientCertFile.secret.name) (.Values.redisTlsConfig.clientCertFile.secret.key) }}
+            - name: REDIS_EXPORTER_TLS_CLIENT_CERT_FILE
+              value: {{ .Values.redisTlsConfig.mountPath }}/tls-client-cert.crt
+            {{- end }}
+            {{- if and (.Values.redisTlsConfig.serverKeyFile.secret.name) (.Values.redisTlsConfig.serverKeyFile.secret.key) }}
+            - name: REDIS_EXPORTER_TLS_SERVER_KEY_FILE
+              value: {{ .Values.redisTlsConfig.mountPath }}/tls-server-key.key
+            {{- end }}
+            {{- if and (.Values.redisTlsConfig.serverCertFile.secret.name) (.Values.redisTlsConfig.serverCertFile.secret.key) }}
+            - name: REDIS_EXPORTER_TLS_SERVER_CERT_FILE
+              value: {{ .Values.redisTlsConfig.mountPath }}/tls-server-cert.crt
+            {{- end }}
+            {{- end }}
+            {{- if .Values.auth.enabled }}
             {{- if and (.Values.auth.redisPasswordFile.secret.name) (.Values.auth.redisPasswordFile.secret.key) }}
             - name: REDIS_PASSWORD_FILE
               value: {{ .Values.auth.redisPasswordFile.mountPath }}/{{ .Values.auth.redisPasswordFile.secret.key }}
@@ -89,14 +115,25 @@ spec:
             - mountPath: {{ .Values.auth.redisPasswordFile.mountPath }}
               name: redis-password-file-mount
             {{- end }}
+            {{- if .Values.redisTlsConfig.enabled }}
+            - mountPath: {{ .Values.redisTlsConfig.mountPath }}
+              name: tls
+              readOnly: true
+            {{- end}}
           livenessProbe:
             httpGet:
               path: /
               port: exporter-port
+              {{- if and (.Values.redisTlsConfig.enabled) (.Values.redisTlsConfig.serverCertFile.secret.name) (.Values.redisTlsConfig.serverCertFile.secret.key) }}
+              scheme: HTTPS
+              {{- end }}
           readinessProbe:
             httpGet:
               path: /
               port: exporter-port
+              {{- if and (.Values.redisTlsConfig.enabled) (.Values.redisTlsConfig.serverCertFile.secret.name) (.Values.redisTlsConfig.serverCertFile.secret.key) }}
+              scheme: HTTPS
+              {{- end }}
           resources:
 {{ toYaml .Values.resources | indent 12 }}
       volumes:
@@ -111,7 +148,47 @@ spec:
         {{- if and (.Values.auth.enabled) (.Values.auth.redisPasswordFile.secret.name) }}
         - name: redis-password-file-mount
           secret:
-             secretName: {{ .Values.auth.redisPasswordFile.secret.name }}
+            secretName: {{ .Values.auth.redisPasswordFile.secret.name }}
+        {{- end }}
+        {{- if .Values.redisTlsConfig.enabled }}
+        - name: tls
+          projected:
+            sources:
+            {{- if and (.Values.redisTlsConfig.caCertFile.secret.name) (.Values.redisTlsConfig.caCertFile.secret.key) }}
+            - secret:
+                name: {{ .Values.redisTlsConfig.caCertFile.secret.name }}
+                items:
+                  - key: {{ .Values.redisTlsConfig.caCertFile.secret.key }}
+                    path: tls-ca-cert.crt
+            {{- end }}
+            {{- if and (.Values.redisTlsConfig.clientKeyFile.secret.name) (.Values.redisTlsConfig.clientKeyFile.secret.key) }}
+            - secret:
+                name: {{ .Values.redisTlsConfig.clientKeyFile.secret.name }}
+                items:
+                  - key: {{ .Values.redisTlsConfig.clientKeyFile.secret.key }}
+                    path: tls-client-key.key
+            {{- end }}
+            {{- if and (.Values.redisTlsConfig.clientCertFile.secret.name) (.Values.redisTlsConfig.clientCertFile.secret.key) }}
+            - secret:
+                name: {{ .Values.redisTlsConfig.clientCertFile.secret.name }}
+                items:
+                  - key: {{ .Values.redisTlsConfig.clientCertFile.secret.key }}
+                    path: tls-client-cert.crt
+            {{- end }}
+            {{- if and (.Values.redisTlsConfig.serverKeyFile.secret.name) (.Values.redisTlsConfig.serverKeyFile.secret.key) }}
+            - secret:
+                name: {{ .Values.redisTlsConfig.serverKeyFile.secret.name }}
+                items:
+                  - key: {{ .Values.redisTlsConfig.serverKeyFile.secret.key }}
+                    path: tls-server-key.key
+            {{- end }}
+            {{- if and (.Values.redisTlsConfig.serverCertFile.secret.name) (.Values.redisTlsConfig.serverCertFile.secret.key) }}
+            - secret:
+                name: {{ .Values.redisTlsConfig.serverCertFile.secret.name }}
+                items:
+                  - key: {{ .Values.redisTlsConfig.serverCertFile.secret.key }}
+                    path: tls-server-cert.crt
+            {{- end }}
         {{- end }}
     {{- if .Values.nodeSelector }}
       nodeSelector:
