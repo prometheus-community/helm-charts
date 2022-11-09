@@ -66,6 +66,14 @@ Return the appropriate apiVersion for networkpolicy.
 {{- end -}}
 
 {{/*
+Selector labels
+*/}}
+{{- define "prometheus-pushgateway.selectorLabels" }}
+app: {{ template "prometheus-pushgateway.name" . }}
+release: {{ .Release.Name }}
+{{- end }}
+
+{{/*
 Returns pod spec
 */}}
 {{- define "prometheus-pushgateway.podSpec" -}}
