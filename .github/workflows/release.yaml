@@ -62,9 +62,9 @@ jobs:
               break
             fi
             helm push "${pkg}" oci://ghcr.io/"${GITHUB_REPOSITORY_OWNER}"/charts
-            file=${pkg##*/}
-            name=${file%-*}
-            version=${file%.*}
-            version=${version#*-}
+            file=${pkg##*/}       # extracts file name from full directory path
+            name=${file%-*}       # extracts chart name from filename
+            noext=${file%.tgz}    # extracts string (NAME-1.2.3) without extension to get version below
+            version=${noext##*-}  # extracts version
             cosign sign ghcr.io/"${GITHUB_REPOSITORY_OWNER}"/charts/"${name}":"${version}"
           done
