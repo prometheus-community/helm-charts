@@ -10,10 +10,10 @@ imagePullSecrets:
 ## Define serviceAccount names for components. Defaults to component's fully qualified name.
 ##
 serviceAccounts:
-  alertmanager:
-    create: true
-    name:
-    annotations: {}
+  # alertmanager:
+  #   create: true
+  #   name:
+  #   annotations: {}
   pushgateway:
     create: true
     name:
@@ -23,7 +23,7 @@ serviceAccounts:
     name:
     annotations: {}
 
-alertmanager:
+old_alertmanager:
   ## If false, alertmanager will not be installed
   ##
   enabled: true
@@ -40,13 +40,6 @@ alertmanager:
   ##
   name: alertmanager
 
-  ## alertmanager container image
-  ##
-  image:
-    repository: quay.io/prometheus/alertmanager
-    tag: v0.24.0
-    pullPolicy: IfNotPresent
-
   ## alertmanager priorityClassName
   ##
   priorityClassName: ""
@@ -55,10 +48,6 @@ alertmanager:
   ##
   ## Useful for providing HTTP Basic Auth to healthchecks
   probeHeaders: []
-
-  ## Additional alertmanager container arguments
-  ##
-  extraArgs: {}
 
   ## Additional InitContainers to initialize the pod
   ##
@@ -110,80 +99,10 @@ alertmanager:
   ##
   configFileName: alertmanager.yml
 
-  ingress:
-    ## If true, alertmanager Ingress will be created
-    ##
-    enabled: false
-
-    # For Kubernetes >= 1.18 you should specify the ingress-controller via the field ingressClassName
-    # See https://kubernetes.io/blog/2020/04/02/improvements-to-the-ingress-api-in-kubernetes-1.18/#specifying-the-class-of-an-ingress
-    # ingressClassName: nginx
-
-    ## alertmanager Ingress annotations
-    ##
-    annotations: {}
-    #   kubernetes.io/ingress.class: nginx
-    #   kubernetes.io/tls-acme: 'true'
-
-    ## alertmanager Ingress additional labels
-    ##
-    extraLabels: {}
-
-    ## alertmanager Ingress hostnames with optional path
-    ## Must be provided if Ingress is enabled
-    ##
-    hosts: []
-    #   - alertmanager.domain.com
-    #   - domain.com/alertmanager
-
-    path: /
-
-    # pathType is only for k8s >= 1.18
-    pathType: Prefix
-
-    ## Extra paths to prepend to every host configuration. This is useful when working with annotation based services.
-    extraPaths: []
-    # - path: /*
-    #   backend:
-    #     serviceName: ssl-redirect
-    #     servicePort: use-annotation
-
-    ## alertmanager Ingress TLS configuration
-    ## Secrets must be manually created in the namespace
-    ##
-    tls: []
-    #   - secretName: prometheus-alerts-tls
-    #     hosts:
-    #       - alertmanager.domain.com
 
   ## Alertmanager Deployment Strategy type
   # strategy:
   #   type: Recreate
-
-  ## Node tolerations for alertmanager scheduling to nodes with taints
-  ## Ref: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/
-  ##
-  tolerations: []
-    # - key: "key"
-    #   operator: "Equal|Exists"
-    #   value: "value"
-    #   effect: "NoSchedule|PreferNoSchedule|NoExecute(1.6 only)"
-
-  ## Node labels for alertmanager pod assignment
-  ## Ref: https://kubernetes.io/docs/user-guide/node-selection/
-  ##
-  nodeSelector: {}
-
-  ## Pod affinity
-  ##
-  affinity: {}
-
-  ## PodDisruptionBudget settings
-  ## ref: https://kubernetes.io/docs/concepts/workloads/pods/disruptions/
-  ##
-  podDisruptionBudget:
-    enabled: false
-    maxUnavailable: 1
 
   ## Use an alternate scheduler, e.g. "stork".
   ## ref: https://kubernetes.io/docs/tasks/administer-cluster/configure-multiple-schedulers/
@@ -261,19 +180,6 @@ alertmanager:
     ##
     sizeLimit: ""
 
-  ## Annotations to be added to alertmanager pods
-  ##
-  podAnnotations: {}
-    ## Tell prometheus to use a specific set of alertmanager pods
-    ## instead of all alertmanager pods found in the same namespace
-    ## Useful if you deploy multiple releases within the same namespace
-    ##
-    ## prometheus.io/probe: alertmanager-teamA
-
-  ## Labels to be added to Prometheus AlertManager pods
-  ##
-  podLabels: {}
-
   ## Specify if a Pod Security Policy for node-exporter must be created
   ## Ref: https://kubernetes.io/docs/concepts/policy/pod-security-policy/
   ##
@@ -318,37 +224,6 @@ alertmanager:
 
       servicePort: 80
 
-  ## alertmanager resource requests and limits
-  ## Ref: http://kubernetes.io/docs/user-guide/compute-resources/
-  ##
-  resources: {}
-    # limits:
-    #   cpu: 10m
-    #   memory: 32Mi
-    # requests:
-    #   cpu: 10m
-    #   memory: 32Mi
-
-  # Custom DNS configuration to be added to alertmanager pods
-  dnsConfig: {}
-    # nameservers:
-    #   - 1.2.3.4
-    # searches:
-    #   - ns1.svc.cluster-domain.example
-    #   - my.dns.search.suffix
-    # options:
-    #   - name: ndots
-    #     value: "2"
-  #   - name: edns0
-
-  ## Security context to be added to alertmanager pods
-  ##
-  securityContext:
-    runAsUser: 65534
-    runAsNonRoot: true
-    runAsGroup: 65534
-    fsGroup: 65534
-
   ## Security context to be added to alertmanager container
   ##
   containerSecurityContext: {}
@@ -377,6 +252,253 @@ alertmanager:
   ## List of initial peers
   ## Ref: https://github.com/prometheus/alertmanager/blob/main/README.md#high-availability
   clusterPeers: []
+
+alertmanager:
+  ## If false, alertmanager will not be installed
+  ##
+  enabled: true
+
+  # Default values for alertmanager.
+  # This is a YAML-formatted file.
+  # Declare variables to be passed into your templates.
+
+  replicaCount: 1
+
+  ## alertmanager container image
+  ##
+  image:
+    repository: quay.io/prometheus/alertmanager
+    pullPolicy: IfNotPresent
+    # Overrides the image tag whose default is the chart appVersion.
+    tag: v0.24.0
+
+  ## Additional alertmanager container arguments
+  ##
+  extraArgs: {}
+
+  ## Additional Alertmanager Secret mounts
+  # Defines additional mounts with secrets. Secrets must be manually created in the namespace.
+  extraSecretMounts: []
+    # - name: secret-files
+    #   mountPath: /etc/secrets
+    #   subPath: ""
+    #   secretName: alertmanager-secret-files
+    #   readOnly: true
+
+  imagePullSecrets: []
+  nameOverride: ""
+  fullnameOverride: ""
+
+  serviceAccount:
+    # Specifies whether a service account should be created
+    create: true
+    # Annotations to add to the service account
+    annotations: {}
+    # The name of the service account to use.
+    # If not set and create is true, a name is generated using the fullname template
+    name:
+
+  podSecurityContext:
+    fsGroup: 65534
+
+  ## Custom DNS configuration to be added to alertmanager pods
+  ##
+  dnsConfig: {}
+    # nameservers:
+    #   - 1.2.3.4
+    # searches:
+    #   - ns1.svc.cluster-domain.example
+    #   - my.dns.search.suffix
+    # options:
+    #   - name: ndots
+    #     value: "2"
+    #   - name: edns0
+
+  ## Security context to be added to alertmanager pods
+  ##
+  securityContext:
+    # capabilities:
+    #   drop:
+    #   - ALL
+    # readOnlyRootFilesystem: true
+    runAsUser: 65534
+    runAsNonRoot: true
+    runAsGroup: 65534
+    fsGroup: 65534
+
+  additionalPeers: []
+
+  livenessProbe:
+    httpGet:
+      path: /
+      port: http
+
+  readinessProbe:
+    httpGet:
+      path: /
+      port: http
+
+  service:
+    annotations: {}
+    type: ClusterIP
+    port: 9093
+    clusterPort: 9094
+    loadBalancerIP: ""  # Assign ext IP when Service type is LoadBalancer
+    loadBalancerSourceRanges: []  # Only allow access to loadBalancerIP from these IPs
+    # if you want to force a specific nodePort. Must be use with service.type=NodePort
+    # nodePort:
+
+  ingress:
+    enabled: false
+    className: ""
+    annotations: {}
+      # kubernetes.io/ingress.class: nginx
+      # kubernetes.io/tls-acme: "true"
+    hosts:
+      - host: alertmanager.domain.com
+        paths:
+          - path: /
+            pathType: ImplementationSpecific
+    tls: []
+    #  - secretName: chart-example-tls
+    #    hosts:
+    #      - alertmanager.domain.com
+
+  ## alertmanager resource requests and limits
+  ## Ref: http://kubernetes.io/docs/user-guide/compute-resources/
+  ##
+  resources: {}
+    # limits:
+    #   cpu: 100m
+    #   memory: 128Mi
+    # requests:
+    #   cpu: 10m
+    #   memory: 32Mi
+
+  ## Node labels for alertmanager pod assignment
+  ## Ref: https://kubernetes.io/docs/user-guide/node-selection/
+  ##
+  nodeSelector: {}
+
+  ## Node tolerations for alertmanager scheduling to nodes with taints
+  ## Ref: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/
+  ##
+  tolerations: []
+    # - key: "key"
+    #   operator: "Equal|Exists"
+    #   value: "value"
+    #   effect: "NoSchedule|PreferNoSchedule|NoExecute(1.6 only)"
+
+  ## Pod affinity
+  ##
+  affinity: {}
+
+  ## Pod anti-affinity can prevent the scheduler from placing Alertmanager replicas on the same node.
+  ## The default value "soft" means that the scheduler should *prefer* to not schedule two replica pods onto the same node but no guarantee is provided.
+  ## The value "hard" means that the scheduler is *required* to not schedule two replica pods onto the same node.
+  ## The value "" will disable pod anti-affinity so that no anti-affinity rules will be configured.
+  ##
+  podAntiAffinity: ""
+
+  ## If anti-affinity is enabled sets the topologyKey to use for anti-affinity.
+  ## This can be changed to, for example, failure-domain.beta.kubernetes.io/zone
+  ##
+  podAntiAffinityTopologyKey: kubernetes.io/hostname
+
+  ## Topology spread constraints rely on node labels to identify the topology domain(s) that each Node is in.
+  ## Ref: https://kubernetes.io/docs/concepts/workloads/pods/pod-topology-spread-constraints/
+  topologySpreadConstraints: []
+    # - maxSkew: 1
+    #   topologyKey: failure-domain.beta.kubernetes.io/zone
+    #   whenUnsatisfiable: DoNotSchedule
+    #   labelSelector:
+    #     matchLabels:
+    #       app.kubernetes.io/instance: alertmanager
+
+  statefulSet:
+    annotations: {}
+
+  ## Annotations to be added to alertmanager pods
+  ##
+  podAnnotations: {}
+    ## Tell prometheus to use a specific set of alertmanager pods
+    ## instead of all alertmanager pods found in the same namespace
+    ## Useful if you deploy multiple releases within the same namespace
+    ##
+    ## prometheus.io/probe: alertmanager-teamA
+
+  ## Labels to be added to Prometheus AlertManager pods
+  ##
+  podLabels: {}
+
+  # Ref: https://kubernetes.io/docs/tasks/run-application/configure-pdb/
+  podDisruptionBudget: {}
+    # maxUnavailable: 1
+    # minAvailable: 1
+
+  command: []
+
+  persistence:
+    enabled: true
+    ## Persistent Volume Storage Class
+    ## If defined, storageClassName: <storageClass>
+    ## If set to "-", storageClassName: "", which disables dynamic provisioning
+    ## If undefined (the default) or set to null, no storageClassName spec is
+    ## set, choosing the default provisioner.
+    ##
+    # storageClass: "-"
+    accessModes:
+      - ReadWriteOnce
+    size: 50Mi
+
+  config:
+    global: {}
+      # slack_api_url: ''
+
+    templates:
+      - '/etc/alertmanager/*.tmpl'
+
+    receivers:
+      - name: default-receiver
+        # slack_configs:
+        #  - channel: '@you'
+        #    send_resolved: true
+
+    route:
+      group_wait: 10s
+      group_interval: 5m
+      receiver: default-receiver
+      repeat_interval: 3h
+
+  ## Monitors ConfigMap changes and POSTs to a URL
+  ## Ref: https://github.com/jimmidyson/configmap-reload
+  ##
+  configmapReload:
+    ## If false, the configmap-reload container will not be deployed
+    ##
+    enabled: false
+
+    ## configmap-reload container name
+    ##
+    name: configmap-reload
+
+    ## configmap-reload container image
+    ##
+    image:
+      repository: jimmidyson/configmap-reload
+      tag: v0.8.0
+      pullPolicy: IfNotPresent
+
+    # containerPort: 9533
+
+    ## configmap-reload resource requests and limits
+    ## Ref: http://kubernetes.io/docs/user-guide/compute-resources/
+    ##
+    resources: {}
+
+  templates: {}
+  #   alertmanager.tmpl: |-
+
 
 ## Monitors ConfigMap changes and POSTs to a URL
 ## Ref: https://github.com/jimmidyson/configmap-reload
@@ -477,12 +599,11 @@ kubeStateMetrics:
 ##
 # kube-state-metrics:
 
-nodeExporter:
+prometheus-node-exporter:
   ## If false, node-exporter will not be installed
   ##
   enabled: true
 
-prometheus-node-exporter:
   # Expose the service to the host network
   hostNetwork: true
 
