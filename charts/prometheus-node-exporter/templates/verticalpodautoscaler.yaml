@@ -2,32 +2,33 @@
 apiVersion: autoscaling.k8s.io/v1
 kind: VerticalPodAutoscaler
 metadata:
-  name: {{ template "prometheus-node-exporter.fullname" . }}
-  namespace: {{ template "prometheus-node-exporter.namespace" . }}
-  labels: {{ include "prometheus-node-exporter.labels" . | indent 4 }}
+  name: {{ include "prometheus-node-exporter.fullname" . }}
+  namespace: {{ include "prometheus-node-exporter.namespace" . }}
+  labels:
+    {{- include "prometheus-node-exporter.labels" . | nindent 4 }}
 spec:
   resourcePolicy:
     containerPolicies:
-    - containerName: {{ template "prometheus-node-exporter.name" . }}
-      {{- if .Values.verticalPodAutoscaler.controlledResources }}
-      controlledResources: {{ .Values.verticalPodAutoscaler.controlledResources }}
+    - containerName: {{ include "prometheus-node-exporter.name" . }}
+      {{- with .Values.verticalPodAutoscaler.controlledResources }}
+      controlledResources: {{ . }}
       {{- end }}
-      {{- if .Values.verticalPodAutoscaler.maxAllowed }}
+      {{- with .Values.verticalPodAutoscaler.maxAllowed }}
       maxAllowed:
-        {{ toYaml .Values.verticalPodAutoscaler.maxAllowed | nindent 8 }}
+        {{- toYaml . | nindent 8 }}
       {{- end }}
-      {{- if .Values.verticalPodAutoscaler.minAllowed }}
+      {{- with .Values.verticalPodAutoscaler.minAllowed }}
       minAllowed:
-        {{ toYaml .Values.verticalPodAutoscaler.minAllowed | nindent 8 }}
+        {{- toYaml . | nindent 8 }}
       {{- end }}
   targetRef:
     apiVersion: apps/v1
     kind: DaemonSet
-    name:  {{ template "prometheus-node-exporter.fullname" . }}
+    name:  {{ include "prometheus-node-exporter.fullname" . }}
   {{- if .Values.verticalPodAutoscaler.updatePolicy }}
   updatePolicy:
-    {{- if .Values.verticalPodAutoscaler.updatePolicy.updateMode }}
-    updateMode: {{ .Values.verticalPodAutoscaler.updatePolicy.updateMode  }}
+    {{- with .Values.verticalPodAutoscaler.updatePolicy.updateMode }}
+    updateMode: {{ . }}
     {{- end }}
   {{- end }}
 {{- end }}
