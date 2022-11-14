@@ -1,0 +1,57 @@
+{{- if and .Values.nodeExporter.enabled .Values.rbac.create .Values.podSecurityPolicy.enabled }}
+{{- if .Capabilities.APIVersions.Has "policy/v1beta1/PodSecurityPolicy" }}
+apiVersion: policy/v1beta1
+kind: PodSecurityPolicy
+metadata:
+  name: {{ template "prometheus.nodeExporter.fullname" . }}
+  labels:
+    {{- include "prometheus.nodeExporter.labels" . | nindent 4 }}
+  {{- with .Values.nodeExporter.podSecurityPolicy.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  privileged: false
+  allowPrivilegeEscalation: false
+  requiredDropCapabilities:
+    - ALL
+  volumes:
+    - 'configMap'
+    - 'hostPath'
+    - 'secret'
+  allowedHostPaths:
+    - pathPrefix: /proc
+      readOnly: true
+    - pathPrefix: /sys
+      readOnly: true
+    - pathPrefix: /
+      readOnly: true
+  {{- range .Values.nodeExporter.extraHostPathMounts }}
+    - pathPrefix: {{ .hostPath }}
+      readOnly: {{ .readOnly }}
+  {{- end }}
+  hostNetwork: {{ .Values.nodeExporter.hostNetwork }}
+  hostPID: {{ .Values.nodeExporter.hostPID }}
+  hostIPC: false
+  runAsUser:
+    rule: 'RunAsAny'
+  seLinux:
+    rule: 'RunAsAny'
+  supplementalGroups:
+    rule: 'MustRunAs'
+    ranges:
+      # Forbid adding the root group.
+      - min: 1
+        max: 65535
+  fsGroup:
+    rule: 'MustRunAs'
+    ranges:
+      # Forbid adding the root group.
+      - min: 1
+        max: 65535
+  readOnlyRootFilesystem: false
+  hostPorts:
+    - min: 1
+      max: 65535
+{{- end }}
+{{- end }}
