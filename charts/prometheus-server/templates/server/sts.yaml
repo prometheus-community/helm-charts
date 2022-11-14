@@ -52,41 +52,6 @@ spec:
 {{ toYaml .Values.server.extraInitContainers | indent 8 }}
       {{- end }}
       containers:
-        {{- if .Values.configmapReload.prometheus.enabled }}
-        - name: {{ template "prometheus.name" . }}-{{ .Values.server.name }}-{{ .Values.configmapReload.prometheus.name }}
-          image: "{{ .Values.configmapReload.prometheus.image.repository }}:{{ .Values.configmapReload.prometheus.image.tag }}"
-          imagePullPolicy: "{{ .Values.configmapReload.prometheus.image.pullPolicy }}"
-          {{- with .Values.configmapReload.prometheus.containerSecurityContext }}
-          securityContext:
-            {{- toYaml . | nindent 12 }}
-          {{- end }}
-          args:
-            - --volume-dir=/etc/config
-            - --webhook-url=http://127.0.0.1:9090{{ .Values.server.prefixURL }}/-/reload
-          {{- range $key, $value := .Values.configmapReload.prometheus.extraArgs }}
-            - --{{ $key }}={{ $value }}
-          {{- end }}
-          {{- range .Values.configmapReload.prometheus.extraVolumeDirs }}
-            - --volume-dir={{ . }}
-          {{- end }}
-          {{- if .Values.configmapReload.prometheus.containerPort }}
-          ports:
-            - containerPort: {{ .Values.configmapReload.prometheus.containerPort }}
-          {{- end }}
-          resources:
-{{ toYaml .Values.configmapReload.prometheus.resources | indent 12 }}
-          volumeMounts:
-            - name: config-volume
-              mountPath: /etc/config
-              readOnly: true
-          {{- range .Values.configmapReload.prometheus.extraConfigmapMounts }}
-            - name: {{ $.Values.configmapReload.prometheus.name }}-{{ .name }}
-              mountPath: {{ .mountPath }}
-              subPath: {{ .subPath }}
-              readOnly: {{ .readOnly }}
-          {{- end }}
-        {{- end }}
-
         - name: {{ template "prometheus.name" . }}-{{ .Values.server.name }}
           image: "{{ .Values.server.image.repository }}:{{ .Values.server.image.tag }}"
           imagePullPolicy: "{{ .Values.server.image.pullPolicy }}"
