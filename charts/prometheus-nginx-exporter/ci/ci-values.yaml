@@ -1,0 +1,21 @@
+---
+nginxServer: http://ci-nginx:8080/stub_status
+nginx:
+  enabled: true
+  fullnameOverride: ci-nginx
+  serverBlock: |-
+    server {
+      listen 0.0.0.0:8080;
+      root /app;
+      location / {
+        index index.html index.php;
+      }
+      location /stub_status {
+        stub_status on;
+      }
+      location ~ \.php$ {
+        fastcgi_pass phpfpm-server:9000;
+        fastcgi_index index.php;
+        include fastcgi.conf;
+      }
+    }
