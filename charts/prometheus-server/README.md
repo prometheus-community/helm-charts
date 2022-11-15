@@ -9,7 +9,7 @@ This chart bootstraps a [Prometheus](https://prometheus.io/) deployment on a [Ku
 - Kubernetes 1.16+
 - Helm 3+
 
-## Get Repo Info
+## Get Repository Info
 
 ```console
 helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
