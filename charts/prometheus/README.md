@@ -9,14 +9,14 @@ This chart bootstraps a [Prometheus](https://prometheus.io/) deployment on a [Ku
 - Kubernetes 1.16+
 - Helm 3+
 
-## Get Repo Info
+## Get Repository Info
 
 ```console
 helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
 helm repo update
 ```
 
-_See [helm repo](https://helm.sh/docs/helm/helm_repo/) for command documentation._
+_See [helm repository](https://helm.sh/docs/helm/helm_repo/) for command documentation._
 
 ## Install Chart
 
@@ -33,8 +33,9 @@ _See [helm install](https://helm.sh/docs/helm/helm_install/) for command documen
 By default this chart installs additional, dependent charts:
 
 - [kube-state-metrics](https://github.com/prometheus-community/helm-charts/tree/main/charts/kube-state-metrics)
+- [prometheus-node-exporter](https://github.com/prometheus-community/helm-charts/tree/main/charts/prometheus)
 
-To disable the dependency during installation, set `kubeStateMetrics.enabled` to `false`.
+To disable the dependency during installation, set `kubeStateMetrics.enabled` and `prometheus-node-exporter.enabled` to `false`.
 
 _See [helm dependency](https://helm.sh/docs/helm/helm_dependency/) for command documentation._
 
@@ -55,6 +56,19 @@ helm upgrade [RELEASE_NAME] [CHART] --install
 ```
 
 _See [helm upgrade](https://helm.sh/docs/helm/helm_upgrade/) for command documentation._
+
+### To 16.0
+
+Starting from version 16.0 embedded services (like alertmanager, node-exporter etc.) are moved out of Prometheus chart and the respecting charts from this repository are used as dependencies. Version 16.0.0 moves node-exporter service to [prometheus-node-exporter chart](https://github.com/prometheus-community/helm-charts/tree/main/charts/prometheus-node-exporter). If you've made some config changes, please check the old `nodeExporter` and the new `prometheus-node-exporter` configuration section in values.yaml for differences.
+
+Before you update, please scale down the `prometheus-server` deployment to `0` then perform upgrade:
+
+```bash
+# In 15.x
+kubectl scale deploy prometheus-server --replicas=0
+# Upgrade
+helm upgrade [RELEASE_NAME] promethus-community/prometheus --version 16.0.0
+```
 
 ### To 15.0
 

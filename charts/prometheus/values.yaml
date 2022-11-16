@@ -477,6 +477,9 @@ kubeStateMetrics:
 ##
 # kube-state-metrics:
 
+## promtheus-node-exporter sub-chart configurable values
+## Please see https://github.com/prometheus-community/helm-charts/tree/main/charts/prometheus-node-exporter
+##
 prometheus-node-exporter:
   ## If false, node-exporter will not be installed
   ##
@@ -508,20 +511,80 @@ prometheus-node-exporter:
   imagePullSecrets: []
   # - name: "image-pull-secret"
 
-  service:
-    type: ClusterIP
-    port: 9100
-    targetPort: 9100
-    nodePort:
-    portName: metrics
-    listenOnAllInterfaces: true
-    annotations:
-      prometheus.io/scrape: "true"
+  rbac:
+    ## If true, create & use RBAC resources
+    ##
+    create: true
+    ## If true, create & use Pod Security Policy resources
+    ## https://kubernetes.io/docs/concepts/policy/pod-security-policy/
+    pspEnabled: false
+    pspAnnotations: {}
+      ## Specify pod annotations
+      ## Ref: https://kubernetes.io/docs/concepts/policy/pod-security-policy/#apparmor
+      ## Ref: https://kubernetes.io/docs/concepts/policy/pod-security-policy/#seccomp
+      ## Ref: https://kubernetes.io/docs/concepts/policy/pod-security-policy/#sysctl
+      ##
+      # seccomp.security.alpha.kubernetes.io/allowedProfileNames: '*'
+      # seccomp.security.alpha.kubernetes.io/defaultProfileName: 'docker/default'
+      # apparmor.security.beta.kubernetes.io/defaultProfileName: 'runtime/default'
+
+  ## Assign a PriorityClassName to pods if set
+  ##
+  # priorityClassName: ""
+
+  ## Customize the updateStrategy if set
+  ##
+  updateStrategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+
+  ## Additional InitContainers to initialize the pod
+  ##
+  extraInitContainers: []
+
+  ## Additional mounts from the host to node-exporter container
+  ##
+  extraHostVolumeMounts: []
+  #  - name: <mountName>
+  #    hostPath: <hostPath>
+  #    mountPath: <mountPath>
+  #    readOnly: true|false
+  #    mountPropagation: None|HostToContainer|Bidirectional
+
+  ## Additional configmaps to be mounted.
+  ##
+  configmaps: []
+  # - name: <configMapName>
+  #   mountPath: <mountPath>
+  secrets: []
+  # - name: <secretName>
+  #   mountPath: <mountPatch>
+
+  ## Node tolerations for node-exporter scheduling to nodes with taints
+  ## Ref: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/
+  ##
+  tolerations:
+    - effect: NoSchedule
+      operator: Exists
+
+  ## Assign a nodeSelector if operating a hybrid cluster
+  ##
+  nodeSelector: {}
+  #   beta.kubernetes.io/arch: amd64
+  #   beta.kubernetes.io/os: linux
+
+  # Annotations to be added to node exporter pods
+  podAnnotations:
+    # Fix for very slow GKE cluster upgrades
+    cluster-autoscaler.kubernetes.io/safe-to-evict: "true"
+
+  # Extra labels to be added to node exporter pods
+  podLabels: {}
 
   # Additional environment variables that will be passed to the daemonset
   env: {}
-  ##  env:
-  ##    VARIABLE: value
+    # VARIABLE: value
 
   prometheus:
     monitor:
@@ -571,12 +634,9 @@ prometheus-node-exporter:
       ##
       labelValueLengthLimit: 0
 
-  ## Customize the updateStrategy if set
-  updateStrategy:
-    type: RollingUpdate
-    rollingUpdate:
-      maxUnavailable: 1
-
+  ## node-exporter resource limits & requests
+  ## Ref: https://kubernetes.io/docs/user-guide/compute-resources/
+  ##
   resources: {}
     # We usually recommend not to specify default resources and to leave this as a conscious
     # choice for the user. This also increases chances charts run on environments with little
@@ -588,6 +648,24 @@ prometheus-node-exporter:
     # requests:
     #   cpu: 100m
     #   memory: 30Mi
+
+  containerSecurityContext:
+    allowPrivilegeEscalation: false
+    # capabilities:
+    #   add:
+    #   - SYS_TIME
+
+  # Custom DNS configuration to be added to prometheus-node-exporter pods
+  dnsConfig: {}
+  # nameservers:
+  #   - 1.2.3.4
+  # searches:
+  #   - ns1.svc.cluster-domain.example
+  #   - my.dns.search.suffix
+  # options:
+  #   - name: ndots
+  #     value: "2"
+  #   - name: edns0
 
   serviceAccount:
     # Specifies whether a ServiceAccount should be created
@@ -605,28 +683,15 @@ prometheus-node-exporter:
     runAsNonRoot: true
     runAsUser: 65534
 
-  containerSecurityContext:
-    allowPrivilegeEscalation: false
-    # capabilities:
-    #   add:
-    #   - SYS_TIME
-
-  rbac:
-    ## If true, create & use RBAC resources
-    ##
-    create: true
-    ## If true, create & use Pod Security Policy resources
-    ## https://kubernetes.io/docs/concepts/policy/pod-security-policy/
-    pspEnabled: false
-    pspAnnotations: {}
-      ## Specify pod annotations
-      ## Ref: https://kubernetes.io/docs/concepts/policy/pod-security-policy/#apparmor
-      ## Ref: https://kubernetes.io/docs/concepts/policy/pod-security-policy/#seccomp
-      ## Ref: https://kubernetes.io/docs/concepts/policy/pod-security-policy/#sysctl
-      ##
-      # seccomp.security.alpha.kubernetes.io/allowedProfileNames: '*'
-      # seccomp.security.alpha.kubernetes.io/defaultProfileName: 'docker/default'
-      # apparmor.security.beta.kubernetes.io/defaultProfileName: 'runtime/default'
+  service:
+    type: ClusterIP
+    port: 9100
+    targetPort: 9100
+    nodePort:
+    portName: metrics
+    listenOnAllInterfaces: true
+    annotations:
+      prometheus.io/scrape: "true"
 
   # for deployments that have node_exporter deployed outside of the cluster, list
   # their addresses here
@@ -644,62 +709,9 @@ prometheus-node-exporter:
   #               values:
   #                 - target-host-name
 
-  # Annotations to be added to node exporter pods
-  podAnnotations:
-    # Fix for very slow GKE cluster upgrades
-    cluster-autoscaler.kubernetes.io/safe-to-evict: "true"
-
-  # Extra labels to be added to node exporter pods
-  podLabels: {}
-
   ## set to true to add the release label so scraping of the servicemonitor with kube-prometheus-stack works out of the box
   releaseLabel: false
 
-  # Custom DNS configuration to be added to prometheus-node-exporter pods
-  dnsConfig: {}
-  # nameservers:
-  #   - 1.2.3.4
-  # searches:
-  #   - ns1.svc.cluster-domain.example
-  #   - my.dns.search.suffix
-  # options:
-  #   - name: ndots
-  #     value: "2"
-  #   - name: edns0
-
-  ## Assign a nodeSelector if operating a hybrid cluster
-  ##
-  nodeSelector: {}
-  #   beta.kubernetes.io/arch: amd64
-  #   beta.kubernetes.io/os: linux
-
-  ## Node tolerations for node-exporter scheduling to nodes with taints
-  ## Ref: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/
-  ##
-  tolerations:
-    - effect: NoSchedule
-      operator: Exists
-
-  ## Assign a PriorityClassName to pods if set
-  # priorityClassName: ""
-
-  ## Additional mounts from the host to node-exporter container
-  ##
-  extraHostVolumeMounts: []
-  #  - name: <mountName>
-  #    hostPath: <hostPath>
-  #    mountPath: <mountPath>
-  #    readOnly: true|false
-  #    mountPropagation: None|HostToContainer|Bidirectional
-
-  ## Additional configmaps to be mounted.
-  ##
-  configmaps: []
-  # - name: <configMapName>
-  #   mountPath: <mountPath>
-  secrets: []
-  # - name: <secretName>
-  #   mountPath: <mountPatch>
   ## Override the deployment namespace
   ##
   namespaceOverride: ""
@@ -725,10 +737,6 @@ prometheus-node-exporter:
   #    mountPath: <mountPath>
   #    readOnly: true|false
   #    mountPropagation: None|HostToContainer|Bidirectional
-
-  ## Additional InitContainers to initialize the pod
-  ##
-  extraInitContainers: []
 
   ## Liveness probe
   ##
