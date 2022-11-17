@@ -1,0 +1,34 @@
+---
+{{- if .Values.serviceMonitor.enabled }}
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: {{ template "prometheus-nginx-exporter.fullname" .  }}
+  namespace: {{ template "prometheus-nginx-exporter.namespace" . }}
+  {{- if .Values.additionalAnnotations }}
+  annotations:
+  {{ toYaml .Values.additionalAnnotations | indent 4 }}
+  {{- end }}
+  labels:
+    {{- include "prometheus-nginx-exporter.labels" . | indent 4 }}
+    {{- if .Values.serviceMonitor.additionalLabels }}
+    {{ toYaml .Values.serviceMonitor.additionalLabels }}
+    {{- end }}
+spec:
+  jobLabel: {{ template "prometheus-nginx-exporter.fullname" . }}
+  endpoints:
+    - port: http
+      interval: {{ .Values.serviceMonitor.interval }}
+      scrapeTimeout: {{ .Values.serviceMonitor.scrapeTimeout }}
+      path: {{ .Values.serviceMonitor.path }}
+      {{- if .Values.serviceMonitor.honorLabels }}
+      honorLabels: true
+      {{- end }}
+      {{- if .Values.serviceMonitor.metricRelabelings }}
+      metricRelabelings:
+      {{ toYaml .Values.serviceMonitor.metricRelabelings | indent 4 }}
+      {{- end }}
+  selector:
+    matchLabels:
+      {{- include "prometheus-nginx-exporter.selectorLabels" . | indent 6 }}
+{{- end }}

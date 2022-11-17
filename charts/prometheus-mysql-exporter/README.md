@@ -67,7 +67,7 @@ helm show values prometheus-community/prometheus-mysql-exporter
 The exporter can connect to mysql directly or using the [Cloud SQL Proxy](https://cloud.google.com/sql/docs/mysql/sql-proxy).
 
 - To configure direct MySQL connection by value, set `mysql.user`, `mysql.pass`, `mysql.host` and `mysql.port` (see additional options in the `mysql` configuration block)
-- To configure direct MySQL connnetion by secret, you must store a connection string in a secret, and set `mysql.existingSecret` to `[SECRET_NAME]`
+- To configure direct MySQL connection by secret, you must store a connection string in a secret, and set `mysql.existingSecret` to `[SECRET_NAME]`
 
 ### Exporter Documentation and Params
 
@@ -77,3 +77,8 @@ A mysql params overview can be found here: (<https://github.com/go-sql-driver/my
 ### Collector Flags
 
 Available collector flags can be found in the [values.yaml](https://github.com/prometheus-community/helm-charts/blob/main/charts/prometheus-mysql-exporter/values.yaml) and a description of each flag can be found in the [mysqld_exporter](https://github.com/prometheus/mysqld_exporter#collector-flags) repository.
+
+### CloudSql Proxy Workload Identity
+
+Enable it with flag  [`cloudsqlproxy.workloadIdentity`](https://github.com/prometheus-community/helm-charts/blob/main/charts/prometheus-mysql-exporter/values.yaml)
+To more details about Workload Identity visit [Use Workload Identity](https://cloud.google.com/kubernetes-engine/docs/how-to/workload-identity)
