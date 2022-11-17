@@ -1,0 +1,76 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "prometheus-nginx-exporter.fullname" . }}
+  namespace: {{ template "prometheus-nginx-exporter.namespace" . }}
+  {{- with .Values.additionalAnnotations }}
+  annotations:
+  {{ toYaml . | indent 4 }}
+  {{- end }}
+  labels:
+    {{- include "prometheus-nginx-exporter.labels" . | indent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "prometheus-nginx-exporter.selectorLabels" . | indent 6 }}
+  strategy:
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        {{- include "prometheus-nginx-exporter.labels" . | indent 8 }}
+      annotations:
+      {{- with .Values.additionalAnnotations }}
+      {{ toYaml . | indent 6 }}
+      {{- end }}
+    spec:
+      serviceAccountName: {{ template "prometheus-nginx-exporter.serviceAccountName" . }}
+      {{- with .Values.initContainers }}
+      initContainers: {{ toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: {{ .Chart.Name }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          args:
+            - "-nginx.scrape-uri={{ tpl .Values.nginxServer . }}"
+            {{- range $key, $value := .Values.options }}
+            - "-{{ $key }}{{ if $value }}={{ $value }}{{ end }}"
+            {{- end }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.service.port }}
+              protocol: TCP
+          livenessProbe:
+            {{- toYaml .Values.livenessProbe | trim | nindent 12 }}
+          readinessProbe:
+            {{- toYaml .Values.readinessProbe | trim | nindent 12 }}
+          {{- with .Values.resources }}
+          resources: {{ toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.extraVolumeMounts }}
+          volumeMounts: {{ toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.extraEnv }}
+          env: {{ toYaml . | nindent 12 }}
+          {{- end }}
+        {{- with .Values.extraContainers }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    {{- with .Values.nodeSelector }}
+      nodeSelector: {{ toYaml . | nindent 8 }}
+    {{- end }}
+    {{- with .Values.affinity }}
+      affinity: {{ toYaml . | nindent 8 }}
+    {{- end }}
+    {{- with .Values.tolerations }}
+      tolerations: {{ toYaml . | nindent 8 }}
+    {{- end }}
+    {{- with .Values.extraVolumes }}
+      volumes: {{ toYaml . | nindent 8 }}
+    {{- end }}
