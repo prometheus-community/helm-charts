@@ -57,6 +57,19 @@ helm upgrade [RELEASE_NAME] [CHART] --install
 
 _See [helm upgrade](https://helm.sh/docs/helm/helm_upgrade/) for command documentation._
 
+### To 17.0
+
+Version 17.0.0 moves pushgateway service to [prometheus-pushgateway](https://github.com/prometheus-community/helm-charts/tree/main/charts/prometheus-pushgateway). If you've made some config changes, please check the old `pushgateway` and the new `prometheus-pushgateway` configuration section in values.yaml for differences.
+
+Before you update, please scale down the `prometheus-server` deployment to `0` then perform upgrade:
+
+```bash
+# In 15.x
+kubectl scale deploy prometheus-server --replicas=0
+# Upgrade
+helm upgrade [RELEASE_NAME] promethus-community/prometheus --version 16.0.0
+```
+
 ### To 16.0
 
 Starting from version 16.0 embedded services (like alertmanager, node-exporter etc.) are moved out of Prometheus chart and the respecting charts from this repository are used as dependencies. Version 16.0.0 moves node-exporter service to [prometheus-node-exporter chart](https://github.com/prometheus-community/helm-charts/tree/main/charts/prometheus-node-exporter). If you've made some config changes, please check the old `nodeExporter` and the new `prometheus-node-exporter` configuration section in values.yaml for differences.
