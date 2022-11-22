@@ -59,7 +59,7 @@ _See [helm upgrade](https://helm.sh/docs/helm/helm_upgrade/) for command documen
 
 ### To 17.0
 
-Version 17.0.0 moves pushgateway service to [prometheus-pushgateway](https://github.com/prometheus-community/helm-charts/tree/main/charts/prometheus-pushgateway). If you've made some config changes, please check the old `pushgateway` and the new `prometheus-pushgateway` configuration section in values.yaml for differences.
+Version 17.0.0 uses pushgateway service from the [prometheus-pushgateway chart](https://github.com/prometheus-community/helm-charts/tree/main/charts/prometheus-pushgateway). If you've made some config changes, please check the old `pushgateway` and the new `prometheus-pushgateway` configuration section in values.yaml for differences.
 
 Before you update, please scale down the `prometheus-server` deployment to `0` then perform upgrade:
 
