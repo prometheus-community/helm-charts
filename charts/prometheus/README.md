@@ -67,7 +67,7 @@ Before you update, please scale down the `prometheus-server` deployment to `0` t
 # In 15.x
 kubectl scale deploy prometheus-server --replicas=0
 # Upgrade
-helm upgrade [RELEASE_NAME] promethus-community/prometheus --version 16.0.0
+helm upgrade [RELEASE_NAME] promethus-community/prometheus --version 17.0.0
 ```
 
 ### To 16.0
