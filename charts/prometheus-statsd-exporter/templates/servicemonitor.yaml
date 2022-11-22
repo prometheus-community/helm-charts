@@ -1,6 +1,6 @@
 {{- if .Values.serviceMonitor.enabled }}
-apiVersion: monitoring.coreos.com/v1
-kind: ServiceMonitor
+apiVersion: {{ .Values.serviceMonitor.apiVersion | default "monitoring.coreos.com/v1" }}
+kind: {{ .Values.serviceMonitor.kind | default "ServiceMonitor" }}
 metadata:
   name: {{ template "prometheus-statsd-exporter.fullname" . }}-metrics
   {{- if .Values.serviceMonitor.namespace }}
@@ -17,7 +17,7 @@ spec:
       {{- include "prometheus-statsd-exporter.selectorLabels" . | nindent 6 }}
   endpoints:
     - port: http
-      path: "/metrics"
+      path: {{ .Values.serviceMonitor.endpoint }}
       {{- if .Values.serviceMonitor.interval }}
       interval: {{ .Values.serviceMonitor.interval }}
       {{- end }}

@@ -1,0 +1,20 @@
+{{- if .Values.prometheus.monitor.enabled }}
+apiVersion: {{ .Values.prometheus.monitor.apiVersion | default "monitoring.googleapis.com/v1" }}
+kind: {{ .Values.prometheus.monitor.kind | default "PodMonitoring" }}
+metadata:
+  name: {{ template "prometheus-statsd-exporter.fullname" . }}-metrics
+  namespace: {{ default .Release.Namespace .Values.prometheus.monitor.namespace | quote }}
+  labels: {{- include "prometheus-statsd-exporter.labels" . | nindent 4 }}
+    app.kubernetes.io/component: metrics
+    {{- range $key, $value := .Values.prometheus.monitor.additionalLabels }}
+    {{ $key }}: {{ $value | quote }}
+    {{- end }}
+spec:
+  selector:
+    matchLabels:
+      {{- include "prometheus-statsd-exporter.selectorLabels" . | nindent 6 }}
+  endpoints:
+    - port: http
+      path: {{ .Values.prometheus.monitor.endpoint }}
+      interval: {{ .Values.prometheus.monitor.interval }}
+{{- end }}
