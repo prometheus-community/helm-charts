@@ -1,0 +1,18 @@
+{{- if .Values.rbac.create }}
+---
+kind: Role
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: {{ template "prometheus-nginx-exporter.fullname" . }}
+  namespace: {{ template "prometheus-nginx-exporter.namespace" . }}
+  {{- if .Values.additionalAnnotations }}
+  annotations:
+  {{ toYaml .Values.additionalAnnotations | indent 4 }}
+  {{- end }}
+  labels:
+    {{- include "prometheus-nginx-exporter.labels" . | indent 4 }}
+rules:
+- apiGroups: [""]
+  resources: ["endpoints"]
+  verbs: ["get"]
+{{- end }}

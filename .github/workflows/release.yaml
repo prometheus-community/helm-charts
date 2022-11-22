@@ -32,6 +32,7 @@ jobs:
 
       - name: Add dependency chart repos
         run: |
+          helm repo add bitnami https://charts.bitnami.com/bitnami
           helm repo add grafana https://grafana.github.io/helm-charts
           helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
 
@@ -49,7 +50,7 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - uses: sigstore/cosign-installer@v2.8.1
-      - name: Push charts to GHCR
+      - name: Push charts to GHCR and sign
         env:
           COSIGN_EXPERIMENTAL: 1
         # when filling gaps with previously released charts, cr would create
@@ -61,10 +62,9 @@ jobs:
             if [ -z "${pkg:-}" ]; then
               break
             fi
-            helm push "${pkg}" oci://ghcr.io/"${GITHUB_REPOSITORY_OWNER}"/charts
-            file=${pkg##*/}
-            name=${file%-*}
-            version=${file%.*}
-            version=${version#*-}
-            cosign sign ghcr.io/"${GITHUB_REPOSITORY_OWNER}"/charts/"${name}":"${version}"
+            helm push "${pkg}" oci://ghcr.io/"${GITHUB_REPOSITORY_OWNER}"/charts > .digest
+            file=${pkg##*/}       # extracts file name from full directory path
+            name=${file%-*}       # extracts chart name from filename
+            digest=$(awk -F "[, ]+" '/Digest/{print $NF}' < .digest)
+            cosign sign ghcr.io/"${GITHUB_REPOSITORY_OWNER}"/charts/"${name}"@"${digest}"
           done
