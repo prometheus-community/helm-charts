@@ -57,6 +57,21 @@ helm upgrade [RELEASE_NAME] [CHART] --install
 
 _See [helm upgrade](https://helm.sh/docs/helm/helm_upgrade/) for command documentation._
 
+### To 18.0
+
+Version 18.0.0 uses alertmanager service from the [alertmanager chart](https://github.com/prometheus-community/helm-charts/tree/main/charts/alertmanager). If you've made some config changes, please check the old `alertmanager` and the new `alertmanager` configuration section in values.yaml for differences.
+
+Note that the `configmapReload` section for `alertmanager` was moved out of dedicated section (`configmapReload.alertmanager`) to alertmanager embedded (`alertmanager.configmapReload`).
+
+Before you update, please scale down the `prometheus-server` deployment to `0` then perform upgrade:
+
+```bash
+# In 17.x
+kubectl scale deploy prometheus-server --replicas=0
+# Upgrade
+helm upgrade [RELEASE_NAME] promethus-community/prometheus --version 18.0.0
+```
+
 ### To 17.0
 
 Version 17.0.0 uses pushgateway service from the [prometheus-pushgateway chart](https://github.com/prometheus-community/helm-charts/tree/main/charts/prometheus-pushgateway). If you've made some config changes, please check the old `pushgateway` and the new `prometheus-pushgateway` configuration section in values.yaml for differences.
@@ -64,7 +79,7 @@ Version 17.0.0 uses pushgateway service from the [prometheus-pushgateway chart](
 Before you update, please scale down the `prometheus-server` deployment to `0` then perform upgrade:
 
 ```bash
-# In 15.x
+# In 16.x
 kubectl scale deploy prometheus-server --replicas=0
 # Upgrade
 helm upgrade [RELEASE_NAME] promethus-community/prometheus --version 17.0.0

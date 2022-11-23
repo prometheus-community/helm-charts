@@ -20,56 +20,34 @@ old_alertmanager:
   ##
   enabled: true
 
-  ## Use a ClusterRole (and ClusterRoleBinding)
-  ## - If set to false - we define a Role and RoleBinding in the defined namespaces ONLY
-  ## This makes alertmanager work - for users who do not have ClusterAdmin privs, but wants alertmanager to operate on their own namespaces, instead of clusterwide.
-  useClusterRole: true
+  # Default values for alertmanager.
+  # This is a YAML-formatted file.
+  # Declare variables to be passed into your templates.
 
-  ## Set to a rolename to use existing role - skipping role creating - but still doing serviceaccount and rolebinding to the rolename set here.
-  useExistingRole: false
-
-  ## alertmanager container name
-  ##
-  name: alertmanager
-
-  ## alertmanager container image
-  ##
   image:
     repository: quay.io/prometheus/alertmanager
     tag: v0.24.0
     pullPolicy: IfNotPresent
 
-  ## alertmanager priorityClassName
-  ##
-  priorityClassName: ""
+  imagePullSecrets: []
+  nameOverride: ""
+  fullnameOverride: ""
 
-  ## Custom HTTP headers for Readiness Probe
-  ##
-  ## Useful for providing HTTP Basic Auth to healthchecks
-  probeHeaders: []
+  livenessProbe:
+    httpGet:
+      path: /
+      port: http
+
+  readinessProbe:
+    httpGet:
+      path: /
+      port: http
 
   ## Additional alertmanager container arguments
   ##
   extraArgs: {}
 
-  ## Additional InitContainers to initialize the pod
-  ##
-  extraInitContainers: []
-
-  ## The URL prefix at which the container can be accessed. Useful in the case the '-web.external-url' includes a slug
-  ## so that the various internal URLs are still able to access as they are in the default case.
-  ## (Optional)
-  prefixURL: ""
-
-  ## External URL which can access alertmanager
-  baseURL: "http://localhost:9093"
-
-  ## Additional alertmanager container environment variable
-  ## For instance to add a http_proxy
-  ##
-  extraEnv: {}
-
-  ## Additional alertmanager Secret mounts
+  ## Additional Alertmanager Secret mounts
   # Defines additional mounts with secrets. Secrets must be manually created in the namespace.
   extraSecretMounts: []
     # - name: secret-files
@@ -78,30 +56,6 @@ old_alertmanager:
     #   secretName: alertmanager-secret-files
     #   readOnly: true
 
-  ## Additional alertmanager Configmap mounts
-  extraConfigmapMounts: []
-    # - name: template-files
-    #   mountPath: /etc/config/templates.d
-    #   configMap: alertmanager-template-files
-    #   readOnly: true
-
-  ## ConfigMap override where fullname is {{.Release.Name}}-{{.Values.alertmanager.configMapOverrideName}}
-  ## Defining configMapOverrideName will cause templates/alertmanager-configmap.yaml
-  ## to NOT generate a ConfigMap resource
-  ##
-  configMapOverrideName: ""
-
-  ## The name of a secret in the same kubernetes namespace which contains the Alertmanager config
-  ## Defining configFromSecret will cause templates/alertmanager-configmap.yaml
-  ## to NOT generate a ConfigMap resource
-  ##
-  configFromSecret: ""
-
-  ## The configuration file name to be loaded to alertmanager
-  ## Must match the key within configuration loaded from ConfigMap/Secret
-  ##
-  configFileName: alertmanager.yml
-
   ingress:
     ## If true, alertmanager Ingress will be created
     ##
@@ -109,7 +63,7 @@ old_alertmanager:
 
     # For Kubernetes >= 1.18 you should specify the ingress-controller via the field ingressClassName
     # See https://kubernetes.io/blog/2020/04/02/improvements-to-the-ingress-api-in-kubernetes-1.18/#specifying-the-class-of-an-ingress
-    # ingressClassName: nginx
+    className: ""
 
     ## alertmanager Ingress annotations
     ##
@@ -117,21 +71,14 @@ old_alertmanager:
     #   kubernetes.io/ingress.class: nginx
     #   kubernetes.io/tls-acme: 'true'
 
-    ## alertmanager Ingress additional labels
-    ##
-    extraLabels: {}
-
     ## alertmanager Ingress hostnames with optional path
     ## Must be provided if Ingress is enabled
     ##
     hosts: []
-    #   - alertmanager.domain.com
-    #   - domain.com/alertmanager
-
-    path: /
-
-    # pathType is only for k8s >= 1.18
-    pathType: Prefix
+      # - host: alertmanager.domain.com
+      #   paths:
+      #     - path: /
+      #       pathType: Prefix
 
     ## Extra paths to prepend to every host configuration. This is useful when working with annotation based services.
     extraPaths: []
@@ -144,13 +91,9 @@ old_alertmanager:
     ## Secrets must be manually created in the namespace
     ##
     tls: []
-    #   - secretName: prometheus-alerts-tls
-    #     hosts:
-    #       - alertmanager.domain.com
-
-  ## Alertmanager Deployment Strategy type
-  # strategy:
-  #   type: Recreate
+    #  - secretName: chart-example-tls
+    #    hosts:
+    #      - alertmanager.domain.com
 
   ## Node tolerations for alertmanager scheduling to nodes with taints
   ## Ref: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/
@@ -171,87 +114,24 @@ old_alertmanager:
   affinity: {}
 
   ## PodDisruptionBudget settings
-  ## ref: https://kubernetes.io/docs/concepts/workloads/pods/disruptions/
-  ##
-  podDisruptionBudget:
-    enabled: false
-    maxUnavailable: 1
+  # Ref: https://kubernetes.io/docs/tasks/run-application/configure-pdb/
+  #      https://kubernetes.io/docs/concepts/workloads/pods/disruptions/
+  podDisruptionBudget: {}
+    # maxUnavailable: 1
+    # minAvailable: 1
 
-  ## Use an alternate scheduler, e.g. "stork".
-  ## ref: https://kubernetes.io/docs/tasks/administer-cluster/configure-multiple-schedulers/
-  ##
-  # schedulerName:
-
-  persistentVolume:
-    ## If true, alertmanager will create/use a Persistent Volume Claim
-    ## If false, use emptyDir
-    ##
+  persistence:
     enabled: true
-
-    ## alertmanager data Persistent Volume access modes
-    ## Must match those of existing PV or dynamic provisioner
-    ## Ref: http://kubernetes.io/docs/user-guide/persistent-volumes/
-    ##
-    accessModes:
-      - ReadWriteOnce
-
-    ## alertmanager data Persistent Volume Claim annotations
-    ##
-    annotations: {}
-
-    ## alertmanager data Persistent Volume existing claim name
-    ## Requires alertmanager.persistentVolume.enabled: true
-    ## If defined, PVC must be created manually before volume will be bound
-    existingClaim: ""
-
-    ## alertmanager data Persistent Volume mount root path
-    ##
-    mountPath: /data
-
-    ## alertmanager data Persistent Volume size
-    ##
-    size: 2Gi
-
-    ## alertmanager data Persistent Volume Storage Class
+    ## Persistent Volume Storage Class
     ## If defined, storageClassName: <storageClass>
     ## If set to "-", storageClassName: "", which disables dynamic provisioning
     ## If undefined (the default) or set to null, no storageClassName spec is
-    ##   set, choosing the default provisioner.  (gp2 on AWS, standard on
-    ##   GKE, AWS & OpenStack)
+    ## set, choosing the default provisioner.
     ##
     # storageClass: "-"
-
-    ## alertmanager data Persistent Volume Binding Mode
-    ## If defined, volumeBindingMode: <volumeBindingMode>
-    ## If undefined (the default) or set to null, no volumeBindingMode spec is
-    ##   set, choosing the default mode.
-    ##
-    # volumeBindingMode: ""
-
-    ## Subdirectory of alertmanager data Persistent Volume to mount
-    ## Useful if the volume's root directory is not empty
-    ##
-    subPath: ""
-
-    ## Persistent Volume Claim Selector
-    ## Useful if Persistent Volumes have been provisioned in advance
-    ## Ref: https://kubernetes.io/docs/concepts/storage/persistent-volumes/#selector
-    ##
-    # selector:
-    #  matchLabels:
-    #    release: "stable"
-    #  matchExpressions:
-    #    - { key: environment, operator: In, values: [ dev ] }
-
-    ## Persistent Volume Name
-    ## Useful if Persistent Volumes have been provisioned in advance and you want to use a specific one
-    ##
-    # volumeName: ""
-
-  emptyDir:
-    ## alertmanager emptyDir volume size limit
-    ##
-    sizeLimit: ""
+    accessModes:
+      - ReadWriteOnce
+    size: 50Mi
 
   ## Annotations to be added to alertmanager pods
   ##
@@ -266,49 +146,12 @@ old_alertmanager:
   ##
   podLabels: {}
 
-  ## Specify if a Pod Security Policy for node-exporter must be created
-  ## Ref: https://kubernetes.io/docs/concepts/policy/pod-security-policy/
-  ##
-  podSecurityPolicy:
-    annotations: {}
-      ## Specify pod annotations
-      ## Ref: https://kubernetes.io/docs/concepts/policy/pod-security-policy/#apparmor
-      ## Ref: https://kubernetes.io/docs/concepts/policy/pod-security-policy/#seccomp
-      ## Ref: https://kubernetes.io/docs/concepts/policy/pod-security-policy/#sysctl
-      ##
-      # seccomp.security.alpha.kubernetes.io/allowedProfileNames: '*'
-      # seccomp.security.alpha.kubernetes.io/defaultProfileName: 'docker/default'
-      # apparmor.security.beta.kubernetes.io/defaultProfileName: 'runtime/default'
-
   ## Use a StatefulSet if replicaCount needs to be greater than 1 (see below)
   ##
   replicaCount: 1
 
-  ## Annotations to be added to deployment
-  ##
-  deploymentAnnotations: {}
-
   statefulSet:
-    ## If true, use a statefulset instead of a deployment for pod management.
-    ## This allows to scale replicas to more than 1 pod
-    ##
-    enabled: false
-
     annotations: {}
-    labels: {}
-    podManagementPolicy: OrderedReady
-
-    ## Alertmanager headless service to use for the statefulset
-    ##
-    headless:
-      annotations: {}
-      labels: {}
-
-      ## Enabling peer mesh service end points for enabling the HA alert manager
-      ## Ref: https://github.com/prometheus/alertmanager/blob/master/README.md
-      enableMeshPeer: false
-
-      servicePort: 80
 
   ## alertmanager resource requests and limits
   ## Ref: http://kubernetes.io/docs/user-guide/compute-resources/
@@ -331,197 +174,37 @@ old_alertmanager:
     # options:
     #   - name: ndots
     #     value: "2"
-  #   - name: edns0
+    #   - name: edns0
 
   ## Security context to be added to alertmanager pods
   ##
-  securityContext:
+  podSecurityContext:
+    fsGroup: 65534
     runAsUser: 65534
     runAsNonRoot: true
     runAsGroup: 65534
-    fsGroup: 65534
 
   ## Security context to be added to alertmanager container
   ##
-  containerSecurityContext: {}
-
-  service:
-    annotations: {}
-    labels: {}
-    clusterIP: ""
-
-    ## Enabling peer mesh service end points for enabling the HA alert manager
-    ## Ref: https://github.com/prometheus/alertmanager/blob/master/README.md
-    # enableMeshPeer : true
-
-    ## List of IP addresses at which the alertmanager service is available
-    ## Ref: https://kubernetes.io/docs/user-guide/services/#external-ips
-    ##
-    externalIPs: []
-
-    loadBalancerIP: ""
-    loadBalancerSourceRanges: []
-    servicePort: 80
-    # nodePort: 30000
-    sessionAffinity: None
-    type: ClusterIP
-
-  ## List of initial peers
-  ## Ref: https://github.com/prometheus/alertmanager/blob/main/README.md#high-availability
-  clusterPeers: []
-
-alertmanager:
-  ## If false, alertmanager will not be installed
-  ##
-  enabled: true
-
-  # Default values for alertmanager.
-  # This is a YAML-formatted file.
-  # Declare variables to be passed into your templates.
-  replicaCount: 1
-
-  image:
-    repository: quay.io/prometheus/alertmanager
-    tag: v0.24.0
-    pullPolicy: IfNotPresent
-
-  ## Additional alertmanager container arguments
-  ##
-  extraArgs: {}
-
-  ## Additional Alertmanager Secret mounts
-  # Defines additional mounts with secrets. Secrets must be manually created in the namespace.
-  extraSecretMounts: []
-    # - name: secret-files
-    #   mountPath: /etc/secrets
-    #   subPath: ""
-    #   secretName: alertmanager-secret-files
-    #   readOnly: true
-
-  imagePullSecrets: []
-  nameOverride: ""
-  fullnameOverride: ""
-
-  serviceAccount:
-    # Specifies whether a service account should be created
-    create: true
-    # Annotations to add to the service account
-    annotations: {}
-    # The name of the service account to use.
-    # If not set and create is true, a name is generated using the fullname template
-    name:
-
-  podSecurityContext:
-    fsGroup: 65534
-
-  dnsConfig: {}
-    # nameservers:
-    #   - 1.2.3.4
-    # searches:
-    #   - ns1.svc.cluster-domain.example
-    #   - my.dns.search.suffix
-    # options:
-    #   - name: ndots
-    #     value: "2"
-    #   - name: edns0
-  securityContext:
+  securityContext: {}
     # capabilities:
     #   drop:
     #   - ALL
     # readOnlyRootFilesystem: true
-    runAsUser: 65534
-    runAsNonRoot: true
-    runAsGroup: 65534
-
-  additionalPeers: []
-
-  livenessProbe:
-    httpGet:
-      path: /
-      port: http
-
-  readinessProbe:
-    httpGet:
-      path: /
-      port: http
 
   service:
     annotations: {}
-    type: ClusterIP
-    port: 9093
     clusterPort: 9094
     loadBalancerIP: ""  # Assign ext IP when Service type is LoadBalancer
     loadBalancerSourceRanges: []  # Only allow access to loadBalancerIP from these IPs
+    port: 9093
     # if you want to force a specific nodePort. Must be use with service.type=NodePort
     # nodePort:
+    type: ClusterIP
 
-  ingress:
-    ## If true, alertmanager Ingress will be created
-    ##
-    enabled: false
-
-    # For Kubernetes >= 1.18 you should specify the ingress-controller via the field ingressClassName
-    # See https://kubernetes.io/blog/2020/04/02/improvements-to-the-ingress-api-in-kubernetes-1.18/#specifying-the-class-of-an-ingress
-    # ingressClassName: nginx
-
-    ## alertmanager Ingress annotations
-    ##
-    annotations: {}
-    #   kubernetes.io/ingress.class: nginx
-    #   kubernetes.io/tls-acme: 'true'
-
-    ## alertmanager Ingress hostnames with optional path
-    ## Must be provided if Ingress is enabled
-    ##
-    hosts: []
-      # - host: alertmanager.domain.com
-      #   paths:
-      #     - path: /
-      #       pathType: ImplementationSpecific
-
-    className: ""
-
-    ## Extra paths to prepend to every host configuration. This is useful when working with annotation based services.
-    extraPaths: []
-    # - path: /*
-    #   backend:
-    #     serviceName: ssl-redirect
-    #     servicePort: use-annotation
-
-    ## alertmanager Ingress TLS configuration
-    ## Secrets must be manually created in the namespace
-    ##
-    tls: []
-    #  - secretName: chart-example-tls
-    #    hosts:
-    #      - alertmanager.domain.com
-
-  ## alertmanager resource requests and limits
-  ## Ref: http://kubernetes.io/docs/user-guide/compute-resources/
-  ##
-  resources: {}
-    # limits:
-    #   cpu: 10m
-    #   memory: 32Mi
-    # requests:
-    #   cpu: 10m
-    #   memory: 32Mi
-
-  ## Node tolerations for alertmanager scheduling to nodes with taints
-  ## Ref: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/
-  ##
-  tolerations: []
-    # - key: "key"
-    #   operator: "Equal|Exists"
-    #   value: "value"
-    #   effect: "NoSchedule|PreferNoSchedule|NoExecute(1.6 only)"
-
-  ## Node labels for alertmanager pod assignment
-  ## Ref: https://kubernetes.io/docs/user-guide/node-selection/
-  ##
-  nodeSelector: {}
-
-  affinity: {}
+  ## List of initial peers
+  ## Ref: https://github.com/prometheus/alertmanager/blob/main/README.md#high-availability
+  additionalPeers: []
 
   ## Pod anti-affinity can prevent the scheduler from placing Alertmanager replicas on the same node.
   ## The default value "soft" means that the scheduler should *prefer* to not schedule two replica pods onto the same node but no guarantee is provided.
@@ -545,31 +228,8 @@ alertmanager:
     #     matchLabels:
     #       app.kubernetes.io/instance: alertmanager
 
-  statefulSet:
-    annotations: {}
-
-  podAnnotations: {}
-  podLabels: {}
-
-  # Ref: https://kubernetes.io/docs/tasks/run-application/configure-pdb/
-  podDisruptionBudget: {}
-    # maxUnavailable: 1
-    # minAvailable: 1
 
   command: []
-
-  persistence:
-    enabled: true
-    ## Persistent Volume Storage Class
-    ## If defined, storageClassName: <storageClass>
-    ## If set to "-", storageClassName: "", which disables dynamic provisioning
-    ## If undefined (the default) or set to null, no storageClassName spec is
-    ## set, choosing the default provisioner.
-    ##
-    # storageClass: "-"
-    accessModes:
-      - ReadWriteOnce
-    size: 50Mi
 
   config:
     global: {}
@@ -596,7 +256,7 @@ alertmanager:
   configmapReload:
     ## If false, the configmap-reload container will not be deployed
     ##
-    enabled: false
+    enabled: true
 
     ## configmap-reload container name
     ##
@@ -619,53 +279,20 @@ alertmanager:
   templates: {}
   #   alertmanager.tmpl: |-
 
+  serviceAccount:
+    # Specifies whether a service account should be created
+    create: true
+    # Annotations to add to the service account
+    annotations: {}
+    # The name of the service account to use.
+    # If not set and create is true, a name is generated using the fullname template
+    name:
+
 ## Monitors ConfigMap changes and POSTs to a URL
 ## Ref: https://github.com/jimmidyson/configmap-reload
 ##
 configmapReload:
   prometheus:
-    ## If false, the configmap-reload container will not be deployed
-    ##
-    enabled: true
-
-    ## configmap-reload container name
-    ##
-    name: configmap-reload
-
-    ## configmap-reload container image
-    ##
-    image:
-      repository: jimmidyson/configmap-reload
-      tag: v0.5.0
-      pullPolicy: IfNotPresent
-
-    # containerPort: 9533
-
-    ## Additional configmap-reload container arguments
-    ##
-    extraArgs: {}
-    ## Additional configmap-reload volume directories
-    ##
-    extraVolumeDirs: []
-
-
-    ## Additional configmap-reload mounts
-    ##
-    extraConfigmapMounts: []
-      # - name: prometheus-alerts
-      #   mountPath: /etc/alerts.d
-      #   subPath: ""
-      #   configMap: prometheus-alerts
-      #   readOnly: true
-
-    ## Security context to be added to configmap-reload container
-    containerSecurityContext: {}
-
-    ## configmap-reload resource requests and limits
-    ## Ref: http://kubernetes.io/docs/user-guide/compute-resources/
-    ##
-    resources: {}
-  alertmanager:
     ## If false, the configmap-reload container will not be deployed
     ##
     enabled: true
