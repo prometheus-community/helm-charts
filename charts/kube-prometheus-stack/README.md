@@ -93,7 +93,7 @@ For instance, the prometheus-config-reloader used to be configured as follow:
       sha: ""
 ```
 
-But it now moved to: 
+But it now moved to:
 
 ```yaml
     image:
