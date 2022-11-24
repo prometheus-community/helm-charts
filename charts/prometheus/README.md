@@ -7,7 +7,7 @@ This chart bootstraps a [Prometheus](https://prometheus.io/) deployment on a [Ku
 ## Prerequisites
 
 - Kubernetes 1.16+
-- Helm 3+
+- Helm 3.7+
 
 ## Get Repository Info
 
@@ -19,6 +19,8 @@ helm repo update
 _See [helm repository](https://helm.sh/docs/helm/helm_repo/) for command documentation._
 
 ## Install Chart
+
+Start from Version 16.0, Prometheus chart required Helm 3.7+ in order to install successfully. Please check your Helm chart version before installation.
 
 ```console
 helm install [RELEASE_NAME] prometheus-community/prometheus
