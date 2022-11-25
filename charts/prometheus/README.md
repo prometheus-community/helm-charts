@@ -33,9 +33,10 @@ _See [helm install](https://helm.sh/docs/helm/helm_install/) for command documen
 By default this chart installs additional, dependent charts:
 
 - [kube-state-metrics](https://github.com/prometheus-community/helm-charts/tree/main/charts/kube-state-metrics)
-- [prometheus-node-exporter](https://github.com/prometheus-community/helm-charts/tree/main/charts/prometheus)
+- [prometheus-node-exporter](https://github.com/prometheus-community/helm-charts/tree/main/charts/prometheus-node-exporter)
+- [prometheus-pushgateway](https://github.com/walker-tom/helm-charts/tree/main/charts/prometheus-pushgateway)
 
-To disable the dependency during installation, set `kubeStateMetrics.enabled` and `prometheus-node-exporter.enabled` to `false`.
+To disable the dependency during installation, set `kubeStateMetrics.enabled`, `prometheus-node-exporter.enabled` and `prometheus-pushgateway.enabled` to `false`.
 
 _See [helm dependency](https://helm.sh/docs/helm/helm_dependency/) for command documentation._
 
