@@ -31,16 +31,20 @@ spec:
 {{- end }}
     spec:
       serviceAccountName: {{ template "prometheus-postgres-exporter.serviceAccountName" . }}
+      {{- with .Values.podSecurityContext }}     
+      securityContext:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
 {{- if .Values.initContainers }}
       initContainers:
 {{ toYaml .Values.initContainers | indent 8 }}
 {{- end }}
-    {{- if .Values.image.pullSecrets }}
+      {{- if .Values.image.pullSecrets }}
       imagePullSecrets:
       {{- range .Values.image.pullSecrets }}
         - name: {{ . }}
       {{- end }}
-    {{- end }}
+      {{- end }} 
       containers:
         - name: {{ .Chart.Name }}
           args:
@@ -105,6 +109,12 @@ spec:
                 key: data_source_password
           {{- end }}
           {{- end }}
+          {{- end }}
+          {{- end }}
+          {{- with .Values.extraEnvs }}
+          {{- range $name, $value := . }}
+          - name: {{ $name }}
+            value: {{ tpl $value $ | quote }}
           {{- end }}
           {{- end }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
