@@ -30,6 +30,7 @@ Create chart name and version as used by the chart label.
 {{- printf "%s-%s" .Chart.Name .Chart.Version | replace "+" "_" | trunc 63 | trimSuffix "-" }}
 {{- end }}
 
+{{/*
 Create the name of the service account to use
 */}}
 {{- define "prometheus-mysql-exporter.serviceAccountName" -}}
@@ -75,5 +76,15 @@ Secret name for DATA_SOURCE_NAME
         {{- printf "%s" .Values.mysql.existingSecret -}}
     {{- else -}}
         {{ template "prometheus-mysql-exporter.fullname" . }}
+    {{- end -}}
+{{- end -}}
+*/}}
+
+{{/*
+CloudSqlProxy Workload Identity Service Account Annotation
+*/}}
+{{- define "prometheus-mysql-exporter.workloadIdentityAnnotation" -}}
+    {{- if .Values.cloudsqlproxy.workloadIdentity.enabled -}}
+         {{- printf "%s: %s" "iam.gke.io/gcp-service-account" .Values.cloudsqlproxy.workloadIdentity.serviceAccountEmail -}}
     {{- end -}}
 {{- end -}}

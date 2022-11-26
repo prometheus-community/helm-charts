@@ -92,19 +92,24 @@ spec:
         - name: cloudsql-proxy
           image: "{{ .Values.cloudsqlproxy.image.repo }}:{{ .Values.cloudsqlproxy.image.tag }}"
           imagePullPolicy: "{{ .Values.cloudsqlproxy.image.PullPolicy  }}"
-          command: ["/cloud_sql_proxy",
-                    "-instances={{ .Values.cloudsqlproxy.instanceConnectionName }}=tcp:{{ .Values.cloudsqlproxy.port }}",
+          command: ["/cloud_sql_proxy"
+                    ,"-instances={{ .Values.cloudsqlproxy.instanceConnectionName }}=tcp:{{ .Values.cloudsqlproxy.port }}"
                     {{- if .Values.cloudsqlproxy.ipAddressTypes }}
-                    "-ip_address_types={{ .Values.cloudsqlproxy.ipAddressTypes }}",
+                    ,"-ip_address_types={{ .Values.cloudsqlproxy.ipAddressTypes }}"
                     {{- end }}
-                    "-credential_file=/secrets/cloudsql/credentials.json"]
+                    {{- if not .Values.cloudsqlproxy.workloadIdentity.enabled }}
+                    ,"-credential_file=/secrets/cloudsql/credentials.json"
+                    {{- end }}
+                    ]
           livenessProbe:
             exec:
               command: ["nc", "-z", "127.0.0.1", "3306"]
+          {{- if not .Values.cloudsqlproxy.workloadIdentity.enabled }}
           volumeMounts:
             - name: cloudsql-proxy-sa-credentials
               mountPath: /secrets/cloudsql
               readOnly: true
+          {{- end }}
         {{- end }}
           resources:
 {{ toYaml .Values.resources | indent 12 }}
@@ -120,7 +125,7 @@ spec:
       tolerations:
 {{ toYaml . | indent 8 }}
     {{- end }}
-    {{- if .Values.cloudsqlproxy.enabled }}
+    {{- if and (.Values.cloudsqlproxy.enabled) (not .Values.cloudsqlproxy.workloadIdentity.enabled) }}
       volumes:
         - name: cloudsql-proxy-sa-credentials
           secret:

@@ -1,0 +1,131 @@
+# Additional labels to add to all resources
+additionalLabels: {}
+
+# Additional annotations to add to all resources
+additionalAnnotations: {}
+
+# Number of instance
+replicaCount: 1
+
+rbac:
+  # Specifies whether RBAC resources should be created
+  create: true
+
+serviceAccount:
+  # Specifies whether a ServiceAccount should be created
+  create: false
+  # The name of the ServiceAccount to use.
+  # If not set and create is true, a name is generated using the fullname template
+  name:
+
+image:
+  repository: nginx/nginx-prometheus-exporter
+  pullPolicy: IfNotPresent
+  # if not set appVersion field from Chart.yaml is used
+  tag: ""
+
+nameOverride: ""
+fullnameOverride: ""
+
+# Add your nginx server details here
+nginxServer: "http://{{ .Release.Name }}.{{ .Release.Namespace }}.svc.cluster.local:8080/stub_status"
+# nginxServer: "http://frontend.default.svc.cluster.local:8080/stub_status"
+
+# Arguments - https://github.com/nginxinc/nginx-prometheus-exporter#command-line-arguments
+options: {}
+  # -nginx.plus
+  # -nginx.retries int
+
+livenessProbe:
+  httpGet:
+    path: /
+    port: http
+  initialDelaySeconds: 30
+  timeoutSeconds: 10
+
+readinessProbe:
+  httpGet:
+    path: /
+    port: http
+  initialDelaySeconds: 30
+  timeoutSeconds: 10
+
+service:
+  type: ClusterIP
+  port: 9113
+  annotations: {}
+
+podAnnotations: {}
+
+ingress:
+  enabled: false
+  annotations: {}
+    # kubernetes.io/ingress.class: nginx
+    # kubernetes.io/tls-acme: "true"
+  path: /
+  hosts:
+    - chart-example.local
+  tls: []
+  #  - secretName: chart-example-tls
+  #    hosts:
+  #      - chart-example.local
+
+resources: {}
+  # We usually recommend not to specify default resources and to leave this as a conscious
+  # choice for the user. This also increases chances charts run on environments with little
+  # resources, such as Minikube. If you do want to specify resources, uncomment the following
+  # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+  # limits:
+  #   cpu: 100m
+  #   memory: 128Mi
+  # requests:
+  #   cpu: 100m
+  #   memory: 128Mi
+
+serviceMonitor:
+  # When set true then use a ServiceMonitor to configure scraping
+  enabled: false
+  # Set the namespace the ServiceMonitor should be deployed
+  namespace: ""
+  # Set how frequently Prometheus should scrape
+  interval: 30s
+  # Set path to nginx-exporter telemtery-path
+  path: /metrics
+  # Set labels for the ServiceMonitor, use this to define your scrape label for Prometheus Operator
+  additionalLabels: {}
+  # Set timeout for scrape
+  timeout: 10s
+  # Set of labels to transfer on the Kubernetes Service onto the target.
+  # targetLabels: []
+  # metricRelabelings: []
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
+
+# Extra environment variables
+extraEnv: []
+
+# Init Containers for Exporter Pod
+initContainers: []
+
+# Extra containers for the exporter pod
+extraContainers: []
+
+# Extra Volumes for the pod
+extraVolumes: []
+  # - name: example
+  #   configMap:
+  #     name: example
+
+# Extra Volume Mounts for the exporter container
+extraVolumeMounts: []
+  # - name: example
+  #   mountPath: /example
+
+# If enabled Nginx dependency chart will be used.
+# This is only needed for the CI job so it should always be disabled.
+nginx:
+  enabled: false

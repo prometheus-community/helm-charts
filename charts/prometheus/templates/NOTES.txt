@@ -61,7 +61,7 @@ Get the Alertmanager URL by running these commands in the same shell:
 {{- end }}
 {{- end }}
 
-{{- if .Values.alertmanager.persistentVolume.enabled }}
+{{- if .Values.alertmanager.persistence.enabled }}
 {{- else }}
 #################################################################################
 ######   WARNING: Persistence is disabled!!! You will lose your data when   #####
@@ -70,39 +70,41 @@ Get the Alertmanager URL by running these commands in the same shell:
 {{- end }}
 {{- end }}
 
-{{- if .Values.nodeExporter.podSecurityPolicy.enabled }}
-{{- else }}
+{{- if (index .Values "prometheus-node-exporter" "enabled") }}
 #################################################################################
-######   WARNING: Pod Security Policy has been moved to a global property.  #####
-######            use .Values.podSecurityPolicy.enabled with pod-based      #####
-######            annotations                                               #####
-######            (e.g. .Values.nodeExporter.podSecurityPolicy.annotations) #####
+######   WARNING: Pod Security Policy has been disabled by default since    #####
+######            it deprecated after k8s 1.25+. use                        #####
+######            (index .Values "prometheus-node-exporter" "rbac"          #####
+###### .          "pspEnabled") with (index .Values                         #####
+######            "prometheus-node-exporter" "rbac" "pspAnnotations")       #####
+######            in case you still need it.                                #####
 #################################################################################
 {{- end }}
 
-{{ if .Values.pushgateway.enabled }}
-The Prometheus PushGateway can be accessed via port {{ .Values.pushgateway.service.servicePort }} on the following DNS name from within your cluster:
-{{ template "prometheus.pushgateway.fullname" . }}.{{ .Release.Namespace }}.svc.cluster.local
+{{ if (index .Values "prometheus-pushgateway" "enabled") }}
+The Prometheus PushGateway can be accessed via port {{ index .Values "prometheus-pushgateway" "service" "port" }} on the following DNS name from within your cluster:
+{{ include "prometheus-pushgateway.fullname" (index .Subcharts "prometheus-pushgateway") }}.{{ .Release.Namespace }}.svc.cluster.local
 
-{{ if .Values.pushgateway.ingress.enabled -}}
+{{ if (index .Values "prometheus-pushgateway" "ingress" "enabled") -}}
 From outside the cluster, the pushgateway URL(s) are:
-{{- range .Values.pushgateway.ingress.hosts }}
+{{- range (index .Values "prometheus-pushgateway" "ingress" "hosts") }}
 http://{{ . }}
 {{- end }}
 {{- else }}
 Get the PushGateway URL by running these commands in the same shell:
-{{- if contains "NodePort" .Values.pushgateway.service.type }}
-  export NODE_PORT=$(kubectl get --namespace {{ .Release.Namespace }} -o jsonpath="{.spec.ports[0].nodePort}" services {{ template "prometheus.pushgateway.fullname" . }})
+{{- $pushgateway_svc_type := index .Values "prometheus-pushgateway" "service" "type" -}}
+{{- if contains "NodePort" $pushgateway_svc_type }}
+  export NODE_PORT=$(kubectl get --namespace {{ .Release.Namespace }} -o jsonpath="{.spec.ports[0].nodePort}" services {{ include "prometheus-pushgateway.fullname" (index .Subcharts "prometheus-pushgateway") }})
   export NODE_IP=$(kubectl get nodes --namespace {{ .Release.Namespace }} -o jsonpath="{.items[0].status.addresses[0].address}")
   echo http://$NODE_IP:$NODE_PORT
-{{- else if contains "LoadBalancer" .Values.pushgateway.service.type }}
+{{- else if contains "LoadBalancer" $pushgateway_svc_type }}
   NOTE: It may take a few minutes for the LoadBalancer IP to be available.
-        You can watch the status of by running 'kubectl get svc --namespace {{ .Release.Namespace }} -w {{ template "prometheus.pushgateway.fullname" . }}'
+        You can watch the status of by running 'kubectl get svc --namespace {{ .Release.Namespace }} -w {{ include "prometheus-pushgateway.fullname" (index .Subcharts "prometheus-pushgateway") }}'
 
-  export SERVICE_IP=$(kubectl get svc --namespace {{ .Release.Namespace }} {{ template "prometheus.pushgateway.fullname" . }} -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
-  echo http://$SERVICE_IP:{{ .Values.pushgateway.service.servicePort }}
-{{- else if contains "ClusterIP"  .Values.pushgateway.service.type }}
-  export POD_NAME=$(kubectl get pods --namespace {{ .Release.Namespace }} -l "app={{ template "prometheus.name" . }},component={{ .Values.pushgateway.name }}" -o jsonpath="{.items[0].metadata.name}")
+  export SERVICE_IP=$(kubectl get svc --namespace {{ .Release.Namespace }} {{ include "prometheus-pushgateway.fullname" (index .Subcharts "prometheus-pushgateway") }} -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
+  echo http://$SERVICE_IP:{{ index .Values "prometheus-pushgateway" "service" "port" }}
+{{- else if contains "ClusterIP" $pushgateway_svc_type }}
+  export POD_NAME=$(kubectl get pods --namespace {{ .Release.Namespace }} -l "app={{ include "prometheus.name" (index .Subcharts "prometheus-pushgateway") }},component=pushgateway" -o jsonpath="{.items[0].metadata.name}")
   kubectl --namespace {{ .Release.Namespace }} port-forward $POD_NAME 9091
 {{- end }}
 {{- end }}

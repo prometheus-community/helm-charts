@@ -122,6 +122,10 @@ global:
       # seccomp.security.alpha.kubernetes.io/defaultProfileName: 'docker/default'
       # apparmor.security.beta.kubernetes.io/defaultProfileName: 'runtime/default'
 
+  ## Global image registry to use if it needs to be overriden for some specific use cases (e.g local registries, custom images, ...)
+  ##
+  imageRegistry: ""
+
   ## Reference to one or more secrets to be used when pulling images
   ## ref: https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/
   ##
@@ -457,7 +461,8 @@ alertmanager:
     ## Image of Alertmanager
     ##
     image:
-      repository: quay.io/prometheus/alertmanager
+      registry: quay.io
+      repository: prometheus/alertmanager
       tag: v0.24.0
       sha: ""
 
@@ -1032,7 +1037,8 @@ kubelet:
     ##
     ## metrics_path is required to match upstream rules and charts
     cAdvisorRelabelings:
-      - sourceLabels: [__metrics_path__]
+      - action: replace
+        sourceLabels: [__metrics_path__]
         targetLabel: metrics_path
     # - sourceLabels: [__meta_kubernetes_pod_node_name]
     #   separator: ;
@@ -1045,7 +1051,8 @@ kubelet:
     ## ref: https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/api.md#relabelconfig
     ##
     probesRelabelings:
-      - sourceLabels: [__metrics_path__]
+      - action: replace
+        sourceLabels: [__metrics_path__]
         targetLabel: metrics_path
     # - sourceLabels: [__meta_kubernetes_pod_node_name]
     #   separator: ;
@@ -1058,7 +1065,8 @@ kubelet:
     ## ref: https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/api.md#relabelconfig
     ##
     resourceRelabelings:
-      - sourceLabels: [__metrics_path__]
+      - action: replace
+        sourceLabels: [__metrics_path__]
         targetLabel: metrics_path
     # - sourceLabels: [__meta_kubernetes_pod_node_name]
     #   separator: ;
@@ -1087,7 +1095,8 @@ kubelet:
     ##
     ## metrics_path is required to match upstream rules and charts
     relabelings:
-      - sourceLabels: [__metrics_path__]
+      - action: replace
+        sourceLabels: [__metrics_path__]
         targetLabel: metrics_path
     # - sourceLabels: [__meta_kubernetes_pod_node_name]
     #   separator: ;
@@ -1622,7 +1631,8 @@ prometheusOperator:
     patch:
       enabled: true
       image:
-        repository: k8s.gcr.io/ingress-nginx/kube-webhook-certgen
+        registry: k8s.gcr.io
+        repository: ingress-nginx/kube-webhook-certgen
         tag: v1.3.0
         sha: ""
         pullPolicy: IfNotPresent
@@ -1781,6 +1791,9 @@ prometheusOperator:
   ## Create a servicemonitor for the operator
   ##
   serviceMonitor:
+    ## Labels for ServiceMonitor
+    additionalLabels: {}
+
     ## Scrape interval. If not set, the Prometheus default scrape interval is used.
     ##
     interval: ""
@@ -1893,24 +1906,34 @@ prometheusOperator:
   ## Prometheus-operator image
   ##
   image:
-    repository: quay.io/prometheus-operator/prometheus-operator
+    registry: quay.io
+    repository: prometheus-operator/prometheus-operator
     tag: v0.60.1
     sha: ""
     pullPolicy: IfNotPresent
 
   ## Prometheus image to use for prometheuses managed by the operator
   ##
-  # prometheusDefaultBaseImage: quay.io/prometheus/prometheus
+  # prometheusDefaultBaseImage: prometheus/prometheus
+
+  ## Prometheus image registry to use for prometheuses managed by the operator
+  ##
+  # prometheusDefaultBaseImageRegistry: quay.io
 
   ## Alertmanager image to use for alertmanagers managed by the operator
   ##
-  # alertmanagerDefaultBaseImage: quay.io/prometheus/alertmanager
+  # alertmanagerDefaultBaseImage: prometheus/alertmanager
+
+  ## Alertmanager image registry to use for alertmanagers managed by the operator
+  ##
+  # alertmanagerDefaultBaseImageRegistry: quay.io
 
   ## Prometheus-config-reloader
   ##
   prometheusConfigReloader:
     image:
-      repository: quay.io/prometheus-operator/prometheus-config-reloader
+      registry: quay.io
+      repository: prometheus-operator/prometheus-config-reloader
       tag: v0.60.1
       sha: ""
 
@@ -1926,7 +1949,8 @@ prometheusOperator:
   ## Thanos side-car image when configured
   ##
   thanosImage:
-    repository: quay.io/thanos/thanos
+    registry: quay.io
+    repository: thanos/thanos
     tag: v0.28.1
     sha: ""
 
@@ -2363,7 +2387,8 @@ prometheus:
     ## Image of Prometheus.
     ##
     image:
-      repository: quay.io/prometheus/prometheus
+      registry: quay.io
+      repository: prometheus/prometheus
       tag: v2.39.1
       sha: ""
 
@@ -2908,6 +2933,12 @@ prometheus:
     ## be considered available. Defaults to 0 (pod will be considered available as soon as it is ready).
     minReadySeconds: 0
 
+    # Required for use in managed kubernetes clusters (such as AWS EKS) with custom CNI (such as calico),
+    # because control-plane managed by AWS cannot communicate with pods' IP CIDR and admission webhooks are not working
+    # Use the host's network namespace if true. Make sure to understand the security implications if you want to enable it.
+    # When hostNetwork is enabled, this will set dnsPolicy to ClusterFirstWithHostNet automatically.
+    hostNetwork: false
+
   additionalRulesForClusterRole: []
   #  - apiGroups: [ "" ]
   #    resources:
@@ -3198,7 +3229,8 @@ thanosRuler:
     ## Image of ThanosRuler
     ##
     image:
-      repository: quay.io/thanos/thanos
+      registry: quay.io
+      repository: thanos/thanos
       tag: v0.28.1
       sha: ""
 

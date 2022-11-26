@@ -80,6 +80,29 @@ _See [helm upgrade](https://helm.sh/docs/helm/helm_upgrade/) for command documen
 
 A major chart version change (like v1.2.3 -> v2.0.0) indicates that there is an incompatible breaking change needing manual actions.
 
+### From 41.x to 42.x
+
+This includes the overridability of container registry for all containers at the global level using `global.imageRegistry` or per container image. The defaults have not changed but if you were using a custom image, you will have to override the registry of said custom container image before you upgrade.
+
+For instance, the prometheus-config-reloader used to be configured as follow:
+
+```yaml
+    image:
+      repository: quay.io/prometheus-operator/prometheus-config-reloader
+      tag: v0.60.1
+      sha: ""
+```
+
+But it now moved to:
+
+```yaml
+    image:
+      registry: quay.io
+      repository: prometheus-operator/prometheus-config-reloader
+      tag: v0.60.1
+      sha: ""
+```
+
 ### From 40.x to 41.x
 
 This version upgrades Prometheus-Operator to v0.60.1, Prometheus to v2.39.1 and Thanos to v0.28.1.
