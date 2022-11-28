@@ -2,25 +2,29 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ template "prometheus-pushgateway.fullname" . }}
   labels:
-{{ template "prometheus-pushgateway.defaultLabels" merge (dict "extraLabels" .Values.podLabels) .  }}
+    {{- include "prometheus-pushgateway.defaultLabels" . | nindent 4 }}
+  name: {{ include "prometheus-pushgateway.fullname" . }}
 spec:
   replicas: {{ .Values.replicaCount }}
-  {{- if .Values.strategy }}
+  {{- with .Values.strategy }}
   strategy:
-{{ toYaml .Values.strategy | indent 4 }}
+    {{- toYaml . | nindent 4 }}
   {{- end }}
   selector:
     matchLabels:
-      app: {{ template "prometheus-pushgateway.name" . }}
-      release: {{ .Release.Name }}
+      {{- include "prometheus-pushgateway.selectorLabels" . | nindent 6 }}
   template:
     metadata:
-      labels:
-{{ template "prometheus-pushgateway.defaultLabels" merge (dict "extraLabels" .Values.podLabels "indent" 8) . }}
+      {{- with .Values.podAnnotations }}
       annotations:
-{{ toYaml .Values.podAnnotations | indent 8 }}
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "prometheus-pushgateway.defaultLabels" . | nindent 8 }}
+        {{- with .Values.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
     spec:
-      {{ include "prometheus-pushgateway.podSpec" . }}
-{{- end -}}
+      {{- include "prometheus-pushgateway.podSpec" . | nindent 6 }}
+{{- end }}

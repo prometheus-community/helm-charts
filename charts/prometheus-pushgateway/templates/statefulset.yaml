@@ -2,33 +2,37 @@
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: {{ template "prometheus-pushgateway.fullname" . }}
   labels:
-{{ template "prometheus-pushgateway.defaultLabels" merge (dict "extraLabels" .Values.podLabels) .  }}
+    {{- include "prometheus-pushgateway.defaultLabels" . | nindent 4 }}
+  name: {{ include "prometheus-pushgateway.fullname" . }}
 spec:
   replicas: {{ .Values.replicaCount }}
-  serviceName: {{ template "prometheus-pushgateway.fullname" . }}
+  serviceName: {{ include "prometheus-pushgateway.fullname" . }}
   selector:
     matchLabels:
-      app: {{ template "prometheus-pushgateway.name" . }}
-      release: {{ .Release.Name }}
+      {{- include "prometheus-pushgateway.selectorLabels" . | nindent 6 }}
   template:
     metadata:
-      labels:
-{{ template "prometheus-pushgateway.defaultLabels" merge (dict "extraLabels" .Values.podLabels "indent" 8) . }}
+      {{- with .Values.podAnnotations }}
       annotations:
-{{ toYaml .Values.podAnnotations | indent 8 }}
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "prometheus-pushgateway.defaultLabels" . | nindent 8 }}
+        {{- with .Values.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
     spec:
-      {{ include "prometheus-pushgateway.podSpec" . }}
+      {{- include "prometheus-pushgateway.podSpec" . | nindent 6 }}
   {{- if .Values.persistentVolume.enabled }}
   volumeClaimTemplates:
     - metadata:
-        {{- if .Values.persistentVolume.annotations }}
+        {{- with .Values.persistentVolume.annotations }}
         annotations:
-      {{ toYaml .Values.persistentVolume.annotations | indent 10 }}
+          {{- toYaml . | nindent 10 }}
         {{- end }}
         labels:
-{{ template "prometheus-pushgateway.defaultLabels" merge (dict "extraLabels" .Values.persistentVolumeLabels "indent" 10) . }}
+          {{- include "prometheus-pushgateway.defaultLabels" . | nindent 10 }}
         name: storage-volume
       spec:
         accessModes:
@@ -44,4 +48,4 @@ spec:
           requests:
             storage: "{{ .Values.persistentVolume.size }}"
   {{- end }}
-{{- end -}}
+{{- end }}
