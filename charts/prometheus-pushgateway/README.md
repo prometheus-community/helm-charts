@@ -4,14 +4,14 @@ This chart bootstraps a prometheus [pushgateway](http://github.com/prometheus/pu
 
 An optional prometheus `ServiceMonitor` can be enabled, should you wish to use this gateway with a [Prometheus Operator](https://github.com/coreos/prometheus-operator).
 
-## Get Repo Info
+## Get Repository Info
 
 ```console
 helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
 helm repo update
 ```
 
-_See [helm repo](https://helm.sh/docs/helm/helm_repo/) for command documentation._
+_See [helm repository](https://helm.sh/docs/helm/helm_repo/) for command documentation._
 
 ## Install Chart
 
@@ -49,6 +49,20 @@ $ helm upgrade [RELEASE_NAME] [CHART] --install
 ```
 
 _See [helm upgrade](https://helm.sh/docs/helm/helm_upgrade/) for command documentation._
+
+### To 1.22.0
+
+Version 1.22.0 adapted [Helm label and annotation best practices](https://helm.sh/docs/chart_best_practices/labels/). Specifically, labels mapping is listed below:
+
+```console
+OLD                 => NEW
+----------------------------------------
+heritage            => app.kubernetes.io/managed-by
+chart               => helm.sh/chart
+[container version] => app.kubernetes.io/version
+app                 => app.kubernetes.io/name
+release             => app.kubernetes.io/instance
+```
 
 ## Configuration
 
