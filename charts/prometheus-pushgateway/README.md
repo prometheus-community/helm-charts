@@ -66,7 +66,7 @@ app                 => app.kubernetes.io/name
 release             => app.kubernetes.io/instance
 ```
 
-Because select labels are immutable, `helm upgrade` cannot be supported. Please reivew and save the existing labels and adapt to the new labels. Then, [uninstall](#markdown-header-uninstall-chart) and [reinstall](#markdown-header-install-chart) the new chart.
+Because select labels are immutable, `helm upgrade` cannot be supported. Please reivew and save the existing labels and adapt to the new labels. Then, [uninstall](#uninstall-chart) and [reinstall](#install-chart) the new chart.
 
 ## Configuration
 
