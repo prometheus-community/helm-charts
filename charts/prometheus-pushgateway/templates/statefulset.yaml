@@ -10,8 +10,7 @@ spec:
   serviceName: {{ template "prometheus-pushgateway.fullname" . }}
   selector:
     matchLabels:
-      app: {{ template "prometheus-pushgateway.name" . }}
-      release: {{ .Release.Name }}
+      {{- include "prometheus-pushgateway.selectorLabels" . | nindent 6 }}
   template:
     metadata:
       labels:
@@ -23,9 +22,9 @@ spec:
   {{- if .Values.persistentVolume.enabled }}
   volumeClaimTemplates:
     - metadata:
-        {{- if .Values.persistentVolume.annotations }}
+        {{- with .Values.persistentVolume.annotations }}
         annotations:
-      {{ toYaml .Values.persistentVolume.annotations | indent 10 }}
+          {{- toYaml . | nindent 10 }}
         {{- end }}
         labels:
 {{ template "prometheus-pushgateway.defaultLabels" merge (dict "extraLabels" .Values.persistentVolumeLabels "indent" 10) . }}

@@ -9,18 +9,17 @@ spec:
   replicas: {{ .Values.replicaCount }}
   {{- if .Values.strategy }}
   strategy:
-{{ toYaml .Values.strategy | indent 4 }}
+    {{ toYaml .Values.strategy | nindent 4 }}
   {{- end }}
   selector:
     matchLabels:
-      app: {{ template "prometheus-pushgateway.name" . }}
-      release: {{ .Release.Name }}
+      {{- include "prometheus-pushgateway.selectorLabels" . | nindent 6 }}
   template:
     metadata:
       labels:
 {{ template "prometheus-pushgateway.defaultLabels" merge (dict "extraLabels" .Values.podLabels "indent" 8) . }}
       annotations:
-{{ toYaml .Values.podAnnotations | indent 8 }}
+        {{- toYaml .Values.podAnnotations | nindent 8 }}
     spec:
       {{ include "prometheus-pushgateway.podSpec" . }}
 {{- end -}}
