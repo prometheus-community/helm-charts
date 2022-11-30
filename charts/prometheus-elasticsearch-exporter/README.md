@@ -59,6 +59,18 @@ $ helm upgrade [RELEASE_NAME] [CHART] --install
 
 _See [helm upgrade](https://helm.sh/docs/helm/helm_upgrade/) for command documentation._
 
+### To 5.0.0
+
+`securityContext` has been renamed to `podSecurityContext` and `securityContext.enabled` has no effect anymore. To mirror the behaviour of `securityContext.enabled=false` of 4.x unset `podSecurityContext`.
+
+```
+helm install --set podSecurityContext=null my-exporter stable/elasticsearch-exporter
+```
+
+In 5.0.0 `securityContext` refers to the container's securityContext instead which was not configurable in earlier versions. The naming is aligned with the base charts created by Helm.
+
+Default values for `podSecurityContext` and `securityContext` have been updated to be compatible with the Pod Security Standard level "restricted". Most notably `seccompProfile.type` is set to `RuntimeDefault`.
+
 ### To 4.0.0
 
 While migrating the chart from `stable/elasticsearch-exporter` it was renamed to `prometheus-elasticsearch-exporter`.
