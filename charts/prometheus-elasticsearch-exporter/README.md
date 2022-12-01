@@ -11,16 +11,16 @@ cluster using the [Helm](https://helm.sh) package manager.
 
 - Kubernetes 1.10+
 
-## Get Repository Info
+## Get Helm Repository Info
 
 ```console
 helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
 helm repo update
 ```
 
-_See the [command documentation](https://helm.sh/docs/helm/helm_repo/) for `helm repo` for more information._
+_See [`helm repo`](https://helm.sh/docs/helm/helm_repo/) for command documentation._
 
-## Install Chart
+## Install Helm Chart
 
 ```console
 # Helm 3
@@ -36,7 +36,7 @@ _See [configuration](#configuration) below._
 
 _See [helm install](https://helm.sh/docs/helm/helm_install/) for command documentation._
 
-## Uninstall Chart
+## Uninstall Helm Chart
 
 ```console
 # Helm 3
@@ -50,7 +50,7 @@ This removes all the Kubernetes components associated with the chart and deletes
 
 _See [helm uninstall](https://helm.sh/docs/helm/helm_uninstall/) for command documentation._
 
-## Upgrading Chart
+## Upgrading Helm Chart
 
 ```console
 # Helm 3 or 2
