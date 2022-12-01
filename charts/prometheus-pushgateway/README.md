@@ -50,9 +50,11 @@ $ helm upgrade [RELEASE_NAME] [CHART] --install
 
 _See [helm upgrade](https://helm.sh/docs/helm/helm_upgrade/) for command documentation._
 
-### To 1.22.0
+### To 2.0.0
 
-Version 1.22.0 adapted [Helm label and annotation best practices](https://helm.sh/docs/chart_best_practices/labels/). Specifically, labels mapping is listed below:
+__!!! BREAKING CHANGE !!!__
+
+Version 2.0.0 adapted [Helm label and annotation best practices](https://helm.sh/docs/chart_best_practices/labels/). Specifically, labels mapping is listed below:
 
 ```console
 OLD                 => NEW
@@ -63,6 +65,8 @@ chart               => helm.sh/chart
 app                 => app.kubernetes.io/name
 release             => app.kubernetes.io/instance
 ```
+
+Because select labels are immutable, `helm upgrade` cannot be supported. Please reivew and save the existing labels and adapt to the new labels. Then, [uninstall](#uninstall-chart) and [reinstall](#install-chart) the new chart.
 
 ## Configuration
 
