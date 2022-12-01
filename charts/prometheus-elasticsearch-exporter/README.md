@@ -18,7 +18,7 @@ helm repo add prometheus-community https://prometheus-community.github.io/helm-c
 helm repo update
 ```
 
-_See [helm repo](https://helm.sh/docs/helm/helm_repo/) for command documentation._
+_See the [command documentation](https://helm.sh/docs/helm/helm_repo/) for `helm repo` for more information._
 
 ## Install Chart
 
