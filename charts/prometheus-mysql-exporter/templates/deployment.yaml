@@ -88,6 +88,9 @@ spec:
             httpGet:
               path: /
               port: {{ .Values.service.internalPort }}
+          {{- with .Values.extraVolumeMounts }}
+          volumeMounts: {{ toYaml . | nindent 12 }}
+          {{- end }}
         {{- if .Values.cloudsqlproxy.enabled }}
         - name: cloudsql-proxy
           image: "{{ .Values.cloudsqlproxy.image.repo }}:{{ .Values.cloudsqlproxy.image.tag }}"
@@ -125,9 +128,12 @@ spec:
       tolerations:
 {{ toYaml . | indent 8 }}
     {{- end }}
-    {{- if and (.Values.cloudsqlproxy.enabled) (not .Values.cloudsqlproxy.workloadIdentity.enabled) }}
       volumes:
+    {{- if and (.Values.cloudsqlproxy.enabled) (not .Values.cloudsqlproxy.workloadIdentity.enabled) }}
         - name: cloudsql-proxy-sa-credentials
           secret:
             secretName: {{ if .Values.cloudsqlproxy.credentialsSecret }}{{ .Values.cloudsqlproxy.credentialsSecret }}{{ else }}{{ template "prometheus-mysql-exporter.cloudsqlsecret" . }}{{ end }}
+    {{- end }}
+    {{- if .Values.extraVolumes }}
+{{ toYaml .Values.extraVolumes | indent 8 }}
     {{- end }}
