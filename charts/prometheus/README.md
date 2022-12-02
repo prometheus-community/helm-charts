@@ -61,6 +61,26 @@ helm upgrade [RELEASE_NAME] [CHART] --install
 
 _See [helm upgrade](https://helm.sh/docs/helm/helm_upgrade/) for command documentation._
 
+### To 19.0
+
+Version 19.0.0 uses [prometheus-pushgateway chart version 2.0.0](https://github.com/prometheus-community/helm-charts/tree/main/charts/prometheus-pushgateway#to-200). 
+Version 2.0.0 also adapted [Helm label and annotation best practices](https://helm.sh/docs/chart_best_practices/labels/). 
+
+Before you update, please delete the `prometheus-pushgateway` StatefulSet or Deployment need to be deleted before upgrade:
+
+```bash
+# If `runAsStatefulSet: false` (this is the default):
+kubectl delete deploy -l app=prometheus-pushgateway
+
+# Or if `runAsStatefulSet: true`:
+# kubectl delete sts -l app=prometheus-pushgateway
+
+# In 18.x
+kubectl scale deploy prometheus-server --replicas=0
+# Upgrade
+helm upgrade [RELEASE_NAME] promethus-community/prometheus --version 19.0.0
+```
+
 ### To 18.0
 
 Version 18.0.0 uses alertmanager service from the [alertmanager chart](https://github.com/prometheus-community/helm-charts/tree/main/charts/alertmanager). If you've made some config changes, please check the old `alertmanager` and the new `alertmanager` configuration section in values.yaml for differences.
