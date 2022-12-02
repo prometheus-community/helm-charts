@@ -66,7 +66,12 @@ app                 => app.kubernetes.io/name
 release             => app.kubernetes.io/instance
 ```
 
-Because select labels are immutable, `helm upgrade` cannot be supported. Please reivew and save the existing labels and adapt to the new labels. Then, [uninstall](#uninstall-chart) and [reinstall](#install-chart) the new chart.
+Therefore, the previous StatefulSet and Deployment need to be deleted before upgrade.
+
+```console
+kubectl delete deploy,sts -l app=prometheus-pushgateway
+helm upgrade -i prometheus-pushgateway prometheus-community/prometheus-pushgateway
+```
 
 ## Configuration
 
