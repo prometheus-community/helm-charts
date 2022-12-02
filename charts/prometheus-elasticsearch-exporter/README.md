@@ -11,16 +11,16 @@ cluster using the [Helm](https://helm.sh) package manager.
 
 - Kubernetes 1.10+
 
-## Get Repo Info
+## Get Helm Repository Info
 
 ```console
 helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
 helm repo update
 ```
 
-_See [helm repo](https://helm.sh/docs/helm/helm_repo/) for command documentation._
+_See [`helm repo`](https://helm.sh/docs/helm/helm_repo/) for command documentation._
 
-## Install Chart
+## Install Helm Chart
 
 ```console
 # Helm 3
@@ -36,7 +36,7 @@ _See [configuration](#configuration) below._
 
 _See [helm install](https://helm.sh/docs/helm/helm_install/) for command documentation._
 
-## Uninstall Chart
+## Uninstall Helm Chart
 
 ```console
 # Helm 3
@@ -50,7 +50,7 @@ This removes all the Kubernetes components associated with the chart and deletes
 
 _See [helm uninstall](https://helm.sh/docs/helm/helm_uninstall/) for command documentation._
 
-## Upgrading Chart
+## Upgrading Helm Chart
 
 ```console
 # Helm 3 or 2
@@ -58,6 +58,18 @@ $ helm upgrade [RELEASE_NAME] [CHART] --install
 ```
 
 _See [helm upgrade](https://helm.sh/docs/helm/helm_upgrade/) for command documentation._
+
+### To 5.0.0
+
+`securityContext` has been renamed to `podSecurityContext` and `securityContext.enabled` has no effect anymore. To mirror the behaviour of `securityContext.enabled=false` of 4.x unset `podSecurityContext`.
+
+```console
+helm install --set podSecurityContext=null my-exporter stable/elasticsearch-exporter
+```
+
+In 5.0.0 `securityContext` refers to the container's securityContext instead which was not configurable in earlier versions. The naming is aligned with the base charts created by Helm.
+
+Default values for `podSecurityContext` and `securityContext` have been updated to be compatible with the Pod Security Standard level "restricted". Most notably `seccompProfile.type` is set to `RuntimeDefault`.
 
 ### To 4.0.0
 
@@ -80,7 +92,7 @@ You now need to escape the rules (see `values.yaml`) for examples.
 
 ### To 2.0.0
 
-Some Kubernetes apis used from 1.x have been deprecated. You need to update your cluster to Kubernetes 1.10+ to support new definitions used in 2.x.
+Some Kubernetes APIs used from 1.x have been deprecated. You need to update your cluster to Kubernetes 1.10+ to support new definitions used in 2.x.
 
 ## Configuration
 
