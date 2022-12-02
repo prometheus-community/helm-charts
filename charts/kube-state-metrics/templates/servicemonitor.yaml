@@ -2,80 +2,80 @@
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
-  name: {{ template "kube-state-metrics.fullname" . }}
-  namespace: {{ template "kube-state-metrics.namespace" . }}
+  name: {{ include "kube-state-metrics.fullname" . }}
+  namespace: {{ include "kube-state-metrics.namespace" . }}
   labels:
-    {{- include "kube-state-metrics.labels" . | indent 4 }}
-  {{- with .Values.prometheus.monitor.additionalLabels }}
+    {{- include "kube-state-metrics.labels" . | nindent 4 }}
+    {{- with .Values.prometheus.monitor.additionalLabels }}
     {{- toYaml . | nindent 4 }}
-  {{- end }}
+    {{- end }}
 spec:
   jobLabel: {{ default "app.kubernetes.io/name" .Values.prometheus.monitor.jobLabel }}
-  {{- include "servicemonitor.scrapeLimits" .Values.prometheus.monitor | indent 2 }}
+  {{- include "servicemonitor.scrapeLimits" .Values.prometheus.monitor | nindent 2 }}
   selector:
     matchLabels:
     {{- with .Values.prometheus.monitor.selectorOverride }}
       {{- toYaml . | nindent 6 }}
     {{- else }}
-      {{- include "kube-state-metrics.selectorLabels" . | indent 6 }}
+      {{- include "kube-state-metrics.selectorLabels" . | nindent 6 }}
     {{- end }}
   endpoints:
     - port: http
-    {{- if .Values.prometheus.monitor.interval }}
-      interval: {{ .Values.prometheus.monitor.interval }}
-    {{- end }}
-    {{- if .Values.prometheus.monitor.scrapeTimeout }}
-      scrapeTimeout: {{ .Values.prometheus.monitor.scrapeTimeout }}
-    {{- end }}
-    {{- if .Values.prometheus.monitor.proxyUrl }}
-      proxyUrl: {{ .Values.prometheus.monitor.proxyUrl}}
-    {{- end }}
-    {{- if .Values.prometheus.monitor.honorLabels }}
+      {{- with .Values.prometheus.monitor.interval }}
+      interval: {{ . }}
+      {{- end }}
+      {{- with .Values.prometheus.monitor.scrapeTimeout }}
+      scrapeTimeout: {{ . }}
+      {{- end }}
+      {{- with .Values.prometheus.monitor.proxyUrl }}
+      proxyUrl: {{ . }}
+      {{- end }}
+      {{- if .Values.prometheus.monitor.honorLabels }}
       honorLabels: true
-    {{- end }}
-    {{- if .Values.prometheus.monitor.metricRelabelings }}
+      {{- end }}
+      {{- with .Values.prometheus.monitor.metricRelabelings }}
       metricRelabelings:
-        {{- toYaml .Values.prometheus.monitor.metricRelabelings | nindent 8 }}
-    {{- end }}
-    {{- if .Values.prometheus.monitor.relabelings }}
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.prometheus.monitor.relabelings }}
       relabelings:
-        {{- toYaml .Values.prometheus.monitor.relabelings | nindent 8 }}
-    {{- end }}
-    {{- if .Values.prometheus.monitor.scheme }}
-      scheme: {{ .Values.prometheus.monitor.scheme }}
-    {{- end }}
-    {{- if .Values.prometheus.monitor.tlsConfig }}
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.prometheus.monitor.scheme }}
+      scheme: {{ . }}
+      {{- end }}
+      {{- with .Values.prometheus.monitor.tlsConfig }}
       tlsConfig:
-        {{- toYaml .Values.prometheus.monitor.tlsConfig | nindent 8 }}
-    {{- end }}
-  {{- if .Values.selfMonitor.enabled }}
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+    {{- if .Values.selfMonitor.enabled }}
     - port: metrics
-    {{- if .Values.prometheus.monitor.interval }}
-      interval: {{ .Values.prometheus.monitor.interval }}
-    {{- end }}
-    {{- if .Values.prometheus.monitor.scrapeTimeout }}
-      scrapeTimeout: {{ .Values.prometheus.monitor.scrapeTimeout }}
-    {{- end }}
-    {{- if .Values.prometheus.monitor.proxyUrl }}
-      proxyUrl: {{ .Values.prometheus.monitor.proxyUrl}}
-    {{- end }}
-    {{- if .Values.prometheus.monitor.honorLabels }}
+      {{- with .Values.prometheus.monitor.interval }}
+      interval: {{ . }}
+      {{- end }}
+      {{- with .Values.prometheus.monitor.scrapeTimeout }}
+      scrapeTimeout: {{ . }}
+      {{- end }}
+      {{- with .Values.prometheus.monitor.proxyUrl }}
+      proxyUrl: {{ . }}
+      {{- end }}
+      {{- if .Values.prometheus.monitor.honorLabels }}
       honorLabels: true
-    {{- end }}
-    {{- if .Values.prometheus.monitor.metricRelabelings }}
+      {{- end }}
+      {{- with .Values.prometheus.monitor.metricRelabelings }}
       metricRelabelings:
-        {{- toYaml .Values.prometheus.monitor.metricRelabelings | nindent 8 }}
-    {{- end }}
-    {{- if .Values.prometheus.monitor.relabelings }}
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.prometheus.monitor.relabelings }}
       relabelings:
-        {{- toYaml .Values.prometheus.monitor.relabelings | nindent 8 }}
-    {{- end }}
-    {{- if .Values.prometheus.monitor.scheme }}
-      scheme: {{ .Values.prometheus.monitor.scheme }}
-    {{- end }}
-    {{- if .Values.prometheus.monitor.tlsConfig }}
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.prometheus.monitor.scheme }}
+      scheme: {{ . }}
+      {{- end }}
+      {{- with .Values.prometheus.monitor.tlsConfig }}
       tlsConfig:
-        {{- toYaml .Values.prometheus.monitor.tlsConfig | nindent 8 }}
+        {{- toYaml . | nindent 8 }}
     {{- end }}
   {{- end }}
 {{- end }}

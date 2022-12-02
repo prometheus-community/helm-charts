@@ -2,14 +2,14 @@
 
 Installs the [kube-state-metrics agent](https://github.com/kubernetes/kube-state-metrics).
 
-## Get Repo Info
+## Get Repository Info
 
 ```console
 helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
 helm repo update
 ```
 
-_See [helm repo](https://helm.sh/docs/helm/helm_repo/) for command documentation._
+_See [helm repository](https://helm.sh/docs/helm/helm_repo/) for command documentation._
 
 ## Install Chart
 
@@ -43,19 +43,18 @@ _See [helm upgrade](https://helm.sh/docs/helm/helm_upgrade/) for command documen
 
 You can upgrade in-place:
 
-1. [get repo info](#get-repo-info)
-1. [upgrade](#upgrading-chart) your existing release name using the new chart repo
-
+1. [get repository info](#get-repository-info)
+1. [upgrade](#upgrading-chart) your existing release name using the new chart repository
 
 ## Upgrading to v3.0.0
 
 v3.0.0 includes kube-state-metrics v2.0, see the [changelog](https://github.com/kubernetes/kube-state-metrics/blob/release-2.0/CHANGELOG.md) for major changes on the application-side.
 
 The upgraded chart now the following changes:
+
 * Dropped support for helm v2 (helm v3 or later is required)
 * collectors key was renamed to resources
 * namespace key was renamed to namespaces
-
 
 ## Configuration
 
@@ -65,4 +64,4 @@ See [Customizing the Chart Before Installing](https://helm.sh/docs/intro/using_h
 helm show values prometheus-community/kube-state-metrics
 ```
 
-You may also run `helm show values` on this chart's [dependencies](#dependencies) for additional options.
+You may also run `helm show values` on this chart's dependencies for additional options.
