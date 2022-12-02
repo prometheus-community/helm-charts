@@ -48,10 +48,9 @@ spec:
 {{- end }}
       {{- include "elasticsearch-exporter.image.pullSecret.name" (dict "images" (list .Values.image) "context" $) | nindent 6 }}
       restartPolicy: {{ .Values.restartPolicy }}
-      {{- if .Values.securityContext.enabled }}
+      {{- with .Values.podSecurityContext }}
       securityContext:
-        runAsNonRoot: true
-        runAsUser: {{ .Values.securityContext.runAsUser }}
+        {{- toYaml . | nindent 8 }}
       {{- end }}
       {{- with .Values.dnsConfig }}
       dnsConfig:
@@ -125,24 +124,10 @@ spec:
                     {{- end }}
                     "--web.listen-address=:{{ .Values.service.httpPort }}",
                     "--web.telemetry-path={{ .Values.web.path }}"]
+          {{- with .Values.securityContext }}
           securityContext:
-            capabilities:
-              drop:
-                - SETPCAP
-                - MKNOD
-                - AUDIT_WRITE
-                - CHOWN
-                - NET_RAW
-                - DAC_OVERRIDE
-                - FOWNER
-                - FSETID
-                - KILL
-                - SETGID
-                - SETUID
-                - NET_BIND_SERVICE
-                - SYS_CHROOT
-                - SETFCAP
-            readOnlyRootFilesystem: true
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
           {{- with .Values.resources }}
           resources:
             {{- toYaml . | nindent 12 }}
