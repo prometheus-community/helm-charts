@@ -45,7 +45,9 @@ _See [helm upgrade](https://helm.sh/docs/helm/helm_upgrade/) for command documen
 
 Chart API version has been upgraded to v2 so Helm 3 is needed from now on.
 
-Version 2.0.0 alos adapted [Helm label and annotation best practices](https://helm.sh/docs/chart_best_practices/labels/). Specifically, labels mapping is listed below:
+Docker image tag is used from Chart.yaml appVersion field by default now.
+
+Version 2.0.0 also adapted [Helm label and annotation best practices](https://helm.sh/docs/chart_best_practices/labels/). Specifically, labels mapping is listed below:
 
 ```console
 OLD                 => NEW
