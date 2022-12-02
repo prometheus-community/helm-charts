@@ -121,7 +121,7 @@ containers:
   {{- toYaml . | nindent 2 }}
   {{- end }}
   - name: pushgateway
-    image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+    image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
     imagePullPolicy: {{ .Values.image.pullPolicy }}
     {{- with .Values.extraVars }}
     env:
