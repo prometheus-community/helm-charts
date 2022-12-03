@@ -66,6 +66,8 @@ _See [helm upgrade](https://helm.sh/docs/helm/helm_upgrade/) for command documen
 Version 19.0.0 uses [prometheus-pushgateway chart version 2.0.0](https://github.com/prometheus-community/helm-charts/tree/main/charts/prometheus-pushgateway#to-200).
 Prometheus-pushgateway 2.0.0 adapted [Helm label and annotation best practices](https://helm.sh/docs/chart_best_practices/labels/).
 
+See the [upgrade docs of the prometheus-pushgateway chart](https://github.com/prometheus-community/helm-charts/tree/main/charts/prometheus-pushgateway#to-200) to see whats to do.
+
 Before you update, please delete the `prometheus-pushgateway` StatefulSet or Deployment need to be deleted before upgrade:
 
 ```bash
