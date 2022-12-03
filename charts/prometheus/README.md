@@ -63,23 +63,26 @@ _See [helm upgrade](https://helm.sh/docs/helm/helm_upgrade/) for command documen
 
 ### To 19.0
 
-Version 19.0.0 uses [prometheus-pushgateway chart version 2.0.0](https://github.com/prometheus-community/helm-charts/tree/main/charts/prometheus-pushgateway#to-200).
-Prometheus-pushgateway 2.0.0 adapted [Helm label and annotation best practices](https://helm.sh/docs/chart_best_practices/labels/).
+Prometheus has been updated to version v2.40.5.
 
-See the [upgrade docs of the prometheus-pushgateway chart](https://github.com/prometheus-community/helm-charts/tree/main/charts/prometheus-pushgateway#to-200) to see whats to do.
+Prometheus-pushgateway was updated to version 2.0.0 which adapted [Helm label and annotation best practices](https://helm.sh/docs/chart_best_practices/labels/).
+See the [upgrade docs of the prometheus-pushgateway chart](https://github.com/prometheus-community/helm-charts/tree/main/charts/prometheus-pushgateway#to-200) to see whats to do, before you upgrade Prometheus!
 
-Before you update, please delete the `prometheus-pushgateway` StatefulSet or Deployment need to be deleted before upgrade:
+The condition in Chart.yaml to disable kube-state-metrics has been changed from `kubeStateMetrics.enabled` to `kube-state-metrics.enabled`
+
+The Docker image tag is used from appVersion field in Chart.yaml by default.
+
+Unused subchart configs has been removed and subchart config is now on the bottom of the config file.
+
+If Prometheus is used as deployment the updatestrategy has been changed to "Recreate" by default, so Helm updates work out of the box.
+
+`.Values.server.extraTemplates` & `.Values.server.extraObjects` has been removed in favour of `.Values.extraManifests`, which can do the same.
+
+`.Values.server.enabled` has been removed as it's useless now that all components are created by subcharts.
+
+All files in `templates/server` directory has been moved to `templates` directory.
 
 ```bash
-# If `runAsStatefulSet: false` (this is the default):
-kubectl delete deploy -l app=prometheus-pushgateway
-
-# Or if `runAsStatefulSet: true`:
-# kubectl delete sts -l app=prometheus-pushgateway
-
-# In 18.x
-kubectl scale deploy prometheus-server --replicas=0
-# Upgrade
 helm upgrade [RELEASE_NAME] promethus-community/prometheus --version 19.0.0
 ```
 
