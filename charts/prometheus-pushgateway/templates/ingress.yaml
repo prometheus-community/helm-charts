@@ -1,26 +1,20 @@
-{{- if .Values.ingress.enabled -}}
+{{- if .Values.ingress.enabled }}
 {{- $serviceName := include "prometheus-pushgateway.fullname" . }}
-{{- $servicePort := .Values.service.port -}}
-{{- $ingressPath := .Values.ingress.path -}}
-{{- $ingressClassName := .Values.ingress.className -}}
-{{- $ingressPathType := .Values.ingress.pathType -}}
-{{- $extraPaths := .Values.ingress.extraPaths -}}
-{{- if semverCompare ">=1.19-0" .Capabilities.KubeVersion.GitVersion -}}
-apiVersion: networking.k8s.io/v1
-{{- else if semverCompare ">=1.14-0" .Capabilities.KubeVersion.GitVersion -}}
-apiVersion: networking.k8s.io/v1beta1
-{{- else -}}
-apiVersion: extensions/v1beta1
-{{- end }}
+{{- $servicePort := .Values.service.port }}
+{{- $ingressPath := .Values.ingress.path }}
+{{- $ingressClassName := .Values.ingress.className }}
+{{- $ingressPathType := .Values.ingress.pathType }}
+{{- $extraPaths := .Values.ingress.extraPaths }}
+apiVersion: {{ include "prometheus-pushgateway.ingress.apiVersion" . }}
 kind: Ingress
 metadata:
-{{- if .Values.ingress.annotations }}
+  {{- with .Values.ingress.annotations }}
   annotations:
-{{ toYaml .Values.ingress.annotations | indent 4}}
-{{- end }}
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
   labels:
-{{ template "prometheus-pushgateway.defaultLabels" merge (dict "extraLabels" dict) .  }}
-  name: {{ template "prometheus-pushgateway.fullname" . }}
+    {{- include "prometheus-pushgateway.defaultLabels" . | nindent 4 }}
+  name: {{ include "prometheus-pushgateway.fullname" . }}
 spec:
   {{- if semverCompare ">=1.19-0" .Capabilities.KubeVersion.GitVersion }}
   ingressClassName: {{ $ingressClassName }}
@@ -30,8 +24,8 @@ spec:
     - host: {{ $host }}
       http:
         paths:
-          {{- if $extraPaths }}
-          {{- toYaml $extraPaths | indent 10 }}
+          {{- with $extraPaths }}
+          {{- toYaml . | nindent 10 }}
           {{- end }}
           - path: {{ $ingressPath }}
             {{- if semverCompare ">=1.19-0" $.Capabilities.KubeVersion.GitVersion }}
@@ -48,8 +42,8 @@ spec:
               servicePort: {{ $servicePort }}
               {{- end }}
     {{- end -}}
-{{- if .Values.ingress.tls }}
+  {{- with .Values.ingress.tls }}
   tls:
-{{ toYaml .Values.ingress.tls | indent 4 }}
-  {{- end -}}
-{{- end -}}
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+{{- end }}
