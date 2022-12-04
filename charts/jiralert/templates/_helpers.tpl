@@ -2,7 +2,7 @@
 Expand the name of the chart.
 */}}
 {{- define "jiralert.name" -}}
-{{- default .Release.Name .Values.nameOverride | trunc 63 | trimSuffix "-" }}
+{{- default .Chart.Name .Values.nameOverride | trunc 63 | trimSuffix "-" -}}
 {{- end }}
 
 {{/*
@@ -33,23 +33,30 @@ Create chart name and version as used by the chart label.
 {{/*
 Common labels
 */}}
-{{- define "jiralert.labels" -}}
-helm.sh/chart: {{ include "jiralert.chart" . }}
-{{ include "jiralert.selectorLabels" . }}
+{{- define "jiralert.labels" }}
+helm.sh/chart: {{ template "jiralert.chart" . }}
+app.kubernetes.io/managed-by: {{ .Release.Service }}
+app.kubernetes.io/component: metrics
+app.kubernetes.io/part-of: {{ template "jiralert.name" . }}
+{{- include "jiralert.selectorLabels" . }}
 {{- if .Chart.AppVersion }}
 app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
 {{- end }}
-app.kubernetes.io/managed-by: {{ .Release.Service }}
+{{- if .Values.customLabels }}
+{{ toYaml .Values.customLabels }}
+{{- end }}
+{{- if .Values.releaseLabel }}
+release: {{ .Release.Name }}
+{{- end }}
 {{- end }}
 
 {{/*
 Selector labels
 */}}
-{{- define "jiralert.selectorLabels" -}}
+{{- define "jiralert.selectorLabels" }}
 app.kubernetes.io/name: {{ include "jiralert.name" . }}
 app.kubernetes.io/instance: {{ .Release.Name }}
 {{- end }}
-
 
 {{/*
 Create the name of the service account to use

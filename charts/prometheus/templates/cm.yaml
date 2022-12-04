@@ -1,4 +1,3 @@
-{{- if .Values.server.enabled -}}
 {{- if (empty .Values.server.configMapOverrideName) -}}
 apiVersion: v1
 kind: ConfigMap
@@ -69,19 +68,15 @@ data:
         - source_labels: [__meta_kubernetes_namespace]
           regex: {{ $root.Release.Namespace }}
           action: keep
-        - source_labels: [__meta_kubernetes_pod_label_app]
-          regex: {{ template "prometheus.name" $root }}
+        - source_labels: [__meta_kubernetes_pod_label_app_kubernetes_io_instance]
+          regex: {{ $root.Release.Name }}
           action: keep
-        - source_labels: [__meta_kubernetes_pod_label_component]
-          regex: alertmanager
-          action: keep
-        - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_probe]
-          regex: {{ index $root.Values.alertmanager.podAnnotations "prometheus.io/probe" | default ".*" }}
+        - source_labels: [__meta_kubernetes_pod_label_app_kubernetes_io_name]
+          regex: {{ default "alertmanager" $root.Values.alertmanager.nameOverride | trunc 63 | trimSuffix "-" }}
           action: keep
         - source_labels: [__meta_kubernetes_pod_container_port_number]
           regex: "9093"
           action: keep
-{{- end -}}
 {{- end -}}
 {{- end -}}
 {{- end -}}

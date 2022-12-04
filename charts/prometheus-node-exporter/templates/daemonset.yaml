@@ -5,6 +5,10 @@ metadata:
   namespace: {{ include "prometheus-node-exporter.namespace" . }}
   labels:
     {{- include "prometheus-node-exporter.labels" . | nindent 4 }}
+  {{- with .Values.daemonsetAnnotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
 spec:
   selector:
     matchLabels:
@@ -63,10 +67,10 @@ spec:
                   apiVersion: v1
                   fieldPath: status.hostIP
               {{- end }}
-          {{- range $key, $value := .Values.env }}
-          - name: {{ $key }}
-            value: {{ $value | quote }}
-          {{- end }}
+            {{- range $key, $value := .Values.env }}
+            - name: {{ $key }}
+              value: {{ $value | quote }}
+            {{- end }}
           ports:
             - name: {{ .Values.service.portName }}
               containerPort: {{ .Values.service.port }}
