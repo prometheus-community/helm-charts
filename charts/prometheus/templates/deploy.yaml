@@ -1,26 +1,25 @@
-{{- if .Values.server.enabled -}}
-{{- if .Values.server.statefulSet.enabled -}}
-apiVersion: apps/v1
-kind: StatefulSet
+{{- if not .Values.server.statefulSet.enabled -}}
+apiVersion: {{ template "prometheus.deployment.apiVersion" . }}
+kind: Deployment
 metadata:
-{{- if .Values.server.statefulSet.annotations }}
+{{- if .Values.server.deploymentAnnotations }}
   annotations:
-    {{ toYaml .Values.server.statefulSet.annotations | nindent 4 }}
+    {{ toYaml .Values.server.deploymentAnnotations | nindent 4 }}
 {{- end }}
   labels:
     {{- include "prometheus.server.labels" . | nindent 4 }}
-    {{- if .Values.server.statefulSet.labels}}
-    {{ toYaml .Values.server.statefulSet.labels | nindent 4 }}
-    {{- end}}
   name: {{ template "prometheus.server.fullname" . }}
 {{ include "prometheus.namespace" . | indent 2 }}
 spec:
-  serviceName: {{ template "prometheus.server.fullname" . }}-headless
   selector:
     matchLabels:
       {{- include "prometheus.server.matchLabels" . | nindent 6 }}
   replicas: {{ .Values.server.replicaCount }}
-  podManagementPolicy: {{ .Values.server.statefulSet.podManagementPolicy }}
+  {{- if .Values.server.strategy }}
+  strategy:
+{{ toYaml .Values.server.strategy | trim | indent 4 }}
+    {{ if eq .Values.server.strategy.type "Recreate" }}rollingUpdate: null{{ end }}
+{{- end }}
   template:
     metadata:
     {{- if .Values.server.podAnnotations }}
@@ -88,7 +87,7 @@ spec:
         {{- end }}
 
         - name: {{ template "prometheus.name" . }}-{{ .Values.server.name }}
-          image: "{{ .Values.server.image.repository }}:{{ .Values.server.image.tag }}"
+          image: "{{ .Values.server.image.repository }}:{{ .Values.server.image.tag | default .Chart.AppVersion}}"
           imagePullPolicy: "{{ .Values.server.image.pullPolicy }}"
           {{- if .Values.server.env }}
           env:
@@ -98,18 +97,15 @@ spec:
         {{- if .Values.server.defaultFlagsOverride }}
         {{ toYaml .Values.server.defaultFlagsOverride | nindent 12}}
         {{- else }}
-          {{- if .Values.server.prefixURL }}
-            - --web.route-prefix={{ .Values.server.prefixURL }}
-          {{- end }}
           {{- if .Values.server.retention }}
             - --storage.tsdb.retention.time={{ .Values.server.retention }}
           {{- end }}
             - --config.file={{ .Values.server.configPath }}
-          {{- if .Values.server.storagePath }}
+            {{- if .Values.server.storagePath }}
             - --storage.tsdb.path={{ .Values.server.storagePath }}
-          {{- else }}
+            {{- else }}
             - --storage.tsdb.path={{ .Values.server.persistentVolume.mountPath }}
-          {{- end }}
+            {{- end }}
             - --web.console.libraries=/etc/prometheus/console_libraries
             - --web.console.templates=/etc/prometheus/consoles
           {{- range .Values.server.extraFlags }}
@@ -117,6 +113,9 @@ spec:
           {{- end }}
           {{- range $key, $value := .Values.server.extraArgs }}
             - --{{ $key }}={{ $value }}
+          {{- end }}
+          {{- if .Values.server.prefixURL }}
+            - --web.route-prefix={{ .Values.server.prefixURL }}
           {{- end }}
           {{- if .Values.server.baseURL }}
             - --web.external-url={{ .Values.server.baseURL }}
@@ -214,24 +213,26 @@ spec:
               readOnly: {{ .readOnly }}
           {{- end }}
           {{- if .Values.server.extraVolumeMounts }}
-          {{ toYaml .Values.server.extraVolumeMounts | nindent 12 }}
+            {{ toYaml .Values.server.extraVolumeMounts | nindent 12 }}
           {{- end }}
           {{- with .Values.server.containerSecurityContext }}
           securityContext:
             {{- toYaml . | nindent 12 }}
           {{- end }}
-    {{- if .Values.server.sidecarContainers }}
-      {{- range $name, $spec :=  .Values.server.sidecarContainers }}
+      {{- if .Values.server.sidecarContainers }}
+        {{- range $name, $spec :=  .Values.server.sidecarContainers }}
         - name: {{ $name }}
           {{- if kindIs "string" $spec }}
             {{- tpl $spec $ | nindent 10 }}
           {{- else }}
             {{- toYaml $spec | nindent 10 }}
           {{- end }}
+        {{- end }}
       {{- end }}
-    {{- end }}
-      hostNetwork: {{ .Values.server.hostNetwork }}
-    {{- if .Values.server.dnsPolicy }}
+    {{- if .Values.server.hostNetwork }}
+      hostNetwork: true
+      dnsPolicy: ClusterFirstWithHostNet
+    {{- else }}
       dnsPolicy: {{ .Values.server.dnsPolicy }}
     {{- end }}
     {{- if .Values.imagePullSecrets }}
@@ -306,39 +307,16 @@ spec:
 {{- if .Values.server.extraVolumes }}
 {{ toYaml .Values.server.extraVolumes | indent 8}}
 {{- end }}
-{{- if .Values.server.persistentVolume.enabled }}
-  volumeClaimTemplates:
-    - metadata:
-        name: storage-volume
-        {{- if .Values.server.persistentVolume.annotations }}
-        annotations:
-{{ toYaml .Values.server.persistentVolume.annotations | indent 10 }}
-        {{- end }}
-        {{- if .Values.server.persistentVolume.labels }}
-        labels:
-{{ toYaml .Values.server.persistentVolume.labels | indent 10 }}
-        {{- end }}
-      spec:
-        accessModes:
-{{ toYaml .Values.server.persistentVolume.accessModes | indent 10 }}
-        resources:
-          requests:
-            storage: "{{ .Values.server.persistentVolume.size }}"
-      {{- if .Values.server.persistentVolume.storageClass }}
-      {{- if (eq "-" .Values.server.persistentVolume.storageClass) }}
-        storageClassName: ""
-      {{- else }}
-        storageClassName: "{{ .Values.server.persistentVolume.storageClass }}"
-      {{- end }}
-      {{- end }}
-{{- else }}
         - name: storage-volume
+        {{- if .Values.server.persistentVolume.enabled }}
+          persistentVolumeClaim:
+            claimName: {{ if .Values.server.persistentVolume.existingClaim }}{{ .Values.server.persistentVolume.existingClaim }}{{- else }}{{ template "prometheus.server.fullname" . }}{{- end }}
+        {{- else }}
           emptyDir:
           {{- if .Values.server.emptyDir.sizeLimit }}
             sizeLimit: {{ .Values.server.emptyDir.sizeLimit }}
           {{- else }}
             {}
           {{- end -}}
-{{- end }}
-{{- end }}
-{{- end }}
+        {{- end -}}
+{{- end -}}
