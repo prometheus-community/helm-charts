@@ -80,6 +80,36 @@ _See [helm upgrade](https://helm.sh/docs/helm/helm_upgrade/) for command documen
 
 A major chart version change (like v1.2.3 -> v2.0.0) indicates that there is an incompatible breaking change needing manual actions.
 
+### From 42.x to 43.x
+Grafana sub chart was [updated to version 6.45.0](https://github.com/prometheus-community/helm-charts/commit/8b4c79314847e07d7af10826d5c68c3d625fcc66).
+
+Users with Grafana sub chart enabled using persistence like this:
+```yaml
+grafana:
+  persistence:
+    ...
+    type: statefulset
+    enabled: true
+    ...
+```
+must change their settings or Grafana Pod **will NOT** be deployed.
+
+In particular, to deploy Grafana as a StatefulSet, settings should be like this:
+
+```yaml
+grafana:
+  useStatefulSet: true
+  persistence:
+    ...
+    enabled: true
+    ...
+```
+
+Please note `useStatefulSet` is at the same level as `persistence` and `type` was removed.
+
+Setting `useStatefulSet: false` (default) deploys Grafana as Deployment.
+
+
 ### From 41.x to 42.x
 
 This includes the overridability of container registry for all containers at the global level using `global.imageRegistry` or per container image. The defaults have not changed but if you were using a custom image, you will have to override the registry of said custom container image before you upgrade.
