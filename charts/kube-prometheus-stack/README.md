@@ -116,11 +116,12 @@ grafana:
   useStatefulSet: true
   persistence:
     ...
+    type: statefulset
     enabled: true
     ...
 ```
 
-Please note `useStatefulSet` is at the same level as `persistence` and `type` was removed.
+Please note `useStatefulSet` is at the same level as `persistence`.
 
 Setting `useStatefulSet: false` (default) deploys Grafana as Deployment.
 
