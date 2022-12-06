@@ -105,6 +105,9 @@ spec:
                 fieldRef:
                   apiVersion: v1
                   fieldPath: status.podIP
+            {{- if .Values.extraEnv }}
+            {{- include "common.tplvalues.render" (dict "value" .Values.extraEnv "context" $) | nindent 12 }}
+            {{- end }}
           {{- with .Values.command }}
           command:
             {{- toYaml . | nindent 12 }}
@@ -153,6 +156,9 @@ spec:
             {{- end }}
             - name: storage
               mountPath: /alertmanager
+            {{- if .Values.extraVolumeMounts }}
+            {{- include "common.tplvalues.render" (dict "value" .Values.extraVolumeMounts "context" $) | nindent 12 }}
+            {{- end }}
       volumes:
         {{- if .Values.config }}
         - name: config
@@ -166,6 +172,9 @@ spec:
             {{- with .optional }}
             optional: {{ . }}
             {{- end }}
+        {{- end }}
+        {{- if .Values.extraVolumes }}
+        {{- include "common.tplvalues.render" (dict "value" .Values.extraVolumes "context" $)  | nindent 8 }}
         {{- end }}
   {{- if .Values.persistence.enabled }}
   volumeClaimTemplates:
