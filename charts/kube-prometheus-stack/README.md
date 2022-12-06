@@ -123,7 +123,7 @@ grafana:
 
 Please note `useStatefulSet` is at the same level as `persistence`.
 
-Setting `useStatefulSet: false` (default) deploys Grafana as Deployment.
+Setting `useStatefulSet: false` (default) deploys Grafana as Deployment, in this case you may also want to set `type: pvc` to create a PersistentVolumeClaim for it.
 
 
 ### From 41.x to 42.x
