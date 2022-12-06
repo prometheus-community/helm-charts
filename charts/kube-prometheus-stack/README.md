@@ -81,6 +81,7 @@ _See [helm upgrade](https://helm.sh/docs/helm/helm_upgrade/) for command documen
 A major chart version change (like v1.2.3 -> v2.0.0) indicates that there is an incompatible breaking change needing manual actions.
 
 ### From 42.x to 43.x
+
 This version upgrades Prometheus-Operator to v0.61.1, Prometheus to v2.40.5 and Thanos to v0.29.0
 
 Run these commands to update the CRDs before applying the upgrade.
@@ -97,33 +98,6 @@ kubectl apply --server-side -f https://raw.githubusercontent.com/prometheus-oper
 ```
 
 The Grafana sub chart was [updated to version 6.45.0](https://github.com/prometheus-community/helm-charts/commit/8b4c79314847e07d7af10826d5c68c3d625fcc66).
-
-Users with Grafana sub chart enabled using persistence like this:
-```yaml
-grafana:
-  persistence:
-    ...
-    type: statefulset
-    enabled: true
-    ...
-```
-must change their settings or Grafana Pod **will NOT** be deployed.
-
-In particular, to deploy Grafana as a StatefulSet, settings should be like this:
-
-```yaml
-grafana:
-  useStatefulSet: true
-  persistence:
-    ...
-    enabled: true
-    ...
-```
-
-Please note `useStatefulSet` is at the same level as `persistence` and `type` was removed.
-
-Setting `useStatefulSet: false` (default) deploys Grafana as Deployment, in this case you may also want to set `type: pvc` to create a PersistentVolumeClaim for it.
-
 
 ### From 41.x to 42.x
 
