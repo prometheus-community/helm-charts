@@ -82,7 +82,7 @@ A major chart version change (like v1.2.3 -> v2.0.0) indicates that there is an 
 
 ### From 42.x to 43.x
 
-This version upgrades Prometheus-Operator to v0.61.1, Prometheus to v2.40.5 and Thanos to v0.29.0
+This version upgrades Prometheus-Operator to v0.61.1, Prometheus to v2.40.5, Thanos to v0.29.0 and Grafana sub chart to v6.45.1.
 
 Run these commands to update the CRDs before applying the upgrade.
 
@@ -96,8 +96,6 @@ kubectl apply --server-side -f https://raw.githubusercontent.com/prometheus-oper
 kubectl apply --server-side -f https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/v0.61.1/example/prometheus-operator-crd/monitoring.coreos.com_servicemonitors.yaml
 kubectl apply --server-side -f https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/v0.61.1/example/prometheus-operator-crd/monitoring.coreos.com_thanosrulers.yaml
 ```
-
-The Grafana sub chart was [updated to version 6.45.0](https://github.com/prometheus-community/helm-charts/commit/8b4c79314847e07d7af10826d5c68c3d625fcc66).
 
 ### From 41.x to 42.x
 
