@@ -1,4 +1,4 @@
-# https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/v0.60.1/example/prometheus-operator-crd/monitoring.coreos.com_servicemonitors.yaml
+# https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/v0.61.1/example/prometheus-operator-crd/monitoring.coreos.com_servicemonitors.yaml
 ---
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
@@ -41,6 +41,15 @@ spec:
             description: Specification of desired Service selection for target discovery
               by Prometheus.
             properties:
+              attachMetadata:
+                description: Attaches node metadata to discovered targets. Requires
+                  Prometheus v2.37.0 and above.
+                properties:
+                  node:
+                    description: When set to true, Prometheus must have permissions
+                      to get Nodes.
+                    type: boolean
+                type: object
               endpoints:
                 description: A list of endpoints allowed as part of this ServiceMonitor.
                 items:
@@ -146,6 +155,10 @@ spec:
                       x-kubernetes-map-type: atomic
                     enableHttp2:
                       description: Whether to enable HTTP2.
+                      type: boolean
+                    filterRunning:
+                      description: 'Drop pods that are not running. (Failed, Succeeded).
+                        Enabled by default. More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/#pod-phase'
                       type: boolean
                     followRedirects:
                       description: FollowRedirects configures whether scrape requests
@@ -436,8 +449,8 @@ spec:
                       description: TLS configuration to use when scraping the endpoint
                       properties:
                         ca:
-                          description: Struct containing the CA cert to use for the
-                            targets.
+                          description: Certificate authority used when verifying server
+                            certificates.
                           properties:
                             configMap:
                               description: ConfigMap containing data to use for the
@@ -485,8 +498,7 @@ spec:
                             to use for the targets.
                           type: string
                         cert:
-                          description: Struct containing the client cert file for
-                            the targets.
+                          description: Client certificate to present when doing client-authentication.
                           properties:
                             configMap:
                               description: ConfigMap containing data to use for the
