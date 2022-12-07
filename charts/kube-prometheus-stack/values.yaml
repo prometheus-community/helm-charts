@@ -76,7 +76,7 @@ defaultRules:
   additionalRuleAnnotations: {}
 
   ## Prefix for runbook URLs. Use this to override the first part of the runbookURLs that is common to all rules.
-  runbookUrl: "https://runbooks.prometheus-operator.dev/runbooks"
+  #runbookUrl: "https://runbooks.prometheus-operator.dev/runbooks"
 
   ## Disabled PrometheusRule alerts
   disabled: {}
@@ -176,41 +176,34 @@ alertmanager:
   config:
     global:
       resolve_timeout: 5m
-    inhibit_rules:
-      - source_matchers:
-          - 'severity = critical'
-        target_matchers:
-          - 'severity =~ warning|info'
-        equal:
-          - 'namespace'
-          - 'alertname'
-      - source_matchers:
-          - 'severity = warning'
-        target_matchers:
-          - 'severity = info'
-        equal:
-          - 'namespace'
-          - 'alertname'
-      - source_matchers:
-          - 'alertname = InfoInhibitor'
-        target_matchers:
-          - 'severity = info'
-        equal:
-          - 'namespace'
     route:
-      group_by: ['namespace']
-      group_wait: 30s
-      group_interval: 5m
-      repeat_interval: 12h
-      receiver: 'null'
+      receiver: 'telegram'
+      group_by: 
+         - severity
+         - namespace
+         - instance
       routes:
-      - receiver: 'null'
-        matchers:
-          - alertname =~ "InfoInhibitor|Watchdog"
+      - match:
+          severity: critical
+        repeat_interval: 24h
+        continue: true
+        receiver: 'telegram'
+      - match:
+          alertname: Watchdog
+        repeat_interval: 24h
+        continue: true
+        receiver: 'telegram'
     receivers:
-    - name: 'null'
+       - name: 'telegram'
+         telegram_configs:
+           - api_url: https://api.telegram.org
+             send_resolved: true
+             bot_token: 5725363964:AAFF23S9woYLa4IoTg-N2n80lDFCfausp8s
+             chat_id: -1001520211719
+             message:  '{{ template "telegram.message" .}}'
+             parse_mode: 'HTML'
     templates:
-    - '/etc/alertmanager/config/*.tmpl'
+      - /etc/alertmanager/config/*.tmpl
 
   ## Pass the Alertmanager configuration directives through Helm's templating
   ## engine. If the Alertmanager configuration contains Alertmanager templates,
@@ -230,7 +223,18 @@ alertmanager:
   ## ref: https://prometheus.io/docs/alerting/notifications/
   ##      https://prometheus.io/docs/alerting/notification_examples/
   ##
-  templateFiles: {}
+  templateFiles:
+    telegram.tmpl: |-
+      {{ define "telegram.message" }}
+      {{ if eq .Status "firing"}}🔥 <b>{{ .Labels.alertname }}</b> 🔥
+      {{ else }}✅ <b>{{ .Labels.alertname }}</b> ✅
+      {{ end }}
+      {{ range $key, $value := .Labels }}{{ if ne $key "alertname" }}
+      <b>{{ $key }}</b>: <i>{{ $value }}</i> {{ end }}{{ end }}
+      <b>Annotations:</b>  {{ range $key, $value := .Annotations }}
+      <b>{{ $key }}:</b> <i>{{ $value }}</i>
+      {{ end }}
+      {{ end }}
   #
   ## An example template:
   #   template_1.tmpl: |-
@@ -838,7 +842,25 @@ grafana:
 
   ## Configure additional grafana datasources (passed through tpl)
   ## ref: http://docs.grafana.org/administration/provisioning/#datasources
-  additionalDataSources: []
+  additionalDataSources:
+    - name: Loki
+      type: loki
+      url: http://localhost:3111
+      access: proxy
+      jsonData:
+          derivedFields:
+            - datasources: tempo
+              matcherRegex: ((\d+[a-z]+)(\d+[a-z]+)(\d+[a-z]+)(\d+[a-z]+)(\d+[a-z]+)(\d+[a-z]+)(\d+[a-z]+)(\d+[a-z]+)(\d+[a-z]+)(\d+[a-z]+)(\d+[a-z]+))
+              name: TraceID
+              url: $${_value.raw}
+          maxLines: 1000
+      version: 1
+    - name: Tempo
+      type: tempo
+      uid: tempo
+      url: http://localhost:3110
+      access: proxy
+      version: 1          
   # - name: prometheus-sample
   #   access: proxy
   #   basicAuth: true
@@ -2656,9 +2678,11 @@ prometheus:
 
     ## The remote_write spec configuration for Prometheus.
     ## ref: https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/api.md#remotewritespec
-    remoteWrite: []
+    remoteWrite:
     # - url: http://remote1/push
     ## additionalRemoteWrite is appended to remoteWrite
+      - url: http://localhost:9009/api/v1/push">http://localhost:9009/api/v1/push
+
     additionalRemoteWrite: []
 
     ## Enable/Disable Grafana dashboards provisioning for prometheus remote write feature
@@ -2708,7 +2732,42 @@ prometheus:
     ## The scrape configuration example below will find master nodes, provided they have the name .*mst.*, relabel the
     ## port to 2379 and allow etcd scraping provided it is running on all Kubernetes master nodes
     ##
-    additionalScrapeConfigs: []
+    additionalScrapeConfigs:
+      - job_name: prometheus
+        honor_labels: true
+        static_configs:
+          - targets: ["localhost:9090"]
+      - job_name: pods
+        kubernetes_sd_configs:
+          - role: pod
+        relabel_configs:
+          - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scrape]
+            action: keep
+            regex: true
+          - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_path]
+            action: replace
+            target_label: __metrics_path__
+            regex: (.+)
+          - source_labels: [__address__, __meta_kubernetes_pod_annotation_prometheus_io_port]
+            action: replace
+            regex: ([^:]+)(?::\d+)?;(\d+)
+            replacement: $1:$2
+            target_label: __address__
+          - action: labelmap
+            regex: __meta_kubernetes_pod_label_(.+)
+          - source_labels: [__meta_kubernetes_namespace]
+            action: replace
+            target_label: namespace
+          - source_labels: [__meta_kubernetes_pod_name]
+            action: replace
+            target_label: pod_name
+      - job_name: 'rabbitmq-datapro'
+        kubernetes_sd_configs:
+          - role: endpoints
+        relabel_configs:
+          - source_labels: [ __meta_kubernetes_endpoints_name ]
+            regex: 'rabbitmq-datapro-rabbitmq-ha'
+            action: keep
     # - job_name: kube-etcd
     #   kubernetes_sd_configs:
     #     - role: node
