@@ -1,26 +1,25 @@
-{{ if .Values.networkPolicy }}
-apiVersion: {{ template "prometheus-pushgateway.networkPolicy.apiVersion" . }}
+{{- if .Values.networkPolicy }}
+apiVersion: {{ include "prometheus-pushgateway.networkPolicy.apiVersion" . }}
 kind: NetworkPolicy
 metadata:
-{{- if .Values.networkPolicy.customSelectors }}
-  name: ingress-allow-customselector-{{ template "prometheus-pushgateway.name" . }}
-{{- else if .Values.networkPolicy.allowAll }}
-  name: ingress-allow-all-{{ template "prometheus-pushgateway.name" . }}
-{{- else -}}
-{{- fail "One of `allowAll` or `customSelectors` must be specified." }}
-{{- end }}
   labels:
-{{ template "prometheus-pushgateway.defaultLabels" merge (dict "extraLabels" .Values.podLabels) .  }}
+    {{- include "prometheus-pushgateway.defaultLabels" . | nindent 4 }}
+  {{- if .Values.networkPolicy.customSelectors }}
+  name: ingress-allow-customselector-{{ template "prometheus-pushgateway.name" . }}
+  {{- else if .Values.networkPolicy.allowAll }}
+  name: ingress-allow-all-{{ template "prometheus-pushgateway.name" . }}
+  {{- else -}}
+  {{- fail "One of `allowAll` or `customSelectors` must be specified." }}
+  {{- end }}
 spec:
   podSelector:
     matchLabels:
-      app: {{ template "prometheus-pushgateway.name" .}}
-      release: {{ .Release.Name }}
+      {{- include "prometheus-pushgateway.selectorLabels" . | nindent 6 }}
   ingress:
     - ports:
       - port: {{ .Values.service.targetPort }}
-{{- if .Values.networkPolicy.customSelectors }}
+      {{- with .Values.networkPolicy.customSelectors }}
       from:
-{{ toYaml .Values.networkPolicy.customSelectors | indent 8 }}
-{{- end -}}
-{{- end -}}
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+{{- end }}

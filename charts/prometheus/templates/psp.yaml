@@ -1,25 +1,34 @@
-{{- if and .Values.pushgateway.enabled .Values.rbac.create .Values.podSecurityPolicy.enabled }}
+{{- if and .Values.rbac.create .Values.podSecurityPolicy.enabled }}
 {{- if .Capabilities.APIVersions.Has "policy/v1beta1/PodSecurityPolicy" }}
 apiVersion: policy/v1beta1
 kind: PodSecurityPolicy
 metadata:
-  name: {{ template "prometheus.pushgateway.fullname" . }}
+  name: {{ template "prometheus.server.fullname" . }}
   labels:
-    {{- include "prometheus.pushgateway.labels" . | nindent 4 }}
-  {{- with .Values.pushgateway.podSecurityPolicy.annotations }}
+    {{- include "prometheus.server.labels" . | nindent 4 }}
+  {{- with .Values.server.podSecurityPolicy.annotations }}
   annotations:
     {{- toYaml . | nindent 4 }}
   {{- end }}
 spec:
   privileged: false
   allowPrivilegeEscalation: false
-  requiredDropCapabilities:
-    - ALL
+  allowedCapabilities:
+    - 'CHOWN'
   volumes:
+    - 'configMap'
     - 'persistentVolumeClaim'
+    - 'emptyDir'
     - 'secret'
+    - 'hostPath'
   allowedHostPaths:
-    - pathPrefix: {{ .Values.pushgateway.persistentVolume.mountPath }}
+    - pathPrefix: /etc
+      readOnly: true
+    - pathPrefix: {{ .Values.server.persistentVolume.mountPath }}
+  {{- range .Values.server.extraHostPathMounts }}
+    - pathPrefix: {{ .hostPath }}
+      readOnly: {{ .readOnly }}
+  {{- end }}
   hostNetwork: false
   hostPID: false
   hostIPC: false
@@ -39,6 +48,6 @@ spec:
       # Forbid adding the root group.
       - min: 1
         max: 65535
-  readOnlyRootFilesystem: true
+  readOnlyRootFilesystem: false
 {{- end }}
 {{- end }}
