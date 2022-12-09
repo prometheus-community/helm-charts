@@ -61,6 +61,31 @@ helm upgrade [RELEASE_NAME] [CHART] --install
 
 _See [helm upgrade](https://helm.sh/docs/helm/helm_upgrade/) for command documentation._
 
+### To 19.0
+
+Prometheus has been updated to version v2.40.5.
+
+Prometheus-pushgateway was updated to version 2.0.0 which adapted [Helm label and annotation best practices](https://helm.sh/docs/chart_best_practices/labels/).
+See the [upgrade docs of the prometheus-pushgateway chart](https://github.com/prometheus-community/helm-charts/tree/main/charts/prometheus-pushgateway#to-200) to see whats to do, before you upgrade Prometheus!
+
+The condition in Chart.yaml to disable kube-state-metrics has been changed from `kubeStateMetrics.enabled` to `kube-state-metrics.enabled`
+
+The Docker image tag is used from appVersion field in Chart.yaml by default.
+
+Unused subchart configs has been removed and subchart config is now on the bottom of the config file.
+
+If Prometheus is used as deployment the updatestrategy has been changed to "Recreate" by default, so Helm updates work out of the box.
+
+`.Values.server.extraTemplates` & `.Values.server.extraObjects` has been removed in favour of `.Values.extraManifests`, which can do the same.
+
+`.Values.server.enabled` has been removed as it's useless now that all components are created by subcharts.
+
+All files in `templates/server` directory has been moved to `templates` directory.
+
+```bash
+helm upgrade [RELEASE_NAME] promethus-community/prometheus --version 19.0.0
+```
+
 ### To 18.0
 
 Version 18.0.0 uses alertmanager service from the [alertmanager chart](https://github.com/prometheus-community/helm-charts/tree/main/charts/alertmanager). If you've made some config changes, please check the old `alertmanager` and the new `alertmanager` configuration section in values.yaml for differences.
