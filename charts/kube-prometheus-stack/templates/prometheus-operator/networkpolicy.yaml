@@ -7,10 +7,8 @@ metadata:
   labels:
     app: {{ template "kube-prometheus-stack.name" . }}-operator
 spec:
-  podSelector:
-    matchLabels:
-      app: {{ template "kube-prometheus-stack.name" . }}-operator
-      release: {{ $.Release.Name | quote }}
+  egress: 
+    - {}
   ingress:
     - ports:
       {{- if .Values.prometheusOperator.tls.enabled }}
@@ -18,4 +16,11 @@ spec:
       {{- else }}
       - port: 8080
       {{- end }}
+  policyTypes:
+    - Egress
+    - Ingress
+  podSelector:
+    matchLabels:
+      app: {{ template "kube-prometheus-stack.name" . }}-operator
+      release: {{ $.Release.Name | quote }}
 {{- end }}
