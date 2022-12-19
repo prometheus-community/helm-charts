@@ -105,6 +105,9 @@ spec:
                 fieldRef:
                   apiVersion: v1
                   fieldPath: status.podIP
+            {{- if .Values.extraEnv }}
+            {{- toYaml .Values.extraEnv | nindent 12 }}
+            {{- end }}
           {{- with .Values.command }}
           command:
             {{- toYaml . | nindent 12 }}
@@ -153,6 +156,9 @@ spec:
             {{- end }}
             - name: storage
               mountPath: /alertmanager
+            {{- if .Values.extraVolumeMounts }}
+            {{- toYaml .Values.extraVolumeMounts | nindent 12 }}
+            {{- end }}
       volumes:
         {{- if .Values.config }}
         - name: config
@@ -166,6 +172,9 @@ spec:
             {{- with .optional }}
             optional: {{ . }}
             {{- end }}
+        {{- end }}
+        {{- if .Values.extraVolumes }}
+        {{- toYaml .Values.extraVolumes | nindent 8 }}
         {{- end }}
   {{- if .Values.persistence.enabled }}
   volumeClaimTemplates:
