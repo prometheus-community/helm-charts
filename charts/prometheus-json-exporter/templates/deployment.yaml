@@ -32,8 +32,10 @@ spec:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
       containers:
         - name: {{ .Chart.Name }}
-          securityContext:
-            {{- toYaml .Values.securityContext | nindent 12 }}
+          {{- with .Values.environmentVariables }}
+          env:
+            {{- toYaml . | nindent 12}}
+          {{- end }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           ports:
@@ -57,6 +59,8 @@ spec:
           {{- with .Values.additionalVolumeMounts }}
             {{- toYaml . | nindent 12 }}
           {{- end  }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
       volumes:
       - name: config-configmap-volume
         configMap:
