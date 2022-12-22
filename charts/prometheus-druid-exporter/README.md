@@ -5,6 +5,7 @@ A Prometheus exporter for [Druid](https://druid.apache.org/) metrics.
 Installs the [Druid Exporter](https://github.com/opstree/druid-exporter) for [Prometheus](https://prometheus.io/).
 
 Some of the metrics collections are:-
+
 - Druid's health metrics
 - Druid's datasource metrics
 - Druid's segment metrics
@@ -19,19 +20,19 @@ Some of the metrics collections are:-
 
 Helm v2 was no longer supported from chart version 1.0.0.
 
-## Get Repo Info
+## Get repository Info
 
 ```console
 helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
 helm repo update
 ```
 
-_See [helm repo](https://helm.sh/docs/helm/helm_repo/) for command documentation._
+_See [helm repository](https://helm.sh/docs/helm/helm_repo/) for command documentation._
 
 ## Install Chart
 
 ```console
-$ helm install [RELEASE_NAME] prometheus-community/prometheus-druid-exporter
+helm install [RELEASE_NAME] prometheus-community/prometheus-druid-exporter
 ```
 
 _See [configuration](#configuration) below._
@@ -41,7 +42,7 @@ _See [helm install](https://helm.sh/docs/helm/helm_install/) for command documen
 ## Uninstall Chart
 
 ```console
-$ helm uninstall [RELEASE_NAME]
+helm uninstall [RELEASE_NAME]
 ```
 
 This removes all the Kubernetes components associated with the chart and deletes the release.
@@ -51,7 +52,7 @@ _See [helm uninstall](https://helm.sh/docs/helm/helm_uninstall/) for command doc
 ## Upgrading Chart
 
 ```console
-$ helm upgrade [RELEASE_NAME] [CHART] --install
+helm upgrade [RELEASE_NAME] [CHART] --install
 ```
 
 _See [helm upgrade](https://helm.sh/docs/helm/helm_upgrade/) for command documentation._
@@ -67,7 +68,7 @@ _See [Migrating Helm v2 to v3](https://helm.sh/docs/topics/v2_v3_migration/) gui
 See [Customizing the Chart Before Installing](https://helm.sh/docs/intro/using_helm/#customizing-the-chart-before-installing). To see all configurable options with detailed comments, visit the chart's [values.yaml](https://github.com/prometheus-community/helm-charts/blob/main/charts/prometheus-druid-exporter/values.yaml), or run these configuration commands:
 
 ```console
-$ helm show values prometheus-community/prometheus-druid-exporter
+helm show values prometheus-community/prometheus-druid-exporter
 ```
 
 ### Druid Server Connection
