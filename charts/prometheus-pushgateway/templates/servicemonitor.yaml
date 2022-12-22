@@ -4,6 +4,9 @@ kind: ServiceMonitor
 metadata:
   labels:
     {{- include "prometheus-pushgateway.defaultLabels" . | nindent 4 }}
+    {{- if .Values.serviceMonitor.additionalLabels }}
+    {{- toYaml .Values.serviceMonitor.additionalLabels | nindent 4 }}
+    {{- end }}
   name: {{ include "prometheus-pushgateway.fullname" .  }}
   {{- with .Values.serviceMonitor.namespace }}
   namespace: {{ . }}
@@ -42,6 +45,5 @@ spec:
       - {{ .Release.Namespace }}
   selector:
     matchLabels:
-      app: {{ include "prometheus-pushgateway.name" . }}
-      release: {{ .Release.Name }}
+      {{- include "prometheus-pushgateway.selectorLabels" . | nindent 6 }}
 {{- end -}}
