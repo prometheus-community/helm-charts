@@ -12,6 +12,13 @@ Some of the metrics collections are:-
 - Druid's tasks metrics
 - Druid's components metrics like:- broker, historical, ingestion(kafka), coordinator, sys
 
+## Prerequisites
+
+- Kubernetes 1.16+
+- Helm 3.7+
+
+Helm v2 was no longer supported from chart version 1.0.0.
+
 ## Get Repo Info
 
 ```console
@@ -24,11 +31,7 @@ _See [helm repo](https://helm.sh/docs/helm/helm_repo/) for command documentation
 ## Install Chart
 
 ```console
-# Helm 3
 $ helm install [RELEASE_NAME] prometheus-community/prometheus-druid-exporter
-
-# Helm 2
-$ helm install --name [RELEASE_NAME] prometheus-community/prometheus-druid-exporter
 ```
 
 _See [configuration](#configuration) below._
@@ -38,11 +41,7 @@ _See [helm install](https://helm.sh/docs/helm/helm_install/) for command documen
 ## Uninstall Chart
 
 ```console
-# Helm 3
 $ helm uninstall [RELEASE_NAME]
-
-# Helm 2
-# helm delete --purge [RELEASE_NAME]
 ```
 
 This removes all the Kubernetes components associated with the chart and deletes the release.
@@ -52,21 +51,22 @@ _See [helm uninstall](https://helm.sh/docs/helm/helm_uninstall/) for command doc
 ## Upgrading Chart
 
 ```console
-# Helm 3 or 2
 $ helm upgrade [RELEASE_NAME] [CHART] --install
 ```
 
 _See [helm upgrade](https://helm.sh/docs/helm/helm_upgrade/) for command documentation._
+
+### To 1.0.0
+
+Helm v2 was no longer supported from chart version 1.0.0.
+
+_See [Migrating Helm v2 to v3](https://helm.sh/docs/topics/v2_v3_migration/) guide._
 
 ## Configuration
 
 See [Customizing the Chart Before Installing](https://helm.sh/docs/intro/using_helm/#customizing-the-chart-before-installing). To see all configurable options with detailed comments, visit the chart's [values.yaml](https://github.com/prometheus-community/helm-charts/blob/main/charts/prometheus-druid-exporter/values.yaml), or run these configuration commands:
 
 ```console
-# Helm 2
-$ helm inspect values prometheus-community/prometheus-druid-exporter
-
-# Helm 3
 $ helm show values prometheus-community/prometheus-druid-exporter
 ```
 
