@@ -31,7 +31,7 @@ spec:
 {{- end }}
     spec:
       serviceAccountName: {{ template "prometheus-postgres-exporter.serviceAccountName" . }}
-      {{- with .Values.podSecurityContext }}     
+      {{- with .Values.podSecurityContext }}
       securityContext:
         {{- toYaml . | nindent 8 }}
       {{- end }}
@@ -44,7 +44,7 @@ spec:
       {{- range .Values.image.pullSecrets }}
         - name: {{ . }}
       {{- end }}
-      {{- end }} 
+      {{- end }}
       containers:
         - name: {{ .Chart.Name }}
           args:
@@ -112,9 +112,14 @@ spec:
           {{- end }}
           {{- end }}
           {{- with .Values.extraEnvs }}
+          {{- if kindIs "map" . }}
           {{- range $name, $value := . }}
           - name: {{ $name }}
             value: {{ tpl $value $ | quote }}
+          {{- end }}
+          {{- end }}
+          {{- if kindIs "slice" . -}}
+          {{ toYaml . | nindent 10 }}
           {{- end }}
           {{- end }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
