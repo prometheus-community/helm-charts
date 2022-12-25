@@ -247,7 +247,6 @@ labelValueLengthLimit: {{ . }}
 {{- end }}
 {{- end -}}
 
-
 {{/*
 To help compatibility with other charts which use global.imagePullSecrets.
 Allow either an array of {name: pullSecret} maps (k8s-style), or an array of strings (more common helm-style).
