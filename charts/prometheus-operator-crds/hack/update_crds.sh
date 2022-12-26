@@ -28,7 +28,7 @@ for line in "${FILES[@]}"; do
     echo "# ${URL}" > ../templates/"${DESTINATION}"
 
     if ! curl --silent --retry-all-errors --fail --location "${URL}" |
-        yq '.metadata.annotations = "{{ toYaml .Values.annotations | nindent 4 }}"' |
+        yq --yaml-output '.metadata.annotations = "{{ toYaml .Values.annotations | nindent 4 }}"' |
         sed "s/'{{/{{/g" | sed "s/}}'/}}/g" >> ../templates/"${DESTINATION}"; then
       echo -e "Failed to download ${URL}!"
       exit 1
