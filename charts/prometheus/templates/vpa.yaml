@@ -1,11 +1,11 @@
-{{- if .Values.server.verticalAutoscaler.enabled -}}
-apiVersion: autoscaling.k8s.io/v1beta2
+{{- if and (.Capabilities.APIVersions.Has "autoscaling.k8s.io/v1") (.Values.server.verticalAutoscaler.enabled) }}
+apiVersion: autoscaling.k8s.io/v1
 kind: VerticalPodAutoscaler
 metadata:
+  name: {{ template "prometheus.server.fullname" . }}-vpa
+  namespace: {{ template "prometheus.namespace" . }}
   labels:
     {{- include "prometheus.server.labels" . | nindent 4 }}
-  name: {{ template "prometheus.server.fullname" . }}-vpa
-{{ include "prometheus.namespace" . | indent 2 }}
 spec:
   targetRef:
     apiVersion: "apps/v1"
