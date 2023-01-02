@@ -1,0 +1,168 @@
+{{- if (eq .Values.kind "Deployment") }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ template "alertmanager-snmp-notifier.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "alertmanager-snmp-notifier.labels" . | indent 4 }}
+spec:
+  replicas: {{ .Values.replicas }}
+  selector:
+    matchLabels:
+      {{- include "alertmanager-snmp-notifier.selectorLabels" . | indent 6 }}
+  strategy:
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        {{- include "alertmanager-snmp-notifier.labels" . | indent 8 }}
+      annotations:
+{{ toYaml .Values.podAnnotations | indent 8 }}
+    spec:
+    {{- if .Values.nodeSelector }}
+      nodeSelector:
+{{ toYaml .Values.nodeSelector | indent 8 }}
+    {{- end }}
+    {{- if .Values.affinity }}
+      affinity:
+{{ toYaml .Values.affinity | indent 8 }}
+    {{- end }}
+    {{- if .Values.tolerations }}
+      tolerations:
+{{ toYaml .Values.tolerations | indent 6 }}
+    {{- end }}
+      restartPolicy: {{ .Values.restartPolicy }}
+      serviceAccountName: {{ template "alertmanager-snmp-notifier.serviceAccountName" . }}
+      containers:
+        - name: snmp-notifier
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+{{- if .Values.containerSecurityContext }}
+          securityContext:
+{{ toYaml .Values.containerSecurityContext | indent 12 }}
+        {{- end }}
+          args:
+        {{- if .Values.config.snmpDestinations }}
+        {{- range $destination := .Values.config.snmpDestinations }}
+            - --snmp.destination={{ $destination }}
+        {{- end }}
+        {{- end }}
+        {{- if (and .Values.config.snmpTemplates .Values.config.snmpTemplates.description) }}
+            - --snmp.trap-description-template=/templates/description-template.tpl
+        {{- else }}
+            - --snmp.trap-description-template=/etc/snmp_notifier/description-template.tpl
+        {{- end }}
+        {{ if (and .Values.config.snmpTemplates .Values.config.snmpTemplates.extraFields) }}
+        {{- range $index, $element := .Values.config.snmpTemplates.extraFields }}
+            - --snmp.extra-field-template={{ add 4 $index }}=/templates/extra-field-{{ add 4 $index }}-template.tpl
+        {{- end }}
+        {{- end }}
+        {{- if .Values.extraArgs }}
+{{ toYaml .Values.extraArgs | indent 12 }}
+        {{- end }}
+          env:
+          {{- if (or .Values.config.snmpCommunity .Values.config.snmpCommunitySecret) }}
+          - name: SNMP_NOTIFIER_COMMUNITY
+            valueFrom:
+              secretKeyRef:
+          {{- if .Values.config.snmpCommunitySecret }}
+                name: {{ .Values.config.snmpCommunitySecret.name }}
+                key: {{ .Values.config.snmpCommunitySecret.key }}
+          {{- else }}
+                name: {{ template "alertmanager-snmp-notifier.fullname" . }}
+                key: community
+          {{- end }}
+          {{- end }}
+          {{- if (or .Values.config.snmpAuthenticationUsername .Values.config.snmpAuthenticationUsernameSecret) }}
+          - name: SNMP_NOTIFIER_AUTH_USERNAME
+            valueFrom:
+              secretKeyRef:
+          {{- if .Values.config.snmpAuthenticationUsernameSecret }}
+                name: {{ .Values.config.snmpAuthenticationUsernameSecret.name }}
+                key: {{ .Values.config.snmpAuthenticationUsernameSecret.key }}
+          {{- else }}
+                name: {{ template "alertmanager-snmp-notifier.fullname" . }}
+                key: authenticationUsername
+          {{- end }}
+          {{- end }}
+          {{- if (or .Values.config.snmpAuthenticationPassword .Values.config.snmpAuthenticationPasswordSecret) }}
+          - name: SNMP_NOTIFIER_AUTH_PASSWORD
+            valueFrom:
+              secretKeyRef:
+          {{- if .Values.config.snmpAuthenticationPasswordSecret }}
+                name: {{ .Values.config.snmpAuthenticationPasswordSecret.name }}
+                key: {{ .Values.config.snmpAuthenticationPasswordSecret.key }}
+          {{- else }}
+                name: {{ template "alertmanager-snmp-notifier.fullname" . }}
+                key: authenticationPassword
+          {{- end }}
+          {{- end }}
+          {{- if (or .Values.config.snmpPrivatePassword .Values.config.snmpPrivatePasswordSecret) }}
+          - name: SNMP_NOTIFIER_PRIV_PASSWORD
+            valueFrom:
+              secretKeyRef:
+          {{- if .Values.config.snmpPrivatePasswordSecret }}
+                name: {{ .Values.config.snmpPrivatePasswordSecret.name }}
+                key: {{ .Values.config.snmpPrivatePasswordSecret.key }}
+          {{- else }}
+                name: {{ template "alertmanager-snmp-notifier.fullname" . }}
+                key: privatePassword
+          {{- end }}
+          {{- end }}
+          resources:
+{{ toYaml .Values.resources | indent 12 }}
+          ports:
+            - containerPort: {{ .Values.service.port }}
+              name: http
+          livenessProbe:
+            {{- toYaml .Values.livenessProbe | trim | nindent 12 }}
+          readinessProbe:
+            {{- toYaml .Values.readinessProbe | trim | nindent 12 }}
+          volumeMounts:
+          {{- if .Values.config.snmpTemplates }}
+            - mountPath: /templates
+              name: templates
+          {{- end }}
+          {{- range .Values.extraConfigmapMounts }}
+            - name: {{ .name }}
+              mountPath: {{ .mountPath }}
+              subPath: {{ .subPath | default "" }}
+              readOnly: {{ .readOnly }}
+          {{- end }}
+          {{- range .Values.extraSecretMounts }}
+            - name: {{ .name }}
+              mountPath: {{ .mountPath }}
+              subPath: {{ .subPath }}
+              readOnly: {{ .readOnly }}
+          {{- end }}
+      {{- if .Values.imagePullSecrets }}
+      imagePullSecrets:
+{{ toYaml .Values.imagePullSecrets | indent 8 }}
+      {{- end }}
+      {{- if .Values.securityContext }}
+      securityContext:
+{{ toYaml .Values.securityContext | indent 8 }}
+      {{- end }}
+      volumes:
+      {{- if .Values.config.snmpTemplates }}
+        - name: templates
+          configMap:
+            name: {{ template "alertmanager-snmp-notifier.fullname" . }}
+      {{- end }}
+      {{- range .Values.extraConfigmapMounts }}
+        - name: {{ .name }}
+          configMap:
+            name: {{ .configMap }}
+            defaultMode: {{ .defaultMode }}
+      {{- end }}
+      {{- range .Values.extraSecretMounts }}
+        - name: {{ .name }}
+          secret:
+            secretName: {{ .secretName }}
+            defaultMode: {{ .defaultMode }}
+      {{- end }}
+{{- end }}

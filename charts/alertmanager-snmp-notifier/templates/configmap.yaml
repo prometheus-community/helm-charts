@@ -1,0 +1,22 @@
+{{- if .Values.config.snmpTemplates }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ template "alertmanager-snmp-notifier.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "alertmanager-snmp-notifier.labels" . | indent 4 }}
+data:
+{{- if .Values.config.snmpTemplates.description }}
+  description-template.tpl: |
+{{ .Values.config.snmpTemplates.description | indent 4 }}
+{{- end }}
+{{- if .Values.config.snmpTemplates.extraFields }}
+{{- range $index, $element := .Values.config.snmpTemplates.extraFields }}
+  extra-field-{{ add 4 $index }}-template.tpl: |
+{{ $element.template | indent 4 }}
+{{- end }}
+{{- end }}
+
+
+{{- end }}
