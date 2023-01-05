@@ -1,14 +1,14 @@
-{{- $svcClusterPort := .Values.service.clusterPort -}}
+{{- $svcClusterPort := .Values.service.clusterPort }}
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
   name: {{ include "alertmanager.fullname" . }}
   labels:
     {{- include "alertmanager.labels" . | nindent 4 }}
-{{- if .Values.statefulSet.annotations }}
+  {{- with .Values.statefulSet.annotations }}
   annotations:
-    {{ toYaml .Values.statefulSet.annotations | nindent 4 }}
-{{- end }}
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
 spec:
   replicas: {{ .Values.replicaCount }}
   selector:
@@ -19,44 +19,44 @@ spec:
     metadata:
       labels:
         {{- include "alertmanager.selectorLabels" . | nindent 8 }}
-{{- if .Values.podLabels }}
-        {{ toYaml .Values.podLabels | nindent 8 }}
-{{- end }}
+        {{- with .Values.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
       annotations:
-      {{- if not .Values.configmapReload.enabled }}
+        {{- if not .Values.configmapReload.enabled }}
         checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
-      {{- end }}
-{{- if .Values.podAnnotations }}
-        {{- toYaml .Values.podAnnotations | nindent 8 }}
-{{- end }}
+        {{- end }}
+        {{- with .Values.podAnnotations }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
     spec:
-    {{- with .Values.imagePullSecrets }}
+      {{- with .Values.imagePullSecrets }}
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
-    {{- end }}
+      {{- end }}
       serviceAccountName: {{ include "alertmanager.serviceAccountName" . }}
-    {{- with .Values.dnsConfig }}
+      {{- with .Values.dnsConfig }}
       dnsConfig:
         {{- toYaml . | nindent 8 }}
-    {{- end }}
-    {{- with .Values.nodeSelector }}
+      {{- end }}
+      {{- with .Values.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-    {{- if or .Values.podAntiAffinity .Values.affinity }}
+      {{- if or .Values.podAntiAffinity .Values.affinity }}
       affinity:
-    {{- end }}
-    {{- if .Values.affinity }}
-        {{- toYaml .Values.affinity | nindent 8 }}
-    {{- end }}
-    {{- if eq .Values.podAntiAffinity "hard" }}
+      {{- end }}
+        {{- with .Values.affinity }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+        {{- if eq .Values.podAntiAffinity "hard" }}
         podAntiAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:
             - topologyKey: {{ .Values.podAntiAffinityTopologyKey }}
               labelSelector:
                 matchExpressions:
                   - {key: app.kubernetes.io/name, operator: In, values: [{{ include "alertmanager.name" . }}]}
-    {{- else if eq .Values.podAntiAffinity "soft" }}
+        {{- else if eq .Values.podAntiAffinity "soft" }}
         podAntiAffinity:
           preferredDuringSchedulingIgnoredDuringExecution:
             - weight: 100
@@ -65,14 +65,15 @@ spec:
                 labelSelector:
                   matchExpressions:
                     - {key: app.kubernetes.io/name, operator: In, values: [{{ include "alertmanager.name" . }}]}
-    {{- end }}
-    {{- with .Values.topologySpreadConstraints }}
-      topologySpreadConstraints: {{- toYaml . | nindent 8 }}
-    {{- end }}
-    {{- with .Values.tolerations }}
+        {{- end }}
+      {{- with .Values.topologySpreadConstraints }}
+      topologySpreadConstraints:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
       tolerations:
         {{- toYaml . | nindent 8 }}
-    {{- end }}
+      {{- end }}
       securityContext:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
       containers:
@@ -85,9 +86,9 @@ spec:
             - --webhook-url=http://127.0.0.1:{{ .Values.service.port }}/-/reload
           resources:
             {{- toYaml .Values.configmapReload.resources | nindent 12 }}
-          {{- if .Values.configmapReload.containerPort }}
+          {{- with .Values.configmapReload.containerPort }}
           ports:
-            - containerPort: {{ .Values.configmapReload.containerPort }}
+            - containerPort: {{ . }}
           {{- end }}
           volumeMounts:
             - name: config
@@ -104,10 +105,13 @@ spec:
                 fieldRef:
                   apiVersion: v1
                   fieldPath: status.podIP
-{{- if .Values.command }}
+            {{- if .Values.extraEnv }}
+            {{- toYaml .Values.extraEnv | nindent 12 }}
+            {{- end }}
+          {{- with .Values.command }}
           command:
-            {{- toYaml .Values.command | nindent 12 }}
-{{- end }}
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
           args:
             - --storage.path=/alertmanager
             - --config.file=/etc/alertmanager/alertmanager.yml
@@ -152,6 +156,9 @@ spec:
             {{- end }}
             - name: storage
               mountPath: /alertmanager
+            {{- if .Values.extraVolumeMounts }}
+            {{- toYaml .Values.extraVolumeMounts | nindent 12 }}
+            {{- end }}
       volumes:
         {{- if .Values.config }}
         - name: config
@@ -166,7 +173,10 @@ spec:
             optional: {{ . }}
             {{- end }}
         {{- end }}
-      {{- if .Values.persistence.enabled }}
+        {{- if .Values.extraVolumes }}
+        {{- toYaml .Values.extraVolumes | nindent 8 }}
+        {{- end }}
+  {{- if .Values.persistence.enabled }}
   volumeClaimTemplates:
     - metadata:
         name: storage
@@ -183,7 +193,7 @@ spec:
         storageClassName: {{ .Values.persistence.storageClass }}
       {{- end }}
       {{- end }}
-{{- else }}
+  {{- else }}
         - name: storage
           emptyDir: {}
-{{- end -}}
+  {{- end }}
