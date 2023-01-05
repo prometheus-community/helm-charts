@@ -40,6 +40,9 @@ helm.sh/chart: {{ include "prometheus-blackbox-exporter.chart" . }}
 app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
 {{- end }}
 app.kubernetes.io/managed-by: {{ .Release.Service }}
+{{- if .Values.releaseLabel }}
+release: {{ .Release.Name }}
+{{- end }}
 {{- end }}
 
 {{/*
