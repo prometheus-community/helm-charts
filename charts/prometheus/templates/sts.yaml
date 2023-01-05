@@ -53,7 +53,11 @@ spec:
       containers:
         {{- if .Values.configmapReload.prometheus.enabled }}
         - name: {{ template "prometheus.name" . }}-{{ .Values.server.name }}-{{ .Values.configmapReload.prometheus.name }}
+          {{- if .Values.configmapReload.prometheus.image.digest }}
+          image: "{{ .Values.configmapReload.prometheus.image.repository }}@{{ .Values.configmapReload.prometheus.image.digest }}"
+          {{- else }}
           image: "{{ .Values.configmapReload.prometheus.image.repository }}:{{ .Values.configmapReload.prometheus.image.tag }}"
+          {{- end }}
           imagePullPolicy: "{{ .Values.configmapReload.prometheus.image.pullPolicy }}"
           {{- with .Values.configmapReload.prometheus.containerSecurityContext }}
           securityContext:
@@ -87,7 +91,11 @@ spec:
         {{- end }}
 
         - name: {{ template "prometheus.name" . }}-{{ .Values.server.name }}
+          {{- if .Values.server.image.digest }}
+          image: "{{ .Values.server.image.repository }}@{{ .Values.server.image.digest }}"
+          {{- else }}
           image: "{{ .Values.server.image.repository }}:{{ .Values.server.image.tag | default .Chart.AppVersion }}"
+          {{- end }}
           imagePullPolicy: "{{ .Values.server.image.pullPolicy }}"
           {{- if .Values.server.env }}
           env:

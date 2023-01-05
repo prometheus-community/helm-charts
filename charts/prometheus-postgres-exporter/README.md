@@ -40,6 +40,11 @@ _See [helm uninstall](https://helm.sh/docs/helm/helm_uninstall/) for command doc
 
 ## Upgrading
 
+### To 4.0.0
+
+This release removes the `pg_database` query from `config.queries` as it has been converted to a built-in collector
+in postgres_exporter v0.11.0. Any customizations to the removed query are now rendered useless and thus should be removed.
+
 ### To 3.0.0
 
 This release introduces changes to accommodate Postgres 13 or newer versions by default.
