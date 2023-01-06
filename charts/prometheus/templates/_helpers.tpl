@@ -14,16 +14,21 @@ Create chart name and version as used by the chart label.
 {{- end -}}
 
 {{/*
-Create unified labels for prometheus components
+Create labels for prometheus
 */}}
 {{- define "prometheus.common.matchLabels" -}}
-app: {{ template "prometheus.name" . }}
-release: {{ .Release.Name }}
+app.kubernetes.io/name: {{ include "prometheus.name" . }}
+app.kubernetes.io/instance: {{ .Release.Name }}
+app.kubernetes.io/version: {{ .Chart.AppVersion }}
 {{- end -}}
 
+{{/*
+Create unified labels for prometheus components
+*/}}
 {{- define "prometheus.common.metaLabels" -}}
-chart: {{ template "prometheus.chart" . }}
-heritage: {{ .Release.Service }}
+helm.sh/chart: {{ include "prometheus.chart" . }}
+app.kubernetes.io/managed-by: {{ .Release.Service }}
+app.kubernetes.io/part-of: {{ include "prometheus.name" . }}
 {{- end -}}
 
 {{- define "prometheus.alertmanager.labels" -}}
@@ -32,7 +37,7 @@ heritage: {{ .Release.Service }}
 {{- end -}}
 
 {{- define "prometheus.alertmanager.matchLabels" -}}
-component: {{ .Values.alertmanager.name | quote }}
+app.kubernetes.io/component: {{ .Values.alertmanager.name }}
 {{ include "prometheus.common.matchLabels" . }}
 {{- end -}}
 
@@ -42,7 +47,7 @@ component: {{ .Values.alertmanager.name | quote }}
 {{- end -}}
 
 {{- define "prometheus.nodeExporter.matchLabels" -}}
-component: {{ .Values.nodeExporter.name | quote }}
+app.kubernetes.io/component: {{ .Values.nodeExporter.name }}
 {{ include "prometheus.common.matchLabels" . }}
 {{- end -}}
 
@@ -52,7 +57,7 @@ component: {{ .Values.nodeExporter.name | quote }}
 {{- end -}}
 
 {{- define "prometheus.pushgateway.matchLabels" -}}
-component: {{ .Values.pushgateway.name | quote }}
+app.kubernetes.io/component: {{ .Values.pushgateway.name }}
 {{ include "prometheus.common.matchLabels" . }}
 {{- end -}}
 
@@ -62,7 +67,7 @@ component: {{ .Values.pushgateway.name | quote }}
 {{- end -}}
 
 {{- define "prometheus.server.matchLabels" -}}
-component: {{ .Values.server.name | quote }}
+app.kubernetes.io/component: {{ .Values.server.name }}
 {{ include "prometheus.common.matchLabels" . }}
 {{- end -}}
 
