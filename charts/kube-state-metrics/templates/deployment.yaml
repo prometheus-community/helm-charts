@@ -162,6 +162,10 @@ spec:
         - --secure-listen-address=:{{ .Values.service.port | default 8080}}
         - --upstream=http://127.0.0.1:{{ $httpPort }}/
         - --proxy-endpoints-port=8888
+        - --config-file=/etc/kube-rbac-proxy-config/config-file.yaml
+        volumeMounts:
+          - name: kube-rbac-proxy-config
+            mountPath: /etc/kube-rbac-proxy-config
         imagePullPolicy: {{ .Values.kubeRBACProxy.image.pullPolicy }}
         {{- if .Values.kubeRBACProxy.image.sha }}
         image: "{{ .Values.kubeRBACProxy.image.repository }}:{{ .Values.kubeRBACProxy.image.tag }}@sha256:{{ .Values.image.sha }}"
@@ -197,6 +201,10 @@ spec:
         - --secure-listen-address=:{{ .Values.selfMonitor.telemetryPort | default 8081 }}
         - --upstream=http://127.0.0.1:{{ $telemetryPort }}/
         - --proxy-endpoints-port=8889
+        - --config-file=/etc/kube-rbac-proxy-config/config-file.yaml
+        volumeMounts:
+          - name: kube-rbac-proxy-config
+            mountPath: /etc/kube-rbac-proxy-config
         imagePullPolicy: {{ .Values.kubeRBACProxy.image.pullPolicy }}
         {{- if .Values.kubeRBACProxy.image.sha }}
         image: "{{ .Values.kubeRBACProxy.image.repository }}:{{ .Values.kubeRBACProxy.image.tag }}@sha256:{{ .Values.image.sha }}"
@@ -245,12 +253,17 @@ spec:
       topologySpreadConstraints:
 {{ toYaml .Values.topologySpreadConstraints | indent 8 }}
       {{- end }}
-      {{- if or (.Values.kubeconfig.enabled) (.Values.volumes) }}
+      {{- if or (.Values.kubeconfig.enabled) (.Values.volumes) (.Values.kubeRBACProxy.enabled) }}
       volumes:
       {{- if .Values.kubeconfig.enabled}}
         - name: kubeconfig
           secret:
             secretName: {{ template "kube-state-metrics.fullname" . }}-kubeconfig
+      {{- end }}
+      {{- if .Values.kubeRBACProxy.enabled}}
+        - name: kube-rbac-proxy-config
+          configMap:
+            name: kube-rbac-proxy
       {{- end }}
       {{- if .Values.volumes }}
 {{ toYaml .Values.volumes | indent 8 }}

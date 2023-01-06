@@ -66,3 +66,22 @@ helm show values prometheus-community/kube-state-metrics
 ```
 
 You may also run `helm show values` on this chart's [dependencies](#dependencies) for additional options.
+
+### kube-rbac-proxy
+
+You can enable `kube-state-metrics` endpoint protection using `kube-rbac-proxy`. By setting `kubeRBACProxy.enabled: true`, this chart will deploy one RBAC proxy container per endpoint (metrics & telemetry).
+To authorize access, authenticate your requests (via a `ServiceAccount` for example) with a `ClusterRole` attached such as:
+
+```yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: kube-state-metrics-read
+rules:
+  - apiGroups: [ "" ]
+    resources: ["services/kube-state-metrics"]
+    verbs:
+      - get
+```
+
+See [kube-rbac-proxy examples](https://github.com/brancz/kube-rbac-proxy/tree/master/examples/resource-attributes) for more details.
