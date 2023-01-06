@@ -26,7 +26,7 @@ spec:
       labels:
         {{- include "prometheus-node-exporter.labels" . | nindent 8 }}
     spec:
-      automountServiceAccountToken: {{ .Values.serviceAccount.automountServiceAccountToken }}
+      automountServiceAccountToken: {{ ternary true false (or .Values.serviceAccount.automountServiceAccountToken .Values.kubeRBACProxy.enabled) }}
       {{- with .Values.securityContext }}
       securityContext:
         {{- toYaml . | nindent 8 }}
@@ -40,6 +40,7 @@ spec:
       {{- end }}
       serviceAccountName: {{ include "prometheus-node-exporter.serviceAccountName" . }}
       containers:
+        {{- $servicePort := ternary 8100 .Values.service.port .Values.kubeRBACProxy.enabled }}
         - name: node-exporter
           image: {{ include "prometheus-node-exporter.image" . }}
           imagePullPolicy: {{ .Values.image.pullPolicy }}
@@ -49,7 +50,7 @@ spec:
             {{- if .Values.hostRootFsMount.enabled }}
             - --path.rootfs=/host/root
             {{- end }}
-            - --web.listen-address=[$(HOST_IP)]:{{ .Values.service.port }}
+            - --web.listen-address=[$(HOST_IP)]:{{ $servicePort }}
             {{- with .Values.extraArgs }}
             {{- toYaml . | nindent 12 }}
             {{- end }}
@@ -71,10 +72,12 @@ spec:
             - name: {{ $key }}
               value: {{ $value | quote }}
             {{- end }}
+          {{- if eq .Values.kubeRBACProxy.enabled false }}
           ports:
             - name: {{ .Values.service.portName }}
               containerPort: {{ .Values.service.port }}
               protocol: TCP
+          {{- end }}
           livenessProbe:
             failureThreshold: {{ .Values.livenessProbe.failureThreshold }}
             httpGet:
@@ -84,7 +87,7 @@ spec:
                 value: {{ $header.value }}
               {{- end }}
               path: /
-              port: {{ .Values.service.port }}
+              port: {{ $servicePort }}
               scheme: {{ upper .Values.livenessProbe.httpGet.scheme }}
             initialDelaySeconds: {{ .Values.livenessProbe.initialDelaySeconds }}
             periodSeconds: {{ .Values.livenessProbe.periodSeconds }}
@@ -99,7 +102,7 @@ spec:
                 value: {{ $header.value }}
               {{- end }}
               path: /
-              port: {{ .Values.service.port }}
+              port: {{ $servicePort }}
               scheme: {{ upper .Values.readinessProbe.httpGet.scheme }}
             initialDelaySeconds: {{ .Values.readinessProbe.initialDelaySeconds }}
             periodSeconds: {{ .Values.readinessProbe.periodSeconds }}
@@ -164,6 +167,46 @@ spec:
             {{- end }}
           {{- end }}
         {{- end }}
+        {{-  if .Values.kubeRBACProxy.enabled  }}
+        - name: kube-rbac-proxy
+          args:
+            {{-  if .Values.kubeRBACProxy.extraArgs  }}
+            {{- .Values.kubeRBACProxy.extraArgs | toYaml | nindent 12 }}
+            {{-  end  }}
+            - --secure-listen-address=:{{ .Values.service.port}}
+            - --upstream=http://127.0.0.1:{{ $servicePort }}/
+            - --proxy-endpoints-port=8888
+            - --config-file=/etc/kube-rbac-proxy-config/config-file.yaml
+          volumeMounts:
+            - name: kube-rbac-proxy-config
+              mountPath: /etc/kube-rbac-proxy-config
+          imagePullPolicy: {{ .Values.kubeRBACProxy.image.pullPolicy }}
+          {{- if .Values.kubeRBACProxy.image.sha }}
+          image: "{{ .Values.kubeRBACProxy.image.repository }}:{{ .Values.kubeRBACProxy.image.tag }}@sha256:{{ .Values.image.sha }}"
+          {{- else }}
+          image: "{{ .Values.kubeRBACProxy.image.repository }}:{{ .Values.kubeRBACProxy.image.tag }}"
+          {{- end }}
+          ports:
+            - containerPort: {{ .Values.service.port}}
+              name: "http"
+            - containerPort: 8888
+              name: "http-healthz"
+          readinessProbe:
+            httpGet:
+              scheme: HTTPS
+              port: 8888
+              path: healthz
+            initialDelaySeconds: 5
+            timeoutSeconds: 5
+          {{- if .Values.kubeRBACProxy.resources }}
+          resources:
+          {{ toYaml .Values.kubeRBACProxy.resources | nindent 12 }}
+          {{- end }}
+          {{- if .Values.kubeRBACProxy.containerSecurityContext }}
+          securityContext:
+          {{ toYaml .Values.kubeRBACProxy.containerSecurityContext | nindent 12 }}
+        {{- end }}
+        {{- end }}
       {{- with .Values.imagePullSecrets }}
       imagePullSecrets:
         {{ toYaml . | nindent 8 }}
@@ -222,4 +265,9 @@ spec:
         - name: {{ $mount.name }}
           secret:
             secretName: {{ $mount.name }}
+        {{- end }}
+        {{- if .Values.kubeRBACProxy.enabled }}
+        - name: kube-rbac-proxy-config
+          configMap:
+            name: {{ template "prometheus-node-exporter.fullname" . }}-rbac-config
         {{- end }}

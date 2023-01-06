@@ -75,3 +75,22 @@ See [Customizing the Chart Before Installing](https://helm.sh/docs/intro/using_h
 ```console
 helm show values prometheus-community/prometheus-node-exporter
 ```
+
+### kube-rbac-proxy
+
+You can enable `prometheus-node-exporter` endpoint protection using `kube-rbac-proxy`. By setting `kubeRBACProxy.enabled: true`, this chart will deploy a RBAC proxy container protecting the node-exporter endpoint.
+To authorize access, authenticate your requests (via a `ServiceAccount` for example) with a `ClusterRole` attached such as:
+
+```yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: prometheus-node-exporter-read
+rules:
+  - apiGroups: [ "" ]
+    resources: ["services/node-exporter-prometheus-node-exporter"]
+    verbs:
+      - get
+```
+
+See [kube-rbac-proxy examples](https://github.com/brancz/kube-rbac-proxy/tree/master/examples/resource-attributes) for more details.
