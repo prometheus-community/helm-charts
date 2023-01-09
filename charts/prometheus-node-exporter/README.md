@@ -41,12 +41,6 @@ helm upgrade [RELEASE_NAME] [CHART] --install
 
 _See [helm upgrade](https://helm.sh/docs/helm/helm_upgrade/) for command documentation._
 
-### 4.8.x to 4.9.0
-
-Release 4.9.0 is introducing a [PodMonitor](https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/api.md#podmonitor) that can now be defined through the values file giving thus, next to a [ServiceMonitor](https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/api.md#servicemonitor), another option to have Prometheus configured by Prometheus operator for scraping Node Exporter containers. Using a PodMonitor may be preferred in some environments where there is very large number of Node Exporter endpoints (1000+) behind a single service.
-
-The PodMonitor is disabled by default. When switching from ServiceMonitor to PodMonitor, the time series resulting from the configuration through PodMonitor may have different labels. For instance, there will not be the `service` label any longer which might affect PromQL queries selecting that label.
-
 ### 3.x to 4.x
 
 Starting from version 4.0.0, the `node exporter` chart is using the [Kubernetes recommended labels](https://kubernetes.io/docs/concepts/overview/working-with-objects/common-labels/). Therefore you have to delete the daemonset before you upgrade.
