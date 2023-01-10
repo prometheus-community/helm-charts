@@ -44,8 +44,8 @@ _See [helm upgrade](https://helm.sh/docs/helm/helm_upgrade/) for command documen
 
 You can upgrade in-place:
 
-1. [get repo info](#get-repository-info)
-1. [upgrade](#upgrading-chart) your existing release name using the new chart repo
+1. [get repository info](#get-repository-info)
+1. [upgrade](#upgrading-chart) your existing release name using the new chart repository
 
 ## Upgrading to v3.0.0
 
