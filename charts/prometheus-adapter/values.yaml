@@ -13,9 +13,6 @@ metricsRelistInterval: 1m
 
 listenPort: 6443
 
-# User to run adapter container as
-runAsUser: 10001
-
 nodeSelector: {}
 
 priorityClassName: ""
@@ -44,6 +41,18 @@ replicas: 1
 # ref: https://github.com/kubernetes/kubernetes/issues/70679
 podSecurityContext:
   fsGroup: 10001
+
+# SecurityContext of the container
+# ref. https://kubernetes.io/docs/tasks/configure-pod-container/security-context
+securityContext:
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop: ["all"]
+  readOnlyRootFilesystem: true
+  runAsNonRoot: true
+  runAsUser: 10001
+  seccompProfile:
+    type: RuntimeDefault
 
 rbac:
   # Specifies whether RBAC resources should be created
@@ -150,6 +159,17 @@ tls:
     # Private key of the APIService
   certificate: |-
     # Public key of the APIService
+
+# Set environment variables from secrets, configmaps or by setting them as name/value
+env: []
+  # - name: TMP_DIR
+  #   value: /tmp
+  # - name: PASSWORD
+  #   valueFrom:
+  #     secretKeyRef:
+  #       name: mysecret
+  #       key: password
+  #       optional: false
 
 # Any extra arguments
 extraArguments: []
