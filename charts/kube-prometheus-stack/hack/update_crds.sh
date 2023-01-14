@@ -1,9 +1,9 @@
 #!/bin/bash
 
 if [[ $(uname -s) = "Darwin" ]]; then
-    VERSION="$(grep ^appVersion ../Chart.yaml | sed 's/appVersion: /v/g')"
+    VERSION="$(grep ^appVersion ../Chart.yaml | sed 's/appVersion: //g')"
 else
-    VERSION="$(grep ^appVersion ../Chart.yaml | sed 's/appVersion:\s/v/g')"
+    VERSION="$(grep ^appVersion ../Chart.yaml | sed 's/appVersion:\s//g')"
 fi
 
 FILES=(
