@@ -99,6 +99,8 @@ kubectl apply --server-side -f https://raw.githubusercontent.com/prometheus-oper
 
 If you have explicitly set `prometheusOperator.admissionWebhooks.failurePolicy`, this value is now always used even when `.prometheusOperator.admissionWebhooks.patch.enabled` is `true` (the default).
 
+The values for `prometheusOperator.image.tag` & `prometheusOperator.prometheusConfigReloader.image.tag` are now empty by default and use the Chart.yaml `appVersion` field by default.
+
 ### From 42.x to 43.x
 
 This version upgrades Prometheus-Operator to v0.61.1, Prometheus to v2.40.5 and Thanos to v0.29.0.
