@@ -97,9 +97,7 @@ kubectl apply --server-side -f https://raw.githubusercontent.com/prometheus-oper
 kubectl apply --server-side -f https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/v0.62.0/example/prometheus-operator-crd/monitoring.coreos.com_thanosrulers.yaml
 ```
 
-If you have explicitly set `prometheusOperator.admissionWebhooks.failurePolicy`,
-this value is now always used even when `.prometheusOperator.admissionWebhooks.patch.enabled`
-is `true` (the default).
+If you have explicitly set `prometheusOperator.admissionWebhooks.failurePolicy`, this value is now always used even when `.prometheusOperator.admissionWebhooks.patch.enabled` is `true` (the default).
 
 ### From 42.x to 43.x
 
