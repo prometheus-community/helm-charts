@@ -9,6 +9,9 @@ metadata:
   {{- with .Values.kubelet.serviceMonitor.additionalLabels }}
     {{- toYaml . | nindent 4 }}
   {{- end }}
+  {{- with .Values.serviceMonitor.metricLabels }}
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
 {{- include "kube-prometheus-stack.labels" . | indent 4 }}
 spec:
   {{- include "servicemonitor.scrapeLimits" .Values.kubelet.serviceMonitor | nindent 2 }}
@@ -214,4 +217,8 @@ spec:
     matchLabels:
       app.kubernetes.io/name: kubelet
       k8s-app: kubelet
+  {{- with .Values.serviceMonitor.metricLabels }}
+  targetLabels:
+    {{- toYaml (keys .) | nindent 4 }}
+  {{- end }}
 {{- end}}

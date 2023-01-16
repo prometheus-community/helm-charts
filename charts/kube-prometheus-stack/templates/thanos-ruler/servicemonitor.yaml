@@ -7,6 +7,9 @@ metadata:
   labels:
     app: {{ template "kube-prometheus-stack.name" . }}-thanos-ruler
 {{ include "kube-prometheus-stack.labels" . | indent 4 }}
+  {{- with .Values.serviceMonitor.metricLabels }}
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
 spec:
   {{- include "servicemonitor.scrapeLimits" .Values.thanosRuler.serviceMonitor | nindent 2 }}
   selector:
@@ -43,4 +46,8 @@ spec:
     relabelings:
 {{ toYaml .Values.thanosRuler.serviceMonitor.relabelings | indent 6 }}
 {{- end }}
+  {{- with .Values.serviceMonitor.metricLabels }}
+  targetLabels:
+    {{- toYaml (keys .) | nindent 4 }}
+  {{- end }}
 {{- end }}

@@ -9,6 +9,9 @@ metadata:
   {{- with .Values.kubeApiServer.serviceMonitor.additionalLabels }}
     {{- toYaml . | nindent 4 }}
   {{- end }}
+  {{- with .Values.serviceMonitor.metricLabels }}
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
 {{ include "kube-prometheus-stack.labels" . | indent 4 }}
 spec:
   {{- include "servicemonitor.scrapeLimits" .Values.kubeApiServer.serviceMonitor | nindent 2 }}
@@ -40,4 +43,8 @@ spec:
     - default
   selector:
 {{ toYaml .Values.kubeApiServer.serviceMonitor.selector | indent 4 }}
+  {{- with .Values.serviceMonitor.metricLabels }}
+  targetLabels:
+    {{- toYaml (keys .) | nindent 4 }}
+  {{- end }}
 {{- end}}

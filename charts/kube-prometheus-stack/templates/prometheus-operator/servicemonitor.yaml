@@ -10,6 +10,9 @@ metadata:
 {{- with .Values.prometheusOperator.serviceMonitor.additionalLabels }}
 {{ toYaml . | indent 4 }}
 {{- end }}
+  {{- with .Values.serviceMonitor.metricLabels }}
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
 spec:
   {{- include "servicemonitor.scrapeLimits" .Values.prometheusOperator.serviceMonitor | nindent 2 }}
   endpoints:
@@ -45,4 +48,8 @@ spec:
   namespaceSelector:
     matchNames:
       - {{ printf "%s" (include "kube-prometheus-stack.namespace" .) | quote }}
+  {{- with .Values.serviceMonitor.metricLabels }}
+  targetLabels:
+    {{- toYaml (keys .) | nindent 4 }}
+  {{- end }}
 {{- end }}

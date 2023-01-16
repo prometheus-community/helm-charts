@@ -9,6 +9,9 @@ metadata:
   {{- with .Values.kubeProxy.serviceMonitor.additionalLabels }}
     {{- toYaml . | nindent 4 }}
   {{- end }}
+  {{- with .Values.serviceMonitor.metricLabels }}
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
 {{ include "kube-prometheus-stack.labels" . | indent 4 }}
 spec:
   jobLabel: jobLabel
@@ -42,4 +45,8 @@ spec:
     relabelings:
 {{ tpl (toYaml .Values.kubeProxy.serviceMonitor.relabelings | indent 4) . }}
 {{- end }}
+  {{- with .Values.serviceMonitor.metricLabels }}
+  targetLabels:
+    {{- toYaml (keys .) | nindent 4 }}
+  {{- end }}
 {{- end }}
