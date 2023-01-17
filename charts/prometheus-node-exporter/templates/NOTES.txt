@@ -13,3 +13,17 @@
   echo "Visit http://127.0.0.1:9100 to use your application"
   kubectl port-forward --namespace {{ template "prometheus-node-exporter.namespace" . }} $POD_NAME 9100
 {{- end }}
+
+{{- if .Values.kubeRBACProxy.enabled}}
+
+kube-rbac-proxy endpoint protections is enabled:
+- Metrics endpoints is now HTTPS
+- Ensure that the client authenticates the requests (e.g. via service account) with the following role permissions:
+```
+rules:
+  - apiGroups: [ "" ]
+    resources: ["services/{{ template "prometheus-node-exporter.fullname" . }}"]
+    verbs:
+      - get
+```
+{{- end }}

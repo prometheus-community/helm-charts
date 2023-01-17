@@ -8,3 +8,16 @@ In your case, {{ template "kube-state-metrics.fullname" . }}.{{ template "kube-s
 They are served either as plaintext or protobuf depending on the Accept header.
 They are designed to be consumed either by Prometheus itself or by a scraper that is compatible with scraping a Prometheus client endpoint.
 
+{{- if .Values.kubeRBACProxy.enabled}}
+
+kube-rbac-proxy endpoint protections is enabled:
+- Metrics endpoints are now HTTPS
+- Ensure that the client authenticates the requests (e.g. via service account) with the following role permissions:
+```
+rules:
+  - apiGroups: [ "" ]
+    resources: ["services/{{ template "kube-state-metrics.fullname" . }}"]
+    verbs:
+      - get
+```
+{{- end }}
