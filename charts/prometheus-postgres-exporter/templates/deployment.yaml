@@ -49,6 +49,12 @@ spec:
         - name: {{ .Chart.Name }}
           args:
           - "--extend.query-path=/etc/config.yaml"
+          {{- if .Values.config.disableCollectorDatabase }}
+          - "--disable-settings-metrics=false"
+          {{- end }}
+          {{- if .Values.config.disableCollectorBgwriter }}
+          - "--collector.bgwriter=false"
+          {{- end }}
           {{- if .Values.config.disableDefaultMetrics }}
           - "--disable-default-metrics"
           {{- end }}
@@ -76,6 +82,9 @@ spec:
           {{- if .Values.config.logFormat }}
           - "--log.format={{ .Values.config.logFormat }}"
           {{- end}}
+          {{-  if .Values.config.extraArgs  }}
+          {{- .Values.config.extraArgs | toYaml | nindent 10 }}
+          {{-  end  }}
           env:
           {{- if .Values.config.datasourceSecret }}
           - name: DATA_SOURCE_NAME
