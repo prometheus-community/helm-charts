@@ -43,6 +43,10 @@ helm upgrade [RELEASE_NAME] [CHART] --install
 
 _See [helm upgrade](https://helm.sh/docs/helm/helm_upgrade/) for command documentation._
 
+### To 4.0.0
+
+Previously, security context of the container was set directly in the deployment template. This release makes it configurable through the new configuration variable `securityContext` whilst keeping the previously set values as defaults. Furthermore, previous variable `runAsUser` is now set in `securityContext` and is not used any longer. Please, use `securityContext.runAsUser` instead. In the same security context, `seccompProfile` has been enabled and set to type `RuntimeDefault`.
+
 ### To 3.0.0
 
 Due to a change in deployment labels, the upgrade requires `helm upgrade --force` in order to re-create the deployment.
@@ -109,8 +113,14 @@ Enabling this option will cause resource metrics to be served at `/apis/metrics.
 rules:
   resource:
     cpu:
-      containerQuery: sum(rate(container_cpu_usage_seconds_total{<<.LabelMatchers>>, container!=""}[3m])) by (<<.GroupBy>>)
-      nodeQuery: sum(rate(container_cpu_usage_seconds_total{<<.LabelMatchers>>, id='/'}[3m])) by (<<.GroupBy>>)
+      containerQuery: |
+        sum by (<<.GroupBy>>) (
+          rate(container_cpu_usage_seconds_total{container!="",<<.LabelMatchers>>}[3m])
+        )
+      nodeQuery: |
+        sum  by (<<.GroupBy>>) (
+          rate(node_cpu_seconds_total{mode!="idle",mode!="iowait",mode!="steal",<<.LabelMatchers>>}[3m])
+        )
       resources:
         overrides:
           node:
@@ -121,8 +131,16 @@ rules:
             resource: pod
       containerLabel: container
     memory:
-      containerQuery: sum(container_memory_working_set_bytes{<<.LabelMatchers>>, container!=""}) by (<<.GroupBy>>)
-      nodeQuery: sum(container_memory_working_set_bytes{<<.LabelMatchers>>,id='/'}) by (<<.GroupBy>>)
+      containerQuery: |
+        sum by (<<.GroupBy>>) (
+          avg_over_time(container_memory_working_set_bytes{container!="",<<.LabelMatchers>>}[3m])
+        )
+      nodeQuery: |
+        sum by (<<.GroupBy>>) (
+          avg_over_time(node_memory_MemTotal_bytes{<<.LabelMatchers>>}[3m])
+          -
+          avg_over_time(node_memory_MemAvailable_bytes{<<.LabelMatchers>>}[3m])
+        )
       resources:
         overrides:
           node:

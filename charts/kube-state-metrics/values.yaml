@@ -2,12 +2,27 @@
 prometheusScrape: true
 image:
   repository: registry.k8s.io/kube-state-metrics/kube-state-metrics
-  tag: v2.7.0
+  # If unset use v + .Charts.appVersion
+  tag: ""
   sha: ""
   pullPolicy: IfNotPresent
 
 imagePullSecrets: []
 # - name: "image-pull-secret"
+
+global:
+  # To help compatibility with other charts which use global.imagePullSecrets.
+  # Allow either an array of {name: pullSecret} maps (k8s-style), or an array of strings (more common helm-style).
+  # global:
+  #   imagePullSecrets:
+  #   - name: pullSecret1
+  #   - name: pullSecret2
+  # or
+  # global:
+  #   imagePullSecrets:
+  #   - pullSecret1
+  #   - pullSecret2
+  imagePullSecrets: []
 
 # If set to true, this will deploy kube-state-metrics as a StatefulSet and the data
 # will be automatically sharded across <.Values.replicas> pods using the built-in
@@ -38,6 +53,9 @@ service:
 customLabels: {}
   # app: kube-state-metrics
 
+## Override selector labels
+selectorOverride: {}
+
 ## set to true to add the release label so scraping of the servicemonitor with kube-prometheus-stack works out of the box
 releaseLabel: false
 
@@ -59,6 +77,38 @@ rbac:
   #   resources: ["prometheuses"]
   #   verbs: ["list", "watch"]
   extraRules: []
+
+# Configure kube-rbac-proxy. When enabled, creates one kube-rbac-proxy container per exposed HTTP endpoint (metrics and telemetry if enabled).
+# The requests are served through the same service but requests are then HTTPS.
+kubeRBACProxy:
+  enabled: false
+  image:
+    repository: quay.io/brancz/kube-rbac-proxy
+    tag: v0.14.0
+    sha: ""
+    pullPolicy: IfNotPresent
+
+  # List of additional cli arguments to configure kube-rbac-prxy
+  # for example: --tls-cipher-suites, --log-file, etc.
+  # all the possible args can be found here: https://github.com/brancz/kube-rbac-proxy#usage
+  extraArgs: []
+
+  ## Specify security settings for a Container
+  ## Allows overrides and additional options compared to (Pod) securityContext
+  ## Ref: https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-the-security-context-for-a-container
+  containerSecurityContext: {}
+
+  resources: {}
+    # We usually recommend not to specify default resources and to leave this as a conscious
+    # choice for the user. This also increases chances charts run on environments with little
+    # resources, such as Minikube. If you do want to specify resources, uncomment the following
+    # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+    # limits:
+    #  cpu: 100m
+    #  memory: 64Mi
+    # requests:
+    #  cpu: 10m
+    #  memory: 32Mi
 
 serviceAccount:
   # Specifies whether a ServiceAccount should be created, require rbac true

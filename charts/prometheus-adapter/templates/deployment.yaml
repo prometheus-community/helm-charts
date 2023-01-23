@@ -44,6 +44,10 @@ spec:
       - name: {{ .Chart.Name }}
         image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
         imagePullPolicy: {{ .Values.image.pullPolicy }}
+        {{- with .Values.env }}
+        env:
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
         args:
         - /adapter
         - --secure-port={{ .Values.listenPort }}
@@ -85,15 +89,10 @@ spec:
         dnsConfig:
         {{ toYaml . | indent 8 }}
         {{- end }}
+        {{- with .Values.securityContext }}
         securityContext:
-          allowPrivilegeEscalation: false
-          capabilities:
-            drop: ["all"]
-          readOnlyRootFilesystem: true
-          runAsNonRoot: true
-          {{- if .Values.runAsUser }}
-          runAsUser: {{ .Values.runAsUser }}
-          {{- end }}
+          {{- toYaml . | nindent 10 }}
+        {{- end }}
         volumeMounts:
         {{- if .Values.extraVolumeMounts }}
         {{ toYaml .Values.extraVolumeMounts | trim | nindent 8 }}
