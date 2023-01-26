@@ -1,9 +1,14 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  {{- if .Values.customAnnotations }}
+  {{- if or .Values.customAnnotations .Values.deploymentAnnotations }}
   annotations:
-  {{- toYaml .Values.customAnnotations | nindent 4 }}
+    {{- with .Values.customAnnotations }}
+    {{- toYaml .Values.customAnnotations | nindent 4 }}
+    {{- end }}
+    {{- with .Values.deploymentAnnotations }}
+    {{- toYaml .Values.deploymentAnnotations | nindent 4 }}
+    {{- end }}
   {{- end }}
   labels:
     {{- include "k8s-prometheus-adapter.labels" . | indent 4 }}
@@ -17,10 +22,6 @@ spec:
       {{- include "k8s-prometheus-adapter.selectorLabels" . | indent 6 }}
   template:
     metadata:
-      {{- if .Values.customAnnotations }}
-      annotations:
-      {{- toYaml .Values.customAnnotations | nindent 8 }}
-      {{- end }}
       labels:
         {{- include "k8s-prometheus-adapter.labels" . | indent 8 }}
         {{- with .Values.podLabels }}
@@ -30,7 +31,10 @@ spec:
       annotations:
         checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
         {{- with .Values.podAnnotations }}
-        {{- toYaml . | trim | nindent 8 }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+        {{- with .Values.customAnnotations }}
+        {{- toYaml . | nindent 8 }}
         {{- end }}
     spec:
       serviceAccountName: {{ template "k8s-prometheus-adapter.serviceAccountName" . }}
