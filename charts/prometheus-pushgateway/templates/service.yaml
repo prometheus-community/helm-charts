@@ -1,3 +1,4 @@
+{{- $stsNoHeadlessSvcTypes := list "LoadBalancer" "NodePort" -}}
 apiVersion: v1
 kind: Service
 metadata:
@@ -14,7 +15,7 @@ metadata:
 spec:
   {{- if .Values.service.clusterIP }}
   clusterIP: {{ .Values.service.clusterIP }}
-  {{ else if and .Values.runAsStatefulSet (and (ne .Values.service.type "LoadBalancer") (ne .Values.service.type "NodePort"))}}
+  {{ else if and .Values.runAsStatefulSet (not (has .Values.service.type $stsNoHeadlessSvcTypes)) }}
   clusterIP: None # Headless service
   {{- end }}
   type: {{ .Values.service.type }}
