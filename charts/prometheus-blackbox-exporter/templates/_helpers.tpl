@@ -83,3 +83,8 @@ Return the appropriate apiVersion for rbac.
     {{- .Release.Namespace -}}
   {{- end -}}
 {{- end -}}
+
+{{/* Enable overriding Kubernetes version for some use cases */}}
+{{- define "prometheus-blackbox-exporter.kubeVersion" -}}
+  {{- default .Capabilities.KubeVersion.Version .Values.kubeVersionOverride -}}
+{{- end -}}
