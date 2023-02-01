@@ -27,10 +27,16 @@ for line in "${FILES[@]}"; do
 
     echo "# ${URL}" > ../templates/"${DESTINATION}"
 
-    if ! curl --silent --retry-all-errors --fail --location "${URL}" |
-        yq --yaml-output '.metadata.annotations = "{{ toYaml .Values.annotations | nindent 4 }}"' |
-        sed "s/'{{/{{/g" | sed "s/}}'/}}/g" >> ../templates/"${DESTINATION}"; then
+    if ! curl --silent --retry-all-errors --fail --location "${URL}" >> ../templates/"${DESTINATION}"; then
       echo -e "Failed to download ${URL}!"
       exit 1
     fi
+    # Update or insert annotations block
+    if yq -e '.metadata.annotations' ../templates/"${DESTINATION}" >/dev/null; then
+      sed -i '/^  annotations:$/a {{- with .Values.annotations }}\n{{- toYaml . | nindent 4 }}\n{{- end }}' ../templates/"${DESTINATION}"
+    else
+      sed -i '/^metadata:$/a {{- with .Values.annotations }}\n  annotations:\n{{- toYaml . | nindent 4 }}\n{{- end }}' ../templates/"${DESTINATION}"
+    fi
 done
+
+exit

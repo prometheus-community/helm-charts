@@ -113,8 +113,14 @@ Enabling this option will cause resource metrics to be served at `/apis/metrics.
 rules:
   resource:
     cpu:
-      containerQuery: sum(rate(container_cpu_usage_seconds_total{<<.LabelMatchers>>, container!=""}[3m])) by (<<.GroupBy>>)
-      nodeQuery: sum(rate(container_cpu_usage_seconds_total{<<.LabelMatchers>>, id='/'}[3m])) by (<<.GroupBy>>)
+      containerQuery: |
+        sum by (<<.GroupBy>>) (
+          rate(container_cpu_usage_seconds_total{container!="",<<.LabelMatchers>>}[3m])
+        )
+      nodeQuery: |
+        sum  by (<<.GroupBy>>) (
+          rate(node_cpu_seconds_total{mode!="idle",mode!="iowait",mode!="steal",<<.LabelMatchers>>}[3m])
+        )
       resources:
         overrides:
           node:
@@ -125,8 +131,16 @@ rules:
             resource: pod
       containerLabel: container
     memory:
-      containerQuery: sum(container_memory_working_set_bytes{<<.LabelMatchers>>, container!=""}) by (<<.GroupBy>>)
-      nodeQuery: sum(container_memory_working_set_bytes{<<.LabelMatchers>>,id='/'}) by (<<.GroupBy>>)
+      containerQuery: |
+        sum by (<<.GroupBy>>) (
+          avg_over_time(container_memory_working_set_bytes{container!="",<<.LabelMatchers>>}[3m])
+        )
+      nodeQuery: |
+        sum by (<<.GroupBy>>) (
+          avg_over_time(node_memory_MemTotal_bytes{<<.LabelMatchers>>}[3m])
+          -
+          avg_over_time(node_memory_MemAvailable_bytes{<<.LabelMatchers>>}[3m])
+        )
       resources:
         overrides:
           node:
