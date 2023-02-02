@@ -283,7 +283,7 @@ def add_custom_labels(rules, indent=4):
 
 
 def add_custom_annotations(rules, indent=4):
-    """Add if wrapper for additional rules labels"""
+    """Add if wrapper for additional rules annotations"""
     rule_condition = '{{- if .Values.defaultRules.additionalRuleAnnotations }}\n{{ toYaml .Values.defaultRules.additionalRuleAnnotations | indent 8 }}\n{{- end }}'
 
     for type in ['alert']:
