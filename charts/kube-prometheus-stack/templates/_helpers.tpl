@@ -1,201 +1,273 @@
 {{/* vim: set filetype=mustache: */}}
-{{/*
-Expand the name of the chart.
-*/}}
-{{- define "grafana.name" -}}
-{{- default .Chart.Name .Values.nameOverride | trunc 63 | trimSuffix "-" }}
+{{/* Expand the name of the chart. This is suffixed with -alertmanager, which means subtract 13 from longest 63 available */}}
+{{- define "kube-prometheus-stack.name" -}}
+{{- default .Chart.Name .Values.nameOverride | trunc 50 | trimSuffix "-" -}}
 {{- end }}
 
 {{/*
 Create a default fully qualified app name.
 We truncate at 63 chars because some Kubernetes name fields are limited to this (by the DNS naming spec).
 If release name contains chart name it will be used as a full name.
+The components in this chart create additional resources that expand the longest created name strings.
+The longest name that gets created adds and extra 37 characters, so truncation should be 63-35=26.
 */}}
-{{- define "grafana.fullname" -}}
-{{- if .Values.fullnameOverride }}
-{{- .Values.fullnameOverride | trunc 63 | trimSuffix "-" }}
-{{- else }}
-{{- $name := default .Chart.Name .Values.nameOverride }}
-{{- if contains $name .Release.Name }}
-{{- .Release.Name | trunc 63 | trimSuffix "-" }}
-{{- else }}
-{{- printf "%s-%s" .Release.Name $name | trunc 63 | trimSuffix "-" }}
+{{- define "kube-prometheus-stack.fullname" -}}
+{{- if .Values.fullnameOverride -}}
+{{- .Values.fullnameOverride | trunc 26 | trimSuffix "-" -}}
+{{- else -}}
+{{- $name := default .Chart.Name .Values.nameOverride -}}
+{{- if contains $name .Release.Name -}}
+{{- .Release.Name | trunc 26 | trimSuffix "-" -}}
+{{- else -}}
+{{- printf "%s-%s" .Release.Name $name | trunc 26 | trimSuffix "-" -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}
+
+{{/* Fullname suffixed with operator */}}
+{{- define "kube-prometheus-stack.operator.fullname" -}}
+{{- printf "%s-operator" (include "kube-prometheus-stack.fullname" .) -}}
 {{- end }}
+
+{{/* Prometheus custom resource instance name */}}
+{{- define "kube-prometheus-stack.prometheus.crname" -}}
+{{- if .Values.cleanPrometheusOperatorObjectNames }}
+{{- include "kube-prometheus-stack.fullname" . }}
+{{- else }}
+{{- print (include "kube-prometheus-stack.fullname" .) "-prometheus" }}
 {{- end }}
 {{- end }}
 
-{{/*
-Create chart name and version as used by the chart label.
-*/}}
-{{- define "grafana.chart" -}}
-{{- printf "%s-%s" .Chart.Name .Chart.Version | replace "+" "_" | trunc 63 | trimSuffix "-" }}
+{{/* Prometheus apiVersion for networkpolicy */}}
+{{- define "kube-prometheus-stack.prometheus.networkPolicy.apiVersion" -}}
+{{- print "networking.k8s.io/v1" -}}
 {{- end }}
 
-{{/*
-Create the name of the service account
-*/}}
-{{- define "grafana.serviceAccountName" -}}
-{{- if .Values.serviceAccount.create }}
-{{- default (include "grafana.fullname" .) .Values.serviceAccount.name }}
+{{/* Alertmanager custom resource instance name */}}
+{{- define "kube-prometheus-stack.alertmanager.crname" -}}
+{{- if .Values.cleanPrometheusOperatorObjectNames }}
+{{- include "kube-prometheus-stack.fullname" . }}
 {{- else }}
-{{- default "default" .Values.serviceAccount.name }}
+{{- print (include "kube-prometheus-stack.fullname" .) "-alertmanager" -}}
 {{- end }}
 {{- end }}
 
-{{- define "grafana.serviceAccountNameTest" -}}
-{{- if .Values.serviceAccount.create }}
-{{- default (print (include "grafana.fullname" .) "-test") .Values.serviceAccount.nameTest }}
-{{- else }}
-{{- default "default" .Values.serviceAccount.nameTest }}
+{{/* Fullname suffixed with thanos-ruler */}}
+{{- define "kube-prometheus-stack.thanosRuler.fullname" -}}
+{{- printf "%s-thanos-ruler" (include "kube-prometheus-stack.fullname" .) -}}
+{{- end }}
+
+{{/* Create chart name and version as used by the chart label. */}}
+{{- define "kube-prometheus-stack.chartref" -}}
+{{- replace "+" "_" .Chart.Version | printf "%s-%s" .Chart.Name -}}
+{{- end }}
+
+{{/* Generate basic labels */}}
+{{- define "kube-prometheus-stack.labels" }}
+app.kubernetes.io/managed-by: {{ .Release.Service }}
+app.kubernetes.io/instance: {{ .Release.Name }}
+app.kubernetes.io/version: "{{ replace "+" "_" .Chart.Version }}"
+app.kubernetes.io/part-of: {{ template "kube-prometheus-stack.name" . }}
+chart: {{ template "kube-prometheus-stack.chartref" . }}
+release: {{ $.Release.Name | quote }}
+heritage: {{ $.Release.Service | quote }}
+{{- if .Values.commonLabels}}
+{{ toYaml .Values.commonLabels }}
 {{- end }}
 {{- end }}
+
+{{/* Create the name of kube-prometheus-stack service account to use */}}
+{{- define "kube-prometheus-stack.operator.serviceAccountName" -}}
+{{- if .Values.prometheusOperator.serviceAccount.create -}}
+    {{ default (include "kube-prometheus-stack.operator.fullname" .) .Values.prometheusOperator.serviceAccount.name }}
+{{- else -}}
+    {{ default "default" .Values.prometheusOperator.serviceAccount.name }}
+{{- end -}}
+{{- end -}}
+
+{{/* Create the name of prometheus service account to use */}}
+{{- define "kube-prometheus-stack.prometheus.serviceAccountName" -}}
+{{- if .Values.prometheus.serviceAccount.create -}}
+    {{ default (print (include "kube-prometheus-stack.fullname" .) "-prometheus") .Values.prometheus.serviceAccount.name }}
+{{- else -}}
+    {{ default "default" .Values.prometheus.serviceAccount.name }}
+{{- end -}}
+{{- end -}}
+
+{{/* Create the name of alertmanager service account to use */}}
+{{- define "kube-prometheus-stack.alertmanager.serviceAccountName" -}}
+{{- if .Values.alertmanager.serviceAccount.create -}}
+    {{ default (print (include "kube-prometheus-stack.fullname" .) "-alertmanager") .Values.alertmanager.serviceAccount.name }}
+{{- else -}}
+    {{ default "default" .Values.alertmanager.serviceAccount.name }}
+{{- end -}}
+{{- end -}}
+
+{{/* Create the name of thanosRuler service account to use */}}
+{{- define "kube-prometheus-stack.thanosRuler.serviceAccountName" -}}
+{{- if .Values.thanosRuler.serviceAccount.create -}}
+    {{ default (include "kube-prometheus-stack.thanosRuler.fullname" .) .Values.thanosRuler.serviceAccount.name }}
+{{- else -}}
+    {{ default "default" .Values.thanosRuler.serviceAccount.name }}
+{{- end -}}
+{{- end -}}
 
 {{/*
 Allow the release namespace to be overridden for multi-namespace deployments in combined charts
 */}}
-{{- define "grafana.namespace" -}}
-{{- if .Values.namespaceOverride }}
-{{- .Values.namespaceOverride }}
-{{- else }}
-{{- .Release.Namespace }}
-{{- end }}
-{{- end }}
+{{- define "kube-prometheus-stack.namespace" -}}
+  {{- if .Values.namespaceOverride -}}
+    {{- .Values.namespaceOverride -}}
+  {{- else -}}
+    {{- .Release.Namespace -}}
+  {{- end -}}
+{{- end -}}
 
 {{/*
-Common labels
+Use the grafana namespace override for multi-namespace deployments in combined charts
 */}}
-{{- define "grafana.labels" -}}
-helm.sh/chart: {{ include "grafana.chart" . }}
-{{ include "grafana.selectorLabels" . }}
-{{- if or .Chart.AppVersion .Values.image.tag }}
-app.kubernetes.io/version: {{ mustRegexReplaceAllLiteral "@sha.*" .Values.image.tag "" | default .Chart.AppVersion | quote }}
-{{- end }}
-app.kubernetes.io/managed-by: {{ .Release.Service }}
-{{- with .Values.extraLabels }}
-{{ toYaml . }}
-{{- end }}
-{{- end }}
+{{- define "kube-prometheus-stack-grafana.namespace" -}}
+  {{- if .Values.grafana.namespaceOverride -}}
+    {{- .Values.grafana.namespaceOverride -}}
+  {{- else -}}
+    {{- .Release.Namespace -}}
+  {{- end -}}
+{{- end -}}
 
 {{/*
-Selector labels
+Use the kube-state-metrics namespace override for multi-namespace deployments in combined charts
 */}}
-{{- define "grafana.selectorLabels" -}}
-app.kubernetes.io/name: {{ include "grafana.name" . }}
-app.kubernetes.io/instance: {{ .Release.Name }}
-{{- end }}
+{{- define "kube-prometheus-stack-kube-state-metrics.namespace" -}}
+  {{- if index .Values "kube-state-metrics" "namespaceOverride" -}}
+    {{- index .Values "kube-state-metrics" "namespaceOverride" -}}
+  {{- else -}}
+    {{- .Release.Namespace -}}
+  {{- end -}}
+{{- end -}}
 
 {{/*
-Common labels
+Use the prometheus-node-exporter namespace override for multi-namespace deployments in combined charts
 */}}
-{{- define "grafana.imageRenderer.labels" -}}
-helm.sh/chart: {{ include "grafana.chart" . }}
-{{ include "grafana.imageRenderer.selectorLabels" . }}
-{{- if or .Chart.AppVersion .Values.image.tag }}
-app.kubernetes.io/version: {{ mustRegexReplaceAllLiteral "@sha.*" .Values.image.tag "" | default .Chart.AppVersion | quote }}
+{{- define "kube-prometheus-stack-prometheus-node-exporter.namespace" -}}
+  {{- if index .Values "prometheus-node-exporter" "namespaceOverride" -}}
+    {{- index .Values "prometheus-node-exporter" "namespaceOverride" -}}
+  {{- else -}}
+    {{- .Release.Namespace -}}
+  {{- end -}}
+{{- end -}}
+
+{{/* Allow KubeVersion to be overridden. */}}
+{{- define "kube-prometheus-stack.kubeVersion" -}}
+  {{- default .Capabilities.KubeVersion.Version .Values.kubeVersionOverride -}}
+{{- end -}}
+
+{{/* Get Ingress API Version */}}
+{{- define "kube-prometheus-stack.ingress.apiVersion" -}}
+  {{- if and (.Capabilities.APIVersions.Has "networking.k8s.io/v1") (semverCompare ">= 1.19-0" (include "kube-prometheus-stack.kubeVersion" .)) -}}
+      {{- print "networking.k8s.io/v1" -}}
+  {{- else if .Capabilities.APIVersions.Has "networking.k8s.io/v1beta1" -}}
+    {{- print "networking.k8s.io/v1beta1" -}}
+  {{- else -}}
+    {{- print "extensions/v1beta1" -}}
+  {{- end -}}
+{{- end -}}
+
+{{/* Check Ingress stability */}}
+{{- define "kube-prometheus-stack.ingress.isStable" -}}
+  {{- eq (include "kube-prometheus-stack.ingress.apiVersion" .) "networking.k8s.io/v1" -}}
+{{- end -}}
+
+{{/* Check Ingress supports pathType */}}
+{{/* pathType was added to networking.k8s.io/v1beta1 in Kubernetes 1.18 */}}
+{{- define "kube-prometheus-stack.ingress.supportsPathType" -}}
+  {{- or (eq (include "kube-prometheus-stack.ingress.isStable" .) "true") (and (eq (include "kube-prometheus-stack.ingress.apiVersion" .) "networking.k8s.io/v1beta1") (semverCompare ">= 1.18-0" (include "kube-prometheus-stack.kubeVersion" .))) -}}
+{{- end -}}
+
+{{/* Get Policy API Version */}}
+{{- define "kube-prometheus-stack.pdb.apiVersion" -}}
+  {{- if and (.Capabilities.APIVersions.Has "policy/v1") (semverCompare ">= 1.21-0" (include "kube-prometheus-stack.kubeVersion" .)) -}}
+      {{- print "policy/v1" -}}
+  {{- else -}}
+    {{- print "policy/v1beta1" -}}
+  {{- end -}}
+  {{- end -}}
+
+{{/* Get value based on current Kubernetes version */}}
+{{- define "kube-prometheus-stack.kubeVersionDefaultValue" -}}
+  {{- $values := index . 0 -}}
+  {{- $kubeVersion := index . 1 -}}
+  {{- $old := index . 2 -}}
+  {{- $new := index . 3 -}}
+  {{- $default := index . 4 -}}
+  {{- if kindIs "invalid" $default -}}
+    {{- if semverCompare $kubeVersion (include "kube-prometheus-stack.kubeVersion" $values) -}}
+      {{- print $new -}}
+    {{- else -}}
+      {{- print $old -}}
+    {{- end -}}
+  {{- else -}}
+    {{- print $default }}
+  {{- end -}}
+{{- end -}}
+
+{{/* Get value for kube-controller-manager depending on insecure scraping availability */}}
+{{- define "kube-prometheus-stack.kubeControllerManager.insecureScrape" -}}
+  {{- $values := index . 0 -}}
+  {{- $insecure := index . 1 -}}
+  {{- $secure := index . 2 -}}
+  {{- $userValue := index . 3 -}}
+  {{- include "kube-prometheus-stack.kubeVersionDefaultValue" (list $values ">= 1.22-0" $insecure $secure $userValue) -}}
+{{- end -}}
+
+{{/* Get value for kube-scheduler depending on insecure scraping availability */}}
+{{- define "kube-prometheus-stack.kubeScheduler.insecureScrape" -}}
+  {{- $values := index . 0 -}}
+  {{- $insecure := index . 1 -}}
+  {{- $secure := index . 2 -}}
+  {{- $userValue := index . 3 -}}
+  {{- include "kube-prometheus-stack.kubeVersionDefaultValue" (list $values ">= 1.23-0" $insecure $secure $userValue) -}}
+{{- end -}}
+
+{{/* Sets default scrape limits for servicemonitor */}}
+{{- define "servicemonitor.scrapeLimits" -}}
+{{- with .sampleLimit }}
+sampleLimit: {{ . }}
 {{- end }}
-app.kubernetes.io/managed-by: {{ .Release.Service }}
+{{- with .targetLimit }}
+targetLimit: {{ . }}
 {{- end }}
+{{- with .labelLimit }}
+labelLimit: {{ . }}
+{{- end }}
+{{- with .labelNameLengthLimit }}
+labelNameLengthLimit: {{ . }}
+{{- end }}
+{{- with .labelValueLengthLimit }}
+labelValueLengthLimit: {{ . }}
+{{- end }}
+{{- end -}}
 
 {{/*
-Selector labels ImageRenderer
-*/}}
-{{- define "grafana.imageRenderer.selectorLabels" -}}
-app.kubernetes.io/name: {{ include "grafana.name" . }}-image-renderer
-app.kubernetes.io/instance: {{ .Release.Name }}
-{{- end }}
+To help compatibility with other charts which use global.imagePullSecrets.
+Allow either an array of {name: pullSecret} maps (k8s-style), or an array of strings (more common helm-style).
+global:
+  imagePullSecrets:
+  - name: pullSecret1
+  - name: pullSecret2
 
-{{/*
-Looks if there's an existing secret and reuse its password. If not it generates
-new password and use it.
-*/}}
-{{- define "grafana.password" -}}
-{{- $secret := (lookup "v1" "Secret" (include "grafana.namespace" .) (include "grafana.fullname" .) ) }}
-{{- if $secret }}
-{{- index $secret "data" "admin-password" }}
-{{- else }}
-{{- (randAlphaNum 40) | b64enc | quote }}
-{{- end }}
-{{- end }}
+or
 
-{{/*
-Return the appropriate apiVersion for rbac.
+global:
+  imagePullSecrets:
+  - pullSecret1
+  - pullSecret2
 */}}
-{{- define "grafana.rbac.apiVersion" -}}
-{{- if $.Capabilities.APIVersions.Has "rbac.authorization.k8s.io/v1" }}
-{{- print "rbac.authorization.k8s.io/v1" }}
-{{- else }}
-{{- print "rbac.authorization.k8s.io/v1beta1" }}
+{{- define "kube-prometheus-stack.imagePullSecrets" -}}
+{{- range .Values.global.imagePullSecrets }}
+  {{- if eq (typeOf .) "map[string]interface {}" }}
+- {{ toYaml . | trim }}
+  {{- else }}
+- name: {{ . }}
+  {{- end }}
 {{- end }}
-{{- end }}
-
-{{/*
-Return the appropriate apiVersion for ingress.
-*/}}
-{{- define "grafana.ingress.apiVersion" -}}
-{{- if and ($.Capabilities.APIVersions.Has "networking.k8s.io/v1") (semverCompare ">= 1.19-0" .Capabilities.KubeVersion.Version) }}
-{{- print "networking.k8s.io/v1" }}
-{{- else if $.Capabilities.APIVersions.Has "networking.k8s.io/v1beta1" }}
-{{- print "networking.k8s.io/v1beta1" }}
-{{- else }}
-{{- print "extensions/v1beta1" }}
-{{- end }}
-{{- end }}
-
-{{/*
-Return the appropriate apiVersion for Horizontal Pod Autoscaler.
-*/}}
-{{- define "grafana.hpa.apiVersion" -}}
-{{- if $.Capabilities.APIVersions.Has "autoscaling/v2/HorizontalPodAutoscaler" }}
-{{- print "autoscaling/v2" }}
-{{- else if $.Capabilities.APIVersions.Has "autoscaling/v2beta2/HorizontalPodAutoscaler" }}
-{{- print "autoscaling/v2beta2" }}
-{{- else }}
-{{- print "autoscaling/v2beta1" }}
-{{- end }}
-{{- end }}
-
-{{/*
-Return the appropriate apiVersion for podDisruptionBudget.
-*/}}
-{{- define "grafana.podDisruptionBudget.apiVersion" -}}
-{{- if $.Capabilities.APIVersions.Has "policy/v1/PodDisruptionBudget" }}
-{{- print "policy/v1" }}
-{{- else }}
-{{- print "policy/v1beta1" }}
-{{- end }}
-{{- end }}
-
-{{/*
-Return if ingress is stable.
-*/}}
-{{- define "grafana.ingress.isStable" -}}
-{{- eq (include "grafana.ingress.apiVersion" .) "networking.k8s.io/v1" }}
-{{- end }}
-
-{{/*
-Return if ingress supports ingressClassName.
-*/}}
-{{- define "grafana.ingress.supportsIngressClassName" -}}
-{{- or (eq (include "grafana.ingress.isStable" .) "true") (and (eq (include "grafana.ingress.apiVersion" .) "networking.k8s.io/v1beta1") (semverCompare ">= 1.18-0" .Capabilities.KubeVersion.Version)) }}
-{{- end }}
-
-{{/*
-Return if ingress supports pathType.
-*/}}
-{{- define "grafana.ingress.supportsPathType" -}}
-{{- or (eq (include "grafana.ingress.isStable" .) "true") (and (eq (include "grafana.ingress.apiVersion" .) "networking.k8s.io/v1beta1") (semverCompare ">= 1.18-0" .Capabilities.KubeVersion.Version)) }}
-{{- end }}
-
-{{/*
-Formats imagePullSecrets. Input is (dict "root" . "imagePullSecrets" .{specific imagePullSecrets})
-*/}}
-{{- define "grafana.imagePullSecrets" -}}
-{{- $root := .root }}
-{{- range (concat .root.Values.global.imagePullSecrets .imagePullSecrets) }}
-{{- if eq (typeOf .) "map[string]interface {}" }}
-- {{ toYaml (dict "name" (tpl .name $root)) | trim }}
-{{- else }}
-- name: {{ tpl . $root }}
-{{- end }}
-{{- end }}
-{{- end }}
+{{- end -}}
