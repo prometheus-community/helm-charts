@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 """Fetch alerting and aggregation rules from provided urls into this chart."""
 import json
-import re
 import textwrap
 from os import makedirs
 
@@ -264,41 +263,43 @@ def add_rules_per_rule_conditions(rules, group, indent=4):
 def add_custom_labels(rules, indent=4):
     """Add if wrapper for additional rules labels"""
     rule_condition = '{{- if .Values.defaultRules.additionalRuleLabels }}\n{{ toYaml .Values.defaultRules.additionalRuleLabels | indent 8 }}\n{{- end }}'
-    rule_condition_len = len(rule_condition) + 1
 
-    separator = " " * indent + "- alert:.*"
-    alerts_positions = re.finditer(separator,rules)
-    alert=-1
-    for alert_position in alerts_positions:
-        # add rule_condition at the end of the alert block
-        if alert >= 0 :
-            index = alert_position.start() + rule_condition_len * alert - 1
-            rules = rules[:index] + "\n" + rule_condition + rules[index:]
-        alert += 1
+    for type in ['alert', 'expr']:
+        sep = " " * indent + "- " + type + ":"
+        rules_split = rules.split(sep)
 
-    # add rule_condition at the end of the last alert
-    if alert >= 0:
-        index = len(rules) - 1
-        rules = rules[:index] + "\n" + rule_condition + rules[index:]
+        for i, rule in enumerate(rules_split):
+            if i == 0:
+                continue
+
+            if 'labels:' in rule:
+                rules_split[i] = rule.replace('labels:', "labels:\n"+rule_condition)
+            else:
+                rules_split[i] = rule + (" " * indent) + "  labels:\n"+rule_condition+"\n"
+
+        rules = sep.join(rules_split)
+
     return rules
 
 
 def add_custom_annotations(rules, indent=4):
-    """Add if wrapper for additional rules annotations"""
+    """Add if wrapper for additional rules labels"""
     rule_condition = '{{- if .Values.defaultRules.additionalRuleAnnotations }}\n{{ toYaml .Values.defaultRules.additionalRuleAnnotations | indent 8 }}\n{{- end }}'
-    annotations = "      annotations:"
-    annotations_len = len(annotations) + 1
-    rule_condition_len = len(rule_condition) + 1
 
-    separator = " " * indent + "- alert:.*"
-    alerts_positions = re.finditer(separator,rules)
-    alert = 0
+    for type in ['alert']:
+        sep = " " * indent + "- " + type + ":"
+        rules_split = rules.split(sep)
 
-    for alert_position in alerts_positions:
-        # Add rule_condition after 'annotations:' statement
-        index = alert_position.end() + annotations_len + rule_condition_len * alert
-        rules = rules[:index] + "\n" + rule_condition + rules[index:]
-        alert += 1
+        for i, rule in enumerate(rules_split):
+            if i == 0:
+                continue
+
+            if 'labels:' in rule:
+                rules_split[i] = rule.replace('annotations:', "annotations:\n"+rule_condition)
+            else:
+                rules_split[i] = rule + (" " * indent) + "  annotations:\n"+rule_condition+"\n"
+
+        rules = sep.join(rules_split)
 
     return rules
 
