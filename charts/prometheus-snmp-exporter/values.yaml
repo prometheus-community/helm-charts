@@ -123,37 +123,59 @@ configmapReload:
   ##
   resources: {}
 
-# Enable this if you're using https://github.com/coreos/prometheus-operator
+# Enable this if you're using https://github.com/prometheus-operator/prometheus-operator
+# A service monitor will be created per each item in serviceMonitor.params[]
 serviceMonitor:
   enabled: false
   namespace: monitoring
 
   path: /snmp
 
-  # fallback to the prometheus default unless specified
+  # Fall back to the prometheus default unless specified
   # interval: 10s
   scrapeTimeout: 10s
   module:
     - if_mib
-  # relabelings: []
-  additionalMetricsRelabels: {}
 
-  ## Defaults to what's used if you follow CoreOS [Prometheus Install Instructions](https://github.com/helm/charts/tree/master/stable/prometheus-operator#tldr)
-  ## [Prometheus Selector Label](https://github.com/helm/charts/tree/master/stable/prometheus-operator#prometheus-operator-1)
-  ## [Kube Prometheus Selector Label](https://github.com/helm/charts/tree/master/stable/prometheus-operator#exporters)
+  # Relabelings dynamically rewrite the label set of a target before it gets scraped.
+  # Set if defined unless overriden by params.relabelings.
+  # https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/api.md#monitoring.coreos.com/v1.RelabelConfig
+  relabelings: []
+    # - sourceLabels: [__address__]
+    #   targetLabel: __param_target
+    # - sourceLabels: [__param_target]
+    #   targetLabel: instance
+
+  # Metric relabeling is applied to samples as the last step before ingestion.
+  # Set if defined unless overriden by params.additionalMetricsRelabels.
+  # https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/api.md#monitoring.coreos.com/v1.RelabelConfig
+  additionalMetricsRelabels: []
+
+  # Label for selecting service monitors as set in Prometheus CRD.
+  # https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/api.md#monitoring.coreos.com/v1.PrometheusSpec
   selector:
     prometheus: kube-prometheus
-  # Retain the job and instance labels of the metrics pushed to the snmp-exporter
-  # [Scraping SNMP-exporter](https://github.com/prometheus/snmp_exporter#configure-the-snmp_exporter-as-a-target-to-scrape)
+
+  # Retain the job and instance labels of the metrics retrieved by the snmp-exporter
+  # https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/api.md#monitoring.coreos.com/v1.Endpoint
   honorLabels: true
 
-  params:
-    # - name: localhost                 # Human readable URL that will appear in Prometheus / AlertManager
-    #   target: 127.0.0.1               # The target that snmp will scrape
-    #   module:                         # Module used for scraping. Overrides value set in `serviceMonitor.module`
+  params: []
+    # Human readable URL that will appear in Prometheus / AlertManager
+    # - name: localhost
+    # The target that snmp will scrape
+    #   target: 127.0.0.1
+    # Module used for scraping. Overrides value set in serviceMonitor.module
+    #   module:
     #     - if_mib
-    #   labels: {}                      # Map of labels for ServiceMonitor. Overrides value set in `serviceMonitor.selector`
-    #   interval: 30s                   # Scraping interval. Overrides value set in `serviceMonitor.interval`
-    #   scrapeTimeout: 30s              # Scrape timeout. Overrides value set in `serviceMonitor.scrapeTimeout`
-    #   relabelings: []                 # MetricRelabelConfigs to apply to samples before ingestion. Overrides value set in `serviceMonitor.relabelings`
-    #   additionalMetricsRelabels: {}   # Map of metric labels and values to add
+    # Map of labels for ServiceMonitor. Overrides value set in serviceMonitor.selector
+    #   labels: {}
+          # release: kube-prometheus-stack
+    # Scraping interval. Overrides value set in serviceMonitor.interval
+    #   interval: 30s
+    # Scrape timeout. Overrides value set in serviceMonitor.scrapeTimeout
+    #   scrapeTimeout: 30s
+    # Relabelings. Overrides value set in serviceMonitor.relabelings
+    #   relabelings: []
+    # Additional metric relabelings. Overrides value set in serviceMonitor.additionalMetricsRelabels
+    #   additionalMetricsRelabels: []

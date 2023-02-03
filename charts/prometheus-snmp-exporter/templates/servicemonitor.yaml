@@ -33,12 +33,12 @@ spec:
       - sourceLabels: [target]
         targetLabel: target
         replacement: {{ .name }}
-        {{- range $targetLabel, $replacement := .additionalMetricsRelabels | default $.Values.serviceMonitor.additionalMetricsRelabels }}
-      - targetLabel: {{ $targetLabel }}
-        replacement: {{ $replacement }}
-        {{- end }}
-    {{- if or .relabelings }}
-    relabelings: {{ toYaml .relabelings | default $.Values.serviceMonitor.relabelings | nindent 8 }}
+      {{- if (or .additionalMetricsRelabels $.Values.serviceMonitor.additionalMetricsRelabels) }}
+      {{- toYaml (default $.Values.serviceMonitor.additionalMetricsRelabels .additionalMetricsRelabels) | nindent 6 }}
+      {{- end }}
+    {{- if (or .relabelings $.Values.serviceMonitor.relabelings) }}
+    relabelings:
+      {{- toYaml (default $.Values.serviceMonitor.relabelings .relabelings) | nindent 6 }}
     {{- end }}
   jobLabel: "{{ $.Release.Name }}"
   selector:
