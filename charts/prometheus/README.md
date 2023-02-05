@@ -83,7 +83,7 @@ If Prometheus is used as deployment the updatestrategy has been changed to "Recr
 All files in `templates/server` directory has been moved to `templates` directory.
 
 ```bash
-helm upgrade [RELEASE_NAME] promethus-community/prometheus --version 19.0.0
+helm upgrade [RELEASE_NAME] prometheus-community/prometheus --version 19.0.0
 ```
 
 ### To 18.0
@@ -98,7 +98,7 @@ Before you update, please scale down the `prometheus-server` deployment to `0` t
 # In 17.x
 kubectl scale deploy prometheus-server --replicas=0
 # Upgrade
-helm upgrade [RELEASE_NAME] promethus-community/prometheus --version 18.0.0
+helm upgrade [RELEASE_NAME] prometheus-community/prometheus --version 18.0.0
 ```
 
 ### To 17.0
@@ -111,7 +111,7 @@ Before you update, please scale down the `prometheus-server` deployment to `0` t
 # In 16.x
 kubectl scale deploy prometheus-server --replicas=0
 # Upgrade
-helm upgrade [RELEASE_NAME] promethus-community/prometheus --version 17.0.0
+helm upgrade [RELEASE_NAME] prometheus-community/prometheus --version 17.0.0
 ```
 
 ### To 16.0
@@ -124,7 +124,7 @@ Before you update, please scale down the `prometheus-server` deployment to `0` t
 # In 15.x
 kubectl scale deploy prometheus-server --replicas=0
 # Upgrade
-helm upgrade [RELEASE_NAME] promethus-community/prometheus --version 16.0.0
+helm upgrade [RELEASE_NAME] prometheus-community/prometheus --version 16.0.0
 ```
 
 ### To 15.0
