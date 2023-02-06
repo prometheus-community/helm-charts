@@ -11,12 +11,14 @@ This chart creates a [Consul Exporter](https://github.com/prometheus/consul_expo
 
 ## Get Repository Info
 
+<!-- textlint-disable terminology -->
 ```console
 helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
 helm repo update
 ```
 
 _See [helm repo](https://helm.sh/docs/helm/helm_repo/) for command documentation._
+<!-- textlint-enable -->
 
 ## Install Chart
 
