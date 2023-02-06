@@ -21,7 +21,7 @@ _See [helm repo](https://helm.sh/docs/helm/helm_repo/) for command documentation
 ## Install Chart
 
 ```console
-$ helm install [RELEASE_NAME] prometheus-community/prometheus-consul-exporter
+helm install [RELEASE_NAME] prometheus-community/prometheus-consul-exporter
 ```
 
 _See [configuration](#configuration) below._
@@ -31,7 +31,7 @@ _See [helm install](https://helm.sh/docs/helm/helm_install/) for command documen
 ## Uninstall Chart
 
 ```console
-$ helm uninstall [RELEASE_NAME]
+helm uninstall [RELEASE_NAME]
 ```
 
 This removes all the Kubernetes components associated with the chart and deletes the release.
@@ -41,7 +41,7 @@ _See [helm uninstall](https://helm.sh/docs/helm/helm_uninstall/) for command doc
 ## Upgrading Chart
 
 ```console
-$ helm upgrade [RELEASE_NAME] [CHART] --install
+helm upgrade [RELEASE_NAME] [CHART] --install
 ```
 
 _See [helm upgrade](https://helm.sh/docs/helm/helm_upgrade/) for command documentation._
@@ -55,7 +55,7 @@ Helm `apiVersion` has been increased to `v2` in version 0.6.0. As a result, Helm
 See [Customizing the Chart Before Installing](https://helm.sh/docs/intro/using_helm/#customizing-the-chart-before-installing). To see all configurable options with detailed comments, visit the chart's [values.yaml](./values.yaml), or run these configuration commands:
 
 ```console
-$ helm show values prometheus-community/prometheus-consul-exporter
+helm show values prometheus-community/prometheus-consul-exporter
 ```
 
 ### Consul Server Info
