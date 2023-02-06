@@ -46,9 +46,9 @@ helm upgrade [RELEASE_NAME] [CHART] --install
 
 _See [helm upgrade](https://helm.sh/docs/helm/helm_upgrade/) for command documentation._
 
-### From 0.5.x to 0.6.0
+### From 0.5.x to 1.0.0
 
-Helm `apiVersion` has been increased to `v2` in version 0.6.0. As a result, Helm v3 is required to install the chart. Please, see notes on [migration from Helm v2 to Helm v3](https://helm.sh/docs/topics/v2_v3_migration/).
+Helm `apiVersion` has been increased to `v2` in version 1.0.0. As a result, Helm v3 is required to install the chart. Please, see notes on [migration from Helm v2 to Helm v3](https://helm.sh/docs/topics/v2_v3_migration/).
 
 ## Configuration
 
