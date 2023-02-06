@@ -142,6 +142,9 @@ replacement_map = {
         'init': '{{- $targetNamespace := .Values.defaultRules.appNamespacesTarget }}'},
     'runbook_url: https://runbooks.prometheus-operator.dev/runbooks/': {
         'replacement': 'runbook_url: {{ .Values.defaultRules.runbookUrl }}/',
+        'init': ''},
+    '(controller,namespace)': {
+        'replacement': '(controller,namespace,cluster)',
         'init': ''}
 }
 
