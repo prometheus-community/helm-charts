@@ -36,7 +36,7 @@ helm uninstall [RELEASE_NAME]
 ```
 
 This removes all the Kubernetes components associated with the chart and deletes the release
-*including* resources of Kind `Prometheus`, `Alertmanager`, `ServiceMonitor`, etc.
+_including_ resources of Kind `Prometheus`, `Alertmanager`, `ServiceMonitor`, etc.
 
 _See [helm uninstall](https://helm.sh/docs/helm/helm_uninstall/) for command documentation._
 
