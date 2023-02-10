@@ -1,3 +1,4 @@
+{{- $stsNoHeadlessSvcTypes := list "LoadBalancer" "NodePort" -}}
 apiVersion: v1
 kind: Service
 metadata:
@@ -11,10 +12,11 @@ metadata:
     {{- toYaml . | nindent 4 }}
     {{- end }}
   name: {{ include "prometheus-pushgateway.fullname" . }}
+  namespace: {{ template "prometheus-pushgateway.namespace" . }}
 spec:
   {{- if .Values.service.clusterIP }}
   clusterIP: {{ .Values.service.clusterIP }}
-  {{ else if and .Values.runAsStatefulSet (ne .Values.service.type "LoadBalancer")}}
+  {{ else if and .Values.runAsStatefulSet (not (has .Values.service.type $stsNoHeadlessSvcTypes)) }}
   clusterIP: None # Headless service
   {{- end }}
   type: {{ .Values.service.type }}
