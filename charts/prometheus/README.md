@@ -67,7 +67,7 @@ _See [helm upgrade](https://helm.sh/docs/helm/helm_upgrade/) for command documen
 
 ### To 19.0
 
-Prometheus has been updated to version v2.41.0.
+Prometheus has been updated to version v2.40.5.
 
 Prometheus-pushgateway was updated to version 2.0.0 which adapted [Helm label and annotation best practices](https://helm.sh/docs/chart_best_practices/labels/).
 See the [upgrade docs of the prometheus-pushgateway chart](https://github.com/prometheus-community/helm-charts/tree/main/charts/prometheus-pushgateway#to-200) to see whats to do, before you upgrade Prometheus!
