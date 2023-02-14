@@ -53,6 +53,10 @@ This removes all the Kubernetes components associated with the chart and deletes
 
 _See [helm uninstall](https://helm.sh/docs/helm/helm_uninstall/) for command documentation._
 
+## Updating values.schema.json
+
+A [`values.schema.json`](https://helm.sh/docs/topics/charts/#schema-files) file has been added to validate chart values. When `values.yaml` file has a structure change (i.e. add a new field, change value type, etc.), modify `values.schema.json` file manually or run `helm schema-gen values.yaml > values.schema.json` to ensure the schema is aligned with the latest values. Refer to [helm plugin `helm-schema-gen`](https://github.com/karuppiah7890/helm-schema-gen) for plugin installation instructions.
+
 ## Upgrading Chart
 
 ```console
