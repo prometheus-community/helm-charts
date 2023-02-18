@@ -4,7 +4,7 @@ rbac:
 podSecurityPolicy:
   enabled: false
 
-imagePullSecrets:
+imagePullSecrets: []
 # - name: "image-pull-secret"
 
 ## Define serviceAccount names for components. Defaults to component's fully qualified name.
@@ -12,7 +12,7 @@ imagePullSecrets:
 serviceAccounts:
   server:
     create: true
-    name:
+    name: ""
     annotations: {}
 
 ## Monitors ConfigMap changes and POSTs to a URL
@@ -943,10 +943,15 @@ serverFiles:
             action: replace
             target_label: __metrics_path__
             regex: (.+)
-          - source_labels: [__address__, __meta_kubernetes_pod_annotation_prometheus_io_port]
+          - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_port, __meta_kubernetes_pod_ip]
             action: replace
-            regex: (.+?)(?::\d+)?;(\d+)
-            replacement: $1:$2
+            regex: (\d+);(([A-Fa-f0-9]{1,4}::?){1,7}[A-Fa-f0-9]{1,4})
+            replacement: '[$2]:$1'
+            target_label: __address__
+          - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_port, __meta_kubernetes_pod_ip]
+            action: replace
+            regex: (\d+);((([0-9]+?)(\.|$)){4})
+            replacement: $2:$1
             target_label: __address__
           - action: labelmap
             regex: __meta_kubernetes_pod_annotation_prometheus_io_param_(.+)
@@ -995,10 +1000,15 @@ serverFiles:
             action: replace
             target_label: __metrics_path__
             regex: (.+)
-          - source_labels: [__address__, __meta_kubernetes_pod_annotation_prometheus_io_port]
+          - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_port, __meta_kubernetes_pod_ip]
             action: replace
-            regex: (.+?)(?::\d+)?;(\d+)
-            replacement: $1:$2
+            regex: (\d+);(([A-Fa-f0-9]{1,4}::?){1,7}[A-Fa-f0-9]{1,4})
+            replacement: '[$2]:$1'
+            target_label: __address__
+          - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_port, __meta_kubernetes_pod_ip]
+            action: replace
+            regex: (\d+);((([0-9]+?)(\.|$)){4})
+            replacement: $2:$1
             target_label: __address__
           - action: labelmap
             regex: __meta_kubernetes_pod_annotation_prometheus_io_param_(.+)
@@ -1018,7 +1028,7 @@ serverFiles:
 # adds additional scrape configs to prometheus.yml
 # must be a string so you have to add a | after extraScrapeConfigs:
 # example adds prometheus-blackbox-exporter scrape config
-extraScrapeConfigs:
+extraScrapeConfigs: ""
   # - job_name: 'prometheus-blackbox-exporter'
   #   metrics_path: /probe
   #   params:
@@ -1036,7 +1046,7 @@ extraScrapeConfigs:
 
 # Adds option to add alert_relabel_configs to avoid duplicate alerts in alertmanager
 # useful in H/A prometheus with different external labels but the same alerts
-alertRelabelConfigs:
+alertRelabelConfigs: {}
   # alert_relabel_configs:
   # - source_labels: [dc]
   #   regex: (.+)\d+
@@ -1048,7 +1058,7 @@ networkPolicy:
   enabled: false
 
 # Force namespace of namespaced resources
-forceNamespace: null
+forceNamespace: ""
 
 # Extra manifests to deploy as an array
 extraManifests: []
