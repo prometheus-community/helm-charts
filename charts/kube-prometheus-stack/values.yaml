@@ -770,14 +770,37 @@ grafana:
 
   adminPassword: prom-operator
   
-  ## Grafana Persistence options for persistent data
+  ## Enable persistence using Persistent Volume Claims
+  ## ref: http://kubernetes.io/docs/user-guide/persistent-volumes/
   ##
-  # persistence:
-  #   type: pvc
-  #   enabled: true
-  #   accessModes:
-  #     - ReadWriteOnce
-  #   size: 10Gi
+  persistence:
+    type: pvc
+    enabled: false
+    # storageClassName: default
+    accessModes:
+      - ReadWriteOnce
+    size: 10Gi
+    # annotations: {}
+    finalizers:
+      - kubernetes.io/pvc-protection
+    # selectorLabels: {}
+    ## Sub-directory of the PV to mount. Can be templated.
+    # subPath: ""
+    ## Name of an existing PVC. Can be templated.
+    # existingClaim:
+    ## Extra labels to apply to a PVC.
+    extraPvcLabels: {}
+
+  ## If persistence is not enabled, this allows to mount the
+  ## local storage in-memory to improve performance
+  ##
+  inMemory:
+    enabled: false
+    ## The maximum usage on memory medium EmptyDir would be
+    ## the minimum value between the SizeLimit specified
+    ## here and the sum of memory limits of all containers in a pod
+    ##
+    # sizeLimit: 300Mi
 
   rbac:
     ## If true, Grafana PSPs will be created
