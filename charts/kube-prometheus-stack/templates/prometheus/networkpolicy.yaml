@@ -4,29 +4,29 @@ kind: NetworkPolicy
 metadata:
   labels:
     app: {{ template "kube-prometheus-stack.name" . }}-prometheus
-{{- include "kube-prometheus-stack.labels" . | indent 4 }}   
+    {{- include "kube-prometheus-stack.labels" . | nindent 4 }}
   name: {{ template "kube-prometheus-stack.fullname" . }}-prometheus
   namespace: {{ template "kube-prometheus-stack.namespace" . }}
 spec:
+  {{- if .Values.prometheus.networkPolicy.egress }}
+  ## Deny all egress by default
   egress:
-    {{- if .Values.prometheus.networkPolicy.egress }}
     {{- toYaml .Values.prometheus.networkPolicy.egress | nindent 4 }}
-    {{- else }}
-    ## Allows all by default
-    - {}
-    {{- end }}
+  {{- end }}
+  {{- if .Values.prometheus.networkPolicy.ingress }}
+  # Deny all ingress by default (prometheus scrapes itself using localhost)
   ingress:
-    {{- if .Values.prometheus.networkPolicy.ingress }}
     {{- toYaml .Values.prometheus.networkPolicy.ingress | nindent 4 }}
-    {{- else }}
-    - ports:
-      - port: {{ .Values.prometheus.prometheusSpec.portName }}
-    {{- end }}
+  {{- end }}
   policyTypes:
     - Egress
     - Ingress
   podSelector:
+    {{- if .Values.prometheus.networkPolicy.podSelector }}
+    {{- toYaml .Values.prometheus.networkPolicy.podSelector | nindent 4 }}
+    {{- else }}
     matchExpressions:
       - {key: app.kubernetes.io/name, operator: In, values: [prometheus]}
       - {key: prometheus, operator: In, values: [{{ template "kube-prometheus-stack.prometheus.crname" . }}]}
+    {{- end }}
 {{- end }}
