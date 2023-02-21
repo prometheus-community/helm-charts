@@ -8,8 +8,10 @@ metadata:
     {{- toYaml .Values.serviceMonitor.additionalLabels | nindent 4 }}
     {{- end }}
   name: {{ include "prometheus-pushgateway.fullname" .  }}
-  {{- with .Values.serviceMonitor.namespace }}
-  namespace: {{ . }}
+  {{- if .Values.serviceMonitor.namespace }}
+  namespace: {{ .Values.serviceMonitor.namespace }}
+  {{- else }}
+  namespace: {{ template "prometheus-pushgateway.namespace" . }}
   {{- end }}
 spec:
   endpoints:
@@ -34,7 +36,7 @@ spec:
     honorLabels: {{ .Values.serviceMonitor.honorLabels }}
     {{- with .Values.serviceMonitor.metricRelabelings }}
     metricRelabelings:
-      {{- tpl (toYaml . | nindent 6) . }}
+      {{- tpl (toYaml . | nindent 6) $ }}
     {{- end }}
     {{- with .Values.serviceMonitor.relabelings }}
     relabelings:
@@ -42,7 +44,7 @@ spec:
     {{- end }}
   namespaceSelector:
     matchNames:
-      - {{ .Release.Namespace }}
+      - {{ template "prometheus-pushgateway.namespace" . }}
   selector:
     matchLabels:
       {{- include "prometheus-pushgateway.selectorLabels" . | nindent 6 }}
