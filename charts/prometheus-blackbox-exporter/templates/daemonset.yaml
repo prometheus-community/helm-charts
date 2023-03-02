@@ -66,11 +66,40 @@ spec:
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           securityContext:
-            readOnlyRootFilesystem: {{ .Values.readOnlyRootFilesystem }}
-            runAsNonRoot: {{ .Values.runAsNonRoot  }}
-            {{- if .Values.runAsUser }}
-            runAsUser: {{ .Values.runAsUser }}
+          {{- range $k, $v := .Values.securityContext }}
+            {{- if eq $k "runAsUser" }}
+            {{- if $v }}
+            runAsUser: {{ $v }}
             {{- end }}
+            {{- else if eq $k "runAsGroup" }}
+            {{- if $v }}
+            runAsGroup: {{ $v }}
+            {{- end }}
+            {{- else if eq $k "capabilities" }}
+              {{- if $v }}
+            {{ $k }}:
+              {{- range $action, $caps := $v  }}
+              {{ $action }}:
+                {{- range $c := $caps }}
+                - {{ $c }}
+                {{- end }}
+              {{- end }}
+              {{- else }}
+            {{ $k }}: {}
+              {{- end }}
+            {{- else if or (eq $k "seLinuxOptions") (eq $k "seccompProfile") (eq $k "windowsOptions") }}
+              {{- if $v }}
+            {{ $k }}:
+              {{- range $key, $value := $v  }}
+              {{ $key }}: {{ $value }}
+              {{- end }}
+              {{- else }}
+            {{ $k }}: {}
+              {{- end }}
+            {{- else }}
+            {{ $k }}: {{ $v }}
+            {{- end }}
+          {{- end }}
           env:
           {{- range $key, $value := .Values.extraEnv }}
             - name: {{ $key }}
