@@ -266,25 +266,41 @@ def add_rules_per_rule_conditions(rules, group, indent=4):
 
 def add_custom_labels(rules, indent=4):
     """Add if wrapper for additional rules labels"""
+
     rule_condition = '{{- if .Values.defaultRules.additionalRuleLabels }}\n{{ toYaml .Values.defaultRules.additionalRuleLabels | indent 8 }}\n{{- end }}'
     rule_condition_len = len(rule_condition) + 1
 
-    separator = " " * indent + "- alert:.*"
+    separator = " " * indent + "- alert: (.*)"
     alerts_positions = re.finditer(separator,rules)
-    alert=-1
+    #alert=-1
+
+    offset_position=0;
+    alert_name="";
+    alert=-1;
+
     for alert_position in alerts_positions:
+
+        alert_rule_condition = f'{{{{- if .Values.perAlertAdditionalRuleLabels.{alert_name} }}}}\n{{{{ toYaml .Values.perAlertAdditionalRuleLables.{alert_name} | indent 8 }}}}\n{{{{- end }}}}'
+        alert_rule_condition_len = len(alert_rule_condition) + 1
+
+        alert_name=alert_position.group(1)
+
         # add rule_condition at the end of the alert block
         if alert >= 0 :
-            index = alert_position.start() + rule_condition_len * alert - 1
-            rules = rules[:index] + "\n" + rule_condition + rules[index:]
+            index = alert_position.start() + offset_position - 1
+            rules = rules[:index] + "\n" + rule_condition + "\n" + alert_rule_condition + rules[index:]
+            offset_position += rule_condition_len
+            offset_position += alert_rule_condition_len
         alert += 1
 
     # add rule_condition at the end of the last alert
+    alert_rule_condition = f'{{{{- if .Values.perAlertAdditionalRuleLabels.{alert_name} }}}}\n{{{{ toYaml .Values.perAlertAdditionalRuleLables.{alert_name} | indent 8 }}}}\n{{{{- end }}}}'
+    alert_rule_condition_len = len(alert_rule_condition) + 1
     if alert >= 0:
         index = len(rules) - 1
-        rules = rules[:index] + "\n" + rule_condition + rules[index:]
-    return rules
+        rules = rules[:index] + "\n" + rule_condition + "\n" + alert_rule_condition + rules[index:]
 
+    return rules
 
 def add_custom_annotations(rules, indent=4):
     """Add if wrapper for additional rules annotations"""
