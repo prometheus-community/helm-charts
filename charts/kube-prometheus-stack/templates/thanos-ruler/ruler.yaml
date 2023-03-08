@@ -2,11 +2,11 @@
 apiVersion: monitoring.coreos.com/v1
 kind: ThanosRuler
 metadata:
-  name: {{ template "kube-prometheus-stack.fullname" . }}-thanos-ruler
+  name: {{ template "kube-prometheus-stack.thanosRuler.name" . }}
   namespace: {{ template "kube-prometheus-stack.namespace" . }}
   labels:
-    app: {{ template "kube-prometheus-stack.name" . }}-thanos-ruler
-{{ include "kube-prometheus-stack.labels" . | indent 4 }}
+    app: {{ include "kube-prometheus-stack.thanosRuler.name" . }}
+{{- include "kube-prometheus-stack.labels" . | indent 4 -}}
 {{- if .Values.thanosRuler.annotations }}
   annotations:
 {{ toYaml .Values.thanosRuler.annotations | indent 4 }}
@@ -35,7 +35,7 @@ spec:
 {{- else if and .Values.thanosRuler.ingress.enabled .Values.thanosRuler.ingress.hosts }}
   externalPrefix: "http://{{ tpl (index .Values.thanosRuler.ingress.hosts 0) . }}{{ .Values.thanosRuler.thanosRulerSpec.routePrefix }}"
 {{- else }}
-  externalPrefix: http://{{ template "kube-prometheus-stack.fullname" . }}-thanosRuler.{{ template "kube-prometheus-stack.namespace" . }}:{{ .Values.thanosRuler.service.port }}
+  externalPrefix: http://{{ template "kube-prometheus-stack.thanosRuler.name" . }}.{{ template "kube-prometheus-stack.namespace" . }}:{{ .Values.thanosRuler.service.port }}
 {{- end }}
 {{- if .Values.thanosRuler.thanosRulerSpec.nodeSelector }}
   nodeSelector:
@@ -126,7 +126,7 @@ spec:
         labelSelector:
           matchExpressions:
             - {key: app.kubernetes.io/name, operator: In, values: [thanos-ruler]}
-            - {key: thanos-ruler, operator: In, values: [{{ template "kube-prometheus-stack.fullname" . }}-thanos-ruler]}
+            - {key: thanos-ruler, operator: In, values: [{{ template "kube-prometheus-stack.thanosRuler.name" . }}]}
 {{- else if eq .Values.thanosRuler.thanosRulerSpec.podAntiAffinity "soft" }}
     podAntiAffinity:
       preferredDuringSchedulingIgnoredDuringExecution:
@@ -136,7 +136,7 @@ spec:
           labelSelector:
             matchExpressions:
               - {key: app.kubernetes.io/name, operator: In, values: [thanos-ruler]}
-              - {key: thanos-ruler, operator: In, values: [{{ template "kube-prometheus-stack.fullname" . }}-thanos-ruler]}
+              - {key: thanos-ruler, operator: In, values: [{{ template "kube-prometheus-stack.thanosRuler.name" . }}]}
 {{- end }}
 {{- if .Values.thanosRuler.thanosRulerSpec.tolerations }}
   tolerations:
