@@ -4,34 +4,33 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ template "prometheus-postgres-exporter.fullname" . }}
+  name: {{ template "prometheus-pgbouncer-exporter.fullname" . }}
   labels:
-    app: {{ template "prometheus-postgres-exporter.name" . }}
-    chart: {{ template "prometheus-postgres-exporter.chart" . }}
+    app: {{ template "prometheus-pgbouncer-exporter.name" . }}
+    chart: {{ template "prometheus-pgbouncer-exporter.chart" . }}
     release: {{ .Release.Name }}
     heritage: {{ .Release.Service }}
 spec:
   replicas: {{ .Values.replicaCount }}
   selector:
     matchLabels:
-      app: {{ template "prometheus-postgres-exporter.name" . }}
+      app: {{ template "prometheus-pgbouncer-exporter.name" . }}
       release: {{ .Release.Name }}
   template:
     metadata:
       labels:
-        app: {{ template "prometheus-postgres-exporter.name" . }}
+        app: {{ template "prometheus-pgbouncer-exporter.name" . }}
         release: {{ .Release.Name }}
 {{- if .Values.podLabels }}
 {{ toYaml .Values.podLabels | trim | indent 8 }}
 {{- end }}
       annotations:
-        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+        kubectl.kubernetes.io/default-container: {{ .Chart.Name }}
 {{- if .Values.annotations }}
 {{ toYaml .Values.annotations | indent 8 }}
 {{- end }}
     spec:
-      automountServiceAccountToken: {{ .Values.automountServiceAccountToken }}
-      serviceAccountName: {{ template "prometheus-postgres-exporter.serviceAccountName" . }}
+      serviceAccountName: {{ template "prometheus-pgbouncer-exporter.serviceAccountName" . }}
       {{- with .Values.podSecurityContext }}
       securityContext:
         {{- toYaml . | nindent 8 }}
@@ -48,45 +47,16 @@ spec:
       {{- end }}
       containers:
         - name: {{ .Chart.Name }}
+          command: 
           args:
-          - "--extend.query-path=/etc/config.yaml"
           - "--web.listen-address=:{{ .Values.service.targetPort }}"
-          {{- if .Values.config.disableCollectorDatabase }}
-          - "--no-collector.database"
-          {{- end }}
-          {{- if .Values.config.disableCollectorBgwriter }}
-          - "--no-collector.bgwriter"
-          {{- end }}
-          {{- if .Values.config.disableDefaultMetrics }}
-          - "--disable-default-metrics"
-          {{- end }}
-          {{- if .Values.config.disableSettingsMetrics }}
-          - "--disable-settings-metrics"
-          {{- end }}
-          {{- if .Values.config.autoDiscoverDatabases }}
-          - "--auto-discover-databases"
-          {{- if .Values.config.excludeDatabases }}
-          - "--exclude-databases"
-          - {{ .Values.config.excludeDatabases | join "," }}
-          {{- end }}
-          {{- if .Values.config.includeDatabases }}
-          - "--include-databases"
-          - {{ .Values.config.includeDatabases | join "," }}
-          {{- end }}
-          {{- end }}
-          {{- if .Values.config.constantLabels }}
-          {{ $firstLabel := true -}}
-          - "--constantLabels={{- range $k, $v := .Values.config.constantLabels }}{{- if not $firstLabel -}},{{ end -}}{{ $firstLabel = false -}}{{ $k }}={{ $v }}{{- end }}"
-          {{- end }}
           {{- if .Values.config.logLevel }}
           - "--log.level={{ .Values.config.logLevel }}"
-          {{- end}}
+          {{- end }}
           {{- if .Values.config.logFormat }}
           - "--log.format={{ .Values.config.logFormat }}"
-          {{- end}}
-          {{-  if .Values.config.extraArgs  }}
-          {{- .Values.config.extraArgs | toYaml | nindent 10 }}
-          {{-  end  }}
+          {{- end }}
+          - "--pgBouncer.connectionString=user={{ .Values.config.datasource.user }} password='$(DATA_SOURCE_PASS)' host={{ .Values.config.datasource.host }} port={{ .Values.config.datasource.port }} dbname={{ .Values.config.datasource.database }} sslmode='{{ .Values.config.datasource.sslmode }}'"
           env:
           {{- if .Values.config.datasourceSecret }}
           - name: DATA_SOURCE_NAME
@@ -96,15 +66,9 @@ spec:
                 key: {{ .Values.config.datasourceSecret.key }}
           {{- else }}
           - name: DATA_SOURCE_URI
-            value: {{ template "prometheus-postgres-exporter.data_source_uri" . }}
+            value: {{ template "prometheus-pgbouncer-exporter.data_source_uri" . }}
           - name: DATA_SOURCE_USER
             value: {{ .Values.config.datasource.user }}
-          {{- if .Values.config.datasource.pgpassfile }}
-          - name: PGPASSFILE
-            value: {{ .Values.config.datasource.pgpassfile }}
-          - name: DATA_SOURCE_PASS
-            value: ""
-          {{- else }}
           {{- if .Values.config.datasource.passwordFile }}
           - name: DATA_SOURCE_PASS_FILE
             value: {{ .Values.config.datasource.passwordFile }}
@@ -116,9 +80,8 @@ spec:
                 name: {{ .Values.config.datasource.passwordSecret.name }}
                 key: {{ .Values.config.datasource.passwordSecret.key }}
           {{- else }}
-                name: {{ template "prometheus-postgres-exporter.fullname" . }}
+                name: {{ template "prometheus-pgbouncer-exporter.fullname" . }}
                 key: data_source_password
-          {{- end }}
           {{- end }}
           {{- end }}
           {{- end }}
@@ -133,12 +96,8 @@ spec:
           {{ toYaml . | nindent 10 }}
           {{- end }}
           {{- end }}
-          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
-          {{- with .Values.command }}
-          command:
-            {{- toYaml . | nindent 12 }}
-          {{- end }}
           ports:
             - name: http
               containerPort: {{ .Values.service.targetPort }}
@@ -162,9 +121,6 @@ spec:
             {{- toYaml . | nindent 12 }}
           {{- end }}
           volumeMounts:
-            - name: queries
-              mountPath: /etc/config.yaml
-              subPath: config.yaml
 {{- with .Values.extraVolumeMounts }}
 {{ toYaml . | indent 12 }}
 {{- end }}
@@ -188,14 +144,6 @@ spec:
 {{ toYaml . | indent 8 }}
     {{- end }}
       volumes:
-      - configMap:
-          defaultMode: 420
-          {{- if not .Values.config.externalQueries.enabled }}
-          name: {{ template "prometheus-postgres-exporter.fullname" . }}
-          {{- else }}
-          name: {{ .Values.config.externalQueries.configmap }}
-          {{- end }}
-        name: queries
 {{- with .Values.extraVolumes }}
 {{ toYaml . | indent 6 }}
 {{- end }}
