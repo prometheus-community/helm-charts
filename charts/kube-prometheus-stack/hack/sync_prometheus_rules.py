@@ -280,7 +280,7 @@ def add_custom_labels(rules, indent=4):
 
     for alert_position in alerts_positions:
 
-        alert_rule_condition = f'{{{{- if .Values.perAlertAdditionalRuleLabels.{alert_name} }}}}\n{{{{ toYaml .Values.perAlertAdditionalRuleLables.{alert_name} | indent 8 }}}}\n{{{{- end }}}}'
+        alert_rule_condition = f'{{{{- if .Values.perAlertAdditionalRuleLabels.{alert_name} }}}}\n{{{{ toYaml .Values.perAlertAdditionalRuleLabels.{alert_name} | indent 8 }}}}\n{{{{- end }}}}'
         alert_rule_condition_len = len(alert_rule_condition) + 1
 
         alert_name=alert_position.group(1)
@@ -294,7 +294,7 @@ def add_custom_labels(rules, indent=4):
         alert += 1
 
     # add rule_condition at the end of the last alert
-    alert_rule_condition = f'{{{{- if .Values.perAlertAdditionalRuleLabels.{alert_name} }}}}\n{{{{ toYaml .Values.perAlertAdditionalRuleLables.{alert_name} | indent 8 }}}}\n{{{{- end }}}}'
+    alert_rule_condition = f'{{{{- if .Values.perAlertAdditionalRuleLabels.{alert_name} }}}}\n{{{{ toYaml .Values.perAlertAdditionalRuleLabels.{alert_name} | indent 8 }}}}\n{{{{- end }}}}'
     alert_rule_condition_len = len(alert_rule_condition) + 1
     if alert >= 0:
         index = len(rules) - 1
