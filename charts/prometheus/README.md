@@ -53,6 +53,10 @@ This removes all the Kubernetes components associated with the chart and deletes
 
 _See [helm uninstall](https://helm.sh/docs/helm/helm_uninstall/) for command documentation._
 
+## Updating values.schema.json
+
+A [`values.schema.json`](https://helm.sh/docs/topics/charts/#schema-files) file has been added to validate chart values. When `values.yaml` file has a structure change (i.e. add a new field, change value type, etc.), modify `values.schema.json` file manually or run `helm schema-gen values.yaml > values.schema.json` to ensure the schema is aligned with the latest values. Refer to [helm plugin `helm-schema-gen`](https://github.com/karuppiah7890/helm-schema-gen) for plugin installation instructions.
+
 ## Upgrading Chart
 
 ```console
@@ -83,7 +87,7 @@ If Prometheus is used as deployment the updatestrategy has been changed to "Recr
 All files in `templates/server` directory has been moved to `templates` directory.
 
 ```bash
-helm upgrade [RELEASE_NAME] promethus-community/prometheus --version 19.0.0
+helm upgrade [RELEASE_NAME] prometheus-community/prometheus --version 19.0.0
 ```
 
 ### To 18.0
@@ -98,7 +102,7 @@ Before you update, please scale down the `prometheus-server` deployment to `0` t
 # In 17.x
 kubectl scale deploy prometheus-server --replicas=0
 # Upgrade
-helm upgrade [RELEASE_NAME] promethus-community/prometheus --version 18.0.0
+helm upgrade [RELEASE_NAME] prometheus-community/prometheus --version 18.0.0
 ```
 
 ### To 17.0
@@ -111,7 +115,7 @@ Before you update, please scale down the `prometheus-server` deployment to `0` t
 # In 16.x
 kubectl scale deploy prometheus-server --replicas=0
 # Upgrade
-helm upgrade [RELEASE_NAME] promethus-community/prometheus --version 17.0.0
+helm upgrade [RELEASE_NAME] prometheus-community/prometheus --version 17.0.0
 ```
 
 ### To 16.0
@@ -124,7 +128,7 @@ Before you update, please scale down the `prometheus-server` deployment to `0` t
 # In 15.x
 kubectl scale deploy prometheus-server --replicas=0
 # Upgrade
-helm upgrade [RELEASE_NAME] promethus-community/prometheus --version 16.0.0
+helm upgrade [RELEASE_NAME] prometheus-community/prometheus --version 16.0.0
 ```
 
 ### To 15.0
