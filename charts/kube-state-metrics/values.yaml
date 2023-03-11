@@ -1,8 +1,10 @@
 # Default values for kube-state-metrics.
 prometheusScrape: true
 image:
-  repository: registry.k8s.io/kube-state-metrics/kube-state-metrics
-  tag: v2.7.0
+  registry: registry.k8s.io
+  repository: kube-state-metrics/kube-state-metrics
+  # If unset use v + .Charts.appVersion
+  tag: ""
   sha: ""
   pullPolicy: IfNotPresent
 
@@ -22,6 +24,9 @@ global:
   #   - pullSecret1
   #   - pullSecret2
   imagePullSecrets: []
+  #
+  # Allow parent charts to override registry hostname
+  imageRegistry: ""
 
 # If set to true, this will deploy kube-state-metrics as a StatefulSet and the data
 # will be automatically sharded across <.Values.replicas> pods using the built-in
@@ -82,7 +87,8 @@ rbac:
 kubeRBACProxy:
   enabled: false
   image:
-    repository: quay.io/brancz/kube-rbac-proxy
+    registry: quay.io
+    repository: brancz/kube-rbac-proxy
     tag: v0.14.0
     sha: ""
     pullPolicy: IfNotPresent
@@ -176,6 +182,17 @@ podSecurityPolicy:
     # apparmor.security.beta.kubernetes.io/defaultProfileName: 'runtime/default'
 
   additionalVolumes: []
+
+## Configure network policy for kube-state-metrics
+networkPolicy:
+  enabled: false
+  # egress:
+  # - {}
+  # ingress:
+  # - {}
+  # podSelector:
+  #   matchLabels:
+  #     app.kubernetes.io/name: kube-state-metrics
 
 securityContext:
   enabled: true

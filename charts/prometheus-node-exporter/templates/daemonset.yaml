@@ -49,6 +49,9 @@ spec:
             - --path.sysfs=/host/sys
             {{- if .Values.hostRootFsMount.enabled }}
             - --path.rootfs=/host/root
+            {{- if semverCompare ">=1.4.0" (default .Chart.AppVersion .Values.image.tag) }}
+            - --path.udev.data=/host/root/run/udev/data
+            {{- end }}
             {{- end }}
             - --web.listen-address=[$(HOST_IP)]:{{ $servicePort }}
             {{- with .Values.extraArgs }}
@@ -182,9 +185,9 @@ spec:
               mountPath: /etc/kube-rbac-proxy-config
           imagePullPolicy: {{ .Values.kubeRBACProxy.image.pullPolicy }}
           {{- if .Values.kubeRBACProxy.image.sha }}
-          image: "{{ .Values.kubeRBACProxy.image.repository }}:{{ .Values.kubeRBACProxy.image.tag }}@sha256:{{ .Values.kubeRBACProxy.image.sha }}"
+          image: "{{ .Values.global.imageRegistry | default .Values.kubeRBACProxy.image.registry}}/{{ .Values.kubeRBACProxy.image.repository }}:{{ .Values.kubeRBACProxy.image.tag }}@sha256:{{ .Values.kubeRBACProxy.image.sha }}"
           {{- else }}
-          image: "{{ .Values.kubeRBACProxy.image.repository }}:{{ .Values.kubeRBACProxy.image.tag }}"
+          image: "{{ .Values.global.imageRegistry | default .Values.kubeRBACProxy.image.registry}}/{{ .Values.kubeRBACProxy.image.repository }}:{{ .Values.kubeRBACProxy.image.tag }}"
           {{- end }}
           ports:
             - containerPort: {{ .Values.service.port}}
