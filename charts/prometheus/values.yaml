@@ -16,7 +16,7 @@ serviceAccounts:
     annotations: {}
 
 ## Monitors ConfigMap changes and POSTs to a URL
-## Ref: https://github.com/jimmidyson/configmap-reload
+## Ref: https://github.com/prometheus-operator/prometheus-operator/tree/main/cmd/prometheus-config-reloader
 ##
 configmapReload:
   prometheus:
@@ -31,8 +31,8 @@ configmapReload:
     ## configmap-reload container image
     ##
     image:
-      repository: jimmidyson/configmap-reload
-      tag: v0.8.0
+      repository: quay.io/prometheus-operator/prometheus-config-reloader
+      tag: v0.63.0
       # When digest is set to a non-empty value, images will be pulled by digest (regardless of tag value).
       digest: ""
       pullPolicy: IfNotPresent
@@ -943,10 +943,15 @@ serverFiles:
             action: replace
             target_label: __metrics_path__
             regex: (.+)
-          - source_labels: [__address__, __meta_kubernetes_pod_annotation_prometheus_io_port]
+          - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_port, __meta_kubernetes_pod_ip]
             action: replace
-            regex: (.+?)(?::\d+)?;(\d+)
-            replacement: $1:$2
+            regex: (\d+);(([A-Fa-f0-9]{1,4}::?){1,7}[A-Fa-f0-9]{1,4})
+            replacement: '[$2]:$1'
+            target_label: __address__
+          - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_port, __meta_kubernetes_pod_ip]
+            action: replace
+            regex: (\d+);((([0-9]+?)(\.|$)){4})
+            replacement: $2:$1
             target_label: __address__
           - action: labelmap
             regex: __meta_kubernetes_pod_annotation_prometheus_io_param_(.+)
@@ -995,10 +1000,15 @@ serverFiles:
             action: replace
             target_label: __metrics_path__
             regex: (.+)
-          - source_labels: [__address__, __meta_kubernetes_pod_annotation_prometheus_io_port]
+          - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_port, __meta_kubernetes_pod_ip]
             action: replace
-            regex: (.+?)(?::\d+)?;(\d+)
-            replacement: $1:$2
+            regex: (\d+);(([A-Fa-f0-9]{1,4}::?){1,7}[A-Fa-f0-9]{1,4})
+            replacement: '[$2]:$1'
+            target_label: __address__
+          - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_port, __meta_kubernetes_pod_ip]
+            action: replace
+            regex: (\d+);((([0-9]+?)(\.|$)){4})
+            replacement: $2:$1
             target_label: __address__
           - action: labelmap
             regex: __meta_kubernetes_pod_annotation_prometheus_io_param_(.+)
