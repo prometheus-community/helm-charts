@@ -40,9 +40,6 @@ helm.sh/chart: {{ include "prometheus-statsd-exporter.chart" . }}
 app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
 {{- end }}
 app.kubernetes.io/managed-by: {{ .Release.Service }}
-{{- with .Values.podLabels }}
-{{ toYaml . }}
-{{- end }}
 {{- end }}
 
 {{/*
@@ -51,6 +48,9 @@ Selector labels
 {{- define "prometheus-statsd-exporter.selectorLabels" -}}
 app.kubernetes.io/name: {{ include "prometheus-statsd-exporter.name" . }}
 app.kubernetes.io/instance: {{ .Release.Name }}
+{{- with .Values.podLabels }}
+{{ toYaml . }}
+{{- end }}
 {{- end }}
 
 {{/*
