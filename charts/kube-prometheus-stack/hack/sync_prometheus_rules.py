@@ -145,6 +145,9 @@ replacement_map = {
         'init': ''},
     '(controller,namespace)': {
         'replacement': '(controller,namespace,cluster)',
+        'init': ''},
+    '(namespace,service)': {
+        'replacement': '(namespace,service,cluster)',
         'init': ''}
 }
 
@@ -264,10 +267,23 @@ def add_rules_per_rule_conditions(rules, group, indent=4):
     return rules
 
 
-def add_custom_labels(rules, indent=4):
+def add_custom_labels(rules, group, indent=4):
     """Add if wrapper for additional rules labels"""
+    value_path = condition_map.get(group['name'], '')
+
+    if value_path != '':
+        if value_path.count(".Values") > 1:
+            value_path = value_path.split(' ')[-1]
+
+        value_path = value_path.replace('Values.defaultRules.rules', 'Values.defaultRules.additionalGroupLabels').strip()
+
+        rule_group_condition = '\n{{- if %s }}\n{{ toYaml %s | indent 8 }}\n{{- end }}' % (value_path,value_path)
+    else:
+        rule_group_condition = ''
+
     rule_condition = '{{- if .Values.defaultRules.additionalRuleLabels }}\n{{ toYaml .Values.defaultRules.additionalRuleLabels | indent 8 }}\n{{- end }}'
     rule_condition_len = len(rule_condition) + 1
+    rule_group_condition_len = len(rule_group_condition)
 
     separator = " " * indent + "- alert:.*"
     alerts_positions = re.finditer(separator,rules)
@@ -275,23 +291,36 @@ def add_custom_labels(rules, indent=4):
     for alert_position in alerts_positions:
         # add rule_condition at the end of the alert block
         if alert >= 0 :
-            index = alert_position.start() + rule_condition_len * alert - 1
-            rules = rules[:index] + "\n" + rule_condition + rules[index:]
+            index = alert_position.start() + (rule_condition_len + rule_group_condition_len) * alert - 1
+            rules = rules[:index] + "\n" + rule_condition + rule_group_condition + rules[index:]
         alert += 1
 
     # add rule_condition at the end of the last alert
     if alert >= 0:
         index = len(rules) - 1
-        rules = rules[:index] + "\n" + rule_condition + rules[index:]
+        rules = rules[:index] + "\n" + rule_condition + rule_group_condition + rules[index:]
     return rules
 
 
-def add_custom_annotations(rules, indent=4):
+def add_custom_annotations(rules, group, indent=4):
     """Add if wrapper for additional rules annotations"""
+    value_path = condition_map.get(group['name'], '')
+
+    if value_path != '':
+        if value_path.count(".Values") > 1:
+            value_path = value_path.split(' ')[-1]
+
+        value_path = value_path.replace('Values.defaultRules.rules', 'Values.defaultRules.additionalGroupAnnotations').strip()
+
+        rule_group_condition = '\n{{- if %s }}\n{{ toYaml %s | indent 8 }}\n{{- end }}' % (value_path,value_path)
+    else:
+        rule_group_condition = ''
+
     rule_condition = '{{- if .Values.defaultRules.additionalRuleAnnotations }}\n{{ toYaml .Values.defaultRules.additionalRuleAnnotations | indent 8 }}\n{{- end }}'
     annotations = "      annotations:"
     annotations_len = len(annotations) + 1
     rule_condition_len = len(rule_condition) + 1
+    rule_group_condition_len = len(rule_group_condition)
 
     separator = " " * indent + "- alert:.*"
     alerts_positions = re.finditer(separator,rules)
@@ -299,8 +328,8 @@ def add_custom_annotations(rules, indent=4):
 
     for alert_position in alerts_positions:
         # Add rule_condition after 'annotations:' statement
-        index = alert_position.end() + annotations_len + rule_condition_len * alert
-        rules = rules[:index] + "\n" + rule_condition + rules[index:]
+        index = alert_position.end() + annotations_len + (rule_condition_len + rule_group_condition_len) * alert
+        rules = rules[:index] + "\n" + rule_condition + rule_group_condition + rules[index:]
         alert += 1
 
     return rules
@@ -320,8 +349,8 @@ def write_group_to_file(group, url, destination, min_kubernetes, max_kubernetes)
             if replacement_map[line]['init']:
                 init_line += '\n' + replacement_map[line]['init']
     # append per-alert rules
-    rules = add_custom_labels(rules)
-    rules = add_custom_annotations(rules)
+    rules = add_custom_labels(rules, group)
+    rules = add_custom_annotations(rules, group)
     rules = add_rules_conditions_from_condition_map(rules)
     rules = add_rules_per_rule_conditions(rules, group)
     # initialize header

@@ -30,18 +30,24 @@ spec:
 {{- if .Values.defaultRules.additionalRuleAnnotations }}
 {{ toYaml .Values.defaultRules.additionalRuleAnnotations | indent 8 }}
 {{- end }}
+{{- if .Values.defaultRules.additionalGroupAnnotations.kubernetesResources }}
+{{ toYaml .Values.defaultRules.additionalGroupAnnotations.kubernetesResources | indent 8 }}
+{{- end }}
         description: Cluster has overcommitted CPU resource requests for Pods by {{`{{`}} $value {{`}}`}} CPU shares and cannot tolerate node failure.
         runbook_url: {{ .Values.defaultRules.runbookUrl }}/kubernetes/kubecpuovercommit
         summary: Cluster has overcommitted CPU resource requests.
       expr: |-
-        sum(namespace_cpu:kube_pod_container_resource_requests:sum{}) - (sum(kube_node_status_allocatable{resource="cpu"}) - max(kube_node_status_allocatable{resource="cpu"})) > 0
+        sum(namespace_cpu:kube_pod_container_resource_requests:sum{}) - (sum(kube_node_status_allocatable{resource="cpu", job="kube-state-metrics"}) - max(kube_node_status_allocatable{resource="cpu", job="kube-state-metrics"})) > 0
         and
-        (sum(kube_node_status_allocatable{resource="cpu"}) - max(kube_node_status_allocatable{resource="cpu"})) > 0
+        (sum(kube_node_status_allocatable{resource="cpu", job="kube-state-metrics"}) - max(kube_node_status_allocatable{resource="cpu", job="kube-state-metrics"})) > 0
       for: 10m
       labels:
         severity: warning
 {{- if .Values.defaultRules.additionalRuleLabels }}
 {{ toYaml .Values.defaultRules.additionalRuleLabels | indent 8 }}
+{{- end }}
+{{- if .Values.defaultRules.additionalGroupLabels.kubernetesResources }}
+{{ toYaml .Values.defaultRules.additionalGroupLabels.kubernetesResources | indent 8 }}
 {{- end }}
 {{- end }}
 {{- if not (.Values.defaultRules.disabled.KubeMemoryOvercommit | default false) }}
@@ -50,18 +56,24 @@ spec:
 {{- if .Values.defaultRules.additionalRuleAnnotations }}
 {{ toYaml .Values.defaultRules.additionalRuleAnnotations | indent 8 }}
 {{- end }}
+{{- if .Values.defaultRules.additionalGroupAnnotations.kubernetesResources }}
+{{ toYaml .Values.defaultRules.additionalGroupAnnotations.kubernetesResources | indent 8 }}
+{{- end }}
         description: Cluster has overcommitted memory resource requests for Pods by {{`{{`}} $value | humanize {{`}}`}} bytes and cannot tolerate node failure.
         runbook_url: {{ .Values.defaultRules.runbookUrl }}/kubernetes/kubememoryovercommit
         summary: Cluster has overcommitted memory resource requests.
       expr: |-
-        sum(namespace_memory:kube_pod_container_resource_requests:sum{}) - (sum(kube_node_status_allocatable{resource="memory"}) - max(kube_node_status_allocatable{resource="memory"})) > 0
+        sum(namespace_memory:kube_pod_container_resource_requests:sum{}) - (sum(kube_node_status_allocatable{resource="memory", job="kube-state-metrics"}) - max(kube_node_status_allocatable{resource="memory", job="kube-state-metrics"})) > 0
         and
-        (sum(kube_node_status_allocatable{resource="memory"}) - max(kube_node_status_allocatable{resource="memory"})) > 0
+        (sum(kube_node_status_allocatable{resource="memory", job="kube-state-metrics"}) - max(kube_node_status_allocatable{resource="memory", job="kube-state-metrics"})) > 0
       for: 10m
       labels:
         severity: warning
 {{- if .Values.defaultRules.additionalRuleLabels }}
 {{ toYaml .Values.defaultRules.additionalRuleLabels | indent 8 }}
+{{- end }}
+{{- if .Values.defaultRules.additionalGroupLabels.kubernetesResources }}
+{{ toYaml .Values.defaultRules.additionalGroupLabels.kubernetesResources | indent 8 }}
 {{- end }}
 {{- end }}
 {{- if not (.Values.defaultRules.disabled.KubeCPUQuotaOvercommit | default false) }}
@@ -69,6 +81,9 @@ spec:
       annotations:
 {{- if .Values.defaultRules.additionalRuleAnnotations }}
 {{ toYaml .Values.defaultRules.additionalRuleAnnotations | indent 8 }}
+{{- end }}
+{{- if .Values.defaultRules.additionalGroupAnnotations.kubernetesResources }}
+{{ toYaml .Values.defaultRules.additionalGroupAnnotations.kubernetesResources | indent 8 }}
 {{- end }}
         description: Cluster has overcommitted CPU resource requests for Namespaces.
         runbook_url: {{ .Values.defaultRules.runbookUrl }}/kubernetes/kubecpuquotaovercommit
@@ -84,12 +99,18 @@ spec:
 {{- if .Values.defaultRules.additionalRuleLabels }}
 {{ toYaml .Values.defaultRules.additionalRuleLabels | indent 8 }}
 {{- end }}
+{{- if .Values.defaultRules.additionalGroupLabels.kubernetesResources }}
+{{ toYaml .Values.defaultRules.additionalGroupLabels.kubernetesResources | indent 8 }}
+{{- end }}
 {{- end }}
 {{- if not (.Values.defaultRules.disabled.KubeMemoryQuotaOvercommit | default false) }}
     - alert: KubeMemoryQuotaOvercommit
       annotations:
 {{- if .Values.defaultRules.additionalRuleAnnotations }}
 {{ toYaml .Values.defaultRules.additionalRuleAnnotations | indent 8 }}
+{{- end }}
+{{- if .Values.defaultRules.additionalGroupAnnotations.kubernetesResources }}
+{{ toYaml .Values.defaultRules.additionalGroupAnnotations.kubernetesResources | indent 8 }}
 {{- end }}
         description: Cluster has overcommitted memory resource requests for Namespaces.
         runbook_url: {{ .Values.defaultRules.runbookUrl }}/kubernetes/kubememoryquotaovercommit
@@ -105,12 +126,18 @@ spec:
 {{- if .Values.defaultRules.additionalRuleLabels }}
 {{ toYaml .Values.defaultRules.additionalRuleLabels | indent 8 }}
 {{- end }}
+{{- if .Values.defaultRules.additionalGroupLabels.kubernetesResources }}
+{{ toYaml .Values.defaultRules.additionalGroupLabels.kubernetesResources | indent 8 }}
+{{- end }}
 {{- end }}
 {{- if not (.Values.defaultRules.disabled.KubeQuotaAlmostFull | default false) }}
     - alert: KubeQuotaAlmostFull
       annotations:
 {{- if .Values.defaultRules.additionalRuleAnnotations }}
 {{ toYaml .Values.defaultRules.additionalRuleAnnotations | indent 8 }}
+{{- end }}
+{{- if .Values.defaultRules.additionalGroupAnnotations.kubernetesResources }}
+{{ toYaml .Values.defaultRules.additionalGroupAnnotations.kubernetesResources | indent 8 }}
 {{- end }}
         description: Namespace {{`{{`}} $labels.namespace {{`}}`}} is using {{`{{`}} $value | humanizePercentage {{`}}`}} of its {{`{{`}} $labels.resource {{`}}`}} quota.
         runbook_url: {{ .Values.defaultRules.runbookUrl }}/kubernetes/kubequotaalmostfull
@@ -126,12 +153,18 @@ spec:
 {{- if .Values.defaultRules.additionalRuleLabels }}
 {{ toYaml .Values.defaultRules.additionalRuleLabels | indent 8 }}
 {{- end }}
+{{- if .Values.defaultRules.additionalGroupLabels.kubernetesResources }}
+{{ toYaml .Values.defaultRules.additionalGroupLabels.kubernetesResources | indent 8 }}
+{{- end }}
 {{- end }}
 {{- if not (.Values.defaultRules.disabled.KubeQuotaFullyUsed | default false) }}
     - alert: KubeQuotaFullyUsed
       annotations:
 {{- if .Values.defaultRules.additionalRuleAnnotations }}
 {{ toYaml .Values.defaultRules.additionalRuleAnnotations | indent 8 }}
+{{- end }}
+{{- if .Values.defaultRules.additionalGroupAnnotations.kubernetesResources }}
+{{ toYaml .Values.defaultRules.additionalGroupAnnotations.kubernetesResources | indent 8 }}
 {{- end }}
         description: Namespace {{`{{`}} $labels.namespace {{`}}`}} is using {{`{{`}} $value | humanizePercentage {{`}}`}} of its {{`{{`}} $labels.resource {{`}}`}} quota.
         runbook_url: {{ .Values.defaultRules.runbookUrl }}/kubernetes/kubequotafullyused
@@ -147,12 +180,18 @@ spec:
 {{- if .Values.defaultRules.additionalRuleLabels }}
 {{ toYaml .Values.defaultRules.additionalRuleLabels | indent 8 }}
 {{- end }}
+{{- if .Values.defaultRules.additionalGroupLabels.kubernetesResources }}
+{{ toYaml .Values.defaultRules.additionalGroupLabels.kubernetesResources | indent 8 }}
+{{- end }}
 {{- end }}
 {{- if not (.Values.defaultRules.disabled.KubeQuotaExceeded | default false) }}
     - alert: KubeQuotaExceeded
       annotations:
 {{- if .Values.defaultRules.additionalRuleAnnotations }}
 {{ toYaml .Values.defaultRules.additionalRuleAnnotations | indent 8 }}
+{{- end }}
+{{- if .Values.defaultRules.additionalGroupAnnotations.kubernetesResources }}
+{{ toYaml .Values.defaultRules.additionalGroupAnnotations.kubernetesResources | indent 8 }}
 {{- end }}
         description: Namespace {{`{{`}} $labels.namespace {{`}}`}} is using {{`{{`}} $value | humanizePercentage {{`}}`}} of its {{`{{`}} $labels.resource {{`}}`}} quota.
         runbook_url: {{ .Values.defaultRules.runbookUrl }}/kubernetes/kubequotaexceeded
@@ -168,12 +207,18 @@ spec:
 {{- if .Values.defaultRules.additionalRuleLabels }}
 {{ toYaml .Values.defaultRules.additionalRuleLabels | indent 8 }}
 {{- end }}
+{{- if .Values.defaultRules.additionalGroupLabels.kubernetesResources }}
+{{ toYaml .Values.defaultRules.additionalGroupLabels.kubernetesResources | indent 8 }}
+{{- end }}
 {{- end }}
 {{- if not (.Values.defaultRules.disabled.CPUThrottlingHigh | default false) }}
     - alert: CPUThrottlingHigh
       annotations:
 {{- if .Values.defaultRules.additionalRuleAnnotations }}
 {{ toYaml .Values.defaultRules.additionalRuleAnnotations | indent 8 }}
+{{- end }}
+{{- if .Values.defaultRules.additionalGroupAnnotations.kubernetesResources }}
+{{ toYaml .Values.defaultRules.additionalGroupAnnotations.kubernetesResources | indent 8 }}
 {{- end }}
         description: '{{`{{`}} $value | humanizePercentage {{`}}`}} throttling of CPU in namespace {{`{{`}} $labels.namespace {{`}}`}} for container {{`{{`}} $labels.container {{`}}`}} in pod {{`{{`}} $labels.pod {{`}}`}}.'
         runbook_url: {{ .Values.defaultRules.runbookUrl }}/kubernetes/cputhrottlinghigh
@@ -188,6 +233,9 @@ spec:
         severity: info
 {{- if .Values.defaultRules.additionalRuleLabels }}
 {{ toYaml .Values.defaultRules.additionalRuleLabels | indent 8 }}
+{{- end }}
+{{- if .Values.defaultRules.additionalGroupLabels.kubernetesResources }}
+{{ toYaml .Values.defaultRules.additionalGroupLabels.kubernetesResources | indent 8 }}
 {{- end }}
 {{- end }}
 {{- end }}
