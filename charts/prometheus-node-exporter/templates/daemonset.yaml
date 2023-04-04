@@ -39,8 +39,10 @@ spec:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       serviceAccountName: {{ include "prometheus-node-exporter.serviceAccountName" . }}
+      {{- with .Values.nodeselector }}
       nodeSelector:
-        kubernetes.io/os: {{ .Values.nodeselector.os }}
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
       containers:
         {{- $servicePort := ternary 8100 .Values.service.port .Values.kubeRBACProxy.enabled }}
         - name: node-exporter
