@@ -5,22 +5,22 @@ metadata:
   name: {{ template "prometheus-smartctl-exporter.fullname" . }}
   labels:
     {{- include "prometheus-smartctl-exporter.labels" . | nindent 4 }}
-{{- if ne (len .Values.serviceMonitor.extraLabels) 0 }}
-{{ toYaml .Values.serviceMonitor.extraLabels | indent 4 }}
-{{- end }}
+    {{- if ne (len .Values.serviceMonitor.extraLabels) 0 }}
+    {{ toYaml .Values.serviceMonitor.extraLabels | indent 4 }}
+    {{- end }}
 {{- if hasKey .Values.serviceMonitor "namespace" }}
   namespace: {{ .Values.serviceMonitor.namespace }}
 {{- end }}
 spec:
   endpoints:
-  - interval: 60s
-    path: /metrics
-    port: http
-    scheme: http
-    scrapeTimeout: 30s
+    - interval: {{ .Values.serviceMonitor.interval }}
+      path: /metrics
+      port: http
+      scheme: http
+      scrapeTimeout: {{ .Values.serviceMonitor.scrapeTimeout }}
   namespaceSelector:
     matchNames:
-    - {{ .Release.Namespace }}
+      - {{ .Release.Namespace }}
   selector:
     matchLabels:
       {{- include "prometheus-smartctl-exporter.labels" . | nindent 6 }}
