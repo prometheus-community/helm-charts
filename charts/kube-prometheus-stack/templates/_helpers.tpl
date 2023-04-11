@@ -69,7 +69,7 @@ The longest name that gets created adds and extra 37 characters, so truncation s
 {{- end }}
 
 {{/* Generate basic labels */}}
-{{- define "kube-prometheus-stack.labels" }}
+{{- define "kube-prometheus-stack.labels" -}}
 app.kubernetes.io/managed-by: {{ .Release.Service }}
 app.kubernetes.io/instance: {{ .Release.Name }}
 app.kubernetes.io/version: "{{ replace "+" "_" .Chart.Version }}"
