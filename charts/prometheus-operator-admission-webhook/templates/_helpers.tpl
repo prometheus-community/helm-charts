@@ -84,17 +84,6 @@ Define overriding namespace
 {{- end -}}
 
 {{/*
-Define Pdb apiVersion
-*/}}
-{{- define "pdb.apiVersion" -}}
-{{- if .Capabilities.APIVersions.Has "policy/v1/PodDisruptionBudget" }}
-{{- printf "policy/v1" }}
-{{- else }}
-{{- printf "policy/v1beta1" }}
-{{- end -}}
-{{- end -}}
-
-{{/*
 Define image tag by attaching "v" to the application version
 preferring to keep the application version according to its release
 */}}
