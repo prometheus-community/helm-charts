@@ -1,0 +1,136 @@
+{{- $registry := .Values.image.registry }}
+{{- $repository := .Values.image.repository }}
+{{- $digest := .Values.image.digest }}
+{{- $imageTag := include "prometheus-operator-admission-webhook.imageTag" . }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  {{- with .Values.deployment.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  labels:
+    {{- include "prometheus-operator-admission-webhook.labels" . | nindent 4 }}
+    {{- with .Values.deployment.labels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+  name: {{ include "prometheus-operator-admission-webhook.fullname" . }}
+  namespace: {{ include "prometheus-operator-admission-webhook.namespace" . }}
+spec:
+  replicas: {{ default 1 .Values.replicas }}
+  selector:
+    matchLabels:
+      {{- include "prometheus-operator-admission-webhook.selectorLabels" . | nindent 6 }}
+  {{- with .Values.updateStrategy }}
+  strategy:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  template:
+    metadata:
+      {{- with .Values.pod.annotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "prometheus-operator-admission-webhook.labels" . | nindent 8 }}
+        {{- with .Values.pod.labels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      automountServiceAccountToken: {{ .Values.automountServiceAccountToken }}
+      {{- if .Values.image.pullSecrets }}
+      imagePullSecrets:
+        {{- range .Values.image.pullSecrets }}
+        - name: {{ . }}
+        {{- end }}
+      {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.priorityClassName }}
+      priorityClassName: {{ . }}
+      {{- end }}
+      restartPolicy: {{ .Values.restartPolicy }}
+      serviceAccountName: {{ include "prometheus-operator-admission-webhook.serviceAccountName" . }}
+      {{- with .Values.securityContext }}
+      securityContext:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 6 }}
+      {{- end }}
+      {{- with .Values.initContainers }}
+      initContainers:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        {{- with .Values.extraContainers }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+        - name: {{ .Chart.Name }}
+          args:
+            - --web.enable-tls=true
+            {{- if .Values.tlsSecret }}
+            - --web.cert-file=/etc/tls/private/{{ default "tls.crt" .Values.tlsSecret.certItem }}
+            - --web.key-file=/etc/tls/private/{{ default "tls.key" .Values.tlsSecret.keyItem }}
+            {{- else }}
+            - --web.cert-file=/etc/tls/private/tls.crt
+            - --web.key-file=/etc/tls/private/tls.key
+            {{- end }}
+            - --web.listen-address=:{{ default 10250 .Values.containerPort }}
+            - --web.tls-min-version={{ default "VersionTLS13" .Values.tlsMinVersion }}
+            {{- with .Values.extraArgs }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+          {{- with .Values.env }}
+          env:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- if .Values.image.digest }}
+          image: "{{ $registry }}/{{ $repository }}@sha256:{{ $digest }}"
+          {{- else }}
+          image: "{{ $registry }}/{{ $repository }}:{{ $imageTag }}"
+          {{- end }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          {{- with .Values.livenessProbe }}
+          livenessProbe:
+            {{- toYaml . | trim | nindent 12 }}
+          {{- end }}
+          ports:
+            - containerPort: {{ default 10250 .Values.containerPort }}
+              name: https
+          {{- with .Values.containerSecurityContext }}
+          securityContext:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.readinessProbe }}
+          readinessProbe:
+            {{- toYaml . | trim | nindent 12 }}
+          {{- end }}
+          {{- with .Values.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          terminationMessagePolicy: FallbackToLogsOnError
+          volumeMounts:
+            - name: tls-certificates
+              mountPath: /etc/tls/private
+              readOnly: true
+      volumes:
+        - name: tls-certificates
+          secret:
+            {{- if .Values.tlsSecret }}
+            secretName: {{ .Values.tlsSecret.name | quote }}
+            {{- else if .Values.certManager.enabled }}
+            secretName: {{ include "prometheus-operator-admission-webhook.fullname" . }}-cert
+            {{- else }}
+            secretName: {{ include "prometheus-operator-admission-webhook.fullname" . }}
+            {{- end }}
+            defaultMode: 420

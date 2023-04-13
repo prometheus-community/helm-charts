@@ -1,0 +1,37 @@
+{{- if and .Values.jobs.enabled .Values.rbac.create }}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name:  {{ include "prometheus-operator-admission-webhook.fullname" . }}-aux
+  namespace: {{ include "prometheus-operator-admission-webhook.namespace" . }}
+  annotations:
+    "helm.sh/hook": pre-install,pre-upgrade,post-install,post-upgrade
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+    {{- with .Values.jobs.annotations }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+  labels:
+    app: {{ include "prometheus-operator-admission-webhook.fullname" . }}-aux
+    {{- include "prometheus-operator-admission-webhook.labels" . | nindent 4 }}
+    {{- with .Values.jobs.labels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+rules:
+  - apiGroups:
+      - ""
+    resources:
+      - secrets
+    verbs:
+      - get
+      - create
+{{- if and .Values.rbac.pspEnabled (.Capabilities.APIVersions.Has "policy/v1beta1/PodSecurityPolicy") }}
+  - apiGroups:
+      - policy
+    resources:
+      - podsecuritypolicies
+    resourceNames:
+      - {{ include "prometheus-operator-admission-webhook.fullname" . }}-aux
+    verbs:
+      - use
+{{- end }}
+{{- end }}

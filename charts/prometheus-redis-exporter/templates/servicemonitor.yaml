@@ -36,14 +36,17 @@ spec:
 {{ toYaml $.Values.serviceMonitor.relabelings | indent 4 }}
 {{- end }}
     metricRelabelings:
-      - sourceLabels: [instance]
+      - action: replace
+        sourceLabels: [instance]
         targetLabel: instance
         replacement: {{ .url }}
-      - sourceLabels: [target]
+      - action: replace
+        sourceLabels: [target]
         targetLabel: target
         replacement: {{ .name }}
         {{- range $targetLabel, $replacement := .additionalMetricsRelabels | default $.Values.serviceMonitor.additionalMetricsRelabels }}
-      - targetLabel: {{ $targetLabel | quote }}
+      - action: replace
+        targetLabel: {{ $targetLabel | quote }}
         replacement: {{ $replacement | quote }}
         {{- end }}
 {{- if concat (.additionalRelabeling | default list) $.Values.serviceMonitor.additionalRelabeling }}
