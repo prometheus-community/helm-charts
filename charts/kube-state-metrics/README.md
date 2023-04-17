@@ -40,12 +40,9 @@ helm upgrade [RELEASE_NAME] prometheus-community/kube-state-metrics [flags]
 
 _See [helm upgrade](https://helm.sh/docs/helm/helm_upgrade/) for command documentation._
 
-### Migrating from stable/kube-state-metrics and kubernetes/kube-state-metrics
+## From 5.x to 6.x
 
-You can upgrade in-place:
-
-1. [get repository info](#get-repository-info)
-1. [upgrade](#upgrading-chart) your existing release name using the new chart repository
+This version renames `image.sha` to `image.digest` and `kubeRBACProxy.image.sha` to `kubeRBACProxy.image.digest`.
 
 ## Upgrading to v3.0.0
 
@@ -56,6 +53,13 @@ The upgraded chart now the following changes:
 * Dropped support for helm v2 (helm v3 or later is required)
 * collectors key was renamed to resources
 * namespace key was renamed to namespaces
+
+### Migrating from stable/kube-state-metrics and kubernetes/kube-state-metrics
+
+You can upgrade in-place:
+
+1. [get repository info](#get-repository-info)
+1. [upgrade](#upgrading-chart) your existing release name using the new chart repository
 
 ## Configuration
 
