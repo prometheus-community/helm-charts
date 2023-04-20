@@ -1,0 +1,217 @@
+# Default values for prometheus-pgbouncer-exporter.
+
+replicaCount: 1
+
+image:
+  repository: quay.io/prometheuscommunity/pgbouncer-exporter
+  tag: latest
+  pullPolicy: IfNotPresent
+
+  ## Optionally specify an array of imagePullSecrets.
+  ## Secrets must be manually created in the namespace.
+  ## ref: https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/
+  ##
+  # pullSecrets:
+  #   - myRegistrKeySecretName
+
+service:
+  type: ClusterIP
+  port: 80
+  targetPort: 9127
+  name: http
+  labels: {}
+  annotations: {}
+
+serviceMonitor:
+  # When set true then use a ServiceMonitor to configure scraping
+  enabled: false
+  # Set the namespace the ServiceMonitor should be deployed
+  # namespace: monitoring
+  # Set how frequently Prometheus should scrape
+  # interval: 30s
+  # Set path to cloudwatch-exporter telemtery-path
+  # telemetryPath: /metrics
+  # Set labels for the ServiceMonitor, use this to define your scrape label for Prometheus Operator
+  # labels:
+  # Set timeout for scrape
+  # timeout: 10s
+  # Set of labels to transfer from the Kubernetes Service onto the target
+  # targetLabels: []
+  # MetricRelabelConfigs to apply to samples before ingestion
+  # metricRelabelings: []
+  # Set relabel_configs as per https://prometheus.io/docs/prometheus/latest/configuration/configuration/#relabel_config
+  # relabelings: []
+
+prometheusRule:
+  enabled: false
+  additionalLabels: {}
+  namespace: ""
+  rules: []
+    ## These are just examples rules, please adapt them to your needs.
+    ## Make sure to constraint the rules to the current prometheus-pgbouncer-exporter service.
+    # - alert: HugeReplicationLag
+    #   expr: pg_replication_lag{service="{{ template "prometheus-pgbouncer-exporter.fullname" . }}"} / 3600 > 1
+    #   for: 1m
+    #   labels:
+    #     severity: critical
+    #   annotations:
+    #     description: replication for {{ template "prometheus-pgbouncer-exporter.fullname" . }} PostgreSQL is lagging by {{ "{{ $value }}" }} hour(s).
+    #     summary: PostgreSQL replication is lagging by {{ "{{ $value }}" }} hour(s).
+
+resources: {}
+  # We usually recommend not to specify default resources and to leave this as a conscious
+  # choice for the user. This also increases chances charts run on environments with little
+  # resources, such as Minikube. If you do want to specify resources, uncomment the following
+  # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+  # limits:
+  #   cpu: 100m
+  #    memory: 128Mi
+  # requests:
+  #   cpu: 100m
+  #   memory: 128Mi
+
+rbac:
+  # Specifies whether RBAC resources should be created
+  create: true
+
+serviceAccount:
+  # Specifies whether a ServiceAccount should be created
+  create: true
+  # The name of the ServiceAccount to use.
+  # If not set and create is true, a name is generated using the fullname template
+  name:
+  # Add annotations to the ServiceAccount, useful for EKS IAM Roles for Service Accounts or Google Workload Identity.
+  annotations: {}
+
+# Add a default ingress to allow namespace access to service.targetPort
+# Helpful if other NetworkPolicies are configured in the namespace
+networkPolicy:
+  # Specifies whether a NetworkPolicy should be created
+  enabled: false
+  # Set labels for the NetworkPolicy
+  labels: {}
+
+# The securityContext of the pod.
+# See https://kubernetes.io/docs/concepts/policy/security-context/ for more.
+podSecurityContext:
+  runAsUser: 1001
+  runAsGroup: 1001
+  runAsNonRoot: true
+  seccompProfile:
+    type: RuntimeDefault
+
+# The securityContext of the container.
+# See https://kubernetes.io/docs/concepts/policy/security-context/ for more.
+securityContext:
+  runAsUser: 1001
+  runAsGroup: 1001
+  readOnlyRootFilesystem: true
+  runAsNonRoot: true
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop: ["ALL"]
+  seccompProfile:
+    type: RuntimeDefault
+
+hostAliases: []
+  # Set Host Aliases as per https://kubernetes.io/docs/tasks/network/customize-hosts-file-for-pods/
+  # - ip: "127.0.0.1"
+  #   hostnames:
+  #   - "foo.local"
+  #   - "bar.local"
+
+config:
+  # Specify logLevel as debug, info, warn, error
+  datasource:
+    # Specify one of both datasource or datasourceSecret
+    host:
+    user: postgres
+    # Only one of password, passwordFile, passwordSecret and pgpassfile can be specified
+    password:
+    # Specify passwordFile if DB password is stored in a file.
+    # For example, to use with vault-injector from Hashicorp
+    passwordFile: ''
+    # Specify passwordSecret if DB password is stored in secret.
+    passwordSecret: {}
+    # Secret name
+    #  name:
+    # Password key inside secret
+    #  key:
+    port: "5432"
+    database: 'pgbouncer'
+    sslmode: disable
+    extraParams: ''
+  datasourceSecret: {}
+    # Specifies if datasource should be sourced from secret value in format: postgresql://login:password@hostname:port/dbname?sslmode=disable
+    # Multiple Postgres databases can be configured by comma separated postgres connection strings
+    # Secret name
+    #  name:
+    # Connection string key inside secret
+    #  key:
+  constantLabels: {}
+  # possible values debug, info, warn, error, fatal
+  logLevel: ""
+  # possible values logfmt, json
+  logFormat: "json"
+  extraArgs: []
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
+
+annotations: {}
+
+podLabels: {}
+
+# Configurable health checks
+livenessProbe:
+  initialDelaySeconds: 3
+  timeoutSeconds: 3
+
+readinessProbe:
+  initialDelaySeconds: 5
+  timeoutSeconds: 10
+
+# ExtraEnvs
+extraEnvs: []
+  # - name: EXTRA_ENV
+  #   value: value
+  # - name: POD_NAMESPACE
+  #   valueFrom:
+  #     fieldRef:
+  #       fieldPath: metadata.namespace
+
+# Init containers, e. g. for secrets creation before the exporter
+initContainers: []
+  # - name:
+  #   image:
+  #   volumeMounts:
+  #     - name: creds
+  #       mountPath: /creds
+
+# Additional sidecar containers, e. g. for a database proxy, such as Google's cloudsql-proxy
+extraContainers: []
+
+# Additional volumes, e. g. for secrets used in an extraContainer
+extraVolumes: []
+# Uncomment for mounting custom ca-certificates
+#  - name: ssl-certs
+#    secret:
+#      defaultMode: 420
+#      items:
+#      - key: ca-certificates.crt
+#        path: ca-certificates.crt
+#      secretName: ssl-certs
+
+# Additional volume mounts
+extraVolumeMounts: []
+# Uncomment for mounting custom ca-certificates file into container
+#  - name: ssl-certs
+#    mountPath: /etc/ssl/certs/ca-certificates.crt
+#    subPath: ca-certificates.crt
+
+podDisruptionBudget:
+  enabled: false
+  maxUnavailable: 1

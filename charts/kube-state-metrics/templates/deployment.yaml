@@ -119,11 +119,7 @@ spec:
         {{- end }}
         {{- end }}
         imagePullPolicy: {{ .Values.image.pullPolicy }}
-        {{- if .Values.image.sha }}
-        image: "{{ .Values.global.imageRegistry | default .Values.image.repository }}:{{ .Values.image.tag | default (print "v" .Chart.AppVersion) }}@sha256:{{ .Values.image.sha }}"
-        {{- else }}
-        image: "{{ .Values.global.imageRegistry | default .Values.image.repository }}:{{ .Values.image.tag | default (print "v" .Chart.AppVersion) }}"
-        {{- end }}
+        image: {{ include "kube-state-metrics.image" . }}
         {{- if eq .Values.kubeRBACProxy.enabled false }}
         ports:
         - containerPort: {{ .Values.service.port | default 8080}}
@@ -166,12 +162,11 @@ spec:
         volumeMounts:
           - name: kube-rbac-proxy-config
             mountPath: /etc/kube-rbac-proxy-config
+          {{- with .Values.kubeRBACProxy.volumeMounts }}
+          {{- toYaml . | nindent 10 }}
+          {{- end }}
         imagePullPolicy: {{ .Values.kubeRBACProxy.image.pullPolicy }}
-        {{- if .Values.kubeRBACProxy.image.sha }}
-        image: "{{ .Values.global.imageRegistry | default .Values.kubeRBACProxy.image.repository }}:{{ .Values.kubeRBACProxy.image.tag }}@sha256:{{ .Values.kubeRBACProxy.image.sha }}"
-        {{- else }}
-        image: "{{ .Values.global.imageRegistry | default .Values.kubeRBACProxy.image.repository }}:{{ .Values.kubeRBACProxy.image.tag }}"
-        {{- end }}
+        image: {{ include "kubeRBACProxy.image" . }}
         ports:
           - containerPort: {{ .Values.service.port | default 8080}}
             name: "http"
@@ -205,12 +200,11 @@ spec:
         volumeMounts:
           - name: kube-rbac-proxy-config
             mountPath: /etc/kube-rbac-proxy-config
+          {{- with .Values.kubeRBACProxy.volumeMounts }}
+          {{- toYaml . | nindent 10 }}
+          {{- end }}
         imagePullPolicy: {{ .Values.kubeRBACProxy.image.pullPolicy }}
-        {{- if .Values.kubeRBACProxy.image.sha }}
-        image: "{{ .Values.global.imageRegistry | default .Values.kubeRBACProxy.image.repository }}:{{ .Values.kubeRBACProxy.image.tag }}@sha256:{{ .Values.kubeRBACProxy.image.sha }}"
-        {{- else }}
-        image: "{{ .Values.global.imageRegistry | default .Values.kubeRBACProxy.image.repository }}:{{ .Values.kubeRBACProxy.image.tag }}"
-        {{- end }}
+        image: {{ include "kubeRBACProxy.image" . }}
         ports:
           - containerPort: {{ .Values.selfMonitor.telemetryPort | default 8081 }}
             name: "metrics"

@@ -158,6 +158,7 @@ alertmanager:
     create: true
     name: ""
     annotations: {}
+    automountServiceAccountToken: true
 
   ## Configure pod disruption budgets for Alertmanager
   ## ref: https://kubernetes.io/docs/tasks/run-application/configure-pdb/#specifying-a-poddisruptionbudget
@@ -419,6 +420,10 @@ alertmanager:
     ##
     interval: ""
     selfMonitor: true
+
+    ## Additional labels
+    ##
+    additionalLabels: {}
 
     ## SampleLimit defines per-scrape limit on number of scraped samples that will be accepted.
     ##
@@ -825,6 +830,8 @@ grafana:
       enabled: true
       label: grafana_dashboard
       labelValue: "1"
+      # Allow discovery in all namespaces for dashboards
+      searchNamespace: ALL
 
       ## Annotations for Grafana dashboard configmaps
       ##
@@ -2297,6 +2304,10 @@ prometheus:
     enabled: false
     interval: ""
 
+    ## Additional labels
+    ##
+    additionalLabels: {}
+
     ## scheme: HTTP scheme to use for scraping. Can be used with `tlsConfig` for example if using istio mTLS.
     scheme: ""
 
@@ -2579,6 +2590,10 @@ prometheus:
     interval: ""
     selfMonitor: true
 
+    ## Additional labels
+    ##
+    additionalLabels: {}
+
     ## SampleLimit defines per-scrape limit on number of scraped samples that will be accepted.
     ##
     sampleLimit: 0
@@ -2664,6 +2679,10 @@ prometheus:
     ## ref: https://prometheus.io/docs/prometheus/latest/querying/api/#tsdb-admin-apis
     ##
     enableAdminAPI: false
+
+    ## Sets version of Prometheus overriding the Prometheus version as derived
+    ## from the image tag. Useful in cases where the tag does not follow semver v2.
+    version: ""
 
     ## WebTLSConfig defines the TLS parameters for HTTPS
     ## ref: https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/api.md#webtlsconfig
@@ -2775,11 +2794,12 @@ prometheus:
     ##
     query: {}
 
-    ## Namespaces to be selected for PrometheusRules discovery.
-    ## If nil, select own namespace. Namespaces to be selected for ServiceMonitor discovery.
-    ## See https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/api.md#namespaceselector for usage
-    ##
+    ## If nil, select own namespace. Namespaces to be selected for PrometheusRules discovery.
     ruleNamespaceSelector: {}
+    ## Example which selects PrometheusRules in namespaces with label "prometheus" set to "somelabel"
+    # ruleNamespaceSelector:
+    #   matchLabels:
+    #     prometheus: somelabel
 
     ## If true, a nil or {} value for prometheus.prometheusSpec.ruleSelector will cause the
     ## prometheus resource to be created with selectors based on values in the helm deployment,
@@ -2844,10 +2864,12 @@ prometheus:
     #   matchLabels:
     #     prometheus: somelabel
 
-    ## Namespaces to be selected for PodMonitor discovery.
-    ## See https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/api.md#namespaceselector for usage
-    ##
+    ## If nil, select own namespace. Namespaces to be selected for PodMonitor discovery.
     podMonitorNamespaceSelector: {}
+    ## Example which selects PodMonitor in namespaces with label "prometheus" set to "somelabel"
+    # podMonitorNamespaceSelector:
+    #   matchLabels:
+    #     prometheus: somelabel
 
     ## If true, a nil or {} value for prometheus.prometheusSpec.probeSelector will cause the
     ## prometheus resource to be created with selectors based on values in the helm deployment,
@@ -2864,10 +2886,12 @@ prometheus:
     #   matchLabels:
     #     prometheus: somelabel
 
-    ## Namespaces to be selected for Probe discovery.
-    ## See https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/api.md#namespaceselector for usage
-    ##
+    ## If nil, select own namespace. Namespaces to be selected for Probe discovery.
     probeNamespaceSelector: {}
+    ## Example which selects Probe in namespaces with label "prometheus" set to "somelabel"
+    # probeNamespaceSelector:
+    #   matchLabels:
+    #     prometheus: somelabel
 
     ## How long to retain metrics
     ##
@@ -2876,6 +2900,11 @@ prometheus:
     ## Maximum size of metrics
     ##
     retentionSize: ""
+
+    ## Allow out-of-order/out-of-bounds samples ingested into Prometheus for a specified duration
+    ## See https://prometheus.io/docs/prometheus/latest/configuration/configuration/#tsdb
+    tsdb:
+      outOfOrderTimeWindow: 0s
 
     ## Enable compression of the write-ahead log using Snappy.
     ##
@@ -3490,6 +3519,10 @@ thanosRuler:
     ##
     interval: ""
     selfMonitor: true
+
+    ## Additional labels
+    ##
+    additionalLabels: {}
 
     ## SampleLimit defines per-scrape limit on number of scraped samples that will be accepted.
     ##

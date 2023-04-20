@@ -49,7 +49,7 @@ spec:
   {{- else }}
   image: "{{ $registry }}/{{ .Values.prometheus.prometheusSpec.image.repository }}"
   {{- end }}
-  version: {{ .Values.prometheus.prometheusSpec.image.tag }}
+  version: {{ default .Values.prometheus.prometheusSpec.image.tag .Values.prometheus.prometheusSpec.version }}
   {{- if .Values.prometheus.prometheusSpec.image.sha }}
   sha: {{ .Values.prometheus.prometheusSpec.image.sha }}
   {{- end }}
@@ -123,6 +123,12 @@ spec:
   retention: {{ .Values.prometheus.prometheusSpec.retention | quote  }}
 {{- if .Values.prometheus.prometheusSpec.retentionSize }}
   retentionSize: {{ .Values.prometheus.prometheusSpec.retentionSize | quote }}
+{{- end }}
+{{- if .Values.prometheus.prometheusSpec.tsdb }}
+  tsdb:
+    {{- if .Values.prometheus.prometheusSpec.tsdb.outOfOrderTimeWindow }}
+    outOfOrderTimeWindow: {{ .Values.prometheus.prometheusSpec.tsdb.outOfOrderTimeWindow }}
+    {{- end }}
 {{- end }}
 {{- if eq .Values.prometheus.prometheusSpec.walCompression false }}
   walCompression: false
