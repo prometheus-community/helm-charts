@@ -243,7 +243,7 @@ You may similarly use the above configuration commands on each chart [dependency
 
 This chart uses a default configuration that causes prometheus to scrape a variety of kubernetes resource types, provided they have the correct annotations. In this section we describe how to configure pods to be scraped; for information on how other resource types can be scraped you can do a `helm template` to get the kubernetes resource definitions, and then reference the prometheus configuration in the ConfigMap against the prometheus documentation for [relabel_config](https://prometheus.io/docs/prometheus/latest/configuration/configuration/#relabel_config) and [kubernetes_sd_config](https://prometheus.io/docs/prometheus/latest/configuration/configuration/#kubernetes_sd_config).
 
-In order to get prometheus to scrape pods, you must add annotations to the the pods as below:
+In order to get prometheus to scrape pods, you must add annotations to the pods as below:
 
 ```yaml
 metadata:
