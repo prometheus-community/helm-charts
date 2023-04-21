@@ -1,0 +1,39 @@
+{{- if and .Values.jobs.enabled .Values.rbac.create }}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name:  {{ include "prometheus-operator-admission-webhook.fullname" . }}-aux
+  annotations:
+    "helm.sh/hook": pre-install,pre-upgrade,post-install,post-upgrade
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+    {{- with .Values.jobs.annotations }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+  labels:
+    app: {{ include "prometheus-operator-admission-webhook.fullname" . }}-aux
+    {{- include "prometheus-operator-admission-webhook.labels" . | nindent 4 }}
+    {{- with .Values.jobs.labels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+rules:
+  - apiGroups:
+      - admissionregistration.k8s.io
+    resources:
+      - validatingwebhookconfigurations
+      - mutatingwebhookconfigurations
+    verbs:
+      - get
+      - update
+{{- if and (.Capabilities.APIVersions.Has "policy/v1beta1/PodSecurityPolicy") .Values.rbac.pspEnabled }}
+{{- $kubeTargetVersion := default .Capabilities.KubeVersion.Version .Values.kubeVersionOverride }}
+{{- if semverCompare "> 1.15.0-0" $kubeTargetVersion }}
+  - apiGroups: ['policy']
+{{- else }}
+  - apiGroups: ['extensions']
+{{- end }}
+    resources: ['podsecuritypolicies']
+    verbs:     ['use']
+    resourceNames:
+    - {{ include "prometheus-operator-admission-webhook.fullname" . }}-aux
+{{- end }}
+{{- end }}
