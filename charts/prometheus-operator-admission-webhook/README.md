@@ -45,10 +45,24 @@ _See [helm uninstall](https://helm.sh/docs/helm/helm_uninstall/) for command doc
 ## Upgrading Chart
 
 ```console
-helm upgrade [RELEASE_NAME] [CHART] --install
+helm upgrade [RELEASE_NAME] prometheus-community/prometheus-operator-admission-webhook --install
 ```
 
 _See [helm upgrade](https://helm.sh/docs/helm/helm_upgrade/) for command documentation._
+
+### To 0.3
+
+Generation of blank lines present in some manifests in `metadata.labels` has been prevented and the blank lines thus removed.
+
+Missing indentation has been corrected in the networkpolicy template.
+
+An icon has been added to the chart in Chart.yaml.
+
+Unused value `networkPolicy.allowMonitoringNamespace` has been removed from the values file.
+
+```bash
+helm upgrade [RELEASE_NAME] prometheus-community/prometheus-operator-admission-webhook --version 0.3.0
+```
 
 ## Configuration
 
