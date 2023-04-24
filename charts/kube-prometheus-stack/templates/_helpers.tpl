@@ -92,6 +92,15 @@ heritage: {{ $.Release.Service | quote }}
 {{- end -}}
 
 {{/* Create the name of prometheus service account to use */}}
+{{- define "kube-prometheus-stack.crds.serviceAccountName" -}}
+{{- if .Values.crds.serviceAccount.create -}}
+    {{ default (print (include "kube-prometheus-stack.fullname" .) "-crds") .Values.crds.serviceAccount.name }}
+{{- else -}}
+    {{ default "default" .Values.crds.serviceAccount.name }}
+{{- end -}}
+{{- end -}}
+
+{{/* Create the name of prometheus service account to use */}}
 {{- define "kube-prometheus-stack.prometheus.serviceAccountName" -}}
 {{- if .Values.prometheus.serviceAccount.create -}}
     {{ default (print (include "kube-prometheus-stack.fullname" .) "-prometheus") .Values.prometheus.serviceAccount.name }}

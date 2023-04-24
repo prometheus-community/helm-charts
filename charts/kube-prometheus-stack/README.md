@@ -85,7 +85,9 @@ A major chart version change (like v1.2.3 -> v2.0.0) indicates that there is an 
 
 This version upgrades Prometheus-Operator to v0.64.0 with the new PrometheusAgent CRD, Prometheus to v2.43.0 and Thanos to v0.31.0.
 
-Run these commands to update the CRDs before applying the upgrade.
+As of this release, CRD installation and upgrade is now managed by the chart if the property `crds.enabled` is set to true (by default).
+
+If you want to upgrade the CRDs the old fashion way, set `crds.enabled` to false and run these commands to update the CRDs before applying the upgrade.
 
 ```console
 kubectl apply --server-side -f https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/v0.64.0/example/prometheus-operator-crd/monitoring.coreos.com_alertmanagerconfigs.yaml

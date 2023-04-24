@@ -1,0 +1,73 @@
+{{- if .Values.crds.enabled }}
+{{- $appVersion := .Chart.AppVersion }}
+{{- $crds := list "alertmanagerconfigs" "alertmanagers" "podmonitors" "probes" "prometheusagents" "prometheuses" "prometheusrules" "servicemonitors" "thanosrulers" -}}
+{{- $registry := $.Values.global.imageRegistry | default $.Values.crds.image.registry -}}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  annotations:
+    helm.sh/hook: pre-install,pre-upgrade
+    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded
+  labels:
+    app: {{ template "kube-prometheus-stack.name" . }}-crds
+    {{- include "kube-prometheus-stack.labels" . | nindent 4 }}
+  name: {{ template "kube-prometheus-stack.fullname" . }}-crds
+  namespace: {{ template "kube-prometheus-stack.namespace" . }}
+spec:
+  {{- if .Capabilities.APIVersions.Has "batch/v1alpha1" }}
+  # Alpha feature since k8s 1.12
+  ttlSecondsAfterFinished: 0
+  {{- end }}
+  template:
+    metadata:
+      {{- with .Values.crds.podAnnotations }}
+      annotations:
+        {{ toYaml . | nindent 8 }}
+      {{- end }}
+      name:  {{ template "kube-prometheus-stack.fullname" . }}-crds
+      labels:
+        app: {{ template "kube-prometheus-stack.name" $ }}-crds
+        {{- include "kube-prometheus-stack.labels" $ | nindent 8 }}
+    spec:
+      {{- if .Values.crds.priorityClassName }}
+      priorityClassName: {{ .Values.crds.priorityClassName }}
+      {{- end }}
+      containers:
+        {{- range $crds }}
+        - name: install-{{ . }}-crd
+          {{- if $.Values.crds.image.sha }}
+          image: {{ $registry }}/{{ $.Values.crds.image.repository }}:{{ $.Values.crds.image.tag }}@sha256:{{ $.Values.crds.image.sha }}
+          {{- else }}
+          image: {{ $registry }}/{{ $.Values.crds.image.repository }}:{{ $.Values.crds.image.tag }}
+          {{- end }}
+          imagePullPolicy: {{ $.Values.crds.image.pullPolicy }}
+          args:
+            - apply
+            - --server-side
+            - --force-conflicts={{ $.Values.crds.forceConflicts }}
+            - -f
+            - https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/{{ $appVersion }}/example/prometheus-operator-crd/monitoring.coreos.com_{{ . }}.yaml
+          securityContext:
+            {{ toYaml $.Values.crds.containerSecurityContext | nindent 12 }}
+          resources:
+            {{ toYaml $.Values.crds.resources | nindent 12 }}
+        {{- end }}
+      restartPolicy: OnFailure
+      serviceAccountName: {{ template "kube-prometheus-stack.fullname" . }}-crds
+      {{- with .Values.crds.nodeSelector }}
+      nodeSelector:
+        {{ toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.crds.affinity }}
+      affinity:
+        {{ toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.crds.tolerations }}
+      tolerations:
+        {{ toYaml . | nindent 8 }}
+      {{- end }}
+      {{- if .Values.crds.securityContext }}
+      securityContext:
+        {{ toYaml .Values.crds.securityContext | nindent 8 }}
+      {{- end }}
+{{- end }}

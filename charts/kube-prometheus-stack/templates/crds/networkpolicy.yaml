@@ -1,0 +1,27 @@
+{{- if and .Values.crds.enabled .Values.crds.networkPolicy.enabled }}
+apiVersion: {{ template "kube-prometheus-stack.prometheus.networkPolicy.apiVersion" . }}
+kind: NetworkPolicy
+metadata:
+  annotations:
+    helm.sh/hook: pre-install,pre-upgrade
+    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded
+    ## Ensure this is run before the job
+    helm.sh/hook-weight: "-5"
+  labels:
+    app: {{ template "kube-prometheus-stack.name" . }}-crds
+    {{- include "kube-prometheus-stack.labels" . | nindent 4 }}
+  name: {{ template "kube-prometheus-stack.fullname" . }}-crds
+  namespace: {{ template "kube-prometheus-stack.namespace" . }}
+spec:
+  podSelector:
+    matchLabels:
+      job-name: {{ template "kube-prometheus-stack.fullname" . }}-crds
+  # allow egress traffic to everywhere
+  egress:
+  - {}
+  # deny ingress traffic
+  ingress: []
+  policyTypes:
+  - Egress
+  - Ingress
+{{- end }}
