@@ -41,6 +41,10 @@ helm upgrade [RELEASE_NAME] [CHART] --install
 
 _See [helm upgrade](https://helm.sh/docs/helm/helm_upgrade/) for command documentation._
 
+### 4.16 to 4.17+
+
+`containerSecurityContext.readOnlyRootFilesystem` is set to `true` by default.
+
 ### 3.x to 4.x
 
 Starting from version 4.0.0, the `node exporter` chart is using the [Kubernetes recommended labels](https://kubernetes.io/docs/concepts/overview/working-with-objects/common-labels/). Therefore you have to delete the daemonset before you upgrade.

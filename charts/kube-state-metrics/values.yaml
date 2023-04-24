@@ -202,6 +202,18 @@ podSecurityPolicy:
 ## Configure network policy for kube-state-metrics
 networkPolicy:
   enabled: false
+  # networkPolicy.flavor -- Flavor of the network policy to use.
+  # Can be:
+  # * kubernetes for networking.k8s.io/v1/NetworkPolicy
+  # * cilium     for cilium.io/v2/CiliumNetworkPolicy
+  flavor: kubernetes
+
+  ## Configure the cilium network policy kube-apiserver selector
+  # cilium:
+    # kubeApiServerSelector:
+      # - toEntities:
+      #   - kube-apiserver
+
   # egress:
   # - {}
   # ingress:
@@ -215,11 +227,18 @@ securityContext:
   runAsGroup: 65534
   runAsUser: 65534
   fsGroup: 65534
+  runAsNonRoot: true
+  seccompProfile:
+    type: RuntimeDefault
 
 ## Specify security settings for a Container
 ## Allows overrides and additional options compared to (Pod) securityContext
 ## Ref: https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-the-security-context-for-a-container
-containerSecurityContext: {}
+containerSecurityContext:
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+    - ALL
 
 ## Node labels for pod assignment
 ## Ref: https://kubernetes.io/docs/user-guide/node-selection/

@@ -7,7 +7,7 @@ image:
   # Overrides the image tag whose default is {{ printf "v%s" .Chart.AppVersion }}
   tag: ""
   pullPolicy: IfNotPresent
-  sha: ""
+  digest: ""
 
 imagePullSecrets: []
 # - name: "image-pull-secret"
@@ -71,6 +71,12 @@ service:
   listenOnAllInterfaces: true
   annotations:
     prometheus.io/scrape: "true"
+
+# Set a NetworkPolicy with:
+# ingress only on service.port
+# no egress permitted
+networkPolicy:
+  enabled: false
 
 # Additional environment variables that will be passed to the daemonset
 env: {}
@@ -258,7 +264,8 @@ securityContext:
   runAsNonRoot: true
   runAsUser: 65534
 
-containerSecurityContext: {}
+containerSecurityContext:
+  readOnlyRootFilesystem: true
   # capabilities:
   #   add:
   #   - SYS_TIME
