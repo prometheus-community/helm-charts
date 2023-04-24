@@ -1,5 +1,4 @@
 {{- if .Values.crds.enabled }}
-{{- $appVersion := .Chart.AppVersion }}
 {{- $registry := $.Values.global.imageRegistry | default $.Values.crds.image.registry -}}
 apiVersion: batch/v1
 kind: Job
@@ -45,7 +44,7 @@ spec:
             - --server-side
             - --force-conflicts={{ $.Values.crds.forceConflicts }}
             - -f
-            - https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/{{ $appVersion }}/example/prometheus-operator-crd/monitoring.coreos.com_{{ . }}.yaml
+            - {{ tpl $.Values.crds.sourceUrl $ }}{{ . }}.yaml
           securityContext:
             {{- toYaml $.Values.crds.containerSecurityContext | nindent 12 }}
           resources:
