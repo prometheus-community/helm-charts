@@ -1,6 +1,5 @@
 {{- if .Values.crds.enabled }}
 {{- $appVersion := .Chart.AppVersion }}
-{{- $crds := list "alertmanagerconfigs" "alertmanagers" "podmonitors" "probes" "prometheusagents" "prometheuses" "prometheusrules" "servicemonitors" "thanosrulers" -}}
 {{- $registry := $.Values.global.imageRegistry | default $.Values.crds.image.registry -}}
 apiVersion: batch/v1
 kind: Job
@@ -33,7 +32,7 @@ spec:
       priorityClassName: {{ .Values.crds.priorityClassName }}
       {{- end }}
       containers:
-        {{- range $crds }}
+        {{- range $.Values.crds.managedResources }}
         - name: install-{{ . }}-crd
           {{- if $.Values.crds.image.sha }}
           image: {{ $registry }}/{{ $.Values.crds.image.repository }}:{{ $.Values.crds.image.tag }}@sha256:{{ $.Values.crds.image.sha }}
@@ -48,9 +47,9 @@ spec:
             - -f
             - https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/{{ $appVersion }}/example/prometheus-operator-crd/monitoring.coreos.com_{{ . }}.yaml
           securityContext:
-            {{ toYaml $.Values.crds.containerSecurityContext | nindent 12 }}
+            {{- toYaml $.Values.crds.containerSecurityContext | nindent 12 }}
           resources:
-            {{ toYaml $.Values.crds.resources | nindent 12 }}
+            {{- toYaml $.Values.crds.resources | nindent 12 }}
         {{- end }}
       restartPolicy: OnFailure
       serviceAccountName: {{ template "kube-prometheus-stack.fullname" . }}-crds
