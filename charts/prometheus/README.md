@@ -65,6 +65,39 @@ helm upgrade [RELEASE_NAME] [CHART] --install
 
 _See [helm upgrade](https://helm.sh/docs/helm/helm_upgrade/) for command documentation._
 
+### To 21.0
+
+The Kubernetes labels have been updated to follow [Helm 3 label and annotation best practices](https://helm.sh/docs/chart_best_practices/labels/).
+Specifically, labels mapping is listed below:
+
+| OLD                | NEW                          |
+|--------------------|------------------------------|
+|heritage            | app.kubernetes.io/managed-by |
+|chart               | helm.sh/chart                |
+|[container version] | app.kubernetes.io/version    |
+|app                 | app.kubernetes.io/name       |
+|release             | app.kubernetes.io/instance   |
+
+Therefore, depending on the way you've configured the chart, the previous StatefulSet or Deployment need to be deleted before upgrade.
+
+If `runAsStatefulSet: false` (this is the default):
+
+```console
+kubectl delete deploy -l app=prometheus
+```
+
+If `runAsStatefulSet: true`:
+
+```console
+kubectl delete sts -l app=prometheus
+```
+
+After that do the actual upgrade:
+
+```console
+helm upgrade -i prometheus prometheus-community/prometheus
+```
+
 ### To 20.0
 
 The [configmap-reload](https://github.com/jimmidyson/configmap-reload) container was replaced by the [prometheus-config-reloader](https://github.com/prometheus-operator/prometheus-operator/tree/main/cmd/prometheus-config-reloader).
