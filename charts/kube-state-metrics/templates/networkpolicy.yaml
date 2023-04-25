@@ -1,15 +1,15 @@
-{{- if .Values.networkPolicy.enabled }}
+{{- if and .Values.networkPolicy.enabled (eq .Values.networkPolicy.flavor "kubernetes") }}
 kind: NetworkPolicy
 apiVersion: networking.k8s.io/v1
 metadata:
-  labels:
-    {{- include "kube-state-metrics.labels" . | indent 4 }}
-  name: {{ template "kube-state-metrics.fullname" . }}
-  namespace: {{ template "kube-state-metrics.namespace" . }}
   {{- if .Values.annotations }}
   annotations:
     {{ toYaml .Values.annotations | nindent 4 }}
   {{- end }}
+  labels:
+    {{- include "kube-state-metrics.labels" . | indent 4 }}
+  name: {{ template "kube-state-metrics.fullname" . }}
+  namespace: {{ template "kube-state-metrics.namespace" . }}
 spec:
   {{- if .Values.networkPolicy.egress }}
   ## Deny all egress by default

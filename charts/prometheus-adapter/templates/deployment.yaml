@@ -71,20 +71,14 @@ spec:
         ports:
         - containerPort: {{ .Values.listenPort }}
           name: https
+        {{- with .Values.livenessProbe }}
         livenessProbe:
-          httpGet:
-            path: /healthz
-            port: https
-            scheme: HTTPS
-          initialDelaySeconds: 30
-          timeoutSeconds: 5
+          {{- toYaml . | nindent 10 }}
+        {{- end }}
+        {{- with .Values.readinessProbe }}
         readinessProbe:
-          httpGet:
-            path: /healthz
-            port: https
-            scheme: HTTPS
-          initialDelaySeconds: 30
-          timeoutSeconds: 5
+          {{- toYaml . | nindent 10 }}
+        {{- end }}
         {{- if .Values.resources }}
         resources:
           {{- toYaml .Values.resources | nindent 10 }}
