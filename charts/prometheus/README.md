@@ -65,6 +65,39 @@ helm upgrade [RELEASE_NAME] [CHART] --install
 
 _See [helm upgrade](https://helm.sh/docs/helm/helm_upgrade/) for command documentation._
 
+### To 21.0
+
+The Kubernetes labels have been updated to follow [Helm 3 label and annotation best practices](https://helm.sh/docs/chart_best_practices/labels/).
+Specifically, labels mapping is listed below:
+
+| OLD                | NEW                          |
+|--------------------|------------------------------|
+|heritage            | app.kubernetes.io/managed-by |
+|chart               | helm.sh/chart                |
+|[container version] | app.kubernetes.io/version    |
+|app                 | app.kubernetes.io/name       |
+|release             | app.kubernetes.io/instance   |
+
+Therefore, depending on the way you've configured the chart, the previous StatefulSet or Deployment need to be deleted before upgrade.
+
+If `runAsStatefulSet: false` (this is the default):
+
+```console
+kubectl delete deploy -l app=prometheus
+```
+
+If `runAsStatefulSet: true`:
+
+```console
+kubectl delete sts -l app=prometheus
+```
+
+After that do the actual upgrade:
+
+```console
+helm upgrade -i prometheus prometheus-community/prometheus
+```
+
 ### To 20.0
 
 The [configmap-reload](https://github.com/jimmidyson/configmap-reload) container was replaced by the [prometheus-config-reloader](https://github.com/prometheus-operator/prometheus-operator/tree/main/cmd/prometheus-config-reloader).
@@ -210,7 +243,7 @@ You may similarly use the above configuration commands on each chart [dependency
 
 This chart uses a default configuration that causes prometheus to scrape a variety of kubernetes resource types, provided they have the correct annotations. In this section we describe how to configure pods to be scraped; for information on how other resource types can be scraped you can do a `helm template` to get the kubernetes resource definitions, and then reference the prometheus configuration in the ConfigMap against the prometheus documentation for [relabel_config](https://prometheus.io/docs/prometheus/latest/configuration/configuration/#relabel_config) and [kubernetes_sd_config](https://prometheus.io/docs/prometheus/latest/configuration/configuration/#kubernetes_sd_config).
 
-In order to get prometheus to scrape pods, you must add annotations to the the pods as below:
+In order to get prometheus to scrape pods, you must add annotations to the pods as below:
 
 ```yaml
 metadata:
