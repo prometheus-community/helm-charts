@@ -101,7 +101,7 @@ spec:
         runbook_url: {{ .Values.defaultRules.runbookUrl }}/alertmanager/alertmanagerclusterfailedtosendalerts
         summary: All Alertmanager instances in a cluster failed to send notifications to a critical integration.
       expr: |-
-        min by (namespace,service, integration) (
+        min by (namespace,service, integration, job) (
           rate(alertmanager_notifications_failed_total{job="{{ $alertmanagerJob }}",namespace="{{ $namespace }}", integration=~`.*`}[5m])
         /
           rate(alertmanager_notifications_total{job="{{ $alertmanagerJob }}",namespace="{{ $namespace }}", integration=~`.*`}[5m])
@@ -124,7 +124,7 @@ spec:
         runbook_url: {{ .Values.defaultRules.runbookUrl }}/alertmanager/alertmanagerclusterfailedtosendalerts
         summary: All Alertmanager instances in a cluster failed to send notifications to a non-critical integration.
       expr: |-
-        min by (namespace,service, integration) (
+        min by (namespace,service, integration, job) (
           rate(alertmanager_notifications_failed_total{job="{{ $alertmanagerJob }}",namespace="{{ $namespace }}", integration!~`.*`}[5m])
         /
           rate(alertmanager_notifications_total{job="{{ $alertmanagerJob }}",namespace="{{ $namespace }}", integration!~`.*`}[5m])
@@ -147,8 +147,8 @@ spec:
         runbook_url: {{ .Values.defaultRules.runbookUrl }}/alertmanager/alertmanagerconfiginconsistent
         summary: Alertmanager instances within the same cluster have different configurations.
       expr: |-
-        count by (namespace,service) (
-          count_values by (namespace,service) ("config_hash", alertmanager_config_hash{job="{{ $alertmanagerJob }}",namespace="{{ $namespace }}"})
+        count by (namespace,service,job) (
+          count_values by (namespace,service,job) ("config_hash", alertmanager_config_hash{job="{{ $alertmanagerJob }}",namespace="{{ $namespace }}"})
         )
         != 1
       for: 20m
@@ -169,11 +169,11 @@ spec:
         summary: Half or more of the Alertmanager instances within the same cluster are down.
       expr: |-
         (
-          count by (namespace,service) (
+          count by (namespace,service,job) (
             avg_over_time(up{job="{{ $alertmanagerJob }}",namespace="{{ $namespace }}"}[5m]) < 0.5
           )
         /
-          count by (namespace,service) (
+          count by (namespace,service,job) (
             up{job="{{ $alertmanagerJob }}",namespace="{{ $namespace }}"}
           )
         )
@@ -196,11 +196,11 @@ spec:
         summary: Half or more of the Alertmanager instances within the same cluster are crashlooping.
       expr: |-
         (
-          count by (namespace,service) (
+          count by (namespace,service,job) (
             changes(process_start_time_seconds{job="{{ $alertmanagerJob }}",namespace="{{ $namespace }}"}[10m]) > 4
           )
         /
-          count by (namespace,service) (
+          count by (namespace,service,job) (
             up{job="{{ $alertmanagerJob }}",namespace="{{ $namespace }}"}
           )
         )
