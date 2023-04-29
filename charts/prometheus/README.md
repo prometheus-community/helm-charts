@@ -20,7 +20,7 @@ _See [helm repository](https://helm.sh/docs/helm/helm_repo/) for command documen
 
 ## Install Chart
 
-Start from Version 16.0, Prometheus chart required Helm 3.7+ in order to install successfully. Please check your Helm chart version before installation.
+Starting with version 16.0, the Prometheus chart requires Helm 3.7+ in order to install successfully. Please check your `helm` release before installation.
 
 ```console
 helm install [RELEASE_NAME] prometheus-community/prometheus
@@ -60,10 +60,21 @@ A [`values.schema.json`](https://helm.sh/docs/topics/charts/#schema-files) file 
 ## Upgrading Chart
 
 ```console
-helm upgrade [RELEASE_NAME] [CHART] --install
+helm upgrade [RELEASE_NAME] prometheus-community/prometheus --install
 ```
 
 _See [helm upgrade](https://helm.sh/docs/helm/helm_upgrade/) for command documentation._
+
+### To 22.7
+
+Releases of the included subcharts (dependencies) have been bumped as follows:
+
+| Subchart                                                                                                                     | Release | Previous Release |
+|------------------------------------------------------------------------------------------------------------------------------|---------|------------------|
+| [alertmanager](https://github.com/prometheus-community/helm-charts/releases/tag/alertmanager-0.33.1)                         | 0.33.1  | 0.30.1           |
+| [kube-state-metrics](https://github.com/prometheus-community/helm-charts/releases/tag/kube-state-metrics-4.32.0)              | 4.32.0   | 4.30.0           |
+| [prometheus-node-exporter](https://github.com/prometheus-community/helm-charts/releases/tag/prometheus-node-exporter-4.18.0) | 4.18.0  | 4.8.1            |
+| [prometheus-pushgateway](https://github.com/prometheus-community/helm-charts/releases/tag/prometheus-pushgateway-2.3.0)      | 2.3.0   | 2.0.4            |
 
 ### To 22.6
 
@@ -265,7 +276,7 @@ See [Customizing the Chart Before Installing](https://helm.sh/docs/intro/using_h
 helm show values prometheus-community/prometheus
 ```
 
-You may similarly use the above configuration commands on each chart [dependency](#dependencies) to see it's configurations.
+You may similarly use the above configuration commands on each chart [dependency](#dependencies) to see its configurations.
 
 ### Scraping Pod Metrics via Annotations
 
