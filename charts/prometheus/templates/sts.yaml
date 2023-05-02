@@ -65,7 +65,11 @@ spec:
           {{- end }}
           args:
             - --watched-dir=/etc/config
-            - --reload-url=http://127.0.0.1:9090{{ .Values.server.prefixURL }}/-/reload
+          {{- $default_url := "http://127.0.0.1:9090/-/reload" }}
+          {{- with .Values.server.prefixURL }}
+          {{- $default_url = printf "http://127.0.0.1:9090/%s/-/reload" . }}
+          {{- end }}
+            - --reload-url={{ default $default_url .Values.configmapReload.reloadUrl }}
           {{- range $key, $value := .Values.configmapReload.prometheus.extraArgs }}
             - --{{ $key }}={{ $value }}
           {{- end }}
@@ -320,7 +324,7 @@ spec:
 {{- if .Values.server.persistentVolume.enabled }}
   volumeClaimTemplates:
     - metadata:
-        name: storage-volume
+        name: {{ default "storage-volume" .Values.server.persistentVolume.statefulSetNameOverride "" }}
         {{- if .Values.server.persistentVolume.annotations }}
         annotations:
 {{ toYaml .Values.server.persistentVolume.annotations | indent 10 }}
