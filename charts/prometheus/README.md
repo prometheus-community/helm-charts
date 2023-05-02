@@ -67,7 +67,9 @@ _See [helm upgrade](https://helm.sh/docs/helm/helm_upgrade/) for command documen
 
 ### To 22.0
 
-The `app.kubernetes.io/version` label has been removed from the selector. Therefore, you must delete the previous StatefulSet or Deployment before performing the upgrade.
+The `app.kubernetes.io/version` label has been removed from the pod selector.
+
+Therefore, you must delete the previous StatefulSet or Deployment before upgrading. Performing this operation will cause **Prometheus to stop functioning** until the upgrade is complete.
 
 ```console
 kubectl delete deploy,sts -l app.kubernetes.io/name=prometheus
