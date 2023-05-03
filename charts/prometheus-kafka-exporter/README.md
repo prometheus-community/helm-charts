@@ -9,7 +9,7 @@ This chart bootstraps a [Kafka Exporter](https://github.com/danielqsj/kafka_expo
 - Kubernetes 1.19+
 - Helm 3
 
-Helm v2 was no longer supported from chart version 2.0.0.
+Helm v2 is no longer supported from chart version 2.0.0.
 
 ## Get Repository Info
 
