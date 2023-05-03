@@ -11,7 +11,7 @@ This chart bootstraps a [Kafka Exporter](https://github.com/danielqsj/kafka_expo
 
 Helm v2 was no longer supported from chart version 2.0.0.
 
-## Get repository Info
+## Get Repository Info
 
 ```console
 helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
