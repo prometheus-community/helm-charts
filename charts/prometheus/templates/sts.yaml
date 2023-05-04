@@ -12,7 +12,7 @@ metadata:
     {{ toYaml .Values.server.statefulSet.labels | nindent 4 }}
     {{- end}}
   name: {{ template "prometheus.server.fullname" . }}
-{{ include "prometheus.namespace" . | indent 2 }}
+  namespace: {{ include "prometheus.namespace" . }}
 spec:
   serviceName: {{ template "prometheus.server.fullname" . }}-headless
   selector:
@@ -64,13 +64,17 @@ spec:
             {{- toYaml . | nindent 12 }}
           {{- end }}
           args:
-            - --volume-dir=/etc/config
-            - --webhook-url=http://127.0.0.1:9090{{ .Values.server.prefixURL }}/-/reload
+            - --watched-dir=/etc/config
+          {{- $default_url := "http://127.0.0.1:9090/-/reload" }}
+          {{- with .Values.server.prefixURL }}
+          {{- $default_url = printf "http://127.0.0.1:9090/%s/-/reload" . }}
+          {{- end }}
+            - --reload-url={{ default $default_url .Values.configmapReload.reloadUrl }}
           {{- range $key, $value := .Values.configmapReload.prometheus.extraArgs }}
             - --{{ $key }}={{ $value }}
           {{- end }}
           {{- range .Values.configmapReload.prometheus.extraVolumeDirs }}
-            - --volume-dir={{ . }}
+            - --watched-dir={{ . }}
           {{- end }}
           {{- if .Values.configmapReload.prometheus.containerPort }}
           ports:
@@ -269,6 +273,10 @@ spec:
       affinity:
 {{ toYaml .Values.server.affinity | indent 8 }}
     {{- end }}
+    {{- with .Values.server.topologySpreadConstraints }}
+      topologySpreadConstraints:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}
       terminationGracePeriodSeconds: {{ .Values.server.terminationGracePeriodSeconds }}
       volumes:
         - name: config-volume
@@ -316,7 +324,7 @@ spec:
 {{- if .Values.server.persistentVolume.enabled }}
   volumeClaimTemplates:
     - metadata:
-        name: storage-volume
+        name: {{ default "storage-volume" .Values.server.persistentVolume.statefulSetNameOverride "" }}
         {{- if .Values.server.persistentVolume.annotations }}
         annotations:
 {{ toYaml .Values.server.persistentVolume.annotations | indent 10 }}
