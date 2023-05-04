@@ -203,7 +203,7 @@ spec:
           volumeMounts:
             - name: config-volume
               mountPath: /etc/config
-            - name: storage-volume
+            - name: {{ ternary .Values.server.persistentVolume.statefulSetNameOverride "storage-volume" (and .Values.server.persistentVolume.enabled .Values.server.persistentVolume.statefulSetNameOverride) }}
               mountPath: {{ .Values.server.persistentVolume.mountPath }}
               subPath: "{{ .Values.server.persistentVolume.subPath }}"
           {{- range .Values.server.extraHostPathMounts }}
@@ -324,7 +324,7 @@ spec:
 {{- if .Values.server.persistentVolume.enabled }}
   volumeClaimTemplates:
     - metadata:
-        name: {{ default "storage-volume" .Values.server.persistentVolume.statefulSetNameOverride "" }}
+        name: {{ .Values.server.persistentVolume.statefulSetNameOverride | default "storage-volume" }}
         {{- if .Values.server.persistentVolume.annotations }}
         annotations:
 {{ toYaml .Values.server.persistentVolume.annotations | indent 10 }}
