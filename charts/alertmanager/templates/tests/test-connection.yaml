@@ -1,11 +1,14 @@
+{{- if .Values.testFramework.enabled }}
 apiVersion: v1
 kind: Pod
 metadata:
   name: "{{ include "alertmanager.fullname" . }}-test-connection"
   labels:
     {{- include "alertmanager.labels" . | nindent 4 }}
+  {{- with .Values.testFramework.annotations }}
   annotations:
-    "helm.sh/hook": test-success
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
 spec:
   containers:
     - name: wget
@@ -13,3 +16,4 @@ spec:
       command: ['wget']
       args: ['{{ include "alertmanager.fullname" . }}:{{ .Values.service.port }}']
   restartPolicy: Never
+{{- end }}
