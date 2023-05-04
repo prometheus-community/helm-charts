@@ -65,8 +65,8 @@ Return the appropriate apiVersion for rbac.
 {{/* Get Policy API Version */}}
 {{- define "prometheus-postgres-exporter.pdb.apiVersion" -}}
 {{- if .Capabilities.APIVersions.Has "policy/v1" }}
-    {{- print "policy/v1" -}}
+{{- print "policy/v1" -}}
 {{- else -}}
-  {{- print "policy/v1beta1" -}}
+{{- print "policy/v1beta1" -}}
 {{- end -}}
 {{- end -}}
