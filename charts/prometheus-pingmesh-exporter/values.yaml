@@ -59,9 +59,6 @@ extraContainers: []
   #     - mountPath: /etc/prometheus/secrets/pingmesh-tls
   #       name: secret-pingmesh-tls
 
-## Enable pod security policy
-pspEnabled: true
-
 hostNetwork: false
 
 strategy:
@@ -83,9 +80,13 @@ image:
   #   - myRegistrKeySecretName
 
 podSecurityContext: {}
-# fsGroup: 1000
+  # runAsUser: 1001
+  # runAsGroup: 1001
+  # runAsNonRoot: true
+  # seccompProfile:
+  #   type: RuntimeDefault
 
-## User and Group to run pingmesh-exporter container as
+## User and Group to run pingmesh-exporter container as Daemonset
 securityContext:
   runAsUser: 1000
   runAsGroup: 1000
@@ -94,6 +95,9 @@ securityContext:
   allowPrivilegeEscalation: false
   capabilities:
     drop: ["ALL"]
+  privileged: true
+  seccompProfile:
+    type: RuntimeDefault
 # Add NET_RAW to enable ICMP
 #    add: ["NET_RAW"]
 
@@ -104,7 +108,7 @@ livenessProbe:
 
 readinessProbe:
   httpGet:
-    path: /health
+    path: /ready
     port: http
 
 nodeSelector: {}
@@ -215,11 +219,9 @@ pinglistConfig:
       name: ping-public-demo
       type: OtherIP
       ips :
-        - 127.0.0.1
-        - 8.8.8.8
-        - 114.114.114.114
-        - www.baidu.com
-        - kubernetes.default.svc.cluster.local
+        - 127.0.0.1                            # local ip
+        - 8.8.8.8                              # google public dns
+        - kubernetes.default.svc.cluster.local # kubernetes coredns
 
 # Set custom config path, other than default /config/pingmesh.yaml. If let empty, path will be "/config/pingmesh.yaml"
 # configPath: "/foo/bar"
@@ -241,17 +243,13 @@ extraSecretMounts: []
   #   readOnly: true
   #   defaultMode: 420
 
-resources: 
-  limits:
-    cpu: 200m
-    memory: 256Mi
-  requests:
-    cpu: 200m
-    memory: 256Mi
+resources: {}
   # limits:
-  #   memory: 300Mi
+  #  cpu: 200m
+  #  memory: 256Mi
   # requests:
-  #   memory: 50Mi
+  #  cpu: 200m
+  #  memory: 256Mi
 
 priorityClassName: ""
 
@@ -345,8 +343,8 @@ serviceMonitor:
   bearerTokenFile:
 
   targets:
-    - name: baidu.com                 # Human readable URL that will appear in Prometheus / AlertManager
-      url: https://www.baidu.com        # The URL that pingmesh will scrape
+    - name: google.com                 # Human readable URL that will appear in Prometheus / AlertManager
+      url: https://www.google.com        # The URL that pingmesh will scrape
       labels: {}                       # Map of labels for ServiceMonitor. Overrides value set in `defaults`
       interval: 60s                    # Scraping interval. Overrides value set in `defaults`
       scrapeTimeout: 60s               # Scrape timeout. Overrides value set in `defaults`
@@ -369,14 +367,14 @@ prometheusRule:
   additionalLabels: {}
   namespace: ""
   rules:
-  - alert: 站点可用性
+  - alert: web site usability
     expr: probe_success == 0
     for: 1m
     labels:
       alertype: domain 
       severity: critical
     annotations:
-      description: "站点无法访问： {{ $labels.instance }}"
+      description: "web site usability： {{ $labels.instance }}"
 
 ## Network policy for chart
 networkPolicy:
@@ -392,5 +390,10 @@ networkPolicy:
 dnsPolicy: ClusterFirst
 dnsConfig: 
   options:
-      - name: ndots
-        value: '3'
+    - name: single-request-reopen
+    - name: timeout
+      value: '1'
+    - name: attempts
+      value: '3'
+    - name: ndots
+      value: '3'
