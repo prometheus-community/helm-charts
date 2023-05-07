@@ -65,6 +65,10 @@ helm upgrade [RELEASE_NAME] [CHART] --install
 
 _See [helm upgrade](https://helm.sh/docs/helm/helm_upgrade/) for command documentation._
 
+### To 22.3
+
+Prometheus has been bumped to release [v2.43.1](https://github.com/prometheus/prometheus/releases/tag/v2.43.1) which is a bugfix release.
+
 ### To 22.0
 
 The `app.kubernetes.io/version` label has been removed from the pod selector.
