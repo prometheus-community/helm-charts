@@ -264,26 +264,49 @@ def add_rules_per_rule_conditions(rules, group, indent=4):
     return rules
 
 
-def add_custom_labels(rules, indent=4):
+def add_custom_labels(rules_str, indent=4):
+    type(rules_str)
     """Add if wrapper for additional rules labels"""
     rule_condition = '{{- if .Values.defaultRules.additionalRuleLabels }}\n{{ toYaml .Values.defaultRules.additionalRuleLabels | indent 8 }}\n{{- end }}'
-    rule_condition_len = len(rule_condition) + 1
 
-    separator = " " * indent + "- alert:.*"
-    alerts_positions = re.finditer(separator,rules)
-    alert=-1
-    for alert_position in alerts_positions:
-        # add rule_condition at the end of the alert block
-        if alert >= 0 :
-            index = alert_position.start() + rule_condition_len * alert - 1
-            rules = rules[:index] + "\n" + rule_condition + rules[index:]
-        alert += 1
+    rule_seperator = "\n" + " " * indent + "-.*"
+    label_seperator = "\n" + " " * indent + "  labels:"
+    section_seperator = "\n" + " " * indent + "  \S"
+    section_seperator_len = len(section_seperator)-1
+    rules_positions = re.finditer(rule_seperator,rules_str)
 
-    # add rule_condition at the end of the last alert
-    if alert >= 0:
-        index = len(rules) - 1
-        rules = rules[:index] + "\n" + rule_condition + rules[index:]
-    return rules
+    ruleStartingLine = [(rule_position.start(),rule_position.end()) for rule_position in rules_positions]
+    head = rules_str[:ruleStartingLine[0][0]]
+
+    # handle each rule individually
+    rules = []
+    previousRule = None
+    for r in ruleStartingLine:
+         if previousRule != None:
+             rules.append(rules_str[previousRule[0]:r[0]])
+         previousRule = r
+    rules.append(rules_str[previousRule[0]:len(rules_str)-1])
+
+    for i, rule in enumerate(rules):
+        current_label = re.search(label_seperator,rule)
+
+        if current_label:
+            # `labels:` block exists
+            # determine if there are any existing entries
+            entries = re.search(section_seperator,rule[current_label.end():])
+            if entries:
+                entries_start = current_label.end()
+                entries_end = entries.end()+current_label.end()-section_seperator_len
+                rules[i] = rule[:entries_end] + "\n" + rule_condition  + rule[entries_end:]
+            else:
+                # `labels:` does not contain any entries
+                # append template to label section
+                rules[i]+= "\n" + rule_condition
+        else:
+            # `labels:` block does not exist
+            # create it and append template
+            rules[i]+= label_seperator + "\n" + rule_condition
+    return head + "".join(rules) + "\n"
 
 
 def add_custom_annotations(rules, indent=4):
