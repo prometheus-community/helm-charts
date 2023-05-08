@@ -265,20 +265,19 @@ def add_rules_per_rule_conditions(rules, group, indent=4):
 
 
 def add_custom_labels(rules_str, indent=4):
-    type(rules_str)
     """Add if wrapper for additional rules labels"""
     rule_condition = '{{- if .Values.defaultRules.additionalRuleLabels }}\n{{ toYaml .Values.defaultRules.additionalRuleLabels | indent 8 }}\n{{- end }}'
-
     rule_seperator = "\n" + " " * indent + "-.*"
     label_seperator = "\n" + " " * indent + "  labels:"
     section_seperator = "\n" + " " * indent + "  \S"
     section_seperator_len = len(section_seperator)-1
     rules_positions = re.finditer(rule_seperator,rules_str)
-
+    
+    # fetch breakpoint between each set of rules
     ruleStartingLine = [(rule_position.start(),rule_position.end()) for rule_position in rules_positions]
     head = rules_str[:ruleStartingLine[0][0]]
 
-    # handle each rule individually
+    # construct array of rules so they can be handled individually 
     rules = []
     previousRule = None
     for r in ruleStartingLine:
@@ -289,7 +288,6 @@ def add_custom_labels(rules_str, indent=4):
 
     for i, rule in enumerate(rules):
         current_label = re.search(label_seperator,rule)
-
         if current_label:
             # `labels:` block exists
             # determine if there are any existing entries
