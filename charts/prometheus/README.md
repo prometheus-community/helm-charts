@@ -65,6 +65,26 @@ helm upgrade [RELEASE_NAME] [CHART] --install
 
 _See [helm upgrade](https://helm.sh/docs/helm/helm_upgrade/) for command documentation._
 
+### To 22.4
+
+Support for environment variables in the _prometheus-config-reloader_'s container has been added through `configmapReload.env`. These can be useful together with `configmapReload.reloadUrl` if basic authentication is set at Prometheus.
+
+_prometheus-config-reloader_ has been bumped to release [0.65.1](https://github.com/prometheus-operator/prometheus-operator/releases).
+
+### To 22.3
+
+Prometheus has been bumped to release [v2.43.1](https://github.com/prometheus/prometheus/releases/tag/v2.43.1) which is a bugfix release.
+
+### To 22.0
+
+The `app.kubernetes.io/version` label has been removed from the pod selector.
+
+Therefore, you must delete the previous StatefulSet or Deployment before upgrading. Performing this operation will cause **Prometheus to stop functioning** until the upgrade is complete.
+
+```console
+kubectl delete deploy,sts -l app.kubernetes.io/name=prometheus
+```
+
 ### To 21.0
 
 The Kubernetes labels have been updated to follow [Helm 3 label and annotation best practices](https://helm.sh/docs/chart_best_practices/labels/).
