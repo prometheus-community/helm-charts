@@ -86,9 +86,10 @@ A major chart version change (like v1.2.3 -> v2.0.0) indicates that there is an 
 
 This version upgrades Prometheus-Operator to v0.65.1 with new CRDs (PrometheusAgent and ScrapeConfig), Prometheus to v2.43.1 and Thanos to v0.31.0.
 
-As of this release, CRD installation and upgrade is now managed by the chart if the property `crds.enabled` is set to true (by default).
+As of this release, the update of your CRD is now managed by the chart if the property `crds.enabled` is set to true (by default to keep the same onboarding experience).
+If you want to manage the lifecycle of your CRDs yourself (e.g. users of --skip-crds=true or [prometheus-operator-crds](https://github.com/prometheus-community/helm-charts/tree/main/charts/prometheus-operator-crds) chart), set `crds.enabled` to false when deploying the chart.
 
-If you want to upgrade the CRDs the old fashion way, set `crds.enabled` to false and run these commands to update the CRDs before applying the upgrade.
+If you want to upgrade the CRDs the old fashion way, set `crds.enabled` to false and run the following commands to update the CRDs before applying the upgrade.
 
 ```console
 kubectl apply --server-side -f https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/v0.65.1/example/prometheus-operator-crd/monitoring.coreos.com_alertmanagerconfigs.yaml
