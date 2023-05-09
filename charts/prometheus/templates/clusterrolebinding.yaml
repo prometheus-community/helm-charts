@@ -4,7 +4,11 @@ kind: ClusterRoleBinding
 metadata:
   labels:
     {{- include "prometheus.server.labels" . | nindent 4 }}
+{{- if .Values.server.clusterRoleNameOverride }}
+  name: {{ template "prometheus.clusterRoleNameOverride" . }}
+  {{- else }}
   name: {{ template "prometheus.server.fullname" . }}
+{{- end }}
 subjects:
   - kind: ServiceAccount
     name: {{ template "prometheus.serviceAccountName.server" . }}
@@ -12,5 +16,9 @@ subjects:
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
+{{- if .Values.server.clusterRoleNameOverride }}
+  name: {{ template "prometheus.clusterRoleNameOverride" . }}
+  {{- else }}
   name: {{ template "prometheus.server.fullname" . }}
+{{- end }}
 {{- end }}
