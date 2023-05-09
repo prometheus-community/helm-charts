@@ -1,0 +1,55 @@
+{{- if .Values.serviceMonitor.enabled }}
+{{- range .Values.serviceMonitor.targets }}
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: {{ template "prometheus-pingmesh-exporter.fullname" $ }}-{{ .name }}
+  namespace: {{ template "prometheus-pingmesh-exporter.namespace" $ }}
+  labels:
+    {{- include "prometheus-pingmesh-exporter.labels" $ | nindent 4 }}
+    {{- if or $.Values.serviceMonitor.defaults.labels .labels }}
+    {{- toYaml (.labels | default $.Values.serviceMonitor.defaults.labels) | nindent 4 }}
+    {{- end }}
+spec:
+  endpoints:
+  - port: http
+    scheme: {{ $.Values.serviceMonitor.scheme }}
+    {{- if $.Values.serviceMonitor.bearerTokenFile }}
+    bearerTokenFile: {{ $.Values.serviceMonitor.bearerTokenFile }}
+    {{- end }}
+    {{- if $.Values.serviceMonitor.tlsConfig }}
+    tlsConfig: {{ toYaml $.Values.serviceMonitor.tlsConfig | nindent 6 }}
+    {{- end }}
+    path: "/probe"
+    interval: {{ .interval | default $.Values.serviceMonitor.defaults.interval }}
+    scrapeTimeout: {{ .scrapeTimeout | default $.Values.serviceMonitor.defaults.scrapeTimeout }}
+    params:
+      module:
+      - {{ .module | default $.Values.serviceMonitor.defaults.module }}
+      target:
+      - {{ .url }}
+    metricRelabelings:
+      - sourceLabels: [instance]
+        targetLabel: instance
+        replacement: {{ .url }}
+      - sourceLabels: [target]
+        targetLabel: target
+        replacement: {{ .name }}
+        {{- range $targetLabel, $replacement := .additionalMetricsRelabels | default $.Values.serviceMonitor.defaults.additionalMetricsRelabels }}
+      - targetLabel: {{ $targetLabel | quote }}
+        replacement: {{ $replacement | quote }}
+        {{- end }}
+{{- if concat (.additionalRelabeling | default list) $.Values.serviceMonitor.defaults.additionalRelabeling }}
+    relabelings:
+{{ toYaml (concat (.additionalRelabeling | default list) $.Values.serviceMonitor.defaults.additionalRelabeling) | indent 6 }}
+{{- end }}
+  jobLabel: "{{ $.Release.Name }}"
+  selector:
+    matchLabels:
+      {{- include "prometheus-pingmesh-exporter.selectorLabels" $ | nindent 6 }}
+  namespaceSelector:
+    matchNames:
+      - {{ template "prometheus-pingmesh-exporter.namespace" $ }}
+{{- end }}
+{{- end }}
