@@ -32,7 +32,7 @@ spec:
       {{- end }}
       containers:
         {{- range $.Values.crds.managedResources }}
-        - name: install-{{ . }}-crd
+        - name: install-{{ . | replace "." "-" | replace "_" "-" }}
           {{- if $.Values.crds.image.sha }}
           image: {{ $registry }}/{{ $.Values.crds.image.repository }}:{{ $.Values.crds.image.tag }}@sha256:{{ $.Values.crds.image.sha }}
           {{- else }}
@@ -44,7 +44,7 @@ spec:
             - --server-side
             - --force-conflicts={{ $.Values.crds.forceConflicts }}
             - -f
-            - {{ tpl $.Values.crds.sourceUrl $ }}{{ . }}.yaml
+            - {{ tpl $.Values.crds.sourceUrl $ }}{{ . }}
           securityContext:
             {{- toYaml $.Values.crds.containerSecurityContext | nindent 12 }}
           resources:
