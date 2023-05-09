@@ -8,14 +8,14 @@ This chart bootstraps a [RabbitMQ Exporter](https://github.com/kbudde/rabbitmq_e
 
 - Kubernetes 1.8+ with Beta APIs enabled
 
-## Get Repo Info
+## Get Repository Info
 
 ```console
 helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
 helm repo update
 ```
 
-_See [helm repo](https://helm.sh/docs/helm/helm_repo/) for command documentation._
+_See [helm repository](https://helm.sh/docs/helm/helm_repo/) for command documentation._
 
 ## Install Chart
 
@@ -58,7 +58,7 @@ _See [helm upgrade](https://helm.sh/docs/helm/helm_upgrade/) for command documen
 
 Before version 1.5.0, Prometheus rules were mainly controlled through `prometheus.rules` in values.yaml, but it could only control whether to enable the default rules, and it could not add other rules. Now, `prometheusRule` has been added to values.yaml, and the original default rules have been moved to `prometheusRule.rules`
 
-## Configuring
+## Configuration
 
 See [Customizing the Chart Before Installing](https://helm.sh/docs/intro/using_helm/#customizing-the-chart-before-installing). To see all configurable options with detailed comments, visit the chart's [values.yaml](./values.yaml), or run these configuration commands:
 
