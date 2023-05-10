@@ -92,16 +92,11 @@ We truncate at 63 chars because some Kubernetes name fields are limited to this 
 Create a fully qualified ClusterRole name.
 We truncate at 63 chars because some Kubernetes name fields are limited to this (by the DNS naming spec).
 */}}
-{{- define "prometheus.clusterRoleNameOverride" -}}
+{{- define "prometheus.clusterRoleName" -}}
 {{- if .Values.server.clusterRoleNameOverride -}}
-{{- .Values.server.clusterRoleNameOverride | trunc 63 | trimSuffix "-" -}}
+{{ .Values.server.clusterRoleNameOverride | trunc 63 | trimSuffix "-" }}
 {{- else -}}
-{{- $name := default .Chart.Name .Values.nameOverride -}}
-{{- if contains $name .Release.Name -}}
-{{- .Release.Name | trunc 63 | trimSuffix "-" -}}
-{{- else -}}
-{{- printf "%s-%s" .Release.Name $name | trunc 63 | trimSuffix "-" -}}
-{{- end -}}
+{{ default (include "prometheus.server.fullname" .) }}
 {{- end -}}
 {{- end -}}
 
