@@ -43,6 +43,9 @@ app.kubernetes.io/managed-by: {{ .Release.Service }}
 {{- if .Values.releaseLabel }}
 release: {{ .Release.Name }}
 {{- end }}
+{{- if Values.commonLabels }}
+{{ toYaml .Values.commonLabels }}
+{{- end }}
 {{- end }}
 
 {{/*
