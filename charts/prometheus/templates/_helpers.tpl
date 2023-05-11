@@ -89,6 +89,18 @@ We truncate at 63 chars because some Kubernetes name fields are limited to this 
 {{- end -}}
 
 {{/*
+Create a fully qualified ClusterRole name.
+We truncate at 63 chars because some Kubernetes name fields are limited to this (by the DNS naming spec).
+*/}}
+{{- define "prometheus.clusterRoleName" -}}
+{{- if .Values.server.clusterRoleNameOverride -}}
+{{ .Values.server.clusterRoleNameOverride | trunc 63 | trimSuffix "-" }}
+{{- else -}}
+{{ include "prometheus.server.fullname" . }}
+{{- end -}}
+{{- end -}}
+
+{{/*
 Create a fully qualified alertmanager name.
 We truncate at 63 chars because some Kubernetes name fields are limited to this (by the DNS naming spec).
 */}}
