@@ -65,6 +65,10 @@ helm upgrade [RELEASE_NAME] [CHART] --install
 
 _See [helm upgrade](https://helm.sh/docs/helm/helm_upgrade/) for command documentation._
 
+### To 22.5
+
+clusterRoleNameOverride has been added to deal with situations where there is a use-case to deploy Prometheus server per namespace and hence being able to set the names of ClusterRole and ClusterRoleBinding independently
+
 ### To 22.4
 
 Support for environment variables in the _prometheus-config-reloader_'s container has been added through `configmapReload.env`. These can be useful together with `configmapReload.reloadUrl` if basic authentication is set at Prometheus.
