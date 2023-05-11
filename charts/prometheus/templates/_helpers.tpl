@@ -96,7 +96,7 @@ We truncate at 63 chars because some Kubernetes name fields are limited to this 
 {{- if .Values.server.clusterRoleNameOverride -}}
 {{ .Values.server.clusterRoleNameOverride | trunc 63 | trimSuffix "-" }}
 {{- else -}}
-{{ default (include "prometheus.server.fullname" .) }}
+{{ include "prometheus.server.fullname" . }}
 {{- end -}}
 {{- end -}}
 
