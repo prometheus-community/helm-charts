@@ -279,6 +279,8 @@ def add_custom_labels(rules_str, indent=4):
 
     # construct array of rules so they can be handled individually 
     rules = []
+    # pylint: disable=E1136
+    # See https://github.com/pylint-dev/pylint/issues/1498 for None Values
     previousRule = None
     for r in ruleStartingLine:
          if previousRule != None:
