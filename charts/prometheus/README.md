@@ -65,6 +65,10 @@ helm upgrade [RELEASE_NAME] [CHART] --install
 
 _See [helm upgrade](https://helm.sh/docs/helm/helm_upgrade/) for command documentation._
 
+### To 22.6
+
+Prometheus has been bumped to release [v2.44.0](https://github.com/prometheus/prometheus/releases/tag/v2.44.0).
+
 ### To 22.5
 
 clusterRoleNameOverride has been added to deal with situations where there is a use-case to deploy Prometheus server per namespace and hence being able to set the names of ClusterRole and ClusterRoleBinding independently
