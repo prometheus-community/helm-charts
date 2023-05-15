@@ -54,10 +54,6 @@ $ helm upgrade [RELEASE_NAME] [CHART] --install
 
 _See [helm upgrade](https://helm.sh/docs/helm/helm_upgrade/) for command documentation._
 
-### To 1.6.0
-
-Before version 1.5.0, Prometheus rules were mainly controlled through `prometheus.rules` in values.yaml, but it could only control whether to enable the default rules, and it could not add other rules. Now, `prometheusRule` has been added to values.yaml, and the original default rules have been moved to `prometheusRule.rules`
-
 ## Configuration
 
 See [Customizing the Chart Before Installing](https://helm.sh/docs/intro/using_helm/#customizing-the-chart-before-installing). To see all configurable options with detailed comments, visit the chart's [values.yaml](./values.yaml), or run these configuration commands:

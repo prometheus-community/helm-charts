@@ -1,20 +1,20 @@
-{{- if .Values.prometheusRule.enabled }}
+{{- if .Values.prometheus.rules.enabled }}
 apiVersion: monitoring.coreos.com/v1
 kind: PrometheusRule
 metadata:
   name: {{ template "prometheus-rabbitmq-exporter.fullname" . }}
-{{- with .Values.prometheusRule.namespace }}
+{{- with .Values.prometheus.rules.namespace }}
   namespace: {{ . }}
 {{- end }}
   labels:
     app: {{ template "prometheus-rabbitmq-exporter.name" . }}
     chart: {{ template "prometheus-rabbitmq-exporter.chart" . }}
     heritage: {{ .Release.Service }}
-  {{- if .Values.prometheusRule.additionalLabels }}
-{{ toYaml .Values.prometheusRule.additionalLabels | indent 4 }}
+  {{- if .Values.prometheus.rules.additionalLabels }}
+{{ toYaml .Values.prometheus.rules.additionalLabels | indent 4 }}
   {{- end }}
 spec:
-{{- with .Values.prometheusRule.rules }}
+{{- with .Values.prometheus.rules.additionalRules }}
   groups:
     - name: {{ template "prometheus-rabbitmq-exporter.fullname" $ }}
       rules: {{ tpl (toYaml .) $ | nindent 8 }}
