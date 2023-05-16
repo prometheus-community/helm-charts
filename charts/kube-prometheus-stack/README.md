@@ -52,17 +52,10 @@ This removes all the Kubernetes components associated with the chart and deletes
 
 _See [helm uninstall](https://helm.sh/docs/helm/helm_uninstall/) for command documentation._
 
-CRDs created by this chart are not removed by default and should be manually cleaned up:
+CRDs created by this chart are not removed by default and should be manually cleaned up: (add `?ref=kube-prometheus-stack-x.y.z` to the URL for a specific version)
 
 ```console
-kubectl delete crd alertmanagerconfigs.monitoring.coreos.com
-kubectl delete crd alertmanagers.monitoring.coreos.com
-kubectl delete crd podmonitors.monitoring.coreos.com
-kubectl delete crd probes.monitoring.coreos.com
-kubectl delete crd prometheuses.monitoring.coreos.com
-kubectl delete crd prometheusrules.monitoring.coreos.com
-kubectl delete crd servicemonitors.monitoring.coreos.com
-kubectl delete crd thanosrulers.monitoring.coreos.com
+kubectl delete -k https://github.com/prometheus-community/helm-charts/charts/kube-prometheus-stack/crds/
 ```
 
 ## Upgrading Chart
@@ -71,10 +64,16 @@ kubectl delete crd thanosrulers.monitoring.coreos.com
 helm upgrade [RELEASE_NAME] prometheus-community/kube-prometheus-stack
 ```
 
-With Helm v3, CRDs created by this chart are not updated by default and should be manually updated.
-Consult also the [Helm Documentation on CRDs](https://helm.sh/docs/chart_best_practices/custom_resource_definitions).
-
 _See [helm upgrade](https://helm.sh/docs/helm/helm_upgrade/) for command documentation._
+
+With Helm v3, CRDs created by this chart are not updated by default and should be manually updated.
+Consult the [Helm Documentation on CRDs](https://helm.sh/docs/chart_best_practices/custom_resource_definitions) for more details.
+
+To upgrade CRDs manually, use this command: (add `?ref=kube-prometheus-stack-x.y.z` to the URL for a specific version)
+
+```console
+kubectl apply --server-side -k https://github.com/prometheus-community/helm-charts/charts/kube-prometheus-stack/crds/
+```
 
 ### Upgrading an existing Release to a new major version
 
