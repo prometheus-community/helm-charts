@@ -55,7 +55,7 @@ condition_map = {
     'node-rsrc-use': ' .Values.nodeExporter.enabled',
     'node-cluster-rsrc-use': ' .Values.nodeExporter.enabled',
     'nodes': ' .Values.nodeExporter.enabled',
-    'nodes-darwin': ' .Values.nodeExporter.enabled',
+    'nodes-darwin': ' .Values.nodeExporterMacOS.enabled',
     'prometheus-remote-write': ' .Values.prometheus.prometheusSpec.remoteWriteDashboards'
 }
 
