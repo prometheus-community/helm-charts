@@ -149,6 +149,81 @@
                     }
                 }
             }
+        },
+        "config": {
+            "description": "https://prometheus.io/docs/alerting/latest/configuration/",
+            "duration": {
+                "type": "string",
+                "pattern": "^((([0-9]+)y)?(([0-9]+)w)?(([0-9]+)d)?(([0-9]+)h)?(([0-9]+)m)?(([0-9]+)s)?(([0-9]+)ms)?|0)$"
+            },
+            "labelname": {
+                "type": "string",
+                "pattern": "^[a-zA-Z_][a-zA-Z0-9_]*$"
+            },
+            "route": {
+                "description": "Alert routing configuration.",
+                "type": "object",
+                "properties": {
+                    "receiver": {
+                        "description": "The default receiver to send alerts to.",
+                        "type": "string"
+                    },
+                    "group_by": {
+                        "description": "The labels by which incoming alerts are grouped together.",
+                        "type": "array",
+                        "items": {
+                            "type": "string",
+                            "$ref": "#/definitions/config/labelname"
+                        }
+                    },
+                    "continue": {
+                        "description": "Whether an alert should continue matching subsequent sibling nodes.",
+                        "type": "boolean",
+                        "default": false
+                    },
+                    "matchers": {
+                        "description": "A list of matchers that an alert has to fulfill to match the node.",
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "group_wait": {
+                        "description": "How long to initially wait to send a notification for a group of alerts.",
+                        "$ref": "#/definitions/config/duration"
+                    },
+                    "group_interval": {
+                        "description": "How long to wait before sending a notification about new alerts that are added to a group of alerts for which an initial notification has already been sent.",
+                        "$ref": "#/definitions/config/duration"
+                    },
+                    "repeat_interval": {
+                        "description": "How long to wait before sending a notification again if it has already been sent successfully for an alert.",
+                        "$ref": "#/definitions/config/duration"
+                    },
+                    "mute_time_intervals": {
+                        "description": "Times when the route should be muted.",
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "active_time_intervals": {
+                        "description": "Times when the route should be active.",
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "routes": {
+                        "description": "Zero or more child routes.",
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "$ref": "#/definitions/config/route"
+                        }
+                    }
+                }
+            }
         }
     },
     "properties": {
@@ -697,24 +772,7 @@
                 "route": {
                     "description": "Alert routing configuration.",
                     "type": "object",
-                    "properties": {
-                        "group_wait": {
-                            "description": "Specifies the time to wait before sending a notification for a group of alerts.",
-                            "type": "string"
-                        },
-                        "group_interval": {
-                            "description": "Specifies the interval between sending notifications for the same group of alerts.",
-                            "type": "string"
-                        },
-                        "receiver": {
-                            "description": "The default receiver to send alerts to.",
-                            "type": "string"
-                        },
-                        "repeat_interval": {
-                            "description": "Specifies the interval between repeating notifications for the same alert.",
-                            "type": "string"
-                        }
-                    }
+                    "$ref": "#/definitions/config/route"
                 }
             }
         },
