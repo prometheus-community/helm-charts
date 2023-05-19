@@ -1,4 +1,4 @@
-{{- if .Values.prometheusOperator.networkPolicy.enabled }}
+{{- if and .Values.prometheusOperator.networkPolicy.enabled (eq .Values.prometheusOperator.networkPolicy.flavor "kubernetes") }}
 apiVersion: {{ template "kube-prometheus-stack.prometheus.networkPolicy.apiVersion" . }}
 kind: NetworkPolicy
 metadata:
@@ -6,6 +6,7 @@ metadata:
   namespace: {{ template "kube-prometheus-stack.namespace" . }}
   labels:
     app: {{ template "kube-prometheus-stack.name" . }}-operator
+    {{- include "kube-prometheus-stack.labels" . | nindent 4 }}
 spec:
   egress: 
     - {}

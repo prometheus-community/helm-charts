@@ -38,7 +38,7 @@ spec:
         - name: {{ .Chart.Name }}
           securityContext:
             {{- toYaml .Values.securityContext | nindent 12 }}
-          image: "{{ .Values.image.repository }}:{{ default .Chart.AppVersion .Values.image.tag }}"
+          image: "{{ .Values.image.registry }}/{{ .Values.image.repository }}:{{ default .Chart.AppVersion .Values.image.tag }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           {{- if or .Values.config .Values.collectors }}
           args:
@@ -106,6 +106,9 @@ spec:
                     {{- end }}
                     {{- if not .Values.cloudsqlproxy.workloadIdentity.enabled }}
                     ,"-credential_file=/secrets/cloudsql/credentials.json"
+                    {{- end }}
+                    {{- if .Values.cloudsqlproxy.extraArgs }}
+                    ,"{{ .Values.cloudsqlproxy.extraArgs }}"
                     {{- end }}
                     ]
           livenessProbe:
