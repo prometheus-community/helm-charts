@@ -43,9 +43,6 @@ spec:
   image: "{{ $registry }}/{{ .Values.prometheus.prometheusSpec.image.repository }}"
   {{- end }}
   version: {{ default .Values.prometheus.prometheusSpec.image.tag .Values.prometheus.prometheusSpec.version }}
-  {{- if .Values.prometheus.prometheusSpec.image.sha }}
-  sha: {{ .Values.prometheus.prometheusSpec.image.sha }}
-  {{- end }}
 {{- end }}
 {{- if .Values.prometheus.prometheusSpec.additionalArgs }}
   additionalArgs:
@@ -364,7 +361,8 @@ spec:
 {{- end }}
   excludedFromEnforcement:
 {{- range $prometheusDefaultRulesExcludedFromEnforce.rules }}
-    - resource: prometheusrules
+    - group: monitoring.coreos.com
+      resource: prometheusrules
       namespace: "{{ template "kube-prometheus-stack.namespace" $ }}"
       name: "{{ printf "%s-%s" (include "kube-prometheus-stack.fullname" $) . | trunc 63 | trimSuffix "-" }}"
 {{- end }}
