@@ -158,6 +158,7 @@ alertmanager:
     create: true
     name: ""
     annotations: {}
+    automountServiceAccountToken: true
 
   ## Configure pod disruption budgets for Alertmanager
   ## ref: https://kubernetes.io/docs/tasks/run-application/configure-pdb/#specifying-a-poddisruptionbudget
@@ -377,6 +378,11 @@ alertmanager:
     ## Denotes if this Service desires to route external traffic to node-local or cluster-wide endpoints
     ##
     externalTrafficPolicy: Cluster
+
+    ## If you want to make sure that connections from a particular client are passed to the same Pod each time
+    ## Accepts 'ClientIP' or ''
+    ##
+    sessionAffinity: ""
 
     ## Service type
     ##
@@ -822,6 +828,8 @@ grafana:
       enabled: true
       label: grafana_dashboard
       labelValue: "1"
+      # Allow discovery in all namespaces for dashboards
+      searchNamespace: ALL
 
       ## Annotations for Grafana dashboard configmaps
       ##
@@ -844,12 +852,18 @@ grafana:
       ##
       # url: http://prometheus-stack-prometheus:9090/
 
+      ## Prometheus request timeout in seconds
+      # timeout: 30
+
       # If not defined, will use prometheus.prometheusSpec.scrapeInterval or its default
       # defaultDatasourceScrapeInterval: 15s
 
       ## Annotations for Grafana datasource configmaps
       ##
       annotations: {}
+
+      ## Set method for HTTP to send query to datasource
+      httpMethod: POST
 
       ## Create datasource for each Pod of Prometheus StatefulSet;
       ## this uses headless service `prometheus-operated` which is
@@ -928,6 +942,11 @@ grafana:
     #   targetLabel: nodename
     #   replacement: $1
     #   action: replace
+
+## Flag to disable all the kubernetes component scrapers
+##
+kubernetesServiceMonitors:
+  enabled: true
 
 ## Component scraping the kube api server
 ##
@@ -1856,6 +1875,8 @@ prometheusOperator:
   ## Admission webhook support for PrometheusRules resources added in Prometheus Operator 0.30 can be enabled to prevent incorrectly formatted
   ## rules from making their way into prometheus and potentially preventing the container from starting
   admissionWebhooks:
+    ## Valid values: Fail, Ignore, IgnoreOnInstallOnly
+    ## IgnoreOnInstallOnly - If Release.IsInstall returns "true", set "Ignore" otherwise "Fail"
     failurePolicy:
     ## The default timeoutSeconds is 10 and the maximum value is 30.
     timeoutSeconds: 10
@@ -1948,6 +1969,15 @@ prometheusOperator:
     ## Enable creation of NetworkPolicy resources.
     ##
     enabled: false
+
+    ## Flavor of the network policy to use.
+    #  Can be:
+    #  * kubernetes for networking.k8s.io/v1/NetworkPolicy
+    #  * cilium     for cilium.io/v2/CiliumNetworkPolicy
+    flavor: kubernetes
+
+    # cilium:
+    #   egress:
 
   ## Service account for Alertmanager to use.
   ## ref: https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-account/
@@ -2202,6 +2232,9 @@ prometheusOperator:
       tag: ""
       sha: ""
 
+    # add prometheus config reloader liveness and readiness probe. Default: false
+    enableProbe: false
+
     # resource config for prometheusConfigReloader
     resources:
       requests:
@@ -2219,6 +2252,17 @@ prometheusOperator:
     tag: v0.30.2
     sha: ""
 
+  ## Set a Label Selector to filter watched prometheus and prometheusAgent
+  ##
+  prometheusInstanceSelector: ""
+
+  ## Set a Label Selector to filter watched alertmanager
+  ##
+  alertmanagerInstanceSelector: ""
+
+  ## Set a Label Selector to filter watched thanosRuler
+  thanosRulerInstanceSelector: ""
+
   ## Set a Field Selector to filter watched secrets
   ##
   secretFieldSelector: ""
@@ -2235,6 +2279,18 @@ prometheus:
   ## Configure network policy for the prometheus
   networkPolicy:
     enabled: false
+
+    ## Flavor of the network policy to use.
+    #  Can be:
+    #  * kubernetes for networking.k8s.io/v1/NetworkPolicy
+    #  * cilium     for cilium.io/v2/CiliumNetworkPolicy
+    flavor: kubernetes
+
+    # cilium:
+    #   endpointSelector:
+    #   egress:
+    #   ingress:
+
     # egress:
     # - {}
     # ingress:
@@ -2669,6 +2725,10 @@ prometheus:
     ## ref: https://prometheus.io/docs/prometheus/latest/querying/api/#tsdb-admin-apis
     ##
     enableAdminAPI: false
+
+    ## Sets version of Prometheus overriding the Prometheus version as derived
+    ## from the image tag. Useful in cases where the tag does not follow semver v2.
+    version: ""
 
     ## WebTLSConfig defines the TLS parameters for HTTPS
     ## ref: https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/api.md#webtlsconfig

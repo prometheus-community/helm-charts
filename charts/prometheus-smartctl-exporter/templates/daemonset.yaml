@@ -1,5 +1,5 @@
 {{- $global := . }}
-{{- $base := dict "resources" .Values.resources "nodeSelector" .Values.nodeSelector "affinity" .Values.affinity "tolerations" .Values.tolerations "config" .Values.config }}
+{{- $base := dict "annotations" .Values.annotations "resources" .Values.resources "nodeSelector" .Values.nodeSelector "affinity" .Values.affinity "tolerations" .Values.tolerations "config" .Values.config }}
 {{- $items := prepend .Values.extraInstances $base }}
 {{- range $idx, $item := $items }}
 {{- $config := mergeOverwrite $item.config $global.Values.common.config }}
@@ -9,6 +9,10 @@ apiVersion: apps/v1
 kind: DaemonSet
 metadata:
   name: {{ template "prometheus-smartctl-exporter.fullname" $global }}-{{ $idx }}
+  {{- with $item.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
   labels:
     {{- include "prometheus-smartctl-exporter.labels" $global | nindent 4 }}
     idx: i{{ $idx }}
