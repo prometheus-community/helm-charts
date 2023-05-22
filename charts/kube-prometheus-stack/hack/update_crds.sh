@@ -11,8 +11,10 @@ FILES=(
   "crd-alertmanagers.yaml       :  monitoring.coreos.com_alertmanagers.yaml"
   "crd-podmonitors.yaml         :  monitoring.coreos.com_podmonitors.yaml"
   "crd-probes.yaml              :  monitoring.coreos.com_probes.yaml"
+  "crd-prometheusagents.yaml    :  monitoring.coreos.com_prometheusagents.yaml"
   "crd-prometheuses.yaml        :  monitoring.coreos.com_prometheuses.yaml"
   "crd-prometheusrules.yaml     :  monitoring.coreos.com_prometheusrules.yaml"
+  "crd-scrapeconfigs.yaml       :  monitoring.coreos.com_scrapeconfigs.yaml"
   "crd-servicemonitors.yaml     :  monitoring.coreos.com_servicemonitors.yaml"
   "crd-thanosrulers.yaml        :  monitoring.coreos.com_thanosrulers.yaml"
 )
