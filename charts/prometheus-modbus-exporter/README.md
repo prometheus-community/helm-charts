@@ -1,4 +1,4 @@
-# modbus-exporter
+# prometheus-modbus-exporter
 Prometheus exporter for scraping metrics via modbus based protocol.    
 
 ## Intro
@@ -43,7 +43,7 @@ _See [helm repo](https://helm.sh/docs/helm/helm_repo/) for command documentation
 
 ```console
 # Helm
-$ helm install [RELEASE_NAME] prometheus-community/modbus-exporter
+$ helm install [RELEASE_NAME] prometheus-community/prometheus-modbus-exporter
 ```
 _See [configuration](## Configuring) below._
 
@@ -73,7 +73,7 @@ See [Customizing the Chart Before Installing](https://helm.sh/docs/intro/using_h
 
 ```console
 # Helm
-$ helm show values prometheus-community/modbus-exporter
+$ helm show values prometheus-community/prometheus-modbus-exporter
 ```
 
 For more information please refer to the [modbus_exporter](https://github.com/RichiH/modbus_exporter) documentation.

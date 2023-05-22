@@ -1,14 +1,14 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ include "modbus-exporter.fullname" . }}
+  name: {{ include "prometheus-modbus-exporter.fullname" . }}
   labels:
-    {{- include "modbus-exporter.labels" . | nindent 4 }}
+    {{- include "prometheus-modbus-exporter.labels" . | nindent 4 }}
 spec:
   replicas: 1
   selector:
     matchLabels:
-      {{- include "modbus-exporter.selectorLabels" . | nindent 6 }}
+      {{- include "prometheus-modbus-exporter.selectorLabels" . | nindent 6 }}
   template:
     metadata:
       {{- with .Values.podAnnotations }}
@@ -16,23 +16,23 @@ spec:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       labels:
-        {{- include "modbus-exporter.selectorLabels" . | nindent 8 }}
+        {{- include "prometheus-modbus-exporter.selectorLabels" . | nindent 8 }}
     spec:
       {{- with .Values.imagePullSecrets }}
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      serviceAccountName: {{ include "modbus-exporter.serviceAccountName" . }}
+      serviceAccountName: {{ include "prometheus-modbus-exporter.serviceAccountName" . }}
       securityContext:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
       shareProcessNamespace: true # required for config-reloader-sidecar
       containers:
-        - name: {{ include "modbus-exporter.fullname" . }}
+        - name: {{ include "prometheus-modbus-exporter.fullname" . }}
           command: ["/bin/modbus_exporter"]
           args:
           - "--config.file=/etc/modbus_exporter/modbus.yml"
-          - "--log.level={{ .Values.log.level | default ("info") }}"
-          - "--log.format={{ .Values.log.format | default ("logfmt") }}"
+          - "--log.level={{ .Values.log.level }}"
+          - "--log.format={{ .Values.log.format }}"
           securityContext:
             {{- toYaml .Values.securityContext | nindent 12 }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
@@ -54,9 +54,9 @@ spec:
           volumeMounts:
           - name: configfile
             mountPath: /etc/modbus_exporter/
-        {{- if .Values.config-reloader-sidecar.enable -}}
-        - name: {{ include "modbus-exporter.fullname" . }}-config-reloader-sidecar
-          image: {{ .Values.config-reloader-sidecar.image.repository }}:{{ .Values.config-reloader-sidecar.image.tag }}"
+        {{ if .Values.configReloaderSidecar.enable }}
+        - name: {{ include "prometheus-modbus-exporter.fullname" . }}-config-reloader-sidecar
+          image: "{{ .Values.configReloaderSidecar.image.repository }}:{{ .Values.configReloaderSidecar.image.tag }}"
           env:
           - name: CONFIG_DIR
             value: /etc/modbus_exporter/
@@ -82,7 +82,7 @@ spec:
       - name: configfile
         configMap:
           {{- if not .Values.configMapFile }}
-          name: {{ include "modbus-exporter.fullname" . }}
+          name: {{ include "prometheus-modbus-exporter.fullname" . }}
           {{- else }}
           name: {{ .Values.configMapFile }}
           {{- end }}
