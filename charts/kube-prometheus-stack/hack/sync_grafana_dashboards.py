@@ -121,39 +121,9 @@ def patch_dashboards_json(content, multicluster_key):
             overwrite_list.append(variable)
         content_struct['templating']['list'] = overwrite_list
 
-        # fix drilldown links. See https://github.com/kubernetes-monitoring/kubernetes-mixin/issues/659
-        for row in content_struct['rows']:
-            for panel in row['panels']:
-                for style in panel.get('styles', []):
-                    if 'linkUrl' in style and style['linkUrl'].startswith('./d'):
-                        style['linkUrl'] = style['linkUrl'].replace('./d', '/d')
 
-        content_array = []
-        original_content_lines = content.split('\n')
-        for i, line in enumerate(json.dumps(content_struct, indent=4).split('\n')):
-            if (' []' not in line and ' {}' not in line) or line == original_content_lines[i]:
-                content_array.append(line)
-                continue
-
-            append = ''
-            if line.endswith(','):
-                line = line[:-1]
-                append = ','
-
-            if line.endswith('{}') or line.endswith('[]'):
-                content_array.append(line[:-1])
-                content_array.append('')
-                content_array.append(' ' * (len(line) - len(line.lstrip())) + line[-1] + append)
-
-        content = '\n'.join(content_array)
-
-        multicluster = content.find(':multicluster:')
-        if multicluster != -1:
-            content = ''.join((
-                content[:multicluster-1],
-                '\{\{ if %s \}\}0\{\{ else \}\}2\{\{ end \}\}' % multicluster_key,
-                content[multicluster + 15:]
-            ))
+        content = json.dumps(content_struct, separators=(',', ':'))
+        return content.replace('":multicluster:"', '\{\{ if %s \}\}0\{\{ else \}\}2\{\{ end \}\}' % multicluster_key,)
     except (ValueError, KeyError):
         pass
 
