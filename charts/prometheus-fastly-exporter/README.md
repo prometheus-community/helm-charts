@@ -1,6 +1,6 @@
 # Prometheus Fastly Exporter
 
-A Prometheus exporter for [Fasty](https://fastly.com/) metrics.
+A Prometheus exporter for [Fastly](https://fastly.com/) metrics.
 
 This chart creates a [Fastly Exporter](https://github.com/fastly/fastly-exporter) deployment on a [Kubernetes](http://kubernetes.io) cluster using the [Helm](https://helm.sh) package manager.
 
