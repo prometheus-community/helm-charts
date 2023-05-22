@@ -89,14 +89,6 @@ def init_yaml_styles():
     yaml.add_representer(LiteralStr, represent_literal_str)
 
 
-def escape(s):
-    return s.replace("{{", "{{`{{").replace("}}", "}}`}}").replace("{{`{{", "{{`{{`}}").replace("}}`}}", "{{`}}`}}")
-
-
-def unescape(s):
-    return s.replace("\{\{", "{{").replace("\}\}", "}}")
-
-
 def yaml_str_repr(struct, indent=2):
     """represent yaml as a string"""
     text = yaml.dump(
@@ -104,10 +96,9 @@ def yaml_str_repr(struct, indent=2):
         width=1000,  # to disable line wrapping
         default_flow_style=False  # to disable multiple items on single line
     )
-    text = escape(text)  # escape {{ and }} for helm
-    text = unescape(text)  # unescape \{\{ and \}\} for templating
     text = textwrap.indent(text, ' ' * indent)
     return text
+
 
 def patch_dashboards_json(content, multicluster_key):
     try:
@@ -120,19 +111,17 @@ def patch_dashboards_json(content, multicluster_key):
                 variable['hide'] = ':multicluster:'
             overwrite_list.append(variable)
         content_struct['templating']['list'] = overwrite_list
-
-
         content = json.dumps(content_struct, separators=(',', ':'))
-        return content.replace('":multicluster:"', '\{\{ if %s \}\}0\{\{ else \}\}2\{\{ end \}\}' % multicluster_key,)
+        content = content.replace('":multicluster:"', '`}}{{ if %s }}0{{ else }}2{{ end }}{{`' % multicluster_key,)
     except (ValueError, KeyError):
         pass
 
-    return content
+    return "{{`" + content + "`}}"
 
 
 def patch_json_set_timezone_as_variable(content):
     # content is no more in json format, so we have to replace using regex
-    return re.sub(r'"timezone"\s*:\s*"(?:\\.|[^\"])*"', '"timezone": "\{\{ .Values.grafana.defaultDashboardsTimezone \}\}"', content, flags=re.IGNORECASE)
+    return re.sub(r'"timezone"\s*:\s*"(?:\\.|[^\"])*"', '"timezone": "`}}{{ .Values.grafana.defaultDashboardsTimezone }}{{`"', content, flags=re.IGNORECASE)
 
 
 def write_group_to_file(resource_name, content, url, destination, min_kubernetes, max_kubernetes, multicluster_key):
