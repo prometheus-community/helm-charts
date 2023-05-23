@@ -65,6 +65,10 @@ helm upgrade [RELEASE_NAME] [CHART] --install
 
 _See [helm upgrade](https://helm.sh/docs/helm/helm_upgrade/) for command documentation._
 
+### To 22.6
+
+Prometheus has been bumped to release [v2.44.0](https://github.com/prometheus/prometheus/releases/tag/v2.44.0).
+
 ### To 22.5
 
 clusterRoleNameOverride has been added to deal with situations where there is a use-case to deploy Prometheus server per namespace and hence being able to set the names of ClusterRole and ClusterRoleBinding independently
@@ -125,7 +129,7 @@ helm upgrade -i prometheus prometheus-community/prometheus
 ### To 20.0
 
 The [configmap-reload](https://github.com/jimmidyson/configmap-reload) container was replaced by the [prometheus-config-reloader](https://github.com/prometheus-operator/prometheus-operator/tree/main/cmd/prometheus-config-reloader).
-Extra command-line arguments specified via configmapReload.prometheus.extraArgs are not compatible and will break with the new prometheus-config-reloader, refer to the [sources](https://github.com/prometheus-operator/prometheus-operator/blob/main/cmd/prometheus-config-reloader/main.go) in order to make the appropriate adjustment to the extea command-line arguments.
+Extra command-line arguments specified via configmapReload.prometheus.extraArgs are not compatible and will break with the new prometheus-config-reloader, refer to the [sources](https://github.com/prometheus-operator/prometheus-operator/blob/main/cmd/prometheus-config-reloader/main.go) in order to make the appropriate adjustment to the extra command-line arguments.
 
 ### To 19.0
 

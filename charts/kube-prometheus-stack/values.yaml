@@ -269,8 +269,11 @@ alertmanager:
 
     labels: {}
 
-    ## Redirect ingress to an additional defined port on the service
+    ## Override ingress to a different defined port on the service
     # servicePort: 8081
+    ## Override ingress to a different service then the default, this is useful if you need to
+    ## point to a specific instance of the alertmanager (eg kube-prometheus-stack-alertmanager-0)
+    # serviceName: kube-prometheus-stack-alertmanager-0
 
     ## Hosts must be provided if Ingress is enabled.
     ##
@@ -378,6 +381,11 @@ alertmanager:
     ## Denotes if this Service desires to route external traffic to node-local or cluster-wide endpoints
     ##
     externalTrafficPolicy: Cluster
+
+    ## If you want to make sure that connections from a particular client are passed to the same Pod each time
+    ## Accepts 'ClientIP' or ''
+    ##
+    sessionAffinity: ""
 
     ## Service type
     ##
@@ -611,6 +619,13 @@ alertmanager:
     ## but the server serves requests under a different route prefix. For example for use with kubectl proxy.
     ##
     routePrefix: /
+
+    ## scheme: HTTP scheme to use. Can be used with `tlsConfig` for example if using istio mTLS.
+    scheme: ""
+
+    ## tlsConfig: TLS configuration to use when connect to the endpoint. For example if using istio mTLS.
+    ## Of type: https://github.com/coreos/prometheus-operator/blob/main/Documentation/api.md#tlsconfig
+    tlsConfig: {}
 
     ## If set to true all actions on the underlying managed objects are not going to be performed, except for delete actions.
     ##
@@ -1870,6 +1885,8 @@ prometheusOperator:
   ## Admission webhook support for PrometheusRules resources added in Prometheus Operator 0.30 can be enabled to prevent incorrectly formatted
   ## rules from making their way into prometheus and potentially preventing the container from starting
   admissionWebhooks:
+    ## Valid values: Fail, Ignore, IgnoreOnInstallOnly
+    ## IgnoreOnInstallOnly - If Release.IsInstall returns "true", set "Ignore" otherwise "Fail"
     failurePolicy:
     ## The default timeoutSeconds is 10 and the maximum value is 30.
     timeoutSeconds: 10
@@ -2242,7 +2259,7 @@ prometheusOperator:
   thanosImage:
     registry: quay.io
     repository: thanos/thanos
-    tag: v0.30.2
+    tag: v0.31.0
     sha: ""
 
   ## Set a Label Selector to filter watched prometheus and prometheusAgent
@@ -2258,7 +2275,7 @@ prometheusOperator:
 
   ## Set a Field Selector to filter watched secrets
   ##
-  secretFieldSelector: ""
+  secretFieldSelector: "type!=kubernetes.io/dockercfg,type!=kubernetes.io/service-account-token,type!=helm.sh/release.v1"
 
 ## Deploy a Prometheus instance
 ##
@@ -2745,7 +2762,7 @@ prometheus:
     image:
       registry: quay.io
       repository: prometheus/prometheus
-      tag: v2.42.0
+      tag: v2.44.0
       sha: ""
 
     ## Tolerations for use with node taints
@@ -3629,7 +3646,7 @@ thanosRuler:
     image:
       registry: quay.io
       repository: thanos/thanos
-      tag: v0.30.2
+      tag: v0.31.0
       sha: ""
 
     ## Namespaces to be selected for PrometheusRules discovery.
