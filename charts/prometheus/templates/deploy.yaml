@@ -65,12 +65,20 @@ spec:
           {{- end }}
           args:
             - --watched-dir=/etc/config
-            - --reload-url=http://127.0.0.1:9090{{ .Values.server.prefixURL }}/-/reload
+          {{- $default_url := "http://127.0.0.1:9090/-/reload" }}
+          {{- with .Values.server.prefixURL }}
+          {{- $default_url = printf "http://127.0.0.1:9090%s/-/reload" . }}
+          {{- end }}
+            - --reload-url={{ default $default_url .Values.configmapReload.reloadUrl }}
           {{- range $key, $value := .Values.configmapReload.prometheus.extraArgs }}
             - --{{ $key }}={{ $value }}
           {{- end }}
           {{- range .Values.configmapReload.prometheus.extraVolumeDirs }}
             - --watched-dir={{ . }}
+          {{- end }}
+          {{- with .Values.configmapReload.env }}
+          env:
+            {{- toYaml . | nindent 12 }}
           {{- end }}
           {{- if .Values.configmapReload.prometheus.containerPort }}
           ports:
@@ -97,6 +105,10 @@ spec:
           image: "{{ .Values.server.image.repository }}:{{ .Values.server.image.tag | default .Chart.AppVersion}}"
           {{- end }}
           imagePullPolicy: "{{ .Values.server.image.pullPolicy }}"
+          {{- with .Values.server.command }}
+          command:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
           {{- if .Values.server.env }}
           env:
 {{ toYaml .Values.server.env | indent 12}}
