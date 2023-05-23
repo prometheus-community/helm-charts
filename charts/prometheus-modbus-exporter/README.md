@@ -3,9 +3,10 @@
 Prometheus exporter for scraping metrics via modbus based protocol.    
 
 ## Intro
+
 This chart bootstraps a [modbus_exporter](https://github.com/RichiH/modbus_exporter) deployment on a [Kubernetes](http://kubernetes.io) cluster using the [Helm](https://helm.sh) package manager.    
 
-The serviceMonitor objects are created for Prometehus Operator.    
+The serviceMonitor objects are created for Prometheus Operator.    
 
 ## Configuration
 
