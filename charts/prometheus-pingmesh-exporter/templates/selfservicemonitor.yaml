@@ -1,0 +1,30 @@
+{{- if .Values.serviceMonitor.selfMonitor.enabled }}
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: {{ template "prometheus-pingmesh-exporter.fullname" $ }}
+  namespace: {{ template "prometheus-pingmesh-exporter.namespace" $ }}
+  labels:
+    {{- include "prometheus-pingmesh-exporter.labels" $ | nindent 4 }}
+    {{- if .Values.serviceMonitor.selfMonitor.labels  }}
+    {{- toYaml (.Values.serviceMonitor.selfMonitor.labels) | nindent 4 }}
+    {{- end }}
+spec:
+  endpoints:
+  - path: /metrics
+    interval: {{ .Values.serviceMonitor.selfMonitor.interval }}
+    scrapeTimeout: {{ .Values.serviceMonitor.selfMonitor.scrapeTimeout }}
+    scheme: http
+{{- if .Values.serviceMonitor.selfMonitor.additionalRelabeling }}
+    relabelings:
+{{ toYaml .Values.serviceMonitor.selfMonitor.additionalRelabeling | indent 6 }}
+{{- end }}
+  jobLabel: "{{ .Release.Name }}"
+  selector:
+    matchLabels:
+      {{- include "prometheus-pingmesh-exporter.selectorLabels" $ | nindent 6 }}
+  namespaceSelector:
+    matchNames:
+      - {{ template "prometheus-pingmesh-exporter.namespace" $ }}
+{{- end }}
