@@ -31,7 +31,7 @@ More on Modbus function codes: https://ozeki.hu/p_5873-modbus-function-codes.htm
 - Kubernetes 1.10+ with Beta APIs enabled
 - Helm 3+
 
-## Get Repo Info
+## Get Repository Info
 
 ```console
 helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
@@ -39,7 +39,7 @@ helm repo add stable https://charts.helm.sh/stable
 helm repo update
 ```
 
-_See [helm repo](https://helm.sh/docs/helm/helm_repo/) for command documentation._
+_See [helm repository](https://helm.sh/docs/helm/helm_repo/) for command documentation._
 
 ## Install Chart
 
