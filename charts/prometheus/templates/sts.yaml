@@ -67,7 +67,7 @@ spec:
             - --watched-dir=/etc/config
           {{- $default_url := "http://127.0.0.1:9090/-/reload" }}
           {{- with .Values.server.prefixURL }}
-          {{- $default_url = printf "http://127.0.0.1:9090/%s/-/reload" . }}
+          {{- $default_url = printf "http://127.0.0.1:9090%s/-/reload" . }}
           {{- end }}
             - --reload-url={{ default $default_url .Values.configmapReload.reloadUrl }}
           {{- range $key, $value := .Values.configmapReload.prometheus.extraArgs }}
@@ -75,6 +75,10 @@ spec:
           {{- end }}
           {{- range .Values.configmapReload.prometheus.extraVolumeDirs }}
             - --watched-dir={{ . }}
+          {{- end }}
+          {{- with .Values.configmapReload.env }}
+          env:
+            {{- toYaml . | nindent 12 }}
           {{- end }}
           {{- if .Values.configmapReload.prometheus.containerPort }}
           ports:
@@ -207,7 +211,7 @@ spec:
           volumeMounts:
             - name: config-volume
               mountPath: /etc/config
-            - name: {{ ternary .Values.server.persistentVolume.statefulSetNameOverride "storage-volume" (and .Values.server.persistentVolume.enabled .Values.server.persistentVolume.statefulSetNameOverride) }}
+            - name: {{ ternary .Values.server.persistentVolume.statefulSetNameOverride "storage-volume" (and .Values.server.persistentVolume.enabled (not (empty .Values.server.persistentVolume.statefulSetNameOverride))) }}
               mountPath: {{ .Values.server.persistentVolume.mountPath }}
               subPath: "{{ .Values.server.persistentVolume.subPath }}"
           {{- range .Values.server.extraHostPathMounts }}
