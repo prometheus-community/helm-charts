@@ -41,10 +41,6 @@ helm upgrade [RELEASE_NAME] [CHART] --install
 
 _See [helm upgrade](https://helm.sh/docs/helm/helm_upgrade/) for command documentation._
 
-### To 2.2
-
-Field `serviceMonitor.telemetryPath` (default `/metrics`) can now be configured to support changes to the telemetry path via start-up flags.
-
 ### To 2.0.0
 
 Chart API version has been upgraded to v2 so Helm 3 is needed from now on.
