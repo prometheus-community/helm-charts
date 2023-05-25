@@ -31,6 +31,9 @@ spec:
 {{- if .Values.defaultRules.additionalRuleAnnotations }}
 {{ toYaml .Values.defaultRules.additionalRuleAnnotations | indent 8 }}
 {{- end }}
+{{- if .Values.defaultRules.additionalRuleGroupAnnotations.kubeControllerManager }}
+{{ toYaml .Values.defaultRules.additionalRuleGroupAnnotations.kubeControllerManager | indent 8 }}
+{{- end }}
         description: KubeControllerManager has disappeared from Prometheus target discovery.
         runbook_url: {{ .Values.defaultRules.runbookUrl }}/kubernetes/kubecontrollermanagerdown
         summary: Target disappeared from Prometheus target discovery.
@@ -38,8 +41,13 @@ spec:
       for: 15m
       labels:
         severity: critical
-      {{- if .Values.defaultRules.additionalRuleLabels }}
-        {{ toYaml .Values.defaultRules.additionalRuleLabels | nindent 8 }}
+      {{- if or .Values.defaultRules.additionalRuleLabels .Values.defaultRules.additionalRuleGroupLabels.kubeControllerManager }}
+        {{- with .Values.defaultRules.additionalRuleLabels }}
+          {{- toYaml . | nindent 8 }}
+        {{- end }}
+        {{- with .Values.defaultRules.additionalRuleGroupLabels.kubeControllerManager }}
+          {{- toYaml . | nindent 8 }}
+        {{- end }}
       {{- end }}
 {{- end }}
 {{- end }}
