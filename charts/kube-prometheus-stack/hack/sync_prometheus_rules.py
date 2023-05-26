@@ -143,8 +143,8 @@ replacement_map = {
     'runbook_url: https://runbooks.prometheus-operator.dev/runbooks/': {
         'replacement': 'runbook_url: {{ .Values.defaultRules.runbookUrl }}/',
         'init': ''},
-    '(controller,namespace)': {
-        'replacement': '(controller,namespace,cluster)',
+    '(namespace,service)': {
+        'replacement': '(namespace,service,cluster)',
         'init': ''}
 }
 
@@ -207,6 +207,16 @@ def yaml_str_repr(struct, indent=4):
     return text
 
 
+def get_rule_group_condition(group_name, value_key):
+    if group_name == '':
+        return ''
+
+    if group_name.count(".Values") > 1:
+        group_name = group_name.split(' ')[-1]
+
+    return group_name.replace('Values.defaultRules.rules', f"Values.defaultRules.{value_key}").strip()
+
+
 def add_rules_conditions(rules, rules_map, indent=4):
     """Add if wrapper for rules, listed in rules_map"""
     rule_condition = '{{- if %s }}\n'
@@ -264,20 +274,33 @@ def add_rules_per_rule_conditions(rules, group, indent=4):
     return rules
 
 
-def add_custom_labels(rules_str, indent=4):
+def add_custom_labels(rules_str, group, indent=4, label_indent=2):
     """Add if wrapper for additional rules labels"""
-    rule_condition = '{{- if .Values.defaultRules.additionalRuleLabels }}\n{{ toYaml .Values.defaultRules.additionalRuleLabels | indent 8 }}\n{{- end }}'
+    rule_group_labels = get_rule_group_condition(condition_map.get(group['name'], ''), 'additionalRuleGroupLabels')
+
+    additional_rule_labels = textwrap.indent("""
+{{- with .Values.defaultRules.additionalRuleLabels }}
+  {{- toYaml . | nindent 8 }}
+{{- end }}
+{{- with %s }}
+  {{- toYaml . | nindent 8 }}
+{{- end }}""" % (rule_group_labels,), " " * (indent + label_indent * 2))
+
+    additional_rule_labels_condition_start = "\n" + " " * (indent + label_indent) + '{{- if or .Values.defaultRules.additionalRuleLabels %s }}' % (rule_group_labels,)
+    additional_rule_labels_condition_end = "\n" + " " * (indent + label_indent) + '{{- end }}'
+    # labels: cannot be null, if a rule does not have any labels by default, the labels block
+    # should only be added if there are .Values defaultRules.additionalRuleLabels defined
     rule_seperator = "\n" + " " * indent + "-.*"
     label_seperator = "\n" + " " * indent + "  labels:"
     section_seperator = "\n" + " " * indent + "  \S"
     section_seperator_len = len(section_seperator)-1
     rules_positions = re.finditer(rule_seperator,rules_str)
-    
+
     # fetch breakpoint between each set of rules
     ruleStartingLine = [(rule_position.start(),rule_position.end()) for rule_position in rules_positions]
     head = rules_str[:ruleStartingLine[0][0]]
 
-    # construct array of rules so they can be handled individually 
+    # construct array of rules so they can be handled individually
     rules = []
     # pylint: disable=E1136
     # See https://github.com/pylint-dev/pylint/issues/1498 for None Values
@@ -297,24 +320,27 @@ def add_custom_labels(rules_str, indent=4):
             if entries:
                 entries_start = current_label.end()
                 entries_end = entries.end()+current_label.end()-section_seperator_len
-                rules[i] = rule[:entries_end] + "\n" + rule_condition  + rule[entries_end:]
+                rules[i] = rule[:entries_end] + additional_rule_labels_condition_start + additional_rule_labels + additional_rule_labels_condition_end + rule[entries_end:]
             else:
                 # `labels:` does not contain any entries
                 # append template to label section
-                rules[i]+= "\n" + rule_condition
+                rules[i] += additional_rule_labels_condition_start + additional_rule_labels + additional_rule_labels_condition_end
         else:
             # `labels:` block does not exist
             # create it and append template
-            rules[i]+= label_seperator + "\n" + rule_condition
+            rules[i] += additional_rule_labels_condition_start + "\n" + " " * indent + "  labels:" + additional_rule_labels + additional_rule_labels_condition_end
     return head + "".join(rules) + "\n"
 
 
-def add_custom_annotations(rules, indent=4):
+def add_custom_annotations(rules, group, indent=4):
     """Add if wrapper for additional rules annotations"""
     rule_condition = '{{- if .Values.defaultRules.additionalRuleAnnotations }}\n{{ toYaml .Values.defaultRules.additionalRuleAnnotations | indent 8 }}\n{{- end }}'
+    rule_group_labels = get_rule_group_condition(condition_map.get(group['name'], ''), 'additionalRuleGroupAnnotations')
+    rule_group_condition = '\n{{- if %s }}\n{{ toYaml %s | indent 8 }}\n{{- end }}' % (rule_group_labels, rule_group_labels)
     annotations = "      annotations:"
     annotations_len = len(annotations) + 1
     rule_condition_len = len(rule_condition) + 1
+    rule_group_condition_len = len(rule_group_condition)
 
     separator = " " * indent + "- alert:.*"
     alerts_positions = re.finditer(separator,rules)
@@ -322,12 +348,11 @@ def add_custom_annotations(rules, indent=4):
 
     for alert_position in alerts_positions:
         # Add rule_condition after 'annotations:' statement
-        index = alert_position.end() + annotations_len + rule_condition_len * alert
-        rules = rules[:index] + "\n" + rule_condition + rules[index:]
+        index = alert_position.end() + annotations_len + (rule_condition_len + rule_group_condition_len) * alert
+        rules = rules[:index] + "\n" + rule_condition + rule_group_condition +  rules[index:]
         alert += 1
 
     return rules
-
 
 def write_group_to_file(group, url, destination, min_kubernetes, max_kubernetes):
     fix_expr(group['rules'])
@@ -343,8 +368,8 @@ def write_group_to_file(group, url, destination, min_kubernetes, max_kubernetes)
             if replacement_map[line]['init']:
                 init_line += '\n' + replacement_map[line]['init']
     # append per-alert rules
-    rules = add_custom_labels(rules)
-    rules = add_custom_annotations(rules)
+    rules = add_custom_labels(rules, group)
+    rules = add_custom_annotations(rules, group)
     rules = add_rules_conditions_from_condition_map(rules)
     rules = add_rules_per_rule_conditions(rules, group)
     # initialize header
