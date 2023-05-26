@@ -1,30 +1,33 @@
 # prometheus-modbus-exporter
 
-Prometheus exporter for scraping metrics via modbus based protocol.    
+Prometheus exporter for scraping metrics via modbus based protocol.
 
 ## Intro
 
-This chart bootstraps a [modbus_exporter](https://github.com/RichiH/modbus_exporter) deployment on a [Kubernetes](http://kubernetes.io) cluster using the [Helm](https://helm.sh) package manager.    
+This chart bootstraps a [modbus_exporter](https://github.com/RichiH/modbus_exporter) deployment on a [Kubernetes](http://kubernetes.io) cluster using the [Helm](https://helm.sh) package manager.
 
-The serviceMonitor objects are created for Prometheus Operator.    
+The serviceMonitor objects are created for Prometheus Operator.
 
 ## Configuration
 
-The configuration of the modbus_exporter can be provided either via helm's custom values, or via an already existing (independently managed) configMap.    
-Either way, every time the configuration is getting updated, the modbus_exporter is getting restarted in order to fetch it. This is done using sidecar reloader: (https://github.com/Pluies/config-reloader-sidecar) .     
+The configuration of the modbus_exporter can be provided either via helm's custom values, or via an already existing (independently managed) configMap.  
+Either way, every time the configuration is getting updated, the modbus_exporter is getting restarted in order to fetch it. This is done using sidecar reloader: <https://github.com/Pluies/config-reloader-sidecar>.
 
 ## Tests
-This setup has been tested with both real unit (Janitza Power Analizer UMG series) as well as using an simulator (https://www.modbustools.com/download.html).     
-Other simulators (fully free) exist as well:    
-1. the one included as part of the test (fake server) in the (https://github.com/RichiH/modbus_exporter/blob/main/tests/fake_server/main.go), which uses (https://github.com/tbrandon/mbserver) (golang) .     
-2. Many others, like pymodslave, based on py module: (https://github.com/ljean/modbus-tk), which has its own demo simulator as well.    
+
+This setup has been tested with both real unit (Janitza Power Analizer UMG series) as well as using an simulator <https://www.modbustools.com/download.html>.  
+Other simulators (fully free) exist as well:
+
+1. the one included as part of the test (fake server) in the <https://github.com/RichiH/modbus_exporter/blob/main/tests/fake_server/main.go>, which uses <https://github.com/tbrandon/mbserver> (golang).  
+2. Many others, like pymodslave, based on py module: (https://github.com/ljean/modbus-tk), which has its own demo simulator as well.  
 
 ## Notes
-There are 4 types of read registries, hence 4 read function codes (1,2,3,4).    
-Don't forget to prefix (first digit) your registry with the required function.   
-Your address should be always 6 digits.    
-E.g. for holding registry 22, the address is: 300022  (where the 3 denotes the holding registry function).    
-More on Modbus function codes: https://ozeki.hu/p_5873-modbus-function-codes.html
+
+There are 4 types of read registries, hence 4 read function codes (1,2,3,4).  
+Don't forget to prefix (first digit) your registry with the required function.  
+Your address should be always 6 digits.  
+E.g. for holding registry 22, the address is: 300022  (where the 3 denotes the holding registry function).  
+More on Modbus function codes: <https://ozeki.hu/p_5873-modbus-function-codes.html>
 
 ## Prerequisites
 
@@ -47,6 +50,7 @@ _See [helm repository](https://helm.sh/docs/helm/helm_repo/) for command documen
 # Helm
 $ helm install [RELEASE_NAME] prometheus-community/prometheus-modbus-exporter
 ```
+
 _See [configuration](## Configuring) below._
 
 _See [helm install](https://helm.sh/docs/helm/helm_install/) for command documentation._
@@ -79,5 +83,3 @@ $ helm show values prometheus-community/prometheus-modbus-exporter
 ```
 
 For more information please refer to the [modbus_exporter](https://github.com/RichiH/modbus_exporter) documentation.
-
-
