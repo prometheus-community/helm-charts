@@ -1,4 +1,4 @@
-{{- if .Values.prometheus.networkPolicy.enabled }}
+{{- if and .Values.prometheus.networkPolicy.enabled (eq .Values.prometheus.networkPolicy.flavor "kubernetes") }}
 apiVersion: {{ template "kube-prometheus-stack.prometheus.networkPolicy.apiVersion" . }}
 kind: NetworkPolicy
 metadata:
@@ -9,12 +9,10 @@ metadata:
   namespace: {{ template "kube-prometheus-stack.namespace" . }}
 spec:
   {{- if .Values.prometheus.networkPolicy.egress }}
-  ## Deny all egress by default
   egress:
     {{- toYaml .Values.prometheus.networkPolicy.egress | nindent 4 }}
   {{- end }}
   {{- if .Values.prometheus.networkPolicy.ingress }}
-  # Deny all ingress by default (prometheus scrapes itself using localhost)
   ingress:
     {{- toYaml .Values.prometheus.networkPolicy.ingress | nindent 4 }}
   {{- end }}

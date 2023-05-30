@@ -75,6 +75,66 @@ defaultRules:
   ## Additional annotations for PrometheusRule alerts
   additionalRuleAnnotations: {}
 
+  ## Additional labels for specific PrometheusRule alert groups
+  additionalRuleGroupLabels:
+    alertmanager: {}
+    etcd: {}
+    configReloaders: {}
+    general: {}
+    k8s: {}
+    kubeApiserverAvailability: {}
+    kubeApiserverBurnrate: {}
+    kubeApiserverHistogram: {}
+    kubeApiserverSlos: {}
+    kubeControllerManager: {}
+    kubelet: {}
+    kubeProxy: {}
+    kubePrometheusGeneral: {}
+    kubePrometheusNodeRecording: {}
+    kubernetesApps: {}
+    kubernetesResources: {}
+    kubernetesStorage: {}
+    kubernetesSystem: {}
+    kubeSchedulerAlerting: {}
+    kubeSchedulerRecording: {}
+    kubeStateMetrics: {}
+    network: {}
+    node: {}
+    nodeExporterAlerting: {}
+    nodeExporterRecording: {}
+    prometheus: {}
+    prometheusOperator: {}
+
+  ## Additional annotations for specific PrometheusRule alerts groups
+  additionalRuleGroupAnnotations:
+    alertmanager: {}
+    etcd: {}
+    configReloaders: {}
+    general: {}
+    k8s: {}
+    kubeApiserverAvailability: {}
+    kubeApiserverBurnrate: {}
+    kubeApiserverHistogram: {}
+    kubeApiserverSlos: {}
+    kubeControllerManager: {}
+    kubelet: {}
+    kubeProxy: {}
+    kubePrometheusGeneral: {}
+    kubePrometheusNodeRecording: {}
+    kubernetesApps: {}
+    kubernetesResources: {}
+    kubernetesStorage: {}
+    kubernetesSystem: {}
+    kubeSchedulerAlerting: {}
+    kubeSchedulerRecording: {}
+    kubeStateMetrics: {}
+    network: {}
+    node: {}
+    nodeExporterAlerting: {}
+    nodeExporterRecording: {}
+    prometheus: {}
+    prometheusOperator: {}
+
   ## Prefix for runbook URLs. Use this to override the first part of the runbookURLs that is common to all rules.
   runbookUrl: "https://runbooks.prometheus-operator.dev/runbooks"
 
@@ -269,8 +329,11 @@ alertmanager:
 
     labels: {}
 
-    ## Redirect ingress to an additional defined port on the service
+    ## Override ingress to a different defined port on the service
     # servicePort: 8081
+    ## Override ingress to a different service then the default, this is useful if you need to
+    ## point to a specific instance of the alertmanager (eg kube-prometheus-stack-alertmanager-0)
+    # serviceName: kube-prometheus-stack-alertmanager-0
 
     ## Hosts must be provided if Ingress is enabled.
     ##
@@ -378,6 +441,11 @@ alertmanager:
     ## Denotes if this Service desires to route external traffic to node-local or cluster-wide endpoints
     ##
     externalTrafficPolicy: Cluster
+
+    ## If you want to make sure that connections from a particular client are passed to the same Pod each time
+    ## Accepts 'ClientIP' or ''
+    ##
+    sessionAffinity: ""
 
     ## Service type
     ##
@@ -612,6 +680,13 @@ alertmanager:
     ##
     routePrefix: /
 
+    ## scheme: HTTP scheme to use. Can be used with `tlsConfig` for example if using istio mTLS.
+    scheme: ""
+
+    ## tlsConfig: TLS configuration to use when connect to the endpoint. For example if using istio mTLS.
+    ## Of type: https://github.com/coreos/prometheus-operator/blob/main/Documentation/api.md#tlsconfig
+    tlsConfig: {}
+
     ## If set to true all actions on the underlying managed objects are not going to be performed, except for delete actions.
     ##
     paused: false
@@ -683,6 +758,8 @@ alertmanager:
       runAsNonRoot: true
       runAsUser: 1000
       fsGroup: 2000
+      seccompProfile:
+        type: RuntimeDefault
 
     ## ListenLocal makes the Alertmanager server listen on loopback, so that it does not bind against the Pod IP.
     ## Note this is only for the Alertmanager UI, not the gossip communication.
@@ -857,6 +934,9 @@ grafana:
       ##
       annotations: {}
 
+      ## Set method for HTTP to send query to datasource
+      httpMethod: POST
+
       ## Create datasource for each Pod of Prometheus StatefulSet;
       ## this uses headless service `prometheus-operated` which is
       ## created by Prometheus Operator
@@ -934,6 +1014,11 @@ grafana:
     #   targetLabel: nodename
     #   replacement: $1
     #   action: replace
+
+## Flag to disable all the kubernetes component scrapers
+##
+kubernetesServiceMonitors:
+  enabled: true
 
 ## Component scraping the kube api server
 ##
@@ -1862,7 +1947,9 @@ prometheusOperator:
   ## Admission webhook support for PrometheusRules resources added in Prometheus Operator 0.30 can be enabled to prevent incorrectly formatted
   ## rules from making their way into prometheus and potentially preventing the container from starting
   admissionWebhooks:
-    failurePolicy:
+    ## Valid values: Fail, Ignore, IgnoreOnInstallOnly
+    ## IgnoreOnInstallOnly - If Release.IsInstall returns "true", set "Ignore" otherwise "Fail"
+    failurePolicy: ""
     ## The default timeoutSeconds is 10 and the maximum value is 30.
     timeoutSeconds: 10
     enabled: true
@@ -1904,14 +1991,26 @@ prometheusOperator:
         runAsGroup: 2000
         runAsNonRoot: true
         runAsUser: 2000
+        seccompProfile:
+          type: RuntimeDefault
 
     # Security context for create job container
     createSecretJob:
-      securityContext: {}
+      securityContext:
+        allowPrivilegeEscalation: false
+        readOnlyRootFilesystem: true
+        capabilities:
+          drop:
+          - ALL
 
       # Security context for patch job container
     patchWebhookJob:
-      securityContext: {}
+      securityContext:
+        allowPrivilegeEscalation: false
+        readOnlyRootFilesystem: true
+        capabilities:
+          drop:
+          - ALL
 
     # Use certmanager to generate webhook certs
     certManager:
@@ -1954,6 +2053,15 @@ prometheusOperator:
     ## Enable creation of NetworkPolicy resources.
     ##
     enabled: false
+
+    ## Flavor of the network policy to use.
+    #  Can be:
+    #  * kubernetes for networking.k8s.io/v1/NetworkPolicy
+    #  * cilium     for cilium.io/v2/CiliumNetworkPolicy
+    flavor: kubernetes
+
+    # cilium:
+    #   egress:
 
   ## Service account for Alertmanager to use.
   ## ref: https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-account/
@@ -2144,6 +2252,8 @@ prometheusOperator:
     runAsGroup: 65534
     runAsNonRoot: true
     runAsUser: 65534
+    seccompProfile:
+      type: RuntimeDefault
 
   ## Container-specific security context configuration
   ## ref: https://kubernetes.io/docs/tasks/configure-pod-container/security-context/
@@ -2151,6 +2261,9 @@ prometheusOperator:
   containerSecurityContext:
     allowPrivilegeEscalation: false
     readOnlyRootFilesystem: true
+    capabilities:
+      drop:
+      - ALL
 
   # Enable vertical pod autoscaler support for prometheus-operator
   verticalPodAutoscaler:
@@ -2208,6 +2321,9 @@ prometheusOperator:
       tag: ""
       sha: ""
 
+    # add prometheus config reloader liveness and readiness probe. Default: false
+    enableProbe: false
+
     # resource config for prometheusConfigReloader
     resources:
       requests:
@@ -2222,7 +2338,7 @@ prometheusOperator:
   thanosImage:
     registry: quay.io
     repository: thanos/thanos
-    tag: v0.30.2
+    tag: v0.31.0
     sha: ""
 
   ## Set a Label Selector to filter watched prometheus and prometheusAgent
@@ -2238,7 +2354,7 @@ prometheusOperator:
 
   ## Set a Field Selector to filter watched secrets
   ##
-  secretFieldSelector: ""
+  secretFieldSelector: "type!=kubernetes.io/dockercfg,type!=kubernetes.io/service-account-token,type!=helm.sh/release.v1"
 
 ## Deploy a Prometheus instance
 ##
@@ -2252,6 +2368,18 @@ prometheus:
   ## Configure network policy for the prometheus
   networkPolicy:
     enabled: false
+
+    ## Flavor of the network policy to use.
+    #  Can be:
+    #  * kubernetes for networking.k8s.io/v1/NetworkPolicy
+    #  * cilium     for cilium.io/v2/CiliumNetworkPolicy
+    flavor: kubernetes
+
+    # cilium:
+    #   endpointSelector:
+    #   egress:
+    #   ingress:
+
     # egress:
     # - {}
     # ingress:
@@ -2713,7 +2841,7 @@ prometheus:
     image:
       registry: quay.io
       repository: prometheus/prometheus
-      tag: v2.42.0
+      tag: v2.44.0
       sha: ""
 
     ## Tolerations for use with node taints
@@ -3152,6 +3280,8 @@ prometheus:
       runAsNonRoot: true
       runAsUser: 1000
       fsGroup: 2000
+      seccompProfile:
+        type: RuntimeDefault
 
     ## Priority class assigned to the Pods
     ##
@@ -3597,7 +3727,7 @@ thanosRuler:
     image:
       registry: quay.io
       repository: thanos/thanos
-      tag: v0.30.2
+      tag: v0.31.0
       sha: ""
 
     ## Namespaces to be selected for PrometheusRules discovery.
@@ -3783,6 +3913,8 @@ thanosRuler:
       runAsNonRoot: true
       runAsUser: 1000
       fsGroup: 2000
+      seccompProfile:
+        type: RuntimeDefault
 
     ## ListenLocal makes the ThanosRuler server listen on loopback, so that it does not bind against the Pod IP.
     ## Note this is only for the ThanosRuler UI, not the gossip communication.
@@ -3825,3 +3957,13 @@ thanosRuler:
 ## Setting to true produces cleaner resource names, but requires a data migration because the name of the persistent volume changes. Therefore this should only be set once on initial installation.
 ##
 cleanPrometheusOperatorObjectNames: false
+
+## Extra manifests to deploy as an array
+extraManifests: []
+  # - apiVersion: v1
+  #   kind: ConfigMap
+  #   metadata:
+  #   labels:
+  #     name: prometheus-extra
+  #   data:
+  #     extra-data: "value"

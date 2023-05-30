@@ -21,6 +21,13 @@ image:
 extraArgs:
   - -log.level=debug
 
+
+# -- Additional Volume mounts
+extraVolumeMounts: []
+
+# -- Additional Volumes
+extraVolumes: []
+
 # Number of pod replicas
 replicaCount: 1
 
@@ -50,14 +57,16 @@ annotations: {}
 podAnnotations: {}
 
 # -- jiralert pods' Security Context.
-podSecurityContext: {}
-# fsGroup: 2000
+podSecurityContext:
+  seccompProfile:
+    type: RuntimeDefault
 
 # Container security context
 securityContext:
   runAsUser: 1001
   runAsGroup: 1001
   runAsNonRoot: true
+  allowPrivilegeEscalation: false
   readOnlyRootFilesystem: true
 
 livenessProbe:
@@ -99,8 +108,8 @@ config:
     api_url: "https://example.atlassian.net"
     # user: {{ .config.jiraUser }}
     # password: '{{ .config.jiraToken }}'
-    summary: '{{`{{ template "jira.summary" . }}`}}'
-    description: '{{`{{ template "jira.description" . }}`}}'
+    summary: '{{ template "jira.summary" . }}'
+    description: '{{ template "jira.description" . }}'
     issue_type: Bug
     reopen_state: "To Do"
     reopen_duration: 0h

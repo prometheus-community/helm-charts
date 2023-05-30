@@ -30,6 +30,9 @@ spec:
 {{- if .Values.defaultRules.additionalRuleAnnotations }}
 {{ toYaml .Values.defaultRules.additionalRuleAnnotations | indent 8 }}
 {{- end }}
+{{- if .Values.defaultRules.additionalRuleGroupAnnotations.kubernetesSystem }}
+{{ toYaml .Values.defaultRules.additionalRuleGroupAnnotations.kubernetesSystem | indent 8 }}
+{{- end }}
         description: There are {{`{{`}} $value {{`}}`}} different semantic versions of Kubernetes components running.
         runbook_url: {{ .Values.defaultRules.runbookUrl }}/kubernetes/kubeversionmismatch
         summary: Different semantic versions of Kubernetes components running.
@@ -37,9 +40,14 @@ spec:
       for: 15m
       labels:
         severity: warning
-{{- if .Values.defaultRules.additionalRuleLabels }}
-{{ toYaml .Values.defaultRules.additionalRuleLabels | indent 8 }}
-{{- end }}
+      {{- if or .Values.defaultRules.additionalRuleLabels .Values.defaultRules.additionalRuleGroupLabels.kubernetesSystem }}
+        {{- with .Values.defaultRules.additionalRuleLabels }}
+          {{- toYaml . | nindent 8 }}
+        {{- end }}
+        {{- with .Values.defaultRules.additionalRuleGroupLabels.kubernetesSystem }}
+          {{- toYaml . | nindent 8 }}
+        {{- end }}
+      {{- end }}
 {{- end }}
 {{- if not (.Values.defaultRules.disabled.KubeClientErrors | default false) }}
     - alert: KubeClientErrors
@@ -47,19 +55,27 @@ spec:
 {{- if .Values.defaultRules.additionalRuleAnnotations }}
 {{ toYaml .Values.defaultRules.additionalRuleAnnotations | indent 8 }}
 {{- end }}
+{{- if .Values.defaultRules.additionalRuleGroupAnnotations.kubernetesSystem }}
+{{ toYaml .Values.defaultRules.additionalRuleGroupAnnotations.kubernetesSystem | indent 8 }}
+{{- end }}
         description: Kubernetes API server client '{{`{{`}} $labels.job {{`}}`}}/{{`{{`}} $labels.instance {{`}}`}}' is experiencing {{`{{`}} $value | humanizePercentage {{`}}`}} errors.'
         runbook_url: {{ .Values.defaultRules.runbookUrl }}/kubernetes/kubeclienterrors
         summary: Kubernetes API server client is experiencing errors.
       expr: |-
-        (sum(rate(rest_client_requests_total{code=~"5.."}[5m])) by (cluster, instance, job, namespace)
+        (sum(rate(rest_client_requests_total{job="apiserver",code=~"5.."}[5m])) by (cluster, instance, job, namespace)
           /
-        sum(rate(rest_client_requests_total[5m])) by (cluster, instance, job, namespace))
+        sum(rate(rest_client_requests_total{job="apiserver"}[5m])) by (cluster, instance, job, namespace))
         > 0.01
       for: 15m
       labels:
         severity: warning
-{{- if .Values.defaultRules.additionalRuleLabels }}
-{{ toYaml .Values.defaultRules.additionalRuleLabels | indent 8 }}
-{{- end }}
+      {{- if or .Values.defaultRules.additionalRuleLabels .Values.defaultRules.additionalRuleGroupLabels.kubernetesSystem }}
+        {{- with .Values.defaultRules.additionalRuleLabels }}
+          {{- toYaml . | nindent 8 }}
+        {{- end }}
+        {{- with .Values.defaultRules.additionalRuleGroupLabels.kubernetesSystem }}
+          {{- toYaml . | nindent 8 }}
+        {{- end }}
+      {{- end }}
 {{- end }}
 {{- end }}

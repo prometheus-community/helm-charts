@@ -43,6 +43,10 @@ helm upgrade [RELEASE_NAME] [CHART] --install
 
 _See [helm upgrade](https://helm.sh/docs/helm/helm_upgrade/) for command documentation._
 
+### To 4.2.0
+
+Readiness and liveness probes are now fully configurable through values `readinessProbe` and `livenessProbe`. The previous values have been kept as defaults.
+
 ### To 4.0.0
 
 Previously, security context of the container was set directly in the deployment template. This release makes it configurable through the new configuration variable `securityContext` whilst keeping the previously set values as defaults. Furthermore, previous variable `runAsUser` is now set in `securityContext` and is not used any longer. Please, use `securityContext.runAsUser` instead. In the same security context, `seccompProfile` has been enabled and set to type `RuntimeDefault`.

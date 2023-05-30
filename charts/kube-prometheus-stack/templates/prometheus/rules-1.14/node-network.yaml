@@ -30,6 +30,9 @@ spec:
 {{- if .Values.defaultRules.additionalRuleAnnotations }}
 {{ toYaml .Values.defaultRules.additionalRuleAnnotations | indent 8 }}
 {{- end }}
+{{- if .Values.defaultRules.additionalRuleGroupAnnotations.network }}
+{{ toYaml .Values.defaultRules.additionalRuleGroupAnnotations.network | indent 8 }}
+{{- end }}
         description: Network interface "{{`{{`}} $labels.device {{`}}`}}" changing its up status often on node-exporter {{`{{`}} $labels.namespace {{`}}`}}/{{`{{`}} $labels.pod {{`}}`}}
         runbook_url: {{ .Values.defaultRules.runbookUrl }}/general/nodenetworkinterfaceflapping
         summary: Network interface is often changing its status
@@ -37,8 +40,13 @@ spec:
       for: 2m
       labels:
         severity: warning
-{{- if .Values.defaultRules.additionalRuleLabels }}
-{{ toYaml .Values.defaultRules.additionalRuleLabels | indent 8 }}
-{{- end }}
+      {{- if or .Values.defaultRules.additionalRuleLabels .Values.defaultRules.additionalRuleGroupLabels.network }}
+        {{- with .Values.defaultRules.additionalRuleLabels }}
+          {{- toYaml . | nindent 8 }}
+        {{- end }}
+        {{- with .Values.defaultRules.additionalRuleGroupLabels.network }}
+          {{- toYaml . | nindent 8 }}
+        {{- end }}
+      {{- end }}
 {{- end }}
 {{- end }}
