@@ -19,7 +19,7 @@ This setup has been tested with both real unit (Janitza Power Analizer UMG serie
 Other simulators (fully free) exist as well:
 
 1. the one included as part of the test (fake server) in the <https://github.com/RichiH/modbus_exporter/blob/main/tests/fake_server/main.go>, which uses <https://github.com/tbrandon/mbserver> (golang).  
-2. Many others, like pymodslave, based on py module: (https://github.com/ljean/modbus-tk), which has its own demo simulator as well.  
+2. Many others, like pymodslave, based on py module: <https://github.com/ljean/modbus-tk>, which has its own demo simulator as well.  
 
 ## Notes
 
