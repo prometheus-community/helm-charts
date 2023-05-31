@@ -27,9 +27,14 @@ spec:
 {{- if not (.Values.defaultRules.disabled.KubeProxyDown | default false) }}
     - alert: KubeProxyDown
       annotations:
-{{- if .Values.defaultRules.additionalRuleAnnotations }}
-{{ toYaml .Values.defaultRules.additionalRuleAnnotations | indent 8 }}
-{{- end }}
+      {{- if or .Values.defaultRules.additionalRuleLabels .Values.defaultRules.additionalRuleGroupAnnotations.kubeProxy }}
+        {{- with .Values.defaultRules.additionalRuleAnnotations }}
+          {{- toYaml . | nindent 8 }}
+        {{- end }}
+        {{- with .Values.defaultRules.additionalRuleGroupAnnotations.kubeProxy }}
+          {{- toYaml . | nindent 8 }}
+        {{- end }}
+      {{- end }}
         description: KubeProxy has disappeared from Prometheus target discovery.
         runbook_url: {{ .Values.defaultRules.runbookUrl }}/kubernetes/kubeproxydown
         summary: Target disappeared from Prometheus target discovery.
@@ -37,8 +42,13 @@ spec:
       for: 15m
       labels:
         severity: critical
-{{- if .Values.defaultRules.additionalRuleLabels }}
-{{ toYaml .Values.defaultRules.additionalRuleLabels | indent 8 }}
-{{- end }}
+      {{- if or .Values.defaultRules.additionalRuleLabels .Values.defaultRules.additionalRuleGroupLabels.kubeProxy }}
+        {{- with .Values.defaultRules.additionalRuleLabels }}
+          {{- toYaml . | nindent 8 }}
+        {{- end }}
+        {{- with .Values.defaultRules.additionalRuleGroupLabels.kubeProxy }}
+          {{- toYaml . | nindent 8 }}
+        {{- end }}
+      {{- end }}
 {{- end }}
 {{- end }}

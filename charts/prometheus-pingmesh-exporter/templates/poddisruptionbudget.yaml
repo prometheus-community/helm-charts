@@ -1,0 +1,18 @@
+{{- if .Values.podDisruptionBudget -}}
+{{ if $.Capabilities.APIVersions.Has "policy/v1/PodDisruptionBudget" -}}
+apiVersion: policy/v1
+{{- else -}}
+apiVersion: policy/v1beta1
+{{- end }}
+kind: PodDisruptionBudget
+metadata:
+  name: {{ template "prometheus-pingmesh-exporter.fullname" . }}
+  namespace: {{ template "prometheus-pingmesh-exporter.namespace" . }}
+  labels:
+    {{- include "prometheus-pingmesh-exporter.labels" . | nindent 4 }}
+spec:
+  selector:
+    matchLabels:
+      {{- include "prometheus-pingmesh-exporter.selectorLabels" . | nindent 6 }}
+{{ toYaml .Values.podDisruptionBudget | indent 2 }}
+{{- end }}
