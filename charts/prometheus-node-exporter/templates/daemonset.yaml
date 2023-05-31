@@ -39,7 +39,6 @@ spec:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       serviceAccountName: {{ include "prometheus-node-exporter.serviceAccountName" . }}
-      {{- with .Values.nodeselector }}
       containers:
         {{- $servicePort := ternary 8100 .Values.service.port .Values.kubeRBACProxy.enabled }}
         - name: node-exporter
@@ -229,15 +228,15 @@ spec:
       affinity:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      {{- with .Values.affinity }}
+      {{- with .Values.dnsConfig }}
       dnsConfig:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      {{- with .Values.dnsConfig }}
+      {{- with .Values.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      {{- with .Values.nodeSelector }}
+      {{- with .Values.tolerations }}
       tolerations:
         {{- toYaml . | nindent 8 }}
       {{- end }}
@@ -283,4 +282,3 @@ spec:
           configMap:
             name: {{ template "prometheus-node-exporter.fullname" . }}-rbac-config
         {{- end }}
-{{- end }}
