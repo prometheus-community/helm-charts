@@ -43,10 +43,6 @@ _See [helm uninstall](https://helm.sh/docs/helm/helm_uninstall/) for command doc
 
 ## Upgrading Chart
 
-### To 3.0
-
-The default value for `rbac.pspEnabled` (true) has now been set to `false`. Users relying on the previous default value have to set the property explicitely to `true` before upgrading.
-
 ```console
 helm upgrade [RELEASE_NAME] [CHART] --install
 ```
