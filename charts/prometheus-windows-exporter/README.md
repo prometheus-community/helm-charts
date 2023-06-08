@@ -33,45 +33,6 @@ This removes all the Kubernetes components associated with the chart and deletes
 
 _See [helm uninstall](https://helm.sh/docs/helm/helm_uninstall/) for command documentation._
 
-## Upgrading Chart
-
-```console
-helm upgrade [RELEASE_NAME] [CHART] --install
-```
-
-_See [helm upgrade](https://helm.sh/docs/helm/helm_upgrade/) for command documentation._
-
-### 4.16 to 4.17+
-
-`containerSecurityContext.readOnlyRootFilesystem` is set to `true` by default.
-
-### 3.x to 4.x
-
-Starting from version 4.0.0, the `node exporter` chart is using the [Kubernetes recommended labels](https://kubernetes.io/docs/concepts/overview/working-with-objects/common-labels/). Therefore you have to delete the daemonset before you upgrade.
-
-```console
-kubectl delete daemonset -l app=prometheus-windows-exporter
-helm upgrade -i prometheus-windows-exporter prometheus-community/prometheus-windows-exporter
-```
-
-If you use your own custom [ServiceMonitor](https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/api.md#servicemonitor) or [PodMonitor](https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/api.md#podmonitor), please ensure to upgrade their `selector` fields accordingly to the new labels.
-
-### From 2.x to 3.x
-
-Change the following:
-
-```yaml
-hostRootFsMount: true
-```
-
-to:
-
-```yaml
-hostRootFsMount:
-  enabled: true
-  mountPropagation: HostToContainer
-```
-
 ## Configuring
 
 See [Customizing the Chart Before Installing](https://helm.sh/docs/intro/using_helm/#customizing-the-chart-before-installing). To see all configurable options with detailed comments, visit the chart's [values.yaml](./values.yaml), or run these configuration commands:
@@ -79,22 +40,3 @@ See [Customizing the Chart Before Installing](https://helm.sh/docs/intro/using_h
 ```console
 helm show values prometheus-community/prometheus-windows-exporter
 ```
-
-### kube-rbac-proxy
-
-You can enable `prometheus-windows-exporter` endpoint protection using `kube-rbac-proxy`. By setting `kubeRBACProxy.enabled: true`, this chart will deploy a RBAC proxy container protecting the node-exporter endpoint.
-To authorize access, authenticate your requests (via a `ServiceAccount` for example) with a `ClusterRole` attached such as:
-
-```yaml
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRole
-metadata:
-  name: prometheus-windows-exporter-read
-rules:
-  - apiGroups: [ "" ]
-    resources: ["services/node-exporter-prometheus-windows-exporter"]
-    verbs:
-      - get
-```
-
-See [kube-rbac-proxy examples](https://github.com/brancz/kube-rbac-proxy/tree/master/examples/resource-attributes) for more details.
