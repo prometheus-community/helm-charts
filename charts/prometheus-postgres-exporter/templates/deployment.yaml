@@ -1,6 +1,9 @@
 {{- if and .Values.config.datasource.passwordSecret .Values.config.datasource.password -}}
 {{ fail (printf "ERROR: only one of .Values.config.datasource.passwordSecret and .Values.config.datasource.password must be defined") }}
 {{- end -}}
+{{- if and .Values.config.datasource.user .Values.config.datasource.userSecret -}}
+{{ fail (printf "ERROR: only one of .Values.config.datasource.user and .Values.config.datasource.userSecret must be defined") }}
+{{- end -}}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -97,8 +100,21 @@ spec:
           {{- else }}
           - name: DATA_SOURCE_URI
             value: {{ template "prometheus-postgres-exporter.data_source_uri" . }}
+          {{- if .Values.config.datasource.user }}
           - name: DATA_SOURCE_USER
             value: {{ .Values.config.datasource.user }}
+          {{- else }}
+          {{- if .Values.config.datasource.userSecret }}
+          - name: DATA_SOURCE_USER
+            valueFrom:
+              secretKeyRef:
+                name: {{ .Values.config.datasource.userSecret.name }}
+                key: {{ .Values.config.datasource.userSecret.key }}
+          {{- else }}
+                name: {{ template "prometheus-postgres-exporter.fullname" . }}
+                key: data_source_user
+          {{- end }}
+          {{- end }}
           {{- if .Values.config.datasource.pgpassfile }}
           - name: PGPASSFILE
             value: {{ .Values.config.datasource.pgpassfile }}
