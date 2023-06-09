@@ -60,6 +60,20 @@ data:
 {{- end }}
 {{- end }}
 {{- end }}
+{{- if .Values.grafana.sidecar.datasources.alertmanager.enabled }}
+    - name: Alertmanager
+      type: alertmanager
+      uid: {{ .Values.grafana.sidecar.datasources.alertmanager.uid }}
+      {{- if .Values.grafana.sidecar.datasources.alertmanager.url }}
+      url: {{ .Values.grafana.sidecar.datasources.alertmanager.url }}
+      {{- else }}
+      url: http://{{ template "kube-prometheus-stack.fullname" . }}-alertmanager.{{ template "kube-prometheus-stack.namespace" . }}:{{ .Values.alertmanager.service.port }}/{{ trimPrefix "/" .Values.alertmanager.alertmanagerSpec.routePrefix }}
+      {{- end }}
+      access: proxy
+      jsonData:
+        handleGrafanaManagedAlerts: {{ .Values.grafana.sidecar.datasources.alertmanager.handleGrafanaManagedAlerts }}
+        implementation: {{ .Values.grafana.sidecar.datasources.alertmanager.implementation }}
+{{- end }}
 {{- end }}
 {{- if .Values.grafana.additionalDataSources }}
 {{ tpl (toYaml .Values.grafana.additionalDataSources | indent 4) . }}
