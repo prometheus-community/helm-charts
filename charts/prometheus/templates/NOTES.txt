@@ -19,7 +19,7 @@ Get the Prometheus server URL by running these commands in the same shell:
   export SERVICE_IP=$(kubectl get svc --namespace {{ .Release.Namespace }} {{ template "prometheus.server.fullname" . }} -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
   echo http://$SERVICE_IP:{{ .Values.server.service.servicePort }}
 {{- else if contains "ClusterIP"  .Values.server.service.type }}
-  export POD_NAME=$(kubectl get pods --namespace {{ .Release.Namespace }} -l "app={{ template "prometheus.name" . }},component={{ .Values.server.name }}" -o jsonpath="{.items[0].metadata.name}")
+  export POD_NAME=$(kubectl get pods --namespace {{ .Release.Namespace }} -l "app.kubernetes.io/name={{ include "prometheus.name" . }},app.kubernetes.io/instance={{ .Release.Name }},app.kubernetes.io/component={{ .Values.server.name }}" -o jsonpath="{.items[0].metadata.name}")
   kubectl --namespace {{ .Release.Namespace }} port-forward $POD_NAME 9090
 {{- end }}
 
@@ -55,7 +55,7 @@ Get the Alertmanager URL by running these commands in the same shell:
   export SERVICE_IP=$(kubectl get svc --namespace {{ .Release.Namespace }} {{ template "prometheus.alertmanager.fullname" . }} -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
   echo http://$SERVICE_IP:{{ .Values.alertmanager.service.servicePort }}
 {{- else if contains "ClusterIP"  .Values.alertmanager.service.type }}
-  export POD_NAME=$(kubectl get pods --namespace {{ .Release.Namespace }} -l "app={{ template "prometheus.name" . }},component={{ .Values.alertmanager.name }}" -o jsonpath="{.items[0].metadata.name}")
+  export POD_NAME=$(kubectl get pods --namespace {{ .Release.Namespace }} -l ""app.kubernetes.io/name={{ include "prometheus.name" . }},app.kubernetes.io/instance={{ .Release.Name }},app.kubernetes.io/component={{ .Values.alertmanager.name }}" -o jsonpath="{.items[0].metadata.name}")
   kubectl --namespace {{ .Release.Namespace }} port-forward $POD_NAME 9093
 {{- end }}
 {{- end }}
