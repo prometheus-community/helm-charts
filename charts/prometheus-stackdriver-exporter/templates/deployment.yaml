@@ -97,10 +97,16 @@ spec:
             {{- end }}
           {{- end }}
           {{- end }}
-          {{- if or .Values.stackdriver.serviceAccountSecret .Values.stackdriver.serviceAccountKey }}
           env:
+          {{- if or .Values.stackdriver.serviceAccountSecret .Values.stackdriver.serviceAccountKey }}
             - name: GOOGLE_APPLICATION_CREDENTIALS
               value: /etc/secrets/service-account/credentials.json
+          {{- end }}
+          {{- range $key, $value := .Values.extraEnvs }}
+            {{- if $value }}
+            - name: {{ $key | quote }}
+              value: {{ $value |quote }}
+            {{- end }}
           {{- end }}
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
