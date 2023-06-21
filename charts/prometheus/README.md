@@ -65,35 +65,6 @@ helm upgrade [RELEASE_NAME] prometheus-community/prometheus --install
 
 _See [helm upgrade](https://helm.sh/docs/helm/helm_upgrade/) for command documentation._
 
-### To 22.7
-
-Releases of the included subcharts (dependencies) have been bumped as follows:
-
-| Subchart                                                                                                                     | Release | Previous Release |
-|------------------------------------------------------------------------------------------------------------------------------|---------|------------------|
-| [alertmanager](https://github.com/prometheus-community/helm-charts/releases/tag/alertmanager-0.33.1)                         | 0.33.1  | 0.30.1           |
-| [kube-state-metrics](https://github.com/prometheus-community/helm-charts/releases/tag/kube-state-metrics-4.32.0)              | 4.32.0   | 4.30.0           |
-| [prometheus-node-exporter](https://github.com/prometheus-community/helm-charts/releases/tag/prometheus-node-exporter-4.18.0) | 4.18.0  | 4.8.1            |
-| [prometheus-pushgateway](https://github.com/prometheus-community/helm-charts/releases/tag/prometheus-pushgateway-2.3.0)      | 2.3.0   | 2.0.4            |
-
-### To 22.6
-
-Prometheus has been bumped to release [v2.44.0](https://github.com/prometheus/prometheus/releases/tag/v2.44.0).
-
-### To 22.5
-
-clusterRoleNameOverride has been added to deal with situations where there is a use-case to deploy Prometheus server per namespace and hence being able to set the names of ClusterRole and ClusterRoleBinding independently
-
-### To 22.4
-
-Support for environment variables in the _prometheus-config-reloader_'s container has been added through `configmapReload.env`. These can be useful together with `configmapReload.reloadUrl` if basic authentication is set at Prometheus.
-
-_prometheus-config-reloader_ has been bumped to release [0.65.1](https://github.com/prometheus-operator/prometheus-operator/releases).
-
-### To 22.3
-
-Prometheus has been bumped to release [v2.43.1](https://github.com/prometheus/prometheus/releases/tag/v2.43.1) which is a bugfix release.
-
 ### To 22.0
 
 The `app.kubernetes.io/version` label has been removed from the pod selector.
