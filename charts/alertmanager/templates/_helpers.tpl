@@ -85,3 +85,14 @@ Define Pdb apiVersion
 {{- printf "policy/v1beta1" }}
 {{- end }}
 {{- end }}
+
+{{/*
+Allow overriding alertmanager namespace
+*/}}
+{{- define "alertmanager.namespace" -}}
+{{- if .Values.namespaceOverride -}}
+{{- .Values.namespaceOverride -}}
+{{- else -}}
+{{- .Release.Namespace -}}
+{{- end -}}
+{{- end -}}

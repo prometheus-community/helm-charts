@@ -39,6 +39,9 @@ spec:
             - "--insecure-listen-address={{ .Values.config.listenAddress }}"
             - "--upstream={{ tpl .Values.config.upstream $ }}"
             - "--label={{ .Values.config.label }}"
+            {{- if .Values.metrics.enabled }}
+            - "--internal-listen-address={{ .Values.metrics.listenAddress }}"
+            {{- end }}
             {{- with .Values.config.extraArgs }}
               {{- toYaml . | nindent 12 }}
             {{- end }}
@@ -46,6 +49,11 @@ spec:
             - name: http
               containerPort: {{ splitList ":" .Values.config.listenAddress | last }}
               protocol: TCP
+            {{- if .Values.metrics.enabled }}
+            - name: http-metrics
+              containerPort: {{ splitList ":" .Values.metrics.listenAddress | last }}
+              protocol: TCP
+            {{- end }}
           livenessProbe:
             {{- toYaml .Values.livenessProbe | nindent 12 }}
           readinessProbe:
