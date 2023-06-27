@@ -68,13 +68,13 @@ _See [helm upgrade](https://helm.sh/docs/helm/helm_upgrade/) for command documen
 ### To 23.0
 
 Release 5.0.0 of the _kube-state-metrics_ chart introduced a separation of the `image.repository` value in two distinct values:
- 
+
 ```console
  image:
    registry: registry.k8s.io
    repository: kube-state-metrics/kube-state-metrics
  ```
- 
+
 If a custom values file or CLI flags set `kube-state.metrics.image.repository`, please, set the new values accordingly.
 
 Users are advised to review changes in the corresponding chart releases before upgrading.
