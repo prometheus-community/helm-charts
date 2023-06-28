@@ -1,13 +1,18 @@
 # Default values for prometheus-node-exporter.
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
+
 image:
-  registry: quay.io
-  repository: prometheus/node-exporter
+  registry: ghcr.io
+  repository: prometheus-community/windows-exporter
   # Overrides the image tag whose default is {{ printf "v%s" .Chart.AppVersion }}
   tag: ""
   pullPolicy: IfNotPresent
   digest: ""
+
+config: |-
+  collectors:
+    enabled: '[defaults],container'
 
 imagePullSecrets: []
 # - name: "image-pull-secret"
@@ -31,54 +36,12 @@ global:
   # Allow parent charts to override registry hostname
   imageRegistry: ""
 
-# Configure kube-rbac-proxy. When enabled, creates a kube-rbac-proxy to protect the node-exporter http endpoint.
-# The requests are served through the same service but requests are HTTPS.
-kubeRBACProxy:
-  enabled: false
-  image:
-    registry: quay.io
-    repository: brancz/kube-rbac-proxy
-    tag: v0.14.0
-    sha: ""
-    pullPolicy: IfNotPresent
-
-  # List of additional cli arguments to configure kube-rbac-prxy
-  # for example: --tls-cipher-suites, --log-file, etc.
-  # all the possible args can be found here: https://github.com/brancz/kube-rbac-proxy#usage
-  extraArgs: []
-
-  ## Specify security settings for a Container
-  ## Allows overrides and additional options compared to (Pod) securityContext
-  ## Ref: https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-the-security-context-for-a-container
-  containerSecurityContext: {}
-
-  resources: {}
-    # We usually recommend not to specify default resources and to leave this as a conscious
-    # choice for the user. This also increases chances charts run on environments with little
-    # resources, such as Minikube. If you do want to specify resources, uncomment the following
-    # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
-    # limits:
-    #  cpu: 100m
-    #  memory: 64Mi
-  # requests:
-  #  cpu: 10m
-  #  memory: 32Mi
-
 service:
   type: ClusterIP
-  port: 9100
-  targetPort: 9100
+  port: 9182
   nodePort:
   portName: metrics
-  listenOnAllInterfaces: true
-  annotations:
-    prometheus.io/scrape: "true"
-
-# Set a NetworkPolicy with:
-# ingress only on service.port
-# no egress permitted
-networkPolicy:
-  enabled: false
+  annotations: {}
 
 # Additional environment variables that will be passed to the daemonset
 env: {}
@@ -248,7 +211,7 @@ resources: {}
   #   memory: 50Mi
   # requests:
   #   cpu: 100m
-  #   memory: 30Mi
+#   memory: 30Mi
 
 serviceAccount:
   # Specifies whether a ServiceAccount should be created
@@ -261,45 +224,22 @@ serviceAccount:
   automountServiceAccountToken: false
 
 securityContext:
-  fsGroup: 65534
-  runAsGroup: 65534
-  runAsNonRoot: true
-  runAsUser: 65534
+  windowsOptions:
+    hostProcess: true
+    runAsUserName: "NT AUTHORITY\\system"
 
-containerSecurityContext:
-  readOnlyRootFilesystem: true
-  # capabilities:
-  #   add:
-  #   - SYS_TIME
+containerSecurityContext: {}
 
 rbac:
   ## If true, create & use RBAC resources
   ##
   create: true
-  ## If true, create & use Pod Security Policy resources
-  ## https://kubernetes.io/docs/concepts/policy/pod-security-policy/
-  pspEnabled: true
-  pspAnnotations: {}
-
-# for deployments that have node_exporter deployed outside of the cluster, list
-# their addresses here
-endpoints: []
 
 # Expose the service to the host network
 hostNetwork: true
 
 # Share the host process ID namespace
 hostPID: true
-
-# Mount the node's root file system (/) at /host/root in the container
-hostRootFsMount:
-  enabled: true
-  # Defines how new mounts in existing mounts on the node or in the container
-  # are propagated to the container or node, respectively. Possible values are
-  # None, HostToContainer, and Bidirectional. If this field is omitted, then
-  # None is used. More information on:
-  # https://kubernetes.io/docs/concepts/storage/volumes/#mount-propagation
-  mountPropagation: HostToContainer
 
 ## Assign a group of affinity scheduling rules
 ##
@@ -342,7 +282,7 @@ dnsConfig: {}
 ## Assign a nodeSelector if operating a hybrid cluster
 ##
 nodeSelector:
-  kubernetes.io/os: linux
+  kubernetes.io/os: windows
   #  kubernetes.io/arch: amd64
 
 tolerations:
@@ -355,8 +295,8 @@ tolerations:
 ## Additional container arguments
 ##
 extraArgs: []
-#   - --collector.diskstats.ignored-devices=^(ram|loop|fd|(h|s|v)d[a-z]|nvme\\d+n\\d+p)\\d+$
-#   - --collector.textfile.directory=/run/prometheus
+#   - --collector.service.services-where
+#   - "Name LIKE 'sql%'"
 
 ## Additional mounts from the host to node-exporter container
 ##
@@ -365,7 +305,6 @@ extraHostVolumeMounts: []
 #    hostPath: <hostPath>
 #    mountPath: <mountPath>
 #    readOnly: true|false
-#    mountPropagation: None|HostToContainer|Bidirectional
 
 ## Additional configmaps to be mounted.
 ##
@@ -428,23 +367,3 @@ readinessProbe:
   periodSeconds: 10
   successThreshold: 1
   timeoutSeconds: 1
-
-# Enable vertical pod autoscaler support for prometheus-node-exporter
-verticalPodAutoscaler:
-  enabled: false
-  # List of resources that the vertical pod autoscaler can control. Defaults to cpu and memory
-  controlledResources: []
-
-  # Define the max allowed resources for the pod
-  maxAllowed: {}
-  # cpu: 200m
-  # memory: 100Mi
-  # Define the min allowed resources for the pod
-  minAllowed: {}
-  # cpu: 200m
-  # memory: 100Mi
-
-  # updatePolicy:
-    # Specifies whether recommended updates are applied when a Pod is started and whether recommended updates
-    # are applied during the life of a Pod. Possible values are "Off", "Initial", "Recreate", and "Auto".
-    # updateMode: Auto
