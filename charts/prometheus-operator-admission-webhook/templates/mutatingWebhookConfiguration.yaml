@@ -1,0 +1,50 @@
+apiVersion: admissionregistration.k8s.io/v1
+kind: MutatingWebhookConfiguration
+metadata:
+  name:  {{ include "prometheus-operator-admission-webhook.fullname" . }}
+  {{- if .Values.certManager.enabled }}
+  annotations:
+    certmanager.k8s.io/inject-ca-from: {{ printf "%s/%s-cert" (include "prometheus-operator-admission-webhook.namespace" .) (include "prometheus-operator-admission-webhook.fullname" .) | quote }}
+    cert-manager.io/inject-ca-from: {{ printf "%s/%s-cert" (include "prometheus-operator-admission-webhook.namespace" .) (include "prometheus-operator-admission-webhook.fullname" .) | quote }}
+    {{- with .Values.webhooks.annotations }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+  {{- else }}
+  {{- with .Values.webhooks.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  {{- end }}
+  labels:
+    {{- include "prometheus-operator-admission-webhook.labels" . | nindent 4 }}
+    {{- with .Values.webhooks.labels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+webhooks:
+  - name: prometheusrulemutate.monitoring.coreos.com
+    failurePolicy: {{ default "Fail" .Values.webhooks.failurePolicy }}
+    {{- with .Values.webhooks.namespaceSelector }}
+    namespaceSelector:
+      {{- toYaml . | nindent 6 }}
+    {{- end }}
+    rules:
+      - apiGroups:
+          - monitoring.coreos.com
+        apiVersions:
+          - "*"
+        resources:
+          - prometheusrules
+        operations:
+          - CREATE
+          - UPDATE
+    clientConfig:
+      service:
+        namespace: {{ include "prometheus-operator-admission-webhook.namespace" . }}
+        name: {{ include "prometheus-operator-admission-webhook.fullname" . }}
+        path: /admission-prometheusrules/mutate
+      {{- with .Values.caBundle }}
+      caBundle: {{ . }}
+      {{- end }}
+    timeoutSeconds: {{ default 10 .Values.webhooks.timeoutSeconds }}
+    admissionReviewVersions: ["v1", "v1beta1"]
+    sideEffects: None

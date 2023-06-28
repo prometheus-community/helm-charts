@@ -7,10 +7,12 @@ image:
   # Overrides the image tag whose default is {{ printf "v%s" .Chart.AppVersion }}
   tag: ""
   pullPolicy: IfNotPresent
-  sha: ""
+  digest: ""
 
 imagePullSecrets: []
 # - name: "image-pull-secret"
+nameOverride: ""
+fullnameOverride: ""
 
 global:
   # To help compatibility with other charts which use global.imagePullSecrets.
@@ -72,6 +74,12 @@ service:
   annotations:
     prometheus.io/scrape: "true"
 
+# Set a NetworkPolicy with:
+# ingress only on service.port
+# no egress permitted
+networkPolicy:
+  enabled: false
+
 # Additional environment variables that will be passed to the daemonset
 env: {}
 ##  env:
@@ -101,6 +109,11 @@ prometheus:
     ## Override serviceMonitor selector
     ##
     selectorOverride: {}
+
+    ## Attach node metadata to discovered targets. Requires Prometheus v2.35.0 and above.
+    ##
+    attachMetadata:
+      node: false
 
     relabelings: []
     metricRelabelings: []
@@ -253,7 +266,8 @@ securityContext:
   runAsNonRoot: true
   runAsUser: 65534
 
-containerSecurityContext: {}
+containerSecurityContext:
+  readOnlyRootFilesystem: true
   # capabilities:
   #   add:
   #   - SYS_TIME
@@ -327,9 +341,9 @@ dnsConfig: {}
 
 ## Assign a nodeSelector if operating a hybrid cluster
 ##
-nodeSelector: {}
-#   beta.kubernetes.io/arch: amd64
-#   beta.kubernetes.io/os: linux
+nodeSelector:
+  kubernetes.io/os: linux
+  #  kubernetes.io/arch: amd64
 
 tolerations:
   - effect: NoSchedule

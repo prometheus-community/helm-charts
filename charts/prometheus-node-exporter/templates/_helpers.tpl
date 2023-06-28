@@ -76,10 +76,12 @@ The image to use
 */}}
 {{- define "prometheus-node-exporter.image" -}}
 {{- if .Values.image.sha }}
+{{- fail "image.sha forbidden. Use image.digest instead" }}
+{{- else if .Values.image.digest }}
 {{- if .Values.global.imageRegistry }}
-{{- printf "%s/%s:%s@%s" .Values.global.imageRegistry .Values.image.repository (default (printf "v%s" .Chart.AppVersion) .Values.image.tag) .Values.image.sha }}
+{{- printf "%s/%s:%s@%s" .Values.global.imageRegistry .Values.image.repository (default (printf "v%s" .Chart.AppVersion) .Values.image.tag) .Values.image.digest }}
 {{- else }}
-{{- printf "%s/%s:%s@%s" .Values.image.registry .Values.image.repository (default (printf "v%s" .Chart.AppVersion) .Values.image.tag) .Values.image.sha }}
+{{- printf "%s/%s:%s@%s" .Values.image.registry .Values.image.repository (default (printf "v%s" .Chart.AppVersion) .Values.image.tag) .Values.image.digest }}
 {{- end }}
 {{- else }}
 {{- if .Values.global.imageRegistry }}

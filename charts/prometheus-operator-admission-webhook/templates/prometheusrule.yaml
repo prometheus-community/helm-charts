@@ -1,0 +1,27 @@
+{{- if .Values.prometheusRule.enabled }}
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: {{ include "prometheus-operator-admission-webhook.fullname" . }}
+  {{- if .Values.prometheusRule.namespace }}
+  namespace: {{ .Values.prometheusRule.namespace }}
+  {{- else }}
+  namespace: {{ include "prometheus-operator-admission-webhook.namespace" . }}
+  {{- end }}
+  labels:
+    {{- include "prometheus-operator-admission-webhook.labels" . | nindent 4 }}
+    {{- with .Values.prometheusRule.labels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+  {{- with .Values.prometheusRule.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  {{- with .Values.prometheusRule.rules }}
+  groups:
+    - name: {{ include "prometheus-operator-admission-webhook.name" $ }}.rules
+      rules: {{ tpl (toYaml .) $ | nindent 8 }}
+  {{- end }}
+{{- end }}

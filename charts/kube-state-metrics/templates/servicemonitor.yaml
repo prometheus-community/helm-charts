@@ -9,6 +9,10 @@ metadata:
   {{- with .Values.prometheus.monitor.additionalLabels }}
     {{- toYaml . | nindent 4 }}
   {{- end }}
+  {{- with .Values.prometheus.monitor.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
 spec:
   jobLabel: {{ default "app.kubernetes.io/name" .Values.prometheus.monitor.jobLabel }}
   {{- with .Values.prometheus.monitor.targetLabels }}
@@ -56,6 +60,13 @@ spec:
       tlsConfig:
         {{- toYaml .Values.prometheus.monitor.tlsConfig | nindent 8 }}
     {{- end }}
+    {{- if .Values.prometheus.monitor.bearerTokenFile }}
+      bearerTokenFile: {{ .Values.prometheus.monitor.bearerTokenFile }}
+    {{- end }}
+    {{- with .Values.prometheus.monitor.bearerTokenSecret }}
+      bearerTokenSecret:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}
   {{- if .Values.selfMonitor.enabled }}
     - port: metrics
     {{- if .Values.prometheus.monitor.interval }}
@@ -84,6 +95,13 @@ spec:
     {{- if .Values.prometheus.monitor.tlsConfig }}
       tlsConfig:
         {{- toYaml .Values.prometheus.monitor.tlsConfig | nindent 8 }}
+    {{- end }}
+    {{- if .Values.prometheus.monitor.bearerTokenFile }}
+      bearerTokenFile: {{ .Values.prometheus.monitor.bearerTokenFile }}
+    {{- end }}
+    {{- with .Values.prometheus.monitor.bearerTokenSecret }}
+      bearerTokenSecret:
+        {{- toYaml . | nindent 8 }}
     {{- end }}
   {{- end }}
 {{- end }}
