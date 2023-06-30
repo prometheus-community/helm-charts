@@ -77,6 +77,12 @@ Release 5.0.0 of the _kube-state-metrics_ chart introduced a separation of the `
 
 If a custom values file or CLI flags set `kube-state.metrics.image.repository`, please, set the new values accordingly.
 
+If you are upgrading _prometheus-pushgateway_ with the chart and _prometheus-pushgateway_ has been deployed as a statefulset with a persistent volume, the statefulset must be deleted before upgrading the chart, e.g.:
+
+```bash
+kubectl delete sts -l app.kubernetes.io/name=prometheus-pushgateway -n monitoring --cascade=orphan
+```
+
 Users are advised to review changes in the corresponding chart releases before upgrading.
 
 ### To 22.0
