@@ -48,9 +48,10 @@ spec:
 {{- end }}
       {{- include "elasticsearch-exporter.image.pullSecret.name" (dict "images" (list .Values.image) "context" $) | nindent 6 }}
       restartPolicy: {{ .Values.restartPolicy }}
-      {{- with .Values.podSecurityContext }}
+      {{- if .Values.podSecurityContext.enabled }}
+      {{- $podSecurityContext := omit .Values.podSecurityContext "enabled" }}
       securityContext:
-        {{- toYaml . | nindent 8 }}
+        {{- toYaml $podSecurityContext | nindent 8 }}
       {{- end }}
       {{- with .Values.dnsConfig }}
       dnsConfig:
