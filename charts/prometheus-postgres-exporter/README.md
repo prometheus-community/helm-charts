@@ -41,10 +41,10 @@ _See [helm uninstall](https://helm.sh/docs/helm/helm_uninstall/) for command doc
 ## Upgrading
 
 ### To 4.6.0
+
 This release adds functionality to template the variables inside `config.datasource` by means of allowing the `tpl` function in the resources that make use of it. This functionality is useful when you want to do sub-charting (e.g. in a postgres chart) and you want to avoid the duplication of variables inside `config.datasource`.
 
-
-Compared to the previous release (4.5.0) the only thing that changed is the fact that you can no longer leave the `config.datasource.host` variable blank. Leaving it blank could cause errors with the `tpl` function. However, the default value was changed to `''` so this error is not expected to happen. 
+Compared to the previous release (4.5.0) the only thing that changed is the fact that you can no longer leave the `config.datasource.host` variable blank. Leaving it blank could cause errors with the `tpl` function. However, the default value was changed to `''` so this error is not expected to happen.
 
 ### To 4.0.0
 
