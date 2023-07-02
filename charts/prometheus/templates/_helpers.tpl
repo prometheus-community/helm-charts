@@ -29,8 +29,8 @@ app.kubernetes.io/version: {{ .Chart.AppVersion }}
 helm.sh/chart: {{ include "prometheus.chart" . }}
 app.kubernetes.io/managed-by: {{ .Release.Service }}
 app.kubernetes.io/part-of: {{ include "prometheus.name" . }}
-{{- if .Values.commonMetaLabels}}
-{{ toYaml .Values.commonMetaLabels }}
+{{- with .Values.commonMetaLabels}}
+{{ toYaml . }}
 {{- end }}
 {{- end -}}
 
