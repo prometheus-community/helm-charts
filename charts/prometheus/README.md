@@ -65,6 +65,10 @@ helm upgrade [RELEASE_NAME] [CHART] --install
 
 _See [helm upgrade](https://helm.sh/docs/helm/helm_upgrade/) for command documentation._
 
+### To 22.7
+
+`commonMetaLabels` has been added. This can be used to set custom metadata labels to resources created by this chart, e.g. when you have policies requiring certain metadata labels.
+
 ### To 22.6
 
 Prometheus has been bumped to release [v2.44.0](https://github.com/prometheus/prometheus/releases/tag/v2.44.0).
