@@ -9,6 +9,7 @@ metadata:
   annotations:
     {{- toYaml . | nindent 4 }}
   {{- end }}
+  namespace: {{ include "alertmanager.namespace" . }}
 spec:
   replicas: {{ .Values.replicaCount }}
   selector:
@@ -47,6 +48,9 @@ spec:
       {{- with .Values.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.schedulerName }}
+      schedulerName: {{ . }}
       {{- end }}
       {{- if or .Values.podAntiAffinity .Values.affinity }}
       affinity:
@@ -171,6 +175,9 @@ spec:
             {{- if .Values.extraVolumeMounts }}
             {{- toYaml .Values.extraVolumeMounts | nindent 12 }}
             {{- end }}
+        {{- with .Values.extraContainers }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
       volumes:
         {{- if .Values.config }}
         - name: config

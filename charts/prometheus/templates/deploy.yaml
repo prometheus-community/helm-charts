@@ -67,7 +67,7 @@ spec:
             - --watched-dir=/etc/config
           {{- $default_url := "http://127.0.0.1:9090/-/reload" }}
           {{- with .Values.server.prefixURL }}
-          {{- $default_url = printf "http://127.0.0.1:9090/%s/-/reload" . }}
+          {{- $default_url = printf "http://127.0.0.1:9090%s/-/reload" . }}
           {{- end }}
             - --reload-url={{ default $default_url .Values.configmapReload.reloadUrl }}
           {{- range $key, $value := .Values.configmapReload.prometheus.extraArgs }}
@@ -95,6 +95,9 @@ spec:
               mountPath: {{ .mountPath }}
               subPath: {{ .subPath }}
               readOnly: {{ .readOnly }}
+          {{- end }}
+          {{- with .Values.configmapReload.prometheus.extraVolumeMounts }}
+            {{ toYaml . | nindent 12 }}
           {{- end }}
         {{- end }}
 

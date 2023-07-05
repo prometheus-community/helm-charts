@@ -106,12 +106,20 @@ spec:
         {{- if .Values.selfMonitor.telemetryPort }}
         - --telemetry-port={{ $telemetryPort }}
         {{- end }}
+        {{- if .Values.customResourceState.enabled }}
+        - --custom-resource-state-config-file=/etc/customresourcestate/config.yaml
         {{- end }}
-        {{- if or (.Values.kubeconfig.enabled) (.Values.volumeMounts) }}
+        {{- end }}
+        {{- if or (.Values.kubeconfig.enabled) (.Values.customResourceState.enabled) (.Values.volumeMounts) }}
         volumeMounts:
         {{- if .Values.kubeconfig.enabled }}
         - name: kubeconfig
           mountPath: /opt/k8s/.kube/
+          readOnly: true
+        {{- end }}
+        {{- if .Values.customResourceState.enabled }}
+        - name: customresourcestate-config
+          mountPath: /etc/customresourcestate
           readOnly: true
         {{- end }}
         {{- if .Values.volumeMounts }}
@@ -247,7 +255,7 @@ spec:
       topologySpreadConstraints:
 {{ toYaml .Values.topologySpreadConstraints | indent 8 }}
       {{- end }}
-      {{- if or (.Values.kubeconfig.enabled) (.Values.volumes) (.Values.kubeRBACProxy.enabled) }}
+      {{- if or (.Values.kubeconfig.enabled) (.Values.customResourceState.enabled) (.Values.volumes) (.Values.kubeRBACProxy.enabled) }}
       volumes:
       {{- if .Values.kubeconfig.enabled}}
         - name: kubeconfig
@@ -258,6 +266,11 @@ spec:
         - name: kube-rbac-proxy-config
           configMap:
             name: {{ template "kube-state-metrics.fullname" . }}-rbac-config
+      {{- end }}
+      {{- if .Values.customResourceState.enabled}}
+        - name: customresourcestate-config
+          configMap:
+            name: {{ template "kube-state-metrics.fullname" . }}-customresourcestate-config
       {{- end }}
       {{- if .Values.volumes }}
 {{ toYaml .Values.volumes | indent 8 }}

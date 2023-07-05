@@ -15,6 +15,7 @@ FILES=(
   "crd-prometheuses.yaml        :  monitoring.coreos.com_prometheuses.yaml"
   "crd-prometheusrules.yaml     :  monitoring.coreos.com_prometheusrules.yaml"
   "crd-servicemonitors.yaml     :  monitoring.coreos.com_servicemonitors.yaml"
+  "crd-scrapeconfigs.yaml       :  monitoring.coreos.com_scrapeconfigs.yaml"
   "crd-thanosrulers.yaml        :  monitoring.coreos.com_thanosrulers.yaml"
 )
 

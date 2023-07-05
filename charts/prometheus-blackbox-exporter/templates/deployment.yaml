@@ -28,17 +28,21 @@ spec:
     spec:
       automountServiceAccountToken: {{ .Values.automountServiceAccountToken }}
       serviceAccountName: {{ template "prometheus-blackbox-exporter.serviceAccountName" . }}
-    {{- if .Values.nodeSelector }}
+    {{- with .Values.topologySpreadConstraints }}
+      topologySpreadConstraints:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}
+    {{- with .Values.nodeSelector }}
       nodeSelector:
-{{ toYaml .Values.nodeSelector | indent 8 }}
+        {{- toYaml . | nindent 8 }}
     {{- end }}
-    {{- if .Values.affinity }}
+    {{- with .Values.affinity }}
       affinity:
-{{ toYaml .Values.affinity | indent 8 }}
+        {{- toYaml . | nindent 8 }}
     {{- end }}
-    {{- if .Values.tolerations }}
+    {{- with .Values.tolerations }}
       tolerations:
-{{ toYaml .Values.tolerations | indent 6 }}
+        {{- toYaml . | nindent 8 }}
     {{- end }}
     {{- if .Values.image.pullSecrets }}
       imagePullSecrets:
@@ -62,7 +66,7 @@ spec:
       priorityClassName: "{{ .Values.priorityClassName }}"
       {{- end }}
       securityContext:
-{{ toYaml .Values.podSecurityContext | indent 8 }}  
+{{ toYaml .Values.podSecurityContext | indent 8 }}
       {{- if .Values.extraInitContainers }}
       initContainers:
 {{ toYaml .Values.extraInitContainers | indent 8 }}
@@ -70,9 +74,9 @@ spec:
       containers:
         {{- if .Values.extraContainers }}
 {{ toYaml .Values.extraContainers | indent 8 }}
-        {{- end }}      
+        {{- end }}
         - name: blackbox-exporter
-          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           {{- with .Values.securityContext }}
           securityContext:
@@ -132,9 +136,9 @@ spec:
         {{- toYaml .Values.dnsConfig | nindent 8 }}
 {{- end }}
       volumes:
-    {{- if .Values.extraVolumes }}      
-{{ toYaml .Values.extraVolumes | indent 8 }}      
-    {{- end }}      
+    {{- if .Values.extraVolumes }}
+{{ toYaml .Values.extraVolumes | indent 8 }}
+    {{- end }}
         - name: config
 {{- if .Values.secretConfig }}
           secret:

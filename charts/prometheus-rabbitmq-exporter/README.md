@@ -8,14 +8,14 @@ This chart bootstraps a [RabbitMQ Exporter](https://github.com/kbudde/rabbitmq_e
 
 - Kubernetes 1.8+ with Beta APIs enabled
 
-## Get Repo Info
+## Get Repository Info
 
 ```console
 helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
 helm repo update
 ```
 
-_See [helm repo](https://helm.sh/docs/helm/helm_repo/) for command documentation._
+_See [`helm repo`]](https://helm.sh/docs/helm/helm_repo/) for command documentation._
 
 ## Install Chart
 
@@ -54,7 +54,7 @@ $ helm upgrade [RELEASE_NAME] [CHART] --install
 
 _See [helm upgrade](https://helm.sh/docs/helm/helm_upgrade/) for command documentation._
 
-## Configuring
+## Configuration
 
 See [Customizing the Chart Before Installing](https://helm.sh/docs/intro/using_helm/#customizing-the-chart-before-installing). To see all configurable options with detailed comments, visit the chart's [values.yaml](./values.yaml), or run these configuration commands:
 
