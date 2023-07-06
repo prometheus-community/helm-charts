@@ -20,7 +20,7 @@ _See [helm repository](https://helm.sh/docs/helm/helm_repo/) for command documen
 
 ## Install Chart
 
-Start from Version 16.0, Prometheus chart required Helm 3.7+ in order to install successfully. Please check your Helm chart version before installation.
+Starting with version 16.0, the Prometheus chart requires Helm 3.7+ in order to install successfully. Please check your `helm` release before installation.
 
 ```console
 helm install [RELEASE_NAME] prometheus-community/prometheus
@@ -60,32 +60,30 @@ A [`values.schema.json`](https://helm.sh/docs/topics/charts/#schema-files) file 
 ## Upgrading Chart
 
 ```console
-helm upgrade [RELEASE_NAME] [CHART] --install
+helm upgrade [RELEASE_NAME] prometheus-community/prometheus --install
 ```
 
 _See [helm upgrade](https://helm.sh/docs/helm/helm_upgrade/) for command documentation._
 
-### To 22.7
+### To 23.0
 
-`commonMetaLabels` has been added. This can be used to set custom metadata labels to resources created by this chart, e.g. when you have policies requiring certain metadata labels.
+Release 5.0.0 of the _kube-state-metrics_ chart introduced a separation of the `image.repository` value in two distinct values:
 
-### To 22.6
+```console
+ image:
+   registry: registry.k8s.io
+   repository: kube-state-metrics/kube-state-metrics
+ ```
 
-Prometheus has been bumped to release [v2.44.0](https://github.com/prometheus/prometheus/releases/tag/v2.44.0).
+If a custom values file or CLI flags set `kube-state.metrics.image.repository`, please, set the new values accordingly.
 
-### To 22.5
+If you are upgrading _prometheus-pushgateway_ with the chart and _prometheus-pushgateway_ has been deployed as a statefulset with a persistent volume, the statefulset must be deleted before upgrading the chart, e.g.:
 
-clusterRoleNameOverride has been added to deal with situations where there is a use-case to deploy Prometheus server per namespace and hence being able to set the names of ClusterRole and ClusterRoleBinding independently
+```bash
+kubectl delete sts -l app.kubernetes.io/name=prometheus-pushgateway -n monitoring --cascade=orphan
+```
 
-### To 22.4
-
-Support for environment variables in the _prometheus-config-reloader_'s container has been added through `configmapReload.env`. These can be useful together with `configmapReload.reloadUrl` if basic authentication is set at Prometheus.
-
-_prometheus-config-reloader_ has been bumped to release [0.65.1](https://github.com/prometheus-operator/prometheus-operator/releases).
-
-### To 22.3
-
-Prometheus has been bumped to release [v2.43.1](https://github.com/prometheus/prometheus/releases/tag/v2.43.1) which is a bugfix release.
+Users are advised to review changes in the corresponding chart releases before upgrading.
 
 ### To 22.0
 
@@ -269,7 +267,7 @@ See [Customizing the Chart Before Installing](https://helm.sh/docs/intro/using_h
 helm show values prometheus-community/prometheus
 ```
 
-You may similarly use the above configuration commands on each chart [dependency](#dependencies) to see it's configurations.
+You may similarly use the above configuration commands on each chart [dependency](#dependencies) to see its configurations.
 
 ### Scraping Pod Metrics via Annotations
 
