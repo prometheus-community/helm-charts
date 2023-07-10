@@ -41,6 +41,24 @@ _See [helm upgrade](https://helm.sh/docs/helm/helm_upgrade/) for command documen
 helm upgrade [RELEASE_NAME] [CHART] --install
 ```
 
+### From 1.x to 2.x
+
+This version uses [cloud-sql-proxy v2](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/blob/main/migration-guide.md).
+
+If you use `cloudsqlproxy.ipAddressTypes` to set private connections, please set `cloudsqlproxy.privateIp`.
+
+```yaml
+cloudsqlproxy:
+  ipAddressTypes: PRIVATE,PUBLIC
+```
+
+to:
+
+```yaml
+cloudsqlproxy:
+  privateIp: true
+```
+
 ### To =< 1.0.0
 
 Version 1.0.0 is a major update.
