@@ -52,7 +52,7 @@ _See [helm upgrade](https://helm.sh/docs/helm/helm_upgrade/) for command documen
 
 - The default image is set to `quay.io/prometheus/blackbox-exporter` instead `prom/blackbox-exporter`
 - `image.repository` is now split into `image.registry` and `image.repository`.
-  For the old behavior, set `image.registry` to an empty string.
+  For the old behavior, set `image.registry` to an empty string and only use `image.repository`.
 
 ### To 7.0.0
 
