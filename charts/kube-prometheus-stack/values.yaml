@@ -60,6 +60,7 @@ defaultRules:
     nodeExporterRecording: true
     prometheus: true
     prometheusOperator: true
+    windows: true
 
   ## Reduce app namespace alert scope
   appNamespacesTarget: ".*"
@@ -193,6 +194,12 @@ global:
   # - name: "image-pull-secret"
   # or
   # - "image-pull-secret"
+
+windowsMonitoring:
+  ## Deploys the windows-exporter and Windows-specific dashboards and rules
+  enabled: false
+  ## Job must match jobLabel in the PodMonitor/ServiceMonitor and is used for the rules
+  job: prometheus-windows-exporter
 
 ## Configuration for alertmanager
 ## ref: https://prometheus.io/docs/alerting/alertmanager/
@@ -2287,6 +2294,8 @@ prometheusOperator:
     enabled: false
     # List of resources that the vertical pod autoscaler can control. Defaults to cpu and memory
     controlledResources: []
+    # Specifies which resource values should be controlled: RequestsOnly or RequestsAndLimits.
+    # controlledValues: RequestsAndLimits
 
     # Define the max allowed resources for the pod
     maxAllowed: {}
@@ -2298,6 +2307,8 @@ prometheusOperator:
     # memory: 100Mi
 
     updatePolicy:
+      # Specifies minimal number of replicas which need to be alive for VPA Updater to attempt pod eviction
+      # minReplicas: 1
       # Specifies whether recommended updates are applied when a Pod is started and whether recommended updates
       # are applied during the life of a Pod. Possible values are "Off", "Initial", "Recreate", and "Auto".
       updateMode: Auto
@@ -2377,6 +2388,12 @@ prometheusOperator:
 ##
 prometheus:
   enabled: true
+
+  ## Toggle prometheus into agent mode
+  ## Note many of features described below (e.g. rules, query, alerting, remote read, thanos) will not work in agent mode.
+  ## ref: https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/designs/prometheus-agent.md
+  ##
+  agentMode: false
 
   ## Annotations for Prometheus
   ##
@@ -2858,7 +2875,7 @@ prometheus:
     image:
       registry: quay.io
       repository: prometheus/prometheus
-      tag: v2.44.0
+      tag: v2.45.0
       sha: ""
 
     ## Tolerations for use with node taints
@@ -3449,6 +3466,10 @@ prometheus:
     #    hostnames:
     #      - a1.app.local
     #      - b1.app.local
+
+    ## TracingConfig configures tracing in Prometheus.
+    ## See https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/api.md#prometheustracingconfig
+    tracingConfig: {}
 
   additionalRulesForClusterRole: []
   #  - apiGroups: [ "" ]

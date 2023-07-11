@@ -1,3 +1,8 @@
+global:
+  ## Global image registry to use if it needs to be overriden for some specific use cases (e.g local registries, custom images, ...)
+  ##
+  imageRegistry: ""
+
 restartPolicy: Always
 
 kind: Deployment
@@ -77,10 +82,12 @@ strategy:
   type: RollingUpdate
 
 image:
-  repository: prom/blackbox-exporter
-  # if not set appVersion field from Chart.yaml is used
+  registry: quay.io
+  repository: prometheus/blackbox-exporter
+  # Overrides the image tag whose default is {{ printf "v%s" .Chart.AppVersion }}
   tag: ""
   pullPolicy: IfNotPresent
+  digest: ""
 
   ## Optionally specify an array of imagePullSecrets.
   ## Secrets must be manually created in the namespace.
@@ -203,6 +210,8 @@ ingress:
     # kubernetes.io/ingress.class: nginx
     # kubernetes.io/tls-acme: "true"
   hosts:
+    ## The host property on hosts and tls is passed through helm tpl function.
+    ## ref: https://helm.sh/docs/developing_charts/#using-the-tpl-function
     - host: chart-example.local
       paths:
         - path: /
@@ -239,6 +248,7 @@ serviceMonitor:
     additionalMetricsRelabels: {}
     additionalRelabeling: []
     labels: {}
+    path: /metrics
     interval: 30s
     scrapeTimeout: 30s
 
@@ -257,6 +267,8 @@ serviceMonitor:
     module: http_2xx
   ## scheme: HTTP scheme to use for scraping. Can be used with `tlsConfig` for example if using istio mTLS.
   scheme: http
+  ## path: HTTP path. Needs to be adjusted, if web.route-prefix is set
+  path: "/probe"
   ## tlsConfig: TLS configuration to use when scraping the endpoint. For example if using istio mTLS.
   ## Of type: https://github.com/coreos/prometheus-operator/blob/master/Documentation/api.md#tlsconfig
   tlsConfig: {}
@@ -307,3 +319,27 @@ extraManifests: []
 
 # global common labels, applied to all ressources
 commonLabels: {}
+
+# Enable vertical pod autoscaler support for prometheus-blackbox-exporter
+verticalPodAutoscaler:
+  enabled: false
+  # List of resources that the vertical pod autoscaler can control. Defaults to cpu and memory
+  controlledResources: []
+  # Specifies which resource values should be controlled: RequestsOnly or RequestsAndLimits.
+  # controlledValues: RequestsAndLimits
+
+  # Define the max allowed resources for the pod
+  maxAllowed: {}
+  # cpu: 200m
+  # memory: 100Mi
+  # Define the min allowed resources for the pod
+  minAllowed: {}
+  # cpu: 200m
+  # memory: 100Mi
+
+  updatePolicy:
+    # Specifies minimal number of replicas which need to be alive for VPA Updater to attempt pod eviction
+    # minReplicas: 1
+    # Specifies whether recommended updates are applied when a Pod is started and whether recommended updates
+    # are applied during the life of a Pod. Possible values are "Off", "Initial", "Recreate", and "Auto".
+    updateMode: Auto
