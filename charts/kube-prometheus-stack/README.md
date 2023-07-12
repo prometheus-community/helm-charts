@@ -84,7 +84,7 @@ A major chart version change (like v1.2.3 -> v2.0.0) indicates that there is an 
 
 ### From 47.x to 48.x
 
-This version moved all CRDs into a dedicated sub-chart. No new CRDs are introduced in this version. 
+This version moved all CRDs into a dedicated sub-chart. No new CRDs are introduced in this version.
 See [#3548](https://github.com/prometheus-community/helm-charts/issues/3548) for more context.
 
 We do not expect any breaking changes in this version.
