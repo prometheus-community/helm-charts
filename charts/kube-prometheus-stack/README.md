@@ -82,6 +82,13 @@ _See [helm upgrade](https://helm.sh/docs/helm/helm_upgrade/) for command documen
 
 A major chart version change (like v1.2.3 -> v2.0.0) indicates that there is an incompatible breaking change needing manual actions.
 
+### From 47.x to 48.x
+
+This version moved all CRDs into a dedicated sub-chart. No new CRDs are introduced in this version.
+See [#3548](https://github.com/prometheus-community/helm-charts/issues/3548) for more context.
+
+We do not expect any breaking changes in this version.
+
 ### From 46.x to 47.x
 
 This version upgrades Prometheus-Operator to v0.66.0 with new CRDs (PrometheusAgent and ScrapeConfig).
