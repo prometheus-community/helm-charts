@@ -18,6 +18,7 @@ spec:
       labels:
         {{- include "prometheus-pingdom-exporter.selectorLabels" . | nindent 8 }}
     spec:
+      serviceAccountName: {{ template "prometheus-pingdom-exporter.serviceAccountName" . }}
       containers:
         - name: {{ .Chart.Name }}
           args:
@@ -63,6 +64,10 @@ spec:
             httpGet:
               path: /
               port: http
+          {{- if .Values.extraVolumeMounts }}
+          volumeMounts:
+{{ toYaml .Values.extraVolumeMounts | indent 10 }}
+          {{- end }}
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
       {{- with .Values.nodeSelector }}
@@ -76,4 +81,8 @@ spec:
     {{- with .Values.tolerations }}
       tolerations:
         {{- toYaml . | nindent 8 }}
+    {{- end }}
+    {{- if .Values.extraVolumes }}
+      volumes:
+{{ toYaml .Values.extraVolumes | indent 8 }}
     {{- end }}

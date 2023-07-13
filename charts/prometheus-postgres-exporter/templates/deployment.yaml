@@ -10,6 +10,13 @@ metadata:
     chart: {{ template "prometheus-postgres-exporter.chart" . }}
     release: {{ .Release.Name }}
     heritage: {{ .Release.Service }}
+    {{- with .Values.deployment.labels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+  {{- with .Values.deployment.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
 spec:
   replicas: {{ .Values.replicaCount }}
   selector:
@@ -55,7 +62,7 @@ spec:
           - "--no-collector.database"
           {{- end }}
           {{- if .Values.config.disableCollectorBgwriter }}
-          - "--no-collector.bgwriter"
+          - "--no-collector.stat_bgwriter"
           {{- end }}
           {{- if .Values.config.disableDefaultMetrics }}
           - "--disable-default-metrics"
@@ -92,29 +99,37 @@ spec:
           - name: DATA_SOURCE_NAME
             valueFrom:
               secretKeyRef:
-                name: {{ .Values.config.datasourceSecret.name }}
-                key: {{ .Values.config.datasourceSecret.key }}
+                name: {{ tpl .Values.config.datasourceSecret.name . }}
+                key: {{ tpl .Values.config.datasourceSecret.key . }}
           {{- else }}
           - name: DATA_SOURCE_URI
             value: {{ template "prometheus-postgres-exporter.data_source_uri" . }}
+          {{- if .Values.config.datasource.userSecret }}
           - name: DATA_SOURCE_USER
-            value: {{ .Values.config.datasource.user }}
+            valueFrom:
+              secretKeyRef:
+                name: {{ tpl .Values.config.datasource.userSecret.name . }}
+                key: {{ tpl .Values.config.datasource.userSecret.key . }}
+          {{- else }}
+          - name: DATA_SOURCE_USER
+            value: {{ tpl .Values.config.datasource.user . }}
+          {{- end }}
           {{- if .Values.config.datasource.pgpassfile }}
           - name: PGPASSFILE
-            value: {{ .Values.config.datasource.pgpassfile }}
+            value: {{ tpl .Values.config.datasource.pgpassfile  . }}
           - name: DATA_SOURCE_PASS
             value: ""
           {{- else }}
           {{- if .Values.config.datasource.passwordFile }}
           - name: DATA_SOURCE_PASS_FILE
-            value: {{ .Values.config.datasource.passwordFile }}
+            value: {{ tpl .Values.config.datasource.passwordFile . }}
           {{- else }}
           - name: DATA_SOURCE_PASS
             valueFrom:
               secretKeyRef:
           {{- if .Values.config.datasource.passwordSecret }}
-                name: {{ .Values.config.datasource.passwordSecret.name }}
-                key: {{ .Values.config.datasource.passwordSecret.key }}
+                name: {{ tpl .Values.config.datasource.passwordSecret.name . }}
+                key: {{ tpl .Values.config.datasource.passwordSecret.key . }}
           {{- else }}
                 name: {{ template "prometheus-postgres-exporter.fullname" . }}
                 key: data_source_password
