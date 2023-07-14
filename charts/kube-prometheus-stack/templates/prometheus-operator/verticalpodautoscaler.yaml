@@ -8,11 +8,16 @@ metadata:
     app: {{ template "kube-prometheus-stack.name" . }}-operator
 {{ include "kube-prometheus-stack.labels" . | indent 4 }}
 spec:
+  {{- with .Values.prometheusOperator.verticalPodAutoscaler.recommenders }}
+  recommenders:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
   resourcePolicy:
     containerPolicies:
     - containerName: {{ template "kube-prometheus-stack.name" . }}
-      {{- if .Values.prometheusOperator.verticalPodAutoscaler.controlledResources }}
-      controlledResources: {{ .Values.prometheusOperator.verticalPodAutoscaler.controlledResources }}
+      {{- with .Values.prometheusOperator.verticalPodAutoscaler.controlledResources }}
+      controlledResources:
+        {{- toYaml . | nindent 8 }}
       {{- end }}
       {{- if .Values.prometheusOperator.verticalPodAutoscaler.controlledValues }}
       controlledValues: {{ .Values.prometheusOperator.verticalPodAutoscaler.controlledValues }}
