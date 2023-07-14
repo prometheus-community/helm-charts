@@ -43,6 +43,40 @@ helm upgrade [RELEASE_NAME] [CHART] --install
 
 ### From 1.x to 2.x
 
+mysqld_exporter has been updated to [v0.15.0](https://github.com/prometheus/mysqld_exporter/releases/tag/v0.15.0), removing support for `DATA_SOURCE_NAME`. Configuration for exporter use `--config.my-cnf` with a custom cnf file (secret).
+
+If you use `mysql.existingSecret` to set full `DATA_SOURCE_NAME`, please set `mysql.existingConfigSecret.name` & `mysql.existingConfigSecret.key` to reference the secret config.
+
+```yaml
+mysql:
+  existingSecret: "my-data-source"
+```
+
+to:
+
+```yaml
+mysql:
+  existingConfigSecret:
+    name: "config"
+    key: "my.cnf"
+```
+
+If you use `mysql.param` to extend `DATA_SOURCE_NAME`, please set `mysql.additionalConfig` with extra params to extend my.cnf file.
+
+```yaml
+mysql:
+  param: "debug&connect-timeout=5"
+```
+
+to:
+
+```yaml
+mysql:
+  additionalConfig:
+    - connect-timeout=5
+    - debug
+```
+
 This version uses [cloud-sql-proxy v2](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/blob/main/migration-guide.md).
 
 If you use `cloudsqlproxy.ipAddressTypes` to set private connections, please set `cloudsqlproxy.privateIp`.
