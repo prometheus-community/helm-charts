@@ -8,7 +8,7 @@ _Note: This chart was formerly named `prometheus-operator` chart, now renamed to
 
 ## Prerequisites
 
-- Kubernetes 1.16+
+- Kubernetes 1.19+
 - Helm 3+
 
 ## Get Helm Repository Info
@@ -81,6 +81,12 @@ _See [helm upgrade](https://helm.sh/docs/helm/helm_upgrade/) for command documen
 ### Upgrading an existing Release to a new major version
 
 A major chart version change (like v1.2.3 -> v2.0.0) indicates that there is an incompatible breaking change needing manual actions.
+
+### From 48.x to 49.x
+
+This version requires Kubernetes 1.19+.
+
+We do not expect any breaking changes in this version.
 
 ### From 47.x to 48.x
 
