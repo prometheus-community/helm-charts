@@ -7,11 +7,16 @@ metadata:
   labels:
     {{- include "prometheus-blackbox-exporter.labels" . | nindent 4 }}
 spec:
+  {{- with .Values.verticalPodAutoscaler.recommenders }}
+  recommenders:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
   resourcePolicy:
     containerPolicies:
     - containerName: blackbox-exporter
-      {{- if .Values.verticalPodAutoscaler.controlledResources }}
-      controlledResources: {{ .Values.verticalPodAutoscaler.controlledResources }}
+      {{- with .Values.verticalPodAutoscaler.controlledResources }}
+      controlledResources:
+        {{- toYaml . | nindent 8 }}
       {{- end }}
       {{- if .Values.verticalPodAutoscaler.controlledValues }}
       controlledValues: {{ .Values.verticalPodAutoscaler.controlledValues }}

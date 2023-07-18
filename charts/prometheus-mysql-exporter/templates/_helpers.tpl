@@ -69,13 +69,24 @@ Secret name for cloudsql credentials
 {{- end -}}
 
 {{/*
-Secret name for DATA_SOURCE_NAME
+Secret name for config
 */}}
-{{- define "prometheus-mysql-exporter.secret" -}}
-    {{- if .Values.mysql.existingSecret -}}
-        {{- printf "%s" .Values.mysql.existingSecret -}}
+{{- define "prometheus-mysql-exporter.secretName" -}}
+    {{- if .Values.mysql.existingConfigSecret.name -}}
+        {{- printf "%s" .Values.mysql.existingConfigSecret.name -}}
     {{- else -}}
-        {{ template "prometheus-mysql-exporter.fullname" . }}
+        {{ template "prometheus-mysql-exporter.fullname" . }}-config
+    {{- end -}}
+{{- end -}}
+*/}}
+
+Secret key for config
+*/}}
+{{- define "prometheus-mysql-exporter.secretKey" -}}
+    {{- if .Values.mysql.existingConfigSecret.key -}}
+        {{- printf "%s" .Values.mysql.existingConfigSecret.key -}}
+    {{- else -}}
+        my.cnf
     {{- end -}}
 {{- end -}}
 */}}
