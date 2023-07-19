@@ -66,6 +66,10 @@ securityContext:
   allowPrivilegeEscalation: false
   capabilities:
     add: ["NET_RAW"]
+podSecurityContext:
+  sysctls:
+    - name: net.ipv4.ping_group_range
+      value: "0 2147483647"
 ```
 
 ### To 6.0.0
