@@ -99,7 +99,10 @@ spec:
           imagePullPolicy: "{{ .Values.configmapReload.image.pullPolicy }}"
           args:
             - --watched-dir=/etc/alertmanager
-            - --reload-url=http://127.0.0.1:9093/-/reload
+            - --reload-url=http://127.0.0.1:{{ .Values.service.port }}/-/reload
+            {{- range $key, $value := .Values.configmapReload.extraArgs }}
+            - --{{ $key }}={{ $value }}
+            {{- end }}
           resources:
             {{- toYaml .Values.configmapReload.resources | nindent 12 }}
           {{- with .Values.configmapReload.containerPort }}
@@ -130,7 +133,9 @@ spec:
           {{- end }}
           args:
             - --storage.path=/alertmanager
+            {{- if not (hasKey .Values.extraArgs "config.file") }}
             - --config.file=/etc/alertmanager/alertmanager.yml
+            {{- end }}
             {{- if or (gt (int .Values.replicaCount) 1) (.Values.additionalPeers) }}
             - --cluster.advertise-address=[$(POD_IP)]:{{ $svcClusterPort }}
             - --cluster.listen-address=0.0.0.0:{{ $svcClusterPort }}
@@ -151,8 +156,13 @@ spec:
             {{- end }}
           ports:
             - name: http
-              containerPort: 9093
+              containerPort: {{ .Values.service.port }}
               protocol: TCP
+            {{- if or (gt (int .Values.replicaCount) 1) (.Values.additionalPeers) }}
+            - name: clusterpeer
+              containerPort: {{ $svcClusterPort }}
+              protocol: TCP
+            {{- end }}
           livenessProbe:
             {{- toYaml .Values.livenessProbe | nindent 12 }}
           readinessProbe:
