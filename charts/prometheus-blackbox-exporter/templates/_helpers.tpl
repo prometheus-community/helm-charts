@@ -91,3 +91,13 @@ Return the appropriate apiVersion for rbac.
 {{- define "prometheus-blackbox-exporter.kubeVersion" -}}
   {{- default .Capabilities.KubeVersion.Version .Values.kubeVersionOverride -}}
 {{- end -}}
+
+
+{{/*
+The image to use
+*/}}
+{{- define "prometheus-blackbox-exporter.image" -}}
+{{- with (.Values.global.imageRegistry | default .Values.image.registry) -}}{{ . }}/{{- end }}
+{{- .Values.image.repository -}}:{{- .Values.image.tag | default .Chart.AppVersion -}}
+{{- with .Values.image.digest -}}@{{ .}}{{- end -}}
+{{- end -}}

@@ -17,7 +17,7 @@ spec:
 {{ toYaml .Values.podLabels | trim | indent 8 }}
 {{- end }}
       annotations:
-        checksum/credentials: {{ include (print .Template.BasePath "/secret-env.yaml") . | sha256sum }}
+        checksum/credentials: {{ include (print .Template.BasePath "/secret-config.yaml") . | sha256sum }}
       {{- if .Values.cloudsqlproxy.enabled }}
         checksum/config: {{ include (print .Template.BasePath "/secret.yaml") . | sha256sum }}
         {{- if .Values.annotations }}
@@ -40,8 +40,9 @@ spec:
             {{- toYaml .Values.securityContext | nindent 12 }}
           image: "{{ .Values.image.registry }}/{{ .Values.image.repository }}:{{ default .Chart.AppVersion .Values.image.tag }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
-          {{- if or .Values.config .Values.collectors }}
           args:
+            - "--config.my-cnf=/etc/cnf/{{ template "prometheus-mysql-exporter.secretKey" . }}"
+          {{- if or .Values.config .Values.collectors }}
           {{- if .Values.config.logLevel }}
             - "--log.level={{ .Values.config.logLevel }}"
           {{- end}}
@@ -61,26 +62,15 @@ spec:
           {{- end }}
           {{- end }}
           {{- end }}
-          {{- if not .Values.mysql.existingSecret }}
+          {{- if and (not .Values.mysql.existingConfigSecret.name) (.Values.mysql.existingPasswordSecret.name) }}
           env:
-            - name: DB_PASSWORD
+            - name: MYSQLD_EXPORTER_PASSWORD
               valueFrom:
                 secretKeyRef:
-          {{- if .Values.mysql.existingPasswordSecret.name }}
+          {{- if and .Values.mysql.existingPasswordSecret.name .Values.mysql.existingPasswordSecret.key }}
                   name: {{ .Values.mysql.existingPasswordSecret.name }}
                   key: {{ .Values.mysql.existingPasswordSecret.key }}
-          {{- else }}
-                  name: {{ template "prometheus-mysql-exporter.fullname" . }}
-                  key: password
           {{- end }}
-          {{- end }}
-          {{- if .Values.mysql.existingSecret }}
-          envFrom:
-            - secretRef:
-                name: {{ template "prometheus-mysql-exporter.secret" . }}
-          {{- else }}
-            - name: DATA_SOURCE_NAME
-              value: "{{ .Values.mysql.user }}:$(DB_PASSWORD)@{{ if .Values.mysql.protocol }}{{ .Values.mysql.protocol }}{{ end }}({{ .Values.mysql.host }}:{{ .Values.mysql.port }})/{{ if .Values.mysql.db }}{{ .Values.mysql.db }}{{ end }}{{ if .Values.mysql.param }}?{{ .Values.mysql.param }}{{ end }}"
           {{- end }}
           ports:
             - containerPort: {{ .Values.service.internalPort }}
@@ -92,28 +82,63 @@ spec:
             httpGet:
               path: /
               port: {{ .Values.service.internalPort }}
+          volumeMounts:
+            - name: secret-config
+              mountPath: /etc/cnf/
+              readOnly: true
           {{- with .Values.extraVolumeMounts }}
-          volumeMounts: {{ toYaml . | nindent 12 }}
+            {{- toYaml . | nindent 12 }}
           {{- end }}
         {{- if .Values.cloudsqlproxy.enabled }}
         - name: cloudsql-proxy
           image: "{{ .Values.cloudsqlproxy.image.repo }}:{{ .Values.cloudsqlproxy.image.tag }}"
           imagePullPolicy: "{{ .Values.cloudsqlproxy.image.PullPolicy  }}"
-          command: ["/cloud_sql_proxy"
-                    ,"-instances={{ .Values.cloudsqlproxy.instanceConnectionName }}=tcp:{{ .Values.cloudsqlproxy.port }}"
-                    {{- if .Values.cloudsqlproxy.ipAddressTypes }}
-                    ,"-ip_address_types={{ .Values.cloudsqlproxy.ipAddressTypes }}"
-                    {{- end }}
-                    {{- if not .Values.cloudsqlproxy.workloadIdentity.enabled }}
-                    ,"-credential_file=/secrets/cloudsql/credentials.json"
-                    {{- end }}
-                    {{- if .Values.cloudsqlproxy.extraArgs }}
-                    ,"{{ .Values.cloudsqlproxy.extraArgs }}"
-                    {{- end }}
-                    ]
+          args: ["{{ .Values.cloudsqlproxy.instanceConnectionName }}?port:{{ .Values.cloudsqlproxy.port }}"
+                  ,"--health-check"
+                  ,"--http-address=0.0.0.0"
+                  ,"--run-connection-test"
+                  {{- if .Values.cloudsqlproxy.privateIp }}
+                  ,"--private-ip"
+                  {{- end }}
+                  {{- if not .Values.cloudsqlproxy.workloadIdentity.enabled }}
+                  ,"--credentials-file=/secrets/cloudsql/credentials.json"
+                  {{- end }}
+                  {{- if .Values.cloudsqlproxy.extraArgs }}
+                  ,"{{ .Values.cloudsqlproxy.extraArgs }}"
+                  {{- end }}
+                  ]
           livenessProbe:
-            exec:
-              command: ["nc", "-z", "127.0.0.1", "3306"]
+            httpGet:
+              path: /liveness
+              port: 9090
+            initialDelaySeconds: 0
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 1
+          readinessProbe:
+            httpGet:
+              path: /readiness
+              port: 9090
+            initialDelaySeconds: 0
+            periodSeconds: 10
+            timeoutSeconds: 5
+            successThreshold: 1
+            failureThreshold: 1
+          startupProbe:
+            httpGet:
+              path: /startup
+              port: 9090
+            periodSeconds: 1
+            timeoutSeconds: 5
+            failureThreshold: 20
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            readOnlyRootFilesystem: true
+            runAsUser: 10000
+            runAsNonRoot: true
           {{- if not .Values.cloudsqlproxy.workloadIdentity.enabled }}
           volumeMounts:
             - name: cloudsql-proxy-sa-credentials
@@ -136,6 +161,9 @@ spec:
 {{ toYaml . | indent 8 }}
     {{- end }}
       volumes:
+        - name: secret-config
+          secret:
+            secretName: {{ template "prometheus-mysql-exporter.secretName" . }}
     {{- if and (.Values.cloudsqlproxy.enabled) (not .Values.cloudsqlproxy.workloadIdentity.enabled) }}
         - name: cloudsql-proxy-sa-credentials
           secret:

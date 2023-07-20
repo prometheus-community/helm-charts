@@ -140,17 +140,22 @@ collectors: {}
   # heartbeat.database: heartbeat
   # heartbeat.table: heartbeat
 
-# mysql connection params which build the DATA_SOURCE_NAME env var of the docker container
+# mysql connection params which build the my.cnf config
 mysql:
   db: ""
   host: "localhost"
-  param: ""
+  # config my.cnf https://dev.mysql.com/doc/c-api/8.0/en/mysql-options.html
+  additionalConfig:
+    # - connect-timeout=5
+    # - debug
   pass: "password"
   port: 3306
   protocol: ""
   user: "exporter"
-  # secret with full DATA_SOURCE_NAME env var as stringdata
-  existingSecret: ""
+  # secret with full config my.cnf
+  existingConfigSecret:
+    name: ""
+    key: ""
   # secret only containing the password
   existingPasswordSecret:
     name: ""
@@ -160,11 +165,11 @@ mysql:
 cloudsqlproxy:
   enabled: false
   image:
-    repo: "gcr.io/cloudsql-docker/gce-proxy"
-    tag: "1.33.0-alpine"
+    repo: "gcr.io/cloud-sql-connectors/cloud-sql-proxy"
+    tag: "2.4.0"
     pullPolicy: "IfNotPresent"
   instanceConnectionName: "project:us-central1:dbname"
-  ipAddressTypes: ""
+  privateIp: false
   port: "3306"
   credentialsSecret: ""
   # service account json

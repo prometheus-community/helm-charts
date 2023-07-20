@@ -40,6 +40,7 @@ jobs:
         uses: helm/chart-releaser-action@v1.5.0
         env:
           CR_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
+          CR_GENERATE_RELEASE_NOTES: true
 
       # see https://github.com/helm/chart-releaser/issues/183
       - name: Login to GitHub Container Registry
@@ -56,28 +57,5 @@ jobs:
             if [ -z "${pkg:-}" ]; then
               break
             fi
-            if ! helm push "${pkg}" "oci://ghcr.io/${GITHUB_REPOSITORY_OWNER}/charts"; then
-              echo '::warning:: helm push failed!'
-            fi
+            helm push "${pkg}" "oci://ghcr.io/${GITHUB_REPOSITORY_OWNER}/charts"
           done
-
-
-      # - uses: sigstore/cosign-installer@v2.8.1
-      # - name: Push charts to GHCR and sign
-      #   env:
-      #     COSIGN_EXPERIMENTAL: 1
-      #   # when filling gaps with previously released charts, cr would create
-      #   # nothing in .cr-release-packages/, and the original globbing character
-      #   # would be preserved, causing a non-zero exit. Set nullglob to fix this
-      #   run: |
-      #     shopt -s nullglob
-      #     for pkg in .cr-release-packages/*; do
-      #       if [ -z "${pkg:-}" ]; then
-      #         break
-      #       fi
-      #       helm push "${pkg}" oci://ghcr.io/"${GITHUB_REPOSITORY_OWNER}"/charts > .digest
-      #       file=${pkg##*/}       # extracts file name from full directory path
-      #       name=${file%-*}       # extracts chart name from filename
-      #       digest=$(awk -F "[, ]+" '/Digest/{print $NF}' < .digest)
-      #       cosign sign ghcr.io/"${GITHUB_REPOSITORY_OWNER}"/charts/"${name}"@"${digest}"
-      #     done
