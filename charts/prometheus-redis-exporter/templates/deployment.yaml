@@ -28,6 +28,10 @@ spec:
         - name: {{ . }}
       {{- end}}
       {{- end }}
+      {{- with .Values.podSecurityContext }}
+      securityContext:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
       containers:
         - name: {{ .Chart.Name }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
@@ -36,9 +40,9 @@ spec:
           {{- range $key, $value := .Values.extraArgs }}
             - --{{ $key }}={{ $value }}
           {{- end }}
+          {{- with .Values.securityContext }}
           securityContext:
-          {{- range $key, $value := .Values.securityContext }}
-            {{ $key }}: {{ $value }}
+            {{- toYaml . | nindent 12 }}
           {{- end }}
           ports:
             - name: exporter-port
