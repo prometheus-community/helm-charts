@@ -20,7 +20,11 @@ spec:
   podSelector:
     matchLabels:
       app: {{ template "kube-prometheus-stack.name" $ }}-admission-patch
-{{- include "kube-prometheus-stack.labels" $ | indent 6 }}
+      {{- if .Values.prometheusOperator.networkPolicy.matchLabels }}
+{{ toYaml .Values.prometheusOperator.networkPolicy.matchLabels | indent 6 }}
+      {{- else }}
+        {{- include "kube-prometheus-stack.labels" $ | indent 6 }}
+      {{- end }}
   egress:
   - {}
   policyTypes:
