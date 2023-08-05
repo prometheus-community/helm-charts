@@ -8,11 +8,19 @@ metadata:
     app: {{ template "kube-prometheus-stack.name" . }}-operator
 {{ include "kube-prometheus-stack.labels" . | indent 4 }}
 spec:
+  {{- with .Values.prometheusOperator.verticalPodAutoscaler.recommenders }}
+  recommenders:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
   resourcePolicy:
     containerPolicies:
     - containerName: {{ template "kube-prometheus-stack.name" . }}
-      {{- if .Values.prometheusOperator.verticalPodAutoscaler.controlledResources }}
-      controlledResources: {{ .Values.prometheusOperator.verticalPodAutoscaler.controlledResources }}
+      {{- with .Values.prometheusOperator.verticalPodAutoscaler.controlledResources }}
+      controlledResources:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- if .Values.prometheusOperator.verticalPodAutoscaler.controlledValues }}
+      controlledValues: {{ .Values.prometheusOperator.verticalPodAutoscaler.controlledValues }}
       {{- end }}
       {{- if .Values.prometheusOperator.verticalPodAutoscaler.maxAllowed }}
       maxAllowed:
@@ -26,10 +34,8 @@ spec:
     apiVersion: apps/v1
     kind: Deployment
     name: {{ template "kube-prometheus-stack.fullname" . }}-operator
-  {{- if .Values.prometheusOperator.verticalPodAutoscaler.updatePolicy }}
+  {{- with .Values.prometheusOperator.verticalPodAutoscaler.updatePolicy }}
   updatePolicy:
-    {{- if .Values.prometheusOperator.verticalPodAutoscaler.updatePolicy.updateMode }}
-    updateMode: {{ .Values.prometheusOperator.verticalPodAutoscaler.updatePolicy.updateMode  }}
-    {{- end }}
+    {{- toYaml . | nindent 4 }}
   {{- end }}
 {{- end }}
