@@ -1,3 +1,4 @@
+# yaml-language-server: $schema=values.schema.json
 # Default values for alertmanager.
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
@@ -24,6 +25,8 @@ extraSecretMounts: []
 imagePullSecrets: []
 nameOverride: ""
 fullnameOverride: ""
+## namespaceOverride overrides the namespace which the resources will be deployed in
+namespaceOverride: ""
 
 automountServiceAccountToken: true
 
@@ -38,6 +41,9 @@ serviceAccount:
 
 # Sets priorityClassName in alertmanager pod
 priorityClassName: ""
+
+# Sets schedulerName in alertmanager pod
+schedulerName: ""
 
 podSecurityContext:
   fsGroup: 65534
@@ -92,6 +98,7 @@ readinessProbe:
 
 service:
   annotations: {}
+  labels: {}
   type: ClusterIP
   port: 9093
   clusterPort: 9094
@@ -213,7 +220,7 @@ config:
     repeat_interval: 3h
 
 ## Monitors ConfigMap changes and POSTs to a URL
-## Ref: https://github.com/jimmidyson/configmap-reload
+## Ref: https://github.com/prometheus-operator/prometheus-operator/tree/main/cmd/prometheus-config-reloader
 ##
 configmapReload:
   ## If false, the configmap-reload container will not be deployed
@@ -227,8 +234,8 @@ configmapReload:
   ## configmap-reload container image
   ##
   image:
-    repository: jimmidyson/configmap-reload
-    tag: v0.8.0
+    repository: quay.io/prometheus-operator/prometheus-config-reloader
+    tag: v0.66.0
     pullPolicy: IfNotPresent
 
   # containerPort: 9533

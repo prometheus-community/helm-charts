@@ -48,7 +48,7 @@ configmapReload:
     ##
     image:
       repository: quay.io/prometheus-operator/prometheus-config-reloader
-      tag: v0.65.1
+      tag: v0.67.0
       # When digest is set to a non-empty value, images will be pulled by digest (regardless of tag value).
       digest: ""
       pullPolicy: IfNotPresent
@@ -62,6 +62,10 @@ configmapReload:
     ## Additional configmap-reload volume directories
     ##
     extraVolumeDirs: []
+
+    ## Additional configmap-reload volume mounts
+    ##
+    extraVolumeMounts: []
 
     ## Additional configmap-reload mounts
     ##
@@ -1011,6 +1015,9 @@ serverFiles:
           - source_labels: [__meta_kubernetes_pod_phase]
             regex: Pending|Succeeded|Failed|Completed
             action: drop
+          - source_labels: [__meta_kubernetes_pod_node_name]
+            action: replace
+            target_label: node
 
       # Example Scrape config for pods which should be scraped slower. An useful example
       # would be stackriver-exporter which queries an API on every scrape of the pod
@@ -1068,6 +1075,9 @@ serverFiles:
           - source_labels: [__meta_kubernetes_pod_phase]
             regex: Pending|Succeeded|Failed|Completed
             action: drop
+          - source_labels: [__meta_kubernetes_pod_node_name]
+            action: replace
+            target_label: node
 
 # adds additional scrape configs to prometheus.yml
 # must be a string so you have to add a | after extraScrapeConfigs:

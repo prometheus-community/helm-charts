@@ -23,8 +23,12 @@ spec:
     {{- if .Values.prometheus.networkPolicy.podSelector }}
     {{- toYaml .Values.prometheus.networkPolicy.podSelector | nindent 4 }}
     {{- else }}
-    matchExpressions:
-      - {key: app.kubernetes.io/name, operator: In, values: [prometheus]}
-      - {key: prometheus, operator: In, values: [{{ template "kube-prometheus-stack.prometheus.crname" . }}]}
+    matchLabels:
+      {{- if .Values.prometheus.agentMode }}
+      app.kubernetes.io/name: prometheus-agent
+      {{- else }}
+      app.kubernetes.io/name: prometheus
+      {{- end }}
+      operator.prometheus.io/name: {{ template "kube-prometheus-stack.prometheus.crname" . }}
     {{- end }}
 {{- end }}
