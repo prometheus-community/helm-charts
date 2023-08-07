@@ -12,6 +12,7 @@ metadata:
   namespace: {{ include "alertmanager.namespace" . }}
 spec:
   replicas: {{ .Values.replicaCount }}
+  revisionHistoryLimit: {{ .Values.revisionHistoryLimit }}
   selector:
     matchLabels:
       {{- include "alertmanager.selectorLabels" . | nindent 6 }}
@@ -97,9 +98,20 @@ spec:
         - name: {{ .Chart.Name }}-{{ .Values.configmapReload.name }}
           image: "{{ .Values.configmapReload.image.repository }}:{{ .Values.configmapReload.image.tag }}"
           imagePullPolicy: "{{ .Values.configmapReload.image.pullPolicy }}"
+          {{- with .Values.configmapReload.extraEnv }}
+          env:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
           args:
+            {{- if and (hasKey .Values.configmapReload.extraArgs "config-file" | not) (hasKey .Values.configmapReload.extraArgs "watched-dir" | not)  }}
             - --watched-dir=/etc/alertmanager
+            {{- end }}
+            {{- if not (hasKey .Values.configmapReload.extraArgs "reload-url") }}
             - --reload-url=http://127.0.0.1:9093/-/reload
+            {{- end }}
+            {{- range $key, $value := .Values.configmapReload.extraArgs }}
+            - --{{ $key }}={{ $value }}
+            {{- end }}
           resources:
             {{- toYaml .Values.configmapReload.resources | nindent 12 }}
           {{- with .Values.configmapReload.containerPort }}
@@ -109,6 +121,9 @@ spec:
           volumeMounts:
             - name: config
               mountPath: /etc/alertmanager
+            {{- if .Values.configmapReload.extraVolumeMounts }}
+            {{- toYaml .Values.configmapReload.extraVolumeMounts | nindent 12 }}
+            {{- end }}
         {{- end }}
         - name: {{ .Chart.Name }}
           securityContext:
@@ -130,7 +145,9 @@ spec:
           {{- end }}
           args:
             - --storage.path=/alertmanager
+            {{- if not (hasKey .Values.extraArgs "config.file") }}
             - --config.file=/etc/alertmanager/alertmanager.yml
+            {{- end }}
             {{- if or (gt (int .Values.replicaCount) 1) (.Values.additionalPeers) }}
             - --cluster.advertise-address=[$(POD_IP)]:{{ $svcClusterPort }}
             - --cluster.listen-address=0.0.0.0:{{ $svcClusterPort }}
@@ -153,6 +170,14 @@ spec:
             - name: http
               containerPort: 9093
               protocol: TCP
+            {{- if or (gt (int .Values.replicaCount) 1) (.Values.additionalPeers) }}
+            - name: clusterpeer-tcp
+              containerPort: {{ $svcClusterPort }}
+              protocol: TCP
+            - name: clusterpeer-udp
+              containerPort: {{ $svcClusterPort }}
+              protocol: UDP
+            {{- end }}
           livenessProbe:
             {{- toYaml .Values.livenessProbe | nindent 12 }}
           readinessProbe:
