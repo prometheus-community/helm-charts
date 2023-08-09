@@ -770,6 +770,42 @@ grafana:
 
   adminPassword: prom-operator
 
+  ## Persistence
+  persistence:
+    enabled: true
+    size: 500Mi
+
+  ## Grafana.ini
+  grafana.ini:
+    paths:
+      data: /var/lib/grafana/
+      logs: /var/log/grafana
+      plugins: /var/lib/grafana/plugins
+      provisioning: /etc/grafana/provisioning
+    analytics:
+      check_for_updates: true
+    log:
+      mode: console
+    grafana_net:
+      url: https://grafana.net
+    server:
+      domain: "monitoring.blu.com.br"
+      protocol: http
+      http_port: 3000
+      enforce_domain: true
+      root_url: "https://monitoring.blu.com.br/"
+    auth.azuread:
+      name: "Azure AD"
+      enabled: true
+      allow_sign_up: true
+      client_id: 15d46831-a669-4058-9597-a04fc9164650
+      client_secret: XFg8Q~qwSjc4wcWtSfTLnywBd95DgUIDFR-YIdks
+      scopes: "openid email profile"
+      auth_url: "https://login.microsoftonline.com/fbaffc83-5851-4b23-815a-fed2be66a2b4/oauth2/v2.0/authorize"
+      token_url: "https://login.microsoftonline.com/fbaffc83-5851-4b23-815a-fed2be66a2b4/oauth2/v2.0/token"
+      allowed_domains: "useblu.com.br"
+      allowed_groups: ""
+  
   rbac:
     ## If true, Grafana PSPs will be created
     ##
@@ -832,7 +868,7 @@ grafana:
     datasources:
       enabled: true
       defaultDatasourceEnabled: true
-      isDefaultDatasource: true
+      isDefaultDatasource: false
 
       uid: prometheus
 
@@ -874,7 +910,7 @@ grafana:
   ## Configure additional grafana datasources (passed through tpl)
   ## ref: http://docs.grafana.org/administration/provisioning/#datasources
   additionalDataSources:
-    - name: Loki
+    - name: Loki-K8s-Shared
       type: loki
       url: http://loki.monitoring.svc.cluster.local:3100
       access: proxy
@@ -913,6 +949,7 @@ grafana:
     - name: Loki-K8s-Production
       type: loki
       url: http://loki-production.blu.com.br:80
+      isDefault: true
       access: proxy
       jsonData:
           derivedFields:
@@ -922,52 +959,28 @@ grafana:
               url: $${__value.raw}
           maxLines: 1000
       version: 1
-    - name: Tempo
-      type: tempo
-      uid: tempo
-      url: http://tempo.monitoring.svc.cluster.local:3100
-      access: proxy
-      version: 1
-    - name: Tempo-K8s-Development
-      type: tempo
-      uid: tempo
-      url: http://tempo-development.blu.com.br:80
-      access: proxy
-      version: 1
-    - name: Tempo-K8s-Staging
-      type: tempo
-      uid: tempo
-      url: http://tempo-staging.blu.com.br:80
-      access: proxy
-      version: 1
-    - name: Tempo-K8s-Production
-      type: tempo
-      uid: tempo
-      url: http://tempo-production.blu.com.br:80
-      access: proxy
-      version: 1
 
     - name: Prometheus-K8s-Development
       type: prometheus
-      url: http://prometheus-development.blu.com.br:9090
+      url: http://prometheus-development.blu.com.br
       access: proxy
-      editable: false
+      editable: true
       jsonData:
           tlsSkipVerify: true
       version: 1
     - name: Prometheus-K8s-Staging
       type: prometheus
-      url: http://prometheus-stagingt.blu.com.br:9090
+      url: http://prometheus-staging.blu.com.br
       access: proxy
-      editable: false
+      editable: true
       jsonData:
           tlsSkipVerify: true
       version: 1
     - name: Prometheus-K8s-Production
       type: prometheus
-      url: http://prometheus-production.blu.com.br:9090
+      url: http://prometheus-production.blu.com.br
       access: proxy
-      editable: false
+      editable: true
       jsonData:
           tlsSkipVerify: true
       version: 1
