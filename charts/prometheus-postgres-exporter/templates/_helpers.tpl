@@ -48,7 +48,7 @@ Create the name of the service account to use
 Set DATA_SOURCE_URI environment variable
 */}}
 {{- define "prometheus-postgres-exporter.data_source_uri" -}}
-{{ printf "%s:%d/%s?sslmode=%s&%s" .Values.config.datasource.host ( .Values.config.datasource.port | int) .Values.config.datasource.database .Values.config.datasource.sslmode .Values.config.datasource.extraParams | trimSuffix "&" | quote }}
+{{ printf "%s:%d/%s?sslmode=%s&%s" (tpl .Values.config.datasource.host .) (tpl .Values.config.datasource.port . | int) (tpl .Values.config.datasource.database .) (tpl .Values.config.datasource.sslmode .) (tpl .Values.config.datasource.extraParams .) | trimSuffix "&" | quote }}
 {{- end }}
 
 {{/*
@@ -59,5 +59,14 @@ Return the appropriate apiVersion for rbac.
 {{- print "rbac.authorization.k8s.io/v1" -}}
 {{- else -}}
 {{- print "rbac.authorization.k8s.io/v1beta1" -}}
+{{- end -}}
+{{- end -}}
+
+{{/* Get Policy API Version */}}
+{{- define "prometheus-postgres-exporter.pdb.apiVersion" -}}
+{{- if .Capabilities.APIVersions.Has "policy/v1" }}
+{{- print "policy/v1" -}}
+{{- else -}}
+{{- print "policy/v1beta1" -}}
 {{- end -}}
 {{- end -}}

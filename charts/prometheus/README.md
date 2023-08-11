@@ -20,7 +20,7 @@ _See [helm repository](https://helm.sh/docs/helm/helm_repo/) for command documen
 
 ## Install Chart
 
-Start from Version 16.0, Prometheus chart required Helm 3.7+ in order to install successfully. Please check your Helm chart version before installation.
+Starting with version 16.0, the Prometheus chart requires Helm 3.7+ in order to install successfully. Please check your `helm` release before installation.
 
 ```console
 helm install [RELEASE_NAME] prometheus-community/prometheus
@@ -60,15 +60,78 @@ A [`values.schema.json`](https://helm.sh/docs/topics/charts/#schema-files) file 
 ## Upgrading Chart
 
 ```console
-helm upgrade [RELEASE_NAME] [CHART] --install
+helm upgrade [RELEASE_NAME] prometheus-community/prometheus --install
 ```
 
 _See [helm upgrade](https://helm.sh/docs/helm/helm_upgrade/) for command documentation._
 
+### To 23.0
+
+Release 5.0.0 of the _kube-state-metrics_ chart introduced a separation of the `image.repository` value in two distinct values:
+
+```console
+ image:
+   registry: registry.k8s.io
+   repository: kube-state-metrics/kube-state-metrics
+ ```
+
+If a custom values file or CLI flags set `kube-state.metrics.image.repository`, please, set the new values accordingly.
+
+If you are upgrading _prometheus-pushgateway_ with the chart and _prometheus-pushgateway_ has been deployed as a statefulset with a persistent volume, the statefulset must be deleted before upgrading the chart, e.g.:
+
+```bash
+kubectl delete sts -l app.kubernetes.io/name=prometheus-pushgateway -n monitoring --cascade=orphan
+```
+
+Users are advised to review changes in the corresponding chart releases before upgrading.
+
+### To 22.0
+
+The `app.kubernetes.io/version` label has been removed from the pod selector.
+
+Therefore, you must delete the previous StatefulSet or Deployment before upgrading. Performing this operation will cause **Prometheus to stop functioning** until the upgrade is complete.
+
+```console
+kubectl delete deploy,sts -l app.kubernetes.io/name=prometheus
+```
+
+### To 21.0
+
+The Kubernetes labels have been updated to follow [Helm 3 label and annotation best practices](https://helm.sh/docs/chart_best_practices/labels/).
+Specifically, labels mapping is listed below:
+
+| OLD                | NEW                          |
+|--------------------|------------------------------|
+|heritage            | app.kubernetes.io/managed-by |
+|chart               | helm.sh/chart                |
+|[container version] | app.kubernetes.io/version    |
+|app                 | app.kubernetes.io/name       |
+|release             | app.kubernetes.io/instance   |
+
+Therefore, depending on the way you've configured the chart, the previous StatefulSet or Deployment need to be deleted before upgrade.
+
+If `runAsStatefulSet: false` (this is the default):
+
+```console
+kubectl delete deploy -l app=prometheus
+```
+
+If `runAsStatefulSet: true`:
+
+```console
+kubectl delete sts -l app=prometheus
+```
+
+After that do the actual upgrade:
+
+```console
+helm upgrade -i prometheus prometheus-community/prometheus
+```
+
 ### To 20.0
 
 The [configmap-reload](https://github.com/jimmidyson/configmap-reload) container was replaced by the [prometheus-config-reloader](https://github.com/prometheus-operator/prometheus-operator/tree/main/cmd/prometheus-config-reloader).
-Extra command-line arguments specified via configmapReload.prometheus.extraArgs are not compatible and will break with the new prometheus-config-reloader, refer to the [sources](https://github.com/prometheus-operator/prometheus-operator/blob/main/cmd/prometheus-config-reloader/main.go) in order to make the appropriate adjustment to the extea command-line arguments.
+Extra command-line arguments specified via configmapReload.prometheus.extraArgs are not compatible and will break with the new prometheus-config-reloader, refer to the [sources](https://github.com/prometheus-operator/prometheus-operator/blob/main/cmd/prometheus-config-reloader/main.go) in order to make the appropriate adjustment to the extra command-line arguments.
 
 ### To 19.0
 
@@ -204,13 +267,13 @@ See [Customizing the Chart Before Installing](https://helm.sh/docs/intro/using_h
 helm show values prometheus-community/prometheus
 ```
 
-You may similarly use the above configuration commands on each chart [dependency](#dependencies) to see it's configurations.
+You may similarly use the above configuration commands on each chart [dependency](#dependencies) to see its configurations.
 
 ### Scraping Pod Metrics via Annotations
 
 This chart uses a default configuration that causes prometheus to scrape a variety of kubernetes resource types, provided they have the correct annotations. In this section we describe how to configure pods to be scraped; for information on how other resource types can be scraped you can do a `helm template` to get the kubernetes resource definitions, and then reference the prometheus configuration in the ConfigMap against the prometheus documentation for [relabel_config](https://prometheus.io/docs/prometheus/latest/configuration/configuration/#relabel_config) and [kubernetes_sd_config](https://prometheus.io/docs/prometheus/latest/configuration/configuration/#kubernetes_sd_config).
 
-In order to get prometheus to scrape pods, you must add annotations to the the pods as below:
+In order to get prometheus to scrape pods, you must add annotations to the pods as below:
 
 ```yaml
 metadata:

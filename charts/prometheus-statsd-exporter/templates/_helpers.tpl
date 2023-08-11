@@ -48,6 +48,9 @@ Selector labels
 {{- define "prometheus-statsd-exporter.selectorLabels" -}}
 app.kubernetes.io/name: {{ include "prometheus-statsd-exporter.name" . }}
 app.kubernetes.io/instance: {{ .Release.Name }}
+{{- with .Values.podLabels }}
+{{ toYaml . }}
+{{- end }}
 {{- end }}
 
 {{/*
@@ -71,3 +74,16 @@ Check if there is any mappings available
 {{- template "prometheus-statsd-exporter.fullname" . -}}
 {{- end }}
 {{- end }}
+
+{{/*
+Define apiVersion of HorizontalPodAutoscaler
+*/}}
+{{- define "prometheus-statsd-exporter.hpa.apiVersion" -}}
+{{- if .Capabilities.APIVersions.Has "autoscaling/v2" -}}
+{{- print "autoscaling/v2" -}}
+{{- else if .Capabilities.APIVersions.Has "autoscaling/v2beta2" -}}
+{{- print "autoscaling/v2beta2" -}}
+{{- else -}}
+{{- print "autoscaling/v2beta1" -}}
+{{- end -}}
+{{- end -}}

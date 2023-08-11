@@ -7,11 +7,19 @@ metadata:
   labels:
     {{- include "kube-state-metrics.labels" . | indent 4 }}
 spec:
+  {{- with .Values.verticalPodAutoscaler.recommenders }}
+  recommenders:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
   resourcePolicy:
     containerPolicies:
     - containerName: {{ template "kube-state-metrics.name" . }}
-      {{- if .Values.verticalPodAutoscaler.controlledResources }}
-      controlledResources: {{ .Values.verticalPodAutoscaler.controlledResources }}
+      {{- with .Values.verticalPodAutoscaler.controlledResources }}
+      controlledResources:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- if .Values.verticalPodAutoscaler.controlledValues }}
+      controlledValues: {{ .Values.verticalPodAutoscaler.controlledValues }}
       {{- end }}
       {{- if .Values.verticalPodAutoscaler.maxAllowed }}
       maxAllowed:
@@ -23,12 +31,14 @@ spec:
       {{- end }}
   targetRef:
     apiVersion: apps/v1
+    {{- if .Values.autosharding.enabled }}
+    kind: StatefulSet
+    {{- else }}
     kind: Deployment
-    name:  {{ template "kube-state-metrics.fullname" . }}
-  {{- if .Values.verticalPodAutoscaler.updatePolicy }}
-  updatePolicy:
-    {{- if .Values.verticalPodAutoscaler.updatePolicy.updateMode }}
-    updateMode: {{ .Values.verticalPodAutoscaler.updatePolicy.updateMode  }}
     {{- end }}
+    name:  {{ template "kube-state-metrics.fullname" . }}
+  {{- with .Values.verticalPodAutoscaler.updatePolicy }}
+  updatePolicy:
+    {{- toYaml . | nindent 4 }}
   {{- end }}
 {{- end }}

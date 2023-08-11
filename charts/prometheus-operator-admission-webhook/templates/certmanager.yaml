@@ -1,0 +1,57 @@
+{{- if .Values.certManager.enabled -}}
+{{- if not .Values.certManager.issuerRef -}}
+# Create a selfsigned Issuer in order to create a root CA certificate for
+# signing webhook serving certificates
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  name: {{ template "prometheus-operator-admission-webhook.fullname" . }}-self-signed-issuer
+  namespace: {{ template "prometheus-operator-admission-webhook.namespace" . }}
+spec:
+  selfSigned: {}
+---
+# Generate a CA Certificate used to sign certificates for the webhook
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: {{ template "prometheus-operator-admission-webhook.fullname" . }}-root-cert
+  namespace: {{ template "prometheus-operator-admission-webhook.namespace" . }}
+spec:
+  secretName: {{ template "prometheus-operator-admission-webhook.fullname" . }}-root-cert
+  duration: {{ .Values.certManager.rootCert.duration | default "43800h0m0s" | quote }}
+  issuerRef:
+    name: {{ template "prometheus-operator-admission-webhook.fullname" . }}-self-signed-issuer
+  commonName: "ca.webhook.prometheus-operator-admission-webhook"
+  isCA: true
+---
+# Create an Issuer that uses the above generated CA certificate to issue certs
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  name: {{ template "prometheus-operator-admission-webhook.fullname" . }}-root-issuer
+  namespace: {{ template "prometheus-operator-admission-webhook.namespace" . }}
+spec:
+  ca:
+    secretName: {{ template "prometheus-operator-admission-webhook.fullname" . }}-root-cert
+{{- end }}
+---
+# generate a server certificate for the apiservices to use
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: {{ template "prometheus-operator-admission-webhook.fullname" . }}-cert
+  namespace: {{ template "prometheus-operator-admission-webhook.namespace" . }}
+spec:
+  secretName: {{ template "prometheus-operator-admission-webhook.fullname" . }}-cert
+  duration: {{ .Values.certManager.webhookCert.duration | default "8760h0m0s" | quote }}
+  issuerRef:
+    {{- if .Values.certManager.issuerRef }}
+    {{- toYaml .Values.certManager.issuerRef | nindent 4 }}
+    {{- else }}
+    name: {{ template "prometheus-operator-admission-webhook.fullname" . }}-root-issuer
+    {{- end }}
+  dnsNames:
+  - {{ template "prometheus-operator-admission-webhook.fullname" . }}
+  - {{ template "prometheus-operator-admission-webhook.fullname" . }}.{{ template "prometheus-operator-admission-webhook.namespace" . }}
+  - {{ template "prometheus-operator-admission-webhook.fullname" . }}.{{ template "prometheus-operator-admission-webhook.namespace" . }}.svc
+{{- end -}}

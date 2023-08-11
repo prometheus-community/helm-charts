@@ -1,0 +1,29 @@
+{{- if .Values.networkPolicy.enabled }}
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  {{- with .Values.networkPolicy.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  labels:
+    {{- include "prometheus-operator-admission-webhook.labels" . | nindent 4 }}
+    {{- with .Values.networkPolicy.labels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+  name: {{ include "prometheus-operator-admission-webhook.fullname" . }}
+  namespace: {{ include "prometheus-operator-admission-webhook.namespace" . }}
+spec:
+  egress:
+    - {}
+  ingress:
+    - ports:
+      - port: {{ .Values.containerPort }}
+  policyTypes:
+    - Egress
+    - Ingress
+  podSelector:
+    matchLabels:
+      {{- include "prometheus-operator-admission-webhook.selectorLabels" . | nindent 6 }}
+{{- end }}

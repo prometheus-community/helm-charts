@@ -1,8 +1,13 @@
+# yaml-language-server: $schema=values.schema.json
 # Default values for alertmanager.
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
 
 replicaCount: 1
+
+# Number of old history to retain to allow rollback
+# Default Kubernetes value is set to 10
+revisionHistoryLimit: 10
 
 image:
   repository: quay.io/prometheus/alertmanager
@@ -24,6 +29,10 @@ extraSecretMounts: []
 imagePullSecrets: []
 nameOverride: ""
 fullnameOverride: ""
+## namespaceOverride overrides the namespace which the resources will be deployed in
+namespaceOverride: ""
+
+automountServiceAccountToken: true
 
 serviceAccount:
   # Specifies whether a service account should be created
@@ -32,10 +41,13 @@ serviceAccount:
   annotations: {}
   # The name of the service account to use.
   # If not set and create is true, a name is generated using the fullname template
-  name:
+  name: ""
 
 # Sets priorityClassName in alertmanager pod
 priorityClassName: ""
+
+# Sets schedulerName in alertmanager pod
+schedulerName: ""
 
 podSecurityContext:
   fsGroup: 65534
@@ -49,6 +61,15 @@ dnsConfig: {}
   #   - name: ndots
   #     value: "2"
   #   - name: edns0
+hostAliases: []
+  # - ip: "127.0.0.1"
+  #   hostnames:
+  #   - "foo.local"
+  #   - "bar.local"
+  # - ip: "10.1.2.3"
+  #   hostnames:
+  #   - "foo.remote"
+  #   - "bar.remote"
 securityContext:
   # capabilities:
   #   drop:
@@ -64,6 +85,11 @@ additionalPeers: []
 ##
 extraInitContainers: []
 
+## Additional containers to add to the stateful set. This will allow to setup sidecarContainers like a proxy to integrate
+## alertmanager with an external tool like teams that has not direct integration.
+##
+extraContainers: []
+
 livenessProbe:
   httpGet:
     path: /
@@ -76,6 +102,7 @@ readinessProbe:
 
 service:
   annotations: {}
+  labels: {}
   type: ClusterIP
   port: 9093
   clusterPort: 9094
@@ -83,6 +110,9 @@ service:
   loadBalancerSourceRanges: []  # Only allow access to loadBalancerIP from these IPs
   # if you want to force a specific nodePort. Must be use with service.type=NodePort
   # nodePort:
+
+  # Optionally specify extra list of additional ports exposed on both services
+  extraPorts: []
 
 ingress:
   enabled: false
@@ -166,7 +196,19 @@ persistence:
     - ReadWriteOnce
   size: 50Mi
 
+configAnnotations: {}
+  ## For example if you want to provide private data from a secret vault
+  ## https://github.com/banzaicloud/bank-vaults/tree/main/charts/vault-secrets-webhook
+  ## P.s.: Add option `configMapMutation: true` for vault-secrets-webhook
+  # vault.security.banzaicloud.io/vault-role: "admin"
+  # vault.security.banzaicloud.io/vault-addr: "https://vault.vault.svc.cluster.local:8200"
+  # vault.security.banzaicloud.io/vault-skip-verify: "true"
+  # vault.security.banzaicloud.io/vault-path: "kubernetes"
+  ## Example for inject secret
+  # slack_api_url: '${vault:secret/data/slack-hook-alerts#URL}'
+
 config:
+  enabled: true
   global: {}
     # slack_api_url: ''
 
@@ -186,7 +228,7 @@ config:
     repeat_interval: 3h
 
 ## Monitors ConfigMap changes and POSTs to a URL
-## Ref: https://github.com/jimmidyson/configmap-reload
+## Ref: https://github.com/prometheus-operator/prometheus-operator/tree/main/cmd/prometheus-config-reloader
 ##
 configmapReload:
   ## If false, the configmap-reload container will not be deployed
@@ -200,8 +242,8 @@ configmapReload:
   ## configmap-reload container image
   ##
   image:
-    repository: jimmidyson/configmap-reload
-    tag: v0.8.0
+    repository: quay.io/prometheus-operator/prometheus-config-reloader
+    tag: v0.66.0
     pullPolicy: IfNotPresent
 
   # containerPort: 9533
@@ -210,6 +252,19 @@ configmapReload:
   ## Ref: http://kubernetes.io/docs/user-guide/compute-resources/
   ##
   resources: {}
+
+  extraArgs: {}
+
+  ## Optionally specify extra list of additional volumeMounts
+  extraVolumeMounts: []
+    # - name: extras
+    #   mountPath: /usr/share/extras
+    #   readOnly: true
+
+  ## Optionally specify extra environment variables to add to alertmanager container
+  extraEnv: []
+    # - name: FOO
+    #   value: BAR
 
 templates: {}
 #   alertmanager.tmpl: |-
@@ -229,3 +284,9 @@ extraVolumes: []
 extraEnv: []
   # - name: FOO
   #   value: BAR
+
+testFramework:
+  enabled: false
+  annotations:
+    "helm.sh/hook": test-success
+    # "helm.sh/hook-delete-policy": "before-hook-creation,hook-succeeded"

@@ -14,16 +14,24 @@ Create chart name and version as used by the chart label.
 {{- end -}}
 
 {{/*
-Create unified labels for prometheus components
+Create labels for prometheus
 */}}
 {{- define "prometheus.common.matchLabels" -}}
-app: {{ template "prometheus.name" . }}
-release: {{ .Release.Name }}
+app.kubernetes.io/name: {{ include "prometheus.name" . }}
+app.kubernetes.io/instance: {{ .Release.Name }}
 {{- end -}}
 
+{{/*
+Create unified labels for prometheus components
+*/}}
 {{- define "prometheus.common.metaLabels" -}}
-chart: {{ template "prometheus.chart" . }}
-heritage: {{ .Release.Service }}
+app.kubernetes.io/version: {{ .Chart.AppVersion }}
+helm.sh/chart: {{ include "prometheus.chart" . }}
+app.kubernetes.io/managed-by: {{ .Release.Service }}
+app.kubernetes.io/part-of: {{ include "prometheus.name" . }}
+{{- with .Values.commonMetaLabels}}
+{{ toYaml . }}
+{{- end }}
 {{- end -}}
 
 {{- define "prometheus.alertmanager.labels" -}}
@@ -32,7 +40,7 @@ heritage: {{ .Release.Service }}
 {{- end -}}
 
 {{- define "prometheus.alertmanager.matchLabels" -}}
-component: {{ .Values.alertmanager.name | quote }}
+app.kubernetes.io/component: {{ .Values.alertmanager.name }}
 {{ include "prometheus.common.matchLabels" . }}
 {{- end -}}
 
@@ -42,7 +50,7 @@ component: {{ .Values.alertmanager.name | quote }}
 {{- end -}}
 
 {{- define "prometheus.nodeExporter.matchLabels" -}}
-component: {{ .Values.nodeExporter.name | quote }}
+app.kubernetes.io/component: {{ .Values.nodeExporter.name }}
 {{ include "prometheus.common.matchLabels" . }}
 {{- end -}}
 
@@ -52,7 +60,7 @@ component: {{ .Values.nodeExporter.name | quote }}
 {{- end -}}
 
 {{- define "prometheus.pushgateway.matchLabels" -}}
-component: {{ .Values.pushgateway.name | quote }}
+app.kubernetes.io/component: {{ .Values.pushgateway.name }}
 {{ include "prometheus.common.matchLabels" . }}
 {{- end -}}
 
@@ -62,7 +70,7 @@ component: {{ .Values.pushgateway.name | quote }}
 {{- end -}}
 
 {{- define "prometheus.server.matchLabels" -}}
-component: {{ .Values.server.name | quote }}
+app.kubernetes.io/component: {{ .Values.server.name }}
 {{ include "prometheus.common.matchLabels" . }}
 {{- end -}}
 
@@ -84,21 +92,24 @@ We truncate at 63 chars because some Kubernetes name fields are limited to this 
 {{- end -}}
 
 {{/*
+Create a fully qualified ClusterRole name.
+We truncate at 63 chars because some Kubernetes name fields are limited to this (by the DNS naming spec).
+*/}}
+{{- define "prometheus.clusterRoleName" -}}
+{{- if .Values.server.clusterRoleNameOverride -}}
+{{ .Values.server.clusterRoleNameOverride | trunc 63 | trimSuffix "-" }}
+{{- else -}}
+{{ include "prometheus.server.fullname" . }}
+{{- end -}}
+{{- end -}}
+
+{{/*
 Create a fully qualified alertmanager name.
 We truncate at 63 chars because some Kubernetes name fields are limited to this (by the DNS naming spec).
 */}}
 
 {{- define "prometheus.alertmanager.fullname" -}}
-{{- if .Values.alertmanager.fullnameOverride -}}
-{{- .Values.alertmanager.fullnameOverride | trunc 63 | trimSuffix "-" -}}
-{{- else -}}
-{{- $name := default .Chart.Name .Values.nameOverride -}}
-{{- if contains $name .Release.Name -}}
-{{- printf "%s-%s" .Release.Name .Values.alertmanager.name | trunc 63 | trimSuffix "-" -}}
-{{- else -}}
-{{- printf "%s-%s-%s" .Release.Name $name .Values.alertmanager.name | trunc 63 | trimSuffix "-" -}}
-{{- end -}}
-{{- end -}}
+{{- template "alertmanager.fullname" .Subcharts.alertmanager -}}
 {{- end -}}
 
 {{/*
@@ -232,17 +243,6 @@ Return if ingress supports pathType.
 {{- end -}}
 
 {{/*
-Create the name of the service account to use for the alertmanager component
-*/}}
-{{- define "prometheus.serviceAccountName.alertmanager" -}}
-{{- if .Values.serviceAccounts.alertmanager.create -}}
-    {{ default (include "prometheus.alertmanager.fullname" .) .Values.serviceAccounts.alertmanager.name }}
-{{- else -}}
-    {{ default "default" .Values.serviceAccounts.alertmanager.name }}
-{{- end -}}
-{{- end -}}
-
-{{/*
 Create the name of the service account to use for the nodeExporter component
 */}}
 {{- define "prometheus.serviceAccountName.nodeExporter" -}}
@@ -279,9 +279,5 @@ Create the name of the service account to use for the server component
 Define the prometheus.namespace template if set with forceNamespace or .Release.Namespace is set
 */}}
 {{- define "prometheus.namespace" -}}
-{{- if .Values.forceNamespace -}}
-{{ printf "namespace: %s" .Values.forceNamespace }}
-{{- else -}}
-{{ printf "namespace: %s" .Release.Namespace }}
-{{- end -}}
-{{- end -}}
+  {{- default .Release.Namespace .Values.forceNamespace -}}
+{{- end }}

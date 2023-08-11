@@ -7,6 +7,9 @@ metadata:
   labels:
     app: {{ template "kube-prometheus-stack.name" . }}-prometheus
 {{ include "kube-prometheus-stack.labels" . | indent 4 }}
+{{- with .Values.prometheus.serviceMonitor.additionalLabels }}
+{{- toYaml . | nindent 4 }}
+{{- end }}
 spec:
   {{- include "servicemonitor.scrapeLimits" .Values.prometheus.serviceMonitor | nindent 2 }}
   selector:
@@ -32,6 +35,28 @@ spec:
     bearerTokenFile: {{ .Values.prometheus.serviceMonitor.bearerTokenFile }}
     {{- end }}
     path: "{{ trimSuffix "/" .Values.prometheus.prometheusSpec.routePrefix }}/metrics"
+{{- if .Values.prometheus.serviceMonitor.metricRelabelings }}
+    metricRelabelings:
+{{ tpl (toYaml .Values.prometheus.serviceMonitor.metricRelabelings | indent 6) . }}
+{{- end }}
+{{- if .Values.prometheus.serviceMonitor.relabelings }}
+    relabelings:
+{{ toYaml .Values.prometheus.serviceMonitor.relabelings | indent 6 }}
+{{- end }}
+  - port: reloader-web
+    {{- if .Values.prometheus.serviceMonitor.interval }}
+    interval: {{ .Values.prometheus.serviceMonitor.interval }}
+    {{- end }}
+    {{- if .Values.prometheus.serviceMonitor.scheme }}
+    scheme: {{ .Values.prometheus.serviceMonitor.scheme }}
+    {{- end }}
+    {{- if .Values.prometheus.serviceMonitor.tlsConfig }}
+    tlsConfig: {{ toYaml .Values.prometheus.serviceMonitor.tlsConfig | nindent 6 }}
+    {{- end }}
+    {{- if .Values.prometheus.serviceMonitor.bearerTokenFile }}
+    bearerTokenFile: {{ .Values.prometheus.serviceMonitor.bearerTokenFile }}
+    {{- end }}
+    path: "/metrics"
 {{- if .Values.prometheus.serviceMonitor.metricRelabelings }}
     metricRelabelings:
 {{ tpl (toYaml .Values.prometheus.serviceMonitor.metricRelabelings | indent 6) . }}

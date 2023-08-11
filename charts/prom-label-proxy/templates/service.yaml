@@ -5,6 +5,10 @@ metadata:
   namespace: {{ template "prom-label-proxy.namespace" . }}
   labels:
     {{- include "prom-label-proxy.labels" . | nindent 4 }}
+  {{- with .Values.service.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
 spec:
   type: ClusterIP
   ports:
@@ -12,5 +16,11 @@ spec:
       targetPort: http
       protocol: TCP
       name: http
+    {{- if and .Values.metrics.enabled .Values.metrics.serviceMonitor.enabled}}
+    - port: {{ .Values.metrics.serviceMonitor.port }}
+      targetPort: http-metrics
+      protocol: TCP
+      name: http-metrics
+    {{- end }}
   selector:
     {{- include "prom-label-proxy.selectorLabels" . | nindent 4 }}

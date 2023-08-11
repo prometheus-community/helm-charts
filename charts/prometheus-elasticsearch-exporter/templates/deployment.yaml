@@ -99,6 +99,9 @@ spec:
                     {{- if .Values.es.indices_mappings }}
                     "--es.indices_mappings",
                     {{- end }}
+                    {{- if .Values.es.aliases }}
+                    "--es.aliases",
+                    {{- end }}
                     {{- if .Values.es.shards }}
                     "--es.shards",
                     {{- end }}
@@ -107,6 +110,12 @@ spec:
                     {{- end }}
                     {{- if .Values.es.cluster_settings }}
                     "--es.cluster_settings",
+                    {{- end }}
+                    {{- if .Values.es.slm }}
+                    "--es.slm",
+                    {{- end }}
+                    {{- if .Values.es.data_stream }}
+                    "--es.data_stream",
                     {{- end }}
                     "--es.timeout={{ .Values.es.timeout }}",
                     {{- if .Values.es.sslSkipVerify }}
@@ -134,25 +143,25 @@ spec:
           {{- end }}
           ports:
             - containerPort: {{ .Values.service.httpPort }}
-              name: http
+              name: {{ .Values.service.metricsPort.name }}
           livenessProbe:
             httpGet:
               path: /healthz
-              port: http
+              port: {{ .Values.service.metricsPort.name }}
             initialDelaySeconds: 5
             timeoutSeconds: 5
             periodSeconds: 5
           readinessProbe:
             httpGet:
               path: /healthz
-              port: http
+              port: {{ .Values.service.metricsPort.name }}
             initialDelaySeconds: 1
             timeoutSeconds: 5
             periodSeconds: 5
           lifecycle:
             preStop:
               exec:
-                command: ["/bin/ash", "-c", "sleep 20"]
+                command: ["/bin/bash", "-c", "sleep 20"]
           volumeMounts:
             {{- if and .Values.es.ssl.enabled (eq .Values.es.ssl.useExistingSecrets false) }}
             - mountPath: /ssl
@@ -168,6 +177,10 @@ spec:
             {{- with .Values.extraVolumeMounts }}
             {{- toYaml . | nindent 12 }}
             {{- end }}
+      {{- with .Values.initContainers }}
+      initContainers:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
       {{- with .Values.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}

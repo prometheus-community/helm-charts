@@ -60,7 +60,6 @@ spec:
         - --tls-private-key-file=/var/run/serving-cert/tls.key
         {{- end }}
         - --cert-dir=/tmp/cert
-        - --logtostderr=true
         - --prometheus-url={{ tpl .Values.prometheus.url . }}{{ if .Values.prometheus.port }}:{{ .Values.prometheus.port }}{{end}}{{ .Values.prometheus.path }}
         - --metrics-relist-interval={{ .Values.metricsRelistInterval }}
         - --v={{ .Values.logLevel }}
@@ -71,27 +70,21 @@ spec:
         ports:
         - containerPort: {{ .Values.listenPort }}
           name: https
+        {{- with .Values.livenessProbe }}
         livenessProbe:
-          httpGet:
-            path: /healthz
-            port: https
-            scheme: HTTPS
-          initialDelaySeconds: 30
-          timeoutSeconds: 5
+          {{- toYaml . | nindent 10 }}
+        {{- end }}
+        {{- with .Values.readinessProbe }}
         readinessProbe:
-          httpGet:
-            path: /healthz
-            port: https
-            scheme: HTTPS
-          initialDelaySeconds: 30
-          timeoutSeconds: 5
+          {{- toYaml . | nindent 10 }}
+        {{- end }}
         {{- if .Values.resources }}
         resources:
           {{- toYaml .Values.resources | nindent 10 }}
         {{- end }}
         {{- with .Values.dnsConfig }}
         dnsConfig:
-        {{ toYaml . | indent 8 }}
+          {{- toYaml . | nindent 10 }}
         {{- end }}
         {{- with .Values.securityContext }}
         securityContext:

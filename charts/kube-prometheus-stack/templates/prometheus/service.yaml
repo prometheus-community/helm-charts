@@ -42,6 +42,9 @@ spec:
     {{- end }}
     port: {{ .Values.prometheus.service.port }}
     targetPort: {{ .Values.prometheus.service.targetPort }}
+  - name: reloader-web
+    port: 8080
+    targetPort: reloader-web
   {{- if .Values.prometheus.thanosIngress.enabled }}
   - name: grpc
     {{- if eq .Values.prometheus.service.type "NodePort" }}
@@ -55,8 +58,12 @@ spec:
 {{- end }}
   publishNotReadyAddresses: {{ .Values.prometheus.service.publishNotReadyAddresses }}
   selector:
+    {{- if .Values.prometheus.agentMode }}
+    app.kubernetes.io/name: prometheus-agent
+    {{- else }}
     app.kubernetes.io/name: prometheus
-    prometheus: {{ template "kube-prometheus-stack.prometheus.crname" . }}
+    {{- end }}
+    operator.prometheus.io/name: {{ template "kube-prometheus-stack.prometheus.crname" . }}
 {{- if .Values.prometheus.service.sessionAffinity }}
   sessionAffinity: {{ .Values.prometheus.service.sessionAffinity }}
 {{- end }}

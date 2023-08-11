@@ -1,0 +1,165 @@
+{{- if (eq .Values.kind "Deployment") }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ template "prometheus-pingmesh-exporter.fullname" . }}
+  namespace: {{ template "prometheus-pingmesh-exporter.namespace" . }}
+  labels:
+    {{- include "prometheus-pingmesh-exporter.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicas }}
+  selector:
+    matchLabels:
+      {{- include "prometheus-pingmesh-exporter.selectorLabels" . | nindent 6 }}
+  strategy:
+{{ toYaml .Values.strategy | indent 4 }}
+  template:
+    metadata:
+      labels:
+        {{- include "prometheus-pingmesh-exporter.labels" . | nindent 8 }}
+        {{- if .Values.pod.labels }}
+{{ toYaml .Values.pod.labels | indent 8 }}
+        {{- end }}
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+        {{- if .Values.podAnnotations }}
+{{ toYaml .Values.podAnnotations | indent 8 }}
+        {{- end }}
+    spec:
+      automountServiceAccountToken: {{ .Values.automountServiceAccountToken }}
+      serviceAccountName: {{ template "prometheus-pingmesh-exporter.serviceAccountName" . }}
+    {{- if .Values.nodeSelector }}
+      nodeSelector:
+{{ toYaml .Values.nodeSelector | indent 8 }}
+    {{- end }}
+    {{- if .Values.affinity }}
+      affinity:
+{{ toYaml .Values.affinity | indent 8 }}
+    {{- end }}
+    {{- if .Values.tolerations }}
+      tolerations:
+{{ toYaml .Values.tolerations | indent 6 }}
+    {{- end }}
+    {{- if .Values.image.pullSecrets }}
+      imagePullSecrets:
+      {{- range .Values.image.pullSecrets }}
+        - name: {{ . }}
+      {{- end }}
+    {{- end }}
+      {{- if .Values.hostAliases }}
+      hostAliases:
+        {{- range .Values.hostAliases }}
+        - ip: {{ .ip }}
+          hostnames:
+          {{- range .hostNames }}
+          - {{ . }}
+          {{- end }}
+        {{- end }}
+      {{- end }}
+      restartPolicy: {{ .Values.restartPolicy }}
+
+      {{- if .Values.priorityClassName }}
+      priorityClassName: "{{ .Values.priorityClassName }}"
+      {{- end }}
+      securityContext:
+{{ toYaml .Values.podSecurityContext | indent 8 }}  
+      {{- if .Values.extraInitContainers }}
+      initContainers:
+{{ toYaml .Values.extraInitContainers | indent 8 }}
+      {{- end }}
+      containers:
+        {{- if .Values.extraContainers }}
+{{ toYaml .Values.extraContainers | indent 8 }}
+        {{- end }}      
+        - name: pingmesh-exporter
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          securityContext:
+{{ toYaml .Values.securityContext | indent 12 }}
+          env:
+          {{- range $key, $value := .Values.extraEnv }}
+            - name: {{ $key }}
+              value: {{ $value | quote }}
+          {{- end }}
+          args:
+{{- if .Values.config }}
+   {{- if .Values.configPath }}
+            - "--config.file={{ .Values.configPath }}/pingmesh.yaml"
+            - "--pinglist.file={{ .Values.configPath }}/pinglist.yaml"
+            - "--log.level=error"
+   {{- else }}
+            - "--config.file=/config/pingmesh.yaml"
+            - "--pinglist.file=/config/pinglist.yaml" 
+            - "--log.level=error"
+   {{- end }}
+{{- else }}
+            - "--config.file=/etc/pingmesh_exporter/config.yml"
+            - "--pinglist.file=/etc/pingmesh_exporter/pinglist.yaml"
+            - "--log.level=error"
+{{- end }}
+        {{- if .Values.extraArgs }}
+{{ toYaml .Values.extraArgs | indent 12 }}
+        {{- end }}
+          resources:
+{{ toYaml .Values.resources | indent 12 }}
+          ports:
+            - containerPort: {{ .Values.containerPort }}
+              name: http
+          livenessProbe:
+            {{- toYaml .Values.livenessProbe | trim | nindent 12 }}
+          readinessProbe:
+            {{- toYaml .Values.readinessProbe | trim | nindent 12 }}
+          volumeMounts:
+            - mountPath: /config
+              name: config
+          {{- range .Values.extraConfigmapMounts }}
+            - name: {{ .name }}
+              mountPath: {{ .mountPath }}
+              subPath: {{ .subPath | default "" }}
+              readOnly: {{ .readOnly }}
+          {{- end }}
+          {{- range .Values.extraSecretMounts }}
+            - name: {{ .name }}
+              mountPath: {{ .mountPath }}
+              subPath: {{ .subPath }}
+              readOnly: {{ .readOnly }}
+          {{- end }}
+          {{- if .Values.extraVolumeMounts }}
+{{ toYaml .Values.extraVolumeMounts | indent 12 }}
+          {{- end }}
+{{- if .Values.dnsPolicy }}
+      dnsPolicy: {{ .Values.dnsPolicy | toString }}
+{{- end }}
+      hostNetwork: {{ .Values.hostNetwork }}
+{{- if .Values.dnsConfig }}
+      dnsConfig:
+        {{- toYaml .Values.dnsConfig | nindent 8 }}
+{{- end }}
+      volumes:
+    {{- if .Values.extraVolumes }}      
+{{ toYaml .Values.extraVolumes | indent 8 }}      
+    {{- end }}      
+        - name: config
+{{- if .Values.secretConfig }}
+          secret:
+            secretName: {{ template "prometheus-pingmesh-exporter.fullname" . }}
+{{- else if .Values.configExistingSecretName }}
+          secret:
+            secretName: {{ .Values.configExistingSecretName }}
+{{- else }}
+          configMap:
+            name: {{ template "prometheus-pingmesh-exporter.fullname" . }}
+{{- end }}
+      {{- range .Values.extraConfigmapMounts }}
+        - name: {{ .name }}
+          configMap:
+            name: {{ .configMap }}
+            defaultMode: {{ .defaultMode }}
+      {{- end }}
+      {{- range .Values.extraSecretMounts }}
+        - name: {{ .name }}
+          secret:
+            secretName: {{ .secretName }}
+            defaultMode: {{ .defaultMode }}
+      {{- end }}
+{{- end }}
