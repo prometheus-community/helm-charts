@@ -1,17 +1,13 @@
 {{- if .Values.podDisruptionBudget.enabled }}
-apiVersion: {{ include "prometheus-postgres-exporter.pdb.apiVersion" . }}
+apiVersion: policy/v1
 kind: PodDisruptionBudget
 metadata:
   name: {{ template "prometheus-postgres-exporter.fullname" . }}
   labels:
-    app: {{ template "prometheus-postgres-exporter.name" . }}
-    chart: {{ template "prometheus-postgres-exporter.chart" . }}
-    release: "{{ .Release.Name }}"
-    heritage: "{{ .Release.Service }}"
+    {{- include "prometheus-postgres-exporter.labels" . | nindent 4 }}
 spec:
   maxUnavailable: {{ .Values.podDisruptionBudget.maxUnavailable }}
   selector:
     matchLabels:
-      app: {{ template "prometheus-postgres-exporter.name" . }}
-      release: {{ .Release.Name }}
+      {{- include "prometheus-postgres-exporter.selectorLabels" . | nindent 6 }}
 {{- end }}
