@@ -31,6 +31,25 @@ Create chart name and version as used by the chart label.
 {{- printf "%s-%s" .Chart.Name .Chart.Version | replace "+" "_" | trunc 63 | trimSuffix "-" -}}
 {{- end -}}
 
+{{/*
+Common labels
+*/}}
+{{- define "prometheus-postgres-exporter.labels" -}}
+chart: {{ include "prometheus-postgres-exporter.chart" . }}
+{{ include "prometheus-postgres-exporter.selectorLabels" . }}
+heritage: {{ .Release.Service }}
+{{- if .Values.commonLabels}}
+{{ toYaml .Values.commonLabels }}
+{{- end }}
+{{- end }}
+
+{{/*
+Selector labels
+*/}}
+{{- define "prometheus-postgres-exporter.selectorLabels" -}}
+app: {{ include "prometheus-postgres-exporter.name" . }}
+release: {{ .Release.Name }}
+{{- end }}
 
 {{/*
 Create the name of the service account to use
@@ -50,23 +69,3 @@ Set DATA_SOURCE_URI environment variable
 {{- define "prometheus-postgres-exporter.data_source_uri" -}}
 {{ printf "%s:%d/%s?sslmode=%s&%s" (tpl .Values.config.datasource.host .) (tpl .Values.config.datasource.port . | int) (tpl .Values.config.datasource.database .) (tpl .Values.config.datasource.sslmode .) (tpl .Values.config.datasource.extraParams .) | trimSuffix "&" | quote }}
 {{- end }}
-
-{{/*
-Return the appropriate apiVersion for rbac.
-*/}}
-{{- define "rbac.apiVersion" -}}
-{{- if .Capabilities.APIVersions.Has "rbac.authorization.k8s.io/v1" }}
-{{- print "rbac.authorization.k8s.io/v1" -}}
-{{- else -}}
-{{- print "rbac.authorization.k8s.io/v1beta1" -}}
-{{- end -}}
-{{- end -}}
-
-{{/* Get Policy API Version */}}
-{{- define "prometheus-postgres-exporter.pdb.apiVersion" -}}
-{{- if .Capabilities.APIVersions.Has "policy/v1" }}
-{{- print "policy/v1" -}}
-{{- else -}}
-{{- print "policy/v1beta1" -}}
-{{- end -}}
-{{- end -}}
