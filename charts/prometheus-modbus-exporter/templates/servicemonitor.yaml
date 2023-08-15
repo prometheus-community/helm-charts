@@ -1,0 +1,52 @@
+{{- $fullName := include "prometheus-modbus-exporter.fullname" . -}}
+{{- $endpointsCommonConfig := .Values.serviceMonitor.endpointsCommonConfig -}}
+{{- if and .Values.serviceMonitor.enabled ( .Capabilities.APIVersions.Has "monitoring.coreos.com/v1/ServiceMonitor" ) }}
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: {{ $fullName }}
+  labels:
+    {{- include "prometheus-modbus-exporter.labels" . | nindent 4 }}
+    {{- with .Values.serviceMonitor.labels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+  {{- with .Values.serviceMonitor.annotations }}
+  annotations:
+    {{ toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  selector:
+    matchLabels:
+    {{- include "prometheus-modbus-exporter.labels" . | nindent 6 }}
+  endpoints:
+  {{- range .Values.serviceMonitor.endpointsConfig }}
+  - port: metrics
+    path: "/modbus"
+{{ toYaml . | indent 4 }}
+    {{/*path: "/modbus&target=1.2.3.4:502" */}}
+    {{ toYaml $endpointsCommonConfig | nindent 4 }}
+  {{- end }}
+{{- end }}
+---
+{{- if and .Values.serviceMonitorExporterItself.enabled ( .Capabilities.APIVersions.Has "monitoring.coreos.com/v1/ServiceMonitor" ) }}
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: {{ $fullName }}-self-monitor
+  labels:
+    {{- include "prometheus-modbus-exporter.labels" . | nindent 4 }}
+    {{- with .Values.serviceMonitorExporterItself.labels }}
+    {{ toYaml . | nindent 4 }}
+    {{- end }}
+  {{- with .Values.serviceMonitorExporterItself.annotations }}
+  annotations:
+    {{ toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  selector:
+    matchLabels:
+    {{- include "prometheus-modbus-exporter.labels" . | nindent 6 }}
+  endpoints:
+  - port: metrics
+    path: "/metrics"
+{{- end }}
