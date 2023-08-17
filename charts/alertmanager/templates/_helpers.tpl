@@ -41,7 +41,7 @@ helm.sh/chart: {{ include "alertmanager.chart" . }}
 app.kubernetes.io/version: {{ . | quote }}
 {{- end }}
 app.kubernetes.io/managed-by: {{ .Release.Service }}
-{{- with .Values.commonMetaLabels}}
+{{- with .Values.extraLabels }}
 {{ toYaml . }}
 {{- end }}
 {{- end }}
