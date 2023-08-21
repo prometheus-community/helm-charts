@@ -6,10 +6,7 @@ kind: Deployment
 metadata:
   name: {{ template "prometheus-postgres-exporter.fullname" . }}
   labels:
-    app: {{ template "prometheus-postgres-exporter.name" . }}
-    chart: {{ template "prometheus-postgres-exporter.chart" . }}
-    release: {{ .Release.Name }}
-    heritage: {{ .Release.Service }}
+    {{- include "prometheus-postgres-exporter.labels" . | nindent 4 }}
     {{- with .Values.deployment.labels }}
     {{- toYaml . | nindent 4 }}
     {{- end }}
@@ -21,21 +18,19 @@ spec:
   replicas: {{ .Values.replicaCount }}
   selector:
     matchLabels:
-      app: {{ template "prometheus-postgres-exporter.name" . }}
-      release: {{ .Release.Name }}
+      {{- include "prometheus-postgres-exporter.selectorLabels" . | nindent 6 }}
   template:
     metadata:
       labels:
-        app: {{ template "prometheus-postgres-exporter.name" . }}
-        release: {{ .Release.Name }}
-{{- if .Values.podLabels }}
-{{ toYaml .Values.podLabels | trim | indent 8 }}
-{{- end }}
+        {{- include "prometheus-postgres-exporter.selectorLabels" . | nindent 8 }}
+        {{- with .Values.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
       annotations:
         checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
-{{- if .Values.annotations }}
-{{ toYaml .Values.annotations | indent 8 }}
-{{- end }}
+        {{- with .Values.annotations }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
     spec:
       automountServiceAccountToken: {{ .Values.automountServiceAccountToken }}
       serviceAccountName: {{ template "prometheus-postgres-exporter.serviceAccountName" . }}
@@ -56,7 +51,7 @@ spec:
       containers:
         - name: {{ .Chart.Name }}
           args:
-          - "--extend.query-path=/etc/config.yaml"
+          - "--config.file=/etc/postgres_exporter.yml"
           - "--web.listen-address=:{{ .Values.service.targetPort }}"
           {{- if .Values.config.disableCollectorDatabase }}
           - "--no-collector.database"
@@ -69,21 +64,6 @@ spec:
           {{- end }}
           {{- if .Values.config.disableSettingsMetrics }}
           - "--disable-settings-metrics"
-          {{- end }}
-          {{- if .Values.config.autoDiscoverDatabases }}
-          - "--auto-discover-databases"
-          {{- if .Values.config.excludeDatabases }}
-          - "--exclude-databases"
-          - {{ .Values.config.excludeDatabases | join "," }}
-          {{- end }}
-          {{- if .Values.config.includeDatabases }}
-          - "--include-databases"
-          - {{ .Values.config.includeDatabases | join "," }}
-          {{- end }}
-          {{- end }}
-          {{- if .Values.config.constantLabels }}
-          {{ $firstLabel := true -}}
-          - "--constantLabels={{- range $k, $v := .Values.config.constantLabels }}{{- if not $firstLabel -}},{{ end -}}{{ $firstLabel = false -}}{{ $k }}={{ $v }}{{- end }}"
           {{- end }}
           {{- if .Values.config.logLevel }}
           - "--log.level={{ .Values.config.logLevel }}"
@@ -148,7 +128,7 @@ spec:
           {{ toYaml . | nindent 10 }}
           {{- end }}
           {{- end }}
-          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           {{- with .Values.command }}
           command:
@@ -177,12 +157,14 @@ spec:
             {{- toYaml . | nindent 12 }}
           {{- end }}
           volumeMounts:
-            - name: queries
-              mountPath: /etc/config.yaml
-              subPath: config.yaml
-{{- with .Values.extraVolumeMounts }}
-{{ toYaml . | indent 12 }}
-{{- end }}
+            {{- if .Values.config.postgresExporter }}
+            - name: postgres-exporter
+              mountPath: /etc/postgres_exporter.yml
+              subPath: postgres_exporter.yml
+            {{- end }}
+            {{- with .Values.extraVolumeMounts }}
+            {{ toYaml . | nindent 12 }}
+            {{- end }}
 {{- with .Values.extraContainers }}
 {{ toYaml . | indent 8 }}
 {{- end }}
@@ -203,14 +185,12 @@ spec:
 {{ toYaml . | indent 8 }}
     {{- end }}
       volumes:
+      {{- if .Values.config.postgresExporter }}
       - configMap:
           defaultMode: 420
-          {{- if not .Values.config.externalQueries.enabled }}
           name: {{ template "prometheus-postgres-exporter.fullname" . }}
-          {{- else }}
-          name: {{ .Values.config.externalQueries.configmap }}
-          {{- end }}
-        name: queries
-{{- with .Values.extraVolumes }}
-{{ toYaml . | indent 6 }}
-{{- end }}
+        name: postgres-exporter
+      {{- end }}
+      {{- with .Values.extraVolumes }}
+      {{ toYaml . | nindent 6 }}
+      {{- end }}
