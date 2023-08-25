@@ -36,14 +36,14 @@ spec:
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           args:
-            - "--insecure-listen-address={{ .Values.config.listenAddress }}"
+            - "--insecure-listen-address={{ tpl .Values.config.listenAddress $ }}"
             - "--upstream={{ tpl .Values.config.upstream $ }}"
-            - "--label={{ .Values.config.label }}"
+            - "--label={{ tpl .Values.config.label $ }}"
             {{- if .Values.metrics.enabled }}
-            - "--internal-listen-address={{ .Values.metrics.listenAddress }}"
+            - "--internal-listen-address={{ tpl .Values.metrics.listenAddress $ }}"
             {{- end }}
             {{- with .Values.config.extraArgs }}
-              {{- toYaml . | nindent 12 }}
+              {{- tpl (toYaml .) $ | nindent 12 }}
             {{- end }}
           ports:
             - name: http
