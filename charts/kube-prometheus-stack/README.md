@@ -84,7 +84,7 @@ A major chart version change (like v1.2.3 -> v2.0.0) indicates that there is an 
 
 ### From 48.x to 49.x
 
-This version upgrades Prometheus-Operator to v0.67.1, 0, Alertmanager to v0.26.0 and Thanos to v0.32.0
+This version upgrades Prometheus-Operator to v0.67.1, 0, Alertmanager to v0.26.0, Prometheus to 2.46.0 and Thanos to v0.32.0
 
 Run these commands to update the CRDs before applying the upgrade.
 
