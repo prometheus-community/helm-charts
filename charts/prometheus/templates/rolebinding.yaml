@@ -1,5 +1,13 @@
+{{- $namespaces := list }}
 {{- if and .Values.rbac.create .Values.server.useExistingClusterRoleName .Values.server.namespaces -}}
-{{ range $.Values.server.namespaces -}}
+{{- range $ns := join "," .Values.server.namespaces | split "," }}
+{{- $namespaces = append $namespaces (tpl $ns $)}}
+{{ end -}}
+{{ end -}}
+{{- if and .Values.rbac.create .Values.server.useExistingClusterRoleName .Values.server.releaseNamespace -}}
+{{- $namespaces = append $namespaces .Release.Namespace }}
+{{ end -}}
+{{- range $namespaces }}
 ---
 apiVersion: {{ template "rbac.apiVersion" $ }}
 kind: RoleBinding
@@ -16,5 +24,4 @@ roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
   name: {{ $.Values.server.useExistingClusterRoleName }}
-{{ end -}}
 {{ end -}}
