@@ -1,0 +1,139 @@
+# Default values for prometheus-ipmi-exporter.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+replicaCount: 1
+
+image:
+  repository: registry.hub.docker.com/lexfrei/ipmi_exporter
+  tag: 1.6.1
+  pullPolicy: IfNotPresent
+
+# Name of an externally managed secret (in the same namespace) containing the ipmi credentials as keys `ipmi-user` and `ipmi-password`.
+nodeSelector: {}
+
+# Name of an externally managed secret (in the same namespace) containing the ipmi credentials as keys `ipmi-user` and `ipmi-password`.
+tolerations: []
+
+# Name of an externally managed secret (in the same namespace) containing the ipmi credentials as keys `ipmi-user` and `ipmi-password`.
+affinity: {}
+
+# Name of an externally managed secret (in the same namespace) containing the ipmi credentials as keys `ipmi-user` and `ipmi-password`.
+service:
+  type: ClusterIP
+  port: 9290
+  annotations: {}
+
+resources:
+  limits:
+    cpu: 100m
+    memory: 128Mi
+  requests:
+    cpu: 100m
+    memory: 128Mi
+
+additionalAnnotations: {}
+
+serviceMonitor:
+  # When set true then use a ServiceMonitor to configure scraping
+  enabled: false
+  # Set the namespace the ServiceMonitor should be deployed
+  # namespace: monitoring
+  # Set how frequently Prometheus should scrape
+  # interval: 30s
+  # Set path to ipmi-exporter telemtery-path
+  # telemetryPath: /metrics
+  # Set labels for the ServiceMonitor, use this to define your scrape label for Prometheus Operator
+  # labels:
+  # Set timeout for scrape
+  # timeout: 10s
+  # Set of labels to transfer on the Kubernetes Service onto the target.
+  # targetLabels: []
+  # metricRelabelings: []
+
+  # Configuration file for ipmi_exporter
+
+# This is an example config for scraping remote hosts via IPMI.
+# Information required to access remote IPMI interfaces can be supplied in the
+# 'modules' section. A scrape can request the usage of a given config by
+# setting the `module` URL parameter.
+modules:
+  default:
+    # These settings are used if no module is specified, the
+    # specified module doesn't exist, or of course if
+    # module=default is specified.
+    user: "default_user"
+    pass: "example_pw"
+    # The below settings correspond to driver-type, privilege-level, and
+    # session-timeout respectively, see `man 5 freeipmi.conf` (and e.g.
+    # `man 8 ipmi-sensors` for a list of driver types).
+    driver: "LAN_2_0"
+    privilege: "user"
+    # The session timeout is in milliseconds. Note that a scrape can take up
+    # to (session-timeout * #-of-collectors) milliseconds, so set the scrape
+    # timeout in Prometheus accordingly.
+    # Must be larger than the retransmission timeout, which defaults to 1000.
+    timeout: 10000
+    # Available collectors are bmc, ipmi, chassis, dcmi, sel, and sm-lan-mode
+    # If _not_ specified, bmc, ipmi, chassis, and dcmi are used
+    collectors:
+      - bmc
+      - ipmi
+      - chassis
+    # Got any sensors you don't care about? Add them here.
+    exclude_sensor_ids:
+      - 2
+      - 29
+      - 32
+      - 50
+      - 52
+      - 55
+  dcmi:
+    # Use these settings when scraped with module=dcmi.
+    user: "admin_user"
+    pass: "another_pw"
+    privilege: "admin"
+    driver: "LAN_2_0"
+    collectors:
+      - dcmi
+  thatspecialhost:
+    # Use these settings when scraped with module=thatspecialhost.
+    user: "some_user"
+    pass: "secret_pw"
+    privilege: "admin"
+    driver: "LAN"
+    collectors:
+      - ipmi
+      - sel
+    # Need any special workaround flags set? Add them here.
+    # Workaround flags might be needed to address issues with specific vendor implementations
+    # e.g. https://www.gnu.org/software/freeipmi/freeipmi-faq.html#Why-is-the-output-from-FreeIPMI-different-than-another-software_003f
+    # For a full list of flags, refer to:
+    # https://www.gnu.org/software/freeipmi/manpages/man8/ipmi-sensors.8.html#lbAL
+    workaround_flags:
+      - discretereading
+    # If you require additional command line arguments (e.g. --bridge-sensors for ipmimonitoring),
+    # you can specify them per collector - BE CAREFUL, you can easily break the exporter with this!
+    custom_args:
+      ipmi:
+        - "--bridge-sensors"
+  advanced:
+    # Use these settings when scraped with module=advanced.
+    user: "some_user"
+    pass: "secret_pw"
+    privilege: "admin"
+    driver: "LAN"
+    collectors:
+      - ipmi
+      - sel
+    # USING ANY OF THE BELOW VOIDS YOUR WARRANTY! YOU MAY GET BITTEN BY SHARKS!
+    # You can override the command to be executed for a collector. Paired with
+    # custom_args, this can be used to e.g. execute the IPMI tools with sudo:
+    collector_cmd:
+      ipmi: sudo
+      sel: sudo
+    custom_args:
+      ipmi:
+        - "ipmimonitoring"
+      sel:
+        - "ipmi-sel"
