@@ -1,13 +1,4 @@
-{{- $namespaces := list }}
-{{- if and .Values.rbac.create .Values.server.useExistingClusterRoleName .Values.server.namespaces -}}
-{{- range $ns := join "," .Values.server.namespaces | split "," }}
-{{- $namespaces = append $namespaces (tpl $ns $)}}
-{{ end -}}
-{{ end -}}
-{{- if and .Values.rbac.create .Values.server.useExistingClusterRoleName .Values.server.releaseNamespace -}}
-{{- $namespaces = append $namespaces .Release.Namespace }}
-{{ end -}}
-{{- range $namespaces }}
+{{- range include "prometheus.namespaces" . | fromJsonArray }}
 ---
 apiVersion: {{ template "rbac.apiVersion" $ }}
 kind: RoleBinding
