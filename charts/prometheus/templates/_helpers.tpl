@@ -193,3 +193,21 @@ Define the prometheus.namespace template if set with forceNamespace or .Release.
 {{- define "prometheus.namespace" -}}
   {{- default .Release.Namespace .Values.forceNamespace -}}
 {{- end }}
+
+{{/*
+Define template prometheus.namespaces producing a list of namespaces to monitor
+*/}}
+{{- define "prometheus.namespaces" -}}
+{{- $namespaces := list }}
+{{- if and .Values.rbac.create .Values.server.useExistingClusterRoleName }}
+  {{- if .Values.server.namespaces -}}
+    {{- range $ns := join "," .Values.server.namespaces | split "," }}
+      {{- $namespaces = append $namespaces (tpl $ns $) }}
+    {{- end -}}
+  {{- end -}}
+  {{- if .Values.server.releaseNamespace -}}
+    {{- $namespaces = append $namespaces (include "prometheus.namespace" .) }}
+  {{- end -}}
+{{- end -}}
+{{ mustToJson $namespaces }}
+{{- end -}}
