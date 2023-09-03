@@ -30,6 +30,29 @@ spec:
 {{ toYaml . | trim | indent 4 -}}
   {{- end }}
   endpoints:
+  {{- if .Values.serviceMonitor.multipleTarget }}
+  {{- range  .Values.serviceMonitor.targets }}
+    - path: /probe
+      port: {{ $.Values.service.name }}
+  {{- if $.Values.serviceMonitor.interval }}
+      interval: {{ $.Values.serviceMonitor.interval }}
+  {{- end }}
+  {{- if $.Values.serviceMonitor.scrapeTimeout }}
+      scrapeTimeout: {{ $.Values.serviceMonitor.scrapeTimeout }}
+  {{- end }}
+  {{- if $.Values.serviceMonitor.metricRelabelings }}
+      metricRelabelings: {{ toYaml $.Values.serviceMonitor.metricRelabelings | nindent 8 }}
+  {{- end }}
+  {{- if $.Values.serviceMonitor.relabelings }}
+      relabelings: {{ toYaml $.Values.serviceMonitor.relabelings | nindent 8 }}
+  {{- end }}
+      params:
+        target:
+          - {{ .endpoint }}:{{ .port | default 3306 }}
+        auth_module:
+          - client.{{ .name }}
+  {{- end }}
+  {{- else }}
     - path: /metrics
       port: {{ .Values.service.name }}
   {{- if .Values.serviceMonitor.interval }}
@@ -43,5 +66,6 @@ spec:
   {{- end }}
   {{- if .Values.serviceMonitor.relabelings }}
       relabelings: {{ toYaml .Values.serviceMonitor.relabelings | nindent 8 }}
+  {{- end }}
   {{- end }}
 {{- end }}

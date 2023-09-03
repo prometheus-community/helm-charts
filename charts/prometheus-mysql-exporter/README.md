@@ -41,6 +41,40 @@ _See [helm upgrade](https://helm.sh/docs/helm/helm_upgrade/) for command documen
 helm upgrade [RELEASE_NAME] [CHART] --install
 ```
 
+### Multiple-target probes
+
+mysql_exporter now support multi-target probes using the `/probe` route. To enable this feature, set `serviecMonitor.multipleTarget.enabled` to `true` and define your targets in `serviceMonitor.multipleTarget.targets`.
+Credentials for each target should be referenced in the associate config file. Target name should match the entry in the config file.
+As an example, for a config file with two targets:
+
+```yaml
+serviceMonitor:
+  multipleTarget:
+    enabled: true
+    targets:
+      - name: localhost
+        endpoint: 127.0.0.1
+      - name: remote
+        endpoint: 8.8.8.8
+        port: 3307
+```
+
+Config file should have the following entries:
+
+```cnf
+[client]
+user=NOT_USED
+password=NOT_USED
+[client.localhost]
+user=localhost_user
+password=localhost_password
+[client.remote]
+user=remote_user
+password=remote_password
+```
+
+The configuration file can be referenced using `mysql.existingConfigSecret`.
+
 ### From 1.x to 2.x
 
 mysqld_exporter has been updated to [v0.15.0](https://github.com/prometheus/mysqld_exporter/releases/tag/v0.15.0), removing support for `DATA_SOURCE_NAME`. Configuration for exporter use `--config.my-cnf` with a custom cnf file (secret).
