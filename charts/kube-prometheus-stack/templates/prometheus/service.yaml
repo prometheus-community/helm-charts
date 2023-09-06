@@ -42,8 +42,11 @@ spec:
     {{- end }}
     port: {{ .Values.prometheus.service.port }}
     targetPort: {{ .Values.prometheus.service.targetPort }}
-  - appProtocol: http
-    name: reloader-web
+  - name: reloader-web
+    {{- $kubeTargetVersion := default .Capabilities.KubeVersion.GitVersion .Values.kubeTargetVersionOverride }}
+    {{- if semverCompare "> 1.20.0-0" $kubeTargetVersion }}
+    appProtocol: http
+    {{- end }}
     port: 8080
     targetPort: reloader-web
   {{- if .Values.prometheus.thanosIngress.enabled }}
