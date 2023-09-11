@@ -202,7 +202,7 @@ global:
 
 windowsMonitoring:
   ## Deploys the windows-exporter and Windows-specific dashboards and rules
-  enabled: false
+  enabled: true
   ## Job must match jobLabel in the PodMonitor/ServiceMonitor and is used for the rules
   job: prometheus-windows-exporter
 
@@ -331,13 +331,23 @@ alertmanager:
   #       {{ end }}
 
   ingress:
-    enabled: false
+    enabled: true
 
     # For Kubernetes >= 1.18 you should specify the ingress-controller via the field ingressClassName
     # See https://kubernetes.io/blog/2020/04/02/improvements-to-the-ingress-api-in-kubernetes-1.18/#specifying-the-class-of-an-ingress
-    # ingressClassName: nginx
+    ingressClassName: nginx
 
-    annotations: {}
+    annotations:
+      alb.ingress.kubernetes.io/scheme: internal
+      alb.ingress.kubernetes.io/listen-ports: '[{"HTTP": 80}, {"HTTPS":443}]'
+      alb.ingress.kubernetes.io/actions.ssl-redirect: '{"Type": "redirect", "RedirectConfig": { "Protocol": "HTTPS", "Port": "443", "StatusCode": "HTTP_301"}}'
+      alb.ingress.kubernetes.io/target-type: ip
+      alb.ingress.kubernetes.io/load-balancer-attributes: idle_timeout.timeout_seconds=300,access_logs.s3.enabled=false
+      alb.ingress.kubernetes.io/security-groups: <+env.name>-internal-loadbalancers
+      alb.ingress.kubernetes.io/certificate-arn: <+serviceVariables.cert_arn>
+      alb.ingress.kubernetes.io/healthcheck-path: /-/healthy
+      external-dns.alpha.kubernetes.io/hostname: prometheus-<+env.name>.<+serviceVariables.dns_domain>
+      kubernetes.io/ingress.class: alb
 
     labels: {}
 
@@ -349,7 +359,8 @@ alertmanager:
 
     ## Hosts must be provided if Ingress is enabled.
     ##
-    hosts: []
+    hosts:
+      - prometheus-<+env.name>.<+serviceVariables.dns_domain>/*
       # - alertmanager.domain.com
 
     ## Paths to use for ingress rules - one path should match the alertmanagerSpec.routePrefix
@@ -2691,7 +2702,17 @@ prometheus:
     # See https://kubernetes.io/blog/2020/04/02/improvements-to-the-ingress-api-in-kubernetes-1.18/#specifying-the-class-of-an-ingress
     # ingressClassName: nginx
 
-    annotations: {}
+    annotations:
+      alb.ingress.kubernetes.io/scheme: internal
+      alb.ingress.kubernetes.io/listen-ports: '[{"HTTP": 80}, {"HTTPS":443}]'
+      alb.ingress.kubernetes.io/actions.ssl-redirect: '{"Type": "redirect", "RedirectConfig": { "Protocol": "HTTPS", "Port": "443", "StatusCode": "HTTP_301"}}'
+      alb.ingress.kubernetes.io/target-type: ip
+      alb.ingress.kubernetes.io/load-balancer-attributes: idle_timeout.timeout_seconds=300,access_logs.s3.enabled=false
+      alb.ingress.kubernetes.io/security-groups: <+env.name>-internal-loadbalancers
+      alb.ingress.kubernetes.io/certificate-arn: <+serviceVariables.cert_arn>
+      alb.ingress.kubernetes.io/healthcheck-path: /-/healthy
+      external-dns.alpha.kubernetes.io/hostname: prometheus-<+env.name>.<+serviceVariables.dns_domain>
+      kubernetes.io/ingress.class: alb
     labels: {}
 
     ## Redirect ingress to an additional defined port on the service
@@ -2963,7 +2984,8 @@ prometheus:
     ## Define which Nodes the Pods are scheduled on.
     ## ref: https://kubernetes.io/docs/user-guide/node-selection/
     ##
-    nodeSelector: {}
+    nodeSelector:
+      kubernetes.io/os: linux
 
     ## Secrets is a list of Secrets in the same namespace as the Prometheus object, which shall be mounted into the Prometheus Pods.
     ## The Secrets are mounted into /etc/prometheus/secrets/. Secrets changes after initial creation of a Prometheus object are not
