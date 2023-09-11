@@ -52,7 +52,7 @@ _See [helm upgrade](https://helm.sh/docs/helm/helm_upgrade/) for command documen
 
 The upgraded chart now the following changes:
 
-* `annotations` value has moved to `crds.annotations`
+- `annotations` value has moved to `crds.annotations`
 
 ## Configuring
 
