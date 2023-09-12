@@ -1,3 +1,4 @@
+{{- $kubeTargetVersion := default .Capabilities.KubeVersion.GitVersion .Values.kubeTargetVersionOverride }}
 {{- if .Values.alertmanager.enabled }}
 apiVersion: v1
 kind: Service
@@ -44,6 +45,9 @@ spec:
     targetPort: {{ .Values.alertmanager.service.targetPort }}
     protocol: TCP
   - name: reloader-web
+    {{- if semverCompare ">=1.20.0-0" $kubeTargetVersion }}
+    appProtocol: http
+    {{- end }}
     port: 8080
     targetPort: reloader-web
 {{- if .Values.alertmanager.service.additionalPorts }}
