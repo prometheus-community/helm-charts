@@ -45,6 +45,14 @@ helm upgrade [RELEASE_NAME] [CHART] --install
 
 _See [helm upgrade](https://helm.sh/docs/helm/helm_upgrade/) for command documentation._
 
+### To 2.0.0
+
+BREAKING CHANGES:
+
+This version of the exporter introduces a new configuration file format. This new format separates the walk and metric mappings from the connection and authentication settings. This allows for easier configuration of different auth params without having to duplicate the full walk and metric mapping.
+
+See [auth-split-migration.md](https://github.com/prometheus/snmp_exporter/blob/main/auth-split-migration.md) for more details.
+
 ### To 1.0.0
 
 This version allows multiple Targets to be specified when using ServiceMonitor. When you use ServiceMonitor, please rewrite below:
