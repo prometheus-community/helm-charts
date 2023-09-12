@@ -20,7 +20,7 @@ _See [helm repository](https://helm.sh/docs/helm/helm_repo/) for command documen
 ## Install Chart
 
 ```console
-helm install [RELEASE_NAME] prometheus-community/snmp-notifier
+helm install [RELEASE_NAME] prometheus-community/alertmanager-snmp-notifier
 ```
 
 _See [configuration](#configuration) below._
@@ -40,7 +40,7 @@ _See [helm uninstall](https://helm.sh/docs/helm/helm_uninstall/) for command doc
 ## Upgrading Chart
 
 ```console
-helm upgrade [RELEASE_NAME] [CHART] --install
+helm upgrade [RELEASE_NAME] prometheus-community/alertmanager-snmp-notifier --install
 ```
 
 _See [helm upgrade](https://helm.sh/docs/helm/helm_upgrade/) for command documentation._
