@@ -65,6 +65,12 @@ helm upgrade [RELEASE_NAME] prometheus-community/prometheus --install
 
 _See [helm upgrade](https://helm.sh/docs/helm/helm_upgrade/) for command documentation._
 
+### To 25.0
+
+The `server.remoteRead` and `server.remoteWrite` fields now support templating.
+
+Any entries in these which previously included `{{` or `}}` must be escaped with `{{ "{{" }}` and `{{ "}}" }}` respectively.
+
 ### To 24.0
 
 Require Kubernetes 1.19+
