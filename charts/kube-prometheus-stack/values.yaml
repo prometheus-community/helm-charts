@@ -10,7 +10,7 @@ nameOverride: ""
 ##
 namespaceOverride: ""
 
-## Provide a k8s version to auto dashboard import script example: kubeTargetVersionOverride: 1.16.6
+## Provide a k8s version to auto dashboard import script example: kubeTargetVersionOverride: 1.26.6
 ##
 kubeTargetVersionOverride: ""
 
@@ -575,7 +575,7 @@ alertmanager:
     image:
       registry: quay.io
       repository: prometheus/alertmanager
-      tag: v0.25.0
+      tag: v0.26.0
       sha: ""
 
     ## If true then the user will be responsible to provide a secret with alertmanager configuration
@@ -1881,6 +1881,11 @@ kube-state-metrics:
 ##
 nodeExporter:
   enabled: true
+  operatingSystems:
+    linux:
+      enabled: true
+    darwin:
+      enabled: true
 
 ## Configuration for prometheus-node-exporter subchart
 ##
@@ -2099,7 +2104,7 @@ prometheusOperator:
     ## match labels used in selector
     # matchLabels: {}
 
-  ## Service account for Alertmanager to use.
+  ## Service account for Prometheus Operator to use.
   ## ref: https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-account/
   ##
   serviceAccount:
@@ -2385,7 +2390,7 @@ prometheusOperator:
   thanosImage:
     registry: quay.io
     repository: thanos/thanos
-    tag: v0.31.0
+    tag: v0.32.2
     sha: ""
 
   ## Set a Label Selector to filter watched prometheus and prometheusAgent
@@ -2894,7 +2899,7 @@ prometheus:
     image:
       registry: quay.io
       repository: prometheus/prometheus
-      tag: v2.45.0
+      tag: v2.47.0
       sha: ""
 
     ## Tolerations for use with node taints
@@ -3099,7 +3104,7 @@ prometheus:
     ## If nil, select own namespace. Namespaces to be selected for scrapeConfig discovery.
     scrapeConfigNamespaceSelector: {}
     ## Example which selects scrapeConfig in namespaces with label "prometheus" set to "somelabel"
-    # scrapeConfigsNamespaceSelector:
+    # scrapeConfigNamespaceSelector:
     #   matchLabels:
     #     prometheus: somelabel
 
@@ -3585,6 +3590,25 @@ prometheus:
           ##
           # serverName: ""
 
+    ## MetricRelabelConfigs to apply to samples after scraping, but before ingestion.
+    ## ref: https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/api.md#relabelconfig
+    ##
+    # metricRelabelings: []
+    # - action: keep
+    #   regex: 'kube_(daemonset|deployment|pod|namespace|node|statefulset).+'
+    #   sourceLabels: [__name__]
+
+    ## RelabelConfigs to apply to samples before scraping
+    ## ref: https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/api.md#relabelconfig
+    ##
+    # relabelings: []
+    # - sourceLabels: [__meta_kubernetes_pod_node_name]
+    #   separator: ;
+    #   regex: ^(.*)$
+    #   targetLabel: nodename
+    #   replacement: $1
+    #   action: replace
+
   additionalPodMonitors: []
   ## Name of the PodMonitor to create
   ##
@@ -3806,7 +3830,7 @@ thanosRuler:
     image:
       registry: quay.io
       repository: thanos/thanos
-      tag: v0.31.0
+      tag: v0.32.2
       sha: ""
 
     ## Namespaces to be selected for PrometheusRules discovery.
