@@ -117,6 +117,19 @@ server:
   #   sidecarContainers:
   #      webserver:
   #        image: nginx
+  # OR for adding OAuth authentication to Prometheus
+  #   sidecarContainers:
+  #     oauth-proxy:
+  #       image: quay.io/oauth2-proxy/oauth2-proxy:v7.1.2
+  #       args:
+  #       - --upstream=http://127.0.0.1:9090
+  #       - --http-address=0.0.0.0:8081
+  #       - ...
+  #       ports:
+  #       - containerPort: 8081
+  #         name: oauth-proxy
+  #         protocol: TCP
+  #       resources: {}
   sidecarContainers: {}
 
   # sidecarTemplateValues - context to be used in template for sidecarContainers
@@ -308,6 +321,9 @@ server:
     ## Prometheus server Ingress additional labels
     ##
     extraLabels: {}
+
+    ## Redirect ingress to an additional defined port on the service
+    # servicePort: 8081
 
     ## Prometheus server Ingress hostnames with optional path
     ## Must be provided if Ingress is enabled
@@ -646,6 +662,13 @@ server:
     statefulsetReplica:
       enabled: false
       replica: 0
+
+    ## Additional port to define in the Service
+    additionalPorts: []
+    # additionalPorts:
+    # - name: authenticated
+    #   port: 8081
+    #   targetPort: 8081
 
   ## Prometheus server pod termination grace period
   ##
