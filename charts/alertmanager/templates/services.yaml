@@ -31,6 +31,9 @@ spec:
       {{- if (and (eq .Values.service.type "NodePort") .Values.service.nodePort) }}
       nodePort: {{ .Values.service.nodePort }}
       {{- end }}
+    {{- with .Values.service.extraPorts }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
   selector:
     {{- include "alertmanager.selectorLabels" . | nindent 4 }}
 ---
@@ -53,13 +56,16 @@ spec:
       name: http
     {{- if or (gt (int .Values.replicaCount) 1) (.Values.additionalPeers) }}
     - port: {{ .Values.service.clusterPort }}
-      targetPort: {{ .Values.service.clusterPort }}
+      targetPort: clusterpeer-tcp
       protocol: TCP
       name: cluster-tcp
     - port: {{ .Values.service.clusterPort }}
-      targetPort: {{ .Values.service.clusterPort }}
+      targetPort: clusterpeer-udp
       protocol: UDP
       name: cluster-udp
+    {{- end }}
+    {{- with .Values.service.extraPorts }}
+    {{- toYaml . | nindent 4 }}
     {{- end }}
   selector:
     {{- include "alertmanager.selectorLabels" . | nindent 4 }}
