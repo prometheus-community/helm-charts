@@ -22,15 +22,11 @@ data:
 {{ $root.Values.server.global | toYaml | trimSuffix "\n" | indent 6 }}
 {{- if $root.Values.server.remoteWrite }}
     remote_write:
-{{- range $root.Values.server.remoteWrite }}
-{{- tpl . $root | toYaml | cat "-" | nindent 4 }}
-{{- end }}
+{{- include "prometheus.server.remoteWrite" $root | nindent 4 }}
 {{- end }}
 {{- if $root.Values.server.remoteRead }}
     remote_read:
-{{- range $root.Values.server.remoteRead }}
-{{- tpl . $root | toYaml | cat "-" | nindent 4 }}
-{{- end }}
+{{- include "prometheus.server.remoteRead" $root | nindent 4 }}
 {{- end }}
 {{- if or $root.Values.server.tsdb $root.Values.server.exemplars }}
     storage:
@@ -60,7 +56,7 @@ data:
 {{- end }}
 {{- if eq $key "prometheus.yml" -}}
 {{- if $root.Values.extraScrapeConfigs }}
-{{ tpl $root.Values.extraScrapeConfigs $root | indent 4 }}
+{{ tpl $root.Values.extraScrapeConfigs $root |  indent 4 }}
 {{- end -}}
 {{- if or ($root.Values.alertmanager.enabled) ($root.Values.server.alertmanagers) }}
     alerting:
