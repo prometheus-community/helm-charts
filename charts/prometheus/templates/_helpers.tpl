@@ -211,3 +211,26 @@ Define template prometheus.namespaces producing a list of namespaces to monitor
 {{- end -}}
 {{ mustToJson $namespaces }}
 {{- end -}}
+
+{{/*
+Define prometheus.server.remoteWrite producing a list of remoteWrite configurations with URL templating
+*/}}
+{{- define "prometheus.server.remoteWrite" -}}
+{{- $remoteWrites := list }}
+{{- range $remoteWrite := .Values.server.remoteWrite }}
+  {{- $remoteWrites = tpl $remoteWrite.url $ | set $remoteWrite "url" | append $remoteWrites }}
+{{- end -}}
+{{ toYaml $remoteWrites }}
+{{- end -}}
+
+{{/*
+Define prometheus.server.remoteRead producing a list of remoteRead configurations with URL templating
+*/}}
+{{- define "prometheus.server.remoteRead" -}}
+{{- $remoteReads := list }}
+{{- range $remoteRead := .Values.server.remoteRead }}
+  {{- $remoteReads = tpl $remoteRead.url $ | set $remoteRead "url" | append $remoteReads }}
+{{- end -}}
+{{ toYaml $remoteReads }}
+{{- end -}}
+
