@@ -380,3 +380,4 @@ Enabling Network Policy for Prometheus will secure connections to Alert Manager 
 To enable network policy for Prometheus, install a networking plugin that implements the Kubernetes NetworkPolicy spec, and set `networkPolicy.enabled` to true.
 
 If NetworkPolicy is enabled for Prometheus' scrape targets, you may also need to manually create a networkpolicy which allows it.
+
