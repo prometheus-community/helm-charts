@@ -6,7 +6,7 @@ This chart bootstraps a [Prometheus](https://prometheus.io/) deployment on a [Ku
 
 ## Prerequisites
 
-- Kubernetes 1.16+
+- Kubernetes 1.19+
 - Helm 3.7+
 
 ## Get Repository Info
@@ -65,6 +65,19 @@ helm upgrade [RELEASE_NAME] prometheus-community/prometheus --install
 
 _See [helm upgrade](https://helm.sh/docs/helm/helm_upgrade/) for command documentation._
 
+### To 25.0
+
+The `server.remoteRead[].url` and `server.remoteWrite[].url` fields now support templating. Allowing for `url` values such as `https://{{ .Release.Name }}.example.com`.
+
+Any entries in these which previously included `{{` or `}}` must be escaped with `{{ "{{" }}` and `{{ "}}" }}` respectively. Entries which did not previously include the template-like syntax will not be affected.
+
+### To 24.0
+
+Require Kubernetes 1.19+
+
+Release 1.0.0 of the _alertmanager_ replaced [configmap-reload](https://github.com/jimmidyson/configmap-reload) with [prometheus-config-reloader](https://github.com/prometheus-operator/prometheus-operator/tree/main/cmd/prometheus-config-reloader).
+Extra command-line arguments specified via `configmapReload.prometheus.extraArgs` are not compatible and will break with the new prometheus-config-reloader. Please, refer to the [sources](https://github.com/prometheus-operator/prometheus-operator/blob/main/cmd/prometheus-config-reloader/main.go) in order to make the appropriate adjustment to the extra command-line arguments.
+
 ### To 23.0
 
 Release 5.0.0 of the _kube-state-metrics_ chart introduced a separation of the `image.repository` value in two distinct values:
@@ -73,7 +86,7 @@ Release 5.0.0 of the _kube-state-metrics_ chart introduced a separation of the `
  image:
    registry: registry.k8s.io
    repository: kube-state-metrics/kube-state-metrics
- ```
+```
 
 If a custom values file or CLI flags set `kube-state.metrics.image.repository`, please, set the new values accordingly.
 

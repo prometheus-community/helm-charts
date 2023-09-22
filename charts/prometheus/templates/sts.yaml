@@ -14,6 +14,11 @@ metadata:
   name: {{ template "prometheus.server.fullname" . }}
   namespace: {{ include "prometheus.namespace" . }}
 spec:
+  {{- if semverCompare ">= 1.27.x" (include "prometheus.kubeVersion" .) }}
+  persistentVolumeClaimRetentionPolicy:
+    whenDeleted: {{ ternary "Delete" "Retain" .Values.server.statefulSet.pvcDeleteOnStsDelete }}
+    whenScaled: {{ ternary "Delete" "Retain" .Values.server.statefulSet.pvcDeleteOnStsScale }}
+  {{- end }}
   serviceName: {{ template "prometheus.server.fullname" . }}-headless
   selector:
     matchLabels:
@@ -144,6 +149,9 @@ spec:
         {{- end }}
           ports:
             - containerPort: 9090
+          {{- if .Values.server.portName }}
+              name: {{ .Values.server.portName }}
+          {{- end }}
           {{- if .Values.server.hostPort }}
               hostPort: {{ .Values.server.hostPort }}
           {{- end }}
