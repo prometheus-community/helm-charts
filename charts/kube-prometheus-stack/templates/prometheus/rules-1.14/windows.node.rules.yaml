@@ -26,41 +26,41 @@ spec:
     rules:
     - expr: |-
         count (
-          windows_system_system_up_time{job="{{ .Values.windowsMonitoring.job }}"}
+          windows_system_system_up_time{job="windows-exporter"}
         )
       record: node:windows_node:sum
     - expr: |-
         count by (instance) (sum by (instance, core) (
-          windows_cpu_time_total{job="{{ .Values.windowsMonitoring.job }}"}
+          windows_cpu_time_total{job="windows-exporter"}
         ))
       record: node:windows_node_num_cpu:sum
-    - expr: 1 - avg(rate(windows_cpu_time_total{job="{{ .Values.windowsMonitoring.job }}",mode="idle"}[1m]))
+    - expr: 1 - avg(rate(windows_cpu_time_total{job="windows-exporter",mode="idle"}[1m]))
       record: :windows_node_cpu_utilisation:avg1m
     - expr: |-
         1 - avg by (instance) (
-          rate(windows_cpu_time_total{job="{{ .Values.windowsMonitoring.job }}",mode="idle"}[1m])
+          rate(windows_cpu_time_total{job="windows-exporter",mode="idle"}[1m])
         )
       record: node:windows_node_cpu_utilisation:avg1m
     - expr: |-
         1 -
-        sum(windows_memory_available_bytes{job="{{ .Values.windowsMonitoring.job }}"})
+        sum(windows_memory_available_bytes{job="windows-exporter"})
         /
-        sum(windows_os_visible_memory_bytes{job="{{ .Values.windowsMonitoring.job }}"})
+        sum(windows_os_visible_memory_bytes{job="windows-exporter"})
       record: ':windows_node_memory_utilisation:'
-    - expr: sum(windows_memory_available_bytes{job="{{ .Values.windowsMonitoring.job }}"} + windows_memory_cache_bytes{job="{{ .Values.windowsMonitoring.job }}"})
+    - expr: sum(windows_memory_available_bytes{job="windows-exporter"} + windows_memory_cache_bytes{job="windows-exporter"})
       record: :windows_node_memory_MemFreeCached_bytes:sum
-    - expr: (windows_memory_cache_bytes{job="{{ .Values.windowsMonitoring.job }}"} + windows_memory_modified_page_list_bytes{job="{{ .Values.windowsMonitoring.job }}"} + windows_memory_standby_cache_core_bytes{job="{{ .Values.windowsMonitoring.job }}"} + windows_memory_standby_cache_normal_priority_bytes{job="{{ .Values.windowsMonitoring.job }}"} + windows_memory_standby_cache_reserve_bytes{job="{{ .Values.windowsMonitoring.job }}"})
+    - expr: (windows_memory_cache_bytes{job="windows-exporter"} + windows_memory_modified_page_list_bytes{job="windows-exporter"} + windows_memory_standby_cache_core_bytes{job="windows-exporter"} + windows_memory_standby_cache_normal_priority_bytes{job="windows-exporter"} + windows_memory_standby_cache_reserve_bytes{job="windows-exporter"})
       record: node:windows_node_memory_totalCached_bytes:sum
-    - expr: sum(windows_os_visible_memory_bytes{job="{{ .Values.windowsMonitoring.job }}"})
+    - expr: sum(windows_os_visible_memory_bytes{job="windows-exporter"})
       record: :windows_node_memory_MemTotal_bytes:sum
     - expr: |-
         sum by (instance) (
-          (windows_memory_available_bytes{job="{{ .Values.windowsMonitoring.job }}"})
+          (windows_memory_available_bytes{job="windows-exporter"})
         )
       record: node:windows_node_memory_bytes_available:sum
     - expr: |-
         sum by (instance) (
-          windows_os_visible_memory_bytes{job="{{ .Values.windowsMonitoring.job }}"}
+          windows_os_visible_memory_bytes{job="windows-exporter"}
         )
       record: node:windows_node_memory_bytes_total:sum
     - expr: |-
@@ -70,43 +70,43 @@ spec:
       record: node:windows_node_memory_utilisation:ratio
     - expr: 1 - (node:windows_node_memory_bytes_available:sum / node:windows_node_memory_bytes_total:sum)
       record: 'node:windows_node_memory_utilisation:'
-    - expr: irate(windows_memory_swap_page_operations_total{job="{{ .Values.windowsMonitoring.job }}"}[5m])
+    - expr: irate(windows_memory_swap_page_operations_total{job="windows-exporter"}[5m])
       record: node:windows_node_memory_swap_io_pages:irate
     - expr: |-
-        avg(irate(windows_logical_disk_read_seconds_total{job="{{ .Values.windowsMonitoring.job }}"}[1m]) +
-            irate(windows_logical_disk_write_seconds_total{job="{{ .Values.windowsMonitoring.job }}"}[1m])
+        avg(irate(windows_logical_disk_read_seconds_total{job="windows-exporter"}[1m]) +
+            irate(windows_logical_disk_write_seconds_total{job="windows-exporter"}[1m])
           )
       record: :windows_node_disk_utilisation:avg_irate
     - expr: |-
         avg by (instance) (
-          (irate(windows_logical_disk_read_seconds_total{job="{{ .Values.windowsMonitoring.job }}"}[1m]) +
-           irate(windows_logical_disk_write_seconds_total{job="{{ .Values.windowsMonitoring.job }}"}[1m]))
+          (irate(windows_logical_disk_read_seconds_total{job="windows-exporter"}[1m]) +
+           irate(windows_logical_disk_write_seconds_total{job="windows-exporter"}[1m]))
         )
       record: node:windows_node_disk_utilisation:avg_irate
     - expr: |-
         max by (instance,volume)(
-          (windows_logical_disk_size_bytes{job="{{ .Values.windowsMonitoring.job }}"}
-        - windows_logical_disk_free_bytes{job="{{ .Values.windowsMonitoring.job }}"})
-        / windows_logical_disk_size_bytes{job="{{ .Values.windowsMonitoring.job }}"}
+          (windows_logical_disk_size_bytes{job="windows-exporter"}
+        - windows_logical_disk_free_bytes{job="windows-exporter"})
+        / windows_logical_disk_size_bytes{job="windows-exporter"}
         )
       record: 'node:windows_node_filesystem_usage:'
-    - expr: max by (instance, volume) (windows_logical_disk_free_bytes{job="{{ .Values.windowsMonitoring.job }}"} / windows_logical_disk_size_bytes{job="{{ .Values.windowsMonitoring.job }}"})
+    - expr: max by (instance, volume) (windows_logical_disk_free_bytes{job="windows-exporter"} / windows_logical_disk_size_bytes{job="windows-exporter"})
       record: 'node:windows_node_filesystem_avail:'
-    - expr: sum(irate(windows_net_bytes_total{job="{{ .Values.windowsMonitoring.job }}"}[1m]))
+    - expr: sum(irate(windows_net_bytes_total{job="windows-exporter"}[1m]))
       record: :windows_node_net_utilisation:sum_irate
     - expr: |-
         sum by (instance) (
-          (irate(windows_net_bytes_total{job="{{ .Values.windowsMonitoring.job }}"}[1m]))
+          (irate(windows_net_bytes_total{job="windows-exporter"}[1m]))
         )
       record: node:windows_node_net_utilisation:sum_irate
     - expr: |-
-        sum(irate(windows_net_packets_received_discarded_total{job="{{ .Values.windowsMonitoring.job }}"}[1m])) +
-        sum(irate(windows_net_packets_outbound_discarded_total{job="{{ .Values.windowsMonitoring.job }}"}[1m]))
+        sum(irate(windows_net_packets_received_discarded_total{job="windows-exporter"}[1m])) +
+        sum(irate(windows_net_packets_outbound_discarded_total{job="windows-exporter"}[1m]))
       record: :windows_node_net_saturation:sum_irate
     - expr: |-
         sum by (instance) (
-          (irate(windows_net_packets_received_discarded_total{job="{{ .Values.windowsMonitoring.job }}"}[1m]) +
-          irate(windows_net_packets_outbound_discarded_total{job="{{ .Values.windowsMonitoring.job }}"}[1m]))
+          (irate(windows_net_packets_received_discarded_total{job="windows-exporter"}[1m]) +
+          irate(windows_net_packets_outbound_discarded_total{job="windows-exporter"}[1m]))
         )
       record: node:windows_node_net_saturation:sum_irate
 {{- end }}
