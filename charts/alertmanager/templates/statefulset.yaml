@@ -11,6 +11,11 @@ metadata:
   {{- end }}
   namespace: {{ include "alertmanager.namespace" . }}
 spec:
+  {{- if semverCompare ">= 1.27-0" .Capabilities.KubeVersion.Version }}
+  persistentVolumeClaimRetentionPolicy:
+    whenDeleted: {{ .Values.statefulSet.persistentVolumeClaimRetentionPolicy.whenDeleted }}
+    whenScaled: {{ .Values.statefulSet.persistentVolumeClaimRetentionPolicy.whenScaled }}
+  {{- end }}
   replicas: {{ .Values.replicaCount }}
   revisionHistoryLimit: {{ .Values.revisionHistoryLimit }}
   selector:

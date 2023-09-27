@@ -25,6 +25,13 @@ If release name contains chart name it will be used as a full name.
 {{- end }}
 
 {{/*
+Get KubeVersion removing pre-release information.
+*/}}
+{{- define "alertmanager.kubeVersion" -}}
+  {{- default .Capabilities.KubeVersion.Version (regexFind "v[0-9]+\\.[0-9]+\\.[0-9]+" .Capabilities.KubeVersion.Version) -}}
+{{- end -}}
+
+{{/*
 Create chart name and version as used by the chart label.
 */}}
 {{- define "alertmanager.chart" -}}
