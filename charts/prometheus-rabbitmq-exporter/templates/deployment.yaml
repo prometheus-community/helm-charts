@@ -47,15 +47,27 @@ spec:
           {{- if .Values.rabbitmq.configMapOverrideReference }}
             - configMapRef:
                name: {{ .Values.rabbitmq.configMapOverrideReference }}
-          {{- end }}                
+          {{- end }}
           env:
-            {{- if .Values.rabbitmq.existingPasswordSecret }}
-            - name: RABBIT_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name:  "{{ .Values.rabbitmq.existingPasswordSecret }}"
-                  key: {{ .Values.rabbitmq.existingPasswordSecretKey }}
-            {{- end }}
+           {{- if .Values.rabbitmq.existingPasswordSecret }}
+              - name: RABBIT_PASSWORD
+                valueFrom:
+                  secretKeyRef:
+                    name: "{{ .Values.rabbitmq.existingPasswordSecret }}"
+                    key: "{{ .Values.rabbitmq.existingPasswordSecretKey }}"
+           {{- else if .Values.rabbitmq.password  }}
+              - name: RABBIT_PASSWORD
+                value: {{ .Values.rabbitmq.password }}
+           {{- end }}
+
+           {{- if .Values.rabbitmq.user }}
+              - name: RABBIT_USER
+                value: {{ .Values.rabbitmq.user }}
+           {{- end }}
+           {{- if .Values.rabbitmq.url }}
+              - name: RABBIT_URL
+                value: {{ .Values.rabbitmq.url }}
+           {{- end }}
           ports:
             - containerPort: {{ .Values.service.internalPort }}
               name: publish
