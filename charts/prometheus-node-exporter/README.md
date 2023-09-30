@@ -1,8 +1,8 @@
-# Prometheus `Node Exporter`
+# Prometheus Node Exporter
 
 Prometheus exporter for hardware and OS metrics exposed by *NIX kernels, written in Go with pluggable metric collectors.
 
-This chart bootstraps a prometheus [`Node Exporter`](http://github.com/prometheus/node_exporter) daemonset on a [Kubernetes](http://kubernetes.io) cluster using the [Helm](https://helm.sh) package manager.
+This chart bootstraps a Prometheus [Node Exporter](http://github.com/prometheus/node_exporter) daemonset on a [Kubernetes](http://kubernetes.io) cluster using the [Helm](https://helm.sh) package manager.
 
 ## Get Repository Info
 
@@ -11,7 +11,7 @@ helm repo add prometheus-community https://prometheus-community.github.io/helm-c
 helm repo update
 ```
 
-_See [`helm repo`](https://helm.sh/docs/helm/helm_repo/) for command documentation._
+_See [helm repo](https://helm.sh/docs/helm/helm_repo/) for command documentation._
 
 ## Install Chart
 
@@ -36,14 +36,10 @@ _See [helm uninstall](https://helm.sh/docs/helm/helm_uninstall/) for command doc
 ## Upgrading Chart
 
 ```console
-helm upgrade [RELEASE_NAME] [CHART] --install
+helm upgrade [RELEASE_NAME] prometheus-community/prometheus-node-exporter --install
 ```
 
 _See [helm upgrade](https://helm.sh/docs/helm/helm_upgrade/) for command documentation._
-
-### 4.16 to 4.17+
-
-`containerSecurityContext.readOnlyRootFilesystem` is set to `true` by default.
 
 ### 3.x to 4.x
 
