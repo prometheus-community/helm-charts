@@ -150,10 +150,10 @@ securityContext:
 {{- end }}
 {{- with .Values.extraInitContainers }}
 initContainers:
-  {{- toYaml . | indent 2 }}
+{{ toYaml . | indent 2 }}
 {{- end }}
 containers:
-{{- with .Values.extraContainers }}
+{{ with .Values.extraContainers }}
   {{- toYaml . }}
 {{- end }}
 - name: blackbox-exporter
