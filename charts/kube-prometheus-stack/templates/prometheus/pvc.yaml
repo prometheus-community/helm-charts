@@ -1,0 +1,41 @@
+{{- if not .Values.prometheus.prometheusSpec.statefulSet.enabled -}}
+{{- if .Values.prometheus.prometheusSpec.persistentVolume.enabled -}}
+{{- if not .Values.prometheus.prometheusSpec.persistentVolume.existingClaim -}}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  {{- if .Values.prometheus.prometheusSpec.persistentVolume.annotations }}
+  annotations:
+{{ toYaml .Values.prometheus.prometheusSpec.persistentVolume.annotations | indent 4 }}
+  {{- end }}
+spec:
+  accessModes:
+{{ toYaml .Values.prometheus.prometheusSpec.persistentVolume.accessModes | indent 4 }}
+{{- if .Values.prometheus.prometheusSpec.persistentVolume.storageClass }}
+{{- if (eq "-" .Values.prometheus.prometheusSpec.persistentVolume.storageClass) }}
+  storageClassName: ""
+{{- else }}
+  storageClassName: "{{ .Values.server.persistentVolume.storageClass }}"
+{{- end }}
+{{- end }}
+{{- if .Values.prometheus.prometheusSpec.persistentVolume.volumeBindingMode }}
+  volumeBindingMode: "{{ .Values.server.persistentVolume.volumeBindingMode }}"
+{{- end }}
+  resources:
+    requests:
+      storage: "{{ .Values.prometheus.prometheusSpec.persistentVolume.size }}"
+{{- if .Values.prometheus.prometheusSpec.persistentVolume.selector }}
+  selector:
+  {{- toYaml .Values.prometheus.prometheusSpec.persistentVolume.selector | nindent 4 }}
+{{- end -}}
+{{- if .Values.prometheus.prometheusSpec.persistentVolume.volumeName }}
+  volumeName: "{{ .Values.server.persistentVolume.volumeName }}"
+{{- if semverCompare ">= 1.27-0" .Capabilities.KubeVersion.Version }}
+persistentVolumeClaimRetentionPolicy:
+  whenDeleted: {{ ternary "Retain" "Delete" .Values.prometheus.prometheusSpec.persistence.retainDeleted }}
+  whenScaled: {{ ternary "Retain" "Delete" .Values.prometheus.prometheusSpec.persistence.retainScaled }}
+  {{- end }}
+{{- end -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}
