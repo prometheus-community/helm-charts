@@ -2463,6 +2463,84 @@ prometheus:
   ##
   annotations: {}
 
+  configmapReload:
+  ## URL for configmap-reload to use for reloads
+  ##
+    reloadUrl: ""
+
+  ## env sets environment variables to pass to the container. Can be set as name/value pairs,
+  ## read from secrets or configmaps.
+    env: []
+    # - name: SOMEVAR
+    #   value: somevalue
+    # - name: PASSWORD
+    #   valueFrom:
+    #     secretKeyRef:
+    #       name: mysecret
+    #       key: password
+    #       optional: false
+
+    prometheus:
+    ## If false, the configmap-reload container will not be deployed
+    ##
+      enabled: true
+
+    ## configmap-reload container name
+    ##
+      name: configmap-reload
+
+    ## configmap-reload container image
+    ##
+      image:
+        repository: quay.io/prometheus-operator/prometheus-config-reloader
+        tag: v0.67.0
+    # When digest is set to a non-empty value, images will be pulled by digest (regardless of tag value).
+        digest: ""
+        pullPolicy: IfNotPresent
+
+    # containerPort: 9533
+
+    ## Additional configmap-reload container arguments
+    ##
+    extraArgs: {}
+
+    ## Additional configmap-reload volume directories
+    ##
+    extraVolumeDirs: []
+
+    ## Additional configmap-reload volume mounts
+    ##
+    extraVolumeMounts: []
+
+    ## Additional configmap-reload mounts
+    ##
+    extraConfigmapMounts: []
+      # - name: prometheus-alerts
+      #   mountPath: /etc/alerts.d
+      #   subPath: ""
+      #   configMap: prometheus-alerts
+      #   readOnly: true
+
+    ## Security context to be added to configmap-reload container
+    containerSecurityContext: {}
+
+    ## configmap-reload resource requests and limits
+    ## Ref: http://kubernetes.io/docs/user-guide/compute-resources/
+    ##
+    resources: {}
+
+  configPath: /etc/config/prometheus.yml
+
+  storagePath: ""
+
+  extraArgs: {}
+  
+  extraInitContainers: []
+
+  env: []
+
+  defaultFlagsOverride: []
+
   ## Configure network policy for the prometheus
   networkPolicy:
     enabled: false
@@ -2832,6 +2910,14 @@ prometheus:
     allowedHostPaths: []
     volumes: []
 
+  podAnnotations: {}
+
+  podLabels: {}
+
+  replicaCount: 1
+
+  revisionHistoryLimit: 10
+
   serviceMonitor:
     ## Scrape interval. If not set, the Prometheus default scrape interval is used.
     ##
@@ -2956,6 +3042,8 @@ prometheus:
       repository: prometheus/prometheus
       tag: v2.47.0
       sha: ""
+      digest: ""
+      pullPolicy: IfNotPresent
 
     persistence:
       enabled: true
@@ -3053,6 +3141,24 @@ prometheus:
           enabled: false
           servicePort: 10901
           # nodePort: 10901
+
+  tcpSocketProbeEnabled: false
+  probeScheme: HTTP
+  readinessProbeInitialDelay: 30
+  readinessProbePeriodSeconds: 5
+  readinessProbeTimeout: 4
+  readinessProbeFailureThreshold: 3
+  readinessProbeSuccessThreshold: 1
+  livenessProbeInitialDelay: 30
+  livenessProbePeriodSeconds: 15
+  livenessProbeTimeout: 10
+  livenessProbeFailureThreshold: 3
+  livenessProbeSuccessThreshold: 1
+  startupProbe:
+    enabled: false
+    periodSeconds: 5
+    failureThreshold: 30
+    timeoutSeconds: 10
 
     ## Tolerations for use with node taints
     ## ref: https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/
@@ -3518,6 +3624,12 @@ prometheus:
     ## Priority class assigned to the Pods
     ##
     priorityClassName: ""
+
+    prefixURL: ""
+
+    baseURL: ""
+
+    enableServiceLinks: true
 
     ## Thanos configuration allows configuring various aspects of a Prometheus server in a Thanos environment.
     ## This section is experimental, it may change significantly without deprecation notice in any release.
