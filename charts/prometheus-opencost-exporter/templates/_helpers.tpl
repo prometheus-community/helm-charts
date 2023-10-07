@@ -61,3 +61,39 @@ Create the name of the service account to use
     {{ default "default" .Values.serviceAccount.name }}
 {{- end -}}
 {{- end -}}
+
+{{/*
+Create a default fully qualified app name.
+We truncate at 63 chars because some Kubernetes name fields are limited to this (by the DNS naming spec).
+*/}}
+{{- define "prometheus-opencost-exporter.prometheus.secretname" -}}
+  {{- if .Values.opencost.prometheus.secret_name -}}
+    {{- .Values.opencost.prometheus.secret_name -}}
+  {{- else -}}
+    {{- include "prometheus-opencost-exporter.fullname" . -}}
+  {{- end -}}
+{{- end -}}
+
+{{/*
+Create the name of the controller service account to use
+*/}}
+{{- define "prometheus-opencost-exporter.prometheusServerEndpoint" -}}
+  {{- if .Values.opencost.prometheus.external.enabled -}}
+    {{ tpl .Values.opencost.prometheus.external.url . }}
+  {{- else -}}
+    {{- $host := tpl .Values.opencost.prometheus.internal.serviceName . }}
+    {{- $ns := tpl .Values.opencost.prometheus.internal.namespaceName . }}
+    {{- $port := .Values.opencost.prometheus.internal.port | int }}
+    {{- printf "http://%s.%s.svc:%d" $host $ns $port -}}
+  {{- end -}}
+{{- end -}}
+
+
+{{/*
+Check that either prometheus external or internal is defined
+*/}}
+{{- define "isPrometheusConfigValid" -}}
+  {{- if and .Values.opencost.prometheus.external.enabled .Values.opencost.prometheus.internal.enabled -}}
+    {{- fail "Only use one of the prometheus setups, internal or external" -}}
+  {{- end -}}
+{{- end -}}
