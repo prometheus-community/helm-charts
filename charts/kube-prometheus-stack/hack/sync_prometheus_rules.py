@@ -410,7 +410,11 @@ def write_group_to_file(group, url, destination, min_kubernetes, max_kubernetes)
     }
 
     # rules themselves
-    lines += rules
+    lines += re.sub(
+        r'\s(by|on) ?\(',
+        r' \1 ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}',
+        rules
+    )
 
     # footer
     lines += '{{- end }}'
