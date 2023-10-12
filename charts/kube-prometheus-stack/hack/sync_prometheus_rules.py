@@ -70,7 +70,7 @@ charts = [
         'destination': '../templates/prometheus/rules-1.14',
         'min_kubernetes': '1.14.0-0',
         'is_mixin': True,
-        'mixin_vars': { '_config+': {}}
+        'mixin_vars': {'_config+': {}}
     },
 ]
 
@@ -420,29 +420,30 @@ def main():
     init_yaml_styles()
     # read the rules, create a new template file per group
     for chart in charts:
-        if ('git' in chart):
+        if 'git' in chart:
             print("Clone %s" % chart['git'])
             checkout_dir = os.path.basename(chart['git'])
+            shutil.rmtree(checkout_dir, ignore_errors=True)
             subprocess.run(["git", "clone", chart['git'], "--branch", "main", "--single-branch", "--depth", "1", checkout_dir])
             print("Generating rules from %s" % chart['source'])
 
             if chart.get('is_mixin'):
-                print("Change cwd to %s" % checkout_dir + '/' + os.path.dirname(chart['source']))
-                cwd = os.getcwd()
-                os.chdir(checkout_dir + '/' + os.path.dirname(chart['source']))
                 mixin_file = os.path.basename(chart['source'])
-                if os.path.exists("jsonnetfile.json"):
+                mixin_dir = checkout_dir + '/' + os.path.dirname(chart['source']) + '/'
+                if os.path.exists(mixin_dir + "jsonnetfile.json"):
                     print("Running jsonnet-bundler, because jsonnetfile.json exists")
-                    subprocess.run(["jb", "install"])
+                    subprocess.run(["jb", "install"], cwd=mixin_dir)
 
                 mixin_vars = json.dumps(chart['mixin_vars'])
 
                 print("Generating rules from %s" % mixin_file)
-                alerts = json.loads(_jsonnet.evaluate_snippet(mixin_file, '((import "%s") + %s).prometheusAlerts' % (mixin_file, mixin_vars)))
+                print("Change cwd to %s" % checkout_dir + '/' + os.path.dirname(chart['source']))
+                cwd = os.getcwd()
+                os.chdir(mixin_dir)
+                alerts = json.loads(_jsonnet.evaluate_snippet(mixin_file, '((import "%s") + %s).prometheusAlerts' % (mixin_file, mixin_vars), import_callback=jsonnet_import_callback))
                 os.chdir(cwd)
-                shutil.rmtree(checkout_dir, ignore_errors=True)
             else:
-                with open(checkout_dir + '/' + chart['source'],"r") as f:
+                with open(checkout_dir + '/' + chart['source'], "r") as f:
                     raw_text = f.read()
 
                 alerts = yaml.full_load(raw_text)
@@ -471,6 +472,18 @@ def main():
     write_rules_names_template()
 
     print("Finished")
+
+
+def jsonnet_import_callback(base, rel):
+    if "github.com" in base:
+        base = os.getcwd() + '/vendor/' + base[base.find('github.com'):]
+    elif "github.com" in rel:
+        base = os.getcwd() + '/vendor/'
+
+    if os.path.isfile(base + rel):
+        return base + rel, open(base + rel).read().encode('utf-8')
+
+    raise RuntimeError('File not found')
 
 
 if __name__ == '__main__':
