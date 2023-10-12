@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 """Fetch alerting and aggregation rules from provided urls into this chart."""
 import json
-import re
-import textwrap
 import os
-import subprocess
+import re
 import shutil
+import subprocess
+import textwrap
 
 import _jsonnet
 import requests

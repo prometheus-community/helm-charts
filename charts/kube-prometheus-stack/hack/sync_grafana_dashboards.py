@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 """Fetch dashboards from provided urls into this chart."""
 import json
-import re
-import textwrap
-import shutil
 import os
+import re
+import shutil
 import subprocess
+import textwrap
 
 import _jsonnet
 import requests
