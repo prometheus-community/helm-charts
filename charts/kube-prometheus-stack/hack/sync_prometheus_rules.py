@@ -358,6 +358,28 @@ def add_custom_annotations(rules, group, indent=4):
 
     return rules
 
+
+def add_custom_keep_firing_for(rules, indent=4):
+    """Add if wrapper for additional rules annotations"""
+    indent_spaces = " " * indent + "  "
+    keep_firing_fore = (indent_spaces + '{{- with .Values.defaultRules.keepFiringFor }}\n' +
+                        indent_spaces + 'keep_firing_for: "{{ . }}"\n' +
+                        indent_spaces + '{{- end }}')
+    keep_firing_fore_len = len(keep_firing_fore) + 1
+
+    separator = " " * indent + "  for:.*"
+    alerts_positions = re.finditer(separator, rules)
+    alert = 0
+
+    for alert_position in alerts_positions:
+        # Add rule_condition after 'annotations:' statement
+        index = alert_position.end() + keep_firing_fore_len * alert
+        rules = rules[:index] + "\n" + keep_firing_fore + rules[index:]
+        alert += 1
+
+    return rules
+
+
 def write_group_to_file(group, url, destination, min_kubernetes, max_kubernetes):
     fix_expr(group['rules'])
     group_name = group['name']
@@ -374,6 +396,7 @@ def write_group_to_file(group, url, destination, min_kubernetes, max_kubernetes)
     # append per-alert rules
     rules = add_custom_labels(rules, group)
     rules = add_custom_annotations(rules, group)
+    rules = add_custom_keep_firing_for(rules)
     rules = add_rules_conditions_from_condition_map(rules)
     rules = add_rules_per_rule_conditions(rules, group)
     # initialize header
