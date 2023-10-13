@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
 """Fetch alerting and aggregation rules from provided urls into this chart."""
 import json
+import os
 import re
+import shutil
+import subprocess
 import textwrap
-from os import makedirs
 
 import _jsonnet
 import requests
@@ -63,10 +65,12 @@ charts = [
         'min_kubernetes': '1.14.0-0'
     },
     {
-        'source': 'https://raw.githubusercontent.com/etcd-io/etcd/main/contrib/mixin/mixin.libsonnet',
+        'git': 'https://github.com/etcd-io/etcd.git',
+        'source': 'contrib/mixin/mixin.libsonnet',
         'destination': '../templates/prometheus/rules-1.14',
         'min_kubernetes': '1.14.0-0',
-        'is_mixin': True
+        'is_mixin': True,
+        'mixin_vars': {'_config+': {}}
     },
 ]
 
@@ -354,6 +358,28 @@ def add_custom_annotations(rules, group, indent=4):
 
     return rules
 
+
+def add_custom_keep_firing_for(rules, indent=4):
+    """Add if wrapper for additional rules annotations"""
+    indent_spaces = " " * indent + "  "
+    keep_firing_for = (indent_spaces + '{{- with .Values.defaultRules.keepFiringFor }}\n' +
+                        indent_spaces + 'keep_firing_for: "{{ . }}"\n' +
+                        indent_spaces + '{{- end }}')
+    keep_firing_for_len = len(keep_firing_for) + 1
+
+    separator = " " * indent + "  for:.*"
+    alerts_positions = re.finditer(separator, rules)
+    alert = 0
+
+    for alert_position in alerts_positions:
+        # Add rule_condition after 'annotations:' statement
+        index = alert_position.end() + keep_firing_for_len * alert
+        rules = rules[:index] + "\n" + keep_firing_for + rules[index:]
+        alert += 1
+
+    return rules
+
+
 def write_group_to_file(group, url, destination, min_kubernetes, max_kubernetes):
     fix_expr(group['rules'])
     group_name = group['name']
@@ -370,6 +396,7 @@ def write_group_to_file(group, url, destination, min_kubernetes, max_kubernetes)
     # append per-alert rules
     rules = add_custom_labels(rules, group)
     rules = add_custom_annotations(rules, group)
+    rules = add_custom_keep_firing_for(rules)
     rules = add_rules_conditions_from_condition_map(rules)
     rules = add_rules_per_rule_conditions(rules, group)
     # initialize header
@@ -392,7 +419,7 @@ def write_group_to_file(group, url, destination, min_kubernetes, max_kubernetes)
     new_filename = "%s/%s" % (destination, filename)
 
     # make sure directories to store the file exist
-    makedirs(destination, exist_ok=True)
+    os.makedirs(destination, exist_ok=True)
 
     # recreate the file
     with open(new_filename, 'w') as f:
@@ -416,16 +443,45 @@ def main():
     init_yaml_styles()
     # read the rules, create a new template file per group
     for chart in charts:
-        print("Generating rules from %s" % chart['source'])
-        response = requests.get(chart['source'])
-        if response.status_code != 200:
-            print('Skipping the file, response code %s not equals 200' % response.status_code)
-            continue
-        raw_text = response.text
-        if chart.get('is_mixin'):
-            alerts = json.loads(_jsonnet.evaluate_snippet(chart['source'], raw_text + '.prometheusAlerts'))
+        if 'git' in chart:
+            print("Clone %s" % chart['git'])
+            checkout_dir = os.path.basename(chart['git'])
+            shutil.rmtree(checkout_dir, ignore_errors=True)
+            subprocess.run(["git", "clone", chart['git'], "--branch", "main", "--single-branch", "--depth", "1", checkout_dir])
+            print("Generating rules from %s" % chart['source'])
+
+            if chart.get('is_mixin'):
+                mixin_file = os.path.basename(chart['source'])
+                mixin_dir = checkout_dir + '/' + os.path.dirname(chart['source']) + '/'
+                if os.path.exists(mixin_dir + "jsonnetfile.json"):
+                    print("Running jsonnet-bundler, because jsonnetfile.json exists")
+                    subprocess.run(["jb", "install"], cwd=mixin_dir)
+
+                mixin_vars = json.dumps(chart['mixin_vars'])
+
+                print("Generating rules from %s" % mixin_file)
+                print("Change cwd to %s" % checkout_dir + '/' + os.path.dirname(chart['source']))
+                cwd = os.getcwd()
+                os.chdir(mixin_dir)
+                alerts = json.loads(_jsonnet.evaluate_snippet(mixin_file, '((import "%s") + %s).prometheusAlerts' % (mixin_file, mixin_vars), import_callback=jsonnet_import_callback))
+                os.chdir(cwd)
+            else:
+                with open(checkout_dir + '/' + chart['source'], "r") as f:
+                    raw_text = f.read()
+
+                alerts = yaml.full_load(raw_text)
+
         else:
-            alerts = yaml.full_load(raw_text)
+            print("Generating rules from %s" % chart['source'])
+            response = requests.get(chart['source'])
+            if response.status_code != 200:
+                print('Skipping the file, response code %s not equals 200' % response.status_code)
+                continue
+            raw_text = response.text
+            if chart.get('is_mixin'):
+                alerts = json.loads(_jsonnet.evaluate_snippet(chart['source'], raw_text + '.prometheusAlerts'))
+            else:
+                alerts = yaml.full_load(raw_text)
 
         if ('max_kubernetes' not in chart):
             chart['max_kubernetes']="9.9.9-9"
@@ -439,6 +495,18 @@ def main():
     write_rules_names_template()
 
     print("Finished")
+
+
+def jsonnet_import_callback(base, rel):
+    if "github.com" in base:
+        base = os.getcwd() + '/vendor/' + base[base.find('github.com'):]
+    elif "github.com" in rel:
+        base = os.getcwd() + '/vendor/'
+
+    if os.path.isfile(base + rel):
+        return base + rel, open(base + rel).read().encode('utf-8')
+
+    raise RuntimeError('File not found')
 
 
 if __name__ == '__main__':
