@@ -362,10 +362,10 @@ def add_custom_annotations(rules, group, indent=4):
 def add_custom_keep_firing_for(rules, indent=4):
     """Add if wrapper for additional rules annotations"""
     indent_spaces = " " * indent + "  "
-    keep_firing_fore = (indent_spaces + '{{- with .Values.defaultRules.keepFiringFor }}\n' +
+    keep_firing_for = (indent_spaces + '{{- with .Values.defaultRules.keepFiringFor }}\n' +
                         indent_spaces + 'keep_firing_for: "{{ . }}"\n' +
                         indent_spaces + '{{- end }}')
-    keep_firing_fore_len = len(keep_firing_fore) + 1
+    keep_firing_for_len = len(keep_firing_for) + 1
 
     separator = " " * indent + "  for:.*"
     alerts_positions = re.finditer(separator, rules)
@@ -373,8 +373,8 @@ def add_custom_keep_firing_for(rules, indent=4):
 
     for alert_position in alerts_positions:
         # Add rule_condition after 'annotations:' statement
-        index = alert_position.end() + keep_firing_fore_len * alert
-        rules = rules[:index] + "\n" + keep_firing_fore + rules[index:]
+        index = alert_position.end() + keep_firing_for_len * alert
+        rules = rules[:index] + "\n" + keep_firing_for + rules[index:]
         alert += 1
 
     return rules
