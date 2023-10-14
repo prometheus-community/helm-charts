@@ -36,17 +36,15 @@ spec:
     bearerTokenFile: {{ .Values.alertmanager.serviceMonitor.bearerTokenFile }}
     {{- end }}
     {{- if .Values.alertmanager.serviceMonitor.tlsConfig }}
-    tlsConfig: {{ toYaml .Values.alertmanager.serviceMonitor.tlsConfig | nindent 6 }}
+    tlsConfig: {{- toYaml .Values.alertmanager.serviceMonitor.tlsConfig | nindent 6 }}
     {{- end }}
     path: "{{ trimSuffix "/" .Values.alertmanager.alertmanagerSpec.routePrefix }}/metrics"
-{{- if .Values.alertmanager.serviceMonitor.metricRelabelings }}
-    metricRelabelings:
-{{ tpl (toYaml .Values.alertmanager.serviceMonitor.metricRelabelings | indent 6) . }}
-{{- end }}
-{{- if .Values.alertmanager.serviceMonitor.relabelings }}
-    relabelings:
-{{ toYaml .Values.alertmanager.serviceMonitor.relabelings | indent 6 }}
-{{- end }}
+    {{- if .Values.alertmanager.serviceMonitor.metricRelabelings }}
+    metricRelabelings: {{- tpl (toYaml .Values.alertmanager.serviceMonitor.metricRelabelings | nindent 6) . }}
+    {{- end }}
+    {{- if .Values.alertmanager.serviceMonitor.relabelings }}
+    relabelings: {{- toYaml .Values.alertmanager.serviceMonitor.relabelings | nindent 6 }}
+    {{- end }}
   - port: reloader-web
     {{- if .Values.alertmanager.serviceMonitor.interval }}
     interval: {{ .Values.alertmanager.serviceMonitor.interval }}
@@ -61,15 +59,38 @@ spec:
     bearerTokenFile: {{ .Values.alertmanager.serviceMonitor.bearerTokenFile }}
     {{- end }}
     {{- if .Values.alertmanager.serviceMonitor.tlsConfig }}
-    tlsConfig: {{ toYaml .Values.alertmanager.serviceMonitor.tlsConfig | nindent 6 }}
+    tlsConfig: {{- toYaml .Values.alertmanager.serviceMonitor.tlsConfig | nindent 6 }}
     {{- end }}
     path: "/metrics"
-{{- if .Values.alertmanager.serviceMonitor.metricRelabelings }}
-    metricRelabelings:
-{{ tpl (toYaml .Values.alertmanager.serviceMonitor.metricRelabelings | indent 6) . }}
+    {{- if .Values.alertmanager.serviceMonitor.metricRelabelings }}
+    metricRelabelings: {{- tpl (toYaml .Values.alertmanager.serviceMonitor.metricRelabelings | nindent 6) . }}
+    {{- end }}
+    {{- if .Values.alertmanager.serviceMonitor.relabelings }}
+    relabelings: {{- toYaml .Values.alertmanager.serviceMonitor.relabelings | nindent 6 }}
+    {{- end }}
 {{- end }}
-{{- if .Values.alertmanager.serviceMonitor.relabelings }}
-    relabelings:
-{{ toYaml .Values.alertmanager.serviceMonitor.relabelings | indent 6 }}
-{{- end }}
+{{- range .Values.alertmanager.serviceMonitor.additionalEndpoints }}
+  - port: {{ .port }}
+    {{- if or .Values.alertmanager.serviceMonitor.interval .interval }}
+    interval: {{ default .Values.alertmanager.serviceMonitor.interval .interval }}
+    {{- end }}
+    {{- if or .Values.alertmanager.serviceMonitor.proxyUrl .proxyUrl }}
+    proxyUrl: {{ default .Values.alertmanager.serviceMonitor.proxyUrl .proxyUrl }}
+    {{- end }}
+    {{- if or .Values.alertmanager.serviceMonitor.scheme .scheme }}
+    scheme: {{ default .Values.alertmanager.serviceMonitor.scheme .scheme }}
+    {{- end }}
+    {{- if or .Values.alertmanager.serviceMonitor.bearerTokenFile .bearerTokenFile }}
+    bearerTokenFile: {{ default .Values.alertmanager.serviceMonitor.bearerTokenFile .bearerTokenFile }}
+    {{- end }}
+    {{- if or .Values.alertmanager.serviceMonitor.tlsConfig .tlsConfig }}
+    tlsConfig: {{- default .Values.alertmanager.serviceMonitor.tlsConfig .tlsConfig | toYaml | nindent 6 }}
+    {{- end }}
+    path: {{ .path }}
+    {{- if or .Values.alertmanager.serviceMonitor.metricRelabelings .metricRelabelings }}
+    metricRelabelings: {{- tpl (default .Values.alertmanager.serviceMonitor.metricRelabelings .metricRelabelings | toYaml | nindent 6) . }}
+    {{- end }}
+    {{- if or .Values.alertmanager.serviceMonitor.relabelings .relabelings }}
+    relabelings: {{- default .Values.alertmanager.serviceMonitor.relabelings .relabelings | toYaml | nindent 6 }}
+    {{- end }}
 {{- end }}
