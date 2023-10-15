@@ -104,6 +104,18 @@ def yaml_str_repr(struct, indent=2):
     return text
 
 
+def replace_nested_key(data, key, value, replace):
+    if isinstance(data, dict):
+        return {
+            k: replace if k == key and v == value else replace_nested_key(v, key, value, replace)
+            for k, v in data.items()
+        }
+    elif isinstance(data, list):
+        return [replace_nested_key(v, key, value, replace) for v in data]
+    else:
+        return data
+
+
 def patch_dashboards_json(content, multicluster_key):
     try:
         content_struct = json.loads(content)
@@ -115,6 +127,11 @@ def patch_dashboards_json(content, multicluster_key):
                 variable['hide'] = ':multicluster:'
             overwrite_list.append(variable)
         content_struct['templating']['list'] = overwrite_list
+
+        # Replace decimals=-1 with decimals= (nil value)
+        # ref: https://github.com/kubernetes-monitoring/kubernetes-mixin/pull/859
+        content_struct = replace_nested_key(content_struct, "decimals", -1, None)
+
         content = json.dumps(content_struct, separators=(',', ':'))
         content = content.replace('":multicluster:"', '`}}{{ if %s }}0{{ else }}2{{ end }}{{`' % multicluster_key,)
     except (ValueError, KeyError):
