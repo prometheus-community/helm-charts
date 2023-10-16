@@ -92,6 +92,17 @@ Secret key for config
 */}}
 
 {{/*
+Define overriding namespace
+*/}}
+{{- define "prometheus-mysql-exporter.namespace" -}}
+  {{- if .Values.namespaceOverride -}}
+    {{- .Values.namespaceOverride -}}
+  {{- else -}}
+    {{- .Release.Namespace -}}
+  {{- end -}}
+{{- end -}}
+
+{{/*
 CloudSqlProxy Workload Identity Service Account Annotation
 */}}
 {{- define "prometheus-mysql-exporter.workloadIdentityAnnotation" -}}
