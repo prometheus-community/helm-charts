@@ -42,7 +42,14 @@ charts = [
         'destination': '../templates/grafana/dashboards-1.14',
         'min_kubernetes': '1.14.0-0',
         'type': 'jsonnet_mixin',
-        'mixin_vars': {'_config+': {}},
+        # ref: https://github.com/etcd-io/etcd/pull/16778
+        'mixin_vars': '''
+        { 
+            _config+:: {
+                clusterLabel: 'cluster',
+            }
+        }
+        ''',
         'multicluster_key': '(or .Values.grafana.sidecar.dashboards.multicluster.global.enabled .Values.grafana.sidecar.dashboards.multicluster.etcd.enabled)'
     },
 ]
@@ -207,11 +214,9 @@ def main():
                 print("Running jsonnet-bundler, because jsonnetfile.json exists")
                 subprocess.run(["jb", "install"], cwd=mixin_dir)
 
-            mixin_vars = json.dumps(chart['mixin_vars'])
-
             cwd = os.getcwd()
             os.chdir(mixin_dir)
-            raw_text = '((import "%s") + %s)' % (mixin_file, mixin_vars)
+            raw_text = '((import "%s") + (%s))' % (mixin_file, chart['mixin_vars'])
             source = mixin_file
         else:
             print("Generating rules from %s" % chart['source'])
