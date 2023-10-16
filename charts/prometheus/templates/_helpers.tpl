@@ -234,3 +234,9 @@ Define prometheus.server.remoteRead producing a list of remoteRead configuration
 {{ toYaml $remoteReads }}
 {{- end -}}
 
+{{/*
+Define prometheus.server.global.externalLabels producing a list of externalLabels
+*/}}
+{{- define "prometheus.server.global.externalLabels" -}}
+{{ toYaml .Values.server.global.externalLabels }}
+{{- end -}}
