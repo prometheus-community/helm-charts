@@ -74,6 +74,7 @@ password=remote_password
 ```
 
 The configuration file can be referenced using `mysql.existingConfigSecret`.
+If all your target use the same credentials, you can set `serviceMonitor.sharedSecret.enabled` to `true` and define the key name in `serviceMonitor.sharedSecret.name`.
 
 ### From 1.x to 2.x
 

@@ -30,8 +30,8 @@ spec:
 {{ toYaml . | trim | indent 4 -}}
   {{- end }}
   endpoints:
-  {{- if .Values.serviceMonitor.multipleTarget }}
-  {{- range  .Values.serviceMonitor.targets }}
+  {{- if .Values.serviceMonitor.multipleTarget.enabled }}
+  {{- range  .Values.serviceMonitor.multipleTarget.targets }}
     - path: /probe
       port: {{ $.Values.service.name }}
   {{- if $.Values.serviceMonitor.interval }}
@@ -58,8 +58,13 @@ spec:
       params:
         target:
           - {{ .endpoint }}:{{ .port | default 3306 }}
+        {{- if $.Values.serviceMonitor.multipleTarget.sharedSecret.enabled }}
+        auth_module:
+          - client.{{ $.Values.serviceMonitor.multipleTarget.sharedSecret.name }}
+        {{- else }}
         auth_module:
           - client.{{ .name }}
+        {{- end }}
   {{- end }}
   {{- else }}
     - path: /metrics
