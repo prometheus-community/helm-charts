@@ -35,20 +35,20 @@ Create chart name and version as used by the chart label.
 Common labels
 */}}
 {{- define "prometheus-opencost-exporter.labels" -}}
-chart: {{ include "prometheus-opencost-exporter.chart" . }}
+helm.sh/chart: {{ include "prometheus-opencost-exporter.chart" . }}
 {{ include "prometheus-opencost-exporter.selectorLabels" . }}
-heritage: {{ .Release.Service }}
-{{- if .Values.commonLabels}}
-{{ toYaml .Values.commonLabels }}
+{{- if .Chart.AppVersion }}
+app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
 {{- end }}
+app.kubernetes.io/managed-by: {{ .Release.Service }}
 {{- end }}
 
 {{/*
 Selector labels
 */}}
 {{- define "prometheus-opencost-exporter.selectorLabels" -}}
-app: {{ include "prometheus-opencost-exporter.name" . }}
-release: {{ .Release.Name }}
+app.kubernetes.io/name: {{ include "prometheus-opencost-exporter.name" . }}
+app.kubernetes.io/instance: {{ .Release.Name }}
 {{- end }}
 
 {{/*
