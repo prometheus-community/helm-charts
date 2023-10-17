@@ -463,11 +463,14 @@ alertmanager:
     ##
 
     ## Additional ports to open for Alertmanager service
+    ##
     additionalPorts: []
-    # additionalPorts:
-    # - name: authenticated
+    # - name: oauth-proxy
     #   port: 8081
     #   targetPort: 8081
+    # - name: oauth-metrics
+    #   port: 8082
+    #   targetPort: 8082
 
     externalIPs: []
     loadBalancerIP: ""
@@ -583,6 +586,12 @@ alertmanager:
     #   targetLabel: nodename
     #   replacement: $1
     #   action: replace
+
+    ## Additional Endpoints
+    ##
+    additionalEndpoints: []
+    # - port: oauth-metrics
+    #   path: /metrics
 
   ## Settings affecting alertmanagerSpec
   ## ref: https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/api.md#alertmanagerspec
@@ -806,14 +815,18 @@ alertmanager:
     containers: []
     # containers:
     # - name: oauth-proxy
-    #   image: quay.io/oauth2-proxy/oauth2-proxy:v7.3.0
+    #   image: quay.io/oauth2-proxy/oauth2-proxy:v7.5.1
     #   args:
     #   - --upstream=http://127.0.0.1:9093
     #   - --http-address=0.0.0.0:8081
+    #   - --metrics-address=0.0.0.0:8082
     #   - ...
     #   ports:
     #   - containerPort: 8081
     #     name: oauth-proxy
+    #     protocol: TCP
+    #   - containerPort: 8082
+    #     name: oauth-metrics
     #     protocol: TCP
     #   resources: {}
 
@@ -2153,7 +2166,7 @@ prometheusOperator:
 
     nodePortTls: 30443
 
-  ## Additional ports to open for Prometheus service
+  ## Additional ports to open for Prometheus operator service
   ## ref: https://kubernetes.io/docs/concepts/services-networking/service/#multi-port-services
   ##
     additionalPorts: []
@@ -2613,12 +2626,16 @@ prometheus:
     ##
     type: ClusterIP
 
-    ## Additional port to define in the Service
+    ## Additional ports to open for Prometheus service
+    ##
     additionalPorts: []
     # additionalPorts:
-    # - name: authenticated
+    # - name: oauth-proxy
     #   port: 8081
     #   targetPort: 8081
+    # - name: oauth-metrics
+    #   port: 8082
+    #   targetPort: 8082
 
     ## Consider that all endpoints are considered "ready" even if the Pods themselves are not
     ## Ref: https://kubernetes.io/docs/reference/kubernetes-api/service-resources/service-v1/#ServiceSpec
@@ -2860,6 +2877,12 @@ prometheus:
     #   targetLabel: nodename
     #   replacement: $1
     #   action: replace
+
+    ## Additional Endpoints
+    ##
+    additionalEndpoints: []
+    # - port: oauth-metrics
+    #   path: /metrics
 
   ## Settings affecting prometheusSpec
   ## ref: https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/api.md#prometheusspec
@@ -3414,14 +3437,18 @@ prometheus:
     containers: []
     # containers:
     # - name: oauth-proxy
-    #   image: quay.io/oauth2-proxy/oauth2-proxy:v7.3.0
+    #   image: quay.io/oauth2-proxy/oauth2-proxy:v7.5.1
     #   args:
-    #   - --upstream=http://127.0.0.1:9093
+    #   - --upstream=http://127.0.0.1:9090
     #   - --http-address=0.0.0.0:8081
+    #   - --metrics-address=0.0.0.0:8082
     #   - ...
     #   ports:
     #   - containerPort: 8081
     #     name: oauth-proxy
+    #     protocol: TCP
+    #   - containerPort: 8082
+    #     name: oauth-metrics
     #     protocol: TCP
     #   resources: {}
 
@@ -3843,6 +3870,12 @@ thanosRuler:
     #   targetLabel: nodename
     #   replacement: $1
     #   action: replace
+
+    ## Additional Endpoints
+    ##
+    additionalEndpoints: []
+    # - port: oauth-metrics
+    #   path: /metrics
 
   ## Settings affecting thanosRulerpec
   ## ref: https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/api.md#thanosrulerspec
