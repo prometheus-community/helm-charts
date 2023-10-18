@@ -154,7 +154,7 @@ initContainers:
 {{- end }}
 containers:
 {{- with .Values.extraContainers }}
-  {{- toYaml . }}
+{{ toYaml . }}
 {{- end }}
 - name: blackbox-exporter
   image: {{ include "prometheus-blackbox-exporter.image" . }}
