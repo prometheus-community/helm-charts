@@ -70,6 +70,9 @@ defaultRules:
   ## Reduce app namespace alert scope
   appNamespacesTarget: ".*"
 
+  ## Set keep_firing_for for all alerts
+  keepFiringFor: ""
+
   ## Labels for default rules
   labels: {}
   ## Annotations for default rules
@@ -201,10 +204,30 @@ global:
   # - "image-pull-secret"
 
 windowsMonitoring:
-  ## Deploys the windows-exporter and Windows-specific dashboards and rules
+  ## Deploys the windows-exporter and Windows-specific dashboards and rules (job name must be 'windows-exporter')
   enabled: false
-  ## Job must match jobLabel in the PodMonitor/ServiceMonitor and is used for the rules
-  job: prometheus-windows-exporter
+
+## Configuration for prometheus-windows-exporter
+## ref: https://github.com/prometheus-community/helm-charts/tree/main/charts/prometheus-windows-exporter
+##
+prometheus-windows-exporter:
+  ## Enable ServiceMonitor and set Kubernetes label to use as a job label
+  ##
+  prometheus:
+    monitor:
+      enabled: true
+      jobLabel: jobLabel
+
+  ## Set job label to 'windows-exporter' as required by the default Prometheus rules and Grafana dashboards
+  ##
+  podLabels:
+    jobLabel: windows-exporter
+
+  ## Enable memory and container metrics as required by the default Prometheus rules and Grafana dashboards
+  ##
+  config: |-
+    collectors:
+      enabled: '[defaults],memory,container'
 
 ## Configuration for alertmanager
 ## ref: https://prometheus.io/docs/alerting/alertmanager/
@@ -440,11 +463,14 @@ alertmanager:
     ##
 
     ## Additional ports to open for Alertmanager service
+    ##
     additionalPorts: []
-    # additionalPorts:
-    # - name: authenticated
+    # - name: oauth-proxy
     #   port: 8081
     #   targetPort: 8081
+    # - name: oauth-metrics
+    #   port: 8082
+    #   targetPort: 8082
 
     externalIPs: []
     loadBalancerIP: ""
@@ -560,6 +586,12 @@ alertmanager:
     #   targetLabel: nodename
     #   replacement: $1
     #   action: replace
+
+    ## Additional Endpoints
+    ##
+    additionalEndpoints: []
+    # - port: oauth-metrics
+    #   path: /metrics
 
   ## Settings affecting alertmanagerSpec
   ## ref: https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/api.md#alertmanagerspec
@@ -783,14 +815,18 @@ alertmanager:
     containers: []
     # containers:
     # - name: oauth-proxy
-    #   image: quay.io/oauth2-proxy/oauth2-proxy:v7.3.0
+    #   image: quay.io/oauth2-proxy/oauth2-proxy:v7.5.1
     #   args:
     #   - --upstream=http://127.0.0.1:9093
     #   - --http-address=0.0.0.0:8081
+    #   - --metrics-address=0.0.0.0:8082
     #   - ...
     #   ports:
     #   - containerPort: 8081
     #     name: oauth-proxy
+    #     protocol: TCP
+    #   - containerPort: 8082
+    #     name: oauth-metrics
     #     protocol: TCP
     #   resources: {}
 
@@ -1130,6 +1166,11 @@ kubelet:
   namespace: kube-system
 
   serviceMonitor:
+    ## Attach metadata to discovered targets. Requires Prometheus v2.45 for endpoints created by the operator.
+    ##
+    attachMetadata:
+      node: false
+
     ## Scrape interval. If not set, the Prometheus default scrape interval is used.
     ##
     interval: ""
@@ -1881,6 +1922,11 @@ kube-state-metrics:
 ##
 nodeExporter:
   enabled: true
+  operatingSystems:
+    linux:
+      enabled: true
+    darwin:
+      enabled: true
 
 ## Configuration for prometheus-node-exporter subchart
 ##
@@ -2120,7 +2166,7 @@ prometheusOperator:
 
     nodePortTls: 30443
 
-  ## Additional ports to open for Prometheus service
+  ## Additional ports to open for Prometheus operator service
   ## ref: https://kubernetes.io/docs/concepts/services-networking/service/#multi-port-services
   ##
     additionalPorts: []
@@ -2372,20 +2418,20 @@ prometheusOperator:
     enableProbe: false
 
     # resource config for prometheusConfigReloader
-    resources:
-      requests:
-        cpu: 200m
-        memory: 50Mi
-      limits:
-        cpu: 200m
-        memory: 50Mi
+    resources: {}
+      # requests:
+      #   cpu: 200m
+      #   memory: 50Mi
+      # limits:
+      #   cpu: 200m
+      #   memory: 50Mi
 
   ## Thanos side-car image when configured
   ##
   thanosImage:
     registry: quay.io
     repository: thanos/thanos
-    tag: v0.32.2
+    tag: v0.32.4
     sha: ""
 
   ## Set a Label Selector to filter watched prometheus and prometheusAgent
@@ -2580,12 +2626,16 @@ prometheus:
     ##
     type: ClusterIP
 
-    ## Additional port to define in the Service
+    ## Additional ports to open for Prometheus service
+    ##
     additionalPorts: []
     # additionalPorts:
-    # - name: authenticated
+    # - name: oauth-proxy
     #   port: 8081
     #   targetPort: 8081
+    # - name: oauth-metrics
+    #   port: 8082
+    #   targetPort: 8082
 
     ## Consider that all endpoints are considered "ready" even if the Pods themselves are not
     ## Ref: https://kubernetes.io/docs/reference/kubernetes-api/service-resources/service-v1/#ServiceSpec
@@ -2828,6 +2878,12 @@ prometheus:
     #   replacement: $1
     #   action: replace
 
+    ## Additional Endpoints
+    ##
+    additionalEndpoints: []
+    # - port: oauth-metrics
+    #   path: /metrics
+
   ## Settings affecting prometheusSpec
   ## ref: https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/api.md#prometheusspec
   ##
@@ -2894,7 +2950,7 @@ prometheus:
     image:
       registry: quay.io
       repository: prometheus/prometheus
-      tag: v2.47.0
+      tag: v2.47.1
       sha: ""
 
     ## Tolerations for use with node taints
@@ -3381,14 +3437,18 @@ prometheus:
     containers: []
     # containers:
     # - name: oauth-proxy
-    #   image: quay.io/oauth2-proxy/oauth2-proxy:v7.3.0
+    #   image: quay.io/oauth2-proxy/oauth2-proxy:v7.5.1
     #   args:
-    #   - --upstream=http://127.0.0.1:9093
+    #   - --upstream=http://127.0.0.1:9090
     #   - --http-address=0.0.0.0:8081
+    #   - --metrics-address=0.0.0.0:8082
     #   - ...
     #   ports:
     #   - containerPort: 8081
     #     name: oauth-proxy
+    #     protocol: TCP
+    #   - containerPort: 8082
+    #     name: oauth-metrics
     #     protocol: TCP
     #   resources: {}
 
@@ -3811,6 +3871,12 @@ thanosRuler:
     #   replacement: $1
     #   action: replace
 
+    ## Additional Endpoints
+    ##
+    additionalEndpoints: []
+    # - port: oauth-metrics
+    #   path: /metrics
+
   ## Settings affecting thanosRulerpec
   ## ref: https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/api.md#thanosrulerspec
   ##
@@ -3825,7 +3891,7 @@ thanosRuler:
     image:
       registry: quay.io
       repository: thanos/thanos
-      tag: v0.32.2
+      tag: v0.32.3
       sha: ""
 
     ## Namespaces to be selected for PrometheusRules discovery.
