@@ -85,9 +85,10 @@ A major chart version change (like v1.2.3 -> v2.0.0) indicates that there is an 
 ### From 51.x to 52.x
 
 This includes the ability to select between using existing secrets or create new secret objects for various thanosrule config. The defaults have not changed but if you were setting:
-* `thanosRuler.thanosRulerSpec.alertmanagersConfig` or
-* `thanosRuler.thanosRulerSpec.objectStorageConfig` or 
-* `thanosRuler.thanosRulerSpec.queryConfig` 
+
+- `thanosRuler.thanosRulerSpec.alertmanagersConfig` or
+- `thanosRuler.thanosRulerSpec.objectStorageConfig` or
+- `thanosRuler.thanosRulerSpec.queryConfig`
 
 you will have to need to set `existingSecret` or `secret` based on your requirement
 
@@ -148,6 +149,7 @@ thanosRuler:
         name: existing-secret-not-created-by-this-chart
         key: object-storage-configs.yaml
 ```
+
 ### From 50.x to 51.x
 
 This version upgrades Prometheus-Operator to v0.68.0, Prometheus to 2.47.0 and Thanos to v0.32.2
