@@ -356,7 +356,16 @@ spec:
 {{- if not .Values.prometheus.agentMode }}
 {{- if .Values.prometheus.prometheusSpec.thanos }}
   thanos:
-{{ toYaml .Values.prometheus.prometheusSpec.thanos | indent 4 }}
+{{- omit .Values.prometheus.prometheusSpec.thanos "objectStorageConfig" | toYaml | indent 4 }}
+{{- if .Values.prometheus.prometheusSpec.thanos.objectStorageConfig.existingSecret }}
+    objectStorageConfig:
+      key: "{{.Values.prometheus.prometheusSpec.thanos.objectStorageConfig.existingSecret.key }}"
+      name: "{{.Values.prometheus.prometheusSpec.thanos.objectStorageConfig.existingSecret.name }}"
+{{- else if .Values.prometheus.prometheusSpec.thanos.objectStorageConfig.secret}}
+    objectStorageConfig:
+      key: object-storage-configs.yaml
+      name: {{ template "kube-prometheus-stack.fullname" . }}-prometheus
+{{- end }}
 {{- end }}
 {{- if .Values.prometheus.prometheusSpec.disableCompaction }}
   disableCompaction: {{ .Values.prometheus.prometheusSpec.disableCompaction }}
