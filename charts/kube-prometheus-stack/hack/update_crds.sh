@@ -25,14 +25,18 @@ for line in "${FILES[@]}"; do
     DESTINATION=$(echo "${line%%:*}" | xargs)
     SOURCE=$(echo "${line##*:}" | xargs)
 
-    URL="https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/$VERSION/example/prometheus-operator-crd/$SOURCE"
+    if [[ $SOURCE == "monitoring.coreos.com_alertmanagerconfigs.yaml" ]]; then
+        URL="https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/$VERSION/example/prometheus-operator-crd-full/$SOURCE"
+    else
+        URL="https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/$VERSION/example/prometheus-operator-crd/$SOURCE"
+    fi
 
     echo -e "Downloading Prometheus Operator CRD with Version ${VERSION}:\n${URL}\n"
 
     echo "# ${URL}" > "${SCRIPT_DIR}/../charts/crds/crds/${DESTINATION}"
 
     if ! curl --silent --retry-all-errors --fail --location "${URL}" >> "${SCRIPT_DIR}/../charts/crds/crds/${DESTINATION}"; then
-      echo -e "Failed to download ${URL}!"
-      exit 1
+        echo -e "Failed to download ${URL}!"
+        exit 1
     fi
 done
