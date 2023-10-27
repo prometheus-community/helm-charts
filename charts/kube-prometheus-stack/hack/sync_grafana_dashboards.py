@@ -58,8 +58,8 @@ condition_map = {
     'scheduler': ' .Values.kubeScheduler.enabled',
     'node-rsrc-use': ' .Values.nodeExporter.enabled',
     'node-cluster-rsrc-use': ' .Values.nodeExporter.enabled',
-    'nodes': ' .Values.nodeExporter.operatingSystems.linux.enabled',
-    'nodes-darwin': ' .Values.nodeExporter.operatingSystems.darwin.enabled',
+    'nodes': ' (and .Values.nodeExporter.enabled .Values.nodeExporter.operatingSystems.linux.enabled)',
+    'nodes-darwin': ' (and .Values.nodeExporter.enabled .Values.nodeExporter.operatingSystems.darwin.enabled)',
     'prometheus-remote-write': ' .Values.prometheus.prometheusSpec.remoteWriteDashboards'
 }
 
