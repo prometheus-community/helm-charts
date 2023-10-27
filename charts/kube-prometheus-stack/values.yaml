@@ -463,11 +463,14 @@ alertmanager:
     ##
 
     ## Additional ports to open for Alertmanager service
+    ##
     additionalPorts: []
-    # additionalPorts:
-    # - name: authenticated
+    # - name: oauth-proxy
     #   port: 8081
     #   targetPort: 8081
+    # - name: oauth-metrics
+    #   port: 8082
+    #   targetPort: 8082
 
     externalIPs: []
     loadBalancerIP: ""
@@ -583,6 +586,12 @@ alertmanager:
     #   targetLabel: nodename
     #   replacement: $1
     #   action: replace
+
+    ## Additional Endpoints
+    ##
+    additionalEndpoints: []
+    # - port: oauth-metrics
+    #   path: /metrics
 
   ## Settings affecting alertmanagerSpec
   ## ref: https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/api.md#alertmanagerspec
@@ -806,14 +815,18 @@ alertmanager:
     containers: []
     # containers:
     # - name: oauth-proxy
-    #   image: quay.io/oauth2-proxy/oauth2-proxy:v7.3.0
+    #   image: quay.io/oauth2-proxy/oauth2-proxy:v7.5.1
     #   args:
     #   - --upstream=http://127.0.0.1:9093
     #   - --http-address=0.0.0.0:8081
+    #   - --metrics-address=0.0.0.0:8082
     #   - ...
     #   ports:
     #   - containerPort: 8081
     #     name: oauth-proxy
+    #     protocol: TCP
+    #   - containerPort: 8082
+    #     name: oauth-metrics
     #     protocol: TCP
     #   resources: {}
 
@@ -862,6 +875,14 @@ alertmanager:
     ## Minimum number of seconds for which a newly created pod should be ready without any of its container crashing for it to
     ## be considered available. Defaults to 0 (pod will be considered available as soon as it is ready).
     minReadySeconds: 0
+
+    ## Additional configuration which is not covered by the properties above. (passed through tpl)
+    additionalConfig: {}
+
+    ## Additional configuration which is not covered by the properties above.
+    ## Useful, if you need advanced templating inside alertmanagerSpec.
+    ## Otherwise, use alertmanager.alertmanagerSpec.additionalConfig (passed through tpl)
+    additionalConfigString: ""
 
   ## ExtraSecret can be used to store various data in an extra secret
   ## (use it for example to store hashed basic auth credentials)
@@ -1161,6 +1182,14 @@ kubelet:
     ## Scrape interval. If not set, the Prometheus default scrape interval is used.
     ##
     interval: ""
+
+    ## If true, Prometheus use (respect) labels provided by exporter.
+    ##
+    honorLabels: true
+
+    ## If true, Prometheus ingests metrics with timestamp provided by exporter. If false, Prometheus ingests metrics with timestamp of scrape.
+    ##
+    honorTimestamps: true
 
     ## SampleLimit defines per-scrape limit on number of scraped samples that will be accepted.
     ##
@@ -2153,7 +2182,7 @@ prometheusOperator:
 
     nodePortTls: 30443
 
-  ## Additional ports to open for Prometheus service
+  ## Additional ports to open for Prometheus operator service
   ## ref: https://kubernetes.io/docs/concepts/services-networking/service/#multi-port-services
   ##
     additionalPorts: []
@@ -2418,7 +2447,7 @@ prometheusOperator:
   thanosImage:
     registry: quay.io
     repository: thanos/thanos
-    tag: v0.32.4
+    tag: v0.32.5
     sha: ""
 
   ## Set a Label Selector to filter watched prometheus and prometheusAgent
@@ -2613,12 +2642,16 @@ prometheus:
     ##
     type: ClusterIP
 
-    ## Additional port to define in the Service
+    ## Additional ports to open for Prometheus service
+    ##
     additionalPorts: []
     # additionalPorts:
-    # - name: authenticated
+    # - name: oauth-proxy
     #   port: 8081
     #   targetPort: 8081
+    # - name: oauth-metrics
+    #   port: 8082
+    #   targetPort: 8082
 
     ## Consider that all endpoints are considered "ready" even if the Pods themselves are not
     ## Ref: https://kubernetes.io/docs/reference/kubernetes-api/service-resources/service-v1/#ServiceSpec
@@ -2860,6 +2893,12 @@ prometheus:
     #   targetLabel: nodename
     #   replacement: $1
     #   action: replace
+
+    ## Additional Endpoints
+    ##
+    additionalEndpoints: []
+    # - port: oauth-metrics
+    #   path: /metrics
 
   ## Settings affecting prometheusSpec
   ## ref: https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/api.md#prometheusspec
@@ -3407,21 +3446,41 @@ prometheus:
       #     secrets: |
       #       - resourceName: "projects/$PROJECT_ID/secrets/testsecret/versions/latest"
       #         fileName: "objstore.yaml"
-      # objectStorageConfigFile: /var/secrets/object-store.yaml
+      ## ObjectStorageConfig configures object storage in Thanos.
+      # objectStorageConfig:
+      #   # use existing secret, if configured, objectStorageConfig.secret will not be used
+      #   existingSecret: {}
+      #     # name: ""
+      #     # key: ""
+      #   # will render objectStorageConfig secret data and configure it to be used by Thanos custom resource,
+      #   # ignored when prometheusspec.thanos.objectStorageConfig.existingSecret is set
+      #   # https://thanos.io/tip/thanos/storage.md/#s3
+      #   secret: {}
+      #     # type: S3
+      #     # config:
+      #     #   bucket: ""
+      #     #   endpoint: ""
+      #     #   region: ""
+      #     #   access_key: ""
+      #     #   secret_key: ""
 
     ## Containers allows injecting additional containers. This is meant to allow adding an authentication proxy to a Prometheus pod.
     ## if using proxy extraContainer update targetPort with proxy container port
     containers: []
     # containers:
     # - name: oauth-proxy
-    #   image: quay.io/oauth2-proxy/oauth2-proxy:v7.3.0
+    #   image: quay.io/oauth2-proxy/oauth2-proxy:v7.5.1
     #   args:
-    #   - --upstream=http://127.0.0.1:9093
+    #   - --upstream=http://127.0.0.1:9090
     #   - --http-address=0.0.0.0:8081
+    #   - --metrics-address=0.0.0.0:8082
     #   - ...
     #   ports:
     #   - containerPort: 8081
     #     name: oauth-proxy
+    #     protocol: TCP
+    #   - containerPort: 8082
+    #     name: oauth-metrics
     #     protocol: TCP
     #   resources: {}
 
@@ -3522,6 +3581,14 @@ prometheus:
     ## TracingConfig configures tracing in Prometheus.
     ## See https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/api.md#prometheustracingconfig
     tracingConfig: {}
+
+    ## Additional configuration which is not covered by the properties above. (passed through tpl)
+    additionalConfig: {}
+
+    ## Additional configuration which is not covered by the properties above.
+    ## Useful, if you need advanced templating inside alertmanagerSpec.
+    ## Otherwise, use prometheus.prometheusSpec.additionalConfig (passed through tpl)
+    additionalConfigString: ""
 
   additionalRulesForClusterRole: []
   #  - apiGroups: [ "" ]
@@ -3844,6 +3911,12 @@ thanosRuler:
     #   replacement: $1
     #   action: replace
 
+    ## Additional Endpoints
+    ##
+    additionalEndpoints: []
+    # - port: oauth-metrics
+    #   path: /metrics
+
   ## Settings affecting thanosRulerpec
   ## ref: https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/api.md#thanosrulerspec
   ##
@@ -3858,7 +3931,7 @@ thanosRuler:
     image:
       registry: quay.io
       repository: thanos/thanos
-      tag: v0.32.3
+      tag: v0.32.5
       sha: ""
 
     ## Namespaces to be selected for PrometheusRules discovery.
@@ -3928,16 +4001,24 @@ thanosRuler:
 
     ## AlertmanagerConfig define configuration for connecting to alertmanager.
     ## Only available with Thanos v0.10.0 and higher. Maps to the alertmanagers.config Thanos Ruler arg.
-    alertmanagersConfig: {}
-    #   - api_version: v2
-    #     http_config:
-    #       basic_auth:
-    #         username: some_user
-    #         password: some_pass
-    #     static_configs:
-    #       - alertmanager.thanos.io
-    #     scheme: http
-    #     timeout: 10s
+    alertmanagersConfig:
+      # use existing secret, if configured, alertmanagersConfig.secret will not be used
+      existingSecret: {}
+        # name: ""
+        # key: ""
+      # will render render alertmanagersConfig secret data and configure it to be used by Thanos Ruler custom resource, ignored when alertmanagersConfig.existingSecret is set
+      # https://thanos.io/tip/components/rule.md/#alertmanager
+      secret: {}
+        # alertmanagers:
+        # - api_version: v2
+        #   http_config:
+        #     basic_auth:
+        #       username: some_user
+        #       password: some_pass
+        #   static_configs:
+        #     - alertmanager.thanos.io
+        #   scheme: http
+        #   timeout: 10s
 
     ## DEPRECATED. Define URLs to send alerts to Alertmanager. For Thanos v0.10.0 and higher, alertmanagersConfig should be used instead.
     ## Note: this field will be ignored if alertmanagersConfig is specified. Maps to the alertmanagers.url Thanos Ruler arg.
@@ -3952,13 +4033,22 @@ thanosRuler:
     ##
     routePrefix: /
 
-    ## ObjectStorageConfig configures object storage in Thanos. Alternative to
-    ## ObjectStorageConfigFile, and lower order priority.
-    objectStorageConfig: {}
-
-    ## ObjectStorageConfigFile specifies the path of the object storage configuration file.
-    ## When used alongside with ObjectStorageConfig, ObjectStorageConfigFile takes precedence.
-    objectStorageConfigFile: ""
+    ## ObjectStorageConfig configures object storage in Thanos
+    objectStorageConfig:
+      # use existing secret, if configured, objectStorageConfig.secret will not be used
+      existingSecret: {}
+        # name: ""
+        # key: ""
+      # will render objectStorageConfig secret data and configure it to be used by Thanos Ruler custom resource, ignored when objectStorageConfig.existingSecret is set
+      # https://thanos.io/tip/thanos/storage.md/#s3
+      secret: {}
+        # type: S3
+        # config:
+        #   bucket: ""
+        #   endpoint: ""
+        #   region: ""
+        #   access_key: ""
+        #   secret_key: ""
 
     ## QueryEndpoints defines Thanos querier endpoints from which to query metrics.
     ## Maps to the --query flag of thanos ruler.
@@ -3966,7 +4056,22 @@ thanosRuler:
 
     ## Define configuration for connecting to thanos query instances. If this is defined, the queryEndpoints field will be ignored.
     ## Maps to the query.config CLI argument. Only available with thanos v0.11.0 and higher.
-    queryConfig: {}
+    queryConfig:
+      # use existing secret, if configured, queryConfig.secret will not be used
+      existingSecret: {}
+        # name: ""
+        # key: ""
+      # render queryConfig secret data and configure it to be used by Thanos Ruler custom resource, ignored when queryConfig.existingSecret is set
+      # https://thanos.io/tip/components/rule.md/#query-api
+      secret: {}
+        # - http_config:
+        #     basic_auth:
+        #       username: some_user
+        #       password: some_pass
+        #   static_configs:
+        #     - URL
+        #   scheme: http
+        #   timeout: 10s
 
     ## Labels configure the external label pairs to ThanosRuler. A default replica
     ## label `thanos_ruler_replica` will be always added as a label with the value
