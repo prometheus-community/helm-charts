@@ -35,15 +35,38 @@ spec:
     bearerTokenFile: {{ .Values.thanosRuler.serviceMonitor.bearerTokenFile }}
     {{- end }}
     {{- if .Values.thanosRuler.serviceMonitor.tlsConfig }}
-    tlsConfig: {{ toYaml .Values.thanosRuler.serviceMonitor.tlsConfig | nindent 6 }}
+    tlsConfig: {{- toYaml .Values.thanosRuler.serviceMonitor.tlsConfig | nindent 6 }}
     {{- end }}
     path: "{{ trimSuffix "/" .Values.thanosRuler.thanosRulerSpec.routePrefix }}/metrics"
-{{- if .Values.thanosRuler.serviceMonitor.metricRelabelings }}
-    metricRelabelings:
-{{ tpl (toYaml .Values.thanosRuler.serviceMonitor.metricRelabelings | indent 6) . }}
-{{- end }}
-{{- if .Values.thanosRuler.serviceMonitor.relabelings }}
-    relabelings:
-{{ toYaml .Values.thanosRuler.serviceMonitor.relabelings | indent 6 }}
-{{- end }}
+    {{- if .Values.thanosRuler.serviceMonitor.metricRelabelings }}
+    metricRelabelings: {{- tpl (toYaml .Values.thanosRuler.serviceMonitor.metricRelabelings | nindent 6) . }}
+    {{- end }}
+    {{- if .Values.thanosRuler.serviceMonitor.relabelings }}
+    relabelings: {{- toYaml .Values.thanosRuler.serviceMonitor.relabelings | nindent 6 }}
+    {{- end }}
+  {{- range .Values.thanosRuler.serviceMonitor.additionalEndpoints }}
+  - port: {{ .port }}
+    {{- if or $.Values.thanosRuler.serviceMonitor.interval .interval }}
+    interval: {{ default $.Values.thanosRuler.serviceMonitor.interval .interval }}
+    {{- end }}
+    {{- if or $.Values.thanosRuler.serviceMonitor.proxyUrl .proxyUrl }}
+    proxyUrl: {{ default $.Values.thanosRuler.serviceMonitor.proxyUrl .proxyUrl }}
+    {{- end }}
+    {{- if or $.Values.thanosRuler.serviceMonitor.scheme .scheme }}
+    scheme: {{ default $.Values.thanosRuler.serviceMonitor.scheme .scheme }}
+    {{- end }}
+    {{- if or $.Values.thanosRuler.serviceMonitor.bearerTokenFile .bearerTokenFile }}
+    bearerTokenFile: {{ default $.Values.thanosRuler.serviceMonitor.bearerTokenFile .bearerTokenFile }}
+    {{- end }}
+    {{- if or $.Values.thanosRuler.serviceMonitor.tlsConfig .tlsConfig }}
+    tlsConfig: {{- default $.Values.thanosRuler.serviceMonitor.tlsConfig .tlsConfig | toYaml | nindent 6 }}
+    {{- end }}
+    path: {{ .path }}
+    {{- if or $.Values.thanosRuler.serviceMonitor.metricRelabelings .metricRelabelings }}
+    metricRelabelings: {{- tpl (default $.Values.thanosRuler.serviceMonitor.metricRelabelings .metricRelabelings | toYaml | nindent 6) . }}
+    {{- end }}
+    {{- if or $.Values.thanosRuler.serviceMonitor.relabelings .relabelings }}
+    relabelings: {{- default $.Values.thanosRuler.serviceMonitor.relabelings .relabelings | toYaml | nindent 6 }}
+    {{- end }}
+  {{- end }}
 {{- end }}

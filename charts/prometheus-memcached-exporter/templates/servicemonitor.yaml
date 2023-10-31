@@ -1,0 +1,96 @@
+{{- if and ( .Capabilities.APIVersions.Has "monitoring.coreos.com/v1" ) ( .Values.serviceMonitor.enabled ) }}
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+{{- if .Values.serviceMonitor.labels }}
+  labels:
+    {{- toYaml .Values.serviceMonitor.labels | nindent 4}}
+{{- end }}
+    {{- with .Values.serviceMonitor.additionalLabels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+  name: {{ include "prometheus-memcached-exporter.fullname" . }}
+{{- if .Values.serviceMonitor.namespace }}
+  namespace: {{ .Values.serviceMonitor.namespace }}
+{{- end }}
+spec:
+  endpoints:
+{{- if .Values.serviceMonitor.multipleTarget }}
+{{- range  .Values.serviceMonitor.targets }}
+  - port: {{ $.Values.service.portName }}
+    scheme: {{ $.Values.serviceMonitor.scheme }}
+    {{- if $.Values.serviceMonitor.bearerTokenFile }}
+    bearerTokenFile: {{ $.Values.serviceMonitor.bearerTokenFile }}
+    {{- end }}
+    {{- if $.Values.serviceMonitor.tlsConfig }}
+    tlsConfig: {{ toYaml $.Values.serviceMonitor.tlsConfig | nindent 6 }}
+    {{- end }}
+    path: {{ $.Values.serviceMonitor.telemetryPath }}
+    interval: {{ .interval | default $.Values.serviceMonitor.interval }}
+    scrapeTimeout: {{ .scrapeTimeout | default $.Values.serviceMonitor.scrapeTimeout }}
+    params:
+      target:
+      - {{ .url }}
+{{- if $.Values.serviceMonitor.relabelings }}
+    relabelings:
+{{ toYaml $.Values.serviceMonitor.relabelings | indent 4 }}
+{{- end }}
+    metricRelabelings:
+      - action: replace
+        sourceLabels: [instance]
+        targetLabel: instance
+        replacement: {{ .url }}
+      - action: replace
+        sourceLabels: [target]
+        targetLabel: target
+        replacement: {{ .name }}
+        {{- range $targetLabel, $replacement := .additionalMetricsRelabels | default $.Values.serviceMonitor.additionalMetricsRelabels }}
+      - action: replace
+        targetLabel: {{ $targetLabel | quote }}
+        replacement: {{ $replacement | quote }}
+        {{- end }}
+{{- if concat (.additionalRelabeling | default list) $.Values.serviceMonitor.additionalRelabeling }}
+{{ toYaml (concat (.additionalRelabeling | default list) $.Values.serviceMonitor.additionalRelabeling) | indent 6 }}
+{{- end }}
+{{- end }}
+{{- else }}
+  - port: {{ .Values.service.portName }}
+{{- if .Values.serviceMonitor.interval }}
+    interval: {{ .Values.serviceMonitor.interval }}
+{{- end }}
+{{- if .Values.serviceMonitor.telemetryPath }}
+    path: {{ .Values.serviceMonitor.telemetryPath }}
+{{- end }}
+{{- if .Values.serviceMonitor.timeout }}
+    scrapeTimeout: {{ .Values.serviceMonitor.timeout }}
+{{- end }}
+{{- if .Values.serviceMonitor.metricRelabelings }}
+    metricRelabelings:
+{{ toYaml .Values.serviceMonitor.metricRelabelings | indent 4 }}
+{{- end }}
+{{- if .Values.serviceMonitor.relabelings }}
+    relabelings:
+{{ toYaml .Values.serviceMonitor.relabelings | indent 4 }}
+{{- end }}
+{{- if .Values.serviceMonitor.scheme }}
+    scheme: {{ .Values.serviceMonitor.scheme }}
+{{- end }}
+{{- if .Values.serviceMonitor.tlsConfig }}
+    tlsConfig:
+{{ toYaml .Values.serviceMonitor.tlsConfig | indent 6 }}
+{{- end }}
+{{- end }}
+  jobLabel: {{ include "prometheus-memcached-exporter.fullname" . }}
+  namespaceSelector:
+    matchNames:
+    - {{ .Release.Namespace }}
+  selector:
+    matchLabels:
+      {{- include "prometheus-memcached-exporter.selectorLabels" . | nindent 6 }}
+{{- if .Values.serviceMonitor.targetLabels }}
+  targetLabels:
+{{- range .Values.serviceMonitor.targetLabels }}
+    - {{ . }}
+{{- end }}
+{{- end }}
+{{- end }}
