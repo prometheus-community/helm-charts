@@ -48,6 +48,10 @@ helm upgrade [RELEASE_NAME] [CHART] --install
 
 _See [helm upgrade](https://helm.sh/docs/helm/helm_upgrade/) for command documentation._
 
+### To 8.5.0
+
+- Support Google Managed Prometheus by creating `PodMonitoring` custom resource (CR) when setting extra targets
+
 ### To 8.0.0
 
 - The default image is set to `quay.io/prometheus/blackbox-exporter` instead `prom/blackbox-exporter`
