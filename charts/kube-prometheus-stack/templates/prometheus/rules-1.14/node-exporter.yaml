@@ -770,4 +770,32 @@ spec:
         {{- end }}
       {{- end }}
 {{- end }}
+{{- if not (.Values.defaultRules.disabled.NodeBondingDegraded | default false)}}
+    - alert: NodeBondingDegraded
+      annotations:
+{{- if .Values.defaultRules.additionalRuleAnnotations }}
+{{ toYaml .Values.defaultRules.additionalRuleAnnotations | indent 8 }}
+{{- end }}
+{{- if .Values.defaultRules.additionalRuleGroupAnnotations.nodeExporterAlerting }}
+{{ toYaml .Values.defaultRules.additionalRuleGroupAnnotations.nodeExporterAlerting | indent 8 }}
+{{- end }}
+        description: Bonding interface {{`{{`}} $labels.master {{`}}`}} on {{`{{`}} $labels.instance {{`}}`}} is in degraded state due to one or more slave failures.
+        runbook_url: {{ .Values.defaultRules.runbookUrl }}/node/nodebondingdegraded
+        summary: Bonding interface is degraded.
+      expr: (node_bonding_active - node_bonding_slaves) != 0
+      for: 5m
+      {{- with .Values.defaultRules.keepFiringFor }}
+      keep_firing_for: "{{ . }}"
+      {{- end }}
+      labels:
+        severity: warning
+      {{- if or .Values.defaultRules.additionalRuleLabels .Values.defaultRules.additionalRuleGroupLabels.nodeExporterAlerting }}
+        {{- with .Values.defaultRules.additionalRuleLabels }}
+          {{- toYaml . | nindent 8 }}
+        {{- end }}
+        {{- with .Values.defaultRules.additionalRuleGroupLabels.nodeExporterAlerting }}
+          {{- toYaml . | nindent 8 }}
+        {{- end }}
+      {{- end }}
+{{- end }}
 {{- end }}
