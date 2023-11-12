@@ -88,8 +88,10 @@ spec:
           ports:
             - containerPort: {{ .Values.configmapReload.prometheus.containerPort }}
           {{- end }}
+          {{- with .Values.configmapReload.prometheus.resources }}
           resources:
-{{ toYaml .Values.configmapReload.prometheus.resources | indent 12 }}
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
           volumeMounts:
             - name: config-volume
               mountPath: /etc/config
@@ -126,6 +128,9 @@ spec:
         {{- else }}
           {{- if .Values.server.retention }}
             - --storage.tsdb.retention.time={{ .Values.server.retention }}
+          {{- end }}
+          {{- if .Values.server.retentionSize }}
+            - --storage.tsdb.retention.size={{ .Values.server.retentionSize }}
           {{- end }}
             - --config.file={{ .Values.server.configPath }}
             {{- if .Values.server.storagePath }}
@@ -216,8 +221,10 @@ spec:
             periodSeconds: {{ .Values.server.startupProbe.periodSeconds }}
             timeoutSeconds: {{ .Values.server.startupProbe.timeoutSeconds }}
           {{- end }}
+          {{- with .Values.server.resources }}
           resources:
-{{ toYaml .Values.server.resources | indent 12 }}
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
           volumeMounts:
             - name: config-volume
               mountPath: /etc/config
