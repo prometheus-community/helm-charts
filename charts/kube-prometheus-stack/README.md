@@ -82,6 +82,12 @@ _See [helm upgrade](https://helm.sh/docs/helm/helm_upgrade/) for command documen
 
 A major chart version change (like v1.2.3 -> v2.0.0) indicates that there is an incompatible breaking change needing manual actions.
 
+### From 52.x to 53.x
+
+Grafana Helm Chart has bump to version 7
+
+Please note Grafana Helm Chart [changelog](https://github.com/grafana/helm-charts/tree/main/charts/grafana#to-700).
+
 ### From 51.x to 52.x
 
 This includes the ability to select between using existing secrets or create new secret objects for various thanos config. The defaults have not changed but if you were setting:
