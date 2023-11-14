@@ -80,7 +80,6 @@ condition_map = {
     'config-reloaders': ' .Values.defaultRules.rules.configReloaders',
     'etcd': ' .Values.kubeEtcd.enabled .Values.defaultRules.rules.etcd',
     'general.rules': ' .Values.defaultRules.rules.general',
-    'k8s.rules': ' .Values.defaultRules.rules.k8s',
     'k8s.rules.container_cpu_usage_seconds_total.rules': ' .Values.defaultRules.rules.k8sContainerCpuUsageSecondsTotal',
     'k8s.rules.container_memory_cache.rules': ' .Values.defaultRules.rules.k8sContainerMemoryCache',
     'k8s.rules.container_memory_rss.rules': ' .Values.defaultRules.rules.k8sContainerMemoryRss',
