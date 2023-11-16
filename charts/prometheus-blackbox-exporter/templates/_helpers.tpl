@@ -179,7 +179,7 @@ containers:
   - "--config.file=/etc/blackbox_exporter/config.yml"
   {{- end }}
   {{- with .Values.extraArgs }}
-{{ toYaml . | indent 2 }}
+{{ tpl (toYaml .) $ | indent 2 }}
   {{- end }}
   {{- with .Values.resources }}
   resources:
