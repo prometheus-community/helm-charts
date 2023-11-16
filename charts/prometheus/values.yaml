@@ -1,3 +1,8 @@
+# yaml-language-server: $schema=values.schema.json
+# Default values for prometheus.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
 rbac:
   create: true
 
@@ -14,6 +19,10 @@ serviceAccounts:
     create: true
     name: ""
     annotations: {}
+    # automountServiceAccountToken:
+
+## Additional labels to attach to all resources
+commonMetaLabels: {}
 
 ## Monitors ConfigMap changes and POSTs to a URL
 ## Ref: https://github.com/prometheus-operator/prometheus-operator/tree/main/cmd/prometheus-config-reloader
@@ -197,6 +206,7 @@ server:
   # List of flags to override default parameters, e.g:
   # - --enable-feature=agent
   # - --storage.agent.retention.max-time=30m
+  # - --config.file=/etc/config/prometheus.yml
   defaultFlagsOverride: []
 
   extraFlags:
@@ -363,7 +373,7 @@ server:
   #       - "example.com"
 
   ## Node tolerations for server scheduling to nodes with taints
-  ## Ref: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/
+  ## Ref: https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/
   ##
   tolerations: []
     # - key: "key"
@@ -372,7 +382,7 @@ server:
     #   effect: "NoSchedule|PreferNoSchedule|NoExecute(1.6 only)"
 
   ## Node labels for Prometheus server pod assignment
-  ## Ref: https://kubernetes.io/docs/user-guide/node-selection/
+  ## Ref: https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/
   ##
   nodeSelector: {}
 
@@ -678,8 +688,17 @@ server:
   ##
   retention: "15d"
 
+  ## Prometheus' data retention size. Supported units: B, KB, MB, GB, TB, PB, EB.
+  ##
+  retentionSize: ""
+
 ## Prometheus server ConfigMap entries for rule files (allow prometheus labels interpolation)
 ruleFiles: {}
+
+## Prometheus server ConfigMap entries for scrape_config_files
+## (allows scrape configs defined in additional files)
+##
+scrapeConfigFiles: []
 
 ## Prometheus server ConfigMap entries
 ##
@@ -1200,7 +1219,7 @@ kube-state-metrics:
   ##
   enabled: true
 
-## promtheus-node-exporter sub-chart configurable values
+## prometheus-node-exporter sub-chart configurable values
 ## Please see https://github.com/prometheus-community/helm-charts/tree/main/charts/prometheus-node-exporter
 ##
 prometheus-node-exporter:
@@ -1214,7 +1233,7 @@ prometheus-node-exporter:
   containerSecurityContext:
     allowPrivilegeEscalation: false
 
-## pprometheus-pushgateway sub-chart configurable values
+## prometheus-pushgateway sub-chart configurable values
 ## Please see https://github.com/prometheus-community/helm-charts/tree/main/charts/prometheus-pushgateway
 ##
 prometheus-pushgateway:
