@@ -71,17 +71,27 @@ spec:
   alertmanagersUrl:
 {{ toYaml .Values.thanosRuler.thanosRulerSpec.alertmanagersUrl | indent 4 }}
 {{- end }}
-{{- if .Values.thanosRuler.thanosRulerSpec.alertmanagersConfig }}
+{{- if .Values.thanosRuler.thanosRulerSpec.alertmanagersConfig.existingSecret }}
   alertmanagersConfig:
-{{ toYaml .Values.thanosRuler.thanosRulerSpec.alertmanagersConfig | indent 4 }}
+    key: "{{.Values.thanosRuler.thanosRulerSpec.alertmanagersConfig.existingSecret.key }}"
+    name: "{{.Values.thanosRuler.thanosRulerSpec.alertmanagersConfig.existingSecret.name }}"
+{{- else if .Values.thanosRuler.thanosRulerSpec.alertmanagersConfig.secret }}
+  alertmanagersConfig:
+    key: alertmanager-configs.yaml
+    name: {{ template "kube-prometheus-stack.thanosRuler.name" . }}
 {{- end }}
 {{- if .Values.thanosRuler.thanosRulerSpec.queryEndpoints }}
   queryEndpoints:
 {{ toYaml .Values.thanosRuler.thanosRulerSpec.queryEndpoints | indent 4 }}
 {{- end }}
-{{- if .Values.thanosRuler.thanosRulerSpec.queryConfig }}
+{{- if .Values.thanosRuler.thanosRulerSpec.queryConfig.existingSecret }}
   queryConfig:
-{{ toYaml .Values.thanosRuler.thanosRulerSpec.queryConfig | indent 4 }}
+    key: "{{.Values.thanosRuler.thanosRulerSpec.queryConfig.existingSecret.key }}"
+    name: "{{.Values.thanosRuler.thanosRulerSpec.queryConfig.existingSecret.name }}"
+{{- else if .Values.thanosRuler.thanosRulerSpec.queryConfig.secret }}
+  queryConfig:
+    key: query-configs.yaml
+    name: {{ template "kube-prometheus-stack.thanosRuler.name" . }}
 {{- end }}
 {{- if .Values.thanosRuler.thanosRulerSpec.resources }}
   resources:
@@ -98,16 +108,18 @@ spec:
   storage:
 {{ toYaml .Values.thanosRuler.thanosRulerSpec.storage | indent 4 }}
 {{- end }}
-{{- if .Values.thanosRuler.thanosRulerSpec.objectStorageConfig }}
+{{- if .Values.thanosRuler.thanosRulerSpec.objectStorageConfig.existingSecret }}
   objectStorageConfig:
-{{ toYaml .Values.thanosRuler.thanosRulerSpec.objectStorageConfig | indent 4 }}
+    key: "{{.Values.thanosRuler.thanosRulerSpec.objectStorageConfig.existingSecret.key }}"
+    name: "{{.Values.thanosRuler.thanosRulerSpec.objectStorageConfig.existingSecret.name }}"
+{{- else if .Values.thanosRuler.thanosRulerSpec.objectStorageConfig.secret }}
+  objectStorageConfig:
+    key: object-storage-configs.yaml
+    name: {{ template "kube-prometheus-stack.thanosRuler.name" . }}
 {{- end }}
 {{- if .Values.thanosRuler.thanosRulerSpec.labels }}
   labels:
 {{ toYaml .Values.thanosRuler.thanosRulerSpec.labels | indent 4 }}
-{{- end }}
-{{- if .Values.thanosRuler.thanosRulerSpec.objectStorageConfigFile }}
-  objectStorageConfigFile: {{ .Values.thanosRuler.thanosRulerSpec.objectStorageConfigFile }}
 {{- end }}
 {{- if .Values.thanosRuler.thanosRulerSpec.podMetadata }}
   podMetadata:
