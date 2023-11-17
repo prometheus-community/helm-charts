@@ -39,4 +39,6 @@ rules:
   - "node-network"
   - "prometheus-operator"
   - "prometheus"
+  - "windows.node.rules"
+  - "windows.pod.rules"
 {{- end }}
