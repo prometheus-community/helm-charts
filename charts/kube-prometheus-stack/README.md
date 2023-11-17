@@ -82,6 +82,100 @@ _See [helm upgrade](https://helm.sh/docs/helm/helm_upgrade/) for command documen
 
 A major chart version change (like v1.2.3 -> v2.0.0) indicates that there is an incompatible breaking change needing manual actions.
 
+### From 53.x to 54.x
+
+Grafana Helm Chart has bumped to version 7
+
+Please note Grafana Helm Chart [changelog](https://github.com/grafana/helm-charts/tree/main/charts/grafana#to-700).
+
+### From 52.x to 53.x
+
+This version upgrades Prometheus-Operator to v0.69.1, Prometheus to 2.47.2
+
+Run these commands to update the CRDs before applying the upgrade.
+
+```console
+kubectl apply --server-side -f https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/v0.69.1/example/prometheus-operator-crd/monitoring.coreos.com_alertmanagerconfigs.yaml
+kubectl apply --server-side -f https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/v0.69.1/example/prometheus-operator-crd/monitoring.coreos.com_alertmanagers.yaml
+kubectl apply --server-side -f https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/v0.69.1/example/prometheus-operator-crd/monitoring.coreos.com_podmonitors.yaml
+kubectl apply --server-side -f https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/v0.69.1/example/prometheus-operator-crd/monitoring.coreos.com_probes.yaml
+kubectl apply --server-side -f https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/v0.69.1/example/prometheus-operator-crd/monitoring.coreos.com_prometheusagents.yaml
+kubectl apply --server-side -f https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/v0.69.1/example/prometheus-operator-crd/monitoring.coreos.com_prometheuses.yaml
+kubectl apply --server-side -f https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/v0.69.1/example/prometheus-operator-crd/monitoring.coreos.com_prometheusrules.yaml
+kubectl apply --server-side -f https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/v0.69.1/example/prometheus-operator-crd/monitoring.coreos.com_scrapeconfigs.yaml
+kubectl apply --server-side -f https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/v0.69.1/example/prometheus-operator-crd/monitoring.coreos.com_servicemonitors.yaml
+kubectl apply --server-side -f https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/v0.69.1/example/prometheus-operator-crd/monitoring.coreos.com_thanosrulers.yaml
+```
+
+### From 51.x to 52.x
+
+This includes the ability to select between using existing secrets or create new secret objects for various thanos config. The defaults have not changed but if you were setting:
+
+- `thanosRuler.thanosRulerSpec.alertmanagersConfig` or
+- `thanosRuler.thanosRulerSpec.objectStorageConfig` or
+- `thanosRuler.thanosRulerSpec.queryConfig` or
+- `prometheus.prometheusSpec.thanos.objectStorageConfig`
+
+you will have to need to set `existingSecret` or `secret` based on your requirement
+
+For instance, the `thanosRuler.thanosRulerSpec.alertmanagersConfig` used to be configured as follow:
+
+```yaml
+thanosRuler:
+  thanosRulerSpec:
+    alertmanagersConfig:
+      alertmanagers:
+        - api_version: v2
+          http_config:
+            basic_auth:
+              username: some_user
+              password: some_pass
+          static_configs:
+            - alertmanager.thanos.io
+          scheme: http
+          timeout: 10s
+```
+
+But it now moved to:
+
+```yaml
+thanosRuler:
+  thanosRulerSpec:
+    alertmanagersConfig:
+      secret:
+        alertmanagers:
+          - api_version: v2
+            http_config:
+              basic_auth:
+                username: some_user
+                password: some_pass
+            static_configs:
+              - alertmanager.thanos.io
+            scheme: http
+            timeout: 10s
+```
+
+or the `thanosRuler.thanosRulerSpec.objectStorageConfig` used to be configured as follow:
+
+```yaml
+thanosRuler:
+  thanosRulerSpec:
+    objectStorageConfig:
+      name: existing-secret-not-created-by-this-chart
+      key: object-storage-configs.yaml
+```
+
+But it now moved to:
+
+```yaml
+thanosRuler:
+  thanosRulerSpec:
+    objectStorageConfig:
+      existingSecret:
+        name: existing-secret-not-created-by-this-chart
+        key: object-storage-configs.yaml
+```
+
 ### From 50.x to 51.x
 
 This version upgrades Prometheus-Operator to v0.68.0, Prometheus to 2.47.0 and Thanos to v0.32.2
