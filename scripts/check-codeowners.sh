@@ -9,7 +9,7 @@ cat <<EOF
 # Unless a later match takes precedence, they will be requested for review when someone opens a pull request.
 * @prometheus-community/helm-charts-admins
 
-/.github/workflows/ @jkroepke
+/.github/workflows/ @prometheus-community/helm-charts-admins @jkroepke
 
 EOF
 
