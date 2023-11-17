@@ -407,7 +407,7 @@ def write_group_to_file(group, url, destination, min_kubernetes, max_kubernetes)
     rules = add_rules_per_rule_conditions(rules, group)
     # initialize header
     lines = header % {
-        'name': group['name'],
+        'name': sanitize_name(group['name']),
         'url': url,
         'condition': condition_map.get(group['name'], ''),
         'init_line': init_line,
@@ -505,6 +505,10 @@ def main():
     write_rules_names_template()
 
     print("Finished")
+
+
+def sanitize_name(name):
+    return re.sub('[_]', '-', name).lower()
 
 
 def jsonnet_import_callback(base, rel):
