@@ -65,8 +65,22 @@ charts = [
         'min_kubernetes': '1.14.0-0'
     },
     {
+        'git': 'https://github.com/kubernetes-monitoring/kubernetes-mixin.git',
+        'branch': 'master',
+        'source': 'windows.libsonnet',
+        'cwd': 'rules',
+        'destination': '../templates/prometheus/rules-1.14',
+        'min_kubernetes': '1.14.0-0',
+        'is_mixin': True,
+        'mixin_vars': {'_config': {
+            'windowsExporterSelector': 'job="windows-exporter"',
+            'kubeStateMetricsSelector': 'job="kube-state-metrics"',
+        }}
+    },
+    {
         'git': 'https://github.com/etcd-io/etcd.git',
-        'source': 'contrib/mixin/mixin.libsonnet',
+        'source': 'mixin.libsonnet',
+        'cwd': 'contrib/mixin',
         'destination': '../templates/prometheus/rules-1.14',
         'min_kubernetes': '1.14.0-0',
         'is_mixin': True,
@@ -105,6 +119,8 @@ condition_map = {
     'node-network': ' .Values.defaultRules.rules.network',
     'prometheus-operator': ' .Values.defaultRules.rules.prometheusOperator',
     'prometheus': ' .Values.defaultRules.rules.prometheus', # kube-prometheus >= 1.14 uses prometheus as group instead of prometheus.rules
+    'windows.node.rules': ' .Values.windowsMonitoring.enabled .Values.defaultRules.rules.windows',
+    'windows.pod.rules': ' .Values.windowsMonitoring.enabled .Values.defaultRules.rules.windows',
 }
 
 alert_condition_map = {
@@ -444,26 +460,53 @@ def main():
     # read the rules, create a new template file per group
     for chart in charts:
         if 'git' in chart:
+            if 'source' not in chart:
+                chart['source'] = '_mixin.jsonnet'
+
+            url = chart['git']
+
             print("Clone %s" % chart['git'])
             checkout_dir = os.path.basename(chart['git'])
             shutil.rmtree(checkout_dir, ignore_errors=True)
-            subprocess.run(["git", "clone", chart['git'], "--branch", "main", "--single-branch", "--depth", "1", checkout_dir])
-            print("Generating rules from %s" % chart['source'])
+
+            branch = "main"
+            if 'branch' in chart:
+                branch = chart['branch']
+
+            subprocess.run(["git", "clone", chart['git'], "--branch", branch, "--single-branch", "--depth", "1", checkout_dir])
 
             if chart.get('is_mixin'):
-                mixin_file = os.path.basename(chart['source'])
-                mixin_dir = checkout_dir + '/' + os.path.dirname(chart['source']) + '/'
+                cwd = os.getcwd()
+
+                source_cwd = chart['cwd']
+                mixin_file = chart['source']
+
+                mixin_dir = cwd + '/' + checkout_dir + '/' + source_cwd + '/'
                 if os.path.exists(mixin_dir + "jsonnetfile.json"):
                     print("Running jsonnet-bundler, because jsonnetfile.json exists")
                     subprocess.run(["jb", "install"], cwd=mixin_dir)
 
+                if 'content' in chart:
+                    f = open(mixin_dir + mixin_file, "w")
+                    f.write(chart['content'])
+                    f.close()
+
                 mixin_vars = json.dumps(chart['mixin_vars'])
 
                 print("Generating rules from %s" % mixin_file)
-                print("Change cwd to %s" % checkout_dir + '/' + os.path.dirname(chart['source']))
-                cwd = os.getcwd()
+                print("Change cwd to %s" % checkout_dir + '/' + source_cwd)
                 os.chdir(mixin_dir)
-                alerts = json.loads(_jsonnet.evaluate_snippet(mixin_file, '((import "%s") + %s).prometheusAlerts' % (mixin_file, mixin_vars), import_callback=jsonnet_import_callback))
+
+                mixin = """
+                local kp =
+                    { prometheusAlerts+:: {}, prometheusRules+:: {}} + 
+                    (import "%s") + 
+                    %s;
+                
+                kp.prometheusAlerts + kp.prometheusRules
+                """
+
+                alerts = json.loads(_jsonnet.evaluate_snippet(mixin_file, mixin % (mixin_file, mixin_vars), import_callback=jsonnet_import_callback))
                 os.chdir(cwd)
             else:
                 with open(checkout_dir + '/' + chart['source'], "r") as f:
@@ -472,14 +515,15 @@ def main():
                 alerts = yaml.full_load(raw_text)
 
         else:
-            print("Generating rules from %s" % chart['source'])
-            response = requests.get(chart['source'])
+            url = chart['source']
+            print("Generating rules from %s" % url)
+            response = requests.get(url)
             if response.status_code != 200:
                 print('Skipping the file, response code %s not equals 200' % response.status_code)
                 continue
             raw_text = response.text
             if chart.get('is_mixin'):
-                alerts = json.loads(_jsonnet.evaluate_snippet(chart['source'], raw_text + '.prometheusAlerts'))
+                alerts = json.loads(_jsonnet.evaluate_snippet(url, raw_text + '.prometheusAlerts'))
             else:
                 alerts = yaml.full_load(raw_text)
 
@@ -489,7 +533,7 @@ def main():
         # etcd workaround, their file don't have spec level
         groups = alerts['spec']['groups'] if alerts.get('spec') else alerts['groups']
         for group in groups:
-            write_group_to_file(group, chart['source'], chart['destination'], chart['min_kubernetes'], chart['max_kubernetes'])
+            write_group_to_file(group, url, chart['destination'], chart['min_kubernetes'], chart['max_kubernetes'])
 
     # write rules.names named template
     write_rules_names_template()
