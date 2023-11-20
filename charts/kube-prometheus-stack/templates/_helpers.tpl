@@ -91,6 +91,15 @@ heritage: {{ $.Release.Service | quote }}
 {{- end -}}
 {{- end -}}
 
+{{/* Create the name of kube-prometheus-stack service account to use */}}
+{{- define "kube-prometheus-stack.operator.admissionWebhooks.serviceAccountName" -}}
+{{- if .Values.prometheusOperator.serviceAccount.create -}}
+    {{ default (printf "%s-webhook" (include "kube-prometheus-stack.operator.fullname" .)) .Values.prometheusOperator.admissionWebhooks.deployment.serviceAccount.name }}
+{{- else -}}
+    {{ default "default" .Values.prometheusOperator.admissionWebhooks.deployment.serviceAccount.name }}
+{{- end -}}
+{{- end -}}
+
 {{/* Create the name of prometheus service account to use */}}
 {{- define "kube-prometheus-stack.prometheus.serviceAccountName" -}}
 {{- if .Values.prometheus.serviceAccount.create -}}

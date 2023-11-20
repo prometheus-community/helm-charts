@@ -2058,6 +2058,187 @@ prometheusOperator:
     annotations: {}
     #   argocd.argoproj.io/hook: PreSync
     #   argocd.argoproj.io/hook-delete-policy: HookSucceeded
+
+    deployment:
+      enabled: false
+
+      ## Number of replicas
+      ##
+      replicas: 1
+
+      ## Number of old replicasets to retain ##
+      ## The default value is 10, 0 will garbage-collect old replicasets ##
+      revisionHistoryLimit: 10
+
+      ## Prometheus-Operator v0.39.0 and later support TLS natively.
+      ##
+      tls:
+        enabled: true
+        # Value must match version names from https://golang.org/pkg/crypto/tls/#pkg-constants
+        tlsMinVersion: VersionTLS13
+        # The default webhook port is 10250 in order to work out-of-the-box in GKE private clusters and avoid adding firewall rules.
+        internalPort: 10250
+
+      ## Service account for Prometheus Operator Webhook to use.
+      ## ref: https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-account/
+      ##
+      serviceAccount:
+        automountServiceAccountToken: false
+        create: true
+        name: ""
+
+      ## Configuration for Prometheus operator Webhook service
+      ##
+      service:
+        annotations: {}
+        labels: {}
+        clusterIP: ""
+
+        ## Port to expose on each node
+        ## Only used if service.type is 'NodePort'
+        ##
+        nodePort: 31080
+
+        nodePortTls: 31443
+
+        ## Additional ports to open for Prometheus operator Webhook service
+        ## ref: https://kubernetes.io/docs/concepts/services-networking/service/#multi-port-services
+        ##
+        additionalPorts: []
+
+        ## Loadbalancer IP
+        ## Only use if service.type is "LoadBalancer"
+        ##
+        loadBalancerIP: ""
+        loadBalancerSourceRanges: []
+
+        ## Denotes if this Service desires to route external traffic to node-local or cluster-wide endpoints
+        ##
+        externalTrafficPolicy: Cluster
+
+        ## Service type
+        ## NodePort, ClusterIP, LoadBalancer
+        ##
+        type: ClusterIP
+
+        ## List of IP addresses at which the Prometheus server service is available
+        ## Ref: https://kubernetes.io/docs/user-guide/services/#external-ips
+        ##
+        externalIPs: []
+
+      # ## Labels to add to the operator webhook deployment
+      # ##
+      labels: {}
+
+      ## Annotations to add to the operator webhook deployment
+      ##
+      annotations: {}
+
+      ## Labels to add to the operator webhook pod
+      ##
+      podLabels: {}
+
+      ## Annotations to add to the operator webhook pod
+      ##
+      podAnnotations: {}
+
+      ## Assign a PriorityClassName to pods if set
+      # priorityClassName: ""
+
+      ## Define Log Format
+      # Use logfmt (default) or json logging
+      # logFormat: logfmt
+
+      ## Decrease log verbosity to errors only
+      # logLevel: error
+
+      ## Prometheus-operator webhook image
+      ##
+      image:
+        registry: quay.io
+        repository: prometheus-operator/admission-webhook
+        # if not set appVersion field from Chart.yaml is used
+        tag: ""
+        sha: ""
+        pullPolicy: IfNotPresent
+
+      ## Define Log Format
+      # Use logfmt (default) or json logging
+      # logFormat: logfmt
+
+      ## Decrease log verbosity to errors only
+      # logLevel: error
+
+      ## Resource limits & requests
+      ##
+      resources: {}
+      # limits:
+      #   cpu: 200m
+      #   memory: 200Mi
+      # requests:
+      #   cpu: 100m
+      #   memory: 100Mi
+
+      # Required for use in managed kubernetes clusters (such as AWS EKS) with custom CNI (such as calico),
+      # because control-plane managed by AWS cannot communicate with pods' IP CIDR and admission webhooks are not working
+      ##
+      hostNetwork: false
+
+      ## Define which Nodes the Pods are scheduled on.
+      ## ref: https://kubernetes.io/docs/user-guide/node-selection/
+      ##
+      nodeSelector: {}
+
+      ## Tolerations for use with node taints
+      ## ref: https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/
+      ##
+      tolerations: []
+      # - key: "key"
+      #   operator: "Equal"
+      #   value: "value"
+      #   effect: "NoSchedule"
+
+      ## Assign custom affinity rules to the prometheus operator
+      ## ref: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/
+      ##
+      affinity: {}
+        # nodeAffinity:
+        #   requiredDuringSchedulingIgnoredDuringExecution:
+        #     nodeSelectorTerms:
+        #     - matchExpressions:
+        #       - key: kubernetes.io/e2e-az-name
+        #         operator: In
+        #         values:
+        #         - e2e-az1
+      #         - e2e-az2
+      dnsConfig: {}
+        # nameservers:
+        #   - 1.2.3.4
+        # searches:
+        #   - ns1.svc.cluster-domain.example
+        #   - my.dns.search.suffix
+        # options:
+        #   - name: ndots
+        #     value: "2"
+        #   - name: edns0
+      securityContext:
+        fsGroup: 65534
+        runAsGroup: 65534
+        runAsNonRoot: true
+        runAsUser: 65534
+        seccompProfile:
+          type: RuntimeDefault
+
+      ## Container-specific security context configuration
+      ## ref: https://kubernetes.io/docs/tasks/configure-pod-container/security-context/
+      ##
+      containerSecurityContext:
+        allowPrivilegeEscalation: false
+        readOnlyRootFilesystem: true
+        capabilities:
+          drop:
+            - ALL
+
     patch:
       enabled: true
       image:
