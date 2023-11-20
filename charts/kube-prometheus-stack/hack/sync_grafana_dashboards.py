@@ -37,8 +37,21 @@ charts = [
         'multicluster_key': '.Values.grafana.sidecar.dashboards.multicluster.global.enabled',
     },
     {
+        'git': 'https://github.com/kubernetes-monitoring/kubernetes-mixin.git',
+        'branch': 'master',
+        'content': "(import 'dashboards/windows.libsonnet') + (import 'config.libsonnet') + { _config+:: { windowsExporterSelector: 'job=\"windows-exporter\"', }}",
+        'cwd': '.',
+        'destination': '../templates/grafana/dashboards-1.14',
+        'min_kubernetes': '1.14.0-0',
+        'type': 'jsonnet_mixin',
+        'mixin_vars': {},
+        'multicluster_key': '.Values.grafana.sidecar.dashboards.multicluster.global.enabled',
+    },
+    {
         'git': 'https://github.com/etcd-io/etcd.git',
-        'source': 'contrib/mixin/mixin.libsonnet',
+        'branch': 'main',
+        'source': 'mixin.libsonnet',
+        'cwd': 'contrib/mixin',
         'destination': '../templates/grafana/dashboards-1.14',
         'min_kubernetes': '1.14.0-0',
         'type': 'jsonnet_mixin',
@@ -60,7 +73,12 @@ condition_map = {
     'node-cluster-rsrc-use': ' .Values.nodeExporter.enabled',
     'nodes': ' (and .Values.nodeExporter.enabled .Values.nodeExporter.operatingSystems.linux.enabled)',
     'nodes-darwin': ' (and .Values.nodeExporter.enabled .Values.nodeExporter.operatingSystems.darwin.enabled)',
-    'prometheus-remote-write': ' .Values.prometheus.prometheusSpec.remoteWriteDashboards'
+    'prometheus-remote-write': ' .Values.prometheus.prometheusSpec.remoteWriteDashboards',
+    'k8s-windows-cluster-rsrc-use': ' .Values.windowsMonitoring.enabled',
+    'k8s-windows-node-rsrc-use': ' .Values.windowsMonitoring.enabled',
+    'k8s-resources-windows-cluster': ' .Values.windowsMonitoring.enabled',
+    'k8s-resources-windows-namespace': ' .Values.windowsMonitoring.enabled',
+    'k8s-resources-windows-pod': ' .Values.windowsMonitoring.enabled',
 }
 
 # standard header
@@ -195,24 +213,39 @@ def main():
     # read the rules, create a new template file per group
     for chart in charts:
         if 'git' in chart:
+            if 'source' not in chart:
+                chart['source'] = '_mixin.jsonnet'
+
+            url = chart['git']
+
             print("Clone %s" % chart['git'])
             checkout_dir = os.path.basename(chart['git'])
             shutil.rmtree(checkout_dir, ignore_errors=True)
-            subprocess.run(["git", "clone", chart['git'], "--branch", "main", "--single-branch", "--depth", "1", checkout_dir])
+
+            branch = "main"
+            if 'branch' in chart:
+                branch = chart['branch']
+
+            subprocess.run(["git", "clone", chart['git'], "--branch", branch, "--single-branch", "--depth", "1", checkout_dir])
             print("Generating rules from %s" % chart['source'])
 
-            mixin_file = os.path.basename(chart['source'])
-            mixin_dir = checkout_dir + '/' + os.path.dirname(chart['source']) + '/'
+            mixin_file = chart['source']
+            mixin_dir = checkout_dir + '/' + chart['cwd'] + '/'
             if os.path.exists(mixin_dir + "jsonnetfile.json"):
                 print("Running jsonnet-bundler, because jsonnetfile.json exists")
                 subprocess.run(["jb", "install"], cwd=mixin_dir)
+
+            if 'content' in chart:
+                f = open(mixin_dir + mixin_file, "w")
+                f.write(chart['content'])
+                f.close()
 
             mixin_vars = json.dumps(chart['mixin_vars'])
 
             cwd = os.getcwd()
             os.chdir(mixin_dir)
             raw_text = '((import "%s") + %s)' % (mixin_file, mixin_vars)
-            source = mixin_file
+            source = os.path.basename(mixin_file)
         else:
             print("Generating rules from %s" % chart['source'])
             response = requests.get(chart['source'])
@@ -221,6 +254,7 @@ def main():
                 continue
             raw_text = response.text
             source = chart['source']
+            url = chart['source']
 
         if ('max_kubernetes' not in chart):
             chart['max_kubernetes']="9.9.9-9"
@@ -230,7 +264,7 @@ def main():
             groups = yaml_text['items']
             for group in groups:
                 for resource, content in group['data'].items():
-                    write_group_to_file(resource.replace('.json', ''), content, chart['source'], chart['destination'], chart['min_kubernetes'], chart['max_kubernetes'], chart['multicluster_key'])
+                    write_group_to_file(resource.replace('.json', ''), content, url, chart['destination'], chart['min_kubernetes'], chart['max_kubernetes'], chart['multicluster_key'])
         elif chart['type'] == 'jsonnet_mixin':
             json_text = json.loads(_jsonnet.evaluate_snippet(source, raw_text + '.grafanaDashboards', import_callback=jsonnet_import_callback))
 
@@ -240,10 +274,10 @@ def main():
             flat_structure = bool(json_text.get('annotations'))
             if flat_structure:
                 resource = os.path.basename(chart['source']).replace('.json', '')
-                write_group_to_file(resource, json.dumps(json_text, indent=4), chart['source'], chart['destination'], chart['min_kubernetes'], chart['max_kubernetes'], chart['multicluster_key'])
+                write_group_to_file(resource, json.dumps(json_text, indent=4), url, chart['destination'], chart['min_kubernetes'], chart['max_kubernetes'], chart['multicluster_key'])
             else:
                 for resource, content in json_text.items():
-                    write_group_to_file(resource.replace('.json', ''), json.dumps(content, indent=4), chart['source'], chart['destination'], chart['min_kubernetes'], chart['max_kubernetes'], chart['multicluster_key'])
+                    write_group_to_file(resource.replace('.json', ''), json.dumps(content, indent=4), url, chart['destination'], chart['min_kubernetes'], chart['max_kubernetes'], chart['multicluster_key'])
 
     print("Finished")
 
