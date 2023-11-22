@@ -25,8 +25,8 @@ spec:
   - name: node.rules
     rules:
     - expr: |-
-        topk by(cluster, namespace, pod) (1,
-          max by (cluster, node, namespace, pod) (
+        topk by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster, namespace, pod) (1,
+          max by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster, node, namespace, pod) (
             label_replace(kube_pod_info{job="kube-state-metrics",node!=""}, "pod", "$1", "pod", "(.*)")
         ))
       record: 'node_namespace_pod:kube_pod_info:'
@@ -40,10 +40,10 @@ spec:
         {{- end }}
       {{- end }}
     - expr: |-
-        count by (cluster, node) (
+        count by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster, node) (
           node_cpu_seconds_total{mode="idle",job="node-exporter"}
-          * on (namespace, pod) group_left(node)
-          topk by(namespace, pod) (1, node_namespace_pod:kube_pod_info:)
+          * on ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}namespace, pod) group_left(node)
+          topk by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}namespace, pod) (1, node_namespace_pod:kube_pod_info:)
         )
       record: node:node_num_cpu:sum
       {{- if or .Values.defaultRules.additionalRuleLabels .Values.defaultRules.additionalRuleGroupLabels.node }}
@@ -64,7 +64,7 @@ spec:
             node_memory_MemFree_bytes{job="node-exporter"} +
             node_memory_Slab_bytes{job="node-exporter"}
           )
-        ) by (cluster)
+        ) by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster)
       record: :node_memory_MemAvailable_bytes:sum
       {{- if or .Values.defaultRules.additionalRuleLabels .Values.defaultRules.additionalRuleGroupLabels.node }}
       labels:
@@ -76,7 +76,7 @@ spec:
         {{- end }}
       {{- end }}
     - expr: |-
-        avg by (cluster, node) (
+        avg by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster, node) (
           sum without (mode) (
             rate(node_cpu_seconds_total{mode!="idle",mode!="iowait",mode!="steal",job="node-exporter"}[5m])
           )
@@ -92,7 +92,7 @@ spec:
         {{- end }}
       {{- end }}
     - expr: |-
-        avg by (cluster) (
+        avg by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster) (
           node:node_cpu_utilization:ratio_rate5m
         )
       record: cluster:node_cpu:ratio_rate5m
