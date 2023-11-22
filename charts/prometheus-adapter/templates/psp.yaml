@@ -4,9 +4,14 @@ apiVersion: policy/v1beta1
 kind: PodSecurityPolicy
 metadata:
   name: {{ template "k8s-prometheus-adapter.fullname" . }}
-  {{- if .Values.customAnnotations }}
+  {{- if or .Values.customAnnotations .Values.pspAnnotations }}
   annotations:
-  {{- toYaml .Values.customAnnotations | nindent 4 }}
+    {{- with .Values.customAnnotations }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+    {{- with .Values.pspAnnotations }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
   {{- end }}
   labels:
     {{- include "k8s-prometheus-adapter.labels" . | indent 4 }}
