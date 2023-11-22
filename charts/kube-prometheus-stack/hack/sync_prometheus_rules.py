@@ -94,7 +94,13 @@ condition_map = {
     'config-reloaders': ' .Values.defaultRules.rules.configReloaders',
     'etcd': ' .Values.kubeEtcd.enabled .Values.defaultRules.rules.etcd',
     'general.rules': ' .Values.defaultRules.rules.general',
-    'k8s.rules': ' .Values.defaultRules.rules.k8s',
+    'k8s.rules.container_cpu_usage_seconds_total': ' .Values.defaultRules.rules.k8sContainerCpuUsageSecondsTotal',
+    'k8s.rules.container_memory_cache': ' .Values.defaultRules.rules.k8sContainerMemoryCache',
+    'k8s.rules.container_memory_rss': ' .Values.defaultRules.rules.k8sContainerMemoryRss',
+    'k8s.rules.container_memory_swap': ' .Values.defaultRules.rules.k8sContainerMemorySwap',
+    'k8s.rules.container_memory_working_set_bytes': ' .Values.defaultRules.rules.k8sContainerMemoryWorkingSetBytes',
+    'k8s.rules.container_resource': ' .Values.defaultRules.rules.k8sContainerResource',
+    'k8s.rules.pod_owner': ' .Values.defaultRules.rules.k8sPodOwner',
     'kube-apiserver-availability.rules': ' .Values.kubeApiServer.enabled .Values.defaultRules.rules.kubeApiserverAvailability',
     'kube-apiserver-burnrate.rules': ' .Values.kubeApiServer.enabled .Values.defaultRules.rules.kubeApiserverBurnrate',
     'kube-apiserver-histogram.rules': ' .Values.kubeApiServer.enabled .Values.defaultRules.rules.kubeApiserverHistogram',
@@ -417,7 +423,7 @@ def write_group_to_file(group, url, destination, min_kubernetes, max_kubernetes)
     rules = add_rules_per_rule_conditions(rules, group)
     # initialize header
     lines = header % {
-        'name': group['name'],
+        'name': sanitize_name(group['name']),
         'url': url,
         'condition': condition_map.get(group['name'], ''),
         'init_line': init_line,
@@ -426,7 +432,11 @@ def write_group_to_file(group, url, destination, min_kubernetes, max_kubernetes)
     }
 
     # rules themselves
-    lines += rules
+    lines += re.sub(
+        r'\s(by|on) ?\(',
+        r' \1 ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}',
+        rules
+    )
 
     # footer
     lines += '{{- end }}'
@@ -539,6 +549,10 @@ def main():
     write_rules_names_template()
 
     print("Finished")
+
+
+def sanitize_name(name):
+    return re.sub('[_]', '-', name).lower()
 
 
 def jsonnet_import_callback(base, rel):

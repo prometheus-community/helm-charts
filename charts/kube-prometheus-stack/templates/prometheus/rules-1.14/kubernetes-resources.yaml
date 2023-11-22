@@ -37,9 +37,9 @@ spec:
         runbook_url: {{ .Values.defaultRules.runbookUrl }}/kubernetes/kubecpuovercommit
         summary: Cluster has overcommitted CPU resource requests.
       expr: |-
-        sum(namespace_cpu:kube_pod_container_resource_requests:sum{job="kube-state-metrics",}) by (cluster) - (sum(kube_node_status_allocatable{job="kube-state-metrics",resource="cpu"}) by (cluster) - max(kube_node_status_allocatable{job="kube-state-metrics",resource="cpu"}) by (cluster)) > 0
+        sum(namespace_cpu:kube_pod_container_resource_requests:sum{job="kube-state-metrics",}) by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster) - (sum(kube_node_status_allocatable{job="kube-state-metrics",resource="cpu"}) by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster) - max(kube_node_status_allocatable{job="kube-state-metrics",resource="cpu"}) by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster)) > 0
         and
-        (sum(kube_node_status_allocatable{job="kube-state-metrics",resource="cpu"}) by (cluster) - max(kube_node_status_allocatable{job="kube-state-metrics",resource="cpu"}) by (cluster)) > 0
+        (sum(kube_node_status_allocatable{job="kube-state-metrics",resource="cpu"}) by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster) - max(kube_node_status_allocatable{job="kube-state-metrics",resource="cpu"}) by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster)) > 0
       for: 10m
       {{- with .Values.defaultRules.keepFiringFor }}
       keep_firing_for: "{{ . }}"
@@ -68,9 +68,9 @@ spec:
         runbook_url: {{ .Values.defaultRules.runbookUrl }}/kubernetes/kubememoryovercommit
         summary: Cluster has overcommitted memory resource requests.
       expr: |-
-        sum(namespace_memory:kube_pod_container_resource_requests:sum{}) by (cluster) - (sum(kube_node_status_allocatable{resource="memory", job="kube-state-metrics"}) by (cluster) - max(kube_node_status_allocatable{resource="memory", job="kube-state-metrics"}) by (cluster)) > 0
+        sum(namespace_memory:kube_pod_container_resource_requests:sum{}) by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster) - (sum(kube_node_status_allocatable{resource="memory", job="kube-state-metrics"}) by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster) - max(kube_node_status_allocatable{resource="memory", job="kube-state-metrics"}) by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster)) > 0
         and
-        (sum(kube_node_status_allocatable{resource="memory", job="kube-state-metrics"}) by (cluster) - max(kube_node_status_allocatable{resource="memory", job="kube-state-metrics"}) by (cluster)) > 0
+        (sum(kube_node_status_allocatable{resource="memory", job="kube-state-metrics"}) by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster) - max(kube_node_status_allocatable{resource="memory", job="kube-state-metrics"}) by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster)) > 0
       for: 10m
       {{- with .Values.defaultRules.keepFiringFor }}
       keep_firing_for: "{{ . }}"
@@ -99,9 +99,9 @@ spec:
         runbook_url: {{ .Values.defaultRules.runbookUrl }}/kubernetes/kubecpuquotaovercommit
         summary: Cluster has overcommitted CPU resource requests.
       expr: |-
-        sum(min without(resource) (kube_resourcequota{job="kube-state-metrics", type="hard", resource=~"(cpu|requests.cpu)"})) by (cluster)
+        sum(min without(resource) (kube_resourcequota{job="kube-state-metrics", type="hard", resource=~"(cpu|requests.cpu)"})) by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster)
           /
-        sum(kube_node_status_allocatable{resource="cpu", job="kube-state-metrics"}) by (cluster)
+        sum(kube_node_status_allocatable{resource="cpu", job="kube-state-metrics"}) by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster)
           > 1.5
       for: 5m
       {{- with .Values.defaultRules.keepFiringFor }}
@@ -131,9 +131,9 @@ spec:
         runbook_url: {{ .Values.defaultRules.runbookUrl }}/kubernetes/kubememoryquotaovercommit
         summary: Cluster has overcommitted memory resource requests.
       expr: |-
-        sum(min without(resource) (kube_resourcequota{job="kube-state-metrics", type="hard", resource=~"(memory|requests.memory)"})) by (cluster)
+        sum(min without(resource) (kube_resourcequota{job="kube-state-metrics", type="hard", resource=~"(memory|requests.memory)"})) by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster)
           /
-        sum(kube_node_status_allocatable{resource="memory", job="kube-state-metrics"}) by (cluster)
+        sum(kube_node_status_allocatable{resource="memory", job="kube-state-metrics"}) by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster)
           > 1.5
       for: 5m
       {{- with .Values.defaultRules.keepFiringFor }}
@@ -259,9 +259,9 @@ spec:
         runbook_url: {{ .Values.defaultRules.runbookUrl }}/kubernetes/cputhrottlinghigh
         summary: Processes experience elevated CPU throttling.
       expr: |-
-        sum(increase(container_cpu_cfs_throttled_periods_total{container!="", }[5m])) by (cluster, container, pod, namespace)
+        sum(increase(container_cpu_cfs_throttled_periods_total{container!="", }[5m])) by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster, container, pod, namespace)
           /
-        sum(increase(container_cpu_cfs_periods_total{}[5m])) by (cluster, container, pod, namespace)
+        sum(increase(container_cpu_cfs_periods_total{}[5m])) by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster, container, pod, namespace)
           > ( 25 / 100 )
       for: 15m
       {{- with .Values.defaultRules.keepFiringFor }}
