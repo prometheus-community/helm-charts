@@ -300,6 +300,19 @@ def add_rules_per_rule_conditions(rules, group, indent=4):
     return rules
 
 
+def specific_rule_labels(rule_name, indent=4, label_indent=2):
+    """Add section to provide custom labels for a specific alert"""
+    if not rule_name:
+        return ""
+    else:
+        return textwrap.indent("""
+{{- if hasKey .Values.defaultRules.additionalRuleAlertLabels "%s" }}
+  {{- with .Values.defaultRules.additionalRuleAlertLabels.%s }}
+    {{- toYaml . | nindent 8 }}
+  {{- end }}
+{{- end }}
+""" % (rule_name, rule_name,), " " * (indent + label_indent * 2 - 2))
+
 def add_custom_labels(rules_str, group, indent=4, label_indent=2):
     """Add if wrapper for additional rules labels"""
     rule_group_labels = get_rule_group_condition(condition_map.get(group['name'], ''), 'additionalRuleGroupLabels')
@@ -338,6 +351,12 @@ def add_custom_labels(rules_str, group, indent=4, label_indent=2):
     rules.append(rules_str[previousRule[0]:len(rules_str)-1])
 
     for i, rule in enumerate(rules):
+        alertname = re.search('^\\s+\\- alert: (\\w+)$', rule, re.MULTILINE)
+        if alertname:
+            alertname = alertname.group(1)
+            print("[DEBUG-K] processing rule {}".format(alertname))
+        else:
+            alertname = False
         current_label = re.search(label_seperator,rule)
         if current_label:
             # `labels:` block exists
@@ -346,15 +365,15 @@ def add_custom_labels(rules_str, group, indent=4, label_indent=2):
             if entries:
                 entries_start = current_label.end()
                 entries_end = entries.end()+current_label.end()-section_seperator_len
-                rules[i] = rule[:entries_end] + additional_rule_labels_condition_start + additional_rule_labels + additional_rule_labels_condition_end + rule[entries_end:]
+                rules[i] = rule[:entries_end] + additional_rule_labels_condition_start + additional_rule_labels + additional_rule_labels_condition_end + specific_rule_labels(alertname, indent, label_indent) + rule[entries_end:]
             else:
                 # `labels:` does not contain any entries
                 # append template to label section
-                rules[i] += additional_rule_labels_condition_start + additional_rule_labels + additional_rule_labels_condition_end
+                rules[i] += additional_rule_labels_condition_start + additional_rule_labels + additional_rule_labels_condition_end + specific_rule_labels(alertname, indent, label_indent)
         else:
             # `labels:` block does not exist
             # create it and append template
-            rules[i] += additional_rule_labels_condition_start + "\n" + " " * indent + "  labels:" + additional_rule_labels + additional_rule_labels_condition_end
+            rules[i] += additional_rule_labels_condition_start + "\n" + " " * indent + "  labels:" + additional_rule_labels + additional_rule_labels_condition_end + specific_rule_labels(alertname, indent, label_indent)
     return head + "".join(rules) + "\n"
 
 

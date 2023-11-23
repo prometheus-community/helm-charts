@@ -24,7 +24,7 @@ spec:
   groups:
   - name: windows.pod.rules
     rules:
-    - expr: windows_container_available{job="windows-exporter", container_id != ""} * on(container_id) group_left(container, pod, namespace) max(kube_pod_container_info{job="kube-state-metrics", container_id != ""}) by(container, container_id, pod, namespace)
+    - expr: windows_container_available{job="windows-exporter", container_id != ""} * on ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}container_id) group_left(container, pod, namespace) max(kube_pod_container_info{job="kube-state-metrics", container_id != ""}) by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}container, container_id, pod, namespace)
       record: windows_pod_container_available
       {{- if or .Values.defaultRules.additionalRuleLabels .Values.defaultRules.additionalRuleGroupLabels.windows }}
       labels:
@@ -35,7 +35,7 @@ spec:
           {{- toYaml . | nindent 8 }}
         {{- end }}
       {{- end }}
-    - expr: windows_container_cpu_usage_seconds_total{job="windows-exporter", container_id != ""} * on(container_id) group_left(container, pod, namespace) max(kube_pod_container_info{job="kube-state-metrics", container_id != ""}) by(container, container_id, pod, namespace)
+    - expr: windows_container_cpu_usage_seconds_total{job="windows-exporter", container_id != ""} * on ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}container_id) group_left(container, pod, namespace) max(kube_pod_container_info{job="kube-state-metrics", container_id != ""}) by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}container, container_id, pod, namespace)
       record: windows_container_total_runtime
       {{- if or .Values.defaultRules.additionalRuleLabels .Values.defaultRules.additionalRuleGroupLabels.windows }}
       labels:
@@ -46,7 +46,7 @@ spec:
           {{- toYaml . | nindent 8 }}
         {{- end }}
       {{- end }}
-    - expr: windows_container_memory_usage_commit_bytes{job="windows-exporter", container_id != ""} * on(container_id) group_left(container, pod, namespace) max(kube_pod_container_info{job="kube-state-metrics", container_id != ""}) by(container, container_id, pod, namespace)
+    - expr: windows_container_memory_usage_commit_bytes{job="windows-exporter", container_id != ""} * on ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}container_id) group_left(container, pod, namespace) max(kube_pod_container_info{job="kube-state-metrics", container_id != ""}) by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}container, container_id, pod, namespace)
       record: windows_container_memory_usage
       {{- if or .Values.defaultRules.additionalRuleLabels .Values.defaultRules.additionalRuleGroupLabels.windows }}
       labels:
@@ -57,7 +57,7 @@ spec:
           {{- toYaml . | nindent 8 }}
         {{- end }}
       {{- end }}
-    - expr: windows_container_memory_usage_private_working_set_bytes{job="windows-exporter", container_id != ""} * on(container_id) group_left(container, pod, namespace) max(kube_pod_container_info{job="kube-state-metrics", container_id != ""}) by(container, container_id, pod, namespace)
+    - expr: windows_container_memory_usage_private_working_set_bytes{job="windows-exporter", container_id != ""} * on ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}container_id) group_left(container, pod, namespace) max(kube_pod_container_info{job="kube-state-metrics", container_id != ""}) by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}container, container_id, pod, namespace)
       record: windows_container_private_working_set_usage
       {{- if or .Values.defaultRules.additionalRuleLabels .Values.defaultRules.additionalRuleGroupLabels.windows }}
       labels:
@@ -68,7 +68,7 @@ spec:
           {{- toYaml . | nindent 8 }}
         {{- end }}
       {{- end }}
-    - expr: windows_container_network_receive_bytes_total{job="windows-exporter", container_id != ""} * on(container_id) group_left(container, pod, namespace) max(kube_pod_container_info{job="kube-state-metrics", container_id != ""}) by(container, container_id, pod, namespace)
+    - expr: windows_container_network_receive_bytes_total{job="windows-exporter", container_id != ""} * on ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}container_id) group_left(container, pod, namespace) max(kube_pod_container_info{job="kube-state-metrics", container_id != ""}) by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}container, container_id, pod, namespace)
       record: windows_container_network_received_bytes_total
       {{- if or .Values.defaultRules.additionalRuleLabels .Values.defaultRules.additionalRuleGroupLabels.windows }}
       labels:
@@ -79,7 +79,7 @@ spec:
           {{- toYaml . | nindent 8 }}
         {{- end }}
       {{- end }}
-    - expr: windows_container_network_transmit_bytes_total{job="windows-exporter", container_id != ""} * on(container_id) group_left(container, pod, namespace) max(kube_pod_container_info{job="kube-state-metrics", container_id != ""}) by(container, container_id, pod, namespace)
+    - expr: windows_container_network_transmit_bytes_total{job="windows-exporter", container_id != ""} * on ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}container_id) group_left(container, pod, namespace) max(kube_pod_container_info{job="kube-state-metrics", container_id != ""}) by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}container, container_id, pod, namespace)
       record: windows_container_network_transmitted_bytes_total
       {{- if or .Values.defaultRules.additionalRuleLabels .Values.defaultRules.additionalRuleGroupLabels.windows }}
       labels:
@@ -91,9 +91,9 @@ spec:
         {{- end }}
       {{- end }}
     - expr: |-
-        max by (namespace, pod, container) (
+        max by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}namespace, pod, container) (
           kube_pod_container_resource_requests{resource="memory",job="kube-state-metrics"}
-        ) * on(container,pod,namespace) (windows_pod_container_available)
+        ) * on ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}container,pod,namespace) (windows_pod_container_available)
       record: kube_pod_windows_container_resource_memory_request
       {{- if or .Values.defaultRules.additionalRuleLabels .Values.defaultRules.additionalRuleGroupLabels.windows }}
       labels:
@@ -104,7 +104,7 @@ spec:
           {{- toYaml . | nindent 8 }}
         {{- end }}
       {{- end }}
-    - expr: kube_pod_container_resource_limits{resource="memory",job="kube-state-metrics"} * on(container,pod,namespace) (windows_pod_container_available)
+    - expr: kube_pod_container_resource_limits{resource="memory",job="kube-state-metrics"} * on ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}container,pod,namespace) (windows_pod_container_available)
       record: kube_pod_windows_container_resource_memory_limit
       {{- if or .Values.defaultRules.additionalRuleLabels .Values.defaultRules.additionalRuleGroupLabels.windows }}
       labels:
@@ -116,9 +116,9 @@ spec:
         {{- end }}
       {{- end }}
     - expr: |-
-        max by (namespace, pod, container) (
+        max by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}namespace, pod, container) (
           kube_pod_container_resource_requests{resource="cpu",job="kube-state-metrics"}
-        ) * on(container,pod,namespace) (windows_pod_container_available)
+        ) * on ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}container,pod,namespace) (windows_pod_container_available)
       record: kube_pod_windows_container_resource_cpu_cores_request
       {{- if or .Values.defaultRules.additionalRuleLabels .Values.defaultRules.additionalRuleGroupLabels.windows }}
       labels:
@@ -129,7 +129,7 @@ spec:
           {{- toYaml . | nindent 8 }}
         {{- end }}
       {{- end }}
-    - expr: kube_pod_container_resource_limits{resource="cpu",job="kube-state-metrics"} * on(container,pod,namespace) (windows_pod_container_available)
+    - expr: kube_pod_container_resource_limits{resource="cpu",job="kube-state-metrics"} * on ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}container,pod,namespace) (windows_pod_container_available)
       record: kube_pod_windows_container_resource_cpu_cores_limit
       {{- if or .Values.defaultRules.additionalRuleLabels .Values.defaultRules.additionalRuleGroupLabels.windows }}
       labels:
@@ -141,7 +141,7 @@ spec:
         {{- end }}
       {{- end }}
     - expr: |-
-        sum by (namespace, pod, container) (
+        sum by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}namespace, pod, container) (
           rate(windows_container_total_runtime{}[5m])
         )
       record: namespace_pod_container:windows_container_cpu_usage_seconds_total:sum_rate
