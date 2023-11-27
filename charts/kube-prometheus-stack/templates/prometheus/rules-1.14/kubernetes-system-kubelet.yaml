@@ -93,11 +93,11 @@ spec:
         runbook_url: {{ .Values.defaultRules.runbookUrl }}/kubernetes/kubelettoomanypods
         summary: Kubelet is running at capacity.
       expr: |-
-        count by(cluster, node) (
-          (kube_pod_status_phase{job="kube-state-metrics",phase="Running"} == 1) * on(instance,pod,namespace,cluster) group_left(node) topk by(instance,pod,namespace,cluster) (1, kube_pod_info{job="kube-state-metrics"})
+        count by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster, node) (
+          (kube_pod_status_phase{job="kube-state-metrics",phase="Running"} == 1) * on ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}instance,pod,namespace,cluster) group_left(node) topk by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}instance,pod,namespace,cluster) (1, kube_pod_info{job="kube-state-metrics"})
         )
         /
-        max by(cluster, node) (
+        max by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster, node) (
           kube_node_status_capacity{job="kube-state-metrics",resource="pods"} != 1
         ) > 0.95
       for: 15m
@@ -127,7 +127,7 @@ spec:
         description: The readiness status of node {{`{{`}} $labels.node {{`}}`}} has changed {{`{{`}} $value {{`}}`}} times in the last 15 minutes.
         runbook_url: {{ .Values.defaultRules.runbookUrl }}/kubernetes/kubenodereadinessflapping
         summary: Node readiness status is flapping.
-      expr: sum(changes(kube_node_status_condition{job="kube-state-metrics",status="true",condition="Ready"}[15m])) by (cluster, node) > 2
+      expr: sum(changes(kube_node_status_condition{job="kube-state-metrics",status="true",condition="Ready"}[15m])) by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster, node) > 2
       for: 15m
       {{- with .Values.defaultRules.keepFiringFor }}
       keep_firing_for: "{{ . }}"
@@ -183,7 +183,7 @@ spec:
         description: Kubelet Pod startup 99th percentile latency is {{`{{`}} $value {{`}}`}} seconds on node {{`{{`}} $labels.node {{`}}`}}.
         runbook_url: {{ .Values.defaultRules.runbookUrl }}/kubernetes/kubeletpodstartuplatencyhigh
         summary: Kubelet Pod startup latency is too high.
-      expr: histogram_quantile(0.99, sum(rate(kubelet_pod_worker_duration_seconds_bucket{job="kubelet", metrics_path="/metrics"}[5m])) by (cluster, instance, le)) * on(cluster, instance) group_left(node) kubelet_node_name{job="kubelet", metrics_path="/metrics"} > 60
+      expr: histogram_quantile(0.99, sum(rate(kubelet_pod_worker_duration_seconds_bucket{job="kubelet", metrics_path="/metrics"}[5m])) by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster, instance, le)) * on ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster, instance) group_left(node) kubelet_node_name{job="kubelet", metrics_path="/metrics"} > 60
       for: 15m
       {{- with .Values.defaultRules.keepFiringFor }}
       keep_firing_for: "{{ . }}"
