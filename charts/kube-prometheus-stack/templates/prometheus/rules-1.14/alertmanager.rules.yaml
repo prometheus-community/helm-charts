@@ -73,8 +73,8 @@ spec:
         # Without max_over_time, failed scrapes could create false negatives, see
         # https://www.robustperception.io/alerting-on-gauges-in-prometheus-2-0 for details.
           max_over_time(alertmanager_cluster_members{job="{{ $alertmanagerJob }}",namespace="{{ $namespace }}"}[5m])
-        < on (namespace,service,cluster) group_left
-          count by (namespace,service,cluster) (max_over_time(alertmanager_cluster_members{job="{{ $alertmanagerJob }}",namespace="{{ $namespace }}"}[5m]))
+        < on ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}namespace,service,cluster) group_left
+          count by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}namespace,service,cluster) (max_over_time(alertmanager_cluster_members{job="{{ $alertmanagerJob }}",namespace="{{ $namespace }}"}[5m]))
       for: 15m
       {{- with .Values.defaultRules.keepFiringFor }}
       keep_firing_for: "{{ . }}"
@@ -106,7 +106,7 @@ spec:
         (
           rate(alertmanager_notifications_failed_total{job="{{ $alertmanagerJob }}",namespace="{{ $namespace }}"}[5m])
         /
-          rate(alertmanager_notifications_total{job="{{ $alertmanagerJob }}",namespace="{{ $namespace }}"}[5m])
+          ignoring (reason) group_left rate(alertmanager_notifications_total{job="{{ $alertmanagerJob }}",namespace="{{ $namespace }}"}[5m])
         )
         > 0.01
       for: 5m
@@ -137,10 +137,10 @@ spec:
         runbook_url: {{ .Values.defaultRules.runbookUrl }}/alertmanager/alertmanagerclusterfailedtosendalerts
         summary: All Alertmanager instances in a cluster failed to send notifications to a critical integration.
       expr: |-
-        min by (namespace,service, integration) (
+        min by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}namespace,service, integration) (
           rate(alertmanager_notifications_failed_total{job="{{ $alertmanagerJob }}",namespace="{{ $namespace }}", integration=~`.*`}[5m])
         /
-          rate(alertmanager_notifications_total{job="{{ $alertmanagerJob }}",namespace="{{ $namespace }}", integration=~`.*`}[5m])
+          ignoring (reason) group_left rate(alertmanager_notifications_total{job="{{ $alertmanagerJob }}",namespace="{{ $namespace }}", integration=~`.*`}[5m])
         )
         > 0.01
       for: 5m
@@ -171,10 +171,10 @@ spec:
         runbook_url: {{ .Values.defaultRules.runbookUrl }}/alertmanager/alertmanagerclusterfailedtosendalerts
         summary: All Alertmanager instances in a cluster failed to send notifications to a non-critical integration.
       expr: |-
-        min by (namespace,service, integration) (
+        min by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}namespace,service, integration) (
           rate(alertmanager_notifications_failed_total{job="{{ $alertmanagerJob }}",namespace="{{ $namespace }}", integration!~`.*`}[5m])
         /
-          rate(alertmanager_notifications_total{job="{{ $alertmanagerJob }}",namespace="{{ $namespace }}", integration!~`.*`}[5m])
+          ignoring (reason) group_left rate(alertmanager_notifications_total{job="{{ $alertmanagerJob }}",namespace="{{ $namespace }}", integration!~`.*`}[5m])
         )
         > 0.01
       for: 5m
@@ -205,8 +205,8 @@ spec:
         runbook_url: {{ .Values.defaultRules.runbookUrl }}/alertmanager/alertmanagerconfiginconsistent
         summary: Alertmanager instances within the same cluster have different configurations.
       expr: |-
-        count by (namespace,service,cluster) (
-          count_values by (namespace,service,cluster) ("config_hash", alertmanager_config_hash{job="{{ $alertmanagerJob }}",namespace="{{ $namespace }}"})
+        count by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}namespace,service,cluster) (
+          count_values by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}namespace,service,cluster) ("config_hash", alertmanager_config_hash{job="{{ $alertmanagerJob }}",namespace="{{ $namespace }}"})
         )
         != 1
       for: 20m
@@ -238,11 +238,11 @@ spec:
         summary: Half or more of the Alertmanager instances within the same cluster are down.
       expr: |-
         (
-          count by (namespace,service,cluster) (
+          count by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}namespace,service,cluster) (
             avg_over_time(up{job="{{ $alertmanagerJob }}",namespace="{{ $namespace }}"}[5m]) < 0.5
           )
         /
-          count by (namespace,service,cluster) (
+          count by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}namespace,service,cluster) (
             up{job="{{ $alertmanagerJob }}",namespace="{{ $namespace }}"}
           )
         )
@@ -276,11 +276,11 @@ spec:
         summary: Half or more of the Alertmanager instances within the same cluster are crashlooping.
       expr: |-
         (
-          count by (namespace,service,cluster) (
+          count by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}namespace,service,cluster) (
             changes(process_start_time_seconds{job="{{ $alertmanagerJob }}",namespace="{{ $namespace }}"}[10m]) > 4
           )
         /
-          count by (namespace,service,cluster) (
+          count by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}namespace,service,cluster) (
             up{job="{{ $alertmanagerJob }}",namespace="{{ $namespace }}"}
           )
         )
