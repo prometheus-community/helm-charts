@@ -4,7 +4,7 @@ Prometheus exporter for [OpenCost](https://www.opencost.io) Kubernetes cost moni
 
 This chart bootstraps a Prometheus [OpenCost exporter](https://www.opencost.io/docs/integrations/opencost-exporter) deployment on a [Kubernetes](http://kubernetes.io) cluster using the [Helm](https://helm.sh) package manager.
 
-The original source for this Helm chart is https://github.com/opencost/opencost-helm-chart.
+The original source for this Helm chart is <https://github.com/opencost/opencost-helm-chart>.
 
 ## Prerequisites
 
