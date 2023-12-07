@@ -1,0 +1,168 @@
+{{- include  "isPrometheusConfigValid" . }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "prometheus-opencost-exporter.fullname" . }}
+  labels: {{- include "prometheus-opencost-exporter.labels" . | nindent 4 }}
+  {{- with .Values.annotations }}
+  annotations: {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  replicas: {{ .Values.opencost.exporter.replicas }}
+  selector:
+    matchLabels: {{- include "prometheus-opencost-exporter.selectorLabels" . | nindent 6 }}
+  strategy:
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 1
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        {{- include "prometheus-opencost-exporter.selectorLabels" . | nindent 8 }}
+        {{- with .Values.podLabels }}
+          {{- toYaml . | nindent 8 }}
+        {{- end }}
+      {{- with .Values.podAnnotations }}
+      annotations: {{- toYaml . | nindent 8 }}
+      {{- end }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets: {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.priorityClassName }}
+      priorityClassName: {{ . }}
+      {{- end }}
+      {{- with .Values.podSecurityContext }}
+      securityContext: {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ template "prometheus-opencost-exporter.serviceAccountName" . }}
+      {{- with .Values.opencost.tolerations }}
+      tolerations: {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.opencost.nodeSelector }}
+      nodeSelector: {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.opencost.affinity }}
+      affinity: {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with.Values.opencost.topologySpreadConstraints }}
+      topologySpreadConstraints: {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: {{ include "prometheus-opencost-exporter.fullname" . }}
+          image: "{{ .Values.opencost.exporter.image.registry }}/{{ .Values.opencost.exporter.image.repository }}:{{ .Values.opencost.exporter.image.tag | default (printf "prod-%s" .Chart.AppVersion) }}"
+          imagePullPolicy: {{ .Values.opencost.exporter.image.pullPolicy }}
+          ports:
+            - containerPort: 9003
+              name: http
+          resources: {{- toYaml .Values.opencost.exporter.resources | nindent 12 }}
+          {{- if .Values.opencost.exporter.livenessProbe.enabled }}
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 9003
+            initialDelaySeconds: {{ .Values.opencost.exporter.livenessProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.opencost.exporter.livenessProbe.periodSeconds }}
+            failureThreshold: {{ .Values.opencost.exporter.livenessProbe.failureThreshold }}
+          {{- end }}
+          {{- if .Values.opencost.exporter.readinessProbe.enabled }}
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: 9003
+            initialDelaySeconds: {{ .Values.opencost.exporter.readinessProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.opencost.exporter.readinessProbe.periodSeconds }}
+            failureThreshold: {{ .Values.opencost.exporter.readinessProbe.failureThreshold }}
+          {{- end }}
+          {{- with .Values.opencost.exporter.securityContext }}
+          securityContext: {{- toYaml . | nindent 12 }}
+          {{- end }}
+          env:
+            - name: PROMETHEUS_SERVER_ENDPOINT
+              value: {{ include "prometheus-opencost-exporter.prometheusServerEndpoint" . | quote }}
+            {{- if .Values.opencost.exporter.cloudProviderApiKey }}
+            - name: CLOUD_PROVIDER_API_KEY
+              value: {{ .Values.opencost.exporter.cloudProviderApiKey | quote }}
+            {{- end }}
+            - name: CLUSTER_ID
+              value: {{ .Values.opencost.exporter.defaultClusterId | quote }}
+            {{- if .Values.opencost.exporter.aws.access_key_id }}
+            - name: AWS_ACCESS_KEY_ID
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "prometheus-opencost-exporter.prometheus.secretname" . }}
+                  key: AWS_ACCESS_KEY_ID
+            {{- end }}
+            {{- if .Values.opencost.exporter.aws.secret_access_key }}
+            - name: AWS_SECRET_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "prometheus-opencost-exporter.prometheus.secretname" . }}
+                  key: AWS_SECRET_ACCESS_KEY
+            {{- end }}
+            # If username, password or bearer_token are defined, pull from secrets
+            {{- if or .Values.opencost.prometheus.username (and .Values.opencost.prometheus.secret_name .Values.opencost.prometheus.username_key) }}
+            - name: DB_BASIC_AUTH_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "prometheus-opencost-exporter.prometheus.secretname" . }}
+                  key: {{ .Values.opencost.prometheus.username_key }}
+            {{- end }}
+            {{- if or .Values.opencost.prometheus.password (and .Values.opencost.prometheus.secret_name .Values.opencost.prometheus.password_key) }}
+            - name: DB_BASIC_AUTH_PW
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "prometheus-opencost-exporter.prometheus.secretname" . }}
+                  key: {{ .Values.opencost.prometheus.password_key }}
+            {{- else if or .Values.opencost.prometheus.bearer_token (and .Values.opencost.prometheus.secret_name .Values.opencost.prometheus.bearer_token_key) }}
+            - name: DB_BEARER_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "prometheus-opencost-exporter.prometheus.secretname" . }}
+                  key: {{ .Values.opencost.prometheus.bearer_token_key }}
+            {{- end }}
+            {{- with .Values.opencost.exporter.env }}
+              {{- toYaml . | nindent 12 }}
+            {{- end }}
+            {{- if .Values.opencost.customPricing.enabled }}
+            - name: CONFIG_PATH
+              value: {{ .Values.opencost.customPricing.configPath | quote }}
+            {{- end }}
+            # Add any additional provided variables
+            {{- range $key, $value := .Values.opencost.exporter.extraEnv }}
+            - name: {{ $key }}
+              value: {{ $value | quote }}
+            {{- end }}
+          {{- if or .Values.opencost.exporter.persistence.enabled .Values.opencost.exporter.extraVolumeMounts .Values.opencost.customPricing.enabled}}
+          volumeMounts:
+            {{- if .Values.opencost.exporter.persistence.enabled }}
+            - mountPath: /mnt/export
+              name: opencost-export
+              readOnly: false
+            {{- end }}
+            {{- if .Values.opencost.customPricing.enabled }}
+            - mountPath: {{ .Values.opencost.customPricing.configPath }}
+              name: custom-configs
+              readOnly: true
+            {{- end }}
+            {{- with .Values.opencost.exporter.extraVolumeMounts }}
+              {{- toYaml . | nindent 12 }}
+            {{- end }}
+          {{- end }}
+      {{- if or .Values.opencost.exporter.persistence.enabled .Values.extraVolumes .Values.opencost.customPricing.enabled}}
+      volumes:
+        {{- if .Values.opencost.customPricing.enabled }}
+        - name: custom-configs
+          configMap:
+            name: {{ .Values.opencost.customPricing.configmapName }}
+        {{- end }}
+        {{- if .Values.opencost.exporter.persistence.enabled }}
+        - name: opencost-export
+          persistentVolumeClaim:
+            claimName: {{ include "prometheus-opencost-exporter.fullname" . }}-pvc
+        {{- end }}
+        {{- with .Values.extraVolumes }}
+          {{- toYaml . | nindent 8 }}
+        {{- end }}
+      {{- end }}
