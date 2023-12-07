@@ -37,6 +37,9 @@ spec:
         - name: {{ . }}
       {{- end }}
       {{- end }}
+      {{- if .Values.priorityClassName }}
+      priorityClassName: {{ .Values.priorityClassName }}
+      {{- end }}
       serviceAccount: {{ template "stackdriver-exporter.serviceAccountName" . }}
       serviceAccountName: {{ template "stackdriver-exporter.serviceAccountName" . }}
       restartPolicy: {{ .Values.restartPolicy }}
@@ -57,7 +60,7 @@ spec:
       {{- end}}
       containers:
         - name: {{ .Chart.Name }}
-          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           command: ["stackdriver_exporter"]
           volumeMounts:
@@ -69,7 +72,7 @@ spec:
             - --google.project-id={{ .Values.stackdriver.projectId }}
             - --monitoring.metrics-interval={{ .Values.stackdriver.metrics.interval }}
             - --monitoring.metrics-offset={{ .Values.stackdriver.metrics.offset }}
-            - --monitoring.metrics-type-prefixes={{ .Values.stackdriver.metrics.typePrefixes }}
+            - --monitoring.metrics-type-prefixes={{ .Values.stackdriver.metrics.typePrefixes | replace " " "" }}
             {{- range .Values.stackdriver.metrics.filters }}
             - --monitoring.filters={{ . }}
             {{- end }}
