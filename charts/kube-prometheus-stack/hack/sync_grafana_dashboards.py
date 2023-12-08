@@ -165,7 +165,7 @@ def patch_json_set_timezone_as_variable(content):
 
 def patch_json_set_editable_as_variable(content):
     # content is no more in json format, so we have to replace using regex
-    return re.sub(r'"editable"\s*:\s*(?:true|false)', '"editable": `}}{{ .Values.grafana.defaultDashboardsEditable }}{{`', content, flags=re.IGNORECASE)
+    return re.sub(r'"editable"\s*:\s*(?:true|false)', '"editable":`}}{{ .Values.grafana.defaultDashboardsEditable }}{{`', content, flags=re.IGNORECASE)
 
 
 def jsonnet_import_callback(base, rel):
