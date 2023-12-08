@@ -71,6 +71,30 @@ spec:
             - containerPort: 8080
               name: http
           {{- end }}
+          {{- if .Values.prometheusOperator.admissionWebhooks.deployment.readinessProbe.enabled }}
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: {{ .Values.prometheusOperator.admissionWebhooks.deployment.tls.enabled | ternary "https" "http" }}
+              scheme: {{ .Values.prometheusOperator.admissionWebhooks.deployment.tls.enabled | ternary "HTTPS" "HTTP" }}
+            initialDelaySeconds: {{ .Values.prometheusOperator.admissionWebhooks.deployment.readinessProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.prometheusOperator.admissionWebhooks.deployment.readinessProbe.periodSeconds }}
+            timeoutSeconds: {{ .Values.prometheusOperator.admissionWebhooks.deployment.readinessProbe.timeoutSeconds }}
+            successThreshold: {{ .Values.prometheusOperator.admissionWebhooks.deployment.readinessProbe.successThreshold }}
+            failureThreshold: {{ .Values.prometheusOperator.admissionWebhooks.deployment.readinessProbe.failureThreshold }}
+          {{- end }}
+          {{- if .Values.prometheusOperator.admissionWebhooks.deployment.livenessProbe.enabled }}
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: {{ .Values.prometheusOperator.admissionWebhooks.deployment.tls.enabled | ternary "https" "http" }}
+              scheme: {{ .Values.prometheusOperator.admissionWebhooks.deployment.tls.enabled | ternary "HTTPS" "HTTP" }}
+            initialDelaySeconds: {{ .Values.prometheusOperator.admissionWebhooks.deployment.livenessProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.prometheusOperator.admissionWebhooks.deployment.livenessProbe.periodSeconds }}
+            timeoutSeconds: {{ .Values.prometheusOperator.admissionWebhooks.deployment.livenessProbe.timeoutSeconds }}
+            successThreshold: {{ .Values.prometheusOperator.admissionWebhooks.deployment.livenessProbe.successThreshold }}
+            failureThreshold: {{ .Values.prometheusOperator.admissionWebhooks.deployment.livenessProbe.failureThreshold }}
+          {{- end }}
           resources:
 {{ toYaml .Values.prometheusOperator.admissionWebhooks.deployment.resources | indent 12 }}
           securityContext:
