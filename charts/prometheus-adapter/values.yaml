@@ -4,7 +4,8 @@ topologySpreadConstraints: []
 
 image:
   repository: registry.k8s.io/prometheus-adapter/prometheus-adapter
-  tag: v0.11.0
+  # if not set appVersion field from Chart.yaml is used
+  tag: ""
   pullPolicy: IfNotPresent
 
 logLevel: 4
@@ -47,7 +48,7 @@ podSecurityContext:
 securityContext:
   allowPrivilegeEscalation: false
   capabilities:
-    drop: ["all"]
+    drop: ["ALL"]
   readOnlyRootFilesystem: true
   runAsNonRoot: true
   runAsUser: 10001
@@ -57,10 +58,19 @@ securityContext:
 rbac:
   # Specifies whether RBAC resources should be created
   create: true
+  externalMetrics:
+    resources: ["*"]
+  customMetrics:
+    resources: ["*"]
 
 psp:
   # Specifies whether PSP resources should be created
   create: false
+  # Annotations added to the pod security policy
+  annotations: {}
+  ## Ref: https://kubernetes.io/docs/concepts/policy/pod-security-policy/#apparmor
+  ## Ref: https://kubernetes.io/docs/concepts/policy/pod-security-policy/#seccomp
+  ## Ref: https://kubernetes.io/docs/concepts/policy/pod-security-policy/#sysctl
 
 serviceAccount:
   # Specifies whether a service account should be created
@@ -111,6 +121,10 @@ readinessProbe:
     scheme: HTTPS
   initialDelaySeconds: 30
   timeoutSeconds: 5
+
+# Configure startup probe
+# Use if prometheus-adapter takes a long time to finish startup e.g. polling a lot of API versions in cluster
+startupProbe: {}
 
 rules:
   default: true
@@ -212,6 +226,9 @@ extraArguments: []
   # - --tls-private-key-file=/etc/tls/tls.key
   # - --tls-cert-file=/etc/tls/tls.crt
 
+# Additional containers to add to the pod
+extraContainers: []
+
 # Any extra volumes
 extraVolumes: []
   # - name: example-name
@@ -269,5 +286,5 @@ podDisruptionBudget:
 
 certManager:
   enabled: false
-  caCertDuration: 43800h
-  certDuration: 8760h
+  caCertDuration: 43800h0m0s
+  certDuration: 8760h0m0s

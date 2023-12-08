@@ -75,7 +75,7 @@ spec:
           - secretRef:
               name: {{ .Values.envFromSecret }}
           {{- end }}
-          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           command: ["elasticsearch_exporter",
                     {{- with .Values.log.format }}
@@ -109,7 +109,7 @@ spec:
                     "--es.snapshots",
                     {{- end }}
                     {{- if .Values.es.cluster_settings }}
-                    "--es.cluster_settings",
+                    "--collector.clustersettings",
                     {{- end }}
                     {{- if .Values.es.slm }}
                     "--es.slm",
@@ -161,7 +161,7 @@ spec:
           lifecycle:
             preStop:
               exec:
-                command: ["/bin/bash", "-c", "sleep 20"]
+                command: ["/bin/sleep", "20"]
           volumeMounts:
             {{- if and .Values.es.ssl.enabled (eq .Values.es.ssl.useExistingSecrets false) }}
             - mountPath: /ssl

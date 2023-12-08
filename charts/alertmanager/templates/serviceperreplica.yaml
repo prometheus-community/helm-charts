@@ -1,0 +1,44 @@
+{{- if and .Values.servicePerReplica.enabled }}
+{{- $count := .Values.replicaCount | int -}}
+{{- $serviceValues := .Values.servicePerReplica -}}
+apiVersion: v1
+kind: List
+metadata:
+  name: {{ include "alertmanager.fullname" . }}-serviceperreplica
+  namespace: {{ include "alertmanager.namespace" . }}
+items:
+{{- range $i, $e := until $count }}
+  - apiVersion: v1
+    kind: Service
+    metadata:
+      name: {{ include "alertmanager.fullname" $ }}-{{ $i }}
+      namespace: {{ include "alertmanager.namespace" $ }}
+      labels:
+        {{- include "alertmanager.labels" $ | nindent 8 }}
+      {{- if $serviceValues.annotations }}
+      annotations:
+{{ toYaml $serviceValues.annotations | indent 8 }}
+      {{- end }}
+    spec:
+      {{- if $serviceValues.clusterIP }}
+      clusterIP: {{ $serviceValues.clusterIP }}
+      {{- end }}
+      {{- if $serviceValues.loadBalancerSourceRanges }}
+      loadBalancerSourceRanges:
+      {{- range $cidr := $serviceValues.loadBalancerSourceRanges }}
+        - {{ $cidr }}
+      {{- end }}
+      {{- end }}
+      {{- if ne $serviceValues.type "ClusterIP" }}
+      externalTrafficPolicy: {{ $serviceValues.externalTrafficPolicy }}
+      {{- end }}
+      ports:
+        - name: http
+          port: {{ $.Values.service.port }}
+          targetPort: http
+      selector:
+        {{- include "alertmanager.selectorLabels" $ | nindent 8 }}
+        statefulset.kubernetes.io/pod-name: {{ include "alertmanager.fullname" $ }}-{{ $i }}
+      type: "{{ $serviceValues.type }}"
+{{- end }}
+{{- end }}
