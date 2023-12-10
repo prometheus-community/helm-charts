@@ -13,11 +13,13 @@ if ! git diff --exit-code; then
 fi
 
 python3 -m venv venv
+# shellcheck source=/dev/null
 source venv/bin/activate
 pip3 install -r hack/requirements.txt
 
 go install -a github.com/jsonnet-bundler/jsonnet-bundler/cmd/jb@latest
-export PATH="$(go env GOPATH)/bin:$PATH"
+PATH="$(go env GOPATH)/bin:$PATH"
+export PATH
 
 ./hack/sync_prometheus_rules.py
 if ! git diff --exit-code; then
