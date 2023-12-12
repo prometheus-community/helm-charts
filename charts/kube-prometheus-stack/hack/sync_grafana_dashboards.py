@@ -163,6 +163,11 @@ def patch_json_set_timezone_as_variable(content):
     return re.sub(r'"timezone"\s*:\s*"(?:\\.|[^\"])*"', '"timezone": "`}}{{ .Values.grafana.defaultDashboardsTimezone }}{{`"', content, flags=re.IGNORECASE)
 
 
+def patch_json_set_editable_as_variable(content):
+    # content is no more in json format, so we have to replace using regex
+    return re.sub(r'"editable"\s*:\s*(?:true|false)', '"editable":`}}{{ .Values.grafana.defaultDashboardsEditable }}{{`', content, flags=re.IGNORECASE)
+
+
 def jsonnet_import_callback(base, rel):
     if "github.com" in base:
         base = os.getcwd() + '/vendor/' + base[base.find('github.com'):]
@@ -187,6 +192,7 @@ def write_group_to_file(resource_name, content, url, destination, min_kubernetes
 
     content = patch_dashboards_json(content, multicluster_key)
     content = patch_json_set_timezone_as_variable(content)
+    content = patch_json_set_editable_as_variable(content)
 
     filename_struct = {resource_name + '.json': (LiteralStr(content))}
     # rules themselves
