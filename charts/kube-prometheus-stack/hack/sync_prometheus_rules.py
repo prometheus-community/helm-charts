@@ -73,6 +73,7 @@ charts = [
         'min_kubernetes': '1.14.0-0',
         'is_mixin': True,
         'mixin_vars': {'_config': {
+            'clusterLabel': 'cluster',
             'windowsExporterSelector': 'job="windows-exporter"',
             'kubeStateMetricsSelector': 'job="kube-state-metrics"',
         }}
@@ -509,10 +510,10 @@ def main():
 
                 mixin = """
                 local kp =
-                    { prometheusAlerts+:: {}, prometheusRules+:: {}} + 
-                    (import "%s") + 
+                    { prometheusAlerts+:: {}, prometheusRules+:: {}} +
+                    (import "%s") +
                     %s;
-                
+
                 kp.prometheusAlerts + kp.prometheusRules
                 """
 
