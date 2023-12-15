@@ -47,6 +47,7 @@ defaultRules:
     k8sContainerMemoryRss: true
     k8sContainerMemorySwap: true
     k8sContainerResource: true
+    k8sContainerMemoryWorkingSetBytes: true
     k8sPodOwner: true
     kubeApiserverAvailability: true
     kubeApiserverBurnrate: true
@@ -310,6 +311,8 @@ alertmanager:
           - 'severity = info'
         equal:
           - 'namespace'
+      - target_matchers:
+          - 'alertname = InfoInhibitor'
     route:
       group_by: ['namespace']
       group_wait: 30s
@@ -319,7 +322,7 @@ alertmanager:
       routes:
       - receiver: 'null'
         matchers:
-          - alertname =~ "InfoInhibitor|Watchdog"
+          - alertname = "Watchdog"
     receivers:
     - name: 'null'
     templates:
@@ -1490,11 +1493,13 @@ kubeControllerManager:
 coreDns:
   enabled: true
   service:
+    enabled: true
     port: 9153
     targetPort: 9153
     # selector:
     #   k8s-app: kube-dns
   serviceMonitor:
+    enabled: true
     ## Scrape interval. If not set, the Prometheus default scrape interval is used.
     ##
     interval: ""
