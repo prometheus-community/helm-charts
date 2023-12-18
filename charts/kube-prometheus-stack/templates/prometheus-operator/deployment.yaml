@@ -27,6 +27,8 @@ spec:
     metadata:
       labels:
         app: {{ template "kube-prometheus-stack.name" . }}-operator
+        app.kubernetes.io/name: {{ template "kube-prometheus-stack.name" . }}-prometheus-operator
+        app.kubernetes.io/component: prometheus-operator
 {{ include "kube-prometheus-stack.labels" . | indent 8 }}
 {{- if .Values.prometheusOperator.podLabels }}
 {{ toYaml .Values.prometheusOperator.podLabels | indent 8 }}
@@ -117,7 +119,7 @@ spec:
             - --thanos-default-base-image={{ $thanosRegistry }}/{{ .Values.prometheusOperator.thanosImage.repository }}:{{ .Values.prometheusOperator.thanosImage.tag }}@sha256:{{ .Values.prometheusOperator.thanosImage.sha }}
             {{- else }}
             - --thanos-default-base-image={{ $thanosRegistry }}/{{ .Values.prometheusOperator.thanosImage.repository }}:{{ .Values.prometheusOperator.thanosImage.tag }}
-            {{- end }} 
+            {{- end }}
             {{- if .Values.prometheusOperator.thanosRulerInstanceNamespaces }}
             - --thanos-ruler-instance-namespaces={{ .Values.prometheusOperator.thanosRulerInstanceNamespaces | join "," }}
             {{- end }}
