@@ -38,10 +38,13 @@ autosharding:
 replicas: 1
 
 # Change the deployment strategy when autosharding is disabled.
-# The default is "Recreate" in favor of preventing two instances from running, but this might create a small gap in data.
+# ref: https://kubernetes.io/docs/concepts/workloads/controllers/deployment/#strategy
+# The default is "RollingUpdate" as per Kubernetes defaults.
 # When using "RollingUpdate", it's wise to use a pessimistic approach when querying for "kube-state-metrics" and perform something like this:
 # max by(namespace, pod) (kube_pod_container_status_restarts).
-# updateStrategy: RollingUpdate
+# This is due to "RollingUpdate" may cause two running instances. Using Recreate, one could create a small gap in data during a release, but it doesn't
+# 'duplicate' data.
+# updateStrategy: Recreate
 
 # Number of old history to retain to allow rollback
 # Default Kubernetes value is set to 10
