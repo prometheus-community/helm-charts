@@ -121,7 +121,7 @@ priorityClassName: {{ . | quote }}
 {{- end }}
 {{- with .Values.hostAliases }}
 hostAliases:
-{{- toYaml . | nindent 8 }}
+{{- toYaml . | nindent 2 }}
 {{- end }}
 {{- with .Values.imagePullSecrets }}
 imagePullSecrets:
