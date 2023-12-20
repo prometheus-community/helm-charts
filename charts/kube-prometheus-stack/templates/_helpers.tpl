@@ -297,3 +297,20 @@ global:
 {{ $fullname }}-webhook.{{ $namespace }}.svc
 {{- end }}
 {{- end }}
+
+{{/*
+Defines the failurePolicy, which is "Ignore" or "Fail".
+If failurePolicy is set to "IgnoreOnInstallOnly":
+  If Release.IsInstall returns "true", returns "Ignore" otherwise "Fail"
+*/}}
+{{- define "kube-prometheus-stack.operator.admission-webhook.failurePolicy" -}}
+{{- if eq .Values.prometheusOperator.admissionWebhooks.failurePolicy "IgnoreOnInstallOnly" -}}
+{{ .Release.IsInstall | ternary "Ignore" "Fail" -}}
+{{- else if .Values.prometheusOperator.admissionWebhooks.failurePolicy  -}}
+{{ .Values.prometheusOperator.admissionWebhooks.failurePolicy }}
+{{- else if .Values.prometheusOperator.admissionWebhooks.patch.enabled -}}
+Ignore
+{{- else -}}
+Fail
+{{- end -}}
+{{- end -}}

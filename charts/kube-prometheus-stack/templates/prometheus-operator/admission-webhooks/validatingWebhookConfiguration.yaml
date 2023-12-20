@@ -13,15 +13,7 @@ metadata:
 {{- include "kube-prometheus-stack.labels" $ | indent 4 }}
 webhooks:
   - name: prometheusrulemutate.monitoring.coreos.com
-    {{- if eq .Values.prometheusOperator.admissionWebhooks.failurePolicy "IgnoreOnInstallOnly" }}
-    failurePolicy: {{ .Release.IsInstall | ternary "Ignore" "Fail" }}
-    {{- else if .Values.prometheusOperator.admissionWebhooks.failurePolicy  }}
-    failurePolicy: {{ .Values.prometheusOperator.admissionWebhooks.failurePolicy }}
-    {{- else if .Values.prometheusOperator.admissionWebhooks.patch.enabled }}
-    failurePolicy: Ignore
-    {{- else }}
-    failurePolicy: Fail
-    {{- end }}
+    failurePolicy: {{ include "kube-prometheus-stack.operator.admission-webhook.failurePolicy" $ }}
     rules:
       - apiGroups:
           - monitoring.coreos.com
