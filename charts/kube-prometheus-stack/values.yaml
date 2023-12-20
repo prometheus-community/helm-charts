@@ -47,6 +47,7 @@ defaultRules:
     k8sContainerMemoryRss: true
     k8sContainerMemorySwap: true
     k8sContainerResource: true
+    k8sContainerMemoryWorkingSetBytes: true
     k8sPodOwner: true
     kubeApiserverAvailability: true
     kubeApiserverBurnrate: true
@@ -310,6 +311,8 @@ alertmanager:
           - 'severity = info'
         equal:
           - 'namespace'
+      - target_matchers:
+          - 'alertname = InfoInhibitor'
     route:
       group_by: ['namespace']
       group_wait: 30s
@@ -319,7 +322,7 @@ alertmanager:
       routes:
       - receiver: 'null'
         matchers:
-          - alertname =~ "InfoInhibitor|Watchdog"
+          - alertname = "Watchdog"
     receivers:
     - name: 'null'
     templates:
@@ -498,9 +501,16 @@ alertmanager:
     externalTrafficPolicy: Cluster
 
     ## If you want to make sure that connections from a particular client are passed to the same Pod each time
-    ## Accepts 'ClientIP' or ''
+    ## Accepts 'ClientIP' or 'None'
     ##
-    sessionAffinity: ""
+    sessionAffinity: None
+
+    ## If you want to modify the ClientIP sessionAffinity timeout
+    ## The value must be >0 && <=86400(for 1 day) if ServiceAffinity == "ClientIP"
+    ##
+    sessionAffinityConfig:
+      clientIP:
+        timeoutSeconds: 10800
 
     ## Service type
     ##
@@ -934,6 +944,10 @@ grafana:
   ## Other options are: browser or a specific timezone, i.e. Europe/Luxembourg
   ##
   defaultDashboardsTimezone: utc
+
+  ## Editable flag for the default dashboards
+  ##
+  defaultDashboardsEditable: true
 
   adminPassword: prom-operator
 
@@ -1479,11 +1493,13 @@ kubeControllerManager:
 coreDns:
   enabled: true
   service:
+    enabled: true
     port: 9153
     targetPort: 9153
     # selector:
     #   k8s-app: kube-dns
   serviceMonitor:
+    enabled: true
     ## Scrape interval. If not set, the Prometheus default scrape interval is used.
     ##
     interval: ""
@@ -2527,6 +2543,12 @@ prometheusOperator:
   #   cpu: 100m
   #   memory: 100Mi
 
+  ## Operator Environment
+  ##  env:
+  ##    VARIABLE: value
+  env:
+    GOGC: "30"
+
   # Required for use in managed kubernetes clusters (such as AWS EKS) with custom CNI (such as calico),
   # because control-plane managed by AWS cannot communicate with pods' IP CIDR and admission webhooks are not working
   ##
@@ -2881,7 +2903,17 @@ prometheus:
     ## Ref: https://kubernetes.io/docs/reference/kubernetes-api/service-resources/service-v1/#ServiceSpec
     publishNotReadyAddresses: false
 
-    sessionAffinity: ""
+    ## If you want to make sure that connections from a particular client are passed to the same Pod each time
+    ## Accepts 'ClientIP' or 'None'
+    ##
+    sessionAffinity: None
+
+    ## If you want to modify the ClientIP sessionAffinity timeout
+    ## The value must be >0 && <=86400(for 1 day) if ServiceAffinity == "ClientIP"
+    ##
+    sessionAffinityConfig:
+      clientIP:
+        timeoutSeconds: 10800
 
   ## Configuration for creating a separate Service for each statefulset Prometheus replica
   ##
@@ -3190,7 +3222,7 @@ prometheus:
     image:
       registry: quay.io
       repository: prometheus/prometheus
-      tag: v2.48.0
+      tag: v2.48.1
       sha: ""
 
     ## Tolerations for use with node taints
