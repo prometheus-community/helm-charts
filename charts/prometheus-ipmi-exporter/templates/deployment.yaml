@@ -31,11 +31,18 @@ spec:
           args:
             - "--config.file"
             - "/config.yml"
+          {{- with.Values.containerSecurityContext }}
+          securityContext:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
           volumeMounts:
             - name: config-volume
               mountPath: /config.yml
               subPath: config.yml
               readOnly: true
+            {{- with .Values.extraVolumeMounts }}
+              {{- toYaml . | nindent 12 }}
+            {{- end }}
           ports:
             - name: http
               containerPort: {{ .Values.service.port }}
@@ -51,6 +58,9 @@ spec:
         - name: config-volume
           configMap:
             name: {{ template "prometheus-ipmi-exporter.fullname" . }}
+        {{- with .Values.extraVolumes }}
+            {{- toYaml . | nindent 8 }}
+        {{- end }}
     {{- with .Values.nodeSelector }}
       nodeSelector: {{ toYaml . | nindent 8 }}
     {{- end }}
