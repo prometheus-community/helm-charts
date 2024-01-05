@@ -1019,8 +1019,7 @@ Helm plugin for generating values.schema.json from single or multiple values fil
 See the [https://github.com/losisin/helm-values-schema-json](https://github.com/losisin/helm-values-schema-json)
 
 ```console
-$ helm plugin install https://github.com/losisin/helm-values-schema-json.git
-Installed plugin: schema
+helm plugin install https://github.com/losisin/helm-values-schema-json.git
 ```
 
 ### Update JsonSchema file
@@ -1028,11 +1027,11 @@ Installed plugin: schema
 See the [json-schema.org](https://json-schema.org/learn/getting-started-step-by-step)
 
 ```console
-$ helm schema -input values.yaml
+helm schema -input values.yaml
 ```
 
 ### Validating value.yaml
 
 ```console
-$ helm lint --values my.values.yaml 
+helm lint --values my.values.yaml 
 ```
