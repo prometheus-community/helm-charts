@@ -1014,6 +1014,7 @@ metadata:
 Update `values.schema.json` file.
 
 ### Install Tools
+
 Helm plugin for generating values.schema.json from single or multiple values files. Schema can be enriched by reading annotations from comments. Works only with Helm3 charts.
 
 See the [https://github.com/losisin/helm-values-schema-json](https://github.com/losisin/helm-values-schema-json)
