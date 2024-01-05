@@ -1008,3 +1008,31 @@ metadata:
   name: kube-proxy
   namespace: kube-system
 ```
+
+## For Developers
+
+Update `values.schema.json` file.
+
+### Install Tools
+Helm plugin for generating values.schema.json from single or multiple values files. Schema can be enriched by reading annotations from comments. Works only with Helm3 charts.
+
+See the [https://github.com/losisin/helm-values-schema-json](https://github.com/losisin/helm-values-schema-json)
+
+```console
+$ helm plugin install https://github.com/losisin/helm-values-schema-json.git
+Installed plugin: schema
+```
+
+### Update JsonSchema file
+
+See the [json-schema.org](https://json-schema.org/learn/getting-started-step-by-step)
+
+```console
+$ helm schema -input values.yaml
+```
+
+### Validating value.yaml
+
+```console
+$ helm lint --values my.values.yaml 
+```

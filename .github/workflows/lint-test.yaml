@@ -28,8 +28,16 @@ jobs:
         run: |
           changed="$(ct list-changed --config .github/linters/ct.yaml)"
           if [[ -n "$changed" ]]; then
+            echo "list=$changed" >> "$GITHUB_OUTPUT"
             echo "changed=true" >> "$GITHUB_OUTPUT"
           fi
+      - name: Generate values schema json
+        if: steps.list-changed.outputs.changed == 'true'
+        uses: losisin/helm-values-schema-json-action@v1
+        with:
+          input: ${GITHUB_WORKSPACE}/${{ steps.list-changed.outputs.changed }}/values.yaml
+          output: ${GITHUB_WORKSPACE}/${{ steps.list-changed.outputs.changed }}/values.schema.json
+          draft: 2020
 
       # - name: install helm unittest plugin
       #   if: steps.list-changed.outputs.changed == 'true'
