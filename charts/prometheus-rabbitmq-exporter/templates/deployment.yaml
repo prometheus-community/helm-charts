@@ -25,7 +25,10 @@ spec:
 {{ toYaml .Values.podLabels | indent 8 }}
         {{- end }}
       annotations:
-{{ toYaml .Values.annotations | indent 8 }}
+        checksum/exporter-config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+        {{- with .Values.annotations }}
+          {{- toYaml .| nindent 8 }}
+        {{- end }}
     spec:
     {{- if .Values.image.pullSecrets }}
       imagePullSecrets:
@@ -38,47 +41,33 @@ spec:
         - name: {{ .Chart.Name }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
+          envFrom:
+            - configMapRef:
+                name: {{ template "prometheus-rabbitmq-exporter.configMapName" . }}
+          {{- if .Values.rabbitmq.configMapOverrideReference }}
+            - configMapRef:
+               name: {{ .Values.rabbitmq.configMapOverrideReference }}
+          {{- end }}
           env:
-            - name: RABBIT_URL
-              value: "{{ tpl .Values.rabbitmq.url . }}"
-            - name: RABBIT_USER
-              value: "{{ .Values.rabbitmq.user }}"
-            {{- if .Values.rabbitmq.existingPasswordSecret }}
-            - name: RABBIT_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name:  "{{ .Values.rabbitmq.existingPasswordSecret }}"
-                  key: {{ .Values.rabbitmq.existingPasswordSecretKey }}
-            {{- else }}
-            - name: RABBIT_PASSWORD
-              value: "{{ .Values.rabbitmq.password }}"
-            {{- end }}
-            - name: PUBLISH_PORT
-              value: "{{ .Values.service.internalPort }}"
-            - name: LOG_LEVEL
-              value: "{{ .Values.loglevel }}"
-            - name: RABBIT_CAPABILITIES
-              value: "{{ .Values.rabbitmq.capabilities }}"
-            - name: INCLUDE_QUEUES
-              value: "{{ .Values.rabbitmq.include_queues }}"
-            - name: INCLUDE_VHOST
-              value: "{{ .Values.rabbitmq.include_vhost }}"
-            - name: SKIP_QUEUES
-              value: "{{ .Values.rabbitmq.skip_queues }}"
-            - name: SKIPVERIFY
-              value: "{{ .Values.rabbitmq.skip_verify }}"
-            - name: SKIP_VHOST
-              value: "{{ .Values.rabbitmq.skip_vhost }}"
-            - name: RABBIT_EXPORTERS
-              value: "{{ .Values.rabbitmq.exporters }}"
-            - name: OUTPUT_FORMAT
-              value: "{{ .Values.rabbitmq.output_format }}"
-            - name: RABBIT_TIMEOUT
-              value: "{{ .Values.rabbitmq.timeout }}"
-            - name: MAX_QUEUES
-              value: "{{ .Values.rabbitmq.max_queues }}"
-            - name: EXCLUDE_METRICS
-              value: "{{ .Values.rabbitmq.excludeMetrics }}"
+           {{- if .Values.rabbitmq.existingPasswordSecret }}
+              - name: RABBIT_PASSWORD
+                valueFrom:
+                  secretKeyRef:
+                    name: "{{ .Values.rabbitmq.existingPasswordSecret }}"
+                    key: "{{ .Values.rabbitmq.existingPasswordSecretKey }}"
+           {{- else if .Values.rabbitmq.password  }}
+              - name: RABBIT_PASSWORD
+                value: {{ .Values.rabbitmq.password }}
+           {{- end }}
+
+           {{- if .Values.rabbitmq.user }}
+              - name: RABBIT_USER
+                value: {{ .Values.rabbitmq.user }}
+           {{- end }}
+           {{- if .Values.rabbitmq.url }}
+              - name: RABBIT_URL
+                value: {{ .Values.rabbitmq.url }}
+           {{- end }}
           ports:
             - containerPort: {{ .Values.service.internalPort }}
               name: publish

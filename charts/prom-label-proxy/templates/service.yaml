@@ -7,16 +7,19 @@ metadata:
     {{- include "prom-label-proxy.labels" . | nindent 4 }}
   {{- with .Values.service.annotations }}
   annotations:
-    {{- toYaml . | nindent 4 }}
+    {{- tpl (toYaml .) $ | nindent 4 }}
   {{- end }}
 spec:
-  type: ClusterIP
+  type: {{ .Values.service.type }}
   ports:
     - port: {{ .Values.service.port }}
       targetPort: http
       protocol: TCP
       name: http
-    {{- if and .Values.metrics.enabled .Values.metrics.serviceMonitor.enabled}}
+      {{- if (and (eq .Values.service.type "NodePort") (not (empty .Values.service.nodePort))) }}
+      nodePort: {{ .Values.service.nodePort }}
+      {{- end }}
+    {{- if and .Values.metrics.enabled .Values.metrics.serviceMonitor.enabled }}
     - port: {{ .Values.metrics.serviceMonitor.port }}
       targetPort: http-metrics
       protocol: TCP

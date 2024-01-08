@@ -356,7 +356,18 @@ spec:
 {{- if not .Values.prometheus.agentMode }}
 {{- if .Values.prometheus.prometheusSpec.thanos }}
   thanos:
-{{ toYaml .Values.prometheus.prometheusSpec.thanos | indent 4 }}
+{{- with (omit .Values.prometheus.prometheusSpec.thanos "objectStorageConfig")}}
+{{ toYaml . | indent 4 }}
+{{- end }}
+{{- if .Values.prometheus.prometheusSpec.thanos.objectStorageConfig.existingSecret }}
+    objectStorageConfig:
+      key: "{{.Values.prometheus.prometheusSpec.thanos.objectStorageConfig.existingSecret.key }}"
+      name: "{{.Values.prometheus.prometheusSpec.thanos.objectStorageConfig.existingSecret.name }}"
+{{- else if .Values.prometheus.prometheusSpec.thanos.objectStorageConfig.secret}}
+    objectStorageConfig:
+      key: object-storage-configs.yaml
+      name: {{ template "kube-prometheus-stack.fullname" . }}-prometheus
+{{- end }}
 {{- end }}
 {{- if .Values.prometheus.prometheusSpec.disableCompaction }}
   disableCompaction: {{ .Values.prometheus.prometheusSpec.disableCompaction }}
@@ -411,6 +422,9 @@ spec:
 {{- if and (not .Values.prometheus.agentMode) .Values.prometheus.prometheusSpec.queryLogFile }}
   queryLogFile: {{ .Values.prometheus.prometheusSpec.queryLogFile }}
 {{- end }}
+{{- if .Values.prometheus.prometheusSpec.sampleLimit }}
+  sampleLimit: {{ .Values.prometheus.prometheusSpec.sampleLimit }}
+{{- end }}
 {{- if .Values.prometheus.prometheusSpec.enforcedSampleLimit }}
   enforcedSampleLimit: {{ .Values.prometheus.prometheusSpec.enforcedSampleLimit }}
 {{- end }}
@@ -440,5 +454,11 @@ spec:
 {{- if .Values.prometheus.prometheusSpec.tracingConfig }}
   tracingConfig:
 {{ toYaml .Values.prometheus.prometheusSpec.tracingConfig | indent 4 }}
+{{- end }}
+{{- with .Values.prometheus.prometheusSpec.additionalConfig }}
+  {{- tpl (toYaml .) $ | nindent 2 }}
+{{- end }}
+{{- with .Values.prometheus.prometheusSpec.additionalConfigString }}
+  {{- tpl . $ | nindent 2 }}
 {{- end }}
 {{- end }}

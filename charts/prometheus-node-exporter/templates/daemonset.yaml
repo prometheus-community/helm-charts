@@ -13,6 +13,7 @@ spec:
   selector:
     matchLabels:
       {{- include "prometheus-node-exporter.selectorLabels" . | nindent 6 }}
+  revisionHistoryLimit: {{ .Values.revisionHistoryLimit }}
   {{- with .Values.updateStrategy }}
   updateStrategy:
     {{- toYaml . | nindent 4 }}
@@ -49,7 +50,7 @@ spec:
             - --path.sysfs=/host/sys
             {{- if .Values.hostRootFsMount.enabled }}
             - --path.rootfs=/host/root
-            {{- if semverCompare ">=1.4.0" (default .Chart.AppVersion .Values.image.tag) }}
+            {{- if semverCompare ">=1.4.0" (coalesce .Values.version .Values.image.tag .Chart.AppVersion) }}
             - --path.udev.data=/host/root/run/udev/data
             {{- end }}
             {{- end }}

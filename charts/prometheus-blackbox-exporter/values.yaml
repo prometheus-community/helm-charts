@@ -31,6 +31,12 @@ automountServiceAccountToken: false
 ##   NO_PROXY: "localhost,127.0.0.1"
 extraEnv: {}
 
+## Additional blackbox-exporter container environment variables for secret
+## extraEnvFromSecret:
+##   - secretOne
+##   - secretTwo
+extraEnvFromSecret: ""
+
 extraVolumes: []
   # - name: secret-blackbox-oauth-htpasswd
   #   secret:
@@ -46,9 +52,12 @@ extraVolumeMounts:
   #   mountPath: /etc/ssl/certs/ca-certificates.crt
 
 ## Additional InitContainers to initialize the pod
-##
+## This supports either a structured array or a templatable string
 extraInitContainers: []
 
+## This supports either a structured array or a templatable string
+
+# Array mode
 extraContainers: []
   # - name: oAuth2-proxy
   #   args:
@@ -69,6 +78,16 @@ extraContainers: []
   #   volumeMounts:
   #     - mountPath: /etc/prometheus/secrets/blackbox-tls
   #       name: secret-blackbox-tls
+
+# String mode
+# extraContainers: |-
+#   - name: oAuth2-proxy
+#     args:
+#       - -https-address=:9116
+#       - -upstream=http://localhost:9115
+#       - -skip-auth-regex=^/metrics
+#       - -openshift-delegate-urls={"/":{"group":"monitoring.coreos.com","resource":"prometheuses","verb":"get"}}
+#     image: {{ .Values.global.imageRegistry }}/openshift/oauth-proxy:v1.1.0
 
 ## Enable pod security policy
 pspEnabled: true
@@ -185,6 +204,10 @@ service:
   labels: {}
   type: ClusterIP
   port: 9115
+  ipDualStack:
+    enabled: false
+    ipFamilies: ["IPv6", "IPv4"]
+    ipFamilyPolicy: "PreferDualStack"
 
 # Only changes container port. Application port can be changed with extraArgs (--web.listen-address=:9115)
 # https://github.com/prometheus/blackbox_exporter/blob/998037b5b40c1de5fee348ffdea8820509d85171/main.go#L55
@@ -292,6 +315,49 @@ prometheusRule:
   additionalLabels: {}
   namespace: ""
   rules: []
+
+podMonitoring:
+  ## If true, a PodMonitoring CR is created for google managed prometheus
+  ## https://cloud.google.com/stackdriver/docs/managed-prometheus/setup-managed#gmp-pod-monitoring for blackbox-exporter itself
+  ##
+  selfMonitor:
+    enabled: false
+    additionalMetricsRelabels: {}
+    labels: {}
+    path: /metrics
+    interval: 30s
+    scrapeTimeout: 30s
+
+  ## If true, a PodMonitoring CR is created for a google managed prometheus
+  ## https://cloud.google.com/stackdriver/docs/managed-prometheus/setup-managed#gmp-pod-monitoring for each target
+  ##
+  enabled: false
+
+  ## Default values that will be used for all PodMonitoring created by `targets`
+  ## Following PodMonitoring API specs https://github.com/GoogleCloudPlatform/prometheus-engine/blob/main/doc/api.md#scrapeendpoint
+  defaults:
+    additionalMetricsRelabels: {}
+    labels: {}
+    interval: 30s
+    scrapeTimeout: 30s
+    module: http_2xx
+  ## scheme: Protocol scheme to use to scrape.
+  scheme: http
+  ## path: HTTP path. Needs to be adjusted, if web.route-prefix is set
+  path: "/probe"
+  ## tlsConfig: TLS configuration to use when scraping the endpoint. For example if using istio mTLS.
+  ## Of type: https://github.com/coreos/prometheus-operator/blob/master/Documentation/api.md#tlsconfig
+  tlsConfig: {}
+
+  targets:
+#    - name: example                    # Human readable URL that will appear in Google Managed Prometheus / AlertManager
+#      url: http://example.com/healthz  # The URL that blackbox will scrape
+#      hostname: example.com            # HTTP probes can accept an additional `hostname` parameter that will set `Host` header and TLS SNI
+#      labels: {}                       # Map of labels for PodMonitoring. Overrides value set in `defaults`
+#      interval: 60s                    # Scraping interval. Overrides value set in `defaults`
+#      scrapeTimeout: 60s               # Scrape timeout. Overrides value set in `defaults`
+#      module: http_2xx                 # Module used for scraping. Overrides value set in `defaults`
+#      additionalMetricsRelabels: {}    # Map of metric labels and values to add
 
 ## Network policy for chart
 networkPolicy:

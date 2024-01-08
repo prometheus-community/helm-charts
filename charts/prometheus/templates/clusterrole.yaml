@@ -6,7 +6,7 @@ metadata:
     {{- include "prometheus.server.labels" . | nindent 4 }}
   name: {{ include "prometheus.clusterRoleName" . }}
 rules:
-{{- if .Values.podSecurityPolicy.enabled }}
+{{- if and .Values.podSecurityPolicy.enabled (.Capabilities.APIVersions.Has "policy/v1beta1/PodSecurityPolicy") }}
   - apiGroups:
     - extensions
     resources:
@@ -37,6 +37,14 @@ rules:
     resources:
       - ingresses/status
       - ingresses
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - "discovery.k8s.io"
+    resources:
+      - endpointslices
     verbs:
       - get
       - list

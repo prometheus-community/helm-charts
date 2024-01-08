@@ -18,6 +18,7 @@ metadata:
 {{- end }}
 spec:
   replicas: 1
+  revisionHistoryLimit: {{ .Values.prometheusOperator.revisionHistoryLimit }}
   selector:
     matchLabels:
       app: {{ template "kube-prometheus-stack.name" . }}-operator
@@ -40,7 +41,7 @@ spec:
     {{- end }}
     {{- if .Values.global.imagePullSecrets }}
       imagePullSecrets:
-      {{ include "kube-prometheus-stack.imagePullSecrets" . | trim | indent 2 }}
+      {{- include "kube-prometheus-stack.imagePullSecrets" . | indent 8 }}
     {{- end }}
       containers:
         - name: {{ template "kube-prometheus-stack.name" . }}
@@ -90,10 +91,10 @@ spec:
             {{- else }}
             - --prometheus-config-reloader={{ $configReloaderRegistry }}/{{ .Values.prometheusOperator.prometheusConfigReloader.image.repository }}:{{ .Values.prometheusOperator.prometheusConfigReloader.image.tag | default .Chart.AppVersion }}
             {{- end }}
-            - --config-reloader-cpu-request={{ .Values.prometheusOperator.prometheusConfigReloader.resources.requests.cpu }}
-            - --config-reloader-cpu-limit={{ .Values.prometheusOperator.prometheusConfigReloader.resources.limits.cpu }}
-            - --config-reloader-memory-request={{ .Values.prometheusOperator.prometheusConfigReloader.resources.requests.memory }}
-            - --config-reloader-memory-limit={{ .Values.prometheusOperator.prometheusConfigReloader.resources.limits.memory }}
+            - --config-reloader-cpu-request={{ (((.Values.prometheusOperator.prometheusConfigReloader.resources).requests).cpu) | default 0 }}
+            - --config-reloader-cpu-limit={{ (((.Values.prometheusOperator.prometheusConfigReloader.resources).limits).cpu) | default 0 }}
+            - --config-reloader-memory-request={{ (((.Values.prometheusOperator.prometheusConfigReloader.resources).requests).memory) | default 0 }}
+            - --config-reloader-memory-limit={{ (((.Values.prometheusOperator.prometheusConfigReloader.resources).limits).memory) | default 0 }}
             {{- if .Values.prometheusOperator.prometheusConfigReloader.enableProbe }}
             - --enable-config-reloader-probes=true
             {{- end }}
@@ -142,6 +143,11 @@ spec:
           ports:
             - containerPort: 8080
               name: http
+          {{- end }}
+          env:
+          {{- range $key, $value := .Values.prometheusOperator.env }}
+          - name: {{ $key }}
+            value: {{ $value | quote }}
           {{- end }}
           resources:
 {{ toYaml .Values.prometheusOperator.resources | indent 12 }}

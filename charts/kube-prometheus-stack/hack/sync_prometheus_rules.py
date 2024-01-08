@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
 """Fetch alerting and aggregation rules from provided urls into this chart."""
 import json
+import os
 import re
+import shutil
+import subprocess
 import textwrap
-from os import makedirs
 
 import _jsonnet
 import requests
@@ -63,10 +65,27 @@ charts = [
         'min_kubernetes': '1.14.0-0'
     },
     {
-        'source': 'https://raw.githubusercontent.com/etcd-io/etcd/main/contrib/mixin/mixin.libsonnet',
+        'git': 'https://github.com/kubernetes-monitoring/kubernetes-mixin.git',
+        'branch': 'master',
+        'source': 'windows.libsonnet',
+        'cwd': 'rules',
         'destination': '../templates/prometheus/rules-1.14',
         'min_kubernetes': '1.14.0-0',
-        'is_mixin': True
+        'is_mixin': True,
+        'mixin_vars': {'_config': {
+            'clusterLabel': 'cluster',
+            'windowsExporterSelector': 'job="windows-exporter"',
+            'kubeStateMetricsSelector': 'job="kube-state-metrics"',
+        }}
+    },
+    {
+        'git': 'https://github.com/etcd-io/etcd.git',
+        'source': 'mixin.libsonnet',
+        'cwd': 'contrib/mixin',
+        'destination': '../templates/prometheus/rules-1.14',
+        'min_kubernetes': '1.14.0-0',
+        'is_mixin': True,
+        'mixin_vars': {'_config+': {}}
     },
 ]
 
@@ -76,7 +95,13 @@ condition_map = {
     'config-reloaders': ' .Values.defaultRules.rules.configReloaders',
     'etcd': ' .Values.kubeEtcd.enabled .Values.defaultRules.rules.etcd',
     'general.rules': ' .Values.defaultRules.rules.general',
-    'k8s.rules': ' .Values.defaultRules.rules.k8s',
+    'k8s.rules.container_cpu_usage_seconds_total': ' .Values.defaultRules.rules.k8sContainerCpuUsageSecondsTotal',
+    'k8s.rules.container_memory_cache': ' .Values.defaultRules.rules.k8sContainerMemoryCache',
+    'k8s.rules.container_memory_rss': ' .Values.defaultRules.rules.k8sContainerMemoryRss',
+    'k8s.rules.container_memory_swap': ' .Values.defaultRules.rules.k8sContainerMemorySwap',
+    'k8s.rules.container_memory_working_set_bytes': ' .Values.defaultRules.rules.k8sContainerMemoryWorkingSetBytes',
+    'k8s.rules.container_resource': ' .Values.defaultRules.rules.k8sContainerResource',
+    'k8s.rules.pod_owner': ' .Values.defaultRules.rules.k8sPodOwner',
     'kube-apiserver-availability.rules': ' .Values.kubeApiServer.enabled .Values.defaultRules.rules.kubeApiserverAvailability',
     'kube-apiserver-burnrate.rules': ' .Values.kubeApiServer.enabled .Values.defaultRules.rules.kubeApiserverBurnrate',
     'kube-apiserver-histogram.rules': ' .Values.kubeApiServer.enabled .Values.defaultRules.rules.kubeApiserverHistogram',
@@ -101,6 +126,8 @@ condition_map = {
     'node-network': ' .Values.defaultRules.rules.network',
     'prometheus-operator': ' .Values.defaultRules.rules.prometheusOperator',
     'prometheus': ' .Values.defaultRules.rules.prometheus', # kube-prometheus >= 1.14 uses prometheus as group instead of prometheus.rules
+    'windows.node.rules': ' .Values.windowsMonitoring.enabled .Values.defaultRules.rules.windows',
+    'windows.pod.rules': ' .Values.windowsMonitoring.enabled .Values.defaultRules.rules.windows',
 }
 
 alert_condition_map = {
@@ -354,6 +381,28 @@ def add_custom_annotations(rules, group, indent=4):
 
     return rules
 
+
+def add_custom_keep_firing_for(rules, indent=4):
+    """Add if wrapper for additional rules annotations"""
+    indent_spaces = " " * indent + "  "
+    keep_firing_for = (indent_spaces + '{{- with .Values.defaultRules.keepFiringFor }}\n' +
+                        indent_spaces + 'keep_firing_for: "{{ . }}"\n' +
+                        indent_spaces + '{{- end }}')
+    keep_firing_for_len = len(keep_firing_for) + 1
+
+    separator = " " * indent + "  for:.*"
+    alerts_positions = re.finditer(separator, rules)
+    alert = 0
+
+    for alert_position in alerts_positions:
+        # Add rule_condition after 'annotations:' statement
+        index = alert_position.end() + keep_firing_for_len * alert
+        rules = rules[:index] + "\n" + keep_firing_for + rules[index:]
+        alert += 1
+
+    return rules
+
+
 def write_group_to_file(group, url, destination, min_kubernetes, max_kubernetes):
     fix_expr(group['rules'])
     group_name = group['name']
@@ -370,11 +419,12 @@ def write_group_to_file(group, url, destination, min_kubernetes, max_kubernetes)
     # append per-alert rules
     rules = add_custom_labels(rules, group)
     rules = add_custom_annotations(rules, group)
+    rules = add_custom_keep_firing_for(rules)
     rules = add_rules_conditions_from_condition_map(rules)
     rules = add_rules_per_rule_conditions(rules, group)
     # initialize header
     lines = header % {
-        'name': group['name'],
+        'name': sanitize_name(group['name']),
         'url': url,
         'condition': condition_map.get(group['name'], ''),
         'init_line': init_line,
@@ -383,7 +433,11 @@ def write_group_to_file(group, url, destination, min_kubernetes, max_kubernetes)
     }
 
     # rules themselves
-    lines += rules
+    lines += re.sub(
+        r'\s(by|on) ?\(',
+        r' \1 ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}',
+        rules
+    )
 
     # footer
     lines += '{{- end }}'
@@ -392,7 +446,7 @@ def write_group_to_file(group, url, destination, min_kubernetes, max_kubernetes)
     new_filename = "%s/%s" % (destination, filename)
 
     # make sure directories to store the file exist
-    makedirs(destination, exist_ok=True)
+    os.makedirs(destination, exist_ok=True)
 
     # recreate the file
     with open(new_filename, 'w') as f:
@@ -416,16 +470,73 @@ def main():
     init_yaml_styles()
     # read the rules, create a new template file per group
     for chart in charts:
-        print("Generating rules from %s" % chart['source'])
-        response = requests.get(chart['source'])
-        if response.status_code != 200:
-            print('Skipping the file, response code %s not equals 200' % response.status_code)
-            continue
-        raw_text = response.text
-        if chart.get('is_mixin'):
-            alerts = json.loads(_jsonnet.evaluate_snippet(chart['source'], raw_text + '.prometheusAlerts'))
+        if 'git' in chart:
+            if 'source' not in chart:
+                chart['source'] = '_mixin.jsonnet'
+
+            url = chart['git']
+
+            print("Clone %s" % chart['git'])
+            checkout_dir = os.path.basename(chart['git'])
+            shutil.rmtree(checkout_dir, ignore_errors=True)
+
+            branch = "main"
+            if 'branch' in chart:
+                branch = chart['branch']
+
+            subprocess.run(["git", "clone", chart['git'], "--branch", branch, "--single-branch", "--depth", "1", checkout_dir])
+
+            if chart.get('is_mixin'):
+                cwd = os.getcwd()
+
+                source_cwd = chart['cwd']
+                mixin_file = chart['source']
+
+                mixin_dir = cwd + '/' + checkout_dir + '/' + source_cwd + '/'
+                if os.path.exists(mixin_dir + "jsonnetfile.json"):
+                    print("Running jsonnet-bundler, because jsonnetfile.json exists")
+                    subprocess.run(["jb", "install"], cwd=mixin_dir)
+
+                if 'content' in chart:
+                    f = open(mixin_dir + mixin_file, "w")
+                    f.write(chart['content'])
+                    f.close()
+
+                mixin_vars = json.dumps(chart['mixin_vars'])
+
+                print("Generating rules from %s" % mixin_file)
+                print("Change cwd to %s" % checkout_dir + '/' + source_cwd)
+                os.chdir(mixin_dir)
+
+                mixin = """
+                local kp =
+                    { prometheusAlerts+:: {}, prometheusRules+:: {}} +
+                    (import "%s") +
+                    %s;
+
+                kp.prometheusAlerts + kp.prometheusRules
+                """
+
+                alerts = json.loads(_jsonnet.evaluate_snippet(mixin_file, mixin % (mixin_file, mixin_vars), import_callback=jsonnet_import_callback))
+                os.chdir(cwd)
+            else:
+                with open(checkout_dir + '/' + chart['source'], "r") as f:
+                    raw_text = f.read()
+
+                alerts = yaml.full_load(raw_text)
+
         else:
-            alerts = yaml.full_load(raw_text)
+            url = chart['source']
+            print("Generating rules from %s" % url)
+            response = requests.get(url)
+            if response.status_code != 200:
+                print('Skipping the file, response code %s not equals 200' % response.status_code)
+                continue
+            raw_text = response.text
+            if chart.get('is_mixin'):
+                alerts = json.loads(_jsonnet.evaluate_snippet(url, raw_text + '.prometheusAlerts'))
+            else:
+                alerts = yaml.full_load(raw_text)
 
         if ('max_kubernetes' not in chart):
             chart['max_kubernetes']="9.9.9-9"
@@ -433,12 +544,28 @@ def main():
         # etcd workaround, their file don't have spec level
         groups = alerts['spec']['groups'] if alerts.get('spec') else alerts['groups']
         for group in groups:
-            write_group_to_file(group, chart['source'], chart['destination'], chart['min_kubernetes'], chart['max_kubernetes'])
+            write_group_to_file(group, url, chart['destination'], chart['min_kubernetes'], chart['max_kubernetes'])
 
     # write rules.names named template
     write_rules_names_template()
 
     print("Finished")
+
+
+def sanitize_name(name):
+    return re.sub('[_]', '-', name).lower()
+
+
+def jsonnet_import_callback(base, rel):
+    if "github.com" in base:
+        base = os.getcwd() + '/vendor/' + base[base.find('github.com'):]
+    elif "github.com" in rel:
+        base = os.getcwd() + '/vendor/'
+
+    if os.path.isfile(base + rel):
+        return base + rel, open(base + rel).read().encode('utf-8')
+
+    raise RuntimeError('File not found')
 
 
 if __name__ == '__main__':

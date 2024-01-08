@@ -15,6 +15,7 @@ spec:
     matchLabels:
       {{- include "prometheus.server.matchLabels" . | nindent 6 }}
   replicas: {{ .Values.server.replicaCount }}
+  revisionHistoryLimit: {{ .Values.server.revisionHistoryLimit }}
   {{- if .Values.server.strategy }}
   strategy:
 {{ toYaml .Values.server.strategy | trim | indent 4 }}
@@ -46,6 +47,9 @@ spec:
       {{- end }}
 {{- end }}
       serviceAccountName: {{ template "prometheus.serviceAccountName.server" . }}
+{{- if kindIs "bool" .Values.server.automountServiceAccountToken }}
+      automountServiceAccountToken: {{ .Values.server.automountServiceAccountToken }}
+{{- end }}
       {{- if .Values.server.extraInitContainers }}
       initContainers:
 {{ toYaml .Values.server.extraInitContainers | indent 8 }}
@@ -84,8 +88,10 @@ spec:
           ports:
             - containerPort: {{ .Values.configmapReload.prometheus.containerPort }}
           {{- end }}
+          {{- with .Values.configmapReload.prometheus.resources }}
           resources:
-{{ toYaml .Values.configmapReload.prometheus.resources | indent 12 }}
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
           volumeMounts:
             - name: config-volume
               mountPath: /etc/config
@@ -123,6 +129,9 @@ spec:
           {{- if .Values.server.retention }}
             - --storage.tsdb.retention.time={{ .Values.server.retention }}
           {{- end }}
+          {{- if .Values.server.retentionSize }}
+            - --storage.tsdb.retention.size={{ .Values.server.retentionSize }}
+          {{- end }}
             - --config.file={{ .Values.server.configPath }}
             {{- if .Values.server.storagePath }}
             - --storage.tsdb.path={{ .Values.server.storagePath }}
@@ -146,6 +155,9 @@ spec:
         {{- end }}
           ports:
             - containerPort: 9090
+          {{- if .Values.server.portName }}
+              name: {{ .Values.server.portName }}
+          {{- end }}
           {{- if .Values.server.hostPort }}
               hostPort: {{ .Values.server.hostPort }}
           {{- end }}
@@ -209,8 +221,10 @@ spec:
             periodSeconds: {{ .Values.server.startupProbe.periodSeconds }}
             timeoutSeconds: {{ .Values.server.startupProbe.timeoutSeconds }}
           {{- end }}
+          {{- with .Values.server.resources }}
           resources:
-{{ toYaml .Values.server.resources | indent 12 }}
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
           volumeMounts:
             - name: config-volume
               mountPath: /etc/config

@@ -11,11 +11,15 @@ spec:
   endpointSelector:
     matchLabels:
       app: {{ template "kube-prometheus-stack.name" . }}-operator
+      {{- if .Values.prometheusOperator.networkPolicy.matchLabels }}
+      {{ toYaml .Values.prometheusOperator.networkPolicy.matchLabels | nindent 6 }}
+      {{- else }}
       {{- include "kube-prometheus-stack.labels" $ | nindent 6 }}
+      {{- end }}
   egress:
-  {{- if and .Values.prometheusOperator.networkPolicy.cilium .Values.prometheusOperator.networkPolicy.cilium.egress }}
+    {{- if and .Values.prometheusOperator.networkPolicy.cilium .Values.prometheusOperator.networkPolicy.cilium.egress }}
     {{ toYaml .Values.prometheusOperator.networkPolicy.cilium.egress | nindent 6 }}
-  {{- else }}
+    {{- else }}
   - toEntities:
     - kube-apiserver
   {{- end }}
@@ -28,8 +32,10 @@ spec:
       - port: "8080"
       {{- end }}
         protocol: "TCP"
+      {{- if not .Values.prometheusOperator.tls.enabled }}
       rules:
         http:
         - method: "GET"
           path: "/metrics"
+      {{- end }}
 {{- end }}

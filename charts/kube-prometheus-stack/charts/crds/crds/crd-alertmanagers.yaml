@@ -1,11 +1,11 @@
-# https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/v0.66.0/example/prometheus-operator-crd/monitoring.coreos.com_alertmanagers.yaml
+# https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/v0.70.0/example/prometheus-operator-crd/monitoring.coreos.com_alertmanagers.yaml
 ---
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.11.1
-  creationTimestamp: null
+    controller-gen.kubebuilder.io/version: v0.13.0
+    operator.prometheus.io/version: 0.70.0
   name: alertmanagers.monitoring.coreos.com
 spec:
   group: monitoring.coreos.com
@@ -1028,8 +1028,8 @@ spec:
                               is only available starting from Alertmanager v0.22+.
                             properties:
                               credentials:
-                                description: The secret's key that contains the credentials
-                                  of the request
+                                description: Selects a key of a Secret in the namespace
+                                  that contains the credentials for authentication.
                                 properties:
                                   key:
                                     description: The key of the secret to select from.  Must
@@ -1050,8 +1050,9 @@ spec:
                                 type: object
                                 x-kubernetes-map-type: atomic
                               type:
-                                description: Set the authentication type. Defaults
-                                  to Bearer, Basic will cause an error
+                                description: "Defines the authentication type. The
+                                  value is case-insensitive. \n \"Basic\" is not a
+                                  supported value. \n Default: \"Bearer\""
                                 type: string
                             type: object
                           basicAuth:
@@ -1060,8 +1061,8 @@ spec:
                               takes precedence.
                             properties:
                               password:
-                                description: The secret in the service monitor namespace
-                                  that contains the password for authentication.
+                                description: '`password` specifies a key of a Secret
+                                  containing the password for authentication.'
                                 properties:
                                   key:
                                     description: The key of the secret to select from.  Must
@@ -1082,8 +1083,8 @@ spec:
                                 type: object
                                 x-kubernetes-map-type: atomic
                               username:
-                                description: The secret in the service monitor namespace
-                                  that contains the username for authentication.
+                                description: '`username` specifies a key of a Secret
+                                  containing the username for authentication.'
                                 properties:
                                   key:
                                     description: The key of the secret to select from.  Must
@@ -1136,8 +1137,8 @@ spec:
                               token for the targets.
                             properties:
                               clientId:
-                                description: The secret or configmap containing the
-                                  OAuth2 client id
+                                description: '`clientId` specifies a key of a Secret
+                                  or ConfigMap containing the OAuth2 client''s ID.'
                                 properties:
                                   configMap:
                                     description: ConfigMap containing data to use
@@ -1184,8 +1185,8 @@ spec:
                                     x-kubernetes-map-type: atomic
                                 type: object
                               clientSecret:
-                                description: The secret containing the OAuth2 client
-                                  secret
+                                description: '`clientSecret` specifies a key of a
+                                  Secret containing the OAuth2 client''s secret.'
                                 properties:
                                   key:
                                     description: The key of the secret to select from.  Must
@@ -1208,15 +1209,18 @@ spec:
                               endpointParams:
                                 additionalProperties:
                                   type: string
-                                description: Parameters to append to the token URL
+                                description: '`endpointParams` configures the HTTP
+                                  parameters to append to the token URL.'
                                 type: object
                               scopes:
-                                description: OAuth2 scopes used for the token request
+                                description: '`scopes` defines the OAuth2 scopes used
+                                  for the token request.'
                                 items:
                                   type: string
                                 type: array
                               tokenUrl:
-                                description: The URL to fetch the token from
+                                description: '`tokenURL` configures the URL to fetch
+                                  the token from.'
                                 minLength: 1
                                 type: string
                             required:
@@ -1424,6 +1428,88 @@ spec:
                         - key
                         type: object
                         x-kubernetes-map-type: atomic
+                      smtp:
+                        description: Configures global SMTP parameters.
+                        properties:
+                          authIdentity:
+                            description: SMTP Auth using PLAIN
+                            type: string
+                          authPassword:
+                            description: SMTP Auth using LOGIN and PLAIN.
+                            properties:
+                              key:
+                                description: The key of the secret to select from.  Must
+                                  be a valid secret key.
+                                type: string
+                              name:
+                                description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                  TODO: Add other useful fields. apiVersion, kind,
+                                  uid?'
+                                type: string
+                              optional:
+                                description: Specify whether the Secret or its key
+                                  must be defined
+                                type: boolean
+                            required:
+                            - key
+                            type: object
+                            x-kubernetes-map-type: atomic
+                          authSecret:
+                            description: SMTP Auth using CRAM-MD5.
+                            properties:
+                              key:
+                                description: The key of the secret to select from.  Must
+                                  be a valid secret key.
+                                type: string
+                              name:
+                                description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                  TODO: Add other useful fields. apiVersion, kind,
+                                  uid?'
+                                type: string
+                              optional:
+                                description: Specify whether the Secret or its key
+                                  must be defined
+                                type: boolean
+                            required:
+                            - key
+                            type: object
+                            x-kubernetes-map-type: atomic
+                          authUsername:
+                            description: SMTP Auth using CRAM-MD5, LOGIN and PLAIN.
+                              If empty, Alertmanager doesn't authenticate to the SMTP
+                              server.
+                            type: string
+                          from:
+                            description: The default SMTP From header field.
+                            type: string
+                          hello:
+                            description: The default hostname to identify to the SMTP
+                              server.
+                            type: string
+                          requireTLS:
+                            description: The default SMTP TLS requirement. Note that
+                              Go does not support unencrypted connections to remote
+                              SMTP endpoints.
+                            type: boolean
+                          smartHost:
+                            description: The default SMTP smarthost used for sending
+                              emails.
+                            properties:
+                              host:
+                                description: Defines the host's address, it can be
+                                  a DNS name or a literal IP address.
+                                minLength: 1
+                                type: string
+                              port:
+                                description: Defines the host's port, it can be a
+                                  literal port number or a port name.
+                                minLength: 1
+                                type: string
+                            required:
+                            - host
+                            - port
+                            type: object
+                        type: object
                     type: object
                   name:
                     description: The name of the AlertmanagerConfig resource which
@@ -2361,6 +2447,25 @@ spec:
                             cannot exceed Limits. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
                           type: object
                       type: object
+                    restartPolicy:
+                      description: 'RestartPolicy defines the restart behavior of
+                        individual containers in a pod. This field may only be set
+                        for init containers, and the only allowed value is "Always".
+                        For non-init containers or when this field is not specified,
+                        the restart behavior is defined by the Pod''s restart policy
+                        and the container type. Setting the RestartPolicy as "Always"
+                        for the init container will have the following effect: this
+                        init container will be continually restarted on exit until
+                        all regular containers have terminated. Once all regular containers
+                        have completed, all init containers with restartPolicy "Always"
+                        will be shut down. This lifecycle differs from normal init
+                        containers and is often referred to as a "sidecar" container.
+                        Although this init container still starts in the init container
+                        sequence, it does not wait for the container to complete before
+                        proceeding to the next init container. Instead, the next init
+                        container starts immediately after this init container is
+                        started, or after any startupProbe has successfully completed.'
+                      type: string
                     securityContext:
                       description: 'SecurityContext defines the security options the
                         container should be run with. If set, the fields of SecurityContext
@@ -2482,8 +2587,8 @@ spec:
                                 in a file on the node should be used. The profile
                                 must be preconfigured on the node to work. Must be
                                 a descending path, relative to the kubelet's configured
-                                seccomp profile location. Must only be set if type
-                                is "Localhost".
+                                seccomp profile location. Must be set if type is "Localhost".
+                                Must NOT be set for any other type.
                               type: string
                             type:
                               description: "type indicates which kind of seccomp profile
@@ -2516,16 +2621,12 @@ spec:
                               type: string
                             hostProcess:
                               description: HostProcess determines if a container should
-                                be run as a 'Host Process' container. This field is
-                                alpha-level and will only be honored by components
-                                that enable the WindowsHostProcessContainers feature
-                                flag. Setting this field without the feature flag
-                                will result in errors when validating the Pod. All
-                                of a Pod's containers must have the same effective
-                                HostProcess value (it is not allowed to have a mix
-                                of HostProcess containers and non-HostProcess containers).  In
-                                addition, if HostProcess is true then HostNetwork
-                                must also be set to true.
+                                be run as a 'Host Process' container. All of a Pod's
+                                containers must have the same effective HostProcess
+                                value (it is not allowed to have a mix of HostProcess
+                                containers and non-HostProcess containers). In addition,
+                                if HostProcess is true then HostNetwork must also
+                                be set to true.
                               type: boolean
                             runAsUserName:
                               description: The UserName in Windows to run the entrypoint
@@ -3704,6 +3805,25 @@ spec:
                             cannot exceed Limits. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
                           type: object
                       type: object
+                    restartPolicy:
+                      description: 'RestartPolicy defines the restart behavior of
+                        individual containers in a pod. This field may only be set
+                        for init containers, and the only allowed value is "Always".
+                        For non-init containers or when this field is not specified,
+                        the restart behavior is defined by the Pod''s restart policy
+                        and the container type. Setting the RestartPolicy as "Always"
+                        for the init container will have the following effect: this
+                        init container will be continually restarted on exit until
+                        all regular containers have terminated. Once all regular containers
+                        have completed, all init containers with restartPolicy "Always"
+                        will be shut down. This lifecycle differs from normal init
+                        containers and is often referred to as a "sidecar" container.
+                        Although this init container still starts in the init container
+                        sequence, it does not wait for the container to complete before
+                        proceeding to the next init container. Instead, the next init
+                        container starts immediately after this init container is
+                        started, or after any startupProbe has successfully completed.'
+                      type: string
                     securityContext:
                       description: 'SecurityContext defines the security options the
                         container should be run with. If set, the fields of SecurityContext
@@ -3825,8 +3945,8 @@ spec:
                                 in a file on the node should be used. The profile
                                 must be preconfigured on the node to work. Must be
                                 a descending path, relative to the kubelet's configured
-                                seccomp profile location. Must only be set if type
-                                is "Localhost".
+                                seccomp profile location. Must be set if type is "Localhost".
+                                Must NOT be set for any other type.
                               type: string
                             type:
                               description: "type indicates which kind of seccomp profile
@@ -3859,16 +3979,12 @@ spec:
                               type: string
                             hostProcess:
                               description: HostProcess determines if a container should
-                                be run as a 'Host Process' container. This field is
-                                alpha-level and will only be honored by components
-                                that enable the WindowsHostProcessContainers feature
-                                flag. Setting this field without the feature flag
-                                will result in errors when validating the Pod. All
-                                of a Pod's containers must have the same effective
-                                HostProcess value (it is not allowed to have a mix
-                                of HostProcess containers and non-HostProcess containers).  In
-                                addition, if HostProcess is true then HostNetwork
-                                must also be set to true.
+                                be run as a 'Host Process' container. All of a Pod's
+                                containers must have the same effective HostProcess
+                                value (it is not allowed to have a mix of HostProcess
+                                containers and non-HostProcess containers). In addition,
+                                if HostProcess is true then HostNetwork must also
+                                be set to true.
                               type: boolean
                             runAsUserName:
                               description: The UserName in Windows to run the entrypoint
@@ -4187,8 +4303,15 @@ spec:
                   objects are not goint to be performed, except for delete actions.
                 type: boolean
               podMetadata:
-                description: PodMetadata configures Labels and Annotations which are
-                  propagated to the alertmanager pods.
+                description: "PodMetadata configures labels and annotations which
+                  are propagated to the Alertmanager pods. \n The following items
+                  are reserved and cannot be overridden: * \"alertmanager\" label,
+                  set to the name of the Alertmanager instance. * \"app.kubernetes.io/instance\"
+                  label, set to the name of the Alertmanager instance. * \"app.kubernetes.io/managed-by\"
+                  label, set to \"prometheus-operator\". * \"app.kubernetes.io/name\"
+                  label, set to \"alertmanager\". * \"app.kubernetes.io/version\"
+                  label, set to the Alertmanager version. * \"kubectl.kubernetes.io/default-container\"
+                  annotation, set to \"alertmanager\"."
                 properties:
                   annotations:
                     additionalProperties:
@@ -4386,7 +4509,8 @@ spec:
                           in a file on the node should be used. The profile must be
                           preconfigured on the node to work. Must be a descending
                           path, relative to the kubelet's configured seccomp profile
-                          location. Must only be set if type is "Localhost".
+                          location. Must be set if type is "Localhost". Must NOT be
+                          set for any other type.
                         type: string
                       type:
                         description: "type indicates which kind of seccomp profile
@@ -4450,14 +4574,11 @@ spec:
                         type: string
                       hostProcess:
                         description: HostProcess determines if a container should
-                          be run as a 'Host Process' container. This field is alpha-level
-                          and will only be honored by components that enable the WindowsHostProcessContainers
-                          feature flag. Setting this field without the feature flag
-                          will result in errors when validating the Pod. All of a
-                          Pod's containers must have the same effective HostProcess
-                          value (it is not allowed to have a mix of HostProcess containers
-                          and non-HostProcess containers).  In addition, if HostProcess
-                          is true then HostNetwork must also be set to true.
+                          be run as a 'Host Process' container. All of a Pod's containers
+                          must have the same effective HostProcess value (it is not
+                          allowed to have a mix of HostProcess containers and non-HostProcess
+                          containers). In addition, if HostProcess is true then HostNetwork
+                          must also be set to true.
                         type: boolean
                       runAsUserName:
                         description: The UserName in Windows to run the entrypoint
@@ -5045,6 +5166,51 @@ spec:
                             items:
                               type: string
                             type: array
+                          allocatedResourceStatuses:
+                            additionalProperties:
+                              description: When a controller receives persistentvolume
+                                claim update with ClaimResourceStatus for a resource
+                                that it does not recognizes, then it should ignore
+                                that update and let other controllers handle it.
+                              type: string
+                            description: "allocatedResourceStatuses stores status
+                              of resource being resized for the given PVC. Key names
+                              follow standard Kubernetes label syntax. Valid values
+                              are either: * Un-prefixed keys: - storage - the capacity
+                              of the volume. * Custom resources must use implementation-defined
+                              prefixed names such as \"example.com/my-custom-resource\"
+                              Apart from above values - keys that are unprefixed or
+                              have kubernetes.io prefix are considered reserved and
+                              hence may not be used. \n ClaimResourceStatus can be
+                              in any of following states: - ControllerResizeInProgress:
+                              State set when resize controller starts resizing the
+                              volume in control-plane. - ControllerResizeFailed: State
+                              set when resize has failed in resize controller with
+                              a terminal error. - NodeResizePending: State set when
+                              resize controller has finished resizing the volume but
+                              further resizing of volume is needed on the node. -
+                              NodeResizeInProgress: State set when kubelet starts
+                              resizing the volume. - NodeResizeFailed: State set when
+                              resizing has failed in kubelet with a terminal error.
+                              Transient errors don't set NodeResizeFailed. For example:
+                              if expanding a PVC for more capacity - this field can
+                              be one of the following states: - pvc.status.allocatedResourceStatus['storage']
+                              = \"ControllerResizeInProgress\" - pvc.status.allocatedResourceStatus['storage']
+                              = \"ControllerResizeFailed\" - pvc.status.allocatedResourceStatus['storage']
+                              = \"NodeResizePending\" - pvc.status.allocatedResourceStatus['storage']
+                              = \"NodeResizeInProgress\" - pvc.status.allocatedResourceStatus['storage']
+                              = \"NodeResizeFailed\" When this field is not set, it
+                              means that no resize operation is in progress for the
+                              given PVC. \n A controller that receives PVC update
+                              with previously unknown resourceName or ClaimResourceStatus
+                              should ignore the update for the purpose it was designed.
+                              For example - a controller that only is responsible
+                              for resizing capacity of the volume, should ignore PVC
+                              updates that change other valid resources associated
+                              with PVC. \n This is an alpha field and requires enabling
+                              RecoverVolumeExpansionFailure feature."
+                            type: object
+                            x-kubernetes-map-type: granular
                           allocatedResources:
                             additionalProperties:
                               anyOf:
@@ -5052,19 +5218,31 @@ spec:
                               - type: string
                               pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
                               x-kubernetes-int-or-string: true
-                            description: allocatedResources is the storage resource
-                              within AllocatedResources tracks the capacity allocated
-                              to a PVC. It may be larger than the actual capacity
-                              when a volume expansion operation is requested. For
-                              storage quota, the larger value from allocatedResources
-                              and PVC.spec.resources is used. If allocatedResources
-                              is not set, PVC.spec.resources alone is used for quota
-                              calculation. If a volume expansion capacity request
-                              is lowered, allocatedResources is only lowered if there
-                              are no expansion operations in progress and if the actual
-                              volume capacity is equal or lower than the requested
-                              capacity. This is an alpha field and requires enabling
-                              RecoverVolumeExpansionFailure feature.
+                            description: "allocatedResources tracks the resources
+                              allocated to a PVC including its capacity. Key names
+                              follow standard Kubernetes label syntax. Valid values
+                              are either: * Un-prefixed keys: - storage - the capacity
+                              of the volume. * Custom resources must use implementation-defined
+                              prefixed names such as \"example.com/my-custom-resource\"
+                              Apart from above values - keys that are unprefixed or
+                              have kubernetes.io prefix are considered reserved and
+                              hence may not be used. \n Capacity reported here may
+                              be larger than the actual capacity when a volume expansion
+                              operation is requested. For storage quota, the larger
+                              value from allocatedResources and PVC.spec.resources
+                              is used. If allocatedResources is not set, PVC.spec.resources
+                              alone is used for quota calculation. If a volume expansion
+                              capacity request is lowered, allocatedResources is only
+                              lowered if there are no expansion operations in progress
+                              and if the actual volume capacity is equal or lower
+                              than the requested capacity. \n A controller that receives
+                              PVC update with previously unknown resourceName should
+                              ignore the update for the purpose it was designed. For
+                              example - a controller that only is responsible for
+                              resizing capacity of the volume, should ignore PVC updates
+                              that change other valid resources associated with PVC.
+                              \n This is an alpha field and requires enabling RecoverVolumeExpansionFailure
+                              feature."
                             type: object
                           capacity:
                             additionalProperties:
@@ -5118,13 +5296,6 @@ spec:
                             type: array
                           phase:
                             description: phase represents the current phase of PersistentVolumeClaim.
-                            type: string
-                          resizeStatus:
-                            description: resizeStatus stores status of resize operation.
-                              ResizeStatus is not set by default but when expansion
-                              is complete resizeStatus is set to empty string by resize
-                              controller or kubelet. This is an alpha field and requires
-                              enabling RecoverVolumeExpansionFailure feature.
                             type: string
                         type: object
                     type: object

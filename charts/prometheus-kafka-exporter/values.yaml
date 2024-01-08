@@ -4,6 +4,9 @@ image:
   tag: ""
   pullPolicy: IfNotPresent
 
+# Allow to change deployment command
+command: []
+
 imagePullSecrets: []
 
 global:
@@ -48,9 +51,18 @@ serviceAccount:
   # If not set and create is true, a name is generated using the fullname template
   name:
 
+# Specifies environment variables to be added to the kafka-exporter container.
+# Environment variables can be defined as a list of either key-value pairs or
+# using valueFrom to reference a secret or config map.
 env: []
-# - name: <ENV_VAR_NAME>
-#   value: <value>
+  # - name: <ENV_VAR_NAME>
+  #   value: <value>
+  # - name: PASSWORD
+  #   valueFrom:
+  #     secretKeyRef:
+  #       name: mysecret
+  #       key: password
+  #       optional: false
 
 # List of additional cli arguments to configure kafka-exporter
 # for example: --log.enable-sarama, --log.level=debug, etc.
@@ -62,6 +74,11 @@ service:
   port: 9308
   labels: {}
   annotations: {}
+  # Specifies a custom nodePort for external use. Used with service.type=NodePort.
+  nodePort: null
+  # Specifies a reserved static IP. Used with service.type=LoadBalancer.
+  # The field is deprecated, implementation-specific annotations should be set instead.
+  loadBalancerIP: null
 
 liveness:
   enabled: false
@@ -90,6 +107,24 @@ prometheus:
     #   release: kube-prometheus
     additionalLabels: {}
     targetLabels: []
+    # Relabel configs to apply to target's labelset before the target gets scraped.
+    # https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/api.md#monitoring.coreos.com/v1.RelabelConfig
+    relabelings: null
+    # - sourceLabels: [__meta_kubernetes_pod_node_name]
+    #   separator: ;
+    #   regex: ^(.*)$
+    #   targetLabel: nodename
+    #   replacement: $1
+    #   action: replace
+    # Metric relabeling is applied to samples as the last step before ingestion
+    # https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/api.md#monitoring.coreos.com/v1.RelabelConfig
+    metricRelabelings: null
+    # - sourceLabels: [__meta_kubernetes_pod_node_name]
+    #   separator: ;
+    #   regex: ^(.*)$
+    #   targetLabel: nodename
+    #   replacement: $1
+    #   action: replace
 
 resources: {}
   # We usually recommend not to specify default resources and to leave this as a conscious

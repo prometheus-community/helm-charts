@@ -14,6 +14,10 @@ imagePullSecrets: []
 nameOverride: ""
 fullnameOverride: ""
 
+# Number of old history to retain to allow rollback
+# Default Kubernetes value is set to 10
+revisionHistoryLimit: 10
+
 global:
   # To help compatibility with other charts which use global.imagePullSecrets.
   # Allow either an array of {name: pullSecret} maps (k8s-style), or an array of strings (more common helm-style).
@@ -38,7 +42,7 @@ kubeRBACProxy:
   image:
     registry: quay.io
     repository: brancz/kube-rbac-proxy
-    tag: v0.14.0
+    tag: v0.15.0
     sha: ""
     pullPolicy: IfNotPresent
 
@@ -65,6 +69,7 @@ kubeRBACProxy:
   #  memory: 32Mi
 
 service:
+  enabled: true
   type: ClusterIP
   port: 9100
   targetPort: 9100
@@ -73,6 +78,10 @@ service:
   listenOnAllInterfaces: true
   annotations:
     prometheus.io/scrape: "true"
+  ipDualStack:
+    enabled: false
+    ipFamilies: ["IPv6", "IPv4"]
+    ipFamilyPolicy: "PreferDualStack"
 
 # Set a NetworkPolicy with:
 # ingress only on service.port
@@ -462,9 +471,13 @@ verticalPodAutoscaler:
 
 # Extra manifests to deploy as an array
 extraManifests: []
-  # - apiVersion: v1
+  # - |
+  #   apiVersion: v1
   #   kind: ConfigMap
   #   metadata:
   #     name: prometheus-extra
   #   data:
   #     extra-data: "value"
+
+# Override version of app, required if image.tag is defined and does not follow semver
+version: ""

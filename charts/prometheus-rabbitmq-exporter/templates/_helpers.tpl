@@ -41,3 +41,8 @@ Create the name of the service account to use
     {{ default "default" .Values.serviceAccount.name }}
 {{- end -}}
 {{- end -}}
+
+
+{{- define "prometheus-rabbitmq-exporter.configMapName" -}}
+{{ template "prometheus-rabbitmq-exporter.fullname" . }}-config
+{{- end -}}

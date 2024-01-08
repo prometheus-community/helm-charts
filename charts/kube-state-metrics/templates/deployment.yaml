@@ -18,6 +18,11 @@ spec:
     matchLabels:
       {{- include "kube-state-metrics.selectorLabels" . | indent 6 }}
   replicas: {{ .Values.replicas }}
+  {{- if not .Values.autosharding.enabled }}
+  strategy:
+    type: {{ .Values.updateStrategy | default "RollingUpdate" }}
+  {{- end }}
+  revisionHistoryLimit: {{ .Values.revisionHistoryLimit }}
   {{- if .Values.autosharding.enabled }}
   serviceName: {{ template "kube-state-metrics.fullname" . }}
   volumeClaimTemplates: []
@@ -39,6 +44,10 @@ spec:
     {{- if .Values.priorityClassName }}
       priorityClassName: {{ .Values.priorityClassName }}
     {{- end }}
+      {{- with .Values.initContainers }}
+      initContainers:
+      {{- toYaml . | nindent 6 }}
+      {{- end }}
       containers:
       {{- $httpPort := ternary 9090 (.Values.service.port | default 8080) .Values.kubeRBACProxy.enabled}}
       {{- $telemetryPort := ternary 9091 (.Values.selfMonitor.telemetryPort | default 8081) .Values.kubeRBACProxy.enabled}}
@@ -234,6 +243,9 @@ spec:
 {{ toYaml .Values.kubeRBACProxy.containerSecurityContext | indent 10 }}
 {{- end }}
       {{- end }}
+      {{- end }}
+      {{- with .Values.containers }}
+      {{- toYaml . | nindent 6 }}
       {{- end }}
 {{- if or .Values.imagePullSecrets .Values.global.imagePullSecrets }}
       imagePullSecrets:
