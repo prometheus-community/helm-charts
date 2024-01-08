@@ -177,6 +177,13 @@ containers:
   - name: {{ $key }}
     value: {{ $value | quote }}
   {{- end }}
+  {{- if .Values.extraEnvFromSecret }}
+  envFrom:
+  {{- range .Values.extraEnvFromSecret }}
+    - secretRef:
+        name: {{ . }}
+  {{- end }}
+  {{- end }}
   args:
   {{- if .Values.config }}
   {{- if .Values.configPath }}
