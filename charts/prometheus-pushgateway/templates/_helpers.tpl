@@ -119,6 +119,10 @@ serviceAccountName: {{ include "prometheus-pushgateway.serviceAccountName" . }}
 {{- with .Values.priorityClassName }}
 priorityClassName: {{ . | quote }}
 {{- end }}
+{{- with .Values.hostAliases }}
+hostAliases:
+{{- toYaml . | nindent 2 }}
+{{- end }}
 {{- with .Values.imagePullSecrets }}
 imagePullSecrets:
   {{- toYaml . | nindent 2 }}
