@@ -31,6 +31,12 @@ automountServiceAccountToken: false
 ##   NO_PROXY: "localhost,127.0.0.1"
 extraEnv: {}
 
+## Additional blackbox-exporter container environment variables for secret
+## extraEnvFromSecret:
+##   - secretOne
+##   - secretTwo
+extraEnvFromSecret: ""
+
 extraVolumes: []
   # - name: secret-blackbox-oauth-htpasswd
   #   secret:
@@ -46,9 +52,12 @@ extraVolumeMounts:
   #   mountPath: /etc/ssl/certs/ca-certificates.crt
 
 ## Additional InitContainers to initialize the pod
-##
+## This supports either a structured array or a templatable string
 extraInitContainers: []
 
+## This supports either a structured array or a templatable string
+
+# Array mode
 extraContainers: []
   # - name: oAuth2-proxy
   #   args:
@@ -69,6 +78,16 @@ extraContainers: []
   #   volumeMounts:
   #     - mountPath: /etc/prometheus/secrets/blackbox-tls
   #       name: secret-blackbox-tls
+
+# String mode
+# extraContainers: |-
+#   - name: oAuth2-proxy
+#     args:
+#       - -https-address=:9116
+#       - -upstream=http://localhost:9115
+#       - -skip-auth-regex=^/metrics
+#       - -openshift-delegate-urls={"/":{"group":"monitoring.coreos.com","resource":"prometheuses","verb":"get"}}
+#     image: {{ .Values.global.imageRegistry }}/openshift/oauth-proxy:v1.1.0
 
 ## Enable pod security policy
 pspEnabled: true
