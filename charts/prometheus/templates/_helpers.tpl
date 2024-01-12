@@ -110,12 +110,7 @@ Return the appropriate apiVersion for deployment.
 {{- define "prometheus.deployment.apiVersion" -}}
 {{- print "apps/v1" -}}
 {{- end -}}
-{{/*
-Return the appropriate apiVersion for daemonset.
-*/}}
-{{- define "prometheus.daemonset.apiVersion" -}}
-{{- print "apps/v1" -}}
-{{- end -}}
+
 {{/*
 Return the appropriate apiVersion for networkpolicy.
 */}}
@@ -133,6 +128,7 @@ Return the appropriate apiVersion for poddisruptionbudget.
 {{- print "policy/v1beta1" -}}
 {{- end -}}
 {{- end -}}
+
 {{/*
 Return the appropriate apiVersion for rbac.
 */}}
@@ -143,6 +139,7 @@ Return the appropriate apiVersion for rbac.
 {{- print "rbac.authorization.k8s.io/v1beta1" -}}
 {{- end -}}
 {{- end -}}
+
 {{/*
 Return the appropriate apiVersion for ingress.
 */}}
@@ -169,6 +166,7 @@ Return if ingress supports ingressClassName.
 {{- define "ingress.supportsIngressClassName" -}}
   {{- or (eq (include "ingress.isStable" .) "true") (and (eq (include "ingress.apiVersion" .) "networking.k8s.io/v1beta1") (semverCompare ">= 1.18.x" (include "prometheus.kubeVersion" .))) -}}
 {{- end -}}
+
 {{/*
 Return if ingress supports pathType.
 */}}

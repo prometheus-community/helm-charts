@@ -110,7 +110,7 @@ automountServiceAccountToken: {{ .Values.automountServiceAccountToken }}
 serviceAccountName: {{ template "prometheus-blackbox-exporter.serviceAccountName" . }}
 {{- with .Values.topologySpreadConstraints }}
 topologySpreadConstraints:
-  {{- toYaml . | nindent 2 }}
+{{ toYaml . }}
 {{- end }}
 {{- with .Values.nodeSelector }}
 nodeSelector:
@@ -122,7 +122,7 @@ affinity:
 {{- end }}
 {{- with .Values.tolerations }}
 tolerations:
-  {{- toYaml . | nindent 2 }}
+{{ toYaml . }}
 {{- end }}
 {{- if .Values.image.pullSecrets }}
 imagePullSecrets:
@@ -150,11 +150,20 @@ securityContext:
 {{- end }}
 {{- with .Values.extraInitContainers }}
 initContainers:
-  {{- toYaml . | indent 2 }}
+{{- if kindIs "string" . }}
+  {{- tpl . $ | nindent 2 }}
+{{- else }}
+  {{-  toYaml . | nindent 2 }}
+{{- end -}}
 {{- end }}
+
 containers:
-{{- with .Values.extraContainers }}
-  {{- toYaml . }}
+{{ with .Values.extraContainers }}
+{{- if kindIs "string" . }}
+  {{- tpl . $ }}
+{{- else }}
+  {{-  toYaml . }}
+{{- end -}}
 {{- end }}
 - name: blackbox-exporter
   image: {{ include "prometheus-blackbox-exporter.image" . }}
@@ -168,6 +177,13 @@ containers:
   - name: {{ $key }}
     value: {{ $value | quote }}
   {{- end }}
+  {{- if .Values.extraEnvFromSecret }}
+  envFrom:
+  {{- range .Values.extraEnvFromSecret }}
+    - secretRef:
+        name: {{ . }}
+  {{- end }}
+  {{- end }}
   args:
   {{- if .Values.config }}
   {{- if .Values.configPath }}
@@ -179,7 +195,7 @@ containers:
   - "--config.file=/etc/blackbox_exporter/config.yml"
   {{- end }}
   {{- with .Values.extraArgs }}
-{{ toYaml . | indent 2 }}
+{{ tpl (toYaml .) $ | indent 2 }}
   {{- end }}
   {{- with .Values.resources }}
   resources:

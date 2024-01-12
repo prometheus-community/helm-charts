@@ -37,6 +37,7 @@ serviceMonitor:
   # scrapeTimeout is the timeout after which the scrape is ended
   # scrapeTimeout: 10s
   # namespace: monitoring
+  # namespaceSelector: []
   # additionalLabels is the set of additional labels to add to the ServiceMonitor
   additionalLabels: {}
   jobLabel: ""
@@ -45,6 +46,21 @@ serviceMonitor:
   metricRelabelings: []
   # Set relabel_configs as per https://prometheus.io/docs/prometheus/latest/configuration/configuration/#relabel_config
   relabelings: []
+  # Enable multi target scraping.
+  multipleTarget:
+    enabled: false
+    targets: []
+      # target connection information with name (required), endpoint (required) and port (optionnal)
+      # if sharedSecret is not enabled the name must match an entry client.{{ name }} existing in the secret
+      # - endpoint: mysql1.dns.local
+      #   name: mysql1
+      #   port: 3307
+      # - endpoint: mysql2.dns.local
+      #   name: mysql2
+    # Enable shared credentials for all targets
+    sharedSecret:
+      enabled: false
+      name: ""
 
 serviceAccount:
   # Specifies whether a ServiceAccount should be created
@@ -181,3 +197,23 @@ cloudsqlproxy:
     enabled: false
     serviceAccountEmail: ""
   extraArgs: ""
+
+## Custom PrometheusRules to be defined
+## The value is evaluated as a template, so, for example, the value can depend on .Release or .Chart
+## ref: https://github.com/coreos/prometheus-operator#customresourcedefinitions
+prometheusRule:
+  enabled: false
+  additionalLabels: {}
+  namespace: ""
+  rules:
+    []
+    ## These are just examples rules, please adapt them to your needs.
+    ## Make sure to constraint the rules to the current service.
+    # - alert: MysqlDown
+    #   expr: mysql_up == 0
+    #   for: 5m
+    #   labels:
+    #     severity: critical
+    #   annotations:
+    #     summary: MySQL down (instance {{ $labels.instance }})
+    #     description: "MySQL instance is down on {{ $labels.instance }}\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}"
