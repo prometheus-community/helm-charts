@@ -359,11 +359,11 @@ spec:
 {{- with (omit .Values.prometheus.prometheusSpec.thanos "objectStorageConfig")}}
 {{ toYaml . | indent 4 }}
 {{- end }}
-{{- if .Values.prometheus.prometheusSpec.thanos.objectStorageConfig.existingSecret }}
+{{- if ((.Values.prometheus.prometheusSpec.thanos.objectStorageConfig).existingSecret) }}
     objectStorageConfig:
       key: "{{.Values.prometheus.prometheusSpec.thanos.objectStorageConfig.existingSecret.key }}"
       name: "{{.Values.prometheus.prometheusSpec.thanos.objectStorageConfig.existingSecret.name }}"
-{{- else if .Values.prometheus.prometheusSpec.thanos.objectStorageConfig.secret}}
+{{- else if ((.Values.prometheus.prometheusSpec.thanos.objectStorageConfig).secret) }}
     objectStorageConfig:
       key: object-storage-configs.yaml
       name: {{ template "kube-prometheus-stack.fullname" . }}-prometheus
@@ -421,6 +421,9 @@ spec:
 {{- end }}
 {{- if and (not .Values.prometheus.agentMode) .Values.prometheus.prometheusSpec.queryLogFile }}
   queryLogFile: {{ .Values.prometheus.prometheusSpec.queryLogFile }}
+{{- end }}
+{{- if .Values.prometheus.prometheusSpec.sampleLimit }}
+  sampleLimit: {{ .Values.prometheus.prometheusSpec.sampleLimit }}
 {{- end }}
 {{- if .Values.prometheus.prometheusSpec.enforcedSampleLimit }}
   enforcedSampleLimit: {{ .Values.prometheus.prometheusSpec.enforcedSampleLimit }}

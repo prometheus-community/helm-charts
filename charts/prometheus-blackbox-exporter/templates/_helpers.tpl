@@ -150,11 +150,20 @@ securityContext:
 {{- end }}
 {{- with .Values.extraInitContainers }}
 initContainers:
-{{ toYaml . }}
+{{- if kindIs "string" . }}
+  {{- tpl . $ | nindent 2 }}
+{{- else }}
+  {{-  toYaml . | nindent 2 }}
+{{- end -}}
 {{- end }}
+
 containers:
 {{ with .Values.extraContainers }}
-  {{- toYaml . }}
+{{- if kindIs "string" . }}
+  {{- tpl . $ }}
+{{- else }}
+  {{-  toYaml . }}
+{{- end -}}
 {{- end }}
 - name: blackbox-exporter
   image: {{ include "prometheus-blackbox-exporter.image" . }}
@@ -167,6 +176,13 @@ containers:
   {{- range $key, $value := .Values.extraEnv }}
   - name: {{ $key }}
     value: {{ $value | quote }}
+  {{- end }}
+  {{- if .Values.extraEnvFromSecret }}
+  envFrom:
+  {{- range .Values.extraEnvFromSecret }}
+    - secretRef:
+        name: {{ . }}
+  {{- end }}
   {{- end }}
   args:
   {{- if .Values.config }}
