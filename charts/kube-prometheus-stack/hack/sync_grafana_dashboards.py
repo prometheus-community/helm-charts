@@ -81,6 +81,18 @@ condition_map = {
     'k8s-resources-windows-pod': ' .Values.windowsMonitoring.enabled',
 }
 
+replacement_map = {
+    'var-namespace=$__cell_1': {
+        'replacement': 'var-namespace=${__data.fields.namespace}',
+    },
+    'var-type=$__cell_2': {
+        'replacement': 'var-type=${__data.fields.workload_type}',
+    },
+    '=$__cell': {
+        'replacement': '=${__value.text}',
+    },
+}
+
 # standard header
 header = '''{{- /*
 Generated from '%(name)s' from %(url)s
@@ -152,6 +164,9 @@ def patch_dashboards_json(content, multicluster_key):
 
         content = json.dumps(content_struct, separators=(',', ':'))
         content = content.replace('":multicluster:"', '`}}{{ if %s }}0{{ else }}2{{ end }}{{`' % multicluster_key,)
+
+        for line in replacement_map:
+            content = content.replace(line, replacement_map[line]['replacement'])
     except (ValueError, KeyError):
         pass
 
