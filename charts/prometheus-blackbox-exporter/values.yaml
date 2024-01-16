@@ -416,3 +416,50 @@ verticalPodAutoscaler:
     # Specifies whether recommended updates are applied when a Pod is started and whether recommended updates
     # are applied during the life of a Pod. Possible values are "Off", "Initial", "Recreate", and "Auto".
     updateMode: Auto
+
+configReloader:
+  enabled: false
+  containerPort: 8080
+  config:
+    logFormat: logfmt
+    logLevel: info
+    watchInterval: 1m
+  image:
+    registry: quay.io
+    repository: prometheus-operator/prometheus-config-reloader
+    tag: "v0.70.0"
+    pullPolicy: IfNotPresent
+    digest: ""
+  securityContext:
+    runAsUser: 1000
+    runAsGroup: 1000
+    readOnlyRootFilesystem: true
+    runAsNonRoot: true
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop: ["ALL"]
+  resources:
+    limits:
+      memory: 50Mi
+    requests:
+      cpu: 10m
+      memory: 20Mi
+  livenessProbe:
+    httpGet:
+      path: /healthz
+      port: reloader-web
+      scheme: HTTP
+  readinessProbe:
+    httpGet:
+      path: /healthz
+      port: reloader-web
+      scheme: HTTP
+  service:
+    port: 8080
+  serviceMonitor:
+    selfMonitor:
+      additionalMetricsRelabels: {}
+      additionalRelabeling: []
+      path: /metrics
+      interval: 30s
+      scrapeTimeout: 30s
