@@ -16,11 +16,20 @@ spec:
     interval: {{ .Values.serviceMonitor.selfMonitor.interval }}
     scrapeTimeout: {{ .Values.serviceMonitor.selfMonitor.scrapeTimeout }}
     scheme: http
-
-{{- if .Values.serviceMonitor.selfMonitor.additionalRelabeling }}
+    {{- if .Values.serviceMonitor.selfMonitor.additionalRelabeling }}
     relabelings:
-{{ toYaml .Values.serviceMonitor.selfMonitor.additionalRelabeling | indent 6 }}
-{{- end }}
+      {{- toYaml .Values.serviceMonitor.selfMonitor.additionalRelabeling | nindent 6 }}
+    {{- end }}
+  {{- if .Values.configReloader.enabled }}
+  - path: {{ .Values.configReloader.serviceMonitor.selfMonitor.path }}
+    interval: {{ .Values.configReloader.serviceMonitor.selfMonitor.interval }}
+    scrapeTimeout: {{ .Values.configReloader.serviceMonitor.selfMonitor.scrapeTimeout }}
+    scheme: http
+    {{- if .Values.configReloader.serviceMonitor.selfMonitor.additionalRelabeling }}
+    relabelings:
+      {{- toYaml .Values.configReloader.serviceMonitor.selfMonitor.additionalRelabeling | indent 6 }}
+    {{- end }}
+  {{- end }}
   jobLabel: "{{ .Release.Name }}"
   selector:
     matchLabels:
@@ -28,4 +37,5 @@ spec:
   namespaceSelector:
     matchNames:
       - {{ template "prometheus-blackbox-exporter.namespace" $ }}
+
 {{- end }}
