@@ -25,7 +25,7 @@ spec:
   - name: windows.node.rules
     rules:
     - expr: |-
-        count (
+        count by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster) (
           windows_system_system_up_time{job="windows-exporter"}
         )
       record: node:windows_node:sum
@@ -39,7 +39,7 @@ spec:
         {{- end }}
       {{- end }}
     - expr: |-
-        count by (instance) (sum by (instance, core) (
+        count by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster, instance) (sum by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster, instance, core) (
           windows_cpu_time_total{job="windows-exporter"}
         ))
       record: node:windows_node_num_cpu:sum
@@ -52,7 +52,7 @@ spec:
           {{- toYaml . | nindent 8 }}
         {{- end }}
       {{- end }}
-    - expr: 1 - avg(rate(windows_cpu_time_total{job="windows-exporter",mode="idle"}[1m]))
+    - expr: 1 - avg by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster) (rate(windows_cpu_time_total{job="windows-exporter",mode="idle"}[1m]))
       record: :windows_node_cpu_utilisation:avg1m
       {{- if or .Values.defaultRules.additionalRuleLabels .Values.defaultRules.additionalRuleGroupLabels.windows }}
       labels:
@@ -64,7 +64,7 @@ spec:
         {{- end }}
       {{- end }}
     - expr: |-
-        1 - avg by (instance) (
+        1 - avg by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster, instance) (
           rate(windows_cpu_time_total{job="windows-exporter",mode="idle"}[1m])
         )
       record: node:windows_node_cpu_utilisation:avg1m
@@ -79,9 +79,9 @@ spec:
       {{- end }}
     - expr: |-
         1 -
-        sum(windows_memory_available_bytes{job="windows-exporter"})
+        sum by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster) (windows_memory_available_bytes{job="windows-exporter"})
         /
-        sum(windows_os_visible_memory_bytes{job="windows-exporter"})
+        sum by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster) (windows_os_visible_memory_bytes{job="windows-exporter"})
       record: ':windows_node_memory_utilisation:'
       {{- if or .Values.defaultRules.additionalRuleLabels .Values.defaultRules.additionalRuleGroupLabels.windows }}
       labels:
@@ -92,7 +92,7 @@ spec:
           {{- toYaml . | nindent 8 }}
         {{- end }}
       {{- end }}
-    - expr: sum(windows_memory_available_bytes{job="windows-exporter"} + windows_memory_cache_bytes{job="windows-exporter"})
+    - expr: sum by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster) (windows_memory_available_bytes{job="windows-exporter"} + windows_memory_cache_bytes{job="windows-exporter"})
       record: :windows_node_memory_MemFreeCached_bytes:sum
       {{- if or .Values.defaultRules.additionalRuleLabels .Values.defaultRules.additionalRuleGroupLabels.windows }}
       labels:
@@ -114,7 +114,7 @@ spec:
           {{- toYaml . | nindent 8 }}
         {{- end }}
       {{- end }}
-    - expr: sum(windows_os_visible_memory_bytes{job="windows-exporter"})
+    - expr: sum by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster) (windows_os_visible_memory_bytes{job="windows-exporter"})
       record: :windows_node_memory_MemTotal_bytes:sum
       {{- if or .Values.defaultRules.additionalRuleLabels .Values.defaultRules.additionalRuleGroupLabels.windows }}
       labels:
@@ -126,7 +126,7 @@ spec:
         {{- end }}
       {{- end }}
     - expr: |-
-        sum by (instance) (
+        sum by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster, instance) (
           (windows_memory_available_bytes{job="windows-exporter"})
         )
       record: node:windows_node_memory_bytes_available:sum
@@ -140,7 +140,7 @@ spec:
         {{- end }}
       {{- end }}
     - expr: |-
-        sum by (instance) (
+        sum by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster, instance) (
           windows_os_visible_memory_bytes{job="windows-exporter"}
         )
       record: node:windows_node_memory_bytes_total:sum
@@ -190,7 +190,7 @@ spec:
         {{- end }}
       {{- end }}
     - expr: |-
-        avg(irate(windows_logical_disk_read_seconds_total{job="windows-exporter"}[1m]) +
+        avg by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster) (irate(windows_logical_disk_read_seconds_total{job="windows-exporter"}[1m]) +
             irate(windows_logical_disk_write_seconds_total{job="windows-exporter"}[1m])
           )
       record: :windows_node_disk_utilisation:avg_irate
@@ -204,7 +204,7 @@ spec:
         {{- end }}
       {{- end }}
     - expr: |-
-        avg by (instance) (
+        avg by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster, instance) (
           (irate(windows_logical_disk_read_seconds_total{job="windows-exporter"}[1m]) +
            irate(windows_logical_disk_write_seconds_total{job="windows-exporter"}[1m]))
         )
@@ -219,7 +219,7 @@ spec:
         {{- end }}
       {{- end }}
     - expr: |-
-        max by (instance,volume)(
+        max by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster,instance,volume)(
           (windows_logical_disk_size_bytes{job="windows-exporter"}
         - windows_logical_disk_free_bytes{job="windows-exporter"})
         / windows_logical_disk_size_bytes{job="windows-exporter"}
@@ -234,7 +234,7 @@ spec:
           {{- toYaml . | nindent 8 }}
         {{- end }}
       {{- end }}
-    - expr: max by (instance, volume) (windows_logical_disk_free_bytes{job="windows-exporter"} / windows_logical_disk_size_bytes{job="windows-exporter"})
+    - expr: max by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster, instance, volume) (windows_logical_disk_free_bytes{job="windows-exporter"} / windows_logical_disk_size_bytes{job="windows-exporter"})
       record: 'node:windows_node_filesystem_avail:'
       {{- if or .Values.defaultRules.additionalRuleLabels .Values.defaultRules.additionalRuleGroupLabels.windows }}
       labels:
@@ -245,7 +245,7 @@ spec:
           {{- toYaml . | nindent 8 }}
         {{- end }}
       {{- end }}
-    - expr: sum(irate(windows_net_bytes_total{job="windows-exporter"}[1m]))
+    - expr: sum by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster) (irate(windows_net_bytes_total{job="windows-exporter"}[1m]))
       record: :windows_node_net_utilisation:sum_irate
       {{- if or .Values.defaultRules.additionalRuleLabels .Values.defaultRules.additionalRuleGroupLabels.windows }}
       labels:
@@ -257,7 +257,7 @@ spec:
         {{- end }}
       {{- end }}
     - expr: |-
-        sum by (instance) (
+        sum by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster, instance) (
           (irate(windows_net_bytes_total{job="windows-exporter"}[1m]))
         )
       record: node:windows_node_net_utilisation:sum_irate
@@ -271,8 +271,8 @@ spec:
         {{- end }}
       {{- end }}
     - expr: |-
-        sum(irate(windows_net_packets_received_discarded_total{job="windows-exporter"}[1m])) +
-        sum(irate(windows_net_packets_outbound_discarded_total{job="windows-exporter"}[1m]))
+        sum by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster) (irate(windows_net_packets_received_discarded_total{job="windows-exporter"}[1m])) +
+        sum by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster) (irate(windows_net_packets_outbound_discarded_total{job="windows-exporter"}[1m]))
       record: :windows_node_net_saturation:sum_irate
       {{- if or .Values.defaultRules.additionalRuleLabels .Values.defaultRules.additionalRuleGroupLabels.windows }}
       labels:
@@ -284,7 +284,7 @@ spec:
         {{- end }}
       {{- end }}
     - expr: |-
-        sum by (instance) (
+        sum by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster, instance) (
           (irate(windows_net_packets_received_discarded_total{job="windows-exporter"}[1m]) +
           irate(windows_net_packets_outbound_discarded_total{job="windows-exporter"}[1m]))
         )
