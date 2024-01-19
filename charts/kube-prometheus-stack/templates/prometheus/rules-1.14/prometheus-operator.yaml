@@ -121,8 +121,36 @@ spec:
 {{- end }}
         description: '{{`{{`}} $value | humanizePercentage {{`}}`}} of reconciling operations failed for {{`{{`}} $labels.controller {{`}}`}} controller in {{`{{`}} $labels.namespace {{`}}`}} namespace.'
         runbook_url: {{ .Values.defaultRules.runbookUrl }}/prometheus-operator/prometheusoperatorreconcileerrors
-        summary: Errors while reconciling controller.
+        summary: Errors while reconciling objects.
       expr: (sum by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster,controller,namespace) (rate(prometheus_operator_reconcile_errors_total{job="{{ $operatorJob }}",namespace="{{ $namespace }}"}[5m]))) / (sum by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster,controller,namespace) (rate(prometheus_operator_reconcile_operations_total{job="{{ $operatorJob }}",namespace="{{ $namespace }}"}[5m]))) > 0.1
+      for: 10m
+      {{- with .Values.defaultRules.keepFiringFor }}
+      keep_firing_for: "{{ . }}"
+      {{- end }}
+      labels:
+        severity: warning
+      {{- if or .Values.defaultRules.additionalRuleLabels .Values.defaultRules.additionalRuleGroupLabels.prometheusOperator }}
+        {{- with .Values.defaultRules.additionalRuleLabels }}
+          {{- toYaml . | nindent 8 }}
+        {{- end }}
+        {{- with .Values.defaultRules.additionalRuleGroupLabels.prometheusOperator }}
+          {{- toYaml . | nindent 8 }}
+        {{- end }}
+      {{- end }}
+{{- end }}
+{{- if not (.Values.defaultRules.disabled.PrometheusOperatorStatusUpdateErrors | default false) }}
+    - alert: PrometheusOperatorStatusUpdateErrors
+      annotations:
+{{- if .Values.defaultRules.additionalRuleAnnotations }}
+{{ toYaml .Values.defaultRules.additionalRuleAnnotations | indent 8 }}
+{{- end }}
+{{- if .Values.defaultRules.additionalRuleGroupAnnotations.prometheusOperator }}
+{{ toYaml .Values.defaultRules.additionalRuleGroupAnnotations.prometheusOperator | indent 8 }}
+{{- end }}
+        description: '{{`{{`}} $value | humanizePercentage {{`}}`}} of status update operations failed for {{`{{`}} $labels.controller {{`}}`}} controller in {{`{{`}} $labels.namespace {{`}}`}} namespace.'
+        runbook_url: {{ .Values.defaultRules.runbookUrl }}/prometheus-operator/prometheusoperatorstatusupdateerrors
+        summary: Errors while updating objects status.
+      expr: (sum by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster,controller,namespace) (rate(prometheus_operator_status_update_errors_total{job="{{ $operatorJob }}",namespace="{{ $namespace }}"}[5m]))) / (sum by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster,controller,namespace) (rate(prometheus_operator_status_update_operations_total{job="{{ $operatorJob }}",namespace="{{ $namespace }}"}[5m]))) > 0.1
       for: 10m
       {{- with .Values.defaultRules.keepFiringFor }}
       keep_firing_for: "{{ . }}"
