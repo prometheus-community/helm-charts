@@ -10,7 +10,7 @@ metadata:
 {{- end }}
   labels:
     app: {{ template "kube-prometheus-stack.name" $ }}-admission
-{{- include "kube-prometheus-stack.labels" $ | indent 4 }}
+    {{- include "kube-prometheus-stack.prometheus-operator-webhook.labels" $ | nindent 4 }}
 webhooks:
   - name: prometheusrulemutate.monitoring.coreos.com
     {{- if eq .Values.prometheusOperator.admissionWebhooks.failurePolicy "IgnoreOnInstallOnly" }}
@@ -57,7 +57,7 @@ webhooks:
       - key: kubernetes.io/metadata.name
         operator: NotIn
         values:
-        {{- range $namespace := mustUniq .Values.prometheusOperator.denyNamespaces }} 
+        {{- range $namespace := mustUniq .Values.prometheusOperator.denyNamespaces }}
         - {{ $namespace }}
         {{- end }}
         {{- else if and .Values.prometheusOperator.namespaces .Values.prometheusOperator.namespaces.additional }}
@@ -68,7 +68,7 @@ webhooks:
         {{- $namespace := printf "%s" (include "kube-prometheus-stack.namespace" .) }}
         - {{ $namespace }}
         {{- end }}
-        {{- range $namespace := mustUniq .Values.prometheusOperator.namespaces.additional }} 
+        {{- range $namespace := mustUniq .Values.prometheusOperator.namespaces.additional }}
         - {{ $namespace }}
         {{- end }}
         {{- end }}
