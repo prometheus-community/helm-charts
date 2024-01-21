@@ -152,9 +152,9 @@ Use the grafana namespace override for multi-namespace deployments in combined c
 {{/*
 Allow kube-state-metrics fullname to be overridden
 */}}
-{{- define "kube-prometheus-stack-kube-state-metrics.fullname" -}}
-  {{- if index .Values "kube-state-metrics" "fullnameOverride" -}}
-    {{- index .Values "kube-state-metrics" "fullnameOverride" -}}
+{{- define "kube-prometheus-stack-kube-state-metrics.name" -}}
+  {{- if index .Values "kube-state-metrics" "nameOverride" -}}
+    {{- index .Values "kube-state-metrics" "nameOverride" -}}
   {{- else -}}
     {{- print "kube-state-metrics" -}}
   {{- end -}}
