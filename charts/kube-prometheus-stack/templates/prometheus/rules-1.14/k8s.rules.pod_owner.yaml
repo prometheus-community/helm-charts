@@ -5,6 +5,7 @@ https://github.com/prometheus-community/helm-charts/tree/main/charts/kube-promet
 */ -}}
 {{- $kubeTargetVersion := default .Capabilities.KubeVersion.GitVersion .Values.kubeTargetVersionOverride }}
 {{- if and (semverCompare ">=1.14.0-0" $kubeTargetVersion) (semverCompare "<9.9.9-9" $kubeTargetVersion) .Values.defaultRules.create .Values.defaultRules.rules.k8sPodOwner }}
+{{- $kubeStateMetricsJob := include "kube-prometheus-stack-kube-state-metrics.name" . }}
 apiVersion: monitoring.coreos.com/v1
 kind: PrometheusRule
 metadata:
@@ -28,11 +29,11 @@ spec:
         max by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster, namespace, workload, pod) (
           label_replace(
             label_replace(
-              kube_pod_owner{job="kube-state-metrics", owner_kind="ReplicaSet"},
+              kube_pod_owner{job="{{ $kubeStateMetricsJob }}", owner_kind="ReplicaSet"},
               "replicaset", "$1", "owner_name", "(.*)"
             ) * on ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}replicaset, namespace) group_left(owner_name) topk by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}replicaset, namespace) (
               1, max by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}replicaset, namespace, owner_name) (
-                kube_replicaset_owner{job="kube-state-metrics"}
+                kube_replicaset_owner{job="{{ $kubeStateMetricsJob }}"}
               )
             ),
             "workload", "$1", "owner_name", "(.*)"
@@ -52,7 +53,7 @@ spec:
     - expr: |-
         max by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster, namespace, workload, pod) (
           label_replace(
-            kube_pod_owner{job="kube-state-metrics", owner_kind="DaemonSet"},
+            kube_pod_owner{job="{{ $kubeStateMetricsJob }}", owner_kind="DaemonSet"},
             "workload", "$1", "owner_name", "(.*)"
           )
         )
@@ -70,7 +71,7 @@ spec:
     - expr: |-
         max by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster, namespace, workload, pod) (
           label_replace(
-            kube_pod_owner{job="kube-state-metrics", owner_kind="StatefulSet"},
+            kube_pod_owner{job="{{ $kubeStateMetricsJob }}", owner_kind="StatefulSet"},
             "workload", "$1", "owner_name", "(.*)"
           )
         )
@@ -88,7 +89,7 @@ spec:
     - expr: |-
         max by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster, namespace, workload, pod) (
           label_replace(
-            kube_pod_owner{job="kube-state-metrics", owner_kind="Job"},
+            kube_pod_owner{job="{{ $kubeStateMetricsJob }}", owner_kind="Job"},
             "workload", "$1", "owner_name", "(.*)"
           )
         )
