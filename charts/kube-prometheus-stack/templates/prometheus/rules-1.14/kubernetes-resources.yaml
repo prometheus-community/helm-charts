@@ -5,6 +5,7 @@ https://github.com/prometheus-community/helm-charts/tree/main/charts/kube-promet
 */ -}}
 {{- $kubeTargetVersion := default .Capabilities.KubeVersion.GitVersion .Values.kubeTargetVersionOverride }}
 {{- if and (semverCompare ">=1.14.0-0" $kubeTargetVersion) (semverCompare "<9.9.9-9" $kubeTargetVersion) .Values.defaultRules.create .Values.defaultRules.rules.kubernetesResources }}
+{{- $kubeStateMetricsJob := include "kube-prometheus-stack-kube-state-metrics.name" . }}
 apiVersion: monitoring.coreos.com/v1
 kind: PrometheusRule
 metadata:
@@ -37,9 +38,9 @@ spec:
         runbook_url: {{ .Values.defaultRules.runbookUrl }}/kubernetes/kubecpuovercommit
         summary: Cluster has overcommitted CPU resource requests.
       expr: |-
-        sum(namespace_cpu:kube_pod_container_resource_requests:sum{job="kube-state-metrics",}) by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster) - (sum(kube_node_status_allocatable{job="kube-state-metrics",resource="cpu"}) by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster) - max(kube_node_status_allocatable{job="kube-state-metrics",resource="cpu"}) by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster)) > 0
+        sum(namespace_cpu:kube_pod_container_resource_requests:sum{job="{{ $kubeStateMetricsJob }}",}) by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster) - (sum(kube_node_status_allocatable{job="{{ $kubeStateMetricsJob }}",resource="cpu"}) by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster) - max(kube_node_status_allocatable{job="{{ $kubeStateMetricsJob }}",resource="cpu"}) by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster)) > 0
         and
-        (sum(kube_node_status_allocatable{job="kube-state-metrics",resource="cpu"}) by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster) - max(kube_node_status_allocatable{job="kube-state-metrics",resource="cpu"}) by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster)) > 0
+        (sum(kube_node_status_allocatable{job="{{ $kubeStateMetricsJob }}",resource="cpu"}) by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster) - max(kube_node_status_allocatable{job="{{ $kubeStateMetricsJob }}",resource="cpu"}) by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster)) > 0
       for: 10m
       {{- with .Values.defaultRules.keepFiringFor }}
       keep_firing_for: "{{ . }}"
@@ -68,9 +69,9 @@ spec:
         runbook_url: {{ .Values.defaultRules.runbookUrl }}/kubernetes/kubememoryovercommit
         summary: Cluster has overcommitted memory resource requests.
       expr: |-
-        sum(namespace_memory:kube_pod_container_resource_requests:sum{}) by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster) - (sum(kube_node_status_allocatable{resource="memory", job="kube-state-metrics"}) by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster) - max(kube_node_status_allocatable{resource="memory", job="kube-state-metrics"}) by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster)) > 0
+        sum(namespace_memory:kube_pod_container_resource_requests:sum{}) by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster) - (sum(kube_node_status_allocatable{resource="memory", job="{{ $kubeStateMetricsJob }}"}) by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster) - max(kube_node_status_allocatable{resource="memory", job="{{ $kubeStateMetricsJob }}"}) by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster)) > 0
         and
-        (sum(kube_node_status_allocatable{resource="memory", job="kube-state-metrics"}) by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster) - max(kube_node_status_allocatable{resource="memory", job="kube-state-metrics"}) by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster)) > 0
+        (sum(kube_node_status_allocatable{resource="memory", job="{{ $kubeStateMetricsJob }}"}) by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster) - max(kube_node_status_allocatable{resource="memory", job="{{ $kubeStateMetricsJob }}"}) by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster)) > 0
       for: 10m
       {{- with .Values.defaultRules.keepFiringFor }}
       keep_firing_for: "{{ . }}"
@@ -99,9 +100,9 @@ spec:
         runbook_url: {{ .Values.defaultRules.runbookUrl }}/kubernetes/kubecpuquotaovercommit
         summary: Cluster has overcommitted CPU resource requests.
       expr: |-
-        sum(min without(resource) (kube_resourcequota{job="kube-state-metrics", type="hard", resource=~"(cpu|requests.cpu)"})) by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster)
+        sum(min without(resource) (kube_resourcequota{job="{{ $kubeStateMetricsJob }}", type="hard", resource=~"(cpu|requests.cpu)"})) by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster)
           /
-        sum(kube_node_status_allocatable{resource="cpu", job="kube-state-metrics"}) by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster)
+        sum(kube_node_status_allocatable{resource="cpu", job="{{ $kubeStateMetricsJob }}"}) by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster)
           > 1.5
       for: 5m
       {{- with .Values.defaultRules.keepFiringFor }}
@@ -131,9 +132,9 @@ spec:
         runbook_url: {{ .Values.defaultRules.runbookUrl }}/kubernetes/kubememoryquotaovercommit
         summary: Cluster has overcommitted memory resource requests.
       expr: |-
-        sum(min without(resource) (kube_resourcequota{job="kube-state-metrics", type="hard", resource=~"(memory|requests.memory)"})) by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster)
+        sum(min without(resource) (kube_resourcequota{job="{{ $kubeStateMetricsJob }}", type="hard", resource=~"(memory|requests.memory)"})) by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster)
           /
-        sum(kube_node_status_allocatable{resource="memory", job="kube-state-metrics"}) by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster)
+        sum(kube_node_status_allocatable{resource="memory", job="{{ $kubeStateMetricsJob }}"}) by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster)
           > 1.5
       for: 5m
       {{- with .Values.defaultRules.keepFiringFor }}
@@ -163,9 +164,9 @@ spec:
         runbook_url: {{ .Values.defaultRules.runbookUrl }}/kubernetes/kubequotaalmostfull
         summary: Namespace quota is going to be full.
       expr: |-
-        kube_resourcequota{job="kube-state-metrics", type="used"}
+        kube_resourcequota{job="{{ $kubeStateMetricsJob }}", type="used"}
           / ignoring(instance, job, type)
-        (kube_resourcequota{job="kube-state-metrics", type="hard"} > 0)
+        (kube_resourcequota{job="{{ $kubeStateMetricsJob }}", type="hard"} > 0)
           > 0.9 < 1
       for: 15m
       {{- with .Values.defaultRules.keepFiringFor }}
@@ -195,9 +196,9 @@ spec:
         runbook_url: {{ .Values.defaultRules.runbookUrl }}/kubernetes/kubequotafullyused
         summary: Namespace quota is fully used.
       expr: |-
-        kube_resourcequota{job="kube-state-metrics", type="used"}
+        kube_resourcequota{job="{{ $kubeStateMetricsJob }}", type="used"}
           / ignoring(instance, job, type)
-        (kube_resourcequota{job="kube-state-metrics", type="hard"} > 0)
+        (kube_resourcequota{job="{{ $kubeStateMetricsJob }}", type="hard"} > 0)
           == 1
       for: 15m
       {{- with .Values.defaultRules.keepFiringFor }}
@@ -227,9 +228,9 @@ spec:
         runbook_url: {{ .Values.defaultRules.runbookUrl }}/kubernetes/kubequotaexceeded
         summary: Namespace quota has exceeded the limits.
       expr: |-
-        kube_resourcequota{job="kube-state-metrics", type="used"}
+        kube_resourcequota{job="{{ $kubeStateMetricsJob }}", type="used"}
           / ignoring(instance, job, type)
-        (kube_resourcequota{job="kube-state-metrics", type="hard"} > 0)
+        (kube_resourcequota{job="{{ $kubeStateMetricsJob }}", type="hard"} > 0)
           > 1
       for: 15m
       {{- with .Values.defaultRules.keepFiringFor }}

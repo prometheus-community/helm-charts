@@ -160,7 +160,10 @@ replacement_map = {
         'replacement': '$1',
         'init': ''},
     'job="kube-state-metrics"': {
-        'replacement': 'job="kube-state-metrics", namespace=~"{{ $targetNamespace }}"',
+        'replacement': 'job="{{ $kubeStateMetricsJob }}"',
+        'init': '{{- $kubeStateMetricsJob := include "kube-prometheus-stack-kube-state-metrics.name" . }}'},
+    'job="{{ $kubeStateMetricsJob }}"': {
+        'replacement': 'job="{{ $kubeStateMetricsJob }}", namespace=~"{{ $targetNamespace }}"',
         'limitGroup': ['kubernetes-apps'],
         'init': '{{- $targetNamespace := .Values.defaultRules.appNamespacesTarget }}'},
     'job="kubelet"': {
