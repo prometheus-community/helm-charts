@@ -1,9 +1,13 @@
-{{- if and .Values.coreDns.enabled .Values.kubernetesServiceMonitors.enabled }}
+{{- if and .Values.coreDns.enabled .Values.coreDns.serviceMonitor.enabled .Values.kubernetesServiceMonitors.enabled }}
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
   name: {{ template "kube-prometheus-stack.fullname" . }}-coredns
+  {{- if .Values.prometheus.prometheusSpec.ignoreNamespaceSelectors }}
+  namespace: kube-system
+  {{- else }}
   namespace: {{ template "kube-prometheus-stack.namespace" . }}
+  {{- end }}
   labels:
     app: {{ template "kube-prometheus-stack.name" . }}-coredns
   {{- with .Values.coreDns.serviceMonitor.additionalLabels }}

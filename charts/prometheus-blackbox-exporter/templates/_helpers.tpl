@@ -103,6 +103,15 @@ The image to use
 {{- end -}}
 
 {{/*
+The image to use
+*/}}
+{{- define "prometheus-blackbox-exporter.config-reloader.image" -}}
+{{- with (.Values.global.imageRegistry | default .Values.configReloader.image.registry) -}}{{ . }}/{{- end }}
+{{- .Values.configReloader.image.repository -}}:{{- .Values.configReloader.image.tag -}}
+{{- with .Values.configReloader.image.digest -}}@{{ .}}{{- end -}}
+{{- end -}}
+
+{{/*
 Define pod spec to be reused by highlevel resources (deployment, daemonset)
 */}}
 {{- define "prometheus-blackbox-exporter.podSpec" -}}
@@ -150,11 +159,52 @@ securityContext:
 {{- end }}
 {{- with .Values.extraInitContainers }}
 initContainers:
-{{ toYaml . }}
+{{- if kindIs "string" . }}
+  {{- tpl . $ | nindent 2 }}
+{{- else }}
+  {{-  toYaml . | nindent 2 }}
+{{- end -}}
 {{- end }}
+
 containers:
 {{ with .Values.extraContainers }}
-  {{- toYaml . }}
+{{- if kindIs "string" . }}
+  {{- tpl . $ }}
+{{- else }}
+  {{-  toYaml . }}
+{{- end -}}
+{{- end }}
+
+{{- if .Values.configReloader.enabled }}
+- name: config-reloader
+  image: {{ include "prometheus-blackbox-exporter.config-reloader.image" . }}
+  imagePullPolicy: {{ .Values.configReloader.image.pullPolicy }}
+  args:
+    - --config-file={{ .Values.configPath | default "/config/blackbox.yaml" }}
+    - --watch-interval={{ .Values.configReloader.config.watchInterval }}
+    - --reload-url=http://127.0.0.1:{{ .Values.containerPort }}/-/reload
+    - --listen-address=:{{ .Values.configReloader.containerPort }}
+    - --log-format={{ .Values.configReloader.config.logFormat }}
+    - --log-level={{ .Values.configReloader.config.logLevel }}
+  {{- with .Values.resources }}
+  resources:
+{{- toYaml . | nindent 4 }}
+  {{- end }}
+  ports:
+    - name: reloader-web
+      containerPort: {{ .Values.configReloader.containerPort }}
+      protocol: TCP
+  livenessProbe:
+    {{- toYaml .Values.configReloader.livenessProbe | nindent 4 }}
+  readinessProbe:
+    {{- toYaml .Values.configReloader.readinessProbe | nindent 4 }}
+  volumeMounts:
+    - mountPath: /config
+      name: config
+  {{- with .Values.configReloader.securityContext }}
+  securityContext:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
 {{- end }}
 - name: blackbox-exporter
   image: {{ include "prometheus-blackbox-exporter.image" . }}
@@ -167,6 +217,13 @@ containers:
   {{- range $key, $value := .Values.extraEnv }}
   - name: {{ $key }}
     value: {{ $value | quote }}
+  {{- end }}
+  {{- if .Values.extraEnvFromSecret }}
+  envFrom:
+  {{- range .Values.extraEnvFromSecret }}
+    - secretRef:
+        name: {{ . }}
+  {{- end }}
   {{- end }}
   args:
   {{- if .Values.config }}
