@@ -160,24 +160,16 @@ spec:
             - name: {{ .name }}
               mountPath: {{ .mountPath }}
             {{- end }}
-        {{- with .Values.sidecars }}
-        {{- toYaml . | nindent 8 }}
-          {{- if or $.Values.sidecarVolumeMount $.Values.sidecarHostVolumeMounts }}
-          volumeMounts:
-            {{- range $_, $mount := $.Values.sidecarVolumeMount }}
-            - name: {{ $mount.name }}
-              mountPath: {{ $mount.mountPath }}
-              readOnly: {{ $mount.readOnly }}
-            {{- end }}
-            {{- range $_, $mount := $.Values.sidecarHostVolumeMounts }}
-            - name: {{ $mount.name }}
-              mountPath: {{ $mount.mountPath }}
-              readOnly: {{ $mount.readOnly }}
-            {{- if $mount.mountPropagation }}
-              mountPropagation: {{ $mount.mountPropagation }}
-            {{- end }}
-            {{- end }}
-          {{- end }}
+        {{- range .Values.sidecars }}
+          {{- $overwrites := dict 
+            "volumeMounts" (concat (include "prometheus-node-exporter.sidecarVolumeMounts" $ | fromYamlArray ) (.volumeMounts | default list) | default list)
+          }}
+          {{- $defaults := dict 
+            "image" (include "prometheus-node-exporter.image" $) 
+            "securityContext" $.Values.containerSecurityContext 
+            "imagePullPolicy" $.Values.image.pullPolicy 
+          }}
+        - {{- toYaml (merge $overwrites . $defaults ) | nindent 10 }}
         {{- end }}
         {{-  if .Values.kubeRBACProxy.enabled  }}
         - name: kube-rbac-proxy
