@@ -40,6 +40,7 @@ spec:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       serviceAccountName: {{ include "prometheus-node-exporter.serviceAccountName" . }}
+      terminationGracePeriodSeconds: {{ .Values.terminationGracePeriodSeconds }}
       containers:
         {{- $servicePort := ternary .Values.kubeRBACProxy.port .Values.service.port .Values.kubeRBACProxy.enabled }}
         - name: node-exporter
@@ -124,12 +125,25 @@ spec:
           resources:
             {{- toYaml . | nindent 12 }}
           {{- end }}
+
+          # CHANGED
+          {{- if eq .Values.configureTerminationMessagePath true }}
+          terminationMessagePath: {{ .Values.terminationMessagePath }}
+          terminationMessagePolicy: {{ .Values.terminationMessagePolicy }}
+          {{- end }}
+
           volumeMounts:
             - name: proc
               mountPath: /host/proc
+              {{- if .Values.hostProcFsMount.enabled }}
+              mountPropagation: {{ .Values.hostProcFsMount.mountPropagation }}
+              {{- end }}
               readOnly:  true
             - name: sys
               mountPath: /host/sys
+              {{- if .Values.hostProcFsMount.enabled }}
+              mountPropagation: {{ .Values.hostSysFsMount.mountPropagation }}
+              {{- end }}
               readOnly: true
             {{- if .Values.hostRootFsMount.enabled }}
             - name: root
@@ -146,6 +160,7 @@ spec:
               {{- with $mount.mountPropagation }}
               mountPropagation: {{ . }}
               {{- end }}
+              type: {{ $mount.type}}
             {{- end }}
             {{- range $_, $mount := .Values.sidecarVolumeMount }}
             - name: {{ $mount.name }}
@@ -196,6 +211,9 @@ spec:
               {{- if .Values.kubeRBACProxy.enableHostPort }}
               hostPort: {{ .Values.service.port }}
               {{- end }}
+
+              # CHANGED
+              protocol: {{ .Values.kubeRBACProxy.portProtocol }}
             - containerPort: 8888
               name: "http-healthz"
           readinessProbe:
@@ -207,8 +225,22 @@ spec:
             timeoutSeconds: 5
           {{- if .Values.kubeRBACProxy.resources }}
           resources:
-          {{ toYaml .Values.kubeRBACProxy.resources | nindent 12 }}
+          {{- toYaml .Values.kubeRBACProxy.resources | nindent 12 }}
           {{- end }}
+
+          # CHANGED
+          env:
+            {{- range $key, $value := .Values.kubeRBACProxy.env }}
+            - name: {{ $key }}
+              value: {{ $value | quote }}
+            {{- end }}
+
+          # CHANGED
+          {{- if eq .Values.kubeRBACProxy.configureTerminationMessagePath true }}
+          terminationMessagePath: {{ .Values.kubeRBACProxy.terminationMessagePath  }}
+          terminationMessagePolicy: {{ .Values.kubeRBACProxy.terminationMessagePolicy }}
+          {{- end }}
+
           {{- if .Values.kubeRBACProxy.containerSecurityContext }}
           securityContext:
           {{ toYaml .Values.kubeRBACProxy.containerSecurityContext | nindent 12 }}
@@ -228,6 +260,7 @@ spec:
       dnsConfig:
         {{- toYaml . | nindent 8 }}
       {{- end }}
+      restartPolicy: {{ .Values.restartPolicy }}
       {{- with .Values.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
