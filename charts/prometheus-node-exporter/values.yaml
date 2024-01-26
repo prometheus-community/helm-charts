@@ -39,8 +39,7 @@ global:
 # The requests are served through the same service but requests are HTTPS.
 kubeRBACProxy:
   enabled: true  # CHANGED
-  env:
-    create_key: true  # SET TO {}
+  env: {}
   image:
     registry: quay.io
     repository: brancz/kube-rbac-proxy
@@ -64,12 +63,14 @@ kubeRBACProxy:
   portName: http
   # Configure a hostPort. If true, hostPort will be enabled in the container and set to service.port.
   enableHostPort: false
-
-  # CHANGED
+  # Configure the protocol for the container port
   portProtocol: TCP
 
+  # Enable or disable container termination messages for KubeRBACProxy container
   configureTerminationMessagePath: true
+  # If configureTerminationMessagePath is enabled, specify the path for termination messages for KubeRBACProxy container
   terminationMessagePath: /dev/termination-log
+  # If configureTerminationMessagePath is enabled, specify the Policy for termination messages for KubeRBACProxy container
   terminationMessagePolicy: File
 
   resources: {}
@@ -329,24 +330,14 @@ hostRootFsMount:
   # https://kubernetes.io/docs/concepts/storage/volumes/#mount-propagation
   mountPropagation: HostToContainer
 
-# Mount the node's root file system (/) at /host/root in the container
+# Mount the node's proc file system (/) at /host/proc in the container
 hostProcFsMount:
   enabled: false
-  # Defines how new mounts in existing mounts on the node or in the container
-  # are propagated to the container or node, respectively. Possible values are
-  # None, HostToContainer, and Bidirectional. If this field is omitted, then
-  # None is used. More information on:
-  # https://kubernetes.io/docs/concepts/storage/volumes/#mount-propagation
   mountPropagation: HostToContainer
 
-# Mount the node's root file system (/) at /host/root in the container
+# Mount the node's sys file system (/) at /host/sys in the container
 hostSysFsMount:
   enabled: true
-  # Defines how new mounts in existing mounts on the node or in the container
-  # are propagated to the container or node, respectively. Possible values are
-  # None, HostToContainer, and Bidirectional. If this field is omitted, then
-  # None is used. More information on:
-  # https://kubernetes.io/docs/concepts/storage/volumes/#mount-propagation
   mountPropagation: HostToContainer
 
 ## Assign a group of affinity scheduling rules
@@ -393,15 +384,18 @@ nodeSelector:
   kubernetes.io/os: linux
   #  kubernetes.io/arch: amd64
 
-# CHANGED
+# Specify grace period for graceful termination of pods
 terminationGracePeriodSeconds: 30
 
 tolerations:
   - effect: NoSchedule
     operator: Exists
 
+# Enable or disable container termination messages for Node Exporter container
 configureTerminationMessagePath: true
+# If configureTerminationMessagePath is enabled, specify the path for termination messages for Node Exporter container
 terminationMessagePath: /dev/termination-log
+# If configureTerminationMessagePath is enabled, specify the Policy for termination messages for Node Exporter container
 terminationMessagePolicy: File
 
 ## Assign a PriorityClassName to pods if set
@@ -415,20 +409,13 @@ extraArgs: []
 
 ## Additional mounts from the host to node-exporter container
 ##
-extraHostVolumeMounts:
-  - name: node-exporter-volume
-    mountPath: /run/node-exporter/textfile_collector
-    readOnly: true
-    hostPath: /run/node-exporter/textfile_collector
-    mountPropagation: HostToContainer
-
-#extraHostVolumeMounts: []
+extraHostVolumeMounts: []
 #  - name: <mountName>
 #    hostPath: <hostPath>
 #    mountPath: <mountPath>
 #    readOnly: true|false
-#    type: ""|DirectoryOrCreate|Directory|FileOrCreate|File|Socket|CharDevice|BlockDevice
 #    mountPropagation: None|HostToContainer|Bidirectional
+
 
 ## Additional configmaps to be mounted.
 ##

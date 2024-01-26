@@ -125,13 +125,10 @@ spec:
           resources:
             {{- toYaml . | nindent 12 }}
           {{- end }}
-
-          # CHANGED
           {{- if eq .Values.configureTerminationMessagePath true }}
           terminationMessagePath: {{ .Values.terminationMessagePath }}
           terminationMessagePolicy: {{ .Values.terminationMessagePolicy }}
           {{- end }}
-
           volumeMounts:
             - name: proc
               mountPath: /host/proc
@@ -211,8 +208,6 @@ spec:
               {{- if .Values.kubeRBACProxy.enableHostPort }}
               hostPort: {{ .Values.service.port }}
               {{- end }}
-
-              # CHANGED
               protocol: {{ .Values.kubeRBACProxy.portProtocol }}
             - containerPort: 8888
               name: "http-healthz"
@@ -227,20 +222,17 @@ spec:
           resources:
           {{- toYaml .Values.kubeRBACProxy.resources | nindent 12 }}
           {{- end }}
-
-          # CHANGED
+          {{-  if .Values.kubeRBACProxy.env }}
           env:
             {{- range $key, $value := .Values.kubeRBACProxy.env }}
             - name: {{ $key }}
               value: {{ $value | quote }}
             {{- end }}
-
-          # CHANGED
+          {{- end }}
           {{- if eq .Values.kubeRBACProxy.configureTerminationMessagePath true }}
           terminationMessagePath: {{ .Values.kubeRBACProxy.terminationMessagePath  }}
           terminationMessagePolicy: {{ .Values.kubeRBACProxy.terminationMessagePolicy }}
           {{- end }}
-
           {{- if .Values.kubeRBACProxy.containerSecurityContext }}
           securityContext:
           {{ toYaml .Values.kubeRBACProxy.containerSecurityContext | nindent 12 }}
