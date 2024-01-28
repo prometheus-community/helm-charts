@@ -3,7 +3,11 @@ apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
   name: {{ template "kube-prometheus-stack.fullname" . }}-kube-scheduler
+  {{- if .Values.prometheus.prometheusSpec.ignoreNamespaceSelectors }}
+  namespace: kube-system
+  {{- else }}
   namespace: {{ template "kube-prometheus-stack.namespace" . }}
+  {{- end }}
   labels:
     app: {{ template "kube-prometheus-stack.name" . }}-kube-scheduler
   {{- with .Values.kubeScheduler.serviceMonitor.additionalLabels }}

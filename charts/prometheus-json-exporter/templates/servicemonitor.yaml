@@ -5,9 +5,7 @@ apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
   name: {{ template "prometheus-json-exporter.fullname" $ }}-{{ .name }}
-  {{- if $.Values.serviceMonitor.namespace }}
-  namespace: {{ $.Values.serviceMonitor.namespace }}
-  {{- end }}
+  namespace: {{ default (include "prometheus-json-exporter.namespace" $) $.Values.serviceMonitor.namespace }}
   labels:
     {{- include "prometheus-json-exporter.labels" $ | nindent 4 }}
     {{- if or $.Values.serviceMonitor.defaults.labels .labels }}
@@ -46,6 +44,6 @@ spec:
       {{- include "prometheus-json-exporter.selectorLabels" $ | nindent 6 }}
   namespaceSelector:
     matchNames:
-      - {{ $.Release.Namespace }}
+      - {{ include "prometheus-json-exporter.namespace" $ }}
 {{- end }}
 {{- end }}

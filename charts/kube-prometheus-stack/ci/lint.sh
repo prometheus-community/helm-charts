@@ -2,7 +2,7 @@
 
 set -euo pipefail
 
-SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &>/dev/null && pwd)
 
 cd "${SCRIPT_DIR}/../"
 
@@ -13,11 +13,13 @@ if ! git diff --exit-code; then
 fi
 
 python3 -m venv venv
+# shellcheck disable=SC1091
 source venv/bin/activate
 pip3 install -r hack/requirements.txt
 
 go install -a github.com/jsonnet-bundler/jsonnet-bundler/cmd/jb@latest
-export PATH="$(go env GOPATH)/bin:$PATH"
+PATH="$(go env GOPATH)/bin:$PATH"
+export PATH
 
 ./hack/sync_prometheus_rules.py
 if ! git diff --exit-code; then
