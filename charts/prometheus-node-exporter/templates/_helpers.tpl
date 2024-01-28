@@ -184,8 +184,6 @@ labelValueLengthLimit: {{ . }}
 {{- end }}
 {{- end }}
 
-
-
 {{/* Sets sidecar volumeMounts */}}
 {{- define "prometheus-node-exporter.sidecarVolumeMounts" -}}
 {{- range $_, $mount := $.Values.sidecarVolumeMount }}
