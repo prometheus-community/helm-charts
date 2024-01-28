@@ -41,7 +41,7 @@ spec:
       {{- end }}
       serviceAccountName: {{ include "prometheus-node-exporter.serviceAccountName" . }}
       containers:
-        {{- $servicePort := ternary 8100 .Values.service.port .Values.kubeRBACProxy.enabled }}
+        {{- $servicePort := ternary .Values.kubeRBACProxy.port .Values.service.port .Values.kubeRBACProxy.enabled }}
         - name: node-exporter
           image: {{ include "prometheus-node-exporter.image" . }}
           imagePullPolicy: {{ .Values.image.pullPolicy }}
@@ -200,7 +200,10 @@ spec:
           {{- end }}
           ports:
             - containerPort: {{ .Values.service.port}}
-              name: "http"
+              name: {{ .Values.kubeRBACProxy.portName }}
+              {{- if .Values.kubeRBACProxy.enableHostPort }}
+              hostPort: {{ .Values.service.port }}
+              {{- end }}
             - containerPort: 8888
               name: "http-healthz"
           readinessProbe:
