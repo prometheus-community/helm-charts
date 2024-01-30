@@ -132,15 +132,9 @@ spec:
           volumeMounts:
             - name: proc
               mountPath: /host/proc
-              {{- if .Values.hostProcFsMount.enabled }}
-              mountPropagation: {{ .Values.hostProcFsMount.mountPropagation }}
-              {{- end }}
               readOnly:  true
             - name: sys
               mountPath: /host/sys
-              {{- if .Values.hostProcFsMount.enabled }}
-              mountPropagation: {{ .Values.hostSysFsMount.mountPropagation }}
-              {{- end }}
               readOnly: true
             {{- if .Values.hostRootFsMount.enabled }}
             - name: root
@@ -157,7 +151,6 @@ spec:
               {{- with $mount.mountPropagation }}
               mountPropagation: {{ . }}
               {{- end }}
-              type: {{ $mount.type}}
             {{- end }}
             {{- range $_, $mount := .Values.sidecarVolumeMount }}
             - name: {{ $mount.name }}
@@ -208,7 +201,6 @@ spec:
               {{- if .Values.kubeRBACProxy.enableHostPort }}
               hostPort: {{ .Values.service.port }}
               {{- end }}
-              protocol: {{ .Values.kubeRBACProxy.portProtocol }}
             - containerPort: 8888
               name: "http-healthz"
           readinessProbe:
@@ -252,7 +244,6 @@ spec:
       dnsConfig:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      restartPolicy: {{ .Values.restartPolicy }}
       {{- with .Values.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
