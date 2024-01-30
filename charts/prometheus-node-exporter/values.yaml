@@ -38,7 +38,7 @@ global:
 # Configure kube-rbac-proxy. When enabled, creates a kube-rbac-proxy to protect the node-exporter http endpoint.
 # The requests are served through the same service but requests are HTTPS.
 kubeRBACProxy:
-  enabled: false
+  enabled: true
   image:
     registry: quay.io
     repository: brancz/kube-rbac-proxy
@@ -62,13 +62,6 @@ kubeRBACProxy:
   portName: http
   # Configure a hostPort. If true, hostPort will be enabled in the container and set to service.port.
   enableHostPort: false
-
-  # Enable or disable container termination messages for KubeRBACProxy container
-  configureTerminationMessagePath: true
-  # If configureTerminationMessagePath is enabled, specify the path for termination messages for KubeRBACProxy container
-  terminationMessagePath: /dev/termination-log
-  # If configureTerminationMessagePath is enabled, specify the Policy for termination messages for KubeRBACProxy container
-  terminationMessagePolicy: File
 
   resources: {}
     # We usually recommend not to specify default resources and to leave this as a conscious
@@ -375,12 +368,15 @@ tolerations:
   - effect: NoSchedule
     operator: Exists
 
-# Enable or disable container termination messages for Node Exporter container
-configureTerminationMessagePath: true
-# If configureTerminationMessagePath is enabled, specify the path for termination messages for Node Exporter container
-terminationMessagePath: /dev/termination-log
-# If configureTerminationMessagePath is enabled, specify the Policy for termination messages for Node Exporter container
-terminationMessagePolicy: File
+# Enable or disable container termination message settings
+# https://kubernetes.io/docs/tasks/debug/debug-application/determine-reason-pod-failure/
+terminationMessageParams:
+  enabled: true
+  # If enabled, specify the path for termination messages
+  terminationMessagePath: /dev/termination-log
+  # If enabled, specify the policy for termination messages
+  terminationMessagePolicy: File
+
 
 ## Assign a PriorityClassName to pods if set
 # priorityClassName: ""
