@@ -136,9 +136,15 @@ spec:
           volumeMounts:
             - name: proc
               mountPath: /host/proc
+              {{- if .Values.hostProcFsMount.enabled }}
+              mountPropagation: {{ .Values.hostProcFsMount.mountPropagation }}
+              {{- end }}
               readOnly:  true
             - name: sys
               mountPath: /host/sys
+              {{- if .Values.hostSysFsMount.enabled }}
+              mountPropagation: {{ .Values.hostSysFsMount.mountPropagation }}
+              {{- end }}
               readOnly: true
             {{- if .Values.hostRootFsMount.enabled }}
             - name: root
@@ -155,6 +161,7 @@ spec:
               {{- with $mount.mountPropagation }}
               mountPropagation: {{ . }}
               {{- end }}
+              type: {{ $mount.type}}
             {{- end }}
             {{- range $_, $mount := .Values.sidecarVolumeMount }}
             - name: {{ $mount.name }}
