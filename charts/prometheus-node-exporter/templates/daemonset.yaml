@@ -40,6 +40,9 @@ spec:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       serviceAccountName: {{ include "prometheus-node-exporter.serviceAccountName" . }}
+      {{- with .Values.terminationGracePeriodSeconds }}
+      terminationGracePeriodSeconds: {{ . }}
+      {{- end }}
       containers:
         {{- $servicePort := ternary .Values.kubeRBACProxy.port .Values.service.port .Values.kubeRBACProxy.enabled }}
         - name: node-exporter
@@ -123,6 +126,12 @@ spec:
           {{- with .Values.resources }}
           resources:
             {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- if .Values.terminationMessageParams.enabled }}
+          {{- with .Values.terminationMessageParams }}
+          terminationMessagePath: {{ .terminationMessagePath }}
+          terminationMessagePolicy: {{ .terminationMessagePolicy }}
+          {{- end }}
           {{- end }}
           volumeMounts:
             - name: proc
@@ -208,6 +217,12 @@ spec:
           {{- if .Values.kubeRBACProxy.resources }}
           resources:
           {{ toYaml .Values.kubeRBACProxy.resources | nindent 12 }}
+          {{- end }}
+          {{- if .Values.terminationMessageParams.enabled }}
+          {{- with .Values.terminationMessageParams }}
+          terminationMessagePath: {{ .terminationMessagePath }}
+          terminationMessagePolicy: {{ .terminationMessagePolicy }}
+          {{- end }}
           {{- end }}
           {{- if .Values.kubeRBACProxy.containerSecurityContext }}
           securityContext:
