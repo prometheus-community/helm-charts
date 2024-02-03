@@ -136,14 +136,14 @@ spec:
           volumeMounts:
             - name: proc
               mountPath: /host/proc
-              {{- if .Values.hostProcFsMount.enabled }}
-              mountPropagation: {{ .Values.hostProcFsMount.mountPropagation }}
+              {{- with .Values.hostProcFsMount.mountPropagation }}
+              mountPropagation: {{ . }}
               {{- end }}
               readOnly:  true
             - name: sys
               mountPath: /host/sys
-              {{- if .Values.hostSysFsMount.enabled }}
-              mountPropagation: {{ .Values.hostSysFsMount.mountPropagation }}
+              {{- with .Values.hostSysFsMount.mountPropagation }}
+              mountPropagation: {{ . }}
               {{- end }}
               readOnly: true
             {{- if .Values.hostRootFsMount.enabled }}
@@ -160,9 +160,6 @@ spec:
               readOnly: {{ $mount.readOnly }}
               {{- with $mount.mountPropagation }}
               mountPropagation: {{ . }}
-              {{- end }}
-              {{- with $mount.type }}
-              type: {{ . }}
               {{- end }}
             {{- end }}
             {{- range $_, $mount := .Values.sidecarVolumeMount }}
@@ -276,6 +273,9 @@ spec:
         - name: {{ $mount.name }}
           hostPath:
             path: {{ $mount.hostPath }}
+            {{- with $mount.hostPath.type }}
+            type: {{ . }}
+            {{- end }}
         {{- end }}
         {{- range $_, $mount := .Values.sidecarVolumeMount }}
         - name: {{ $mount.name }}
