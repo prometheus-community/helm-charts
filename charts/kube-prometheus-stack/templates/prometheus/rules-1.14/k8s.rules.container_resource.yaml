@@ -5,6 +5,7 @@ https://github.com/prometheus-community/helm-charts/tree/main/charts/kube-promet
 */ -}}
 {{- $kubeTargetVersion := default .Capabilities.KubeVersion.GitVersion .Values.kubeTargetVersionOverride }}
 {{- if and (semverCompare ">=1.14.0-0" $kubeTargetVersion) (semverCompare "<9.9.9-9" $kubeTargetVersion) .Values.defaultRules.create .Values.defaultRules.rules.k8sContainerResource }}
+{{- $kubeStateMetricsJob := include "kube-prometheus-stack-kube-state-metrics.name" . }}
 apiVersion: monitoring.coreos.com/v1
 kind: PrometheusRule
 metadata:
@@ -25,7 +26,7 @@ spec:
   - name: k8s.rules.container_resource
     rules:
     - expr: |-
-        kube_pod_container_resource_requests{resource="memory",job="kube-state-metrics"}  * on ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}namespace, pod, cluster)
+        kube_pod_container_resource_requests{resource="memory",job="{{ $kubeStateMetricsJob }}"}  * on ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}namespace, pod, cluster)
         group_left() max by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}namespace, pod, cluster) (
           (kube_pod_status_phase{phase=~"Pending|Running"} == 1)
         )
@@ -43,7 +44,7 @@ spec:
         sum by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}namespace, cluster) (
             sum by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}namespace, pod, cluster) (
                 max by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}namespace, pod, container, cluster) (
-                  kube_pod_container_resource_requests{resource="memory",job="kube-state-metrics"}
+                  kube_pod_container_resource_requests{resource="memory",job="{{ $kubeStateMetricsJob }}"}
                 ) * on ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}namespace, pod, cluster) group_left() max by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}namespace, pod, cluster) (
                   kube_pod_status_phase{phase=~"Pending|Running"} == 1
                 )
@@ -60,7 +61,7 @@ spec:
         {{- end }}
       {{- end }}
     - expr: |-
-        kube_pod_container_resource_requests{resource="cpu",job="kube-state-metrics"}  * on ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}namespace, pod, cluster)
+        kube_pod_container_resource_requests{resource="cpu",job="{{ $kubeStateMetricsJob }}"}  * on ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}namespace, pod, cluster)
         group_left() max by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}namespace, pod, cluster) (
           (kube_pod_status_phase{phase=~"Pending|Running"} == 1)
         )
@@ -78,7 +79,7 @@ spec:
         sum by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}namespace, cluster) (
             sum by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}namespace, pod, cluster) (
                 max by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}namespace, pod, container, cluster) (
-                  kube_pod_container_resource_requests{resource="cpu",job="kube-state-metrics"}
+                  kube_pod_container_resource_requests{resource="cpu",job="{{ $kubeStateMetricsJob }}"}
                 ) * on ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}namespace, pod, cluster) group_left() max by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}namespace, pod, cluster) (
                   kube_pod_status_phase{phase=~"Pending|Running"} == 1
                 )
@@ -95,7 +96,7 @@ spec:
         {{- end }}
       {{- end }}
     - expr: |-
-        kube_pod_container_resource_limits{resource="memory",job="kube-state-metrics"}  * on ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}namespace, pod, cluster)
+        kube_pod_container_resource_limits{resource="memory",job="{{ $kubeStateMetricsJob }}"}  * on ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}namespace, pod, cluster)
         group_left() max by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}namespace, pod, cluster) (
           (kube_pod_status_phase{phase=~"Pending|Running"} == 1)
         )
@@ -113,7 +114,7 @@ spec:
         sum by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}namespace, cluster) (
             sum by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}namespace, pod, cluster) (
                 max by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}namespace, pod, container, cluster) (
-                  kube_pod_container_resource_limits{resource="memory",job="kube-state-metrics"}
+                  kube_pod_container_resource_limits{resource="memory",job="{{ $kubeStateMetricsJob }}"}
                 ) * on ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}namespace, pod, cluster) group_left() max by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}namespace, pod, cluster) (
                   kube_pod_status_phase{phase=~"Pending|Running"} == 1
                 )
@@ -130,7 +131,7 @@ spec:
         {{- end }}
       {{- end }}
     - expr: |-
-        kube_pod_container_resource_limits{resource="cpu",job="kube-state-metrics"}  * on ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}namespace, pod, cluster)
+        kube_pod_container_resource_limits{resource="cpu",job="{{ $kubeStateMetricsJob }}"}  * on ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}namespace, pod, cluster)
         group_left() max by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}namespace, pod, cluster) (
          (kube_pod_status_phase{phase=~"Pending|Running"} == 1)
          )
@@ -148,7 +149,7 @@ spec:
         sum by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}namespace, cluster) (
             sum by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}namespace, pod, cluster) (
                 max by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}namespace, pod, container, cluster) (
-                  kube_pod_container_resource_limits{resource="cpu",job="kube-state-metrics"}
+                  kube_pod_container_resource_limits{resource="cpu",job="{{ $kubeStateMetricsJob }}"}
                 ) * on ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}namespace, pod, cluster) group_left() max by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}namespace, pod, cluster) (
                   kube_pod_status_phase{phase=~"Pending|Running"} == 1
                 )

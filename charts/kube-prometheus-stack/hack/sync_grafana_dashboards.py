@@ -81,6 +81,18 @@ condition_map = {
     'k8s-resources-windows-pod': ' .Values.windowsMonitoring.enabled',
 }
 
+replacement_map = {
+    'var-namespace=$__cell_1': {
+        'replacement': 'var-namespace=${__data.fields.namespace}',
+    },
+    'var-type=$__cell_2': {
+        'replacement': 'var-type=${__data.fields.workload_type}',
+    },
+    '=$__cell': {
+        'replacement': '=${__value.text}',
+    },
+}
+
 # standard header
 header = '''{{- /*
 Generated from '%(name)s' from %(url)s
@@ -152,6 +164,9 @@ def patch_dashboards_json(content, multicluster_key):
 
         content = json.dumps(content_struct, separators=(',', ':'))
         content = content.replace('":multicluster:"', '`}}{{ if %s }}0{{ else }}2{{ end }}{{`' % multicluster_key,)
+
+        for line in replacement_map:
+            content = content.replace(line, replacement_map[line]['replacement'])
     except (ValueError, KeyError):
         pass
 
@@ -161,6 +176,11 @@ def patch_dashboards_json(content, multicluster_key):
 def patch_json_set_timezone_as_variable(content):
     # content is no more in json format, so we have to replace using regex
     return re.sub(r'"timezone"\s*:\s*"(?:\\.|[^\"])*"', '"timezone": "`}}{{ .Values.grafana.defaultDashboardsTimezone }}{{`"', content, flags=re.IGNORECASE)
+
+
+def patch_json_set_editable_as_variable(content):
+    # content is no more in json format, so we have to replace using regex
+    return re.sub(r'"editable"\s*:\s*(?:true|false)', '"editable":`}}{{ .Values.grafana.defaultDashboardsEditable }}{{`', content, flags=re.IGNORECASE)
 
 
 def jsonnet_import_callback(base, rel):
@@ -187,6 +207,7 @@ def write_group_to_file(resource_name, content, url, destination, min_kubernetes
 
     content = patch_dashboards_json(content, multicluster_key)
     content = patch_json_set_timezone_as_variable(content)
+    content = patch_json_set_editable_as_variable(content)
 
     filename_struct = {resource_name + '.json': (LiteralStr(content))}
     # rules themselves

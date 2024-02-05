@@ -31,6 +31,12 @@ automountServiceAccountToken: false
 ##   NO_PROXY: "localhost,127.0.0.1"
 extraEnv: {}
 
+## Additional blackbox-exporter container environment variables for secret
+## extraEnvFromSecret:
+##   - secretOne
+##   - secretTwo
+extraEnvFromSecret: ""
+
 extraVolumes: []
   # - name: secret-blackbox-oauth-htpasswd
   #   secret:
@@ -46,9 +52,12 @@ extraVolumeMounts:
   #   mountPath: /etc/ssl/certs/ca-certificates.crt
 
 ## Additional InitContainers to initialize the pod
-##
+## This supports either a structured array or a templatable string
 extraInitContainers: []
 
+## This supports either a structured array or a templatable string
+
+# Array mode
 extraContainers: []
   # - name: oAuth2-proxy
   #   args:
@@ -69,6 +78,16 @@ extraContainers: []
   #   volumeMounts:
   #     - mountPath: /etc/prometheus/secrets/blackbox-tls
   #       name: secret-blackbox-tls
+
+# String mode
+# extraContainers: |-
+#   - name: oAuth2-proxy
+#     args:
+#       - -https-address=:9116
+#       - -upstream=http://localhost:9115
+#       - -skip-auth-regex=^/metrics
+#       - -openshift-delegate-urls={"/":{"group":"monitoring.coreos.com","resource":"prometheuses","verb":"get"}}
+#     image: {{ .Values.global.imageRegistry }}/openshift/oauth-proxy:v1.1.0
 
 ## Enable pod security policy
 pspEnabled: true
@@ -397,3 +416,50 @@ verticalPodAutoscaler:
     # Specifies whether recommended updates are applied when a Pod is started and whether recommended updates
     # are applied during the life of a Pod. Possible values are "Off", "Initial", "Recreate", and "Auto".
     updateMode: Auto
+
+configReloader:
+  enabled: false
+  containerPort: 8080
+  config:
+    logFormat: logfmt
+    logLevel: info
+    watchInterval: 1m
+  image:
+    registry: quay.io
+    repository: prometheus-operator/prometheus-config-reloader
+    tag: "v0.71.2"
+    pullPolicy: IfNotPresent
+    digest: ""
+  securityContext:
+    runAsUser: 1000
+    runAsGroup: 1000
+    readOnlyRootFilesystem: true
+    runAsNonRoot: true
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop: ["ALL"]
+  resources:
+    limits:
+      memory: 50Mi
+    requests:
+      cpu: 10m
+      memory: 20Mi
+  livenessProbe:
+    httpGet:
+      path: /healthz
+      port: reloader-web
+      scheme: HTTP
+  readinessProbe:
+    httpGet:
+      path: /healthz
+      port: reloader-web
+      scheme: HTTP
+  service:
+    port: 8080
+  serviceMonitor:
+    selfMonitor:
+      additionalMetricsRelabels: {}
+      additionalRelabeling: []
+      path: /metrics
+      interval: 30s
+      scrapeTimeout: 30s

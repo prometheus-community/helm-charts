@@ -46,7 +46,7 @@ kubeRBACProxy:
     sha: ""
     pullPolicy: IfNotPresent
 
-  # List of additional cli arguments to configure kube-rbac-prxy
+  # List of additional cli arguments to configure kube-rbac-proxy
   # for example: --tls-cipher-suites, --log-file, etc.
   # all the possible args can be found here: https://github.com/brancz/kube-rbac-proxy#usage
   extraArgs: []
@@ -55,6 +55,13 @@ kubeRBACProxy:
   ## Allows overrides and additional options compared to (Pod) securityContext
   ## Ref: https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-the-security-context-for-a-container
   containerSecurityContext: {}
+
+  # Specify the port used for the Node exporter container (upstream port)
+  port: 8100
+  # Specify the name of the container port
+  portName: http
+  # Configure a hostPort. If true, hostPort will be enabled in the container and set to service.port.
+  enableHostPort: false
 
   resources: {}
     # We usually recommend not to specify default resources and to leave this as a conscious
@@ -354,9 +361,22 @@ nodeSelector:
   kubernetes.io/os: linux
   #  kubernetes.io/arch: amd64
 
+# Specify grace period for graceful termination of pods. Defaults to 30 if null or not specified
+terminationGracePeriodSeconds: null
+
 tolerations:
   - effect: NoSchedule
     operator: Exists
+
+# Enable or disable container termination message settings
+# https://kubernetes.io/docs/tasks/debug/debug-application/determine-reason-pod-failure/
+terminationMessageParams:
+  enabled: false
+  # If enabled, specify the path for termination messages
+  terminationMessagePath: /dev/termination-log
+  # If enabled, specify the policy for termination messages
+  terminationMessagePolicy: File
+
 
 ## Assign a PriorityClassName to pods if set
 # priorityClassName: ""
@@ -388,18 +408,21 @@ secrets: []
 ##
 namespaceOverride: ""
 
-## Additional containers for export metrics to text file
+## Additional containers for export metrics to text file; fields image,imagePullPolicy,securityContext take default value from main container
 ##
 sidecars: []
-##  - name: nvidia-dcgm-exporter
-##    image: nvidia/dcgm-exporter:1.4.3
+#  - name: nvidia-dcgm-exporter
+#    image: nvidia/dcgm-exporter:1.4.3
+#    volumeMounts:
+#     - name: tmp
+#       mountPath: /tmp
 
 ## Volume for sidecar containers
 ##
 sidecarVolumeMount: []
-##  - name: collector-textfiles
-##    mountPath: /run/prometheus
-##    readOnly: false
+#  - name: collector-textfiles
+#    mountPath: /run/prometheus
+#    readOnly: false
 
 ## Additional mounts from the host to sidecar containers
 ##
@@ -478,3 +501,6 @@ extraManifests: []
   #     name: prometheus-extra
   #   data:
   #     extra-data: "value"
+
+# Override version of app, required if image.tag is defined and does not follow semver
+version: ""

@@ -1,0 +1,177 @@
+# -- Overwrite the default name of the chart
+nameOverride: ""
+# -- Overwrite all resources name created by the chart
+fullnameOverride: ""
+
+# -- List of secret names to use for pulling the images
+imagePullSecrets: []
+
+serviceAccount:
+  # -- Specifies whether a service account should be created
+  create: true
+  # --  Annotations to add to the service account
+  annotations: {}
+  # The name of the service account to use.
+  # If not set and create is true, a name is generated using the fullname template
+  name: ""
+  # -- Whether pods running as this service account should have an API token automatically mounted
+  automountServiceAccountToken: true
+
+# --  Annotations to add to the all the resources
+annotations: {}
+# --  Annotations to add to the OpenCost Pod
+podAnnotations: {}
+# --  Annotations to add to the Secret
+secretAnnotations: {}
+# --  Labels to add to the OpenCost Pod
+podLabels: {}
+# --  Pod priority
+priorityClassName: ~
+
+# -- Holds pod-level security attributes and common container settings
+podSecurityContext: {}
+  # fsGroup: 2000
+
+service:
+  enabled: true
+  # --  Annotations to add to the service
+  annotations: {}
+  # --  Labels to add to the service account
+  labels: {}
+  # --  Kubernetes Service type
+  type: ClusterIP
+
+# Create cluster role policies
+rbac:
+  enabled: true
+
+opencost:
+  exporter:
+    # -- The GCP Pricing API requires a key. This is supplied just for evaluation.
+    cloudProviderApiKey: ""
+    # -- Default cluster ID to use if cluster_id is not set in Prometheus metrics.
+    defaultClusterId: 'default-cluster'
+    image:
+      # -- Exporter container image registry
+      registry: quay.io
+      # -- Exporter container image name
+      repository: kubecost1/kubecost-cost-model
+      # -- Exporter container image tag
+      # @default -- `""` (use appVersion in Chart.yaml)
+      tag: ""
+      # -- Exporter container image pull policy
+      pullPolicy: IfNotPresent
+    # -- Number of OpenCost replicas to run
+    replicas: 1
+    resources:
+      # -- CPU/Memory resource requests
+      requests:
+        cpu: '10m'
+        memory: '55Mi'
+      # -- CPU/Memory resource limits
+      limits:
+        cpu: '999m'
+        memory: '1Gi'
+    # Liveness probe configuration
+    livenessProbe:
+      # -- Whether probe is enabled
+      enabled: true
+      # -- Number of seconds before probe is initiated
+      initialDelaySeconds: 120
+      # -- Probe frequency in seconds
+      periodSeconds: 10
+      # -- Number of failures for probe to be considered failed
+      failureThreshold: 3
+    # Readiness probe configuration
+    readinessProbe:
+      # -- Whether probe is enabled
+      enabled: true
+      # -- Number of seconds before probe is initiated
+      initialDelaySeconds: 120
+      # -- Probe frequency in seconds
+      periodSeconds: 10
+      # -- Number of failures for probe to be considered failed
+      failureThreshold: 3
+    # -- The security options the container should be run with
+    securityContext: {}
+      # capabilities:
+      #   drop:
+      #   - ALL
+      # readOnlyRootFilesystem: true
+      # runAsNonRoot: true
+      # runAsUser: 1000
+
+    # Persistent volume claim for storing the data. eg: csv file
+    persistence:
+      enabled: false
+      # -- Annotations for persistent volume
+      annotations: {}
+      # -- Access mode for persistent volume
+      accessMode: ""
+      # -- Storage class for persistent volume
+      storageClass: ""
+      # -- Size for persistent volume
+      size: ""
+
+    aws:
+      # -- AWS secret access key
+      secret_access_key: ""
+      # -- AWS secret key id
+      access_key_id: ""
+    # -- A list of volume mounts to be added to the pod
+    extraVolumeMounts: []
+    # -- List of additional environment variables to set in the container
+    env: []
+    # -- Any extra environment variables you would like to pass on to the pod
+    extraEnv: {}
+      # FOO: BAR
+  customPricing:
+    # -- Enables custom pricing for on-premise setup.
+    enabled: false
+    configmapName: custom-pricing-model
+    # -- Path for the pricing configuration.
+    configPath: /tmp/custom-config
+    # -- Configures the pricing model provided in the values file.
+    createConfigmap: true
+    # -- More information about these values here: https://www.opencost.io/docs/configuration/on-prem#custom-pricing-using-the-opencost-helm-chart
+    costModel:
+      description: Modified prices based on your internal pricing
+      CPU: 1.25
+      spotCPU: 0.006655
+      RAM: 0.50
+      spotRAM: 0.000892
+      GPU: 0.95
+      storage: 0.25
+      zoneNetworkEgress: 0.01
+      regionNetworkEgress: 0.01
+      internetNetworkEgress: 0.12
+
+  # OpenCost uses Prometheus for persistent storage
+  prometheus:
+    # -- Secret name that contains credentials for Prometheus
+    secret_name: ~
+    # -- Prometheus Basic auth username
+    username: ""
+    # -- Key in the secret that references the username
+    username_key: DB_BASIC_AUTH_USERNAME
+    # -- Prometheus Basic auth password
+    password: ""
+    # -- Key in the secret that references the password
+    password_key: DB_BASIC_AUTH_PW
+    # -- Prometheus Bearer token
+    bearer_token: ""
+    bearer_token_key: DB_BEARER_TOKEN
+    external:
+      # -- Use external Prometheus (eg. Grafana Cloud)
+      enabled: false
+      # -- External Prometheus url
+      url: "https://prometheus.example.com/prometheus"
+    internal:
+      # -- Use in-cluster Prometheus
+      enabled: true
+      # -- Service name of in-cluster Prometheus
+      serviceName: my-prometheus
+      # -- Namespace of in-cluster Prometheus
+      namespaceName: opencost
+      # -- Service port of in-cluster Prometheus
+      port: 9090
