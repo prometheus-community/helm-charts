@@ -101,6 +101,10 @@ spec:
             - name: config-volume
               mountPath: /etc/config
               readOnly: true
+          {{- with .Values.configmapReload.prometheus.extraVolumeMounts }}
+              extraVolumeMounts:
+                {{ toYaml . | nindent 16 }}
+          {{- end }}
           {{- range .Values.configmapReload.prometheus.extraConfigmapMounts }}
             - name: {{ $.Values.configmapReload.prometheus.name }}-{{ .name }}
               mountPath: {{ .mountPath }}
@@ -319,7 +323,7 @@ spec:
           hostPath:
             path: {{ .hostPath }}
       {{- end }}
-      {{- range .Values.configmapReload.prometheus.extraVolumeMounts }}
+      {{- range .Values.configmapReload.prometheus.extraConfigmapMounts }}
         - name: {{ $.Values.configmapReload.prometheus.name }}-{{ .name }}
           configMap:
             name: {{ .configMap }}
