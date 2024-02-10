@@ -236,6 +236,8 @@ prometheus-windows-exporter:
       enabled: true
       jobLabel: jobLabel
 
+  releaseLabel: true
+
   ## Set job label to 'windows-exporter' as required by the default Prometheus rules and Grafana dashboards
   ##
   podLabels:
@@ -993,6 +995,18 @@ grafana:
     # - secretName: grafana-general-tls
     #   hosts:
     #   - grafana.example.com
+
+  # # To make Grafana persistent (Using Statefulset)
+  # #
+  # persistence:
+  #   enabled: true
+  #   type: sts
+  #   storageClassName: "storageClassName"
+  #   accessModes:
+  #     - ReadWriteOnce
+  #   size: 20Gi
+  #   finalizers:
+  #     - kubernetes.io/pvc-protection
 
   sidecar:
     dashboards:
@@ -2059,6 +2073,9 @@ prometheus-node-exporter:
 prometheusOperator:
   enabled: true
 
+  ## Use '{{ template "kube-prometheus-stack.fullname" . }}-operator' by default
+  fullnameOverride: ""
+
   ## Number of old replicasets to retain ##
   ## The default value is 10, 0 will garbage-collect old replicasets ##
   revisionHistoryLimit: 10
@@ -2091,6 +2108,8 @@ prometheusOperator:
     annotations: {}
     #   argocd.argoproj.io/hook: PreSync
     #   argocd.argoproj.io/hook-delete-policy: HookSucceeded
+
+    namespaceSelector: {}
 
     deployment:
       enabled: false
@@ -2693,7 +2712,7 @@ prometheusOperator:
   thanosImage:
     registry: quay.io
     repository: thanos/thanos
-    tag: v0.32.5
+    tag: v0.34.0
     sha: ""
 
   ## Set a Label Selector to filter watched prometheus and prometheusAgent
@@ -3222,7 +3241,7 @@ prometheus:
     image:
       registry: quay.io
       repository: prometheus/prometheus
-      tag: v2.48.1
+      tag: v2.49.1
       sha: ""
 
     ## Tolerations for use with node taints
@@ -3420,7 +3439,7 @@ prometheus:
     ##
     scrapeConfigSelector: {}
     ## Example which selects scrapeConfigs with label "prometheus" set to "somelabel"
-    # scrapeConfig:
+    # scrapeConfigSelector:
     #   matchLabels:
     #     prometheus: somelabel
 
@@ -3759,8 +3778,10 @@ prometheus:
     ## OverrideHonorTimestamps allows to globally enforce honoring timestamps in all scrape configs.
     overrideHonorTimestamps: false
 
-    ## IgnoreNamespaceSelectors if set to true will ignore NamespaceSelector settings from the podmonitor and servicemonitor
-    ## configs, and they will only discover endpoints within their current namespace. Defaults to false.
+    ## When ignoreNamespaceSelectors is set to true, namespaceSelector from all PodMonitor, ServiceMonitor and Probe objects will be ignored,
+    ## they will only discover targets within the namespace of the PodMonitor, ServiceMonitor and Probe object,
+    ## and servicemonitors will be installed in the default service namespace.
+    ## Defaults to false.
     ignoreNamespaceSelectors: false
 
     ## EnforcedNamespaceLabel enforces adding a namespace label of origin for each alert and metric that is user created.
@@ -3784,6 +3805,15 @@ prometheus:
     ## as /dev/stdout to log querie information to the default Prometheus log stream. This is only available in versions
     ## of Prometheus >= 2.16.0. For more details, see the Prometheus docs (https://prometheus.io/docs/guides/query-log/)
     queryLogFile: false
+
+    # Use to set global sample_limit for Prometheus. This act as default SampleLimit for ServiceMonitor or/and PodMonitor.
+    # Set to 'false' to disable global sample_limit. or set to a number to override the default value.
+    sampleLimit: false
+
+    # EnforcedKeepDroppedTargetsLimit defines on the number of targets dropped by relabeling that will be kept in memory.
+    # The value overrides any spec.keepDroppedTargets set by ServiceMonitor, PodMonitor, Probe objects unless spec.keepDroppedTargets
+    # is greater than zero and less than spec.enforcedKeepDroppedTargets. 0 means no limit.
+    enforcedKeepDroppedTargets: 0
 
     ## EnforcedSampleLimit defines global limit on number of scraped samples that will be accepted. This overrides any SampleLimit
     ## set per ServiceMonitor or/and PodMonitor. It is meant to be used by admins to enforce the SampleLimit to keep overall
@@ -3845,6 +3875,13 @@ prometheus:
     ## Useful, if you need advanced templating inside alertmanagerSpec.
     ## Otherwise, use prometheus.prometheusSpec.additionalConfig (passed through tpl)
     additionalConfigString: ""
+
+    ## Defines the maximum time that the `prometheus` container's startup probe
+    ## will wait before being considered failed. The startup probe will return
+    ## success after the WAL replay is complete. If set, the value should be
+    ## greater than 60 (seconds). Otherwise it will be equal to 600 seconds (15
+    ## minutes).
+    maximumStartupDurationSeconds: 0
 
   additionalRulesForClusterRole: []
   #  - apiGroups: [ "" ]
@@ -4187,7 +4224,7 @@ thanosRuler:
     image:
       registry: quay.io
       repository: thanos/thanos
-      tag: v0.32.5
+      tag: v0.34.0
       sha: ""
 
     ## Namespaces to be selected for PrometheusRules discovery.
@@ -4337,6 +4374,17 @@ thanosRuler:
     ## If set to true all actions on the underlying managed objects are not going to be performed, except for delete actions.
     ##
     paused: false
+
+    ## Allows setting additional arguments for the ThanosRuler container
+    ## ref: https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/api.md#thanosruler
+    ##
+    additionalArgs: []
+      # - name: remote-write.config
+      #   value: |-
+      #     "remote_write":
+      #     - "name": "receiver-0"
+      #       "remote_timeout": "30s"
+      #       "url": "http://thanos-receiver-0.thanos-receiver:8081/api/v1/receive"
 
     ## Define which Nodes the Pods are scheduled on.
     ## ref: https://kubernetes.io/docs/user-guide/node-selection/
