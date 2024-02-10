@@ -1,8 +1,11 @@
 {{- if and .Values.prometheus.enabled .Values.global.rbac.create }}
 apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRole
+kind: {{ .Values.prometheus.rbac.namespaced | ternary "Role" "ClusteRole" }}
 metadata:
   name: {{ template "kube-prometheus-stack.fullname" . }}-prometheus
+  {{- if .Values.prometheus.rbac.namespaced }}
+  namespace: {{ template "kube-prometheus-stack.namespace" . }}
+  {{- end }}
   labels:
     app: {{ template "kube-prometheus-stack.name" . }}-prometheus
 {{ include "kube-prometheus-stack.labels" . | indent 4 }}
@@ -11,8 +14,10 @@ rules:
 # they're grabbed from https://github.com/prometheus/prometheus/blob/master/documentation/examples/rbac-setup.yml
 - apiGroups: [""]
   resources:
+  {{- if not .Values.prometheus.rbac.namespaced }}
   - nodes
   - nodes/metrics
+  {{- end }}
   - services
   - endpoints
   - pods
@@ -22,8 +27,10 @@ rules:
   resources:
   - ingresses
   verbs: ["get", "list", "watch"]
+{{- if not .Values.prometheus.rbac.namespaced }}
 - nonResourceURLs: ["/metrics", "/metrics/cadvisor"]
   verbs: ["get"]
+{{- end }}
 {{- if .Values.prometheus.additionalRulesForClusterRole }}
 {{ toYaml .Values.prometheus.additionalRulesForClusterRole | indent 0 }}
 {{- end }}

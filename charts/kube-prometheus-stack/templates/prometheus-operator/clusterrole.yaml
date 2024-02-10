@@ -1,8 +1,11 @@
 {{- if and .Values.prometheusOperator.enabled .Values.global.rbac.create }}
 apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRole
+kind: {{ .Values.prometheusOperator.rbac.namespaced | ternary "Role" "ClusteRole" }}
 metadata:
   name: {{ template "kube-prometheus-stack.fullname" . }}-operator
+  {{- if .Values.prometheusOperator.rbac.namespaced }}
+  namespace: {{ template "kube-prometheus-stack.namespace" . }}
+  {{- end }}
   labels:
     app: {{ template "kube-prometheus-stack.name" . }}-operator
 {{ include "kube-prometheus-stack.labels" . | indent 4 }}
@@ -61,6 +64,7 @@ rules:
   - create
   - update
   - delete
+{{- if not .Values.prometheusOperator.rbac.namespaced }}
 - apiGroups:
   - ""
   resources:
@@ -68,6 +72,7 @@ rules:
   verbs:
   - list
   - watch
+{{- end }}
 - apiGroups:
   - ""
   resources:

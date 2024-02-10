@@ -1,15 +1,21 @@
 {{- if and .Values.prometheusOperator.enabled .Values.global.rbac.create }}
 apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRoleBinding
+kind: {{ .Values.prometheusOperator.rbac.namespaced | ternary "RoleBinding" "ClusterRoleBinding" }}
 metadata:
   name: {{ template "kube-prometheus-stack.fullname" . }}-operator
+  {{- if .Values.prometheusOperator.rbac.namespaced }}
+  namespace: {{ template "kube-prometheus-stack.namespace" . }}
+  {{- end }}
   labels:
     app: {{ template "kube-prometheus-stack.name" . }}-operator
 {{ include "kube-prometheus-stack.labels" . | indent 4 }}
 roleRef:
   apiGroup: rbac.authorization.k8s.io
-  kind: ClusterRole
+  kind: {{ .Values.prometheusOperator.rbac.namespaced | ternary "Role" "ClusterRole" }}
   name: {{ template "kube-prometheus-stack.fullname" . }}-operator
+  {{- if .Values.prometheusOperator.rbac.namespaced }}
+  namespace: {{ template "kube-prometheus-stack.namespace" . }}
+  {{- end }}
 subjects:
 - kind: ServiceAccount
   name: {{ template "kube-prometheus-stack.operator.serviceAccountName" . }}
