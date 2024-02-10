@@ -2477,6 +2477,12 @@ prometheusOperator:
   ##
   denyNamespaces: []
 
+  rbac:
+    # If true, the following values should be also defined:
+    # - prometheusOperator.namespaces.releaseNamespace=true
+    # - prometheusOperator.kubeletService.enabled=false
+    namespaced: false
+
   ## Filter namespaces to look for prometheus-operator custom resources
   ##
   alertmanagerInstanceNamespaces: []
@@ -2588,6 +2594,19 @@ prometheusOperator:
     namespace: kube-system
     ## Use '{{ template "kube-prometheus-stack.fullname" . }}-kubelet' by default
     name: ""
+
+  additionalRulesForClusterRole: []
+  #  - apiGroups: [ "" ]
+  #    resources:
+  #      - nodes/proxy
+  #    verbs: [ "get", "list", "watch" ]
+
+  ## Only used, if prometheus.rbac.namespaced=true
+  additionalRulesForRole: []
+  #  - apiGroups: [ "" ]
+  #    resources:
+  #      - secrets
+  #    verbs: [ "get", "list", "watch" ]
 
   ## Create a servicemonitor for the operator
   ##
@@ -2870,6 +2889,11 @@ prometheus:
     # podSelector:
     #   matchLabels:
     #     app: prometheus
+
+  ## Restrict RBAC permission to release namespaces.
+  ## You have to disable cluster-wide and node-level scrape jobs
+  rbac:
+    namespaced: false
 
   ## Service account for Prometheuses to use.
   ## ref: https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-account/
@@ -3996,6 +4020,13 @@ prometheus:
   #  - apiGroups: [ "" ]
   #    resources:
   #      - nodes/proxy
+  #    verbs: [ "get", "list", "watch" ]
+
+  ## Only used, if prometheus.rbac.namespaced=true
+  additionalRulesForRole: []
+  #  - apiGroups: [ "" ]
+  #    resources:
+  #      - secrets
   #    verbs: [ "get", "list", "watch" ]
 
   additionalServiceMonitors: []

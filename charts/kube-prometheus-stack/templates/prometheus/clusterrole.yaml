@@ -1,8 +1,11 @@
 {{- if and .Values.prometheus.enabled .Values.global.rbac.create }}
 apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRole
+kind: {{ .Values.prometheus.rbac.namespaced | ternary "Role" "ClusterRole" }}
 metadata:
   name: {{ template "kube-prometheus-stack.fullname" . }}-prometheus
+  {{- if .Values.prometheus.rbac.namespaced }}
+  namespace: {{ template "kube-prometheus-stack.namespace" . }}
+  {{- end }}
   labels:
     app: {{ template "kube-prometheus-stack.name" . }}-prometheus
 {{ include "kube-prometheus-stack.labels" . | indent 4 }}
@@ -11,8 +14,10 @@ rules:
 # they're grabbed from https://github.com/prometheus/prometheus/blob/master/documentation/examples/rbac-setup.yml
 - apiGroups: [""]
   resources:
+  {{- if not .Values.prometheus.rbac.namespaced }}
   - nodes
   - nodes/metrics
+  {{- end }}
   - services
   - endpoints
   - pods
@@ -22,8 +27,10 @@ rules:
   resources:
   - ingresses
   verbs: ["get", "list", "watch"]
+{{- if not .Values.prometheus.rbac.namespaced }}
 - nonResourceURLs: ["/metrics", "/metrics/cadvisor"]
   verbs: ["get"]
+{{- end }}
 {{/* fix(#3338): add required rules to use node-exporter with the RBAC proxy */}}
 {{- if and .Values.nodeExporter.enabled (index .Values "prometheus-node-exporter").kubeRBACProxy.enabled }}
 - apiGroups: [ "" ]
@@ -31,7 +38,21 @@ rules:
   - services/{{ include "prometheus-node-exporter.fullname" (index .Subcharts "prometheus-node-exporter") }}
   verbs: [ "get", "list", "watch" ]
 {{- end }}
-{{- if .Values.prometheus.additionalRulesForClusterRole }}
-{{ toYaml .Values.prometheus.additionalRulesForClusterRole | indent 0 }}
+{{- if .Values.prometheusOperator.rbac.namespaced }}
+  {{- with .Values.prometheus.additionalRulesForRole }}
+  {{- toYaml . | nindent 0 }}
+  {{- end }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ template "kube-prometheus-stack.fullname" . }}-prometheus
+  labels:
+    app: {{ template "kube-prometheus-stack.name" . }}-prometheus
+    {{- include "kube-prometheus-stack.labels" . | nindent 4 }}
+rules:
+{{- end }}
+{{- with .Values.prometheus.additionalRulesForClusterRole }}
+{{- toYaml . | nindent 0 }}
 {{- end }}
 {{- end }}
