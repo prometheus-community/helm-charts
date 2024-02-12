@@ -5,8 +5,7 @@ metadata:
   name: {{ include "prometheus-nginx-exporter.fullname" . }}
   namespace: {{ template "prometheus-nginx-exporter.namespace" . }}
   {{- with .Values.additionalAnnotations }}
-  annotations:
-  {{ toYaml . | indent 4 }}
+  annotations: {{ toYaml . | nindent 4 }}
   {{- end }}
   labels:
     {{- include "prometheus-nginx-exporter.labels" . | indent 4 }}
@@ -24,9 +23,9 @@ spec:
     metadata:
       labels:
         {{- include "prometheus-nginx-exporter.labels" . | indent 8 }}
+      {{- if or .Values.additionalAnnotations .Values.podAnnotations }}
       annotations:
-      {{- with .Values.additionalAnnotations }}
-      {{ toYaml . | indent 6 }}
+        {{- include "prometheus-nginx-exporter.podAnnotations" . | indent 8 }}
       {{- end }}
     spec:
       serviceAccountName: {{ template "prometheus-nginx-exporter.serviceAccountName" . }}
