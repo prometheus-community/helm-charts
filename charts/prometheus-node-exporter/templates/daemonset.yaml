@@ -136,9 +136,15 @@ spec:
           volumeMounts:
             - name: proc
               mountPath: /host/proc
+              {{- with .Values.hostProcFsMount.mountPropagation }}
+              mountPropagation: {{ . }}
+              {{- end }}
               readOnly:  true
             - name: sys
               mountPath: /host/sys
+              {{- with .Values.hostSysFsMount.mountPropagation }}
+              mountPropagation: {{ . }}
+              {{- end }}
               readOnly: true
             {{- if .Values.hostRootFsMount.enabled }}
             - name: root
@@ -224,6 +230,13 @@ spec:
           terminationMessagePolicy: {{ .terminationMessagePolicy }}
           {{- end }}
           {{- end }}
+          {{- with .Values.kubeRBACProxy.env }}
+          env:
+            {{- range $key, $value := $.Values.kubeRBACProxy.env }}
+            - name: {{ $key }}
+              value: {{ $value | quote }}
+            {{- end }}
+          {{- end }}
           {{- if .Values.kubeRBACProxy.containerSecurityContext }}
           securityContext:
           {{ toYaml .Values.kubeRBACProxy.containerSecurityContext | nindent 12 }}
@@ -247,6 +260,9 @@ spec:
       nodeSelector:
         {{- toYaml . | nindent 8 }}
       {{- end }}
+      {{- with .Values.restartPolicy }}
+      restartPolicy: {{ . }}
+      {{- end }}
       {{- with .Values.tolerations }}
       tolerations:
         {{- toYaml . | nindent 8 }}
@@ -267,6 +283,9 @@ spec:
         - name: {{ $mount.name }}
           hostPath:
             path: {{ $mount.hostPath }}
+            {{- with $mount.type }}
+            type: {{ . }}
+            {{- end }}
         {{- end }}
         {{- range $_, $mount := .Values.sidecarVolumeMount }}
         - name: {{ $mount.name }}
