@@ -32,7 +32,7 @@ _See [helm install](https://helm.sh/docs/helm/helm_install/) for command documen
 
 ## Dependencies
 
-By default this chart installs additional, dependent charts:
+By default, this chart installs additional, dependent charts:
 
 - [prometheus-community/kube-state-metrics](https://github.com/prometheus-community/helm-charts/tree/main/charts/kube-state-metrics)
 - [prometheus-community/prometheus-node-exporter](https://github.com/prometheus-community/helm-charts/tree/main/charts/prometheus-node-exporter)
@@ -556,7 +556,7 @@ If you are using PodSecurityPolicies you can enable the previous behaviour by se
 This version splits prometheus-node-exporter chart recording and altering rules in separate config values.
 Instead of `defaultRules.rules.node` the 2 new variables `defaultRules.rules.nodeExporterAlerting` and `defaultRules.rules.nodeExporterRecording` are used.
 
-Also the following defaultRules.rules has been removed as they had no effect: `kubeApiserverError`, `kubePrometheusNodeAlerting`, `kubernetesAbsent`, `time`.
+Also, the following defaultRules.rules has been removed as they had no effect: `kubeApiserverError`, `kubePrometheusNodeAlerting`, `kubernetesAbsent`, `time`.
 
 The ability to set a rubookUrl via `defaultRules.rules.rubookUrl` was reintroduced.
 
@@ -581,7 +581,7 @@ kubectl apply --server-side -f https://raw.githubusercontent.com/prometheus-oper
 
 ### From 23.x to 24.x
 
-The custom `ServiceMonitor` for the _kube-state-metrics_ & _prometheus-node-exporter_ charts have been removed in favour of the built-in sub-chart `ServiceMonitor`; for both sub-charts this means that `ServiceMonitor` customisations happen via the values passed to the chart. If you haven't directly customised this behaviour then there are no changes required to upgrade, but if you have please read the following.
+The custom `ServiceMonitor` for the _kube-state-metrics_ & _prometheus-node-exporter_ charts have been removed in favour of the built-in sub-chart `ServiceMonitor`; for both sub-charts this means that `ServiceMonitor` customisations happen via the values passed to the chart. If you haven't directly customised this behaviour, then there are no changes required to upgrade, but if you have please read the following.
 
 For _kube-state-metrics_ the `ServiceMonitor` customisation is now set via `kube-state-metrics.prometheus.monitor` and the `kubeStateMetrics.serviceMonitor.selfMonitor.enabled` value has moved to `kube-state-metrics.selfMonitor.enabled`.
 
@@ -820,7 +820,7 @@ Because the operator can only run as a single pod, there is potential for this c
 
 ## Developing Prometheus Rules and Grafana Dashboards
 
-This chart Grafana Dashboards and Prometheus Rules are just a copy from [prometheus-operator/prometheus-operator](https://github.com/prometheus-operator/prometheus-operator) and other sources, synced (with alterations) by scripts in [hack](hack) folder. In order to introduce any changes you need to first [add them to the original repository](https://github.com/prometheus-operator/kube-prometheus/blob/main/docs/customizations/developing-prometheus-rules-and-grafana-dashboards.md) and then sync there by scripts.
+This chart Grafana Dashboards and Prometheus Rules are just a copy from [prometheus-operator/prometheus-operator](https://github.com/prometheus-operator/prometheus-operator) and other sources, synced (with alterations) by scripts in [hack](hack) folder. In order to introduce any changes, you need to first [add them to the original repository](https://github.com/prometheus-operator/kube-prometheus/blob/main/docs/customizations/developing-prometheus-rules-and-grafana-dashboards.md) and then sync there by scripts.
 
 ## Further Information
 
@@ -849,7 +849,7 @@ To do so, you can set `prometheus.prometheusSpec.podMonitorSelectorNilUsesHelmVa
 ## Zero downtime
 
 Since `kube-prometheus-stack` is fully compatible with the `stable/prometheus-operator` chart, a migration without downtime can be achieved.
-However, the old name prefix needs to be kept. If you want the new name please follow the step by step guide below (with downtime).
+However, the old name prefix needs to be kept. If you want the new name, please follow the step by step guide below (with downtime).
 
 You can override the name to achieve this:
 
@@ -944,7 +944,7 @@ You can check out the tickets for this change [here](https://github.com/promethe
 The chart has added 3 [dependencies](#dependencies).
 
 - Node-Exporter, Kube-State-Metrics: These components are loaded as dependencies into the chart, and are relatively simple components
-- Grafana: The Grafana chart is more feature-rich than this chart - it contains a sidecar that is able to load data sources and dashboards from configmaps deployed into the same cluster. For more information check out the [documentation for the chart](https://github.com/grafana/helm-charts/blob/main/charts/grafana/README.md)
+- Grafana: The Grafana chart is more feature-rich than this chart - it contains a sidecar that is able to load data sources and dashboards from configmaps deployed into the same cluster. For more information, check out the [documentation for the chart](https://github.com/grafana/helm-charts/blob/main/charts/grafana/README.md)
 
 #### Kubelet Service
 
@@ -996,7 +996,7 @@ spec:
   volumeName: pvc-prometheus-migration-prometheus-0
 ```
 
-The PVC will take ownership of the PV and when you create a release using a persistent volume claim template it will use the existing PVCs as they match the naming convention used by the chart. For other cloud providers similar approaches can be used.
+The PVC will take ownership of the PV and when you create a release using a persistent volume claim template it will use the existing PVCs as they match the naming convention used by the chart. For other cloud providers, similar approaches can be used.
 
 #### KubeProxy
 
