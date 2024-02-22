@@ -176,14 +176,8 @@ spec:
               mountPath: {{ .mountPath }}
             {{- end }}
         {{- range .Values.sidecars }}
-          {{- $overwrites := dict 
-            "volumeMounts" (concat (include "prometheus-node-exporter.sidecarVolumeMounts" $ | fromYamlArray) (.volumeMounts | default list) | default list)
-          }}
-          {{- $defaults := dict 
-            "image" (include "prometheus-node-exporter.image" $) 
-            "securityContext" $.Values.containerSecurityContext 
-            "imagePullPolicy" $.Values.image.pullPolicy 
-          }}
+          {{- $overwrites := dict "volumeMounts" (concat (include "prometheus-node-exporter.sidecarVolumeMounts" $ | fromYamlArray) (.volumeMounts | default list) | default list) }}
+          {{- $defaults := dict "image" (include "prometheus-node-exporter.image" $) "securityContext" $.Values.containerSecurityContext "imagePullPolicy" $.Values.image.pullPolicy }}
         - {{- toYaml (merge $overwrites . $defaults) | nindent 10 }}
         {{- end }}
         {{-  if .Values.kubeRBACProxy.enabled  }}
