@@ -2,11 +2,10 @@
 apiVersion: autoscaling.k8s.io/v1
 kind: VerticalPodAutoscaler
 metadata:
-  name: {{ template "kube-prometheus-stack.fullname" . }}-operator
+  name: {{ template "kube-prometheus-stack.operator.fullname" . }}
   namespace: {{ template "kube-prometheus-stack.namespace" . }}
   labels:
-    app: {{ template "kube-prometheus-stack.name" . }}-operator
-{{ include "kube-prometheus-stack.labels" . | indent 4 }}
+    {{- include "kube-prometheus-stack.prometheus-operator.labels" . | nindent 4 }}
 spec:
   {{- with .Values.prometheusOperator.verticalPodAutoscaler.recommenders }}
   recommenders:
@@ -33,7 +32,7 @@ spec:
   targetRef:
     apiVersion: apps/v1
     kind: Deployment
-    name: {{ template "kube-prometheus-stack.fullname" . }}-operator
+    name: {{ template "kube-prometheus-stack.operator.fullname" . }}
   {{- with .Values.prometheusOperator.verticalPodAutoscaler.updatePolicy }}
   updatePolicy:
     {{- toYaml . | nindent 4 }}
