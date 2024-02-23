@@ -27,22 +27,6 @@ _See [configuration](#configuration) below._
 
 _See [helm install](https://helm.sh/docs/helm/helm_install/) for command documentation._
 
-## Upgrading Chart
-
-```console
-helm upgrade [RELEASE_NAME] prometheus-community/prometheus-snmp-exporter
-```
-
-_See [helm upgrade](https://helm.sh/docs/helm/helm_upgrade/) for command documentation._
-
-### Upgrading an existing Release to a new major version
-
-A major chart version change (like v1.2.3 -> v2.0.0) indicates that there is an incompatible breaking change needing manual actions.
-
-### From 1.x to 2.x
-
-This version upgrades changes the `serviceMonitor.namespace` value from `monitoring` to the namespace the release is deployed to.
-
 ## Uninstall Chart
 
 ```console
@@ -60,6 +44,10 @@ helm upgrade [RELEASE_NAME] [CHART] --install
 ```
 
 _See [helm upgrade](https://helm.sh/docs/helm/helm_upgrade/) for command documentation._
+
+### Upgrading an existing Release to a new major version
+
+A major chart version change (like v1.2.3 -> v2.0.0) indicates that there is an incompatible breaking change needing manual actions.
 
 ### To 1.0.0
 
@@ -88,6 +76,10 @@ serviceMonitor:
     name: device1
     target: 127.0.0.1
 ```
+
+### To 2.0.0
+
+This version changes the `serviceMonitor.namespace` value from `monitoring` to the namespace the release is deployed to.
 
 ## Configuration
 
