@@ -12,14 +12,14 @@ This chart bootstraps a [Kafka Exporter](https://github.com/danielqsj/kafka_expo
 Helm v2 is no longer supported from chart version 2.0.0.
 
 ## Get Repository Info
-
+<!-- textlint-disable terminology -->
 ```console
 helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
 helm repo update
 ```
 
 _See [helm repo](https://helm.sh/docs/helm/helm_repo/) for command documentation._
-
+<!-- textlint-enable -->
 ## Install Chart
 
 ```console
