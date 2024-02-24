@@ -44,12 +44,12 @@ spec:
           )
         )
         > 0
-      for: 10m
+      for: {{ dig "etcdMembersDown" "for" "10m" .Values.customRules }}
       {{- with .Values.defaultRules.keepFiringFor }}
       keep_firing_for: "{{ . }}"
       {{- end }}
       labels:
-        severity: critical
+        severity: {{ dig "etcdMembersDown" "severity" "critical" .Values.customRules }}
       {{- if or .Values.defaultRules.additionalRuleLabels .Values.defaultRules.additionalRuleGroupLabels.etcd }}
         {{- with .Values.defaultRules.additionalRuleLabels }}
           {{- toYaml . | nindent 8 }}
@@ -71,12 +71,12 @@ spec:
         description: 'etcd cluster "{{`{{`}} $labels.job {{`}}`}}": insufficient members ({{`{{`}} $value {{`}}`}}).'
         summary: etcd cluster has insufficient number of members.
       expr: sum(up{job=~".*etcd.*"} == bool 1) without (instance) < ((count(up{job=~".*etcd.*"}) without (instance) + 1) / 2)
-      for: 3m
+      for: {{ dig "etcdInsufficientMembers" "for" "3m" .Values.customRules }}
       {{- with .Values.defaultRules.keepFiringFor }}
       keep_firing_for: "{{ . }}"
       {{- end }}
       labels:
-        severity: critical
+        severity: {{ dig "etcdInsufficientMembers" "severity" "critical" .Values.customRules }}
       {{- if or .Values.defaultRules.additionalRuleLabels .Values.defaultRules.additionalRuleGroupLabels.etcd }}
         {{- with .Values.defaultRules.additionalRuleLabels }}
           {{- toYaml . | nindent 8 }}
@@ -98,12 +98,12 @@ spec:
         description: 'etcd cluster "{{`{{`}} $labels.job {{`}}`}}": member {{`{{`}} $labels.instance {{`}}`}} has no leader.'
         summary: etcd cluster has no leader.
       expr: etcd_server_has_leader{job=~".*etcd.*"} == 0
-      for: 1m
+      for: {{ dig "etcdNoLeader" "for" "1m" .Values.customRules }}
       {{- with .Values.defaultRules.keepFiringFor }}
       keep_firing_for: "{{ . }}"
       {{- end }}
       labels:
-        severity: critical
+        severity: {{ dig "etcdNoLeader" "severity" "critical" .Values.customRules }}
       {{- if or .Values.defaultRules.additionalRuleLabels .Values.defaultRules.additionalRuleGroupLabels.etcd }}
         {{- with .Values.defaultRules.additionalRuleLabels }}
           {{- toYaml . | nindent 8 }}
@@ -125,12 +125,12 @@ spec:
         description: 'etcd cluster "{{`{{`}} $labels.job {{`}}`}}": {{`{{`}} $value {{`}}`}} leader changes within the last 15 minutes. Frequent elections may be a sign of insufficient resources, high network latency, or disruptions by other components and should be investigated.'
         summary: etcd cluster has high number of leader changes.
       expr: increase((max without (instance) (etcd_server_leader_changes_seen_total{job=~".*etcd.*"}) or 0*absent(etcd_server_leader_changes_seen_total{job=~".*etcd.*"}))[15m:1m]) >= 4
-      for: 5m
+      for: {{ dig "etcdHighNumberOfLeaderChanges" "for" "5m" .Values.customRules }}
       {{- with .Values.defaultRules.keepFiringFor }}
       keep_firing_for: "{{ . }}"
       {{- end }}
       labels:
-        severity: warning
+        severity: {{ dig "etcdHighNumberOfLeaderChanges" "severity" "warning" .Values.customRules }}
       {{- if or .Values.defaultRules.additionalRuleLabels .Values.defaultRules.additionalRuleGroupLabels.etcd }}
         {{- with .Values.defaultRules.additionalRuleLabels }}
           {{- toYaml . | nindent 8 }}
@@ -156,12 +156,12 @@ spec:
           /
         sum(rate(grpc_server_handled_total{job=~".*etcd.*"}[5m])) without (grpc_type, grpc_code)
           > 1
-      for: 10m
+      for: {{ dig "etcdHighNumberOfFailedGRPCRequests" "for" "10m" .Values.customRules }}
       {{- with .Values.defaultRules.keepFiringFor }}
       keep_firing_for: "{{ . }}"
       {{- end }}
       labels:
-        severity: warning
+        severity: {{ dig "etcdHighNumberOfFailedGRPCRequests" "severity" "warning" .Values.customRules }}
       {{- if or .Values.defaultRules.additionalRuleLabels .Values.defaultRules.additionalRuleGroupLabels.etcd }}
         {{- with .Values.defaultRules.additionalRuleLabels }}
           {{- toYaml . | nindent 8 }}
@@ -187,12 +187,12 @@ spec:
           /
         sum(rate(grpc_server_handled_total{job=~".*etcd.*"}[5m])) without (grpc_type, grpc_code)
           > 5
-      for: 5m
+      for: {{ dig "etcdHighNumberOfFailedGRPCRequests" "for" "5m" .Values.customRules }}
       {{- with .Values.defaultRules.keepFiringFor }}
       keep_firing_for: "{{ . }}"
       {{- end }}
       labels:
-        severity: critical
+        severity: {{ dig "etcdHighNumberOfFailedGRPCRequests" "severity" "critical" .Values.customRules }}
       {{- if or .Values.defaultRules.additionalRuleLabels .Values.defaultRules.additionalRuleGroupLabels.etcd }}
         {{- with .Values.defaultRules.additionalRuleLabels }}
           {{- toYaml . | nindent 8 }}
@@ -216,12 +216,12 @@ spec:
       expr: |-
         histogram_quantile(0.99, sum(rate(grpc_server_handling_seconds_bucket{job=~".*etcd.*", grpc_method!="Defragment", grpc_type="unary"}[5m])) without(grpc_type))
         > 0.15
-      for: 10m
+      for: {{ dig "etcdGRPCRequestsSlow" "for" "10m" .Values.customRules }}
       {{- with .Values.defaultRules.keepFiringFor }}
       keep_firing_for: "{{ . }}"
       {{- end }}
       labels:
-        severity: critical
+        severity: {{ dig "etcdGRPCRequestsSlow" "severity" "critical" .Values.customRules }}
       {{- if or .Values.defaultRules.additionalRuleLabels .Values.defaultRules.additionalRuleGroupLabels.etcd }}
         {{- with .Values.defaultRules.additionalRuleLabels }}
           {{- toYaml . | nindent 8 }}
@@ -245,12 +245,12 @@ spec:
       expr: |-
         histogram_quantile(0.99, rate(etcd_network_peer_round_trip_time_seconds_bucket{job=~".*etcd.*"}[5m]))
         > 0.15
-      for: 10m
+      for: {{ dig "etcdMemberCommunicationSlow" "for" "10m" .Values.customRules }}
       {{- with .Values.defaultRules.keepFiringFor }}
       keep_firing_for: "{{ . }}"
       {{- end }}
       labels:
-        severity: warning
+        severity: {{ dig "etcdMemberCommunicationSlow" "severity" "warning" .Values.customRules }}
       {{- if or .Values.defaultRules.additionalRuleLabels .Values.defaultRules.additionalRuleGroupLabels.etcd }}
         {{- with .Values.defaultRules.additionalRuleLabels }}
           {{- toYaml . | nindent 8 }}
@@ -272,12 +272,12 @@ spec:
         description: 'etcd cluster "{{`{{`}} $labels.job {{`}}`}}": {{`{{`}} $value {{`}}`}} proposal failures within the last 30 minutes on etcd instance {{`{{`}} $labels.instance {{`}}`}}.'
         summary: etcd cluster has high number of proposal failures.
       expr: rate(etcd_server_proposals_failed_total{job=~".*etcd.*"}[15m]) > 5
-      for: 15m
+      for: {{ dig "etcdHighNumberOfFailedProposals" "for" "15m" .Values.customRules }}
       {{- with .Values.defaultRules.keepFiringFor }}
       keep_firing_for: "{{ . }}"
       {{- end }}
       labels:
-        severity: warning
+        severity: {{ dig "etcdHighNumberOfFailedProposals" "severity" "warning" .Values.customRules }}
       {{- if or .Values.defaultRules.additionalRuleLabels .Values.defaultRules.additionalRuleGroupLabels.etcd }}
         {{- with .Values.defaultRules.additionalRuleLabels }}
           {{- toYaml . | nindent 8 }}
@@ -301,12 +301,12 @@ spec:
       expr: |-
         histogram_quantile(0.99, rate(etcd_disk_wal_fsync_duration_seconds_bucket{job=~".*etcd.*"}[5m]))
         > 0.5
-      for: 10m
+      for: {{ dig "etcdHighFsyncDurations" "for" "10m" .Values.customRules }}
       {{- with .Values.defaultRules.keepFiringFor }}
       keep_firing_for: "{{ . }}"
       {{- end }}
       labels:
-        severity: warning
+        severity: {{ dig "etcdHighFsyncDurations" "severity" "warning" .Values.customRules }}
       {{- if or .Values.defaultRules.additionalRuleLabels .Values.defaultRules.additionalRuleGroupLabels.etcd }}
         {{- with .Values.defaultRules.additionalRuleLabels }}
           {{- toYaml . | nindent 8 }}
@@ -330,12 +330,12 @@ spec:
       expr: |-
         histogram_quantile(0.99, rate(etcd_disk_wal_fsync_duration_seconds_bucket{job=~".*etcd.*"}[5m]))
         > 1
-      for: 10m
+      for: {{ dig "etcdHighFsyncDurations" "for" "10m" .Values.customRules }}
       {{- with .Values.defaultRules.keepFiringFor }}
       keep_firing_for: "{{ . }}"
       {{- end }}
       labels:
-        severity: critical
+        severity: {{ dig "etcdHighFsyncDurations" "severity" "critical" .Values.customRules }}
       {{- if or .Values.defaultRules.additionalRuleLabels .Values.defaultRules.additionalRuleGroupLabels.etcd }}
         {{- with .Values.defaultRules.additionalRuleLabels }}
           {{- toYaml . | nindent 8 }}
@@ -359,12 +359,12 @@ spec:
       expr: |-
         histogram_quantile(0.99, rate(etcd_disk_backend_commit_duration_seconds_bucket{job=~".*etcd.*"}[5m]))
         > 0.25
-      for: 10m
+      for: {{ dig "etcdHighCommitDurations" "for" "10m" .Values.customRules }}
       {{- with .Values.defaultRules.keepFiringFor }}
       keep_firing_for: "{{ . }}"
       {{- end }}
       labels:
-        severity: warning
+        severity: {{ dig "etcdHighCommitDurations" "severity" "warning" .Values.customRules }}
       {{- if or .Values.defaultRules.additionalRuleLabels .Values.defaultRules.additionalRuleGroupLabels.etcd }}
         {{- with .Values.defaultRules.additionalRuleLabels }}
           {{- toYaml . | nindent 8 }}
@@ -386,12 +386,12 @@ spec:
         description: 'etcd cluster "{{`{{`}} $labels.job {{`}}`}}": database size exceeds the defined quota on etcd instance {{`{{`}} $labels.instance {{`}}`}}, please defrag or increase the quota as the writes to etcd will be disabled when it is full.'
         summary: etcd cluster database is running full.
       expr: (last_over_time(etcd_mvcc_db_total_size_in_bytes{job=~".*etcd.*"}[5m]) / last_over_time(etcd_server_quota_backend_bytes{job=~".*etcd.*"}[5m]))*100 > 95
-      for: 10m
+      for: {{ dig "etcdDatabaseQuotaLowSpace" "for" "10m" .Values.customRules }}
       {{- with .Values.defaultRules.keepFiringFor }}
       keep_firing_for: "{{ . }}"
       {{- end }}
       labels:
-        severity: critical
+        severity: {{ dig "etcdDatabaseQuotaLowSpace" "severity" "critical" .Values.customRules }}
       {{- if or .Values.defaultRules.additionalRuleLabels .Values.defaultRules.additionalRuleGroupLabels.etcd }}
         {{- with .Values.defaultRules.additionalRuleLabels }}
           {{- toYaml . | nindent 8 }}
@@ -413,12 +413,12 @@ spec:
         description: 'etcd cluster "{{`{{`}} $labels.job {{`}}`}}": Predicting running out of disk space in the next four hours, based on write observations within the past four hours on etcd instance {{`{{`}} $labels.instance {{`}}`}}, please check as it might be disruptive.'
         summary: etcd cluster database growing very fast.
       expr: predict_linear(etcd_mvcc_db_total_size_in_bytes{job=~".*etcd.*"}[4h], 4*60*60) > etcd_server_quota_backend_bytes{job=~".*etcd.*"}
-      for: 10m
+      for: {{ dig "etcdExcessiveDatabaseGrowth" "for" "10m" .Values.customRules }}
       {{- with .Values.defaultRules.keepFiringFor }}
       keep_firing_for: "{{ . }}"
       {{- end }}
       labels:
-        severity: warning
+        severity: {{ dig "etcdExcessiveDatabaseGrowth" "severity" "warning" .Values.customRules }}
       {{- if or .Values.defaultRules.additionalRuleLabels .Values.defaultRules.additionalRuleGroupLabels.etcd }}
         {{- with .Values.defaultRules.additionalRuleLabels }}
           {{- toYaml . | nindent 8 }}
@@ -441,12 +441,12 @@ spec:
         runbook_url: https://etcd.io/docs/v3.5/op-guide/maintenance/#defragmentation
         summary: etcd database size in use is less than 50% of the actual allocated storage.
       expr: (last_over_time(etcd_mvcc_db_total_size_in_use_in_bytes{job=~".*etcd.*"}[5m]) / last_over_time(etcd_mvcc_db_total_size_in_bytes{job=~".*etcd.*"}[5m])) < 0.5 and etcd_mvcc_db_total_size_in_use_in_bytes{job=~".*etcd.*"} > 104857600
-      for: 10m
+      for: {{ dig "etcdDatabaseHighFragmentationRatio" "for" "10m" .Values.customRules }}
       {{- with .Values.defaultRules.keepFiringFor }}
       keep_firing_for: "{{ . }}"
       {{- end }}
       labels:
-        severity: warning
+        severity: {{ dig "etcdDatabaseHighFragmentationRatio" "severity" "warning" .Values.customRules }}
       {{- if or .Values.defaultRules.additionalRuleLabels .Values.defaultRules.additionalRuleGroupLabels.etcd }}
         {{- with .Values.defaultRules.additionalRuleLabels }}
           {{- toYaml . | nindent 8 }}
