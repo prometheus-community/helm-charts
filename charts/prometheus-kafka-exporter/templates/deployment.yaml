@@ -18,8 +18,9 @@ spec:
       release: {{ .Release.Name }}
   template:
     metadata:
-      annotations:
-{{ toYaml .Values.annotations | indent 8 }}
+      {{- with .Values.annotations }}
+      annotations: {{ toYaml . | nindent 8 }}
+      {{- end }}
       labels:
         app: {{ template "prometheus-kafka-exporter.name" . }}
         release: {{ .Release.Name }}
@@ -121,8 +122,9 @@ spec:
           readinessProbe:
 {{- toYaml .Values.readiness.probe | trim | nindent 12 }}
 {{- end }}
-          resources:
-{{ toYaml .Values.resources | indent 12 }}
+          {{- with .Values.resources }}
+          resources: {{ toYaml . | nindent 12 }}
+          {{- end }}
           {{- with .Values.containerSecurityContext }}
           securityContext:
             {{- toYaml . | nindent 12 }}
