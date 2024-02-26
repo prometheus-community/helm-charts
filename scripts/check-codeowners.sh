@@ -10,6 +10,7 @@ cat <<EOF
 * @prometheus-community/helm-charts-admins
 
 /.github/workflows/ @prometheus-community/helm-charts-admins @jkroepke @GMartinez-Sisti
+/renovate.json @prometheus-community/helm-charts-admins @jkroepke @GMartinez-Sisti
 
 EOF
 
