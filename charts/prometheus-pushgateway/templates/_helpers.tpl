@@ -116,6 +116,7 @@ Returns pod spec
 */}}
 {{- define "prometheus-pushgateway.podSpec" -}}
 serviceAccountName: {{ include "prometheus-pushgateway.serviceAccountName" . }}
+automountServiceAccountToken: {{ .Values.automountServiceAccountToken }}
 {{- with .Values.priorityClassName }}
 priorityClassName: {{ . | quote }}
 {{- end }}

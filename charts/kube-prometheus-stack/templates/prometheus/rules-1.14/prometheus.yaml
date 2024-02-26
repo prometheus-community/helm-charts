@@ -1,5 +1,5 @@
 {{- /*
-Generated from 'prometheus' group from https://raw.githubusercontent.com/prometheus-operator/kube-prometheus/main/manifests/prometheus-prometheusRule.yaml
+Generated from 'prometheus' group from https://raw.githubusercontent.com/prometheus-operator/kube-prometheus/a8ba97a150c75be42010c75d10b720c55e182f1a/manifests/prometheus-prometheusRule.yaml
 Do not change in-place! In order to change this file first read following link:
 https://github.com/prometheus-community/helm-charts/tree/main/charts/kube-prometheus-stack/hack
 */ -}}
@@ -42,12 +42,12 @@ spec:
         # Without max_over_time, failed scrapes could create false negatives, see
         # https://www.robustperception.io/alerting-on-gauges-in-prometheus-2-0 for details.
         max_over_time(prometheus_config_last_reload_successful{job="{{ $prometheusJob }}",namespace="{{ $namespace }}"}[5m]) == 0
-      for: 10m
+      for: {{ dig "PrometheusBadConfig" "for" "10m" .Values.customRules }}
       {{- with .Values.defaultRules.keepFiringFor }}
       keep_firing_for: "{{ . }}"
       {{- end }}
       labels:
-        severity: critical
+        severity: {{ dig "PrometheusBadConfig" "severity" "critical" .Values.customRules }}
       {{- if or .Values.defaultRules.additionalRuleLabels .Values.defaultRules.additionalRuleGroupLabels.prometheus }}
         {{- with .Values.defaultRules.additionalRuleLabels }}
           {{- toYaml . | nindent 8 }}
@@ -70,12 +70,12 @@ spec:
         runbook_url: {{ .Values.defaultRules.runbookUrl }}/prometheus/prometheussdrefreshfailure
         summary: Failed Prometheus SD refresh.
       expr: increase(prometheus_sd_refresh_failures_total{job="{{ $prometheusJob }}",namespace="{{ $namespace }}"}[10m]) > 0
-      for: 20m
+      for: {{ dig "PrometheusSDRefreshFailure" "for" "20m" .Values.customRules }}
       {{- with .Values.defaultRules.keepFiringFor }}
       keep_firing_for: "{{ . }}"
       {{- end }}
       labels:
-        severity: warning
+        severity: {{ dig "PrometheusSDRefreshFailure" "severity" "warning" .Values.customRules }}
       {{- if or .Values.defaultRules.additionalRuleLabels .Values.defaultRules.additionalRuleGroupLabels.prometheus }}
         {{- with .Values.defaultRules.additionalRuleLabels }}
           {{- toYaml . | nindent 8 }}
@@ -105,12 +105,12 @@ spec:
         >
           min_over_time(prometheus_notifications_queue_capacity{job="{{ $prometheusJob }}",namespace="{{ $namespace }}"}[5m])
         )
-      for: 15m
+      for: {{ dig "PrometheusNotificationQueueRunningFull" "for" "15m" .Values.customRules }}
       {{- with .Values.defaultRules.keepFiringFor }}
       keep_firing_for: "{{ . }}"
       {{- end }}
       labels:
-        severity: warning
+        severity: {{ dig "PrometheusNotificationQueueRunningFull" "severity" "warning" .Values.customRules }}
       {{- if or .Values.defaultRules.additionalRuleLabels .Values.defaultRules.additionalRuleGroupLabels.prometheus }}
         {{- with .Values.defaultRules.additionalRuleLabels }}
           {{- toYaml . | nindent 8 }}
@@ -140,12 +140,12 @@ spec:
         )
         * 100
         > 1
-      for: 15m
+      for: {{ dig "PrometheusErrorSendingAlertsToSomeAlertmanagers" "for" "15m" .Values.customRules }}
       {{- with .Values.defaultRules.keepFiringFor }}
       keep_firing_for: "{{ . }}"
       {{- end }}
       labels:
-        severity: warning
+        severity: {{ dig "PrometheusErrorSendingAlertsToSomeAlertmanagers" "severity" "warning" .Values.customRules }}
       {{- if or .Values.defaultRules.additionalRuleLabels .Values.defaultRules.additionalRuleGroupLabels.prometheus }}
         {{- with .Values.defaultRules.additionalRuleLabels }}
           {{- toYaml . | nindent 8 }}
@@ -171,12 +171,12 @@ spec:
         # Without max_over_time, failed scrapes could create false negatives, see
         # https://www.robustperception.io/alerting-on-gauges-in-prometheus-2-0 for details.
         max_over_time(prometheus_notifications_alertmanagers_discovered{job="{{ $prometheusJob }}",namespace="{{ $namespace }}"}[5m]) < 1
-      for: 10m
+      for: {{ dig "PrometheusNotConnectedToAlertmanagers" "for" "10m" .Values.customRules }}
       {{- with .Values.defaultRules.keepFiringFor }}
       keep_firing_for: "{{ . }}"
       {{- end }}
       labels:
-        severity: warning
+        severity: {{ dig "PrometheusNotConnectedToAlertmanagers" "severity" "warning" .Values.customRules }}
       {{- if or .Values.defaultRules.additionalRuleLabels .Values.defaultRules.additionalRuleGroupLabels.prometheus }}
         {{- with .Values.defaultRules.additionalRuleLabels }}
           {{- toYaml . | nindent 8 }}
@@ -199,12 +199,12 @@ spec:
         runbook_url: {{ .Values.defaultRules.runbookUrl }}/prometheus/prometheustsdbreloadsfailing
         summary: Prometheus has issues reloading blocks from disk.
       expr: increase(prometheus_tsdb_reloads_failures_total{job="{{ $prometheusJob }}",namespace="{{ $namespace }}"}[3h]) > 0
-      for: 4h
+      for: {{ dig "PrometheusTSDBReloadsFailing" "for" "4h" .Values.customRules }}
       {{- with .Values.defaultRules.keepFiringFor }}
       keep_firing_for: "{{ . }}"
       {{- end }}
       labels:
-        severity: warning
+        severity: {{ dig "PrometheusTSDBReloadsFailing" "severity" "warning" .Values.customRules }}
       {{- if or .Values.defaultRules.additionalRuleLabels .Values.defaultRules.additionalRuleGroupLabels.prometheus }}
         {{- with .Values.defaultRules.additionalRuleLabels }}
           {{- toYaml . | nindent 8 }}
@@ -227,12 +227,12 @@ spec:
         runbook_url: {{ .Values.defaultRules.runbookUrl }}/prometheus/prometheustsdbcompactionsfailing
         summary: Prometheus has issues compacting blocks.
       expr: increase(prometheus_tsdb_compactions_failed_total{job="{{ $prometheusJob }}",namespace="{{ $namespace }}"}[3h]) > 0
-      for: 4h
+      for: {{ dig "PrometheusTSDBCompactionsFailing" "for" "4h" .Values.customRules }}
       {{- with .Values.defaultRules.keepFiringFor }}
       keep_firing_for: "{{ . }}"
       {{- end }}
       labels:
-        severity: warning
+        severity: {{ dig "PrometheusTSDBCompactionsFailing" "severity" "warning" .Values.customRules }}
       {{- if or .Values.defaultRules.additionalRuleLabels .Values.defaultRules.additionalRuleGroupLabels.prometheus }}
         {{- with .Values.defaultRules.additionalRuleLabels }}
           {{- toYaml . | nindent 8 }}
@@ -256,7 +256,7 @@ spec:
         summary: Prometheus is not ingesting samples.
       expr: |-
         (
-          rate(prometheus_tsdb_head_samples_appended_total{job="{{ $prometheusJob }}",namespace="{{ $namespace }}"}[5m]) <= 0
+          sum without(type) (rate(prometheus_tsdb_head_samples_appended_total{job="{{ $prometheusJob }}",namespace="{{ $namespace }}"}[5m])) <= 0
         and
           (
             sum without(scrape_job) (prometheus_target_metadata_cache_entries{job="{{ $prometheusJob }}",namespace="{{ $namespace }}"}) > 0
@@ -264,12 +264,12 @@ spec:
             sum without(rule_group) (prometheus_rule_group_rules{job="{{ $prometheusJob }}",namespace="{{ $namespace }}"}) > 0
           )
         )
-      for: 10m
+      for: {{ dig "PrometheusNotIngestingSamples" "for" "10m" .Values.customRules }}
       {{- with .Values.defaultRules.keepFiringFor }}
       keep_firing_for: "{{ . }}"
       {{- end }}
       labels:
-        severity: warning
+        severity: {{ dig "PrometheusNotIngestingSamples" "severity" "warning" .Values.customRules }}
       {{- if or .Values.defaultRules.additionalRuleLabels .Values.defaultRules.additionalRuleGroupLabels.prometheus }}
         {{- with .Values.defaultRules.additionalRuleLabels }}
           {{- toYaml . | nindent 8 }}
@@ -292,12 +292,12 @@ spec:
         runbook_url: {{ .Values.defaultRules.runbookUrl }}/prometheus/prometheusduplicatetimestamps
         summary: Prometheus is dropping samples with duplicate timestamps.
       expr: rate(prometheus_target_scrapes_sample_duplicate_timestamp_total{job="{{ $prometheusJob }}",namespace="{{ $namespace }}"}[5m]) > 0
-      for: 10m
+      for: {{ dig "PrometheusDuplicateTimestamps" "for" "10m" .Values.customRules }}
       {{- with .Values.defaultRules.keepFiringFor }}
       keep_firing_for: "{{ . }}"
       {{- end }}
       labels:
-        severity: warning
+        severity: {{ dig "PrometheusDuplicateTimestamps" "severity" "warning" .Values.customRules }}
       {{- if or .Values.defaultRules.additionalRuleLabels .Values.defaultRules.additionalRuleGroupLabels.prometheus }}
         {{- with .Values.defaultRules.additionalRuleLabels }}
           {{- toYaml . | nindent 8 }}
@@ -320,12 +320,12 @@ spec:
         runbook_url: {{ .Values.defaultRules.runbookUrl }}/prometheus/prometheusoutofordertimestamps
         summary: Prometheus drops samples with out-of-order timestamps.
       expr: rate(prometheus_target_scrapes_sample_out_of_order_total{job="{{ $prometheusJob }}",namespace="{{ $namespace }}"}[5m]) > 0
-      for: 10m
+      for: {{ dig "PrometheusOutOfOrderTimestamps" "for" "10m" .Values.customRules }}
       {{- with .Values.defaultRules.keepFiringFor }}
       keep_firing_for: "{{ . }}"
       {{- end }}
       labels:
-        severity: warning
+        severity: {{ dig "PrometheusOutOfOrderTimestamps" "severity" "warning" .Values.customRules }}
       {{- if or .Values.defaultRules.additionalRuleLabels .Values.defaultRules.additionalRuleGroupLabels.prometheus }}
         {{- with .Values.defaultRules.additionalRuleLabels }}
           {{- toYaml . | nindent 8 }}
@@ -359,12 +359,12 @@ spec:
         )
         * 100
         > 1
-      for: 15m
+      for: {{ dig "PrometheusRemoteStorageFailures" "for" "15m" .Values.customRules }}
       {{- with .Values.defaultRules.keepFiringFor }}
       keep_firing_for: "{{ . }}"
       {{- end }}
       labels:
-        severity: critical
+        severity: {{ dig "PrometheusRemoteStorageFailures" "severity" "critical" .Values.customRules }}
       {{- if or .Values.defaultRules.additionalRuleLabels .Values.defaultRules.additionalRuleGroupLabels.prometheus }}
         {{- with .Values.defaultRules.additionalRuleLabels }}
           {{- toYaml . | nindent 8 }}
@@ -395,12 +395,12 @@ spec:
           max_over_time(prometheus_remote_storage_queue_highest_sent_timestamp_seconds{job="{{ $prometheusJob }}",namespace="{{ $namespace }}"}[5m])
         )
         > 120
-      for: 15m
+      for: {{ dig "PrometheusRemoteWriteBehind" "for" "15m" .Values.customRules }}
       {{- with .Values.defaultRules.keepFiringFor }}
       keep_firing_for: "{{ . }}"
       {{- end }}
       labels:
-        severity: critical
+        severity: {{ dig "PrometheusRemoteWriteBehind" "severity" "critical" .Values.customRules }}
       {{- if or .Values.defaultRules.additionalRuleLabels .Values.defaultRules.additionalRuleGroupLabels.prometheus }}
         {{- with .Values.defaultRules.additionalRuleLabels }}
           {{- toYaml . | nindent 8 }}
@@ -430,12 +430,12 @@ spec:
         >
           max_over_time(prometheus_remote_storage_shards_max{job="{{ $prometheusJob }}",namespace="{{ $namespace }}"}[5m])
         )
-      for: 15m
+      for: {{ dig "PrometheusRemoteWriteDesiredShards" "for" "15m" .Values.customRules }}
       {{- with .Values.defaultRules.keepFiringFor }}
       keep_firing_for: "{{ . }}"
       {{- end }}
       labels:
-        severity: warning
+        severity: {{ dig "PrometheusRemoteWriteDesiredShards" "severity" "warning" .Values.customRules }}
       {{- if or .Values.defaultRules.additionalRuleLabels .Values.defaultRules.additionalRuleGroupLabels.prometheus }}
         {{- with .Values.defaultRules.additionalRuleLabels }}
           {{- toYaml . | nindent 8 }}
@@ -458,12 +458,12 @@ spec:
         runbook_url: {{ .Values.defaultRules.runbookUrl }}/prometheus/prometheusrulefailures
         summary: Prometheus is failing rule evaluations.
       expr: increase(prometheus_rule_evaluation_failures_total{job="{{ $prometheusJob }}",namespace="{{ $namespace }}"}[5m]) > 0
-      for: 15m
+      for: {{ dig "PrometheusRuleFailures" "for" "15m" .Values.customRules }}
       {{- with .Values.defaultRules.keepFiringFor }}
       keep_firing_for: "{{ . }}"
       {{- end }}
       labels:
-        severity: critical
+        severity: {{ dig "PrometheusRuleFailures" "severity" "critical" .Values.customRules }}
       {{- if or .Values.defaultRules.additionalRuleLabels .Values.defaultRules.additionalRuleGroupLabels.prometheus }}
         {{- with .Values.defaultRules.additionalRuleLabels }}
           {{- toYaml . | nindent 8 }}
@@ -486,12 +486,12 @@ spec:
         runbook_url: {{ .Values.defaultRules.runbookUrl }}/prometheus/prometheusmissingruleevaluations
         summary: Prometheus is missing rule evaluations due to slow rule group evaluation.
       expr: increase(prometheus_rule_group_iterations_missed_total{job="{{ $prometheusJob }}",namespace="{{ $namespace }}"}[5m]) > 0
-      for: 15m
+      for: {{ dig "PrometheusMissingRuleEvaluations" "for" "15m" .Values.customRules }}
       {{- with .Values.defaultRules.keepFiringFor }}
       keep_firing_for: "{{ . }}"
       {{- end }}
       labels:
-        severity: warning
+        severity: {{ dig "PrometheusMissingRuleEvaluations" "severity" "warning" .Values.customRules }}
       {{- if or .Values.defaultRules.additionalRuleLabels .Values.defaultRules.additionalRuleGroupLabels.prometheus }}
         {{- with .Values.defaultRules.additionalRuleLabels }}
           {{- toYaml . | nindent 8 }}
@@ -514,12 +514,12 @@ spec:
         runbook_url: {{ .Values.defaultRules.runbookUrl }}/prometheus/prometheustargetlimithit
         summary: Prometheus has dropped targets because some scrape configs have exceeded the targets limit.
       expr: increase(prometheus_target_scrape_pool_exceeded_target_limit_total{job="{{ $prometheusJob }}",namespace="{{ $namespace }}"}[5m]) > 0
-      for: 15m
+      for: {{ dig "PrometheusTargetLimitHit" "for" "15m" .Values.customRules }}
       {{- with .Values.defaultRules.keepFiringFor }}
       keep_firing_for: "{{ . }}"
       {{- end }}
       labels:
-        severity: warning
+        severity: {{ dig "PrometheusTargetLimitHit" "severity" "warning" .Values.customRules }}
       {{- if or .Values.defaultRules.additionalRuleLabels .Values.defaultRules.additionalRuleGroupLabels.prometheus }}
         {{- with .Values.defaultRules.additionalRuleLabels }}
           {{- toYaml . | nindent 8 }}
@@ -542,12 +542,12 @@ spec:
         runbook_url: {{ .Values.defaultRules.runbookUrl }}/prometheus/prometheuslabellimithit
         summary: Prometheus has dropped targets because some scrape configs have exceeded the labels limit.
       expr: increase(prometheus_target_scrape_pool_exceeded_label_limits_total{job="{{ $prometheusJob }}",namespace="{{ $namespace }}"}[5m]) > 0
-      for: 15m
+      for: {{ dig "PrometheusLabelLimitHit" "for" "15m" .Values.customRules }}
       {{- with .Values.defaultRules.keepFiringFor }}
       keep_firing_for: "{{ . }}"
       {{- end }}
       labels:
-        severity: warning
+        severity: {{ dig "PrometheusLabelLimitHit" "severity" "warning" .Values.customRules }}
       {{- if or .Values.defaultRules.additionalRuleLabels .Values.defaultRules.additionalRuleGroupLabels.prometheus }}
         {{- with .Values.defaultRules.additionalRuleLabels }}
           {{- toYaml . | nindent 8 }}
@@ -570,12 +570,12 @@ spec:
         runbook_url: {{ .Values.defaultRules.runbookUrl }}/prometheus/prometheusscrapebodysizelimithit
         summary: Prometheus has dropped some targets that exceeded body size limit.
       expr: increase(prometheus_target_scrapes_exceeded_body_size_limit_total{job="{{ $prometheusJob }}",namespace="{{ $namespace }}"}[5m]) > 0
-      for: 15m
+      for: {{ dig "PrometheusScrapeBodySizeLimitHit" "for" "15m" .Values.customRules }}
       {{- with .Values.defaultRules.keepFiringFor }}
       keep_firing_for: "{{ . }}"
       {{- end }}
       labels:
-        severity: warning
+        severity: {{ dig "PrometheusScrapeBodySizeLimitHit" "severity" "warning" .Values.customRules }}
       {{- if or .Values.defaultRules.additionalRuleLabels .Values.defaultRules.additionalRuleGroupLabels.prometheus }}
         {{- with .Values.defaultRules.additionalRuleLabels }}
           {{- toYaml . | nindent 8 }}
@@ -598,12 +598,12 @@ spec:
         runbook_url: {{ .Values.defaultRules.runbookUrl }}/prometheus/prometheusscrapesamplelimithit
         summary: Prometheus has failed scrapes that have exceeded the configured sample limit.
       expr: increase(prometheus_target_scrapes_exceeded_sample_limit_total{job="{{ $prometheusJob }}",namespace="{{ $namespace }}"}[5m]) > 0
-      for: 15m
+      for: {{ dig "PrometheusScrapeSampleLimitHit" "for" "15m" .Values.customRules }}
       {{- with .Values.defaultRules.keepFiringFor }}
       keep_firing_for: "{{ . }}"
       {{- end }}
       labels:
-        severity: warning
+        severity: {{ dig "PrometheusScrapeSampleLimitHit" "severity" "warning" .Values.customRules }}
       {{- if or .Values.defaultRules.additionalRuleLabels .Values.defaultRules.additionalRuleGroupLabels.prometheus }}
         {{- with .Values.defaultRules.additionalRuleLabels }}
           {{- toYaml . | nindent 8 }}
@@ -626,12 +626,12 @@ spec:
         runbook_url: {{ .Values.defaultRules.runbookUrl }}/prometheus/prometheustargetsyncfailure
         summary: Prometheus has failed to sync targets.
       expr: increase(prometheus_target_sync_failed_total{job="{{ $prometheusJob }}",namespace="{{ $namespace }}"}[30m]) > 0
-      for: 5m
+      for: {{ dig "PrometheusTargetSyncFailure" "for" "5m" .Values.customRules }}
       {{- with .Values.defaultRules.keepFiringFor }}
       keep_firing_for: "{{ . }}"
       {{- end }}
       labels:
-        severity: critical
+        severity: {{ dig "PrometheusTargetSyncFailure" "severity" "critical" .Values.customRules }}
       {{- if or .Values.defaultRules.additionalRuleLabels .Values.defaultRules.additionalRuleGroupLabels.prometheus }}
         {{- with .Values.defaultRules.additionalRuleLabels }}
           {{- toYaml . | nindent 8 }}
@@ -654,12 +654,12 @@ spec:
         runbook_url: {{ .Values.defaultRules.runbookUrl }}/prometheus/prometheushighqueryload
         summary: Prometheus is reaching its maximum capacity serving concurrent requests.
       expr: avg_over_time(prometheus_engine_queries{job="{{ $prometheusJob }}",namespace="{{ $namespace }}"}[5m]) / max_over_time(prometheus_engine_queries_concurrent_max{job="{{ $prometheusJob }}",namespace="{{ $namespace }}"}[5m]) > 0.8
-      for: 15m
+      for: {{ dig "PrometheusHighQueryLoad" "for" "15m" .Values.customRules }}
       {{- with .Values.defaultRules.keepFiringFor }}
       keep_firing_for: "{{ . }}"
       {{- end }}
       labels:
-        severity: warning
+        severity: {{ dig "PrometheusHighQueryLoad" "severity" "warning" .Values.customRules }}
       {{- if or .Values.defaultRules.additionalRuleLabels .Values.defaultRules.additionalRuleGroupLabels.prometheus }}
         {{- with .Values.defaultRules.additionalRuleLabels }}
           {{- toYaml . | nindent 8 }}
@@ -689,12 +689,12 @@ spec:
         )
         * 100
         > 3
-      for: 15m
+      for: {{ dig "PrometheusErrorSendingAlertsToAnyAlertmanager" "for" "15m" .Values.customRules }}
       {{- with .Values.defaultRules.keepFiringFor }}
       keep_firing_for: "{{ . }}"
       {{- end }}
       labels:
-        severity: critical
+        severity: {{ dig "PrometheusErrorSendingAlertsToAnyAlertmanager" "severity" "critical" .Values.customRules }}
       {{- if or .Values.defaultRules.additionalRuleLabels .Values.defaultRules.additionalRuleGroupLabels.prometheus }}
         {{- with .Values.defaultRules.additionalRuleLabels }}
           {{- toYaml . | nindent 8 }}

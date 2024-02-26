@@ -53,7 +53,7 @@ spec:
             - --path.sysfs=/host/sys
             {{- if .Values.hostRootFsMount.enabled }}
             - --path.rootfs=/host/root
-            {{- if semverCompare ">=1.4.0" (coalesce .Values.version .Values.image.tag .Chart.AppVersion) }}
+            {{- if semverCompare ">=1.4.0-0" (coalesce .Values.version .Values.image.tag .Chart.AppVersion) }}
             - --path.udev.data=/host/root/run/udev/data
             {{- end }}
             {{- end }}
@@ -176,14 +176,8 @@ spec:
               mountPath: {{ .mountPath }}
             {{- end }}
         {{- range .Values.sidecars }}
-          {{- $overwrites := dict 
-            "volumeMounts" (concat (include "prometheus-node-exporter.sidecarVolumeMounts" $ | fromYamlArray) (.volumeMounts | default list) | default list)
-          }}
-          {{- $defaults := dict 
-            "image" (include "prometheus-node-exporter.image" $) 
-            "securityContext" $.Values.containerSecurityContext 
-            "imagePullPolicy" $.Values.image.pullPolicy 
-          }}
+          {{- $overwrites := dict "volumeMounts" (concat (include "prometheus-node-exporter.sidecarVolumeMounts" $ | fromYamlArray) (.volumeMounts | default list) | default list) }}
+          {{- $defaults := dict "image" (include "prometheus-node-exporter.image" $) "securityContext" $.Values.containerSecurityContext "imagePullPolicy" $.Values.image.pullPolicy }}
         - {{- toYaml (merge $overwrites . $defaults) | nindent 10 }}
         {{- end }}
         {{-  if .Values.kubeRBACProxy.enabled  }}
@@ -222,7 +216,7 @@ spec:
             timeoutSeconds: 5
           {{- if .Values.kubeRBACProxy.resources }}
           resources:
-          {{ toYaml .Values.kubeRBACProxy.resources | nindent 12 }}
+          {{- toYaml .Values.kubeRBACProxy.resources | nindent 12 }}
           {{- end }}
           {{- if .Values.terminationMessageParams.enabled }}
           {{- with .Values.terminationMessageParams }}
@@ -259,6 +253,9 @@ spec:
       {{- with .Values.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.restartPolicy }}
+      restartPolicy: {{ . }}
       {{- end }}
       {{- with .Values.tolerations }}
       tolerations:
