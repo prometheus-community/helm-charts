@@ -7,6 +7,9 @@ metadata:
     chart: {{ template "prometheus-kafka-exporter.chart" . }}
     release: {{ .Release.Name }}
     heritage: {{ .Release.Service }}
+    {{- with .Values.deploymentLabels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
 spec:
   replicas: {{ .Values.replicaCount }}
   selector:
@@ -15,11 +18,15 @@ spec:
       release: {{ .Release.Name }}
   template:
     metadata:
-      annotations:
-{{ toYaml .Values.annotations | indent 8 }}
+      {{- with .Values.annotations }}
+      annotations: {{ toYaml . | nindent 8 }}
+      {{- end }}
       labels:
         app: {{ template "prometheus-kafka-exporter.name" . }}
         release: {{ .Release.Name }}
+        {{- with .Values.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
     spec:
       {{- if .Values.securityContext }}
       securityContext:
@@ -115,8 +122,9 @@ spec:
           readinessProbe:
 {{- toYaml .Values.readiness.probe | trim | nindent 12 }}
 {{- end }}
-          resources:
-{{ toYaml .Values.resources | indent 12 }}
+          {{- with .Values.resources }}
+          resources: {{ toYaml . | nindent 12 }}
+          {{- end }}
           {{- with .Values.containerSecurityContext }}
           securityContext:
             {{- toYaml . | nindent 12 }}
