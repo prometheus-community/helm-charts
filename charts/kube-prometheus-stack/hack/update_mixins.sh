@@ -29,5 +29,5 @@ source "${SCRIPT_DIR}/tmp/venv/bin/activate"
 
 pip3 install -r "${SCRIPT_DIR}/requirements.txt"
 
-./sync_grafana_dashboards.py
-./sync_prometheus_rules.py
+"${SCRIPT_DIR}/sync_grafana_dashboards.py"
+"${SCRIPT_DIR}/sync_prometheus_rules.py"
