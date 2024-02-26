@@ -52,6 +52,9 @@ spec:
       {{- end }}
 {{- end }}
       serviceAccountName: {{ template "prometheus.serviceAccountName.server" . }}
+{{- if kindIs "bool" .Values.server.automountServiceAccountToken }}
+      automountServiceAccountToken: {{ .Values.server.automountServiceAccountToken }}
+{{- end }}
       {{- if .Values.server.extraInitContainers }}
       initContainers:
 {{ toYaml .Values.server.extraInitContainers | indent 8 }}
@@ -90,12 +93,17 @@ spec:
           ports:
             - containerPort: {{ .Values.configmapReload.prometheus.containerPort }}
           {{- end }}
+          {{- with .Values.configmapReload.prometheus.resources }}
           resources:
-{{ toYaml .Values.configmapReload.prometheus.resources | indent 12 }}
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
           volumeMounts:
             - name: config-volume
               mountPath: /etc/config
               readOnly: true
+          {{- with .Values.configmapReload.prometheus.extraVolumeMounts }}
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
           {{- range .Values.configmapReload.prometheus.extraConfigmapMounts }}
             - name: {{ $.Values.configmapReload.prometheus.name }}-{{ .name }}
               mountPath: {{ .mountPath }}
@@ -128,6 +136,9 @@ spec:
           {{- end }}
           {{- if .Values.server.retention }}
             - --storage.tsdb.retention.time={{ .Values.server.retention }}
+          {{- end }}
+          {{- if .Values.server.retentionSize }}
+            - --storage.tsdb.retention.size={{ .Values.server.retentionSize }}
           {{- end }}
             - --config.file={{ .Values.server.configPath }}
           {{- if .Values.server.storagePath }}
@@ -215,8 +226,10 @@ spec:
             periodSeconds: {{ .Values.server.startupProbe.periodSeconds }}
             timeoutSeconds: {{ .Values.server.startupProbe.timeoutSeconds }}
           {{- end }}
+          {{- with .Values.server.resources }}
           resources:
-{{ toYaml .Values.server.resources | indent 12 }}
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
           volumeMounts:
             - name: config-volume
               mountPath: /etc/config

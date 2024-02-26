@@ -60,3 +60,10 @@ Create the name of the service account to use
 {{- default "default" .Values.serviceAccount.name }}
 {{- end }}
 {{- end }}
+
+{{/*
+Allow overriding namespace
+*/}}
+{{- define "prometheus-json-exporter.namespace" -}}
+{{- default .Release.Namespace .Values.namespaceOverride -}}
+{{- end }}
