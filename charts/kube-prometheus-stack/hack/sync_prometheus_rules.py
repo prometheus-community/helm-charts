@@ -29,53 +29,53 @@ def change_style(style, representer):
 
 refs = {
     # https://github.com/prometheus-operator/kube-prometheus
-    'kube-prometheus': 'a8ba97a150c75be42010c75d10b720c55e182f1a',
+    'ref.kube-prometheus': 'a8ba97a150c75be42010c75d10b720c55e182f1a',
     # https://github.com/kubernetes-monitoring/kubernetes-mixin
-    'kubernetes-mixin': '883f294bc636e2cd019a64328a1dbfa53edbc985',
+    'ref.kubernetes-mixin': '883f294bc636e2cd019a64328a1dbfa53edbc985',
     # https://github.com/etcd-io/etcd
-    'etcd': '2e7ed80be246380fc50ca46aa193348a28935380',
+    'ref.etcd': '2e7ed80be246380fc50ca46aa193348a28935380',
 }
 
 # Source files list
 charts = [
     {
-        'source': 'https://raw.githubusercontent.com/prometheus-operator/kube-prometheus/%s/manifests/alertmanager-prometheusRule.yaml' % (refs['kube-prometheus'],),
+        'source': 'https://raw.githubusercontent.com/prometheus-operator/kube-prometheus/%s/manifests/alertmanager-prometheusRule.yaml' % (refs['ref.kube-prometheus'],),
         'destination': '../templates/prometheus/rules-1.14',
         'min_kubernetes': '1.14.0-0'
     },
     {
-        'source': 'https://raw.githubusercontent.com/prometheus-operator/kube-prometheus/%s/manifests/kubePrometheus-prometheusRule.yaml'% (refs['kube-prometheus'],),
+        'source': 'https://raw.githubusercontent.com/prometheus-operator/kube-prometheus/%s/manifests/kubePrometheus-prometheusRule.yaml'% (refs['ref.kube-prometheus'],),
         'destination': '../templates/prometheus/rules-1.14',
         'min_kubernetes': '1.14.0-0'
     },
     {
-        'source': 'https://raw.githubusercontent.com/prometheus-operator/kube-prometheus/%s/manifests/kubernetesControlPlane-prometheusRule.yaml'% (refs['kube-prometheus'],),
+        'source': 'https://raw.githubusercontent.com/prometheus-operator/kube-prometheus/%s/manifests/kubernetesControlPlane-prometheusRule.yaml'% (refs['ref.kube-prometheus'],),
         'destination': '../templates/prometheus/rules-1.14',
         'min_kubernetes': '1.14.0-0'
     },
     {
-        'source': 'https://raw.githubusercontent.com/prometheus-operator/kube-prometheus/%s/manifests/kubeStateMetrics-prometheusRule.yaml'% (refs['kube-prometheus'],),
+        'source': 'https://raw.githubusercontent.com/prometheus-operator/kube-prometheus/%s/manifests/kubeStateMetrics-prometheusRule.yaml'% (refs['ref.kube-prometheus'],),
         'destination': '../templates/prometheus/rules-1.14',
         'min_kubernetes': '1.14.0-0'
     },
     {
-        'source': 'https://raw.githubusercontent.com/prometheus-operator/kube-prometheus/%s/manifests/nodeExporter-prometheusRule.yaml'% (refs['kube-prometheus'],),
+        'source': 'https://raw.githubusercontent.com/prometheus-operator/kube-prometheus/%s/manifests/nodeExporter-prometheusRule.yaml'% (refs['ref.kube-prometheus'],),
         'destination': '../templates/prometheus/rules-1.14',
         'min_kubernetes': '1.14.0-0'
     },
     {
-        'source': 'https://raw.githubusercontent.com/prometheus-operator/kube-prometheus/%s/manifests/prometheus-prometheusRule.yaml'% (refs['kube-prometheus'],),
+        'source': 'https://raw.githubusercontent.com/prometheus-operator/kube-prometheus/%s/manifests/prometheus-prometheusRule.yaml'% (refs['ref.kube-prometheus'],),
         'destination': '../templates/prometheus/rules-1.14',
         'min_kubernetes': '1.14.0-0'
     },
     {
-        'source': 'https://raw.githubusercontent.com/prometheus-operator/kube-prometheus/%s/manifests/prometheusOperator-prometheusRule.yaml'% (refs['kube-prometheus'],),
+        'source': 'https://raw.githubusercontent.com/prometheus-operator/kube-prometheus/%s/manifests/prometheusOperator-prometheusRule.yaml'% (refs['ref.kube-prometheus'],),
         'destination': '../templates/prometheus/rules-1.14',
         'min_kubernetes': '1.14.0-0'
     },
     {
         'git': 'https://github.com/kubernetes-monitoring/kubernetes-mixin.git',
-        'branch': refs['kubernetes-mixin'],
+        'branch': refs['ref.kubernetes-mixin'],
         'source': 'windows.libsonnet',
         'cwd': 'rules',
         'destination': '../templates/prometheus/rules-1.14',
@@ -89,7 +89,7 @@ charts = [
     },
     {
         'git': 'https://github.com/etcd-io/etcd.git',
-        'branch': refs['etcd'],
+        'branch': refs['ref.etcd'],
         'source': 'mixin.libsonnet',
         'cwd': 'contrib/mixin',
         'destination': '../templates/prometheus/rules-1.14',
