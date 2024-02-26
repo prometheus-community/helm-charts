@@ -2,37 +2,44 @@
 
 set -euo pipefail
 
-SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &>/dev/null && pwd)
+{
+    SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &>/dev/null && pwd)
 
-cd "${SCRIPT_DIR}/../"
+    cd "${SCRIPT_DIR}/../"
 
-./hack/update_crds.sh
-if ! git diff --exit-code; then
-  echo "Please run ./hack/update_crds.sh"
-  exit 1
-fi
+    ./hack/update_crds.sh
+    if ! git diff "$GITHUB_SHA" --color=always --exit-code; then
+      echo "Please run ./hack/update_crds.sh"
+      exit 1
+    fi
 
-python3 -m venv venv
-# shellcheck disable=SC1091
-source venv/bin/activate
-pip3 install -r hack/requirements.txt
+    cd hack
 
-go install -a github.com/jsonnet-bundler/jsonnet-bundler/cmd/jb@latest
-PATH="$(go env GOPATH)/bin:$PATH"
-export PATH
+    export PIP_DISABLE_PIP_VERSION_CHECK=1
 
-./hack/sync_prometheus_rules.py
-if ! git diff --exit-code; then
-  echo "Changes inside rules are not supported!"
-  echo "Please run ./hack/sync_prometheus_rules.py"
-  exit 1
-fi
+    python3 -m venv venv
+    # shellcheck disable=SC1091
+    source venv/bin/activate
 
-./hack/sync_grafana_dashboards.py
-if ! git diff --exit-code; then
-  echo "Changes inside dashboards are not supported!"
-  echo "Please run ./hack/sync_grafana_dashboards.py"
-  exit 1
-fi
+    pip3 install -r requirements.txt
 
-rm -rf ./venv ./*.git
+    go install -a github.com/jsonnet-bundler/jsonnet-bundler/cmd/jb@latest
+    PATH="$(go env GOPATH)/bin:$PATH"
+    export PATH
+
+    ./sync_prometheus_rules.py
+    if ! git diff "$GITHUB_SHA" --color=always --exit-code; then
+      echo "Changes inside rules are not supported!"
+      echo "Please go into the ./hack/ directory and run ./sync_prometheus_rules.py"
+      exit 1
+    fi
+
+    ./sync_grafana_dashboards.py
+    if ! git diff "$GITHUB_SHA" --color=always --exit-code; then
+      echo "Changes inside dashboards are not supported!"
+      echo "Please go into the ./hack/ directory and run ./sync_grafana_dashboards.py"
+      exit 1
+    fi
+
+    rm -rf ./venv ./*.git
+} 2>&1
