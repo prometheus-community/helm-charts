@@ -2,6 +2,8 @@
 
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 
+trap 'rm -rf "${SCRIPT_DIR}/tmp"' EXIT
+
 rm -rf "${SCRIPT_DIR}/tmp"
 mkdir "${SCRIPT_DIR}/tmp"
 
@@ -16,3 +18,12 @@ for REPO_PATH in "${SCRIPT_DIR}/tmp/"*; do
   sed -i '' -e "s/'ref.$REPO_NAME'.*:.*'.*'/'ref.$REPO_NAME': '$SHA'/" "${SCRIPT_DIR}/sync_grafana_dashboards.py"
   sed -i '' -e "s/'ref.$REPO_NAME'.*:.*'.*'/'ref.$REPO_NAME': '$SHA'/" "${SCRIPT_DIR}/sync_prometheus_rules.py"
 done
+
+python3 -m venv "${SCRIPT_DIR}/tmp/venv"
+
+source "${SCRIPT_DIR}/tmp/venv/bin/activate"
+
+pip install -r "${SCRIPT_DIR}/requirements.txt"
+
+./sync_grafana_dashboards.py
+./sync_prometheus_rules.py
