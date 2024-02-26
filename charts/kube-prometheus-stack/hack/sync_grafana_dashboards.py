@@ -83,13 +83,13 @@ condition_map = {
 
 replacement_map = {
     'var-namespace=$__cell_1': {
-        'replacement': 'var-namespace=${__data.fields.namespace}',
+        'replacement': 'var-namespace=`}}{{ if .Values.grafana.sidecar.dashboards.enableNewTablePanelSyntax }}${__data.fields.namespace}{{ else }}$__cell_1{{ end }}{{`',
     },
     'var-type=$__cell_2': {
-        'replacement': 'var-type=${__data.fields.workload_type}',
+        'replacement': 'var-type=`}}{{ if .Values.grafana.sidecar.dashboards.enableNewTablePanelSyntax }}${__data.fields.workload_type}{{ else }}$__cell_2{{ end }}{{`',
     },
     '=$__cell': {
-        'replacement': '=${__value.text}',
+        'replacement': '=`}}{{ if .Values.grafana.sidecar.dashboards.enableNewTablePanelSyntax }}${__value.text}{{ else }}$__cell{{ end }}{{`',
     },
 }
 
