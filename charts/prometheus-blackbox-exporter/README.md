@@ -48,6 +48,33 @@ helm upgrade [RELEASE_NAME] [CHART] --install
 
 _See [helm upgrade](https://helm.sh/docs/helm/helm_upgrade/) for command documentation._
 
+### To 9.0.0
+
+This version changes how the value `extraManifests` is used within the [template](./templates/extra-manifests.yaml). It no longer applies the `toYaml` function to each element in the `extraManifests` array. Previously if you used the value to create an extra resource such as:
+
+```yaml
+extraManifests:
+- apiVersion: v1
+  kind: ConfigMap
+  metadata:
+    name: prometheus-extra
+  data:
+    extra-data: "value"
+```
+
+This would now need to be a multiline YAML string instead of its own block of YAML:
+
+```yaml
+extraManifests:
+- |
+  apiVersion: v1
+  kind: ConfigMap
+  metadata:
+    name: prometheus-extra
+  data:
+    extra-data: "value"
+```
+
 ### To 8.0.0
 
 - The default image is set to `quay.io/prometheus/blackbox-exporter` instead `prom/blackbox-exporter`
