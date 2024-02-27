@@ -151,16 +151,25 @@ spec:
 {{ toYaml .Values.prometheusOperator.resources | indent 12 }}
           securityContext:
 {{ toYaml .Values.prometheusOperator.containerSecurityContext | indent 12 }}
-{{- if .Values.prometheusOperator.tls.enabled }}
           volumeMounts:
+          {{- if .Values.prometheusOperator.tls.enabled }}
             - name: tls-secret
               mountPath: /cert
               readOnly: true
+          {{- end }}
+          {{- with .Values.prometheusOperator.extraVolumeMounts }}
+          {{ toYaml . | nindent 12 }}
+          {{- end }}
       volumes:
+        {{- if .Values.prometheusOperator.tls.enabled }}
         - name: tls-secret
           secret:
             defaultMode: 420
             secretName: {{ template "kube-prometheus-stack.fullname" . }}-admission
+        {{- end }}
+        {{- with .Values.prometheusOperator.extraVolumes }}
+        {{ toYaml . | nindent 8 }}
+        {{- end }}
 {{- end }}
     {{- with .Values.prometheusOperator.dnsConfig }}
       dnsConfig:
