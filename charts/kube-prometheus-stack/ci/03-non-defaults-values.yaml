@@ -7,6 +7,19 @@ defaultRules:
     kubernetesSystem:
       key2: value2
 
+prometheusOperator:
+  denyNamespaces:
+    - kube-system
+  admissionWebhooks:
+    namespaceSelector:
+      matchLabels:
+        key: value
+      matchExpressions:
+      - key: control-plane
+        operator: NotIn
+        values:
+        - "true"
+
 alertmanager:
   alertmanagerSpec:
     additionalConfig:
@@ -20,3 +33,10 @@ prometheus:
       logFormat: json
     additionalConfigString: |-
       logLevel: {{ print "debug" | quote }}
+
+customRules:
+  AlertmanagerFailedReload:
+    for: 3m
+  AlertmanagerMembersInconsistent:
+    for: 5m
+    severity: "warning"

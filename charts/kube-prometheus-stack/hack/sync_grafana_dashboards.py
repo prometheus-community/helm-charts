@@ -27,10 +27,19 @@ def change_style(style, representer):
     return new_representer
 
 
+refs = {
+    # https://github.com/prometheus-operator/kube-prometheus
+    'ref.kube-prometheus': 'a8ba97a150c75be42010c75d10b720c55e182f1a',
+    # https://github.com/kubernetes-monitoring/kubernetes-mixin
+    'ref.kubernetes-mixin': '883f294bc636e2cd019a64328a1dbfa53edbc985',
+    # https://github.com/etcd-io/etcd
+    'ref.etcd': '786da8731e6ebc61d3482048fdfa64e505da1f8f',
+}
+
 # Source files list
 charts = [
     {
-        'source': 'https://raw.githubusercontent.com/prometheus-operator/kube-prometheus/main/manifests/grafana-dashboardDefinitions.yaml',
+        'source': 'https://raw.githubusercontent.com/prometheus-operator/kube-prometheus/%s/manifests/grafana-dashboardDefinitions.yaml' % (refs['ref.kube-prometheus'],),
         'destination': '../templates/grafana/dashboards-1.14',
         'type': 'yaml',
         'min_kubernetes': '1.14.0-0',
@@ -38,7 +47,7 @@ charts = [
     },
     {
         'git': 'https://github.com/kubernetes-monitoring/kubernetes-mixin.git',
-        'branch': 'master',
+        'branch': refs['ref.kubernetes-mixin'],
         'content': "(import 'dashboards/windows.libsonnet') + (import 'config.libsonnet') + { _config+:: { windowsExporterSelector: 'job=\"windows-exporter\"', }}",
         'cwd': '.',
         'destination': '../templates/grafana/dashboards-1.14',
@@ -49,7 +58,7 @@ charts = [
     },
     {
         'git': 'https://github.com/etcd-io/etcd.git',
-        'branch': 'main',
+        'branch': refs['ref.etcd'],
         'source': 'mixin.libsonnet',
         'cwd': 'contrib/mixin',
         'destination': '../templates/grafana/dashboards-1.14',
@@ -79,6 +88,18 @@ condition_map = {
     'k8s-resources-windows-cluster': ' .Values.windowsMonitoring.enabled',
     'k8s-resources-windows-namespace': ' .Values.windowsMonitoring.enabled',
     'k8s-resources-windows-pod': ' .Values.windowsMonitoring.enabled',
+}
+
+replacement_map = {
+    'var-namespace=$__cell_1': {
+        'replacement': 'var-namespace=`}}{{ if .Values.grafana.sidecar.dashboards.enableNewTablePanelSyntax }}${__data.fields.namespace}{{ else }}$__cell_1{{ end }}{{`',
+    },
+    'var-type=$__cell_2': {
+        'replacement': 'var-type=`}}{{ if .Values.grafana.sidecar.dashboards.enableNewTablePanelSyntax }}${__data.fields.workload_type}{{ else }}$__cell_2{{ end }}{{`',
+    },
+    '=$__cell': {
+        'replacement': '=`}}{{ if .Values.grafana.sidecar.dashboards.enableNewTablePanelSyntax }}${__value.text}{{ else }}$__cell{{ end }}{{`',
+    },
 }
 
 # standard header
@@ -152,6 +173,9 @@ def patch_dashboards_json(content, multicluster_key):
 
         content = json.dumps(content_struct, separators=(',', ':'))
         content = content.replace('":multicluster:"', '`}}{{ if %s }}0{{ else }}2{{ end }}{{`' % multicluster_key,)
+
+        for line in replacement_map:
+            content = content.replace(line, replacement_map[line]['replacement'])
     except (ValueError, KeyError):
         pass
 
@@ -161,6 +185,11 @@ def patch_dashboards_json(content, multicluster_key):
 def patch_json_set_timezone_as_variable(content):
     # content is no more in json format, so we have to replace using regex
     return re.sub(r'"timezone"\s*:\s*"(?:\\.|[^\"])*"', '"timezone": "`}}{{ .Values.grafana.defaultDashboardsTimezone }}{{`"', content, flags=re.IGNORECASE)
+
+
+def patch_json_set_editable_as_variable(content):
+    # content is no more in json format, so we have to replace using regex
+    return re.sub(r'"editable"\s*:\s*(?:true|false)', '"editable":`}}{{ .Values.grafana.defaultDashboardsEditable }}{{`', content, flags=re.IGNORECASE)
 
 
 def jsonnet_import_callback(base, rel):
@@ -187,6 +216,7 @@ def write_group_to_file(resource_name, content, url, destination, min_kubernetes
 
     content = patch_dashboards_json(content, multicluster_key)
     content = patch_json_set_timezone_as_variable(content)
+    content = patch_json_set_editable_as_variable(content)
 
     filename_struct = {resource_name + '.json': (LiteralStr(content))}
     # rules themselves
@@ -226,7 +256,10 @@ def main():
             if 'branch' in chart:
                 branch = chart['branch']
 
-            subprocess.run(["git", "clone", chart['git'], "--branch", branch, "--single-branch", "--depth", "1", checkout_dir])
+            subprocess.run(["git", "init", "--initial-branch", "main", checkout_dir, "--quiet"])
+            subprocess.run(["git", "-C", checkout_dir, "remote", "add", "origin", chart['git']])
+            subprocess.run(["git", "-C", checkout_dir, "fetch", "--depth", "1", "origin", branch, "--quiet"])
+            subprocess.run(["git", "-c", "advice.detachedHead=false", "-C", checkout_dir, "checkout", "FETCH_HEAD", "--quiet"])
             print("Generating rules from %s" % chart['source'])
 
             mixin_file = chart['source']

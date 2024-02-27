@@ -1,5 +1,5 @@
 {{- /*
-Generated from 'node-network' group from https://raw.githubusercontent.com/prometheus-operator/kube-prometheus/main/manifests/kubePrometheus-prometheusRule.yaml
+Generated from 'node-network' group from https://raw.githubusercontent.com/prometheus-operator/kube-prometheus/a8ba97a150c75be42010c75d10b720c55e182f1a/manifests/kubePrometheus-prometheusRule.yaml
 Do not change in-place! In order to change this file first read following link:
 https://github.com/prometheus-community/helm-charts/tree/main/charts/kube-prometheus-stack/hack
 */ -}}
@@ -37,12 +37,12 @@ spec:
         runbook_url: {{ .Values.defaultRules.runbookUrl }}/general/nodenetworkinterfaceflapping
         summary: Network interface is often changing its status
       expr: changes(node_network_up{job="node-exporter",device!~"veth.+"}[2m]) > 2
-      for: 2m
+      for: {{ dig "NodeNetworkInterfaceFlapping" "for" "2m" .Values.customRules }}
       {{- with .Values.defaultRules.keepFiringFor }}
       keep_firing_for: "{{ . }}"
       {{- end }}
       labels:
-        severity: warning
+        severity: {{ dig "NodeNetworkInterfaceFlapping" "severity" "warning" .Values.customRules }}
       {{- if or .Values.defaultRules.additionalRuleLabels .Values.defaultRules.additionalRuleGroupLabels.network }}
         {{- with .Values.defaultRules.additionalRuleLabels }}
           {{- toYaml . | nindent 8 }}
