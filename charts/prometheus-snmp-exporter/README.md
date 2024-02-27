@@ -81,6 +81,11 @@ serviceMonitor:
 
 This version changes the `serviceMonitor.namespace` value from `monitoring` to the namespace the release is deployed to.
 
+### To 3.0.0
+
+This version upgrades snmp-exporter version to 0.24.1, which introduces breaking change to configuration format.
+See [Module and Auth Split Migration](https://github.com/prometheus/snmp_exporter/blob/main/auth-split-migration.md) for more details.
+
 ## Configuration
 
 See [Customizing the Chart Before Installing](https://helm.sh/docs/intro/using_helm/#customizing-the-chart-before-installing). To see all configurable options with detailed comments, visit the chart's [values.yaml](./values.yaml), or run these configuration commands:
