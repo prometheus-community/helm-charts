@@ -15,12 +15,16 @@ metadata:
   {{- end }}
 {{ include "kube-prometheus-stack.labels" . | indent 4 }}
 spec:
-  jobLabel: jobLabel
+  jobLabel: {{ .Values.kubeEtcd.serviceMonitor.jobLabel }}
   {{- include "servicemonitor.scrapeLimits" .Values.kubeEtcd.serviceMonitor | nindent 4 }}
   selector:
+    {{- if .Values.kubeEtcd.serviceMonitor.selector }}
+    {{ tpl (toYaml .Values.kubeEtcd.serviceMonitor.selector | nindent 4) . }}
+    {{- else }}
     matchLabels:
       app: {{ template "kube-prometheus-stack.name" . }}-kube-etcd
       release: {{ $.Release.Name | quote }}
+    {{- end }}
   namespaceSelector:
     matchNames:
       - "kube-system"
