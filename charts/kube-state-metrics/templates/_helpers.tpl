@@ -108,7 +108,15 @@ labelValueLengthLimit: {{ . }}
 Formats imagePullSecrets. Input is (dict "Values" .Values "imagePullSecrets" .{specific imagePullSecrets})
 */}}
 {{- define "kube-state-metrics.imagePullSecrets" -}}
-{{- range (concat .Values.global.imagePullSecrets .imagePullSecrets) }}
+
+{{- $pullSecrets := "" }}
+{{- if .Values.ignoreGlobal }}
+{{- $pullSecrets = .imagePullSecrets }}
+{{- else }}
+{{- $pullSecrets = (concat .Values.global.imagePullSecrets .imagePullSecrets) }}
+{{- end }}
+
+{{- range $pullSecrets }}
   {{- if eq (typeOf .) "map[string]interface {}" }}
 - {{ toYaml . | trim }}
   {{- else }}
@@ -122,13 +130,13 @@ The image to use for kube-state-metrics
 */}}
 {{- define "kube-state-metrics.image" -}}
 {{- if .Values.image.sha }}
-{{- if .Values.global.imageRegistry }}
+{{- if and .Values.global.imageRegistry (not .Values.ignoreGlobal) }}
 {{- printf "%s/%s:%s@%s" .Values.global.imageRegistry .Values.image.repository (default (printf "v%s" .Chart.AppVersion) .Values.image.tag) .Values.image.sha }}
 {{- else }}
 {{- printf "%s/%s:%s@%s" .Values.image.registry .Values.image.repository (default (printf "v%s" .Chart.AppVersion) .Values.image.tag) .Values.image.sha }}
 {{- end }}
 {{- else }}
-{{- if .Values.global.imageRegistry }}
+{{- if and .Values.global.imageRegistry (not .Values.ignoreGlobal) }}
 {{- printf "%s/%s:%s" .Values.global.imageRegistry .Values.image.repository (default (printf "v%s" .Chart.AppVersion) .Values.image.tag) }}
 {{- else }}
 {{- printf "%s/%s:%s" .Values.image.registry .Values.image.repository (default (printf "v%s" .Chart.AppVersion) .Values.image.tag) }}
@@ -141,13 +149,13 @@ The image to use for kubeRBACProxy
 */}}
 {{- define "kubeRBACProxy.image" -}}
 {{- if .Values.kubeRBACProxy.image.sha }}
-{{- if .Values.global.imageRegistry }}
+{{- if and .Values.global.imageRegistry (not .Values.ignoreGlobal) }}
 {{- printf "%s/%s:%s@%s" .Values.global.imageRegistry .Values.kubeRBACProxy.image.repository (default (printf "v%s" .Chart.AppVersion) .Values.kubeRBACProxy.image.tag) .Values.kubeRBACProxy.image.sha }}
 {{- else }}
 {{- printf "%s/%s:%s@%s" .Values.kubeRBACProxy.image.registry .Values.kubeRBACProxy.image.repository (default (printf "v%s" .Chart.AppVersion) .Values.kubeRBACProxy.image.tag) .Values.kubeRBACProxy.image.sha }}
 {{- end }}
 {{- else }}
-{{- if .Values.global.imageRegistry }}
+{{- if and .Values.global.imageRegistry (not .Values.ignoreGlobal) }}
 {{- printf "%s/%s:%s" .Values.global.imageRegistry .Values.kubeRBACProxy.image.repository (default (printf "v%s" .Chart.AppVersion) .Values.kubeRBACProxy.image.tag) }}
 {{- else }}
 {{- printf "%s/%s:%s" .Values.kubeRBACProxy.image.registry .Values.kubeRBACProxy.image.repository (default (printf "v%s" .Chart.AppVersion) .Values.kubeRBACProxy.image.tag) }}
