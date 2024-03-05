@@ -328,8 +328,8 @@ global:
 {{/* Define ServiceMonitor endpoint for kube-apiserver */}}
 {{- define "kube-prometheus-stack.kubeApiServer.endpoint" }}
 {{- $ := index . 0 }}
-{{- $prefix := index . 1 }}
 {{- $smon := $.Values.kubeApiServer.serviceMonitor }}
+{{- $base := dig (index . 1) $smon $smon }}
 {{- $tlsConfig := $.Values.kubeApiServer.tlsConfig }}
   - bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
     {{- with $smon.interval }}
@@ -340,11 +340,11 @@ global:
     {{- end }}
     port: https
     scheme: https
-    {{- with include "kube-prometheus-stack.lowerCamelCase" (list $prefix "metricRelabelings") | get $smon }}
+    {{- with $base.metricRelabelings }}
     metricRelabelings:
     {{- tpl (toYaml . | nindent 4) $ }}
     {{- end }}
-    {{- with include "kube-prometheus-stack.lowerCamelCase" (list $prefix "relabelings") | get $smon }}
+    {{- with $base.relabelings }}
     relabelings:
     {{- tpl (toYaml . | nindent 4) $ }}
     {{- end }}
@@ -393,8 +393,8 @@ global:
 {{/* Define ServiceMonitor endpoint for kube-controller-manager */}}
 {{- define "kube-prometheus-stack.kubeControllerManager.endpoint" }}
 {{- $ := index . 0 }}
-{{- $prefix := index . 1 }}
 {{- $smon := $.Values.kubeControllerManager.serviceMonitor }}
+{{- $base := dig (index . 1) $smon $smon }}
   - port: {{ $smon.port }}
     {{- with $smon.interval }}
     interval: {{ . }}
@@ -414,11 +414,11 @@ global:
       serverName: {{ . }}
       {{- end }}
     {{- end }}
-    {{- with include "kube-prometheus-stack.lowerCamelCase" (list $prefix "metricRelabelings") | get $smon }}
+    {{- with $base.metricRelabelings }}
     metricRelabelings:
     {{- tpl (toYaml . | nindent 4) $ }}
     {{- end }}
-    {{- with include "kube-prometheus-stack.lowerCamelCase" (list $prefix "relabelings") | get $smon }}
+    {{- with $base.relabelings }}
     relabelings:
     {{- tpl (toYaml . | nindent 4) $ }}
     {{- end }}
@@ -427,8 +427,8 @@ global:
 {{/* Define ServiceMonitor endpoint for kube-scheduler */}}
 {{- define "kube-prometheus-stack.kubeScheduler.endpoint" -}}
 {{- $ := index . 0 }}
-{{- $prefix := index . 1 }}
 {{- $smon := $.Values.kubeScheduler.serviceMonitor }}
+{{- $base := dig (index . 1) $smon $smon }}
   - port: {{ $smon.port }}
     {{- with $smon.interval }}
     interval: {{ . }}
@@ -448,11 +448,11 @@ global:
       serverName: {{ . }}
       {{- end }}
     {{- end }}
-    {{- with include "kube-prometheus-stack.lowerCamelCase" (list $prefix "metricRelabelings") | get $smon }}
+    {{- with $base.metricRelabelings }}
     metricRelabelings:
     {{- tpl (toYaml . | nindent 4) $ }}
     {{- end }}
-    {{- with include "kube-prometheus-stack.lowerCamelCase" (list $prefix "relabelings") | get $smon }}
+    {{- with $base.relabelings }}
     relabelings:
     {{- tpl (toYaml . | nindent 4) $ }}
     {{- end }}
@@ -461,8 +461,8 @@ global:
 {{/* Define ServiceMonitor endpoint for kube-proxy */}}
 {{- define "kube-prometheus-stack.kubeProxy.endpoint" -}}
 {{- $ := index . 0 }}
-{{- $prefix := index . 1 }}
 {{- $smon := $.Values.kubeProxy.serviceMonitor }}
+{{- $base := dig (index . 1) $smon $smon }}
   - port: {{ $smon.port }}
     {{- with $smon.interval }}
     interval: {{ . }}
@@ -476,11 +476,11 @@ global:
     tlsConfig:
       caFile: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
     {{- end }}
-    {{- with include "kube-prometheus-stack.lowerCamelCase" (list $prefix "metricRelabelings") | get $smon }}
+    {{- with $base.metricRelabelings }}
     metricRelabelings:
     {{- tpl (toYaml . | nindent 4) $ }}
     {{- end }}
-    {{- with include "kube-prometheus-stack.lowerCamelCase" (list $prefix "relabelings") | get $smon }}
+    {{- with $base.relabelings }}
     relabelings:
     {{- tpl (toYaml . | nindent 4) $ }}
     {{- end }}
