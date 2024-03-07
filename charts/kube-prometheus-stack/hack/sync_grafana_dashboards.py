@@ -39,6 +39,13 @@ refs = {
 # Source files list
 charts = [
     {
+        'source': '../files/dashboards/k8s-coredns.json',
+        'destination': '../templates/grafana/dashboards-1.14',
+        'type': 'dashboard_json',
+        'min_kubernetes': '1.14.0-0',
+        'multicluster_key': '.Values.grafana.sidecar.dashboards.multicluster.global.enabled',
+    },
+    {
         'source': 'https://raw.githubusercontent.com/prometheus-operator/kube-prometheus/%s/manifests/grafana-dashboardDefinitions.yaml' % (refs['ref.kube-prometheus'],),
         'destination': '../templates/grafana/dashboards-1.14',
         'type': 'yaml',
@@ -83,6 +90,7 @@ condition_map = {
     'nodes': ' (and (or .Values.nodeExporter.enabled .Values.nodeExporter.forceDeployDashboards) .Values.nodeExporter.operatingSystems.linux.enabled)',
     'nodes-darwin': ' (and (or .Values.nodeExporter.enabled .Values.nodeExporter.forceDeployDashboards) .Values.nodeExporter.operatingSystems.darwin.enabled)',
     'prometheus-remote-write': ' .Values.prometheus.prometheusSpec.remoteWriteDashboards',
+    'k8s-coredns': ' .Values.coreDns.enabled',
     'k8s-windows-cluster-rsrc-use': ' .Values.windowsMonitoring.enabled',
     'k8s-windows-node-rsrc-use': ' .Values.windowsMonitoring.enabled',
     'k8s-resources-windows-cluster': ' .Values.windowsMonitoring.enabled',
@@ -282,13 +290,19 @@ def main():
             os.chdir(mixin_dir)
             raw_text = '((import "%s") + %s)' % (mixin_file, mixin_vars)
             source = os.path.basename(mixin_file)
-        else:
+        elif 'source' in chart and chart['source'].startswith('http'):
             print("Generating rules from %s" % chart['source'])
             response = requests.get(chart['source'])
             if response.status_code != 200:
                 print('Skipping the file, response code %s not equals 200' % response.status_code)
                 continue
             raw_text = response.text
+            source = chart['source']
+            url = chart['source']
+        else:
+            with open(chart['source']) as f:
+                raw_text = f.read()
+
             source = chart['source']
             url = chart['source']
 
@@ -314,8 +328,13 @@ def main():
             else:
                 for resource, content in json_text.items():
                     write_group_to_file(resource.replace('.json', ''), json.dumps(content, indent=4), url, chart['destination'], chart['min_kubernetes'], chart['max_kubernetes'], chart['multicluster_key'])
+        elif chart['type'] == 'dashboard_json':
+            write_group_to_file(os.path.basename(source).replace('.json', ''),
+                                raw_text, url, chart['destination'], chart['min_kubernetes'],
+                                chart['max_kubernetes'], chart['multicluster_key'])
 
-    print("Finished")
+
+print("Finished")
 
 
 if __name__ == '__main__':
