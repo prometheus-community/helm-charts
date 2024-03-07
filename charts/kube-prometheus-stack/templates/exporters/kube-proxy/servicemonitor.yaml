@@ -29,25 +29,9 @@ spec:
     matchNames:
       - "kube-system"
   endpoints:
-  - port: {{ .Values.kubeProxy.serviceMonitor.port }}
-    {{- if .Values.kubeProxy.serviceMonitor.interval }}
-    interval: {{ .Values.kubeProxy.serviceMonitor.interval }}
-    {{- end }}
-    bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
-    {{- if .Values.kubeProxy.serviceMonitor.proxyUrl }}
-    proxyUrl: {{ .Values.kubeProxy.serviceMonitor.proxyUrl}}
-    {{- end }}
-    {{- if .Values.kubeProxy.serviceMonitor.https }}
-    scheme: https
-    tlsConfig:
-      caFile: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
-    {{- end}}
-{{- if .Values.kubeProxy.serviceMonitor.metricRelabelings }}
-    metricRelabelings:
-{{ tpl (toYaml .Values.kubeProxy.serviceMonitor.metricRelabelings | indent 4) . }}
-{{- end }}
-{{- if .Values.kubeProxy.serviceMonitor.relabelings }}
-    relabelings:
-{{ tpl (toYaml .Values.kubeProxy.serviceMonitor.relabelings | indent 4) . }}
-{{- end }}
+  {{- include "kube-prometheus-stack.kubeProxy.endpoint" (list $ "") }}
+  {{- if .Values.kubeProxy.serviceMonitor.slis.enabled }}
+  {{- include "kube-prometheus-stack.kubeProxy.endpoint" (list $ "slis") }}
+    path: /metrics/slis
+  {{- end }}
 {{- end }}

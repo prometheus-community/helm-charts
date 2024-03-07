@@ -313,3 +313,175 @@ global:
 {{ $fullname }}-webhook.{{ $namespace }}.svc
 {{- end }}
 {{- end }}
+
+{{/* Create lower camel case string. */}}
+{{- define "kube-prometheus-stack.lowerCamelCase" }}
+{{- $prefix := index . 0 }}
+{{- $base := index . 1 }}
+{{- with $prefix }}
+{{- printf "%s%s" . (title $base) }}
+{{- else }}
+{{- $base }}
+{{- end }}
+{{- end }}
+
+{{/* Define ServiceMonitor endpoint for kube-apiserver */}}
+{{- define "kube-prometheus-stack.kubeApiServer.endpoint" }}
+{{- $ := index . 0 }}
+{{- $smon := $.Values.kubeApiServer.serviceMonitor }}
+{{- $base := dig (index . 1) $smon $smon }}
+{{- $tlsConfig := $.Values.kubeApiServer.tlsConfig }}
+  - bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
+    {{- with $smon.interval }}
+    interval: {{ . }}
+    {{- end }}
+    {{- with $smon.proxyUrl }}
+    proxyUrl: {{ . }}
+    {{- end }}
+    port: https
+    scheme: https
+    {{- with $base.metricRelabelings }}
+    metricRelabelings:
+    {{- tpl (toYaml . | nindent 4) $ }}
+    {{- end }}
+    {{- with $base.relabelings }}
+    relabelings:
+    {{- tpl (toYaml . | nindent 4) $ }}
+    {{- end }}
+    tlsConfig:
+      caFile: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+      serverName: {{ $tlsConfig.serverName }}
+      insecureSkipVerify: {{ $tlsConfig.insecureSkipVerify }}
+{{- end }}
+
+{{/* Define ServiceMonitor endpoint for kubelet */}}
+{{- define "kube-prometheus-stack.kubelet.endpoint" -}}
+{{- $ := index . 0 }}
+{{- $prefix := index . 1 }}
+{{- $smon := $.Values.kubelet.serviceMonitor }}
+  {{- if $smon.https }}
+  - port: https-metrics
+    scheme: https
+    tlsConfig:
+      caFile: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+      insecureSkipVerify: true
+    bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
+  {{- else }}
+  - port: http-metrics
+  {{- end }}
+    {{- with $smon.interval }}
+    interval: {{ . }}
+    {{- end }}
+    {{- with $smon.proxyUrl }}
+    proxyUrl: {{ . }}
+    {{- end }}
+    {{- with $smon.scrapeTimeout }}
+    scrapeTimeout: {{ . }}
+    {{- end }}
+    honorLabels: {{ $smon.honorLabels }}
+    honorTimestamps: {{ $smon.honorTimestamps }}
+    {{- with include "kube-prometheus-stack.lowerCamelCase" (list $prefix "metricRelabelings") | get $smon }}
+    metricRelabelings:
+    {{- tpl (toYaml . | nindent 4) $ }}
+    {{- end }}
+    {{- with include "kube-prometheus-stack.lowerCamelCase" (list $prefix "relabelings") | get $smon }}
+    relabelings:
+    {{- tpl (toYaml . | nindent 4) $ }}
+    {{- end }}
+{{- end }}
+
+{{/* Define ServiceMonitor endpoint for kube-controller-manager */}}
+{{- define "kube-prometheus-stack.kubeControllerManager.endpoint" }}
+{{- $ := index . 0 }}
+{{- $smon := $.Values.kubeControllerManager.serviceMonitor }}
+{{- $base := dig (index . 1) $smon $smon }}
+  - port: {{ $smon.port }}
+    {{- with $smon.interval }}
+    interval: {{ . }}
+    {{- end }}
+    bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
+    {{- with $smon.proxyUrl }}
+    proxyUrl: {{ . }}
+    {{- end }}
+    {{- if eq (include "kube-prometheus-stack.kubeControllerManager.insecureScrape" (list $ false true $smon.https )) "true" }}
+    scheme: https
+    tlsConfig:
+      caFile: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+      {{- if eq (include "kube-prometheus-stack.kubeControllerManager.insecureScrape" (list $ nil true $smon.insecureSkipVerify)) "true" }}
+      insecureSkipVerify: true
+      {{- end }}
+      {{- with $smon.serverName }}
+      serverName: {{ . }}
+      {{- end }}
+    {{- end }}
+    {{- with $base.metricRelabelings }}
+    metricRelabelings:
+    {{- tpl (toYaml . | nindent 4) $ }}
+    {{- end }}
+    {{- with $base.relabelings }}
+    relabelings:
+    {{- tpl (toYaml . | nindent 4) $ }}
+    {{- end }}
+{{- end }}
+
+{{/* Define ServiceMonitor endpoint for kube-scheduler */}}
+{{- define "kube-prometheus-stack.kubeScheduler.endpoint" -}}
+{{- $ := index . 0 }}
+{{- $smon := $.Values.kubeScheduler.serviceMonitor }}
+{{- $base := dig (index . 1) $smon $smon }}
+  - port: {{ $smon.port }}
+    {{- with $smon.interval }}
+    interval: {{ . }}
+    {{- end }}
+    bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
+    {{- with $smon.proxyUrl }}
+    proxyUrl: {{ . }}
+    {{- end }}
+    {{- if eq (include "kube-prometheus-stack.kubeScheduler.insecureScrape" (list $ false true $smon.https)) "true" }}
+    scheme: https
+    tlsConfig:
+      caFile: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+      {{- if eq (include "kube-prometheus-stack.kubeScheduler.insecureScrape" (list $ nil true $smon.insecureSkipVerify)) "true" }}
+      insecureSkipVerify: true
+      {{- end }}
+      {{- with $smon.serverName }}
+      serverName: {{ . }}
+      {{- end }}
+    {{- end }}
+    {{- with $base.metricRelabelings }}
+    metricRelabelings:
+    {{- tpl (toYaml . | nindent 4) $ }}
+    {{- end }}
+    {{- with $base.relabelings }}
+    relabelings:
+    {{- tpl (toYaml . | nindent 4) $ }}
+    {{- end }}
+{{- end }}
+
+{{/* Define ServiceMonitor endpoint for kube-proxy */}}
+{{- define "kube-prometheus-stack.kubeProxy.endpoint" -}}
+{{- $ := index . 0 }}
+{{- $smon := $.Values.kubeProxy.serviceMonitor }}
+{{- $base := dig (index . 1) $smon $smon }}
+  - port: {{ $smon.port }}
+    {{- with $smon.interval }}
+    interval: {{ . }}
+    {{- end }}
+    bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
+    {{- with $smon.proxyUrl }}
+    proxyUrl: {{ . }}
+    {{- end }}
+    {{- if $smon.https }}
+    scheme: https
+    tlsConfig:
+      caFile: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+    {{- end }}
+    {{- with $base.metricRelabelings }}
+    metricRelabelings:
+    {{- tpl (toYaml . | nindent 4) $ }}
+    {{- end }}
+    {{- with $base.relabelings }}
+    relabelings:
+    {{- tpl (toYaml . | nindent 4) $ }}
+    {{- end }}
+{{- end }}

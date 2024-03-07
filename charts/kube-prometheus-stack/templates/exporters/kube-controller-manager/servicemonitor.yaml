@@ -29,31 +29,9 @@ spec:
     matchNames:
       - "kube-system"
   endpoints:
-  - port: {{ .Values.kubeControllerManager.serviceMonitor.port }}
-    {{- if .Values.kubeControllerManager.serviceMonitor.interval }}
-    interval: {{ .Values.kubeControllerManager.serviceMonitor.interval }}
-    {{- end }}
-    bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
-    {{- if .Values.kubeControllerManager.serviceMonitor.proxyUrl }}
-    proxyUrl: {{ .Values.kubeControllerManager.serviceMonitor.proxyUrl}}
-    {{- end }}
-    {{- if eq (include "kube-prometheus-stack.kubeControllerManager.insecureScrape" (list . false true .Values.kubeControllerManager.serviceMonitor.https )) "true" }}
-    scheme: https
-    tlsConfig:
-      caFile: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
-      {{- if eq (include "kube-prometheus-stack.kubeControllerManager.insecureScrape" (list . nil true .Values.kubeControllerManager.serviceMonitor.insecureSkipVerify)) "true" }}
-      insecureSkipVerify: true
-      {{- end }}
-      {{- if .Values.kubeControllerManager.serviceMonitor.serverName }}
-      serverName: {{ .Values.kubeControllerManager.serviceMonitor.serverName }}
-      {{- end }}
-    {{- end }}
-{{- if .Values.kubeControllerManager.serviceMonitor.metricRelabelings }}
-    metricRelabelings:
-{{ tpl (toYaml .Values.kubeControllerManager.serviceMonitor.metricRelabelings | indent 4) . }}
-{{- end }}
-{{- if .Values.kubeControllerManager.serviceMonitor.relabelings }}
-    relabelings:
-{{ tpl (toYaml .Values.kubeControllerManager.serviceMonitor.relabelings | indent 4) . }}
-{{- end }}
+  {{- include "kube-prometheus-stack.kubeControllerManager.endpoint" (list $ "") }}
+  {{- if .Values.kubeControllerManager.serviceMonitor.slis.enabled }}
+  {{- include "kube-prometheus-stack.kubeControllerManager.endpoint" (list $ "slis") }}
+    path: /metrics/slis
+  {{- end }}
 {{- end }}
