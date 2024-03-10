@@ -108,6 +108,9 @@ replacement_map = {
     '=$__cell': {
         'replacement': '=`}}{{ if .Values.grafana.sidecar.dashboards.enableNewTablePanelSyntax }}${__value.text}{{ else }}$__cell{{ end }}{{`',
     },
+    'job=\\"prometheus-k8s\\",namespace=\\"monitoring\\"': {
+        'replacement': '',
+    },
 }
 
 # standard header
