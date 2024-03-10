@@ -14,10 +14,11 @@ spec:
       {{- include "prometheus-statsd-exporter.selectorLabels" . | nindent 6 }}
   template:
     metadata:
-      {{- with .Values.podAnnotations }}
       annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+        {{- with .Values.podAnnotations }}
         {{- toYaml . | nindent 8 }}
-      {{- end }}
+        {{- end }}
       labels:
         {{- include "prometheus-statsd-exporter.selectorLabels" . | nindent 8 }}
     spec:
@@ -89,6 +90,10 @@ spec:
             - name: statsd-mapping-config
               mountPath: /etc/prometheus-statsd-exporter
           {{- end }}
+          {{- if .Values.lifecycle }}
+          lifecycle: 
+            {{- toYaml .Values.lifecycle | nindent 12 }}
+          {{- end }}
       {{- if or .Values.statsd.mappingConfigMapName .Values.statsd.mappingConfig }}
       volumes:
         - name: statsd-mapping-config
@@ -108,5 +113,9 @@ spec:
       {{- end }}
       {{- with .Values.tolerations }}
       tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.topologySpreadConstraints }}
+      topologySpreadConstraints:
         {{- toYaml . | nindent 8 }}
       {{- end }}

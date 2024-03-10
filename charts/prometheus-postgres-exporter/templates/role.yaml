@@ -1,18 +1,8 @@
 {{- if .Values.rbac.create }}
-apiVersion: {{ template "rbac.apiVersion" . }}
+apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
   name: {{ template "prometheus-postgres-exporter.fullname" . }}
   labels:
-    app: {{ template "prometheus-postgres-exporter.name" . }}
-    chart: {{ template "prometheus-postgres-exporter.chart" . }}
-    heritage: {{ .Release.Service }}
-    release: {{ .Release.Name }}
-{{- if and .Values.rbac.pspEnabled (.Capabilities.APIVersions.Has "policy/v1beta1/PodSecurityPolicy") }}
-rules:
-- apiGroups:      ['extensions']
-  resources:      ['podsecuritypolicies']
-  verbs:          ['use']
-  resourceNames:  [{{ template "prometheus-postgres-exporter.fullname" . }}]
-{{- end }}
+    {{- include "prometheus-postgres-exporter.labels" . | nindent 4 }}
 {{- end }}

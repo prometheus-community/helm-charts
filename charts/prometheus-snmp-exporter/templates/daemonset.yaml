@@ -3,7 +3,7 @@ apiVersion: apps/v1
 kind: DaemonSet
 metadata:
   name: {{ template "prometheus-snmp-exporter.fullname" . }}
-  namespace: {{ .Release.Namespace }}
+  namespace: {{ template "prometheus-snmp-exporter.namespace" . }}
   labels:
     {{- include "prometheus-snmp-exporter.labels" . | indent 4 }}
 spec:
@@ -72,13 +72,16 @@ spec:
               subPath: {{ .subPath }}
               readOnly: {{ .readOnly }}
           {{- end }}
+          {{- with .Values.extraVolumeMounts }}
+          {{ toYaml . | nindent 12 }}
+          {{- end }}
       {{- if .Values.config }}
         - name: configmap-reload
           image: "{{ .Values.configmapReload.image.repository }}:{{ .Values.configmapReload.image.tag }}"
           imagePullPolicy: "{{ .Values.configmapReload.image.pullPolicy }}"
           args:
-            - --volume-dir=/etc/config
-            - --webhook-url=http://localhost:{{ .Values.service.port }}/-/reload
+            - --watched-dir=/etc/config
+            - --reload-url=http://localhost:{{ .Values.service.port }}/-/reload
           resources:
 {{ toYaml .Values.configmapReload.resources | indent 12 }}
           volumeMounts:
@@ -111,5 +114,8 @@ spec:
           secret:
             secretName: {{ .secretName }}
             defaultMode: {{ .defaultMode }}
+      {{- end }}
+      {{- with .Values.extraVolumes }}
+      {{ toYaml . | nindent 8 }}
       {{- end }}
 {{- end }}

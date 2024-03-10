@@ -10,17 +10,21 @@ metadata:
     "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
     ## Ensure this is run before the job
     "helm.sh/hook-weight": "-5"
-{{- with .Values.prometheusOperator.admissionWebhooks.patch.annotations }}
-{{ toYaml . | indent 4 }}
-{{- end }}   
+    {{- with .Values.prometheusOperator.admissionWebhooks.patch.annotations }}
+    {{ toYaml . | nindent 4 }}
+    {{- end }}
   labels:
     app: {{ template "kube-prometheus-stack.name" $ }}-admission-patch
-{{- include "kube-prometheus-stack.labels" $ | indent 4 }}
+    {{- include "kube-prometheus-stack.prometheus-operator-webhook.labels" $ | nindent 4 }}
 spec:
   podSelector:
     matchLabels:
       app: {{ template "kube-prometheus-stack.name" $ }}-admission-patch
-{{- include "kube-prometheus-stack.labels" $ | indent 6 }}
+      {{- if .Values.prometheusOperator.networkPolicy.matchLabels }}
+      {{ toYaml .Values.prometheusOperator.networkPolicy.matchLabels | nindent 6 }}
+      {{- else }}
+      {{- include "kube-prometheus-stack.prometheus-operator-webhook.labels" $ | nindent 6 }}
+      {{- end }}
   egress:
   - {}
   policyTypes:

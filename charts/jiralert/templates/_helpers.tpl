@@ -48,6 +48,9 @@ app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
 {{- if .Values.releaseLabel }}
 release: {{ .Release.Name }}
 {{- end }}
+{{- if .Values.commonLabels }}
+{{ toYaml .Values.commonLabels }}
+{{- end }}
 {{- end }}
 
 {{/*
@@ -56,6 +59,9 @@ Selector labels
 {{- define "jiralert.selectorLabels" }}
 app.kubernetes.io/name: {{ include "jiralert.name" . }}
 app.kubernetes.io/instance: {{ .Release.Name }}
+{{- if .Values.commonLabels }}
+{{ toYaml .Values.commonLabels }}
+{{- end }}
 {{- end }}
 
 {{/*

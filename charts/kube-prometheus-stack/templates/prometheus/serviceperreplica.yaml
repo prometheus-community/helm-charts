@@ -41,9 +41,14 @@ items:
           port: {{ $serviceValues.port }}
           targetPort: {{ $serviceValues.targetPort }}
       selector:
+        {{- if $.Values.prometheus.agentMode }}
+        app.kubernetes.io/name: prometheus-agent
+        statefulset.kubernetes.io/pod-name: prom-agent-{{ include "kube-prometheus-stack.prometheus.crname" $ }}-{{ $i }}
+        {{- else }}
         app.kubernetes.io/name: prometheus
-        prometheus: {{ include "kube-prometheus-stack.prometheus.crname" $ }}
         statefulset.kubernetes.io/pod-name: prometheus-{{ include "kube-prometheus-stack.prometheus.crname" $ }}-{{ $i }}
+        {{- end }}
+        operator.prometheus.io/name: {{ template "kube-prometheus-stack.prometheus.crname" $ }}
       type: "{{ $serviceValues.type }}"
 {{- end }}
 {{- end }}

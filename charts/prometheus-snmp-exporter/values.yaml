@@ -3,7 +3,7 @@ restartPolicy: Always
 kind: Deployment
 
 image:
-  repository: prom/snmp-exporter
+  repository: quay.io/prometheus/snmp-exporter
   # if not set appVersion field from Chart.yaml is used
   tag: ""
   pullPolicy: IfNotPresent
@@ -12,6 +12,9 @@ imagePullSecrets: []
 nodeSelector: {}
 tolerations: []
 affinity: {}
+
+## Provide a namespace to substitude for the namespace on resources
+namespaceOverride: ""
 
 ## Security context to be added to snmp-exporter pods
 securityContext: {}
@@ -55,6 +58,12 @@ extraSecretMounts: []
   #   readOnly: true
   #   defaultMode: 420
 
+# Additional volumes, e.g. for secrets used in an extraContainer
+extraVolumes: []
+
+# Additional volume mounts for snmp-exporter container
+extraVolumeMounts: []
+
 ## For RBAC support:
 rbac:
   # Specifies whether RBAC resources should be created
@@ -87,6 +96,10 @@ service:
   annotations: {}
   type: ClusterIP
   port: 9116
+  ipDualStack:
+    enabled: false
+    ipFamilies: ["IPv6", "IPv4"]
+    ipFamilyPolicy: "PreferDualStack"
 
 ## An Ingress resource can provide name-based virtual hosting and TLS
 ## termination among other things for CouchDB deployments which are accessed
@@ -126,8 +139,8 @@ configmapReload:
   ## configmap-reload container image
   ##
   image:
-    repository: jimmidyson/configmap-reload
-    tag: v0.5.0
+    repository: quay.io/prometheus-operator/prometheus-config-reloader
+    tag: v0.71.2
     pullPolicy: IfNotPresent
 
   ## configmap-reload resource requests and limits
@@ -139,7 +152,8 @@ configmapReload:
 # A service monitor will be created per each item in serviceMonitor.params[]
 serviceMonitor:
   enabled: false
-  namespace: monitoring
+  # Default value is the namespace the release is deployed to
+  # namespace: monitoring
 
   path: /snmp
 
@@ -148,6 +162,9 @@ serviceMonitor:
   scrapeTimeout: 10s
   module:
     - if_mib
+  # Auth used for scraping.
+  auth:
+    - public_v2
 
   # Relabelings dynamically rewrite the label set of a target before it gets scraped.
   # Set if defined unless overriden by params.relabelings.
@@ -190,3 +207,20 @@ serviceMonitor:
     #   relabelings: []
     # Map of metric labels and values to add. Overrides value set in serviceMonitor.additionalMetricsRelabels
     #   additionalMetricsRelabels: {}
+
+# Extra manifests to deploy as an array
+extraManifests: []
+  # - |
+  #   apiVersion: v1
+  #   kind: ConfigMap
+  #   metadata:
+  #   labels:
+  #     name: prometheus-extra
+  #   data:
+  #     extra-data: "value"
+
+strategy:
+  rollingUpdate:
+    maxSurge: 1
+    maxUnavailable: 0
+  type: RollingUpdate

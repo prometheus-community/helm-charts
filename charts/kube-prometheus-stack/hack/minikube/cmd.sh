@@ -80,5 +80,3 @@ Commands:
 EOF
 
 exit 0
-}
-

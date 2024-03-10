@@ -2,17 +2,24 @@
 apiVersion: autoscaling.k8s.io/v1
 kind: VerticalPodAutoscaler
 metadata:
-  name: {{ template "kube-prometheus-stack.fullname" . }}-operator
+  name: {{ template "kube-prometheus-stack.operator.fullname" . }}
   namespace: {{ template "kube-prometheus-stack.namespace" . }}
   labels:
-    app: {{ template "kube-prometheus-stack.name" . }}-operator
-{{ include "kube-prometheus-stack.labels" . | indent 4 }}
+    {{- include "kube-prometheus-stack.prometheus-operator.labels" . | nindent 4 }}
 spec:
+  {{- with .Values.prometheusOperator.verticalPodAutoscaler.recommenders }}
+  recommenders:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
   resourcePolicy:
     containerPolicies:
     - containerName: {{ template "kube-prometheus-stack.name" . }}
-      {{- if .Values.prometheusOperator.verticalPodAutoscaler.controlledResources }}
-      controlledResources: {{ .Values.prometheusOperator.verticalPodAutoscaler.controlledResources }}
+      {{- with .Values.prometheusOperator.verticalPodAutoscaler.controlledResources }}
+      controlledResources:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- if .Values.prometheusOperator.verticalPodAutoscaler.controlledValues }}
+      controlledValues: {{ .Values.prometheusOperator.verticalPodAutoscaler.controlledValues }}
       {{- end }}
       {{- if .Values.prometheusOperator.verticalPodAutoscaler.maxAllowed }}
       maxAllowed:
@@ -25,11 +32,9 @@ spec:
   targetRef:
     apiVersion: apps/v1
     kind: Deployment
-    name: {{ template "kube-prometheus-stack.fullname" . }}-operator
-  {{- if .Values.prometheusOperator.verticalPodAutoscaler.updatePolicy }}
+    name: {{ template "kube-prometheus-stack.operator.fullname" . }}
+  {{- with .Values.prometheusOperator.verticalPodAutoscaler.updatePolicy }}
   updatePolicy:
-    {{- if .Values.prometheusOperator.verticalPodAutoscaler.updatePolicy.updateMode }}
-    updateMode: {{ .Values.prometheusOperator.verticalPodAutoscaler.updatePolicy.updateMode  }}
-    {{- end }}
+    {{- toYaml . | nindent 4 }}
   {{- end }}
 {{- end }}

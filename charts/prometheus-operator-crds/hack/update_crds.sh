@@ -1,9 +1,11 @@
 #!/bin/bash
 
+SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+
 if [[ $(uname -s) = "Darwin" ]]; then
-    VERSION="$(grep ^appVersion ../Chart.yaml | sed 's/appVersion: /v/g')"
+    VERSION="$(grep ^appVersion "${SCRIPT_DIR}/../Chart.yaml" | sed 's/appVersion: //g')"
 else
-    VERSION="$(grep ^appVersion ../Chart.yaml | sed 's/appVersion:\s/v/g')"
+    VERSION="$(grep ^appVersion "${SCRIPT_DIR}/../Chart.yaml" | sed 's/appVersion:\s//g')"
 fi
 
 FILES=(
@@ -14,8 +16,8 @@ FILES=(
   "crd-prometheusagents.yaml    :  monitoring.coreos.com_prometheusagents.yaml"
   "crd-prometheuses.yaml        :  monitoring.coreos.com_prometheuses.yaml"
   "crd-prometheusrules.yaml     :  monitoring.coreos.com_prometheusrules.yaml"
-  "crd-servicemonitors.yaml     :  monitoring.coreos.com_servicemonitors.yaml"
   "crd-scrapeconfigs.yaml       :  monitoring.coreos.com_scrapeconfigs.yaml"
+  "crd-servicemonitors.yaml     :  monitoring.coreos.com_servicemonitors.yaml"
   "crd-thanosrulers.yaml        :  monitoring.coreos.com_thanosrulers.yaml"
 )
 
@@ -27,18 +29,17 @@ for line in "${FILES[@]}"; do
 
     echo -e "Downloading Prometheus Operator CRD with Version ${VERSION}:\n${URL}\n"
 
-    echo "# ${URL}" > ../templates/"${DESTINATION}"
+    echo "# ${URL}" > "${SCRIPT_DIR}/../charts/crds/templates/${DESTINATION}"
 
-    if ! curl --silent --retry-all-errors --fail --location "${URL}" >> ../templates/"${DESTINATION}"; then
+    if ! curl --silent --retry-all-errors --fail --location "${URL}" >> "${SCRIPT_DIR}/../charts/crds/templates/${DESTINATION}"; then
       echo -e "Failed to download ${URL}!"
       exit 1
     fi
+
     # Update or insert annotations block
-    if yq -e '.metadata.annotations' ../templates/"${DESTINATION}" >/dev/null; then
-      sed -i '/^  annotations:$/a {{- with .Values.annotations }}\n{{- toYaml . | nindent 4 }}\n{{- end }}' ../templates/"${DESTINATION}"
+    if yq -e '.metadata.annotations' "${SCRIPT_DIR}/../charts/crds/crds/" >/dev/null; then
+      sed -i '/^  annotations:$/a {{- with .Values.annotations }}\n{{- toYaml . | nindent 4 }}\n{{- end }}' "${SCRIPT_DIR}/../charts/crds/templates/${DESTINATION}"
     else
-      sed -i '/^metadata:$/a {{- with .Values.annotations }}\n  annotations:\n{{- toYaml . | nindent 4 }}\n{{- end }}' ../templates/"${DESTINATION}"
+      sed -i '/^metadata:$/a {{- with .Values.annotations }}\n  annotations:\n{{- toYaml . | nindent 4 }}\n{{- end }}' "${SCRIPT_DIR}/../charts/crds/templates/${DESTINATION}"
     fi
 done
-
-exit

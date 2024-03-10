@@ -1,6 +1,6 @@
 {{- if and .Values.prometheus.enabled .Values.prometheus.thanosIngress.enabled }}
 {{- $pathType := .Values.prometheus.thanosIngress.pathType | default "" }}
-{{- $serviceName := printf "%s-%s" (include "kube-prometheus-stack.fullname" .) "prometheus" }}
+{{- $serviceName := printf "%s-%s" (include "kube-prometheus-stack.fullname" .) "thanos-discovery" }}
 {{- $thanosPort := .Values.prometheus.thanosIngress.servicePort -}}
 {{- $routePrefix := list .Values.prometheus.prometheusSpec.routePrefix }}
 {{- $paths := .Values.prometheus.thanosIngress.paths | default $routePrefix -}}
@@ -11,7 +11,7 @@ kind: Ingress
 metadata:
 {{- if .Values.prometheus.thanosIngress.annotations }}
   annotations:
-{{ toYaml .Values.prometheus.thanosIngress.annotations | indent 4 }}
+    {{- tpl (toYaml .Values.prometheus.thanosIngress.annotations) . | nindent 4 }}
 {{- end }}
   name: {{ template "kube-prometheus-stack.fullname" . }}-thanos-gateway
   namespace: {{ template "kube-prometheus-stack.namespace" . }}

@@ -2,20 +2,23 @@
 apiVersion: cilium.io/v2
 kind: CiliumNetworkPolicy
 metadata:
-  name: {{ template "kube-prometheus-stack.fullname" . }}-operator
+  name: {{ template "kube-prometheus-stack.operator.fullname" . }}
   namespace: {{ template "kube-prometheus-stack.namespace" . }}
   labels:
-    app: {{ template "kube-prometheus-stack.name" . }}-operator
-    {{- include "kube-prometheus-stack.labels" . | nindent 4 }}
+    {{- include "kube-prometheus-stack.prometheus-operator.labels" . | nindent 4 }}
 spec:
   endpointSelector:
     matchLabels:
+      {{- if .Values.prometheusOperator.networkPolicy.matchLabels }}
       app: {{ template "kube-prometheus-stack.name" . }}-operator
-      {{- include "kube-prometheus-stack.labels" $ | nindent 6 }}
+      {{ toYaml .Values.prometheusOperator.networkPolicy.matchLabels | nindent 6 }}
+      {{- else }}
+      {{- include "kube-prometheus-stack.prometheus-operator.labels" $ | nindent 6 }}
+      {{- end }}
   egress:
-  {{- if and .Values.prometheusOperator.networkPolicy.cilium .Values.prometheusOperator.networkPolicy.cilium.egress }}
+    {{- if and .Values.prometheusOperator.networkPolicy.cilium .Values.prometheusOperator.networkPolicy.cilium.egress }}
     {{ toYaml .Values.prometheusOperator.networkPolicy.cilium.egress | nindent 6 }}
-  {{- else }}
+    {{- else }}
   - toEntities:
     - kube-apiserver
   {{- end }}
@@ -28,8 +31,10 @@ spec:
       - port: "8080"
       {{- end }}
         protocol: "TCP"
+      {{- if not .Values.prometheusOperator.tls.enabled }}
       rules:
         http:
         - method: "GET"
           path: "/metrics"
+      {{- end }}
 {{- end }}

@@ -4,6 +4,7 @@ kind: ServiceMonitor
 metadata:
 {{- if .Values.serviceMonitor.labels }}
   labels:
+    {{- include "prometheus-postgres-exporter.labels" . | nindent 4 }}
 {{ toYaml .Values.serviceMonitor.labels | indent 4}}
 {{- end }}
   name: {{ template "prometheus-postgres-exporter.fullname" . }}
@@ -36,8 +37,7 @@ spec:
     - {{ .Release.Namespace }}
   selector:
     matchLabels:
-      app: {{ template "prometheus-postgres-exporter.name" . }}
-      release: {{ .Release.Name }}
+      {{- include "prometheus-postgres-exporter.selectorLabels" . | nindent 6 }}
 {{- if .Values.serviceMonitor.targetLabels }}
   targetLabels:
 {{- range .Values.serviceMonitor.targetLabels }}

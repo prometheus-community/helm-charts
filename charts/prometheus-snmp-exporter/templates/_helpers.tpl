@@ -65,3 +65,14 @@ Selector labels
 app.kubernetes.io/name: {{ include "prometheus-snmp-exporter.name" . }}
 app.kubernetes.io/instance: {{ .Release.Name }}
 {{- end }}
+
+{{/*
+Namespace override
+*/}}
+{{- define "prometheus-snmp-exporter.namespace" -}}
+  {{- if .Values.namespaceOverride -}}
+    {{- .Values.namespaceOverride -}}
+  {{- else -}}
+    {{- .Release.namespace -}}
+  {{- end -}}
+{{- end -}}

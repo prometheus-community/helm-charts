@@ -116,8 +116,13 @@ Returns pod spec
 */}}
 {{- define "prometheus-pushgateway.podSpec" -}}
 serviceAccountName: {{ include "prometheus-pushgateway.serviceAccountName" . }}
+automountServiceAccountToken: {{ .Values.automountServiceAccountToken }}
 {{- with .Values.priorityClassName }}
 priorityClassName: {{ . | quote }}
+{{- end }}
+{{- with .Values.hostAliases }}
+hostAliases:
+{{- toYaml . | nindent 2 }}
 {{- end }}
 {{- with .Values.imagePullSecrets }}
 imagePullSecrets:
@@ -177,10 +182,29 @@ nodeSelector:
 tolerations:
   {{- toYaml . | nindent 2 }}
 {{- end }}
-{{- with .Values.affinity }}
+{{- if or .Values.podAntiAffinity .Values.affinity }}
 affinity:
-  {{- toYaml . | nindent 2 }}
 {{- end }}
+  {{- with .Values.affinity }}
+  {{- toYaml . | nindent 2 }}
+  {{- end }}
+  {{- if eq .Values.podAntiAffinity "hard" }}
+  podAntiAffinity:
+    requiredDuringSchedulingIgnoredDuringExecution:
+      - topologyKey: {{ .Values.podAntiAffinityTopologyKey }}
+        labelSelector:
+          matchExpressions:
+            - {key: app.kubernetes.io/name, operator: In, values: [{{ include "prometheus-pushgateway.name" . }}]}
+  {{- else if eq .Values.podAntiAffinity "soft" }}
+  podAntiAffinity:
+    preferredDuringSchedulingIgnoredDuringExecution:
+      - weight: 100
+        podAffinityTerm:
+          topologyKey: {{ .Values.podAntiAffinityTopologyKey }}
+          labelSelector:
+            matchExpressions:
+              - {key: app.kubernetes.io/name, operator: In, values: [{{ include "prometheus-pushgateway.name" . }}]}
+  {{- end }}
 {{- with .Values.topologySpreadConstraints }}
 topologySpreadConstraints:
   {{- toYaml . | nindent 2 }}

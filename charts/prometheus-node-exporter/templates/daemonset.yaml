@@ -13,6 +13,7 @@ spec:
   selector:
     matchLabels:
       {{- include "prometheus-node-exporter.selectorLabels" . | nindent 6 }}
+  revisionHistoryLimit: {{ .Values.revisionHistoryLimit }}
   {{- with .Values.updateStrategy }}
   updateStrategy:
     {{- toYaml . | nindent 4 }}
@@ -39,8 +40,11 @@ spec:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       serviceAccountName: {{ include "prometheus-node-exporter.serviceAccountName" . }}
+      {{- with .Values.terminationGracePeriodSeconds }}
+      terminationGracePeriodSeconds: {{ . }}
+      {{- end }}
       containers:
-        {{- $servicePort := ternary 8100 .Values.service.port .Values.kubeRBACProxy.enabled }}
+        {{- $servicePort := ternary .Values.kubeRBACProxy.port .Values.service.port .Values.kubeRBACProxy.enabled }}
         - name: node-exporter
           image: {{ include "prometheus-node-exporter.image" . }}
           imagePullPolicy: {{ .Values.image.pullPolicy }}
@@ -49,7 +53,7 @@ spec:
             - --path.sysfs=/host/sys
             {{- if .Values.hostRootFsMount.enabled }}
             - --path.rootfs=/host/root
-            {{- if semverCompare ">=1.4.0" (default .Chart.AppVersion .Values.image.tag) }}
+            {{- if semverCompare ">=1.4.0-0" (coalesce .Values.version .Values.image.tag .Chart.AppVersion) }}
             - --path.udev.data=/host/root/run/udev/data
             {{- end }}
             {{- end }}
@@ -123,12 +127,24 @@ spec:
           resources:
             {{- toYaml . | nindent 12 }}
           {{- end }}
+          {{- if .Values.terminationMessageParams.enabled }}
+          {{- with .Values.terminationMessageParams }}
+          terminationMessagePath: {{ .terminationMessagePath }}
+          terminationMessagePolicy: {{ .terminationMessagePolicy }}
+          {{- end }}
+          {{- end }}
           volumeMounts:
             - name: proc
               mountPath: /host/proc
+              {{- with .Values.hostProcFsMount.mountPropagation }}
+              mountPropagation: {{ . }}
+              {{- end }}
               readOnly:  true
             - name: sys
               mountPath: /host/sys
+              {{- with .Values.hostSysFsMount.mountPropagation }}
+              mountPropagation: {{ . }}
+              {{- end }}
               readOnly: true
             {{- if .Values.hostRootFsMount.enabled }}
             - name: root
@@ -159,24 +175,10 @@ spec:
             - name: {{ .name }}
               mountPath: {{ .mountPath }}
             {{- end }}
-        {{- with .Values.sidecars }}
-        {{- toYaml . | nindent 8 }}
-          {{- if or $.Values.sidecarVolumeMount $.Values.sidecarHostVolumeMounts }}
-          volumeMounts:
-            {{- range $_, $mount := $.Values.sidecarVolumeMount }}
-            - name: {{ $mount.name }}
-              mountPath: {{ $mount.mountPath }}
-              readOnly: {{ $mount.readOnly }}
-            {{- end }}
-            {{- range $_, $mount := $.Values.sidecarHostVolumeMounts }}
-            - name: {{ $mount.name }}
-              mountPath: {{ $mount.mountPath }}
-              readOnly: {{ $mount.readOnly }}
-            {{- if $mount.mountPropagation }}
-              mountPropagation: {{ $mount.mountPropagation }}
-            {{- end }}
-            {{- end }}
-          {{- end }}
+        {{- range .Values.sidecars }}
+          {{- $overwrites := dict "volumeMounts" (concat (include "prometheus-node-exporter.sidecarVolumeMounts" $ | fromYamlArray) (.volumeMounts | default list) | default list) }}
+          {{- $defaults := dict "image" (include "prometheus-node-exporter.image" $) "securityContext" $.Values.containerSecurityContext "imagePullPolicy" $.Values.image.pullPolicy }}
+        - {{- toYaml (merge $overwrites . $defaults) | nindent 10 }}
         {{- end }}
         {{-  if .Values.kubeRBACProxy.enabled  }}
         - name: kube-rbac-proxy
@@ -186,7 +188,7 @@ spec:
             {{-  end  }}
             - --secure-listen-address=:{{ .Values.service.port}}
             - --upstream=http://127.0.0.1:{{ $servicePort }}/
-            - --proxy-endpoints-port=8888
+            - --proxy-endpoints-port={{ .Values.kubeRBACProxy.proxyEndpointsPort }}
             - --config-file=/etc/kube-rbac-proxy-config/config-file.yaml
           volumeMounts:
             - name: kube-rbac-proxy-config
@@ -199,19 +201,38 @@ spec:
           {{- end }}
           ports:
             - containerPort: {{ .Values.service.port}}
-              name: "http"
-            - containerPort: 8888
+              name: {{ .Values.kubeRBACProxy.portName }}
+              {{- if .Values.kubeRBACProxy.enableHostPort }}
+              hostPort: {{ .Values.service.port }}
+              {{- end }}
+            - containerPort: {{ .Values.kubeRBACProxy.proxyEndpointsPort }}
+              {{- if .Values.kubeRBACProxy.enableProxyEndpointsHostPort }}
+              hostPort: {{ .Values.kubeRBACProxy.proxyEndpointsPort }}
+              {{- end }}
               name: "http-healthz"
           readinessProbe:
             httpGet:
               scheme: HTTPS
-              port: 8888
+              port: {{ .Values.kubeRBACProxy.proxyEndpointsPort }}
               path: healthz
             initialDelaySeconds: 5
             timeoutSeconds: 5
           {{- if .Values.kubeRBACProxy.resources }}
           resources:
-          {{ toYaml .Values.kubeRBACProxy.resources | nindent 12 }}
+          {{- toYaml .Values.kubeRBACProxy.resources | nindent 12 }}
+          {{- end }}
+          {{- if .Values.terminationMessageParams.enabled }}
+          {{- with .Values.terminationMessageParams }}
+          terminationMessagePath: {{ .terminationMessagePath }}
+          terminationMessagePolicy: {{ .terminationMessagePolicy }}
+          {{- end }}
+          {{- end }}
+          {{- with .Values.kubeRBACProxy.env }}
+          env:
+            {{- range $key, $value := $.Values.kubeRBACProxy.env }}
+            - name: {{ $key }}
+              value: {{ $value | quote }}
+            {{- end }}
           {{- end }}
           {{- if .Values.kubeRBACProxy.containerSecurityContext }}
           securityContext:
@@ -236,6 +257,9 @@ spec:
       nodeSelector:
         {{- toYaml . | nindent 8 }}
       {{- end }}
+      {{- with .Values.restartPolicy }}
+      restartPolicy: {{ . }}
+      {{- end }}
       {{- with .Values.tolerations }}
       tolerations:
         {{- toYaml . | nindent 8 }}
@@ -256,6 +280,9 @@ spec:
         - name: {{ $mount.name }}
           hostPath:
             path: {{ $mount.hostPath }}
+            {{- with $mount.type }}
+            type: {{ . }}
+            {{- end }}
         {{- end }}
         {{- range $_, $mount := .Values.sidecarVolumeMount }}
         - name: {{ $mount.name }}

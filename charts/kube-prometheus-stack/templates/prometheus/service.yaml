@@ -1,3 +1,4 @@
+{{- $kubeTargetVersion := default .Capabilities.KubeVersion.GitVersion .Values.kubeTargetVersionOverride }}
 {{- if .Values.prometheus.enabled }}
 apiVersion: v1
 kind: Service
@@ -42,6 +43,12 @@ spec:
     {{- end }}
     port: {{ .Values.prometheus.service.port }}
     targetPort: {{ .Values.prometheus.service.targetPort }}
+  - name: reloader-web
+    {{- if semverCompare "> 1.20.0-0" $kubeTargetVersion }}
+    appProtocol: http
+    {{- end }}
+    port: {{ .Values.prometheus.service.reloaderWebPort }}
+    targetPort: reloader-web
   {{- if .Values.prometheus.thanosIngress.enabled }}
   - name: grpc
     {{- if eq .Values.prometheus.service.type "NodePort" }}
@@ -55,10 +62,19 @@ spec:
 {{- end }}
   publishNotReadyAddresses: {{ .Values.prometheus.service.publishNotReadyAddresses }}
   selector:
+    {{- if .Values.prometheus.agentMode }}
+    app.kubernetes.io/name: prometheus-agent
+    {{- else }}
     app.kubernetes.io/name: prometheus
-    prometheus: {{ template "kube-prometheus-stack.prometheus.crname" . }}
+    {{- end }}
+    operator.prometheus.io/name: {{ template "kube-prometheus-stack.prometheus.crname" . }}
 {{- if .Values.prometheus.service.sessionAffinity }}
   sessionAffinity: {{ .Values.prometheus.service.sessionAffinity }}
+{{- end }}
+{{- if eq .Values.prometheus.service.sessionAffinity "ClientIP" }}
+  sessionAffinityConfig:
+    clientIP:
+      timeoutSeconds: {{ .Values.prometheus.service.sessionAffinityConfig.clientIP.timeoutSeconds }}
 {{- end }}
   type: "{{ .Values.prometheus.service.type }}"
 {{- end }}

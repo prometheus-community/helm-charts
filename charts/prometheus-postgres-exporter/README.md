@@ -40,6 +40,26 @@ _See [helm uninstall](https://helm.sh/docs/helm/helm_uninstall/) for command doc
 
 ## Upgrading
 
+### To 6.0.0
+
+Image repository has been split into two values: the new `image.registry` value and the already existing `image.repository` value. No change is required when using the default for `image.repository`. If you have previously modified field `image.repository`, please, set the two fields accordingly.
+
+### To 5.0.0
+
+Deprecated options `auto-discover-databases`, `constantLabels`, `exclude-databases` & `include-databases` has been removed.
+Deprecated custom query config has been removed.
+Deprecated PodSecurityPolicy and K8S beta API versions have been removed.
+Chart.yaml appVersion field is used as default image tag.
+Labels are templated now.
+Add default securityContext and PodSecurityContext.
+LivenessProbe timeout has been raised to 3.
+
+### To 4.6.0
+
+This release adds functionality to template the variables inside `config.datasource` by means of allowing the `tpl` function in the resources that make use of it. This functionality is useful when you want to do sub-charting (e.g. in a postgres chart) and you want to avoid the duplication of variables inside `config.datasource`.
+
+Compared to the previous release (4.5.0) the only thing that changed is the fact that you can no longer leave the `config.datasource.host` variable blank. Leaving it blank could cause errors with the `tpl` function. However, the default value was changed to `''` so this error is not expected to happen.
+
 ### To 4.0.0
 
 This release removes the `pg_database` query from `config.queries` as it has been converted to a built-in collector

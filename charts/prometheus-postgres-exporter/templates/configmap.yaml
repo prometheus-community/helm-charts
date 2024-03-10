@@ -1,15 +1,11 @@
-{{- if not .Values.config.externalQueries.enabled }}
+{{- if .Values.config.postgresExporter }}
 apiVersion: v1
 kind: ConfigMap
 metadata:
   name: {{ template "prometheus-postgres-exporter.fullname" . }}
   labels:
-    app: {{ template "prometheus-postgres-exporter.name" . }}
-    chart: {{ template "prometheus-postgres-exporter.chart" . }}
-    release: {{ .Release.Name }}
-    heritage: {{ .Release.Service }}
+    {{- include "prometheus-postgres-exporter.labels" . | nindent 4 }}
 data:
-  allow-snippet-annotations: "false"
-  config.yaml: |
-    {{- tpl (mergeOverwrite (tpl .Values.config.queries . | fromYaml) (tpl .Values.config.userQueries . | fromYaml) | toYaml) . | nindent 4 }}
+  postgres_exporter.yml: |
+    {{ tpl .Values.config.postgresExporter . | nindent 4 }}
 {{- end }}
