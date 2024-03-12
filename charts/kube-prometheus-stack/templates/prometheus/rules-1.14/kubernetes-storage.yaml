@@ -1,5 +1,5 @@
 {{- /*
-Generated from 'kubernetes-storage' group from https://raw.githubusercontent.com/prometheus-operator/kube-prometheus/main/manifests/kubernetesControlPlane-prometheusRule.yaml
+Generated from 'kubernetes-storage' group from https://raw.githubusercontent.com/prometheus-operator/kube-prometheus/a8ba97a150c75be42010c75d10b720c55e182f1a/manifests/kubernetesControlPlane-prometheusRule.yaml
 Do not change in-place! In order to change this file first read following link:
 https://github.com/prometheus-community/helm-charts/tree/main/charts/kube-prometheus-stack/hack
 */ -}}
@@ -35,7 +35,7 @@ spec:
 {{- if .Values.defaultRules.additionalRuleGroupAnnotations.kubernetesStorage }}
 {{ toYaml .Values.defaultRules.additionalRuleGroupAnnotations.kubernetesStorage | indent 8 }}
 {{- end }}
-        description: The PersistentVolume claimed by {{`{{`}} $labels.persistentvolumeclaim {{`}}`}} in Namespace {{`{{`}} $labels.namespace {{`}}`}} on Cluster {{`{{`}} $labels.cluster {{`}}`}} is only {{`{{`}} $value | humanizePercentage {{`}}`}} free.
+        description: The PersistentVolume claimed by {{`{{`}} $labels.persistentvolumeclaim {{`}}`}} in Namespace {{`{{`}} $labels.namespace {{`}}`}} {{`{{`}} with $labels.cluster -{{`}}`}} on Cluster {{`{{`}} . {{`}}`}} {{`{{`}}- end {{`}}`}} is only {{`{{`}} $value | humanizePercentage {{`}}`}} free.
         runbook_url: {{ .Values.defaultRules.runbookUrl }}/kubernetes/kubepersistentvolumefillingup
         summary: PersistentVolume is filling up.
       expr: |-
@@ -50,12 +50,12 @@ spec:
         kube_persistentvolumeclaim_access_mode{ access_mode="ReadOnlyMany"} == 1
         unless on ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster, namespace, persistentvolumeclaim)
         kube_persistentvolumeclaim_labels{label_excluded_from_alerts="true"} == 1
-      for: 1m
+      for: {{ dig "KubePersistentVolumeFillingUp" "for" "1m" .Values.customRules }}
       {{- with .Values.defaultRules.keepFiringFor }}
       keep_firing_for: "{{ . }}"
       {{- end }}
       labels:
-        severity: critical
+        severity: {{ dig "KubePersistentVolumeFillingUp" "severity" "critical" .Values.customRules }}
       {{- if or .Values.defaultRules.additionalRuleLabels .Values.defaultRules.additionalRuleGroupLabels.kubernetesStorage }}
         {{- with .Values.defaultRules.additionalRuleLabels }}
           {{- toYaml . | nindent 8 }}
@@ -74,7 +74,7 @@ spec:
 {{- if .Values.defaultRules.additionalRuleGroupAnnotations.kubernetesStorage }}
 {{ toYaml .Values.defaultRules.additionalRuleGroupAnnotations.kubernetesStorage | indent 8 }}
 {{- end }}
-        description: Based on recent sampling, the PersistentVolume claimed by {{`{{`}} $labels.persistentvolumeclaim {{`}}`}} in Namespace {{`{{`}} $labels.namespace {{`}}`}} on Cluster {{`{{`}} $labels.cluster {{`}}`}} is expected to fill up within four days. Currently {{`{{`}} $value | humanizePercentage {{`}}`}} is available.
+        description: Based on recent sampling, the PersistentVolume claimed by {{`{{`}} $labels.persistentvolumeclaim {{`}}`}} in Namespace {{`{{`}} $labels.namespace {{`}}`}} {{`{{`}} with $labels.cluster -{{`}}`}} on Cluster {{`{{`}} . {{`}}`}} {{`{{`}}- end {{`}}`}} is expected to fill up within four days. Currently {{`{{`}} $value | humanizePercentage {{`}}`}} is available.
         runbook_url: {{ .Values.defaultRules.runbookUrl }}/kubernetes/kubepersistentvolumefillingup
         summary: PersistentVolume is filling up.
       expr: |-
@@ -91,12 +91,12 @@ spec:
         kube_persistentvolumeclaim_access_mode{ access_mode="ReadOnlyMany"} == 1
         unless on ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster, namespace, persistentvolumeclaim)
         kube_persistentvolumeclaim_labels{label_excluded_from_alerts="true"} == 1
-      for: 1h
+      for: {{ dig "KubePersistentVolumeFillingUp" "for" "1h" .Values.customRules }}
       {{- with .Values.defaultRules.keepFiringFor }}
       keep_firing_for: "{{ . }}"
       {{- end }}
       labels:
-        severity: warning
+        severity: {{ dig "KubePersistentVolumeFillingUp" "severity" "warning" .Values.customRules }}
       {{- if or .Values.defaultRules.additionalRuleLabels .Values.defaultRules.additionalRuleGroupLabels.kubernetesStorage }}
         {{- with .Values.defaultRules.additionalRuleLabels }}
           {{- toYaml . | nindent 8 }}
@@ -115,7 +115,7 @@ spec:
 {{- if .Values.defaultRules.additionalRuleGroupAnnotations.kubernetesStorage }}
 {{ toYaml .Values.defaultRules.additionalRuleGroupAnnotations.kubernetesStorage | indent 8 }}
 {{- end }}
-        description: The PersistentVolume claimed by {{`{{`}} $labels.persistentvolumeclaim {{`}}`}} in Namespace {{`{{`}} $labels.namespace {{`}}`}} on Cluster {{`{{`}} $labels.cluster {{`}}`}} only has {{`{{`}} $value | humanizePercentage {{`}}`}} free inodes.
+        description: The PersistentVolume claimed by {{`{{`}} $labels.persistentvolumeclaim {{`}}`}} in Namespace {{`{{`}} $labels.namespace {{`}}`}} {{`{{`}} with $labels.cluster -{{`}}`}} on Cluster {{`{{`}} . {{`}}`}} {{`{{`}}- end {{`}}`}} only has {{`{{`}} $value | humanizePercentage {{`}}`}} free inodes.
         runbook_url: {{ .Values.defaultRules.runbookUrl }}/kubernetes/kubepersistentvolumeinodesfillingup
         summary: PersistentVolumeInodes are filling up.
       expr: |-
@@ -130,12 +130,12 @@ spec:
         kube_persistentvolumeclaim_access_mode{ access_mode="ReadOnlyMany"} == 1
         unless on ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster, namespace, persistentvolumeclaim)
         kube_persistentvolumeclaim_labels{label_excluded_from_alerts="true"} == 1
-      for: 1m
+      for: {{ dig "KubePersistentVolumeInodesFillingUp" "for" "1m" .Values.customRules }}
       {{- with .Values.defaultRules.keepFiringFor }}
       keep_firing_for: "{{ . }}"
       {{- end }}
       labels:
-        severity: critical
+        severity: {{ dig "KubePersistentVolumeInodesFillingUp" "severity" "critical" .Values.customRules }}
       {{- if or .Values.defaultRules.additionalRuleLabels .Values.defaultRules.additionalRuleGroupLabels.kubernetesStorage }}
         {{- with .Values.defaultRules.additionalRuleLabels }}
           {{- toYaml . | nindent 8 }}
@@ -154,7 +154,7 @@ spec:
 {{- if .Values.defaultRules.additionalRuleGroupAnnotations.kubernetesStorage }}
 {{ toYaml .Values.defaultRules.additionalRuleGroupAnnotations.kubernetesStorage | indent 8 }}
 {{- end }}
-        description: Based on recent sampling, the PersistentVolume claimed by {{`{{`}} $labels.persistentvolumeclaim {{`}}`}} in Namespace {{`{{`}} $labels.namespace {{`}}`}} on Cluster {{`{{`}} $labels.cluster {{`}}`}} is expected to run out of inodes within four days. Currently {{`{{`}} $value | humanizePercentage {{`}}`}} of its inodes are free.
+        description: Based on recent sampling, the PersistentVolume claimed by {{`{{`}} $labels.persistentvolumeclaim {{`}}`}} in Namespace {{`{{`}} $labels.namespace {{`}}`}} {{`{{`}} with $labels.cluster -{{`}}`}} on Cluster {{`{{`}} . {{`}}`}} {{`{{`}}- end {{`}}`}} is expected to run out of inodes within four days. Currently {{`{{`}} $value | humanizePercentage {{`}}`}} of its inodes are free.
         runbook_url: {{ .Values.defaultRules.runbookUrl }}/kubernetes/kubepersistentvolumeinodesfillingup
         summary: PersistentVolumeInodes are filling up.
       expr: |-
@@ -171,12 +171,12 @@ spec:
         kube_persistentvolumeclaim_access_mode{ access_mode="ReadOnlyMany"} == 1
         unless on ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster, namespace, persistentvolumeclaim)
         kube_persistentvolumeclaim_labels{label_excluded_from_alerts="true"} == 1
-      for: 1h
+      for: {{ dig "KubePersistentVolumeInodesFillingUp" "for" "1h" .Values.customRules }}
       {{- with .Values.defaultRules.keepFiringFor }}
       keep_firing_for: "{{ . }}"
       {{- end }}
       labels:
-        severity: warning
+        severity: {{ dig "KubePersistentVolumeInodesFillingUp" "severity" "warning" .Values.customRules }}
       {{- if or .Values.defaultRules.additionalRuleLabels .Values.defaultRules.additionalRuleGroupLabels.kubernetesStorage }}
         {{- with .Values.defaultRules.additionalRuleLabels }}
           {{- toYaml . | nindent 8 }}
@@ -195,16 +195,16 @@ spec:
 {{- if .Values.defaultRules.additionalRuleGroupAnnotations.kubernetesStorage }}
 {{ toYaml .Values.defaultRules.additionalRuleGroupAnnotations.kubernetesStorage | indent 8 }}
 {{- end }}
-        description: The persistent volume {{`{{`}} $labels.persistentvolume {{`}}`}} on Cluster {{`{{`}} $labels.cluster {{`}}`}} has status {{`{{`}} $labels.phase {{`}}`}}.
+        description: The persistent volume {{`{{`}} $labels.persistentvolume {{`}}`}} {{`{{`}} with $labels.cluster -{{`}}`}} on Cluster {{`{{`}} . {{`}}`}} {{`{{`}}- end {{`}}`}} has status {{`{{`}} $labels.phase {{`}}`}}.
         runbook_url: {{ .Values.defaultRules.runbookUrl }}/kubernetes/kubepersistentvolumeerrors
         summary: PersistentVolume is having issues with provisioning.
       expr: kube_persistentvolume_status_phase{phase=~"Failed|Pending",job="{{ $kubeStateMetricsJob }}"} > 0
-      for: 5m
+      for: {{ dig "KubePersistentVolumeErrors" "for" "5m" .Values.customRules }}
       {{- with .Values.defaultRules.keepFiringFor }}
       keep_firing_for: "{{ . }}"
       {{- end }}
       labels:
-        severity: critical
+        severity: {{ dig "KubePersistentVolumeErrors" "severity" "critical" .Values.customRules }}
       {{- if or .Values.defaultRules.additionalRuleLabels .Values.defaultRules.additionalRuleGroupLabels.kubernetesStorage }}
         {{- with .Values.defaultRules.additionalRuleLabels }}
           {{- toYaml . | nindent 8 }}

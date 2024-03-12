@@ -59,8 +59,13 @@ spec:
               - name: RABBIT_PASSWORD
                 value: {{ .Values.rabbitmq.password }}
            {{- end }}
-
-           {{- if .Values.rabbitmq.user }}
+           {{- if .Values.rabbitmq.existingUserSecret }}
+              - name: RABBIT_USER
+                valueFrom:
+                  secretKeyRef:
+                    name: "{{ .Values.rabbitmq.existingUserSecret }}"
+                    key: "{{ .Values.rabbitmq.existingUserSecretKey }}"
+           {{- else if .Values.rabbitmq.user }}
               - name: RABBIT_USER
                 value: {{ .Values.rabbitmq.user }}
            {{- end }}

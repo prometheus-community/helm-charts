@@ -17,6 +17,10 @@ metadata:
 spec:
   replicas: {{ .Values.prometheusOperator.admissionWebhooks.deployment.replicas }}
   revisionHistoryLimit: {{ .Values.prometheusOperator.admissionWebhooks.deployment.revisionHistoryLimit }}
+  {{- with .Values.prometheusOperator.admissionWebhooks.deployment.strategy }}
+  strategy:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
   selector:
     matchLabels:
       app: {{ template "kube-prometheus-stack.name" . }}-operator-webhook
@@ -119,6 +123,7 @@ spec:
 {{ toYaml .Values.prometheusOperator.admissionWebhooks.deployment.securityContext | indent 8 }}
 {{- end }}
       serviceAccountName: {{ template "kube-prometheus-stack.operator.serviceAccountName" . }}-webhook
+      automountServiceAccountToken: {{ .Values.prometheusOperator.admissionWebhooks.deployment.automountServiceAccountToken }}
 {{- if .Values.prometheusOperator.admissionWebhooks.deployment.hostNetwork }}
       hostNetwork: true
       dnsPolicy: ClusterFirstWithHostNet

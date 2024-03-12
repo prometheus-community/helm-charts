@@ -45,6 +45,10 @@ helm upgrade [RELEASE_NAME] [CHART] --install
 
 _See [helm upgrade](https://helm.sh/docs/helm/helm_upgrade/) for command documentation._
 
+### Upgrading an existing Release to a new major version
+
+A major chart version change (like v1.2.3 -> v2.0.0) indicates that there is an incompatible breaking change needing manual actions.
+
 ### To 1.0.0
 
 This version allows multiple Targets to be specified when using ServiceMonitor. When you use ServiceMonitor, please rewrite below:
@@ -72,6 +76,23 @@ serviceMonitor:
     name: device1
     target: 127.0.0.1
 ```
+
+### To 2.0.0
+
+This version changes the `serviceMonitor.namespace` value from `monitoring` to the namespace the release is deployed to.
+
+### To 3.0.0
+
+This version upgrades snmp-exporter version to 0.24.1, which introduces breaking change to configuration format.
+See [Module and Auth Split Migration](https://github.com/prometheus/snmp_exporter/blob/main/auth-split-migration.md) for more details.
+
+### To 4.0.0
+
+This version contain major changes & The [configmap-reload](https://github.com/jimmidyson/configmap-reload) container was replaced by the [prometheus-config-reloader](https://github.com/prometheus-operator/prometheus-operator/tree/main/cmd/prometheus-config-reloader).
+
+### To 5.0.0
+
+This version changes the default image repository from using Dockerhub to Quay.
 
 ## Configuration
 
