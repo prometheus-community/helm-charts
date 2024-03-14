@@ -86,6 +86,14 @@ This version changes the `serviceMonitor.namespace` value from `monitoring` to t
 This version upgrades snmp-exporter version to 0.24.1, which introduces breaking change to configuration format.
 See [Module and Auth Split Migration](https://github.com/prometheus/snmp_exporter/blob/main/auth-split-migration.md) for more details.
 
+### To 4.0.0
+
+This version contain major changes & The [configmap-reload](https://github.com/jimmidyson/configmap-reload) container was replaced by the [prometheus-config-reloader](https://github.com/prometheus-operator/prometheus-operator/tree/main/cmd/prometheus-config-reloader).
+
+### To 5.0.0
+
+This version changes the default image repository from using Dockerhub to Quay.
+
 ## Configuration
 
 See [Customizing the Chart Before Installing](https://helm.sh/docs/intro/using_helm/#customizing-the-chart-before-installing). To see all configurable options with detailed comments, visit the chart's [values.yaml](./values.yaml), or run these configuration commands:

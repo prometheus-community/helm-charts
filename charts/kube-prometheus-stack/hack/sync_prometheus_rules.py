@@ -535,7 +535,7 @@ https://github.com/prometheus-community/helm-charts/tree/main/charts/kube-promet
         f.write('{{- define "rules.names" }}\n')
         f.write('rules:\n')
         for rule in condition_map:
-            f.write('  - "%s"\n' % rule)
+            f.write('  - "%s"\n' % sanitize_name(rule))
         f.write('{{- end }}')
 
 def main():

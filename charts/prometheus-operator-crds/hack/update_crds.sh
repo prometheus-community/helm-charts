@@ -37,7 +37,7 @@ for line in "${FILES[@]}"; do
     fi
 
     # Update or insert annotations block
-    if yq -e '.metadata.annotations' "${SCRIPT_DIR}/../charts/crds/crds/" >/dev/null; then
+    if yq -e '.metadata.annotations' "${SCRIPT_DIR}/../charts/crds/templates/${DESTINATION}" >/dev/null; then
       sed -i '/^  annotations:$/a {{- with .Values.annotations }}\n{{- toYaml . | nindent 4 }}\n{{- end }}' "${SCRIPT_DIR}/../charts/crds/templates/${DESTINATION}"
     else
       sed -i '/^metadata:$/a {{- with .Values.annotations }}\n  annotations:\n{{- toYaml . | nindent 4 }}\n{{- end }}' "${SCRIPT_DIR}/../charts/crds/templates/${DESTINATION}"

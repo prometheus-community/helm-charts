@@ -188,7 +188,7 @@ spec:
             {{-  end  }}
             - --secure-listen-address=:{{ .Values.service.port}}
             - --upstream=http://127.0.0.1:{{ $servicePort }}/
-            - --proxy-endpoints-port=8888
+            - --proxy-endpoints-port={{ .Values.kubeRBACProxy.proxyEndpointsPort }}
             - --config-file=/etc/kube-rbac-proxy-config/config-file.yaml
           volumeMounts:
             - name: kube-rbac-proxy-config
@@ -205,12 +205,15 @@ spec:
               {{- if .Values.kubeRBACProxy.enableHostPort }}
               hostPort: {{ .Values.service.port }}
               {{- end }}
-            - containerPort: 8888
+            - containerPort: {{ .Values.kubeRBACProxy.proxyEndpointsPort }}
+              {{- if .Values.kubeRBACProxy.enableProxyEndpointsHostPort }}
+              hostPort: {{ .Values.kubeRBACProxy.proxyEndpointsPort }}
+              {{- end }}
               name: "http-healthz"
           readinessProbe:
             httpGet:
               scheme: HTTPS
-              port: 8888
+              port: {{ .Values.kubeRBACProxy.proxyEndpointsPort }}
               path: healthz
             initialDelaySeconds: 5
             timeoutSeconds: 5
