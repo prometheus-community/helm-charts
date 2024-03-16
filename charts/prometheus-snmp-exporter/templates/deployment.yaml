@@ -12,10 +12,7 @@ spec:
     matchLabels:
       {{- include "prometheus-snmp-exporter.selectorLabels" . | indent 6 }}
   strategy:
-    rollingUpdate:
-      maxSurge: 1
-      maxUnavailable: 0
-    type: RollingUpdate
+{{ toYaml .Values.strategy | indent 4 }}
   template:
     metadata:
       labels:
@@ -82,13 +79,16 @@ spec:
               subPath: {{ .subPath }}
               readOnly: {{ .readOnly }}
           {{- end }}
+          {{- with .Values.extraVolumeMounts }}
+          {{ toYaml . | nindent 12 }}
+          {{- end }}
       {{- if .Values.config }}
         - name: configmap-reload
           image: "{{ .Values.configmapReload.image.repository }}:{{ .Values.configmapReload.image.tag }}"
           imagePullPolicy: "{{ .Values.configmapReload.image.pullPolicy }}"
           args:
-            - --volume-dir=/etc/config
-            - --webhook-url=http://localhost:{{ .Values.service.port }}/-/reload
+            - --watched-dir=/etc/config
+            - --reload-url=http://localhost:{{ .Values.service.port }}/-/reload
           resources:
 {{ toYaml .Values.configmapReload.resources | indent 12 }}
           volumeMounts:
@@ -121,5 +121,8 @@ spec:
           secret:
             secretName: {{ .secretName }}
             defaultMode: {{ .defaultMode }}
+      {{- end }}
+      {{- with .Values.extraVolumes }}
+      {{ toYaml . | nindent 8 }}
       {{- end }}
 {{- end }}

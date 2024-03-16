@@ -4,11 +4,10 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ template "kube-prometheus-stack.fullname" . }}-operator
+  name: {{ template "kube-prometheus-stack.operator.fullname" . }}
   namespace: {{ template "kube-prometheus-stack.namespace" . }}
   labels:
-    app: {{ template "kube-prometheus-stack.name" . }}-operator
-{{ include "kube-prometheus-stack.labels" . | indent 4 }}
+    {{- include "kube-prometheus-stack.prometheus-operator.labels" . | nindent 4 }}
 {{- if .Values.prometheusOperator.labels }}
 {{ toYaml .Values.prometheusOperator.labels | indent 4 }}
 {{- end }}
@@ -23,11 +22,14 @@ spec:
     matchLabels:
       app: {{ template "kube-prometheus-stack.name" . }}-operator
       release: {{ $.Release.Name | quote }}
+  {{- with .Values.prometheusOperator.strategy }}
+  strategy:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
   template:
     metadata:
       labels:
-        app: {{ template "kube-prometheus-stack.name" . }}-operator
-{{ include "kube-prometheus-stack.labels" . | indent 8 }}
+        {{- include "kube-prometheus-stack.prometheus-operator.labels" . | nindent 8 }}
 {{- if .Values.prometheusOperator.podLabels }}
 {{ toYaml .Values.prometheusOperator.podLabels | indent 8 }}
 {{- end }}
@@ -117,7 +119,7 @@ spec:
             - --thanos-default-base-image={{ $thanosRegistry }}/{{ .Values.prometheusOperator.thanosImage.repository }}:{{ .Values.prometheusOperator.thanosImage.tag }}@sha256:{{ .Values.prometheusOperator.thanosImage.sha }}
             {{- else }}
             - --thanos-default-base-image={{ $thanosRegistry }}/{{ .Values.prometheusOperator.thanosImage.repository }}:{{ .Values.prometheusOperator.thanosImage.tag }}
-            {{- end }} 
+            {{- end }}
             {{- if .Values.prometheusOperator.thanosRulerInstanceNamespaces }}
             - --thanos-ruler-instance-namespaces={{ .Values.prometheusOperator.thanosRulerInstanceNamespaces | join "," }}
             {{- end }}
@@ -153,17 +155,25 @@ spec:
 {{ toYaml .Values.prometheusOperator.resources | indent 12 }}
           securityContext:
 {{ toYaml .Values.prometheusOperator.containerSecurityContext | indent 12 }}
-{{- if .Values.prometheusOperator.tls.enabled }}
           volumeMounts:
+          {{- if .Values.prometheusOperator.tls.enabled }}
             - name: tls-secret
               mountPath: /cert
               readOnly: true
+          {{- end }}
+          {{- with .Values.prometheusOperator.extraVolumeMounts }}
+          {{- toYaml . | nindent 12 }}
+          {{- end }}
       volumes:
+        {{- if .Values.prometheusOperator.tls.enabled }}
         - name: tls-secret
           secret:
             defaultMode: 420
             secretName: {{ template "kube-prometheus-stack.fullname" . }}-admission
-{{- end }}
+        {{- end }}
+        {{- with .Values.prometheusOperator.extraVolumes }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
     {{- with .Values.prometheusOperator.dnsConfig }}
       dnsConfig:
 {{ toYaml . | indent 8 }}
@@ -173,6 +183,7 @@ spec:
 {{ toYaml .Values.prometheusOperator.securityContext | indent 8 }}
 {{- end }}
       serviceAccountName: {{ template "kube-prometheus-stack.operator.serviceAccountName" . }}
+      automountServiceAccountToken: {{ .Values.prometheusOperator.automountServiceAccountToken }}
 {{- if .Values.prometheusOperator.hostNetwork }}
       hostNetwork: true
       dnsPolicy: ClusterFirstWithHostNet

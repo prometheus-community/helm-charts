@@ -15,17 +15,21 @@ metadata:
   {{- end }}
 {{ include "kube-prometheus-stack.labels" . | indent 4 }}
 spec:
-  jobLabel: jobLabel
+  jobLabel: {{ .Values.coreDns.serviceMonitor.jobLabel }}
   {{- include "servicemonitor.scrapeLimits" .Values.coreDns.serviceMonitor | nindent 2 }}
   selector:
+    {{- if .Values.coreDns.serviceMonitor.selector }}
+    {{ tpl (toYaml .Values.coreDns.serviceMonitor.selector | nindent 4) . }}
+    {{- else }}
     matchLabels:
       app: {{ template "kube-prometheus-stack.name" . }}-coredns
       release: {{ $.Release.Name | quote }}
+    {{- end }}
   namespaceSelector:
     matchNames:
       - "kube-system"
   endpoints:
-  - port: http-metrics
+  - port: {{ .Values.coreDns.serviceMonitor.port }}
     {{- if .Values.coreDns.serviceMonitor.interval}}
     interval: {{ .Values.coreDns.serviceMonitor.interval }}
     {{- end }}

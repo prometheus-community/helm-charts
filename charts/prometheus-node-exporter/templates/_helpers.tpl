@@ -183,3 +183,20 @@ labelNameLengthLimit: {{ . }}
 labelValueLengthLimit: {{ . }}
 {{- end }}
 {{- end }}
+
+{{/* Sets sidecar volumeMounts */}}
+{{- define "prometheus-node-exporter.sidecarVolumeMounts" -}}
+{{- range $_, $mount := $.Values.sidecarVolumeMount }}
+- name: {{ $mount.name }}
+  mountPath: {{ $mount.mountPath }}
+  readOnly: {{ $mount.readOnly }}
+{{- end }}
+{{- range $_, $mount := $.Values.sidecarHostVolumeMounts }}
+- name: {{ $mount.name }}
+  mountPath: {{ $mount.mountPath }}
+  readOnly: {{ $mount.readOnly }}
+{{- if $mount.mountPropagation }}
+  mountPropagation: {{ $mount.mountPropagation }}
+{{- end }}
+{{- end }}
+{{- end }}

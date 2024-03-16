@@ -10,7 +10,7 @@ metadata:
 {{- end }}
   labels:
     app: {{ template "kube-prometheus-stack.name" $ }}-admission
-{{- include "kube-prometheus-stack.labels" $ | indent 4 }}
+    {{- include "kube-prometheus-stack.prometheus-operator-webhook.labels" $ | nindent 4 }}
 webhooks:
   - name: prometheusrulemutate.monitoring.coreos.com
     {{- if eq .Values.prometheusOperator.admissionWebhooks.failurePolicy "IgnoreOnInstallOnly" }}
@@ -43,17 +43,24 @@ webhooks:
     timeoutSeconds: {{ .Values.prometheusOperator.admissionWebhooks.timeoutSeconds }}
     admissionReviewVersions: ["v1", "v1beta1"]
     sideEffects: None
-    {{- if or .Values.prometheusOperator.denyNamespaces .Values.prometheusOperator.namespaces }}
+    {{- if or .Values.prometheusOperator.denyNamespaces .Values.prometheusOperator.namespaces .Values.prometheusOperator.admissionWebhooks.namespaceSelector }}
     namespaceSelector:
+      {{- with (omit .Values.prometheusOperator.admissionWebhooks.namespaceSelector "matchExpressions") }}
+      {{- toYaml . | nindent 6 }}
+      {{- end }}
+      {{- if or .Values.prometheusOperator.denyNamespaces .Values.prometheusOperator.namespaces .Values.prometheusOperator.admissionWebhooks.namespaceSelector.matchExpressions }}
       matchExpressions:
-      {{- if .Values.prometheusOperator.denyNamespaces }}
+        {{- with (.Values.prometheusOperator.admissionWebhooks.namespaceSelector.matchExpressions) }}
+        {{- toYaml . | nindent 6 }}
+        {{- end }}
+        {{- if .Values.prometheusOperator.denyNamespaces }}
       - key: kubernetes.io/metadata.name
         operator: NotIn
         values:
-        {{- range $namespace := mustUniq .Values.prometheusOperator.denyNamespaces }} 
+        {{- range $namespace := mustUniq .Values.prometheusOperator.denyNamespaces }}
         - {{ $namespace }}
         {{- end }}
-      {{- else if and .Values.prometheusOperator.namespaces .Values.prometheusOperator.namespaces.additional }}
+        {{- else if and .Values.prometheusOperator.namespaces .Values.prometheusOperator.namespaces.additional }}
       - key: kubernetes.io/metadata.name
         operator: In
         values:
@@ -61,8 +68,9 @@ webhooks:
         {{- $namespace := printf "%s" (include "kube-prometheus-stack.namespace" .) }}
         - {{ $namespace }}
         {{- end }}
-        {{- range $namespace := mustUniq .Values.prometheusOperator.namespaces.additional }} 
+        {{- range $namespace := mustUniq .Values.prometheusOperator.namespaces.additional }}
         - {{ $namespace }}
+        {{- end }}
         {{- end }}
       {{- end }}
     {{- end }}

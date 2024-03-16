@@ -77,3 +77,27 @@ Selector labels
 app.kubernetes.io/name: {{ include "prometheus-nginx-exporter.name" . }}
 app.kubernetes.io/instance: {{ .Release.Name }}
 {{- end }}
+
+{{/*
+Pod annotations
+*/}}
+{{- define "prometheus-nginx-exporter.podAnnotations" }}
+{{- if .Values.additionalAnnotations }}
+{{ toYaml .Values.additionalAnnotations }}
+{{- end }}
+{{- if .Values.podAnnotations }}
+{{ toYaml .Values.podAnnotations }}
+{{- end }}
+{{- end }}
+
+{{/*
+Service annotations
+*/}}
+{{- define "prometheus-nginx-exporter.serviceAnnotations" }}
+{{- if .Values.additionalAnnotations }}
+{{ toYaml .Values.additionalAnnotations }}
+{{- end }}
+{{- if .Values.service.annotations }}
+{{ toYaml .Values.service.annotations }}
+{{- end }}
+{{- end }}

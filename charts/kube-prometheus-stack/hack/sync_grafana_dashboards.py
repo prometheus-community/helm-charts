@@ -27,10 +27,26 @@ def change_style(style, representer):
     return new_representer
 
 
+refs = {
+    # https://github.com/prometheus-operator/kube-prometheus
+    'ref.kube-prometheus': 'a8ba97a150c75be42010c75d10b720c55e182f1a',
+    # https://github.com/kubernetes-monitoring/kubernetes-mixin
+    'ref.kubernetes-mixin': '883f294bc636e2cd019a64328a1dbfa53edbc985',
+    # https://github.com/etcd-io/etcd
+    'ref.etcd': '786da8731e6ebc61d3482048fdfa64e505da1f8f',
+}
+
 # Source files list
 charts = [
     {
-        'source': 'https://raw.githubusercontent.com/prometheus-operator/kube-prometheus/main/manifests/grafana-dashboardDefinitions.yaml',
+        'source': '../files/dashboards/k8s-coredns.json',
+        'destination': '../templates/grafana/dashboards-1.14',
+        'type': 'dashboard_json',
+        'min_kubernetes': '1.14.0-0',
+        'multicluster_key': '.Values.grafana.sidecar.dashboards.multicluster.global.enabled',
+    },
+    {
+        'source': 'https://raw.githubusercontent.com/prometheus-operator/kube-prometheus/%s/manifests/grafana-dashboardDefinitions.yaml' % (refs['ref.kube-prometheus'],),
         'destination': '../templates/grafana/dashboards-1.14',
         'type': 'yaml',
         'min_kubernetes': '1.14.0-0',
@@ -38,7 +54,7 @@ charts = [
     },
     {
         'git': 'https://github.com/kubernetes-monitoring/kubernetes-mixin.git',
-        'branch': 'master',
+        'branch': refs['ref.kubernetes-mixin'],
         'content': "(import 'dashboards/windows.libsonnet') + (import 'config.libsonnet') + { _config+:: { windowsExporterSelector: 'job=\"windows-exporter\"', }}",
         'cwd': '.',
         'destination': '../templates/grafana/dashboards-1.14',
@@ -49,7 +65,7 @@ charts = [
     },
     {
         'git': 'https://github.com/etcd-io/etcd.git',
-        'branch': 'main',
+        'branch': refs['ref.etcd'],
         'source': 'mixin.libsonnet',
         'cwd': 'contrib/mixin',
         'destination': '../templates/grafana/dashboards-1.14',
@@ -69,16 +85,32 @@ condition_map = {
     'kubelet': ' .Values.kubelet.enabled',
     'proxy': ' .Values.kubeProxy.enabled',
     'scheduler': ' .Values.kubeScheduler.enabled',
-    'node-rsrc-use': ' .Values.nodeExporter.enabled',
-    'node-cluster-rsrc-use': ' .Values.nodeExporter.enabled',
-    'nodes': ' (and .Values.nodeExporter.enabled .Values.nodeExporter.operatingSystems.linux.enabled)',
-    'nodes-darwin': ' (and .Values.nodeExporter.enabled .Values.nodeExporter.operatingSystems.darwin.enabled)',
+    'node-rsrc-use': ' (or .Values.nodeExporter.enabled .Values.nodeExporter.forceDeployDashboards)',
+    'node-cluster-rsrc-use': ' (or .Values.nodeExporter.enabled .Values.nodeExporter.forceDeployDashboards)',
+    'nodes': ' (and (or .Values.nodeExporter.enabled .Values.nodeExporter.forceDeployDashboards) .Values.nodeExporter.operatingSystems.linux.enabled)',
+    'nodes-darwin': ' (and (or .Values.nodeExporter.enabled .Values.nodeExporter.forceDeployDashboards) .Values.nodeExporter.operatingSystems.darwin.enabled)',
     'prometheus-remote-write': ' .Values.prometheus.prometheusSpec.remoteWriteDashboards',
+    'k8s-coredns': ' .Values.coreDns.enabled',
     'k8s-windows-cluster-rsrc-use': ' .Values.windowsMonitoring.enabled',
     'k8s-windows-node-rsrc-use': ' .Values.windowsMonitoring.enabled',
     'k8s-resources-windows-cluster': ' .Values.windowsMonitoring.enabled',
     'k8s-resources-windows-namespace': ' .Values.windowsMonitoring.enabled',
     'k8s-resources-windows-pod': ' .Values.windowsMonitoring.enabled',
+}
+
+replacement_map = {
+    'var-namespace=$__cell_1': {
+        'replacement': 'var-namespace=`}}{{ if .Values.grafana.sidecar.dashboards.enableNewTablePanelSyntax }}${__data.fields.namespace}{{ else }}$__cell_1{{ end }}{{`',
+    },
+    'var-type=$__cell_2': {
+        'replacement': 'var-type=`}}{{ if .Values.grafana.sidecar.dashboards.enableNewTablePanelSyntax }}${__data.fields.workload_type}{{ else }}$__cell_2{{ end }}{{`',
+    },
+    '=$__cell': {
+        'replacement': '=`}}{{ if .Values.grafana.sidecar.dashboards.enableNewTablePanelSyntax }}${__value.text}{{ else }}$__cell{{ end }}{{`',
+    },
+    'job=\\"prometheus-k8s\\",namespace=\\"monitoring\\"': {
+        'replacement': '',
+    },
 }
 
 # standard header
@@ -152,6 +184,9 @@ def patch_dashboards_json(content, multicluster_key):
 
         content = json.dumps(content_struct, separators=(',', ':'))
         content = content.replace('":multicluster:"', '`}}{{ if %s }}0{{ else }}2{{ end }}{{`' % multicluster_key,)
+
+        for line in replacement_map:
+            content = content.replace(line, replacement_map[line]['replacement'])
     except (ValueError, KeyError):
         pass
 
@@ -232,7 +267,10 @@ def main():
             if 'branch' in chart:
                 branch = chart['branch']
 
-            subprocess.run(["git", "clone", chart['git'], "--branch", branch, "--single-branch", "--depth", "1", checkout_dir])
+            subprocess.run(["git", "init", "--initial-branch", "main", checkout_dir, "--quiet"])
+            subprocess.run(["git", "-C", checkout_dir, "remote", "add", "origin", chart['git']])
+            subprocess.run(["git", "-C", checkout_dir, "fetch", "--depth", "1", "origin", branch, "--quiet"])
+            subprocess.run(["git", "-c", "advice.detachedHead=false", "-C", checkout_dir, "checkout", "FETCH_HEAD", "--quiet"])
             print("Generating rules from %s" % chart['source'])
 
             mixin_file = chart['source']
@@ -252,13 +290,19 @@ def main():
             os.chdir(mixin_dir)
             raw_text = '((import "%s") + %s)' % (mixin_file, mixin_vars)
             source = os.path.basename(mixin_file)
-        else:
+        elif 'source' in chart and chart['source'].startswith('http'):
             print("Generating rules from %s" % chart['source'])
             response = requests.get(chart['source'])
             if response.status_code != 200:
                 print('Skipping the file, response code %s not equals 200' % response.status_code)
                 continue
             raw_text = response.text
+            source = chart['source']
+            url = chart['source']
+        else:
+            with open(chart['source']) as f:
+                raw_text = f.read()
+
             source = chart['source']
             url = chart['source']
 
@@ -284,8 +328,13 @@ def main():
             else:
                 for resource, content in json_text.items():
                     write_group_to_file(resource.replace('.json', ''), json.dumps(content, indent=4), url, chart['destination'], chart['min_kubernetes'], chart['max_kubernetes'], chart['multicluster_key'])
+        elif chart['type'] == 'dashboard_json':
+            write_group_to_file(os.path.basename(source).replace('.json', ''),
+                                raw_text, url, chart['destination'], chart['min_kubernetes'],
+                                chart['max_kubernetes'], chart['multicluster_key'])
 
-    print("Finished")
+
+print("Finished")
 
 
 if __name__ == '__main__':
