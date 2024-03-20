@@ -74,6 +74,7 @@ Selector labels
 {{- define "prometheus-pushgateway.selectorLabels" -}}
 app.kubernetes.io/name: {{ include "prometheus-pushgateway.name" . }}
 app.kubernetes.io/instance: {{ .Release.Name }}
+release: {{ .Release.Name }}
 {{- end }}
 
 {{/*
