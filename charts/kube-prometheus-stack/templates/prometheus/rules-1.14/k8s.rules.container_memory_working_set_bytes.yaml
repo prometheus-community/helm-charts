@@ -32,11 +32,15 @@ spec:
       record: node_namespace_pod_container:container_memory_working_set_bytes
       {{- if or .Values.defaultRules.additionalRuleLabels .Values.defaultRules.additionalRuleGroupLabels.k8sContainerMemoryWorkingSetBytes }}
       labels:
-        {{- with .Values.defaultRules.additionalRuleLabels }}
-          {{- toYaml . | nindent 8 }}
+        {{- range $k, $v := mergeOverwrite
+              (.Values.defaultRules.additionalRuleLabels | default (dict))
+              (.Values.defaultRules.additionalRuleGroupLabels.k8sContainerMemoryWorkingSetBytes | default (dict))
+            }}
+
+        {{- if $v }}
+        {{ $k | quote }}: {{ $v | quote }}
         {{- end }}
-        {{- with .Values.defaultRules.additionalRuleGroupLabels.k8sContainerMemoryWorkingSetBytes }}
-          {{- toYaml . | nindent 8 }}
+
         {{- end }}
       {{- end }}
 {{- end }}
