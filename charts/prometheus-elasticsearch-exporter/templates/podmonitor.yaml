@@ -1,11 +1,8 @@
 {{- if and .Values.podMonitor.enabled .Values.serviceMonitor.enabled }}
 {{- fail "Either .Values.podMonitor.enabled or .Values.serviceMonitor.enabled can be enabled at a time, but not both." }}
 {{- else if .Values.podMonitor.enabled }}
-{{- if .Values.azuremanagedprometheus.use_azuremanagedprometheus }}
-apiVersion: azmonitoring.coreos.com/v1
-{{- else }}
-apiVersion: monitoring.coreos.com/v1
-{{- end }}
+{{- if .Capabilities.APIVersions.Has .Values.podMonitor.apiVersion}}
+apiVersion: {{ .Values.podMonitor.apiVersion }}
 kind: PodMonitor
 metadata:
   name: {{ template "elasticsearch-exporter.fullname" . }}
@@ -51,4 +48,5 @@ spec:
     matchLabels:
       app: {{ template "elasticsearch-exporter.name" . }}
       release: "{{ .Release.Name }}"
+{{- end }}
 {{- end }}

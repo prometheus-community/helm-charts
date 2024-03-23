@@ -1,10 +1,7 @@
-{{- if .Values.serviceMonitor.enabled }}
+{{- if and .Values.serviceMonitor.enabled }}
 ---
-{{- if .Values.azuremanagedprometheus.use_azuremanagedprometheus }}
-apiVersion: azmonitoring.coreos.com/v1
-{{- else }}
-apiVersion: monitoring.coreos.com/v1
-{{- end }}
+{{- if .Capabilities.APIVersions.Has .Values.podMonitor.apiVersion}}
+apiVersion: {{ .Values.serviceMonitor.apiVersion }}
 kind: ServiceMonitor
 metadata:
   name: {{ template "elasticsearch-exporter.fullname" . }}
@@ -52,4 +49,5 @@ spec:
 {{- end }}
 {{- end }}
   sampleLimit: {{ .Values.serviceMonitor.sampleLimit }}
+{{- end }}
 {{- end }}
