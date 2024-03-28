@@ -156,6 +156,11 @@ priorityClassName: "{{ . }}"
 {{- with .Values.podSecurityContext }}
 securityContext:
 {{ toYaml . | indent 2 }}
+{{- if has "NET_RAW" .Values.securityContext.capabilities.add }}
+sysctls:
+- name: net.ipv4.ping_group_range
+  value: {{ .Values.customPingGroupRange | default "0 65535" }}
+{{- end }}
 {{- end }}
 {{- with .Values.extraInitContainers }}
 initContainers:

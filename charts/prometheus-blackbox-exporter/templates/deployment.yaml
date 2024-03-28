@@ -35,4 +35,13 @@ spec:
       {{- end }}
     spec:
     {{- include "prometheus-blackbox-exporter.podSpec" . | nindent 6 }}
+    {{- with .Values.podSecurityContext }}
+      securityContext:
+        {{ toYaml . | indent 2 }}
+        {{- if has "NET_RAW" .capabilities.add }}
+        sysctls:
+        - name: net.ipv4.ping_group_range
+          value: {{ .customPingGroupRange | default "0 65536" }}
+        {{- end }}
+    {{- end }}
 {{- end }}
