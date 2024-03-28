@@ -27,12 +27,17 @@ spec:
 {{- if not (.Values.defaultRules.disabled.KubeVersionMismatch | default false) }}
     - alert: KubeVersionMismatch
       annotations:
-{{- if .Values.defaultRules.additionalRuleAnnotations }}
-{{ toYaml .Values.defaultRules.additionalRuleAnnotations | indent 8 }}
-{{- end }}
-{{- if .Values.defaultRules.additionalRuleGroupAnnotations.kubernetesSystem }}
-{{ toYaml .Values.defaultRules.additionalRuleGroupAnnotations.kubernetesSystem | indent 8 }}
-{{- end }}
+
+        {{- range $k, $v := mergeOverwrite
+              (.Values.defaultRules.additionalRuleAnnotations | default (dict))
+              (.Values.defaultRules.additionalRuleGroupAnnotations.kubernetesSystem | default (dict))
+            }}
+
+        {{- if $v }}
+        {{ $k | quote }}: {{ $v | quote }}
+        {{- end }}
+
+        {{- end }}
         description: There are {{`{{`}} $value {{`}}`}} different semantic versions of Kubernetes components running.
         runbook_url: {{ .Values.defaultRules.runbookUrl }}/kubernetes/kubeversionmismatch
         summary: Different semantic versions of Kubernetes components running.
@@ -44,23 +49,32 @@ spec:
       labels:
         severity: {{ dig "KubeVersionMismatch" "severity" "warning" .Values.customRules }}
       {{- if or .Values.defaultRules.additionalRuleLabels .Values.defaultRules.additionalRuleGroupLabels.kubernetesSystem }}
-        {{- with .Values.defaultRules.additionalRuleLabels }}
-          {{- toYaml . | nindent 8 }}
+        {{- range $k, $v := mergeOverwrite
+              (.Values.defaultRules.additionalRuleLabels | default (dict))
+              (.Values.defaultRules.additionalRuleGroupLabels.kubernetesSystem | default (dict))
+            }}
+
+        {{- if $v }}
+        {{ $k | quote }}: {{ $v | quote }}
         {{- end }}
-        {{- with .Values.defaultRules.additionalRuleGroupLabels.kubernetesSystem }}
-          {{- toYaml . | nindent 8 }}
+
         {{- end }}
       {{- end }}
 {{- end }}
 {{- if not (.Values.defaultRules.disabled.KubeClientErrors | default false) }}
     - alert: KubeClientErrors
       annotations:
-{{- if .Values.defaultRules.additionalRuleAnnotations }}
-{{ toYaml .Values.defaultRules.additionalRuleAnnotations | indent 8 }}
-{{- end }}
-{{- if .Values.defaultRules.additionalRuleGroupAnnotations.kubernetesSystem }}
-{{ toYaml .Values.defaultRules.additionalRuleGroupAnnotations.kubernetesSystem | indent 8 }}
-{{- end }}
+
+        {{- range $k, $v := mergeOverwrite
+              (.Values.defaultRules.additionalRuleAnnotations | default (dict))
+              (.Values.defaultRules.additionalRuleGroupAnnotations.kubernetesSystem | default (dict))
+            }}
+
+        {{- if $v }}
+        {{ $k | quote }}: {{ $v | quote }}
+        {{- end }}
+
+        {{- end }}
         description: Kubernetes API server client '{{`{{`}} $labels.job {{`}}`}}/{{`{{`}} $labels.instance {{`}}`}}' is experiencing {{`{{`}} $value | humanizePercentage {{`}}`}} errors.'
         runbook_url: {{ .Values.defaultRules.runbookUrl }}/kubernetes/kubeclienterrors
         summary: Kubernetes API server client is experiencing errors.
@@ -76,11 +90,15 @@ spec:
       labels:
         severity: {{ dig "KubeClientErrors" "severity" "warning" .Values.customRules }}
       {{- if or .Values.defaultRules.additionalRuleLabels .Values.defaultRules.additionalRuleGroupLabels.kubernetesSystem }}
-        {{- with .Values.defaultRules.additionalRuleLabels }}
-          {{- toYaml . | nindent 8 }}
+        {{- range $k, $v := mergeOverwrite
+              (.Values.defaultRules.additionalRuleLabels | default (dict))
+              (.Values.defaultRules.additionalRuleGroupLabels.kubernetesSystem | default (dict))
+            }}
+
+        {{- if $v }}
+        {{ $k | quote }}: {{ $v | quote }}
         {{- end }}
-        {{- with .Values.defaultRules.additionalRuleGroupLabels.kubernetesSystem }}
-          {{- toYaml . | nindent 8 }}
+
         {{- end }}
       {{- end }}
 {{- end }}

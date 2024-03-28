@@ -33,11 +33,15 @@ spec:
       record: node_namespace_pod_container:container_cpu_usage_seconds_total:sum_irate
       {{- if or .Values.defaultRules.additionalRuleLabels .Values.defaultRules.additionalRuleGroupLabels.k8sContainerCpuUsageSecondsTotal }}
       labels:
-        {{- with .Values.defaultRules.additionalRuleLabels }}
-          {{- toYaml . | nindent 8 }}
+        {{- range $k, $v := mergeOverwrite
+              (.Values.defaultRules.additionalRuleLabels | default (dict))
+              (.Values.defaultRules.additionalRuleGroupLabels.k8sContainerCpuUsageSecondsTotal | default (dict))
+            }}
+
+        {{- if $v }}
+        {{ $k | quote }}: {{ $v | quote }}
         {{- end }}
-        {{- with .Values.defaultRules.additionalRuleGroupLabels.k8sContainerCpuUsageSecondsTotal }}
-          {{- toYaml . | nindent 8 }}
+
         {{- end }}
       {{- end }}
 {{- end }}
