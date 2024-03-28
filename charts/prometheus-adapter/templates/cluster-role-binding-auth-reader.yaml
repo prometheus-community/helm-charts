@@ -1,6 +1,6 @@
-{{- if and .Values.rbac.create (not .Values.rbac.useAuthReaderClusterRole) -}}
+{{- if and .Values.rbac.create .Values.rbac.useAuthReaderClusterRole -}}
 apiVersion: rbac.authorization.k8s.io/v1
-kind: RoleBinding
+kind: ClusterRoleBinding
 metadata:
   {{- if .Values.customAnnotations }}
   annotations:
@@ -9,10 +9,9 @@ metadata:
   labels:
     {{- include "k8s-prometheus-adapter.labels" . | indent 4 }}
   name: {{ template "k8s-prometheus-adapter.name" . }}-auth-reader
-  namespace: kube-system
 roleRef:
   apiGroup: rbac.authorization.k8s.io
-  kind: Role
+  kind: ClusterRole
   name: extension-apiserver-authentication-reader
 subjects:
 - kind: ServiceAccount
