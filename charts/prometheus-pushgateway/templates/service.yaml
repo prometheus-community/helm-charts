@@ -19,13 +19,11 @@ spec:
   {{ else if and .Values.runAsStatefulSet (not (has .Values.service.type $stsNoHeadlessSvcTypes)) }}
   clusterIP: None # Headless service
   {{- end }}
+  {{- if .Values.service.ipDualStack.enabled }}
+    ipFamilies: {{ toYaml .Values.service.ipDualStack.ipFamilies | nindent 4 }}
+    ipFamilyPolicy: {{ .Values.service.ipDualStack.ipFamilyPolicy }}
+  {{- end }}
   type: {{ .Values.service.type }}
-  {{- if .Values.service.ipFamilyPolicy }}
-  ipFamilyPolicy: {{ .Values.service.ipFamilyPolicy }}
-  {{- end }}
-  {{- if .Values.service.ipFamilies }}
-  ipFamilies: {{ .Values.service.ipFamilies | toYaml | nindent 2 }}
-  {{- end }}
   {{- with .Values.service.loadBalancerIP }}
   loadBalancerIP: {{ . }}
   {{- end }}
