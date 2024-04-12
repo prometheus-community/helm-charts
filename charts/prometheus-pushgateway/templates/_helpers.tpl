@@ -112,6 +112,26 @@ Define Ingress apiVersion
 {{- end }}
 
 {{/*
+Define webConfiguration
+*/}}
+{{- define "prometheus-pushgateway.webConfiguration" -}}
+basic_auth_users:
+{{- range $k, $v := .Values.webConfiguration.basicAuthUsers }}
+  {{ $k }}: {{ htpasswd "" $v | trimPrefix ":"}}
+{{- end }}
+{{- end }}
+
+{{/*
+Define Authorization
+*/}}
+{{- define "prometheus-pushgateway.Authorization" -}}
+{{- $users := keys .Values.webConfiguration.basicAuthUsers }}
+{{- $user := first $users }}
+{{- $password := index .Values.webConfiguration.basicAuthUsers $user }}
+{{- $user }}:{{ $password }}
+{{- end }}
+
+{{/*
 Returns pod spec
 */}}
 {{- define "prometheus-pushgateway.podSpec" -}}
@@ -143,9 +163,12 @@ containers:
     env:
       {{- toYaml . | nindent 6 }}
     {{- end }}
-    {{- with .Values.extraArgs }}
     args:
+    {{- with .Values.extraArgs }}
       {{- toYaml . | nindent 6 }}
+    {{- end }}
+    {{- if .Values.webConfiguration }}
+      - --web.config.file=/etc/config/web-config.yaml
     {{- end }}
     ports:
       - name: metrics
@@ -153,11 +176,29 @@ containers:
         protocol: TCP
     {{- if .Values.liveness.enabled }}
     livenessProbe:
-      {{- toYaml .Values.liveness.probe | nindent 6 }}
+      httpGet:
+        path: {{ .Values.liveness.probe.httpGet.path }}
+        port: {{ .Values.liveness.probe.httpGet.port }}
+        httpHeaders:
+        {{- if .Values.webConfiguration.basicAuthUsers }}
+          - name: Authorization
+            value: Basic {{ include "prometheus-pushgateway.Authorization" . | b64enc }}
+        {{- end }}
+      initialDelaySeconds: {{ .Values.liveness.probe.initialDelaySeconds }}
+      timeoutSeconds: {{ .Values.liveness.probe.timeoutSeconds }}
     {{- end }}
     {{- if .Values.readiness.enabled }}
     readinessProbe:
-      {{- toYaml .Values.readiness.probe | nindent 6 }}
+      httpGet:
+        path: {{ .Values.readiness.probe.httpGet.path }}
+        port: {{ .Values.readiness.probe.httpGet.port }}
+        httpHeaders:
+        {{- if .Values.webConfiguration.basicAuthUsers }}
+          - name: Authorization
+            value: Basic {{ include "prometheus-pushgateway.Authorization" . | b64enc }}
+        {{- end }}
+      initialDelaySeconds: {{ .Values.readiness.probe.initialDelaySeconds }}
+      timeoutSeconds: {{ .Values.readiness.probe.timeoutSeconds }}
     {{- end }}
     {{- with .Values.resources }}
     resources:
@@ -171,6 +212,10 @@ containers:
       - name: storage-volume
         mountPath: "{{ .Values.persistentVolume.mountPath }}"
         subPath: "{{ .Values.persistentVolume.subPath }}"
+      {{- if .Values.webConfiguration }}
+      - name: web-config
+        mountPath: "/etc/config"
+      {{- end }}
       {{- with .Values.extraVolumeMounts }}
       {{- toYaml . | nindent 6 }}
       {{- end }}
@@ -223,10 +268,21 @@ volumes:
   {{- else }}
     emptyDir: {}
   {{- end }}
+  {{- if .Values.webConfiguration }}
+  - name: web-config
+    secret:
+      secretName: {{ include "prometheus-pushgateway.fullname" . }}
+  {{- end }}
   {{- end }}
   {{- if .Values.extraVolumes }}
   {{- toYaml .Values.extraVolumes  | nindent 2 }}
   {{- else if $storageVolumeAsPVCTemplate }}
+  {{- if .Values.webConfiguration }}
+  - name: web-config
+    secret:
+      secretName: {{ include "prometheus-pushgateway.fullname" . }}
+  {{- else }}
   []
+  {{- end }}
   {{- end }}
 {{- end }}
