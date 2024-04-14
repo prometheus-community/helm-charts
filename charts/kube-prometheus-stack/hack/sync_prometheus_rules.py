@@ -29,11 +29,11 @@ def change_style(style, representer):
 
 refs = {
     # https://github.com/prometheus-operator/kube-prometheus
-    'ref.kube-prometheus': '76f2e1ef95be0df752037baa040781c5219e1fb3',
+    'ref.kube-prometheus': 'f752c172f1d1c457b4edb6f08e8705ee81a05851',
     # https://github.com/kubernetes-monitoring/kubernetes-mixin
-    'ref.kubernetes-mixin': '346bef2584068e803757e12c4ee4814e72a67927',
+    'ref.kubernetes-mixin': 'b247371d1780f530587a8d9dd04ccb19ea970ba0',
     # https://github.com/etcd-io/etcd
-    'ref.etcd': '84e67ffaf683cd4898897e958ba56da1f1bd2819',
+    'ref.etcd': 'a7f5d4b4e4569bd316277ebf1347785e0467c64d',
 }
 
 # Source files list
@@ -539,6 +539,8 @@ https://github.com/prometheus-community/helm-charts/tree/main/charts/kube-promet
         f.write('{{- end }}')
 
 def main():
+    os.chdir(os.path.dirname(os.path.abspath(__file__)))
+
     init_yaml_styles()
     # read the rules, create a new template file per group
     for chart in charts:
