@@ -10,9 +10,9 @@ An optional prometheus `ServiceMonitor` can be enabled, should you wish to use t
 helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
 helm repo update
 ```
-<!-- textlint-enable -->
-_See [helm repo](https://helm.sh/docs/helm/helm_repo/) for command documentation._
 
+_See [helm repo](https://helm.sh/docs/helm/helm_repo/) for command documentation._
+<!-- textlint-enable -->
 ## Install Chart
 
 ```console
