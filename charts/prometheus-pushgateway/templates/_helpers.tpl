@@ -163,12 +163,14 @@ containers:
     env:
       {{- toYaml . | nindent 6 }}
     {{- end }}
+    {{- if or .Values.extraArgs .Values.webConfiguration }}
     args:
     {{- with .Values.extraArgs }}
       {{- toYaml . | nindent 6 }}
     {{- end }}
     {{- if .Values.webConfiguration }}
       - --web.config.file=/etc/config/web-config.yaml
+    {{- end }}
     {{- end }}
     ports:
       - name: metrics
