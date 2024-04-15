@@ -177,30 +177,44 @@ containers:
         containerPort: 9091
         protocol: TCP
     {{- if .Values.liveness.enabled }}
+    {{- $livenessCommon := omit .Values.liveness.probe "httpGet" }}
     livenessProbe:
+    {{- with .Values.liveness.probe }}
       httpGet:
-        path: {{ .Values.liveness.probe.httpGet.path }}
-        port: {{ .Values.liveness.probe.httpGet.port }}
+        path: {{ .httpGet.path }}
+        port: {{ .httpGet.port }}
+        {{- if or .httpGet.httpHeaders $.Values.webConfiguration.basicAuthUsers }}
         httpHeaders:
-        {{- if .Values.webConfiguration.basicAuthUsers }}
+        {{- if $.Values.webConfiguration.basicAuthUsers }}
           - name: Authorization
-            value: Basic {{ include "prometheus-pushgateway.Authorization" . | b64enc }}
+            value: Basic {{ include "prometheus-pushgateway.Authorization" $ | b64enc }}
         {{- end }}
-      initialDelaySeconds: {{ .Values.liveness.probe.initialDelaySeconds }}
-      timeoutSeconds: {{ .Values.liveness.probe.timeoutSeconds }}
+        {{- with .httpGet.httpHeaders }}
+          {{- toYaml . | nindent 10 }}
+        {{- end }}
+        {{- end }}
+        {{- toYaml $livenessCommon | nindent 6 }}
+      {{- end }}
     {{- end }}
     {{- if .Values.readiness.enabled }}
+    {{- $readinessCommon := omit .Values.readiness.probe "httpGet" }}
     readinessProbe:
+    {{- with .Values.readiness.probe }}
       httpGet:
-        path: {{ .Values.readiness.probe.httpGet.path }}
-        port: {{ .Values.readiness.probe.httpGet.port }}
+        path: {{ .httpGet.path }}
+        port: {{ .httpGet.port }}
+        {{- if or .httpGet.httpHeaders $.Values.webConfiguration.basicAuthUsers }}
         httpHeaders:
-        {{- if .Values.webConfiguration.basicAuthUsers }}
+        {{- if $.Values.webConfiguration.basicAuthUsers }}
           - name: Authorization
-            value: Basic {{ include "prometheus-pushgateway.Authorization" . | b64enc }}
+            value: Basic {{ include "prometheus-pushgateway.Authorization" $ | b64enc }}
         {{- end }}
-      initialDelaySeconds: {{ .Values.readiness.probe.initialDelaySeconds }}
-      timeoutSeconds: {{ .Values.readiness.probe.timeoutSeconds }}
+        {{- with .httpGet.httpHeaders }}
+          {{- toYaml . | nindent 10 }}
+        {{- end }}
+        {{- end }}
+        {{- toYaml $readinessCommon | nindent 6 }}
+      {{- end }}
     {{- end }}
     {{- with .Values.resources }}
     resources:
