@@ -1,11 +1,31 @@
 {{- if and .Values.prometheus.enabled .Values.global.rbac.create }}
 apiVersion: rbac.authorization.k8s.io/v1
+kind: {{ .Values.prometheus.rbac.namespaced | ternary "RoleBinding" "ClusterRoleBinding" }}
+metadata:
+  name: {{ template "kube-prometheus-stack.fullname" . }}-prometheus
+  {{- if .Values.prometheus.rbac.namespaced }}
+  namespace: {{ template "kube-prometheus-stack.namespace" . }}
+  {{- end }}
+  labels:
+    app: {{ template "kube-prometheus-stack.name" . }}-prometheus
+{{ include "kube-prometheus-stack.labels" . | indent 4 }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: {{ .Values.prometheus.rbac.namespaced | ternary "Role" "ClusterRole" }}
+  name: {{ template "kube-prometheus-stack.fullname" . }}-prometheus
+subjects:
+  - kind: ServiceAccount
+    name: {{ template "kube-prometheus-stack.prometheus.serviceAccountName" . }}
+    namespace: {{ template "kube-prometheus-stack.namespace" . }}
+{{- if and .Values.prometheus.rbac.namespaced .Values.prometheus.additionalRulesForClusterRole }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
   name: {{ template "kube-prometheus-stack.fullname" . }}-prometheus
   labels:
     app: {{ template "kube-prometheus-stack.name" . }}-prometheus
-{{ include "kube-prometheus-stack.labels" . | indent 4 }}
+    {{- include "kube-prometheus-stack.labels" . | nindent 4 }}
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
@@ -14,5 +34,6 @@ subjects:
   - kind: ServiceAccount
     name: {{ template "kube-prometheus-stack.prometheus.serviceAccountName" . }}
     namespace: {{ template "kube-prometheus-stack.namespace" . }}
+{{- end }}
 {{- end }}
 
