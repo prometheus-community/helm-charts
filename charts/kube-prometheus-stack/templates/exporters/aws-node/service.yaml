@@ -1,0 +1,24 @@
+{{- if and .Values.awsNode.enabled .Values.awsNode.service.enabled .Values.kubernetesServiceMonitors.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ template "kube-prometheus-stack.fullname" . }}-aws-node
+  labels:
+    app: {{ template "kube-prometheus-stack.name" . }}-aws-node
+    jobLabel: aws-node
+{{- include "kube-prometheus-stack.labels" . | indent 4 }}
+  namespace: kube-system
+spec:
+  clusterIP: None
+  ports:
+    - name: {{ .Values.awsNode.serviceMonitor.port }}
+      port: {{ .Values.awsNode.service.port }}
+      protocol: TCP
+      targetPort: {{ .Values.awsNode.service.targetPort }}
+  selector:
+    {{- if .Values.awsNode.service.selector }}
+{{ toYaml .Values.awsNode.service.selector | indent 4 }}
+    {{- else }}
+    k8s-app: aws-node
+    {{- end }}
+{{- end }}
