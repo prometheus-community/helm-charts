@@ -186,7 +186,7 @@ containers:
     - --listen-address=:{{ .Values.configReloader.containerPort }}
     - --log-format={{ .Values.configReloader.config.logFormat }}
     - --log-level={{ .Values.configReloader.config.logLevel }}
-  {{- with .Values.resources }}
+  {{- with .Values.configReloader.resources }}
   resources:
 {{- toYaml . | nindent 4 }}
   {{- end }}

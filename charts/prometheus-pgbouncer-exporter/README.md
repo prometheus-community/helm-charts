@@ -1,4 +1,4 @@
-# Prometheus Postgres Exporter
+# Prometheus PgBouncer Exporter
 
 Prometheus exporter for [PgBouncer](https://www.pgbouncer.org/) server metrics.
 
@@ -10,14 +10,14 @@ This chart bootstraps a prometheus [pgbouncer exporter](https://github.com/prome
 - Helm 3+
 
 ## Add Helm Chart Repository
-
+<!-- textlint-disable terminology -->
 ```console
 helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
 helm repo update
 ```
 
-_See [`helm repo`](https://helm.sh/docs/helm/helm_repo/) for command documentation._
-
+_See [helm repo](https://helm.sh/docs/helm/helm_repo/) for command documentation._
+<!-- textlint-enable -->
 ## Install Chart
 
 ```console
@@ -37,6 +37,14 @@ helm uninstall [RELEASE_NAME]
 This removes all the Kubernetes components associated with the chart and deletes the release.
 
 _See [helm uninstall](https://helm.sh/docs/helm/helm_uninstall/) for command documentation._
+
+## Upgrading Chart
+
+```console
+helm upgrade [RELEASE_NAME] prometheus-community/prometheus-pgbouncer-exporter --install
+```
+
+_See [helm upgrade](https://helm.sh/docs/helm/helm_upgrade/) for command documentation._
 
 ## Configuring
 
