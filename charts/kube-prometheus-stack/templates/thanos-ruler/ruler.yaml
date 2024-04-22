@@ -2,7 +2,7 @@
 apiVersion: monitoring.coreos.com/v1
 kind: ThanosRuler
 metadata:
-  name: {{ template "kube-prometheus-stack.thanosRuler.name" . }}
+  name: {{ template "kube-prometheus-stack.thanosRuler.crname" . }}
   namespace: {{ template "kube-prometheus-stack.namespace" . }}
   labels:
     app: {{ include "kube-prometheus-stack.thanosRuler.name" . }}
@@ -34,12 +34,12 @@ spec:
   externalPrefix: "{{ tpl .Values.thanosRuler.thanosRulerSpec.externalPrefix . }}"
 {{- else if and .Values.thanosRuler.ingress.enabled .Values.thanosRuler.ingress.hosts }}
   externalPrefix: "http://{{ tpl (index .Values.thanosRuler.ingress.hosts 0) . }}{{ .Values.thanosRuler.thanosRulerSpec.routePrefix }}"
-{{- else }}
-  externalPrefix: http://{{ template "kube-prometheus-stack.thanosRuler.name" . }}.{{ template "kube-prometheus-stack.namespace" . }}:{{ .Values.thanosRuler.service.port }}
+{{- else if .Values.thanosRuler.thanosRulerSpec.externalPrefixNilUsesHelmValues }}
+  externalPrefix: "http://{{ template "kube-prometheus-stack.thanosRuler.name" . }}.{{ template "kube-prometheus-stack.namespace" . }}:{{ .Values.thanosRuler.service.port }}"
 {{- end }}
 {{- if .Values.thanosRuler.thanosRulerSpec.additionalArgs }}
   additionalArgs:
-{{ toYaml .Values.thanosRuler.thanosRulerSpec.additionalArgs | indent 4 }}
+{{ tpl (toYaml .Values.thanosRuler.thanosRulerSpec.additionalArgs) $ | indent 4 }}
 {{- end }}
 {{- if .Values.thanosRuler.thanosRulerSpec.nodeSelector }}
   nodeSelector:
@@ -123,7 +123,7 @@ spec:
 {{- end }}
 {{- if .Values.thanosRuler.thanosRulerSpec.labels }}
   labels:
-{{ toYaml .Values.thanosRuler.thanosRulerSpec.labels | indent 4 }}
+{{ tpl (toYaml .Values.thanosRuler.thanosRulerSpec.labels) $ | indent 4 }}
 {{- end }}
 {{- if .Values.thanosRuler.thanosRulerSpec.podMetadata }}
   podMetadata:
@@ -142,7 +142,7 @@ spec:
         labelSelector:
           matchExpressions:
             - {key: app.kubernetes.io/name, operator: In, values: [thanos-ruler]}
-            - {key: thanos-ruler, operator: In, values: [{{ template "kube-prometheus-stack.thanosRuler.name" . }}]}
+            - {key: thanos-ruler, operator: In, values: [{{ template "kube-prometheus-stack.thanosRuler.crname" . }}]}
 {{- else if eq .Values.thanosRuler.thanosRulerSpec.podAntiAffinity "soft" }}
     podAntiAffinity:
       preferredDuringSchedulingIgnoredDuringExecution:
@@ -152,7 +152,7 @@ spec:
           labelSelector:
             matchExpressions:
               - {key: app.kubernetes.io/name, operator: In, values: [thanos-ruler]}
-              - {key: thanos-ruler, operator: In, values: [{{ template "kube-prometheus-stack.thanosRuler.name" . }}]}
+              - {key: thanos-ruler, operator: In, values: [{{ template "kube-prometheus-stack.thanosRuler.crname" . }}]}
 {{- end }}
 {{- if .Values.thanosRuler.thanosRulerSpec.tolerations }}
   tolerations:
@@ -185,5 +185,15 @@ spec:
   volumeMounts:
 {{ toYaml .Values.thanosRuler.thanosRulerSpec.volumeMounts | indent 4 }}
 {{- end }}
+{{- if .Values.thanosRuler.thanosRulerSpec.alertDropLabels }}
+  alertDropLabels:
+{{ toYaml .Values.thanosRuler.thanosRulerSpec.alertDropLabels | indent 4 }}
+{{- end }}
   portName: {{ .Values.thanosRuler.thanosRulerSpec.portName }}
+{{- with .Values.thanosRuler.thanosRulerSpec.additionalConfig }}
+  {{- tpl (toYaml .) $ | nindent 2 }}
+{{- end }}
+{{- with .Values.thanosRuler.thanosRulerSpec.additionalConfigString }}
+  {{- tpl . $ | nindent 2 }}
+{{- end }}
 {{- end }}

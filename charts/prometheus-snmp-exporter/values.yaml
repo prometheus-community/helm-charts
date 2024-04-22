@@ -3,7 +3,7 @@ restartPolicy: Always
 kind: Deployment
 
 image:
-  repository: prom/snmp-exporter
+  repository: quay.io/prometheus/snmp-exporter
   # if not set appVersion field from Chart.yaml is used
   tag: ""
   pullPolicy: IfNotPresent
@@ -57,6 +57,12 @@ extraSecretMounts: []
   #   secretName: snmp-exporter-secret-files
   #   readOnly: true
   #   defaultMode: 420
+
+# Additional volumes, e.g. for secrets used in an extraContainer
+extraVolumes: []
+
+# Additional volume mounts for snmp-exporter container
+extraVolumeMounts: []
 
 ## For RBAC support:
 rbac:
@@ -121,6 +127,10 @@ podAnnotations: {}
 extraArgs: []
 #  --history.limit=1000
 
+envFrom: []
+#  - secretRef:
+#      name: name-of-secret
+
 replicas: 1
 ## Monitors ConfigMap changes and POSTs to a URL
 ## Ref: https://github.com/jimmidyson/configmap-reload
@@ -133,8 +143,8 @@ configmapReload:
   ## configmap-reload container image
   ##
   image:
-    repository: jimmidyson/configmap-reload
-    tag: v0.5.0
+    repository: quay.io/prometheus-operator/prometheus-config-reloader
+    tag: v0.71.2
     pullPolicy: IfNotPresent
 
   ## configmap-reload resource requests and limits
@@ -156,6 +166,9 @@ serviceMonitor:
   scrapeTimeout: 10s
   module:
     - if_mib
+  # Auth used for scraping.
+  auth:
+    - public_v2
 
   # Relabelings dynamically rewrite the label set of a target before it gets scraped.
   # Set if defined unless overriden by params.relabelings.
