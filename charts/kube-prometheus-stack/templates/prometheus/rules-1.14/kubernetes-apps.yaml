@@ -63,9 +63,9 @@ spec:
 {{- if .Values.defaultRules.additionalRuleGroupAnnotations.kubernetesApps }}
 {{ toYaml .Values.defaultRules.additionalRuleGroupAnnotations.kubernetesApps | indent 8 }}
 {{- end }}
-        description: Pod {{`{{`}} $labels.namespace {{`}}`}}/{{`{{`}} $labels.pod {{`}}`}} has been in a non-ready state for longer than 15 minutes.
+        description: Pod {{`{{`}} $labels.namespace {{`}}`}}/{{`{{`}} $labels.pod {{`}}`}} has been in a non-ready state for longer than {{ dig "KubePodNotReady" "for" "15m" .Values.customRules }} minutes.
         runbook_url: {{ .Values.defaultRules.runbookUrl }}/kubernetes/kubepodnotready
-        summary: Pod has been in a non-ready state for more than 15 minutes.
+        summary: Pod has been in a non-ready state for more than {{ dig "KubePodNotReady" "for" "15m" .Values.customRules }} minutes.
       expr: |-
         sum by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}namespace, pod, cluster) (
           max by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}namespace, pod, cluster) (
@@ -129,7 +129,7 @@ spec:
 {{- if .Values.defaultRules.additionalRuleGroupAnnotations.kubernetesApps }}
 {{ toYaml .Values.defaultRules.additionalRuleGroupAnnotations.kubernetesApps | indent 8 }}
 {{- end }}
-        description: Deployment {{`{{`}} $labels.namespace {{`}}`}}/{{`{{`}} $labels.deployment {{`}}`}} has not matched the expected number of replicas for longer than 15 minutes.
+        description: Deployment {{`{{`}} $labels.namespace {{`}}`}}/{{`{{`}} $labels.deployment {{`}}`}} has not matched the expected number of replicas for longer than {{ dig "KubeDeploymentReplicasMismatch" "for" "15m" .Values.customRules }} minutes.
         runbook_url: {{ .Values.defaultRules.runbookUrl }}/kubernetes/kubedeploymentreplicasmismatch
         summary: Deployment has not matched the expected number of replicas.
       expr: |-
@@ -166,7 +166,7 @@ spec:
 {{- if .Values.defaultRules.additionalRuleGroupAnnotations.kubernetesApps }}
 {{ toYaml .Values.defaultRules.additionalRuleGroupAnnotations.kubernetesApps | indent 8 }}
 {{- end }}
-        description: Rollout of deployment {{`{{`}} $labels.namespace {{`}}`}}/{{`{{`}} $labels.deployment {{`}}`}} is not progressing for longer than 15 minutes.
+        description: Rollout of deployment {{`{{`}} $labels.namespace {{`}}`}}/{{`{{`}} $labels.deployment {{`}}`}} is not progressing for longer than {{ dig "KubeDeploymentReplicasMismatch" "for" "15m" .Values.customRules }} minutes.
         runbook_url: {{ .Values.defaultRules.runbookUrl }}/kubernetes/kubedeploymentrolloutstuck
         summary: Deployment rollout is not progressing.
       expr: |-
@@ -196,7 +196,7 @@ spec:
 {{- if .Values.defaultRules.additionalRuleGroupAnnotations.kubernetesApps }}
 {{ toYaml .Values.defaultRules.additionalRuleGroupAnnotations.kubernetesApps | indent 8 }}
 {{- end }}
-        description: StatefulSet {{`{{`}} $labels.namespace {{`}}`}}/{{`{{`}} $labels.statefulset {{`}}`}} has not matched the expected number of replicas for longer than 15 minutes.
+        description: StatefulSet {{`{{`}} $labels.namespace {{`}}`}}/{{`{{`}} $labels.statefulset {{`}}`}} has not matched the expected number of replicas for longer than {{ dig "KubeDeploymentReplicasMismatch" "for" "15m" .Values.customRules }} minutes.
         runbook_url: {{ .Values.defaultRules.runbookUrl }}/kubernetes/kubestatefulsetreplicasmismatch
         summary: StatefulSet has not matched the expected number of replicas.
       expr: |-
@@ -309,7 +309,7 @@ spec:
 {{- if .Values.defaultRules.additionalRuleGroupAnnotations.kubernetesApps }}
 {{ toYaml .Values.defaultRules.additionalRuleGroupAnnotations.kubernetesApps | indent 8 }}
 {{- end }}
-        description: DaemonSet {{`{{`}} $labels.namespace {{`}}`}}/{{`{{`}} $labels.daemonset {{`}}`}} has not finished or progressed for at least 15 minutes.
+        description: DaemonSet {{`{{`}} $labels.namespace {{`}}`}}/{{`{{`}} $labels.daemonset {{`}}`}} has not finished or progressed for at least {{ dig "KubeDeploymentReplicasMismatch" "for" "15m" .Values.customRules }} minutes.
         runbook_url: {{ .Values.defaultRules.runbookUrl }}/kubernetes/kubedaemonsetrolloutstuck
         summary: DaemonSet rollout is stuck.
       expr: |-
@@ -360,9 +360,9 @@ spec:
 {{- if .Values.defaultRules.additionalRuleGroupAnnotations.kubernetesApps }}
 {{ toYaml .Values.defaultRules.additionalRuleGroupAnnotations.kubernetesApps | indent 8 }}
 {{- end }}
-        description: pod/{{`{{`}} $labels.pod {{`}}`}} in namespace {{`{{`}} $labels.namespace {{`}}`}} on container {{`{{`}} $labels.container{{`}}`}} has been in waiting state for longer than 1 hour.
+        description: pod/{{`{{`}} $labels.pod {{`}}`}} in namespace {{`{{`}} $labels.namespace {{`}}`}} on container {{`{{`}} $labels.container{{`}}`}} has been in waiting state for longer than {{ dig "KubeDeploymentReplicasMismatch" "for" "1h" .Values.customRules }} hour.
         runbook_url: {{ .Values.defaultRules.runbookUrl }}/kubernetes/kubecontainerwaiting
-        summary: Pod container waiting longer than 1 hour
+        summary: Pod container waiting longer than {{ dig "KubeDeploymentReplicasMismatch" "for" "1h" .Values.customRules }} hour
       expr: sum by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}namespace, pod, container, cluster) (kube_pod_container_status_waiting_reason{job="{{ $kubeStateMetricsJob }}", namespace=~"{{ $targetNamespace }}"}) > 0
       for: {{ dig "KubeContainerWaiting" "for" "1h" .Values.customRules }}
       {{- with .Values.defaultRules.keepFiringFor }}
@@ -502,7 +502,7 @@ spec:
 {{- if .Values.defaultRules.additionalRuleGroupAnnotations.kubernetesApps }}
 {{ toYaml .Values.defaultRules.additionalRuleGroupAnnotations.kubernetesApps | indent 8 }}
 {{- end }}
-        description: HPA {{`{{`}} $labels.namespace {{`}}`}}/{{`{{`}} $labels.horizontalpodautoscaler  {{`}}`}} has not matched the desired number of replicas for longer than 15 minutes.
+        description: HPA {{`{{`}} $labels.namespace {{`}}`}}/{{`{{`}} $labels.horizontalpodautoscaler  {{`}}`}} has not matched the desired number of replicas for longer than {{ dig "KubeDeploymentReplicasMismatch" "for" "15m" .Values.customRules }} minutes.
         runbook_url: {{ .Values.defaultRules.runbookUrl }}/kubernetes/kubehpareplicasmismatch
         summary: HPA has not matched desired number of replicas.
       expr: |-
@@ -543,7 +543,7 @@ spec:
 {{- if .Values.defaultRules.additionalRuleGroupAnnotations.kubernetesApps }}
 {{ toYaml .Values.defaultRules.additionalRuleGroupAnnotations.kubernetesApps | indent 8 }}
 {{- end }}
-        description: HPA {{`{{`}} $labels.namespace {{`}}`}}/{{`{{`}} $labels.horizontalpodautoscaler  {{`}}`}} has been running at max replicas for longer than 15 minutes.
+        description: HPA {{`{{`}} $labels.namespace {{`}}`}}/{{`{{`}} $labels.horizontalpodautoscaler  {{`}}`}} has been running at max replicas for longer than {{ dig "KubeDeploymentReplicasMismatch" "for" "15m" .Values.customRules }} minutes.
         runbook_url: {{ .Values.defaultRules.runbookUrl }}/kubernetes/kubehpamaxedout
         summary: HPA is running at max replicas
       expr: |-
