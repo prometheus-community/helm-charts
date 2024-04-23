@@ -186,7 +186,7 @@ containers:
     - --listen-address=:{{ .Values.configReloader.containerPort }}
     - --log-format={{ .Values.configReloader.config.logFormat }}
     - --log-level={{ .Values.configReloader.config.logLevel }}
-  {{- with .Values.resources }}
+  {{- with .Values.configReloader.resources }}
   resources:
 {{- toYaml . | nindent 4 }}
   {{- end }}
@@ -213,10 +213,12 @@ containers:
   securityContext:
     {{- toYaml . | nindent 4 }}
   {{- end }}
+  {{- if .Values.extraEnv }}
   env:
   {{- range $key, $value := .Values.extraEnv }}
   - name: {{ $key }}
     value: {{ $value | quote }}
+  {{- end }}
   {{- end }}
   {{- if .Values.extraEnvFromSecret }}
   envFrom:
