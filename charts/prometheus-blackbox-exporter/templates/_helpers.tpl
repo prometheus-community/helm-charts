@@ -247,6 +247,9 @@ containers:
   ports:
   - containerPort: {{ .Values.containerPort }}
     name: http
+    {{- if .Values.hostPort }}
+    hostPort: {{ .Values.hostPort }}
+    {{- end }}
   livenessProbe:
   {{- toYaml .Values.livenessProbe | trim | nindent 4 }}
   readinessProbe:
