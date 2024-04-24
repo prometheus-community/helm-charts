@@ -56,8 +56,16 @@ spec:
               memory: {{ .Values.resources.requests.memory }}
       volumes:
         - name: config-volume
+        {{- if .Values.configSecret.enabled }}
+          secret:
+            secretName: {{ .Values.configSecret.name }}
+            items:
+            - key: {{ .Values.configSecret.key }}
+              path: config.yml
+        {{- else }}
           configMap:
             name: {{ template "prometheus-ipmi-exporter.fullname" . }}
+        {{- end }}
         {{- with .Values.extraVolumes }}
             {{- toYaml . | nindent 8 }}
         {{- end }}
