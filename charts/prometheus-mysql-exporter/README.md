@@ -43,8 +43,8 @@ helm upgrade [RELEASE_NAME] [CHART] --install
 
 ### Multiple-target probes
 
-mysql_exporter now support multi-target probes using the `/probe` route. To enable this feature, set `serviecMonitor.multipleTarget.enabled` to `true` and define your targets in `serviceMonitor.multipleTarget.targets`.
-Credentials for each target should be referenced in the associate config file. Target name should match the entry in the config file.
+mysql_exporter now support multi-target probes using the `/probe` route. To enable this feature, set `serviceMonitor.multipleTarget.enabled` to `true` and define your targets in `serviceMonitor.multipleTarget.targets`.
+Credentials for each target should be referenced either in targets section or in the associated config file.
 As an example, for a config file with two targets:
 
 ```yaml
@@ -52,28 +52,35 @@ serviceMonitor:
   multipleTarget:
     enabled: true
     targets:
-      - name: localhost
-        endpoint: 127.0.0.1
-      - name: remote
-        endpoint: 8.8.8.8
+      - endpoint: mysql1.dns.local
+        name: mysql1
         port: 3307
+        user: user1
+        password: password1
+      - endpoint: mysql2.dns.local
+        name: mysql2
+        user: user2
+        password: password2
 ```
 
-Config file should have the following entries:
+In case of Config file Target name should match the entry in the config file.
+Config file example for the above targets:
 
 ```cnf
 [client]
 user=NOT_USED
 password=NOT_USED
-[client.localhost]
-user=localhost_user
-password=localhost_password
-[client.remote]
-user=remote_user
-password=remote_password
+[client.mysql1]
+user=user1
+password=password1
+[client.mysql2]
+user=user2
+password=password2
 ```
 
-The configuration file can be referenced using `mysql.existingConfigSecret`.
+The configuration file can be:
+- referenced using `mysql.existingConfigSecret`;
+- created automatically in case user and password are specified for the target.
 If all your target use the same credentials, you can set `serviceMonitor.sharedSecret.enabled` to `true` and define the key name in `serviceMonitor.sharedSecret.name`.
 
 ### From 1.x to 2.x
