@@ -79,6 +79,7 @@ password=password2
 ```
 
 The configuration file can be:
+
 - referenced using `mysql.existingConfigSecret`;
 - created automatically in case user and password are specified for the target.
 If all your target use the same credentials, you can set `serviceMonitor.sharedSecret.enabled` to `true` and define the key name in `serviceMonitor.sharedSecret.name`.
