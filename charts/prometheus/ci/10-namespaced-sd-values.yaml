@@ -1,0 +1,114 @@
+---
+## Test case: Prometheus with namespaced SD
+## Prometheus runs service discovery (SD) in its own namespace only.
+## A custom cluster role is set up and bound to SA through a role binding
+## in the given namespace. Prometheus *must* be told that its SD
+## is namespaced by means of 'scrape_configs.kubernetes_sd_configs.namespaces'.
+server:
+  automountServiceAccountToken: true
+  namespaces: []
+  releaseNamespace: true
+  useExistingClusterRoleName: "prometheus-cluster-role"
+
+  persistentVolume:
+    enabled: false
+
+alertmanager:
+  enabled: false
+
+kube-state-metrics:
+  enabled: true
+
+prometheus-node-exporter:
+  enabled: false
+
+prometheus-pushgateway:
+  enabled: false
+
+serverFiles:
+  prometheus.yml:
+    scrape_configs:
+      - job_name: "prometheus"
+        static_configs:
+          - targets:
+            - localhost:9090
+      - job_name: "kubernetes-service-endpoints"
+        honor_labels: true
+        kubernetes_sd_configs:
+          - role: endpoints
+            namespaces:
+              own_namespace: true
+        relabel_configs:
+          - source_labels: [__meta_kubernetes_service_annotation_prometheus_io_scrape]
+            action: keep
+            regex: true
+          - source_labels: [__meta_kubernetes_service_annotation_prometheus_io_scheme]
+            action: replace
+            target_label: __scheme__
+            regex: (https?)
+          - source_labels: [__meta_kubernetes_service_annotation_prometheus_io_path]
+            action: replace
+            target_label: __metrics_path__
+            regex: (.+)
+          - source_labels:
+            - __address__
+            - __meta_kubernetes_service_annotation_prometheus_io_port
+            action: replace
+            target_label: __address__
+            regex: (.+?)(?::\d+)?;(\d+)
+            replacement: $1:$2
+          - action: labelmap
+            regex: __meta_kubernetes_service_label_(.+)
+          - source_labels: [__meta_kubernetes_namespace]
+            action: replace
+            target_label: namespace
+          - source_labels: [__meta_kubernetes_service_name]
+            action: replace
+            target_label: service
+          - source_labels: [__meta_kubernetes_pod_node_name]
+            action: replace
+            target_label: node
+
+extraManifests:
+  - |
+    apiVersion: rbac.authorization.k8s.io/v1
+    kind: ClusterRole
+    metadata:
+      labels:
+        {{- include "prometheus.server.labels" . | nindent 4 }}
+      name: prometheus-cluster-role
+    rules:
+      - apiGroups:
+        - ""
+        resources:
+        - services
+        - endpoints
+        - pods
+        - ingresses
+        - configmaps
+        verbs:
+        - get
+        - list
+        - watch
+      - apiGroups:
+        - "extensions"
+        - "networking.k8s.io"
+        resources:
+        - ingresses/status
+        - ingresses
+        verbs:
+        - get
+        - list
+        - watch
+      - apiGroups:
+        - "discovery.k8s.io"
+        resources:
+        - endpointslices
+        verbs:
+        - get
+        - list
+        - watch
+      - nonResourceURLs:
+        - "/metrics"
+        verbs:
+        - get
