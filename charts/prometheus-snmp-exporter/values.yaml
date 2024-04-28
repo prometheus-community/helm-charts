@@ -127,7 +127,15 @@ podAnnotations: {}
 extraArgs: []
 #  --history.limit=1000
 
+envFrom: []
+#  - secretRef:
+#      name: name-of-secret
+
 replicas: 1
+
+# Uncomment to set a specific revisionHistoryLimit. Defaults to 10 as per Kubernetes API if not set.
+# revisionHistoryLimit: 3
+
 ## Monitors ConfigMap changes and POSTs to a URL
 ## Ref: https://github.com/jimmidyson/configmap-reload
 ##
@@ -177,7 +185,21 @@ serviceMonitor:
 
   # Metric relabeling is applied to samples as the last step before ingestion.
   # Set if defined unless overriden by params.additionalMetricsRelabels.
+  # This sets fixed relabel configs with action 'replace'.
   additionalMetricsRelabels: {}
+    # targetLabel1: replacementValue1
+    # targetLabel2: replacementValue2
+
+  # Metric relabeling is applied to samples as the last step before ingestion.
+  # Set if defined unless overridden by params.additionalMetricsRelabelConfigs.
+  # This allows setting arbitrary relabel configs.
+  # https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/api.md#monitoring.coreos.com/v1.RelabelConfig
+  additionalMetricsRelabelConfigs: []
+    # - sourceLabels: [__name__]
+    #   targetLabel: __name__
+    #   action: replace
+    #   regex: (.*)
+    #   replacement: prefix_$1
 
   # Label for selecting service monitors as set in Prometheus CRD.
   # https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/api.md#monitoring.coreos.com/v1.PrometheusSpec
@@ -206,7 +228,10 @@ serviceMonitor:
     # Relabelings. Overrides value set in serviceMonitor.relabelings
     #   relabelings: []
     # Map of metric labels and values to add. Overrides value set in serviceMonitor.additionalMetricsRelabels
+    # This sets fixed relabel configs with action 'replace'.
     #   additionalMetricsRelabels: {}
+    # Metrics relabelings. Overrides value set in serviceMonitor.additionalMetricsRelabelConfigs
+    #   additionalMetricsRelabelConfigs: []
 
 # Extra manifests to deploy as an array
 extraManifests: []
