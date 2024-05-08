@@ -25,7 +25,7 @@ for line in "${FILES[@]}"; do
     DESTINATION=$(echo "${line%%:*}" | xargs)
     SOURCE=$(echo "${line##*:}" | xargs)
 
-    URL="https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/$VERSION/example/prometheus-operator-crd/$SOURCE"
+    URL="https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/$VERSION/example/prometheus-operator-crd-full/$SOURCE"
 
     echo -e "Downloading Prometheus Operator CRD with Version ${VERSION}:\n${URL}\n"
 
@@ -36,3 +36,16 @@ for line in "${FILES[@]}"; do
       exit 1
     fi
 done
+
+if ! curl --silent --retry-all-errors --fail --location "https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/$VERSION/example/alertmanager-crd-conversion/patch.json" >> "${SCRIPT_DIR}/../charts/crds/crds/patch.json"; then
+  echo -e "Failed to download ${URL}!"
+  exit 1
+fi
+
+{
+  head -n1 "${SCRIPT_DIR}/../charts/crds/crds/crd-alertmanagerconfigs.yaml";
+  kubectl patch --local=true -f "${SCRIPT_DIR}/../charts/crds/crds/crd-alertmanagerconfigs.yaml" --patch-file="${SCRIPT_DIR}/../charts/crds/crds/patch.json" --type=merge --dry-run=client -o yaml
+} >"${SCRIPT_DIR}/../charts/crds/crds/crd-alertmanagerconfigs.patched.yaml"
+
+rm "${SCRIPT_DIR}/../charts/crds/crds/patch.json"
+mv "${SCRIPT_DIR}/../charts/crds/crds/crd-alertmanagerconfigs.patched.yaml" "${SCRIPT_DIR}/../charts/crds/crds/crd-alertmanagerconfigs.yaml"
