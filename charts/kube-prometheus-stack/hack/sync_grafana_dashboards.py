@@ -29,11 +29,11 @@ def change_style(style, representer):
 
 refs = {
     # https://github.com/prometheus-operator/kube-prometheus
-    'ref.kube-prometheus': 'f752c172f1d1c457b4edb6f08e8705ee81a05851',
+    'ref.kube-prometheus': 'cb55161e24eee55d67f3bb7e7f1719feab66da52',
     # https://github.com/kubernetes-monitoring/kubernetes-mixin
-    'ref.kubernetes-mixin': 'b247371d1780f530587a8d9dd04ccb19ea970ba0',
+    'ref.kubernetes-mixin': '033a6fb33be80d381045dc570fc53f0b7750e8b6',
     # https://github.com/etcd-io/etcd
-    'ref.etcd': 'a7f5d4b4e4569bd316277ebf1347785e0467c64d',
+    'ref.etcd': '52fb28c1a8db4e66c547b7975bf6dc1e0b17f8bf',
 }
 
 # Source files list
@@ -204,10 +204,10 @@ def patch_json_set_editable_as_variable(content):
 
 
 def jsonnet_import_callback(base, rel):
-    if "github.com" in base:
-        base = os.getcwd() + '/vendor/' + base[base.find('github.com'):]
-    elif "github.com" in rel:
+    if "github.com" in rel:
         base = os.getcwd() + '/vendor/'
+    elif "github.com" in base:
+        base = os.getcwd() + '/vendor/' + base[base.find('github.com'):]
 
     if os.path.isfile(base + rel):
         return base + rel, open(base + rel).read().encode('utf-8')
