@@ -8,7 +8,7 @@ This chart creates a SQL-Exporter deployment on a [Kubernetes](http://kubernetes
 
 ## Prerequisites
 
-- Kubernetes 1.8+ with Beta APIs enabled
+- Kubernetes 1.27+
 - Helm >= 3.0
 
 ## Get Repository Info
