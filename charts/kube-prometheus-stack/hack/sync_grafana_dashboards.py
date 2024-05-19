@@ -29,11 +29,11 @@ def change_style(style, representer):
 
 refs = {
     # https://github.com/prometheus-operator/kube-prometheus
-    'ref.kube-prometheus': '76f2e1ef95be0df752037baa040781c5219e1fb3',
+    'ref.kube-prometheus': 'cb55161e24eee55d67f3bb7e7f1719feab66da52',
     # https://github.com/kubernetes-monitoring/kubernetes-mixin
-    'ref.kubernetes-mixin': '346bef2584068e803757e12c4ee4814e72a67927',
+    'ref.kubernetes-mixin': '033a6fb33be80d381045dc570fc53f0b7750e8b6',
     # https://github.com/etcd-io/etcd
-    'ref.etcd': '84e67ffaf683cd4898897e958ba56da1f1bd2819',
+    'ref.etcd': '52fb28c1a8db4e66c547b7975bf6dc1e0b17f8bf',
 }
 
 # Source files list
@@ -204,10 +204,10 @@ def patch_json_set_editable_as_variable(content):
 
 
 def jsonnet_import_callback(base, rel):
-    if "github.com" in base:
-        base = os.getcwd() + '/vendor/' + base[base.find('github.com'):]
-    elif "github.com" in rel:
+    if "github.com" in rel:
         base = os.getcwd() + '/vendor/'
+    elif "github.com" in base:
+        base = os.getcwd() + '/vendor/' + base[base.find('github.com'):]
 
     if os.path.isfile(base + rel):
         return base + rel, open(base + rel).read().encode('utf-8')
@@ -250,6 +250,8 @@ def write_group_to_file(resource_name, content, url, destination, min_kubernetes
 
 
 def main():
+    os.chdir(os.path.dirname(os.path.abspath(__file__)))
+
     init_yaml_styles()
     # read the rules, create a new template file per group
     for chart in charts:
