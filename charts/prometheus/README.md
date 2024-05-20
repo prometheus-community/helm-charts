@@ -65,6 +65,12 @@ helm upgrade [RELEASE_NAME] prometheus-community/prometheus --install
 
 _See [helm upgrade](https://helm.sh/docs/helm/helm_upgrade/) for command documentation._
 
+### To 25.0
+
+The `server.remoteRead[].url` and `server.remoteWrite[].url` fields now support templating. Allowing for `url` values such as `https://{{ .Release.Name }}.example.com`.
+
+Any entries in these which previously included `{{` or `}}` must be escaped with `{{ "{{" }}` and `{{ "}}" }}` respectively. Entries which did not previously include the template-like syntax will not be affected.
+
 ### To 24.0
 
 Require Kubernetes 1.19+

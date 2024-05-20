@@ -2,11 +2,10 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ template "kube-prometheus-stack.fullname" . }}-operator
+  name: {{ template "kube-prometheus-stack.operator.fullname" . }}
   namespace: {{ template "kube-prometheus-stack.namespace" . }}
   labels:
-    app: {{ template "kube-prometheus-stack.name" . }}-operator
-{{ include "kube-prometheus-stack.labels" . | indent 4 }}
+    {{- include "kube-prometheus-stack.prometheus-operator.labels" . | nindent 4 }}
 {{- if .Values.prometheusOperator.service.labels }}
 {{ toYaml .Values.prometheusOperator.service.labels | indent 4 }}
 {{- end }}
@@ -17,6 +16,10 @@ metadata:
 spec:
 {{- if .Values.prometheusOperator.service.clusterIP }}
   clusterIP: {{ .Values.prometheusOperator.service.clusterIP }}
+{{- end }}
+{{- if .Values.prometheusOperator.service.ipDualStack.enabled }}
+  ipFamilies: {{ toYaml .Values.prometheusOperator.service.ipDualStack.ipFamilies | nindent 4 }}
+  ipFamilyPolicy: {{ .Values.prometheusOperator.service.ipDualStack.ipFamilyPolicy }}
 {{- end }}
 {{- if .Values.prometheusOperator.service.externalIPs }}
   externalIPs:

@@ -37,7 +37,10 @@ autosharding:
 
 replicas: 1
 
-# Change the deployment strategy when autosharding is disabled
+# Change the deployment strategy when autosharding is disabled.
+# ref: https://kubernetes.io/docs/concepts/workloads/controllers/deployment/#strategy
+# The default is "RollingUpdate" as per Kubernetes defaults.
+# During a release, 'RollingUpdate' can lead to two running instances for a short period of time while 'Recreate' can create a small gap in data.
 # updateStrategy: Recreate
 
 # Number of old history to retain to allow rollback
@@ -53,6 +56,10 @@ service:
   port: 8080
   # Default to clusterIP for backward compatibility
   type: ClusterIP
+  ipDualStack:
+    enabled: false
+    ipFamilies: ["IPv6", "IPv4"]
+    ipFamilyPolicy: "PreferDualStack"
   nodePort: 0
   loadBalancerIP: ""
   # Only allow access to the loadBalancerIP from these IPs
@@ -96,7 +103,7 @@ kubeRBACProxy:
   image:
     registry: quay.io
     repository: brancz/kube-rbac-proxy
-    tag: v0.14.0
+    tag: v0.16.0
     sha: ""
     pullPolicy: IfNotPresent
 
@@ -108,7 +115,12 @@ kubeRBACProxy:
   ## Specify security settings for a Container
   ## Allows overrides and additional options compared to (Pod) securityContext
   ## Ref: https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-the-security-context-for-a-container
-  containerSecurityContext: {}
+  containerSecurityContext:
+    readOnlyRootFilesystem: true
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+      - ALL
 
   resources: {}
     # We usually recommend not to specify default resources and to leave this as a conscious
@@ -175,6 +187,8 @@ prometheus:
     labelValueLengthLimit: 0
     scrapeTimeout: ""
     proxyUrl: ""
+    ## Whether to enable HTTP2 for servicemonitor
+    # enableHttp2: false
     selectorOverride: {}
     honorLabels: false
     metricRelabelings: []
@@ -243,6 +257,7 @@ securityContext:
 ## Allows overrides and additional options compared to (Pod) securityContext
 ## Ref: https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-the-security-context-for-a-container
 containerSecurityContext:
+  readOnlyRootFilesystem: true
   allowPrivilegeEscalation: false
   capabilities:
     drop:
@@ -442,3 +457,37 @@ extraManifests: []
   #     name: prometheus-extra
   #   data:
   #     extra-data: "value"
+
+## Containers allows injecting additional containers.
+containers: []
+  # - name: crd-init
+  #   image: kiwigrid/k8s-sidecar:latest
+
+## InitContainers allows injecting additional initContainers.
+initContainers: []
+  # - name: crd-sidecar
+  #   image: kiwigrid/k8s-sidecar:latest
+
+## Liveness probe
+##
+livenessProbe:
+  failureThreshold: 3
+  httpGet:
+    httpHeaders: []
+    scheme: http
+  initialDelaySeconds: 5
+  periodSeconds: 10
+  successThreshold: 1
+  timeoutSeconds: 5
+
+## Readiness probe
+##
+readinessProbe:
+  failureThreshold: 3
+  httpGet:
+    httpHeaders: []
+    scheme: http
+  initialDelaySeconds: 5
+  periodSeconds: 10
+  successThreshold: 1
+  timeoutSeconds: 5

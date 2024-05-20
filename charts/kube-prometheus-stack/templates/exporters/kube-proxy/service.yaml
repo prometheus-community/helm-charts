@@ -10,8 +10,12 @@ metadata:
   namespace: kube-system
 spec:
   clusterIP: None
+  {{- if .Values.kubeProxy.service.ipDualStack.enabled }}
+  ipFamilies: {{ toYaml .Values.kubeProxy.service.ipDualStack.ipFamilies | nindent 4 }}
+  ipFamilyPolicy: {{ .Values.kubeProxy.service.ipDualStack.ipFamilyPolicy }}
+  {{- end }}
   ports:
-    - name: http-metrics
+    - name: {{ .Values.kubeProxy.serviceMonitor.port }}
       port: {{ .Values.kubeProxy.service.port }}
       protocol: TCP
       targetPort: {{ .Values.kubeProxy.service.targetPort }}

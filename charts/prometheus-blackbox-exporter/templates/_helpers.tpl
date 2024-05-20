@@ -101,3 +101,210 @@ The image to use
 {{- .Values.image.repository -}}:{{- .Values.image.tag | default .Chart.AppVersion -}}
 {{- with .Values.image.digest -}}@{{ .}}{{- end -}}
 {{- end -}}
+
+{{/*
+The image to use
+*/}}
+{{- define "prometheus-blackbox-exporter.config-reloader.image" -}}
+{{- with (.Values.global.imageRegistry | default .Values.configReloader.image.registry) -}}{{ . }}/{{- end }}
+{{- .Values.configReloader.image.repository -}}:{{- .Values.configReloader.image.tag -}}
+{{- with .Values.configReloader.image.digest -}}@{{ .}}{{- end -}}
+{{- end -}}
+
+{{/*
+Define pod spec to be reused by highlevel resources (deployment, daemonset)
+*/}}
+{{- define "prometheus-blackbox-exporter.podSpec" -}}
+automountServiceAccountToken: {{ .Values.automountServiceAccountToken }}
+serviceAccountName: {{ template "prometheus-blackbox-exporter.serviceAccountName" . }}
+{{- with .Values.topologySpreadConstraints }}
+topologySpreadConstraints:
+{{ toYaml . }}
+{{- end }}
+{{- with .Values.nodeSelector }}
+nodeSelector:
+  {{- toYaml . | nindent 2 }}
+{{- end }}
+{{- with .Values.affinity }}
+affinity:
+  {{- toYaml . | nindent 2 }}
+{{- end }}
+{{- with .Values.tolerations }}
+tolerations:
+{{ toYaml . }}
+{{- end }}
+{{- if .Values.image.pullSecrets }}
+imagePullSecrets:
+{{- range .Values.image.pullSecrets }}
+- name: {{ . }}
+{{- end }}
+{{- end }}
+{{- if .Values.hostAliases }}
+hostAliases:
+{{- range .Values.hostAliases }}
+- ip: {{ .ip }}
+  hostnames:
+  {{- range .hostNames }}
+  - {{ . }}
+  {{- end }}
+{{- end }}
+{{- end }}
+restartPolicy: {{ .Values.restartPolicy }}
+{{- with .Values.priorityClassName }}
+priorityClassName: "{{ . }}"
+{{- end }}
+{{- with .Values.podSecurityContext }}
+securityContext:
+{{ toYaml . | indent 2 }}
+{{- end }}
+{{- with .Values.extraInitContainers }}
+initContainers:
+{{- if kindIs "string" . }}
+  {{- tpl . $ | nindent 2 }}
+{{- else }}
+  {{-  toYaml . | nindent 2 }}
+{{- end -}}
+{{- end }}
+
+containers:
+{{ with .Values.extraContainers }}
+{{- if kindIs "string" . }}
+  {{- tpl . $ }}
+{{- else }}
+  {{-  toYaml . }}
+{{- end -}}
+{{- end }}
+
+{{- if .Values.configReloader.enabled }}
+- name: config-reloader
+  image: {{ include "prometheus-blackbox-exporter.config-reloader.image" . }}
+  imagePullPolicy: {{ .Values.configReloader.image.pullPolicy }}
+  args:
+    - --config-file={{ .Values.configPath | default "/config/blackbox.yaml" }}
+    - --watch-interval={{ .Values.configReloader.config.watchInterval }}
+    - --reload-url=http://127.0.0.1:{{ .Values.containerPort }}/-/reload
+    - --listen-address=:{{ .Values.configReloader.containerPort }}
+    - --log-format={{ .Values.configReloader.config.logFormat }}
+    - --log-level={{ .Values.configReloader.config.logLevel }}
+  {{- with .Values.configReloader.resources }}
+  resources:
+{{- toYaml . | nindent 4 }}
+  {{- end }}
+  ports:
+    - name: reloader-web
+      containerPort: {{ .Values.configReloader.containerPort }}
+      protocol: TCP
+  livenessProbe:
+    {{- toYaml .Values.configReloader.livenessProbe | nindent 4 }}
+  readinessProbe:
+    {{- toYaml .Values.configReloader.readinessProbe | nindent 4 }}
+  volumeMounts:
+    - mountPath: /config
+      name: config
+  {{- with .Values.configReloader.securityContext }}
+  securityContext:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+{{- end }}
+- name: blackbox-exporter
+  image: {{ include "prometheus-blackbox-exporter.image" . }}
+  imagePullPolicy: {{ .Values.image.pullPolicy }}
+  {{- with .Values.securityContext }}
+  securityContext:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  {{- if .Values.extraEnv }}
+  env:
+  {{- range $key, $value := .Values.extraEnv }}
+  - name: {{ $key }}
+    value: {{ $value | quote }}
+  {{- end }}
+  {{- end }}
+  {{- if .Values.extraEnvFromSecret }}
+  envFrom:
+  {{- range .Values.extraEnvFromSecret }}
+    - secretRef:
+        name: {{ . }}
+  {{- end }}
+  {{- end }}
+  args:
+  {{- if .Values.config }}
+  {{- if .Values.configPath }}
+  - "--config.file={{ .Values.configPath }}"
+  {{- else }}
+  - "--config.file=/config/blackbox.yaml"
+  {{- end }}
+  {{- else }}
+  - "--config.file=/etc/blackbox_exporter/config.yml"
+  {{- end }}
+  {{- with .Values.extraArgs }}
+{{ tpl (toYaml .) $ | indent 2 }}
+  {{- end }}
+  {{- with .Values.resources }}
+  resources:
+{{ toYaml . | indent 4 }}
+  {{- end }}
+  ports:
+  - containerPort: {{ .Values.containerPort }}
+    name: http
+    {{- if .Values.hostPort }}
+    hostPort: {{ .Values.hostPort }}
+    {{- end }}
+  livenessProbe:
+  {{- toYaml .Values.livenessProbe | trim | nindent 4 }}
+  readinessProbe:
+  {{- toYaml .Values.readinessProbe | trim | nindent 4 }}
+  volumeMounts:
+  - mountPath: /config
+    name: config
+  {{- range .Values.extraConfigmapMounts }}
+  - name: {{ .name }}
+    mountPath: {{ .mountPath }}
+    subPath: {{ .subPath | default "" }}
+    readOnly: {{ .readOnly }}
+  {{- end }}
+  {{- range .Values.extraSecretMounts }}
+  - name: {{ .name }}
+    mountPath: {{ .mountPath }}
+    subPath: {{ .subPath }}
+    readOnly: {{ .readOnly }}
+  {{- end }}
+  {{- if .Values.extraVolumeMounts }}
+{{ toYaml .Values.extraVolumeMounts | indent 2 }}
+  {{- end }}
+  {{- if .Values.dnsPolicy }}
+dnsPolicy: {{ .Values.dnsPolicy | toString }}
+{{- end }}
+hostNetwork: {{ .Values.hostNetwork }}
+{{- with .Values.dnsConfig }}
+dnsConfig:
+  {{- toYaml . | nindent 2 }}
+{{- end }}
+volumes:
+{{- if .Values.extraVolumes }}
+{{ toYaml .Values.extraVolumes }}
+{{- end }}
+- name: config
+{{- if .Values.secretConfig }}
+  secret:
+    secretName: {{ template "prometheus-blackbox-exporter.fullname" . }}
+{{- else if .Values.configExistingSecretName }}
+  secret:
+    secretName: {{ .Values.configExistingSecretName }}
+{{- else }}
+  configMap:
+    name: {{ template "prometheus-blackbox-exporter.fullname" . }}
+{{- end }}
+{{- range .Values.extraConfigmapMounts }}
+- name: {{ .name }}
+  configMap:
+    name: {{ .configMap }}
+    defaultMode: {{ .defaultMode }}
+{{- end }}
+{{- range .Values.extraSecretMounts }}
+- name: {{ .name }}
+  secret:
+    secretName: {{ .secretName }}
+    defaultMode: {{ .defaultMode }}
+{{- end }}
+{{- end -}}

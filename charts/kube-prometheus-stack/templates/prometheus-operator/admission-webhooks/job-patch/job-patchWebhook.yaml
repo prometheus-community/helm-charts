@@ -9,15 +9,12 @@ metadata:
     "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
 {{- with .Values.prometheusOperator.admissionWebhooks.patch.annotations }}
 {{ toYaml . | indent 4 }}
-{{- end }}   
+{{- end }}
   labels:
     app: {{ template "kube-prometheus-stack.name" $ }}-admission-patch
-{{- include "kube-prometheus-stack.labels" $ | indent 4 }}
+    {{- include "kube-prometheus-stack.prometheus-operator-webhook.labels" $ | nindent 4 }}
 spec:
-  {{- if .Capabilities.APIVersions.Has "batch/v1alpha1" }}
-  # Alpha feature since k8s 1.12
-  ttlSecondsAfterFinished: 0
-  {{- end }}
+  ttlSecondsAfterFinished: {{ .Values.prometheusOperator.admissionWebhooks.patch.ttlSecondsAfterFinished }}
   template:
     metadata:
       name:  {{ template "kube-prometheus-stack.fullname" . }}-admission-patch
@@ -27,7 +24,7 @@ spec:
 {{- end }}
       labels:
         app: {{ template "kube-prometheus-stack.name" $ }}-admission-patch
-{{- include "kube-prometheus-stack.labels" $ | indent 8 }}
+        {{- include "kube-prometheus-stack.prometheus-operator-webhook.labels" $ | nindent 8 }}
     spec:
       {{- if .Values.prometheusOperator.admissionWebhooks.patch.priorityClassName }}
       priorityClassName: {{ .Values.prometheusOperator.admissionWebhooks.patch.priorityClassName }}

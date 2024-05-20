@@ -1,0 +1,44 @@
+---
+# Test case: set various fields in statefulset
+server:
+  automountServiceAccountToken: true
+
+  clusterRoleNameOverride: "ci-prometheus-server-cluster-role"
+
+  containerSecurityContext:
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+        - ALL
+    seccompProfile:
+      type: RuntimeDefault
+
+  env:
+    - name: APPNAME
+      value: prometheus
+
+  extraArgs:
+    query.timeout: 1m
+    query.max-concurrency: 15
+
+  global:
+    external_labels:
+      cluster: "ci"
+
+  persistentVolume:
+    enabled: true
+    statefulSetNameOverride: "ci-prometheus-server-pvc"
+    size: 2Gi
+
+  prefixURL: /prometheus
+
+  retentionSize: 1GB
+
+  startupProbe:
+    enabled: true
+
+  statefulSet:
+    enabled: true
+
+  tsdb:
+    out_of_order_time_window: 10s

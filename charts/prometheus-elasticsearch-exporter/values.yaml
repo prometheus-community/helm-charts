@@ -3,6 +3,7 @@
 ## to set the same values for each chart (and image) separately
 global:
   imagePullSecrets: []
+  imageRegistry: ""
 
 ## number of exporter instances
 ##
@@ -13,6 +14,7 @@ replicaCount: 1
 restartPolicy: Always
 
 image:
+  registry: ""
   repository: quay.io/prometheuscommunity/elasticsearch-exporter
   # if not set appVersion field from Chart.yaml is used
   tag: ""
@@ -71,6 +73,7 @@ affinity: {}
 initContainers: []
 
 service:
+  enabled: true
   type: ClusterIP
   httpPort: 9108
   metricsPort:
@@ -81,6 +84,8 @@ service:
 deployment:
   annotations: {}
   labels: {}
+  metricsPort:
+    name: http
 
 ## Extra environment variables that will be passed into the exporter pod
 ## example:
@@ -182,6 +187,10 @@ es:
   ##
   data_stream: false
 
+  ## If true, query stats for Index Lifecycle Management.
+  ##
+  ilm: false
+
   ## Timeout for trying to get stats from Elasticsearch. (ex: 20s)
   ##
   timeout: 30s
@@ -235,6 +244,7 @@ serviceMonitor:
   ## https://github.com/coreos/prometheus-operator
   ##
   enabled: false
+  apiVersion: "monitoring.coreos.com/v1"
   #  namespace: monitoring
   labels: {}
   interval: 10s
@@ -245,6 +255,21 @@ serviceMonitor:
   targetLabels: []
   metricRelabelings: []
   sampleLimit: 0
+
+podMonitor:
+  ## If true, a PodMonitor CRD is created for a Prometheus Operator
+  ## https://prometheus-operator.dev/docs/operator/api/#monitoring.coreos.com/v1.PodMonitor
+  ##
+  enabled: false
+  apiVersion: "monitoring.coreos.com/v1"
+  namespace: ""
+  labels: {}
+  interval: 60s
+  scrapeTimeout: 10s
+  honorLabels: true
+  scheme: http
+  relabelings: []
+  metricRelabelings: []
 
 prometheusRule:
   ## If true, a PrometheusRule CRD is created for a prometheus operator

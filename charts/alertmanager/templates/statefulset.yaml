@@ -12,6 +12,7 @@ metadata:
   namespace: {{ include "alertmanager.namespace" . }}
 spec:
   replicas: {{ .Values.replicaCount }}
+  minReadySeconds: {{ .Values.minReadySeconds }}
   revisionHistoryLimit: {{ .Values.revisionHistoryLimit }}
   selector:
     matchLabels:
@@ -169,6 +170,9 @@ spec:
             {{- end }}
             {{- range $key, $value := .Values.extraArgs }}
             - --{{ $key }}={{ $value }}
+            {{- end }}
+            {{- if .Values.baseURL }}
+            - --web.external-url={{ .Values.baseURL }}
             {{- end }}
           ports:
             - name: http

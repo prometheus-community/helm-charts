@@ -47,6 +47,9 @@ spec:
       {{- end }}
 {{- end }}
       serviceAccountName: {{ template "prometheus.serviceAccountName.server" . }}
+{{- if kindIs "bool" .Values.server.automountServiceAccountToken }}
+      automountServiceAccountToken: {{ .Values.server.automountServiceAccountToken }}
+{{- end }}
       {{- if .Values.server.extraInitContainers }}
       initContainers:
 {{ toYaml .Values.server.extraInitContainers | indent 8 }}
@@ -72,7 +75,11 @@ spec:
           {{- end }}
             - --reload-url={{ default $default_url .Values.configmapReload.reloadUrl }}
           {{- range $key, $value := .Values.configmapReload.prometheus.extraArgs }}
+            {{- if $value }}
             - --{{ $key }}={{ $value }}
+            {{- else }}
+            - --{{ $key }}
+            {{- end }}
           {{- end }}
           {{- range .Values.configmapReload.prometheus.extraVolumeDirs }}
             - --watched-dir={{ . }}
@@ -85,8 +92,10 @@ spec:
           ports:
             - containerPort: {{ .Values.configmapReload.prometheus.containerPort }}
           {{- end }}
+          {{- with .Values.configmapReload.prometheus.resources }}
           resources:
-{{ toYaml .Values.configmapReload.prometheus.resources | indent 12 }}
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
           volumeMounts:
             - name: config-volume
               mountPath: /etc/config
@@ -124,6 +133,9 @@ spec:
           {{- if .Values.server.retention }}
             - --storage.tsdb.retention.time={{ .Values.server.retention }}
           {{- end }}
+          {{- if .Values.server.retentionSize }}
+            - --storage.tsdb.retention.size={{ .Values.server.retentionSize }}
+          {{- end }}
             - --config.file={{ .Values.server.configPath }}
             {{- if .Values.server.storagePath }}
             - --storage.tsdb.path={{ .Values.server.storagePath }}
@@ -136,7 +148,11 @@ spec:
             - --{{ . }}
           {{- end }}
           {{- range $key, $value := .Values.server.extraArgs }}
+            {{- if $value }}
             - --{{ $key }}={{ $value }}
+            {{- else }}
+            - --{{ $key }}
+            {{- end }}
           {{- end }}
           {{- if .Values.server.prefixURL }}
             - --web.route-prefix={{ .Values.server.prefixURL }}
@@ -213,8 +229,10 @@ spec:
             periodSeconds: {{ .Values.server.startupProbe.periodSeconds }}
             timeoutSeconds: {{ .Values.server.startupProbe.timeoutSeconds }}
           {{- end }}
+          {{- with .Values.server.resources }}
           resources:
-{{ toYaml .Values.server.resources | indent 12 }}
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
           volumeMounts:
             - name: config-volume
               mountPath: /etc/config
@@ -286,10 +304,29 @@ spec:
       tolerations:
 {{ toYaml .Values.server.tolerations | indent 8 }}
     {{- end }}
-    {{- if .Values.server.affinity }}
+    {{- if or .Values.server.affinity .Values.server.podAntiAffinity }}
       affinity:
-{{ toYaml .Values.server.affinity | indent 8 }}
     {{- end }}
+      {{- with .Values.server.affinity }}
+      {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- if eq .Values.server.podAntiAffinity "hard" }}
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - topologyKey: {{ .Values.server.podAntiAffinityTopologyKey }}
+              labelSelector:
+                matchExpressions:
+                  - {key: app.kubernetes.io/name, operator: In, values: [{{ template "prometheus.name" . }}]}
+      {{- else if eq .Values.server.podAntiAffinity "soft" }}
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                topologyKey: {{ .Values.server.podAntiAffinityTopologyKey }}
+                labelSelector:
+                  matchExpressions:
+                    - {key: app.kubernetes.io/name, operator: In, values: [{{ template "prometheus.name" . }}]}
+      {{- end }}
     {{- with .Values.server.topologySpreadConstraints }}
       topologySpreadConstraints:
         {{- toYaml . | nindent 8 }}

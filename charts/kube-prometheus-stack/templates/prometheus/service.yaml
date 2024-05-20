@@ -20,6 +20,10 @@ spec:
 {{- if .Values.prometheus.service.clusterIP }}
   clusterIP: {{ .Values.prometheus.service.clusterIP }}
 {{- end }}
+{{- if .Values.prometheus.service.ipDualStack.enabled }}
+  ipFamilies: {{ toYaml .Values.prometheus.service.ipDualStack.ipFamilies | nindent 4 }}
+  ipFamilyPolicy: {{ .Values.prometheus.service.ipDualStack.ipFamilyPolicy }}
+{{- end }}
 {{- if .Values.prometheus.service.externalIPs }}
   externalIPs:
 {{ toYaml .Values.prometheus.service.externalIPs | indent 4 }}
@@ -47,7 +51,7 @@ spec:
     {{- if semverCompare "> 1.20.0-0" $kubeTargetVersion }}
     appProtocol: http
     {{- end }}
-    port: 8080
+    port: {{ .Values.prometheus.service.reloaderWebPort }}
     targetPort: reloader-web
   {{- if .Values.prometheus.thanosIngress.enabled }}
   - name: grpc
@@ -70,6 +74,11 @@ spec:
     operator.prometheus.io/name: {{ template "kube-prometheus-stack.prometheus.crname" . }}
 {{- if .Values.prometheus.service.sessionAffinity }}
   sessionAffinity: {{ .Values.prometheus.service.sessionAffinity }}
+{{- end }}
+{{- if eq .Values.prometheus.service.sessionAffinity "ClientIP" }}
+  sessionAffinityConfig:
+    clientIP:
+      timeoutSeconds: {{ .Values.prometheus.service.sessionAffinityConfig.clientIP.timeoutSeconds }}
 {{- end }}
   type: "{{ .Values.prometheus.service.type }}"
 {{- end }}

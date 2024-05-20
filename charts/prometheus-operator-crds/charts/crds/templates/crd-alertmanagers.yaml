@@ -1,4 +1,4 @@
-# https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/v0.68.0/example/prometheus-operator-crd/monitoring.coreos.com_alertmanagers.yaml
+# https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/v0.73.0/example/prometheus-operator-crd/monitoring.coreos.com_alertmanagers.yaml
 ---
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
@@ -7,8 +7,8 @@ metadata:
 {{- with .Values.annotations }}
 {{- toYaml . | nindent 4 }}
 {{- end }}
-    controller-gen.kubebuilder.io/version: v0.11.1
-  creationTimestamp: null
+    controller-gen.kubebuilder.io/version: v0.13.0
+    operator.prometheus.io/version: 0.73.0
   name: alertmanagers.monitoring.coreos.com
 spec:
   group: monitoring.coreos.com
@@ -313,7 +313,8 @@ spec:
                               properties:
                                 labelSelector:
                                   description: A label query over a set of resources,
-                                    in this case pods.
+                                    in this case pods. If it's null, this PodAffinityTerm
+                                    matches with no Pods.
                                   properties:
                                     matchExpressions:
                                       description: matchExpressions is a list of label
@@ -363,6 +364,44 @@ spec:
                                       type: object
                                   type: object
                                   x-kubernetes-map-type: atomic
+                                matchLabelKeys:
+                                  description: MatchLabelKeys is a set of pod label
+                                    keys to select which pods will be taken into consideration.
+                                    The keys are used to lookup values from the incoming
+                                    pod labels, those key-value labels are merged
+                                    with `LabelSelector` as `key in (value)` to select
+                                    the group of existing pods which pods will be
+                                    taken into consideration for the incoming pod's
+                                    pod (anti) affinity. Keys that don't exist in
+                                    the incoming pod labels will be ignored. The default
+                                    value is empty. The same key is forbidden to exist
+                                    in both MatchLabelKeys and LabelSelector. Also,
+                                    MatchLabelKeys cannot be set when LabelSelector
+                                    isn't set. This is an alpha field and requires
+                                    enabling MatchLabelKeysInPodAffinity feature gate.
+                                  items:
+                                    type: string
+                                  type: array
+                                  x-kubernetes-list-type: atomic
+                                mismatchLabelKeys:
+                                  description: MismatchLabelKeys is a set of pod label
+                                    keys to select which pods will be taken into consideration.
+                                    The keys are used to lookup values from the incoming
+                                    pod labels, those key-value labels are merged
+                                    with `LabelSelector` as `key notin (value)` to
+                                    select the group of existing pods which pods will
+                                    be taken into consideration for the incoming pod's
+                                    pod (anti) affinity. Keys that don't exist in
+                                    the incoming pod labels will be ignored. The default
+                                    value is empty. The same key is forbidden to exist
+                                    in both MismatchLabelKeys and LabelSelector. Also,
+                                    MismatchLabelKeys cannot be set when LabelSelector
+                                    isn't set. This is an alpha field and requires
+                                    enabling MatchLabelKeysInPodAffinity feature gate.
+                                  items:
+                                    type: string
+                                  type: array
+                                  x-kubernetes-list-type: atomic
                                 namespaceSelector:
                                   description: A label query over the set of namespaces
                                     that the term applies to. The term is applied
@@ -473,7 +512,8 @@ spec:
                           properties:
                             labelSelector:
                               description: A label query over a set of resources,
-                                in this case pods.
+                                in this case pods. If it's null, this PodAffinityTerm
+                                matches with no Pods.
                               properties:
                                 matchExpressions:
                                   description: matchExpressions is a list of label
@@ -519,6 +559,43 @@ spec:
                                   type: object
                               type: object
                               x-kubernetes-map-type: atomic
+                            matchLabelKeys:
+                              description: MatchLabelKeys is a set of pod label keys
+                                to select which pods will be taken into consideration.
+                                The keys are used to lookup values from the incoming
+                                pod labels, those key-value labels are merged with
+                                `LabelSelector` as `key in (value)` to select the
+                                group of existing pods which pods will be taken into
+                                consideration for the incoming pod's pod (anti) affinity.
+                                Keys that don't exist in the incoming pod labels will
+                                be ignored. The default value is empty. The same key
+                                is forbidden to exist in both MatchLabelKeys and LabelSelector.
+                                Also, MatchLabelKeys cannot be set when LabelSelector
+                                isn't set. This is an alpha field and requires enabling
+                                MatchLabelKeysInPodAffinity feature gate.
+                              items:
+                                type: string
+                              type: array
+                              x-kubernetes-list-type: atomic
+                            mismatchLabelKeys:
+                              description: MismatchLabelKeys is a set of pod label
+                                keys to select which pods will be taken into consideration.
+                                The keys are used to lookup values from the incoming
+                                pod labels, those key-value labels are merged with
+                                `LabelSelector` as `key notin (value)` to select the
+                                group of existing pods which pods will be taken into
+                                consideration for the incoming pod's pod (anti) affinity.
+                                Keys that don't exist in the incoming pod labels will
+                                be ignored. The default value is empty. The same key
+                                is forbidden to exist in both MismatchLabelKeys and
+                                LabelSelector. Also, MismatchLabelKeys cannot be set
+                                when LabelSelector isn't set. This is an alpha field
+                                and requires enabling MatchLabelKeysInPodAffinity
+                                feature gate.
+                              items:
+                                type: string
+                              type: array
+                              x-kubernetes-list-type: atomic
                             namespaceSelector:
                               description: A label query over the set of namespaces
                                 that the term applies to. The term is applied to the
@@ -622,7 +699,8 @@ spec:
                               properties:
                                 labelSelector:
                                   description: A label query over a set of resources,
-                                    in this case pods.
+                                    in this case pods. If it's null, this PodAffinityTerm
+                                    matches with no Pods.
                                   properties:
                                     matchExpressions:
                                       description: matchExpressions is a list of label
@@ -672,6 +750,44 @@ spec:
                                       type: object
                                   type: object
                                   x-kubernetes-map-type: atomic
+                                matchLabelKeys:
+                                  description: MatchLabelKeys is a set of pod label
+                                    keys to select which pods will be taken into consideration.
+                                    The keys are used to lookup values from the incoming
+                                    pod labels, those key-value labels are merged
+                                    with `LabelSelector` as `key in (value)` to select
+                                    the group of existing pods which pods will be
+                                    taken into consideration for the incoming pod's
+                                    pod (anti) affinity. Keys that don't exist in
+                                    the incoming pod labels will be ignored. The default
+                                    value is empty. The same key is forbidden to exist
+                                    in both MatchLabelKeys and LabelSelector. Also,
+                                    MatchLabelKeys cannot be set when LabelSelector
+                                    isn't set. This is an alpha field and requires
+                                    enabling MatchLabelKeysInPodAffinity feature gate.
+                                  items:
+                                    type: string
+                                  type: array
+                                  x-kubernetes-list-type: atomic
+                                mismatchLabelKeys:
+                                  description: MismatchLabelKeys is a set of pod label
+                                    keys to select which pods will be taken into consideration.
+                                    The keys are used to lookup values from the incoming
+                                    pod labels, those key-value labels are merged
+                                    with `LabelSelector` as `key notin (value)` to
+                                    select the group of existing pods which pods will
+                                    be taken into consideration for the incoming pod's
+                                    pod (anti) affinity. Keys that don't exist in
+                                    the incoming pod labels will be ignored. The default
+                                    value is empty. The same key is forbidden to exist
+                                    in both MismatchLabelKeys and LabelSelector. Also,
+                                    MismatchLabelKeys cannot be set when LabelSelector
+                                    isn't set. This is an alpha field and requires
+                                    enabling MatchLabelKeysInPodAffinity feature gate.
+                                  items:
+                                    type: string
+                                  type: array
+                                  x-kubernetes-list-type: atomic
                                 namespaceSelector:
                                   description: A label query over the set of namespaces
                                     that the term applies to. The term is applied
@@ -782,7 +898,8 @@ spec:
                           properties:
                             labelSelector:
                               description: A label query over a set of resources,
-                                in this case pods.
+                                in this case pods. If it's null, this PodAffinityTerm
+                                matches with no Pods.
                               properties:
                                 matchExpressions:
                                   description: matchExpressions is a list of label
@@ -828,6 +945,43 @@ spec:
                                   type: object
                               type: object
                               x-kubernetes-map-type: atomic
+                            matchLabelKeys:
+                              description: MatchLabelKeys is a set of pod label keys
+                                to select which pods will be taken into consideration.
+                                The keys are used to lookup values from the incoming
+                                pod labels, those key-value labels are merged with
+                                `LabelSelector` as `key in (value)` to select the
+                                group of existing pods which pods will be taken into
+                                consideration for the incoming pod's pod (anti) affinity.
+                                Keys that don't exist in the incoming pod labels will
+                                be ignored. The default value is empty. The same key
+                                is forbidden to exist in both MatchLabelKeys and LabelSelector.
+                                Also, MatchLabelKeys cannot be set when LabelSelector
+                                isn't set. This is an alpha field and requires enabling
+                                MatchLabelKeysInPodAffinity feature gate.
+                              items:
+                                type: string
+                              type: array
+                              x-kubernetes-list-type: atomic
+                            mismatchLabelKeys:
+                              description: MismatchLabelKeys is a set of pod label
+                                keys to select which pods will be taken into consideration.
+                                The keys are used to lookup values from the incoming
+                                pod labels, those key-value labels are merged with
+                                `LabelSelector` as `key notin (value)` to select the
+                                group of existing pods which pods will be taken into
+                                consideration for the incoming pod's pod (anti) affinity.
+                                Keys that don't exist in the incoming pod labels will
+                                be ignored. The default value is empty. The same key
+                                is forbidden to exist in both MismatchLabelKeys and
+                                LabelSelector. Also, MismatchLabelKeys cannot be set
+                                when LabelSelector isn't set. This is an alpha field
+                                and requires enabling MatchLabelKeysInPodAffinity
+                                feature gate.
+                              items:
+                                type: string
+                              type: array
+                              x-kubernetes-list-type: atomic
                             namespaceSelector:
                               description: A label query over the set of namespaces
                                 that the term applies to. The term is applied to the
@@ -1014,9 +1168,10 @@ spec:
                 type: object
                 x-kubernetes-map-type: atomic
               alertmanagerConfiguration:
-                description: 'EXPERIMENTAL: alertmanagerConfiguration specifies the
-                  configuration of Alertmanager. If defined, it takes precedence over
-                  the `configSecret` field. This field may change in future releases.'
+                description: "alertmanagerConfiguration specifies the configuration
+                  of Alertmanager. \n If defined, it takes precedence over the `configSecret`
+                  field. \n This is an *experimental feature*, it may change in any
+                  upcoming release in a breaking way."
                 properties:
                   global:
                     description: Defines the global parameters of the Alertmanager
@@ -1064,8 +1219,8 @@ spec:
                               takes precedence.
                             properties:
                               password:
-                                description: The secret in the service monitor namespace
-                                  that contains the password for authentication.
+                                description: '`password` specifies a key of a Secret
+                                  containing the password for authentication.'
                                 properties:
                                   key:
                                     description: The key of the secret to select from.  Must
@@ -1086,8 +1241,8 @@ spec:
                                 type: object
                                 x-kubernetes-map-type: atomic
                               username:
-                                description: The secret in the service monitor namespace
-                                  that contains the username for authentication.
+                                description: '`username` specifies a key of a Secret
+                                  containing the username for authentication.'
                                 properties:
                                   key:
                                     description: The key of the secret to select from.  Must
@@ -1140,8 +1295,8 @@ spec:
                               token for the targets.
                             properties:
                               clientId:
-                                description: The secret or configmap containing the
-                                  OAuth2 client id
+                                description: '`clientId` specifies a key of a Secret
+                                  or ConfigMap containing the OAuth2 client''s ID.'
                                 properties:
                                   configMap:
                                     description: ConfigMap containing data to use
@@ -1188,8 +1343,8 @@ spec:
                                     x-kubernetes-map-type: atomic
                                 type: object
                               clientSecret:
-                                description: The secret containing the OAuth2 client
-                                  secret
+                                description: '`clientSecret` specifies a key of a
+                                  Secret containing the OAuth2 client''s secret.'
                                 properties:
                                   key:
                                     description: The key of the secret to select from.  Must
@@ -1212,15 +1367,18 @@ spec:
                               endpointParams:
                                 additionalProperties:
                                   type: string
-                                description: Parameters to append to the token URL
+                                description: '`endpointParams` configures the HTTP
+                                  parameters to append to the token URL.'
                                 type: object
                               scopes:
-                                description: OAuth2 scopes used for the token request
+                                description: '`scopes` defines the OAuth2 scopes used
+                                  for the token request.'
                                 items:
                                   type: string
                                 type: array
                               tokenUrl:
-                                description: The URL to fetch the token from
+                                description: '`tokenURL` configures the URL to fetch
+                                  the token from.'
                                 minLength: 1
                                 type: string
                             required:
@@ -1573,7 +1731,7 @@ spec:
                 type: boolean
               baseImage:
                 description: 'Base image that is used to deploy pods, without tag.
-                  Deprecated: use ''image'' instead'
+                  Deprecated: use ''image'' instead.'
                 type: string
               clusterAdvertiseAddress:
                 description: 'ClusterAdvertiseAddress is the explicit address to advertise
@@ -1583,6 +1741,13 @@ spec:
               clusterGossipInterval:
                 description: Interval between gossip attempts.
                 pattern: ^(0|(([0-9]+)h)?(([0-9]+)m)?(([0-9]+)s)?(([0-9]+)ms)?)$
+                type: string
+              clusterLabel:
+                description: Defines the identifier that uniquely identifies the Alertmanager
+                  cluster. You should only set it when the Alertmanager cluster includes
+                  Alertmanager instances which are external to this Alertmanager resource.
+                  In practice, the addresses of the external instances are provided
+                  via the `.spec.additionalPeers` field.
                 type: string
               clusterPeerTimeout:
                 description: Timeout for cluster peering.
@@ -1903,6 +2068,18 @@ spec:
                               required:
                               - port
                               type: object
+                            sleep:
+                              description: Sleep represents the duration that the
+                                container should sleep before being terminated.
+                              properties:
+                                seconds:
+                                  description: Seconds is the number of seconds to
+                                    sleep.
+                                  format: int64
+                                  type: integer
+                              required:
+                              - seconds
+                              type: object
                             tcpSocket:
                               description: Deprecated. TCPSocket is NOT supported
                                 as a LifecycleHandler and kept for the backward compatibility.
@@ -2000,6 +2177,18 @@ spec:
                                   type: string
                               required:
                               - port
+                              type: object
+                            sleep:
+                              description: Sleep represents the duration that the
+                                container should sleep before being terminated.
+                              properties:
+                                seconds:
+                                  description: Seconds is the number of seconds to
+                                    sleep.
+                                  format: int64
+                                  type: integer
+                              required:
+                              - seconds
                               type: object
                             tcpSocket:
                               description: Deprecated. TCPSocket is NOT supported
@@ -2905,6 +3094,15 @@ spec:
                   - name
                   type: object
                 type: array
+              enableFeatures:
+                description: "Enable access to Alertmanager feature flags. By default,
+                  no features are enabled. Enabling features which are disabled by
+                  default is entirely outside the scope of what the maintainers will
+                  support and by doing so, you accept that this behaviour may break
+                  at any time without notice. \n It requires Alertmanager >= 0.27.0."
+                items:
+                  type: string
+                type: array
               externalUrl:
                 description: The external URL the Alertmanager instances will be available
                   under. This is necessary to generate correct URLs. This is necessary
@@ -3261,6 +3459,18 @@ spec:
                               required:
                               - port
                               type: object
+                            sleep:
+                              description: Sleep represents the duration that the
+                                container should sleep before being terminated.
+                              properties:
+                                seconds:
+                                  description: Seconds is the number of seconds to
+                                    sleep.
+                                  format: int64
+                                  type: integer
+                              required:
+                              - seconds
+                              type: object
                             tcpSocket:
                               description: Deprecated. TCPSocket is NOT supported
                                 as a LifecycleHandler and kept for the backward compatibility.
@@ -3358,6 +3568,18 @@ spec:
                                   type: string
                               required:
                               - port
+                              type: object
+                            sleep:
+                              description: Sleep represents the duration that the
+                                container should sleep before being terminated.
+                              properties:
+                                seconds:
+                                  description: Seconds is the number of seconds to
+                                    sleep.
+                                  format: int64
+                                  type: integer
+                              required:
+                              - seconds
                               type: object
                             tcpSocket:
                               description: Deprecated. TCPSocket is NOT supported
@@ -4303,8 +4525,15 @@ spec:
                   objects are not goint to be performed, except for delete actions.
                 type: boolean
               podMetadata:
-                description: PodMetadata configures Labels and Annotations which are
-                  propagated to the alertmanager pods.
+                description: "PodMetadata configures labels and annotations which
+                  are propagated to the Alertmanager pods. \n The following items
+                  are reserved and cannot be overridden: * \"alertmanager\" label,
+                  set to the name of the Alertmanager instance. * \"app.kubernetes.io/instance\"
+                  label, set to the name of the Alertmanager instance. * \"app.kubernetes.io/managed-by\"
+                  label, set to \"prometheus-operator\". * \"app.kubernetes.io/name\"
+                  label, set to \"alertmanager\". * \"app.kubernetes.io/version\"
+                  label, set to the Alertmanager version. * \"kubectl.kubernetes.io/default-container\"
+                  annotation, set to \"alertmanager\"."
                 properties:
                   annotations:
                     additionalProperties:
@@ -4590,7 +4819,7 @@ spec:
                 description: 'SHA of Alertmanager container image to be deployed.
                   Defaults to the value of `version`. Similar to a tag, but the SHA
                   explicitly deploys an immutable container image. Version and Tag
-                  are ignored if SHA is set. Deprecated: use ''image'' instead.  The
+                  are ignored if SHA is set. Deprecated: use ''image'' instead. The
                   image digest can be specified as part of the image URL.'
                 type: string
               storage:
@@ -4598,8 +4827,8 @@ spec:
                   by the Alertmanager instances.
                 properties:
                   disableMountSubPath:
-                    description: '*Deprecated: subPath usage will be removed in a
-                      future release.*'
+                    description: 'Deprecated: subPath usage will be removed in a future
+                      release.'
                     type: boolean
                   emptyDir:
                     description: 'EmptyDirVolumeSource to be used by the StatefulSet.
@@ -4772,30 +5001,6 @@ spec:
                                   value but must still be higher than capacity recorded
                                   in the status field of the claim. More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#resources'
                                 properties:
-                                  claims:
-                                    description: "Claims lists the names of resources,
-                                      defined in spec.resourceClaims, that are used
-                                      by this container. \n This is an alpha field
-                                      and requires enabling the DynamicResourceAllocation
-                                      feature gate. \n This field is immutable. It
-                                      can only be set for containers."
-                                    items:
-                                      description: ResourceClaim references one entry
-                                        in PodSpec.ResourceClaims.
-                                      properties:
-                                        name:
-                                          description: Name must match the name of
-                                            one entry in pod.spec.resourceClaims of
-                                            the Pod where this field is used. It makes
-                                            that resource available inside a container.
-                                          type: string
-                                      required:
-                                      - name
-                                      type: object
-                                    type: array
-                                    x-kubernetes-list-map-keys:
-                                    - name
-                                    x-kubernetes-list-type: map
                                   limits:
                                     additionalProperties:
                                       anyOf:
@@ -4873,6 +5078,27 @@ spec:
                               storageClassName:
                                 description: 'storageClassName is the name of the
                                   StorageClass required by the claim. More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#class-1'
+                                type: string
+                              volumeAttributesClassName:
+                                description: 'volumeAttributesClassName may be used
+                                  to set the VolumeAttributesClass used by this claim.
+                                  If specified, the CSI driver will create or update
+                                  the volume with the attributes defined in the corresponding
+                                  VolumeAttributesClass. This has a different purpose
+                                  than storageClassName, it can be changed after the
+                                  claim is created. An empty string value means that
+                                  no VolumeAttributesClass will be applied to the
+                                  claim but it''s not allowed to reset this field
+                                  to empty string once it is set. If unspecified and
+                                  the PersistentVolumeClaim is unbound, the default
+                                  VolumeAttributesClass will be set by the persistentvolume
+                                  controller if it exists. If the resource referred
+                                  to by volumeAttributesClass does not exist, this
+                                  PersistentVolumeClaim will be set to a Pending state,
+                                  as reflected by the modifyVolumeStatus field, until
+                                  such as a resource exists. More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#volumeattributesclass
+                                  (Alpha) Using this field requires the VolumeAttributesClass
+                                  feature gate to be enabled.'
                                 type: string
                               volumeMode:
                                 description: volumeMode defines what type of volume
@@ -5040,30 +5266,6 @@ spec:
                               must still be higher than capacity recorded in the status
                               field of the claim. More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#resources'
                             properties:
-                              claims:
-                                description: "Claims lists the names of resources,
-                                  defined in spec.resourceClaims, that are used by
-                                  this container. \n This is an alpha field and requires
-                                  enabling the DynamicResourceAllocation feature gate.
-                                  \n This field is immutable. It can only be set for
-                                  containers."
-                                items:
-                                  description: ResourceClaim references one entry
-                                    in PodSpec.ResourceClaims.
-                                  properties:
-                                    name:
-                                      description: Name must match the name of one
-                                        entry in pod.spec.resourceClaims of the Pod
-                                        where this field is used. It makes that resource
-                                        available inside a container.
-                                      type: string
-                                  required:
-                                  - name
-                                  type: object
-                                type: array
-                                x-kubernetes-list-map-keys:
-                                - name
-                                x-kubernetes-list-type: map
                               limits:
                                 additionalProperties:
                                   anyOf:
@@ -5140,6 +5342,26 @@ spec:
                             description: 'storageClassName is the name of the StorageClass
                               required by the claim. More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#class-1'
                             type: string
+                          volumeAttributesClassName:
+                            description: 'volumeAttributesClassName may be used to
+                              set the VolumeAttributesClass used by this claim. If
+                              specified, the CSI driver will create or update the
+                              volume with the attributes defined in the corresponding
+                              VolumeAttributesClass. This has a different purpose
+                              than storageClassName, it can be changed after the claim
+                              is created. An empty string value means that no VolumeAttributesClass
+                              will be applied to the claim but it''s not allowed to
+                              reset this field to empty string once it is set. If
+                              unspecified and the PersistentVolumeClaim is unbound,
+                              the default VolumeAttributesClass will be set by the
+                              persistentvolume controller if it exists. If the resource
+                              referred to by volumeAttributesClass does not exist,
+                              this PersistentVolumeClaim will be set to a Pending
+                              state, as reflected by the modifyVolumeStatus field,
+                              until such as a resource exists. More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#volumeattributesclass
+                              (Alpha) Using this field requires the VolumeAttributesClass
+                              feature gate to be enabled.'
+                            type: string
                           volumeMode:
                             description: volumeMode defines what type of volume is
                               required by the claim. Value of Filesystem is implied
@@ -5151,7 +5373,7 @@ spec:
                             type: string
                         type: object
                       status:
-                        description: '*Deprecated: this field is never set.*'
+                        description: 'Deprecated: this field is never set.'
                         properties:
                           accessModes:
                             description: 'accessModes contains the actual access modes
@@ -5287,6 +5509,42 @@ spec:
                               - type
                               type: object
                             type: array
+                          currentVolumeAttributesClassName:
+                            description: currentVolumeAttributesClassName is the current
+                              name of the VolumeAttributesClass the PVC is using.
+                              When unset, there is no VolumeAttributeClass applied
+                              to this PersistentVolumeClaim This is an alpha field
+                              and requires enabling VolumeAttributesClass feature.
+                            type: string
+                          modifyVolumeStatus:
+                            description: ModifyVolumeStatus represents the status
+                              object of ControllerModifyVolume operation. When this
+                              is unset, there is no ModifyVolume operation being attempted.
+                              This is an alpha field and requires enabling VolumeAttributesClass
+                              feature.
+                            properties:
+                              status:
+                                description: 'status is the status of the ControllerModifyVolume
+                                  operation. It can be in any of following states:
+                                  - Pending Pending indicates that the PersistentVolumeClaim
+                                  cannot be modified due to unmet requirements, such
+                                  as the specified VolumeAttributesClass not existing.
+                                  - InProgress InProgress indicates that the volume
+                                  is being modified. - Infeasible Infeasible indicates
+                                  that the request has been rejected as invalid by
+                                  the CSI driver. To resolve the error, a valid VolumeAttributesClass
+                                  needs to be specified. Note: New statuses can be
+                                  added in the future. Consumers should check for
+                                  unknown statuses and fail appropriately.'
+                                type: string
+                              targetVolumeAttributesClassName:
+                                description: targetVolumeAttributesClassName is the
+                                  name of the VolumeAttributesClass the PVC currently
+                                  being reconciled
+                                type: string
+                            required:
+                            - status
+                            type: object
                           phase:
                             description: phase represents the current phase of PersistentVolumeClaim.
                             type: string
@@ -5296,7 +5554,7 @@ spec:
               tag:
                 description: 'Tag of Alertmanager container image to be deployed.
                   Defaults to the value of `version`. Version is ignored if Tag is
-                  set. Deprecated: use ''image'' instead.  The image tag can be specified
+                  set. Deprecated: use ''image'' instead. The image tag can be specified
                   as part of the image URL.'
                 type: string
               tolerations:
@@ -6112,31 +6370,6 @@ spec:
                                     value but must still be higher than capacity recorded
                                     in the status field of the claim. More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#resources'
                                   properties:
-                                    claims:
-                                      description: "Claims lists the names of resources,
-                                        defined in spec.resourceClaims, that are used
-                                        by this container. \n This is an alpha field
-                                        and requires enabling the DynamicResourceAllocation
-                                        feature gate. \n This field is immutable.
-                                        It can only be set for containers."
-                                      items:
-                                        description: ResourceClaim references one
-                                          entry in PodSpec.ResourceClaims.
-                                        properties:
-                                          name:
-                                            description: Name must match the name
-                                              of one entry in pod.spec.resourceClaims
-                                              of the Pod where this field is used.
-                                              It makes that resource available inside
-                                              a container.
-                                            type: string
-                                        required:
-                                        - name
-                                        type: object
-                                      type: array
-                                      x-kubernetes-list-map-keys:
-                                      - name
-                                      x-kubernetes-list-type: map
                                     limits:
                                       additionalProperties:
                                         anyOf:
@@ -6218,6 +6451,28 @@ spec:
                                   description: 'storageClassName is the name of the
                                     StorageClass required by the claim. More info:
                                     https://kubernetes.io/docs/concepts/storage/persistent-volumes#class-1'
+                                  type: string
+                                volumeAttributesClassName:
+                                  description: 'volumeAttributesClassName may be used
+                                    to set the VolumeAttributesClass used by this
+                                    claim. If specified, the CSI driver will create
+                                    or update the volume with the attributes defined
+                                    in the corresponding VolumeAttributesClass. This
+                                    has a different purpose than storageClassName,
+                                    it can be changed after the claim is created.
+                                    An empty string value means that no VolumeAttributesClass
+                                    will be applied to the claim but it''s not allowed
+                                    to reset this field to empty string once it is
+                                    set. If unspecified and the PersistentVolumeClaim
+                                    is unbound, the default VolumeAttributesClass
+                                    will be set by the persistentvolume controller
+                                    if it exists. If the resource referred to by volumeAttributesClass
+                                    does not exist, this PersistentVolumeClaim will
+                                    be set to a Pending state, as reflected by the
+                                    modifyVolumeStatus field, until such as a resource
+                                    exists. More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#volumeattributesclass
+                                    (Alpha) Using this field requires the VolumeAttributesClass
+                                    feature gate to be enabled.'
                                   type: string
                                 volumeMode:
                                   description: volumeMode defines what type of volume
@@ -6593,6 +6848,102 @@ spec:
                             description: Projection that may be projected along with
                               other supported volume types
                             properties:
+                              clusterTrustBundle:
+                                description: "ClusterTrustBundle allows a pod to access
+                                  the `.spec.trustBundle` field of ClusterTrustBundle
+                                  objects in an auto-updating file. \n Alpha, gated
+                                  by the ClusterTrustBundleProjection feature gate.
+                                  \n ClusterTrustBundle objects can either be selected
+                                  by name, or by the combination of signer name and
+                                  a label selector. \n Kubelet performs aggressive
+                                  normalization of the PEM contents written into the
+                                  pod filesystem.  Esoteric PEM features such as inter-block
+                                  comments and block headers are stripped.  Certificates
+                                  are deduplicated. The ordering of certificates within
+                                  the file is arbitrary, and Kubelet may change the
+                                  order over time."
+                                properties:
+                                  labelSelector:
+                                    description: Select all ClusterTrustBundles that
+                                      match this label selector.  Only has effect
+                                      if signerName is set.  Mutually-exclusive with
+                                      name.  If unset, interpreted as "match nothing".  If
+                                      set but empty, interpreted as "match everything".
+                                    properties:
+                                      matchExpressions:
+                                        description: matchExpressions is a list of
+                                          label selector requirements. The requirements
+                                          are ANDed.
+                                        items:
+                                          description: A label selector requirement
+                                            is a selector that contains values, a
+                                            key, and an operator that relates the
+                                            key and values.
+                                          properties:
+                                            key:
+                                              description: key is the label key that
+                                                the selector applies to.
+                                              type: string
+                                            operator:
+                                              description: operator represents a key's
+                                                relationship to a set of values. Valid
+                                                operators are In, NotIn, Exists and
+                                                DoesNotExist.
+                                              type: string
+                                            values:
+                                              description: values is an array of string
+                                                values. If the operator is In or NotIn,
+                                                the values array must be non-empty.
+                                                If the operator is Exists or DoesNotExist,
+                                                the values array must be empty. This
+                                                array is replaced during a strategic
+                                                merge patch.
+                                              items:
+                                                type: string
+                                              type: array
+                                          required:
+                                          - key
+                                          - operator
+                                          type: object
+                                        type: array
+                                      matchLabels:
+                                        additionalProperties:
+                                          type: string
+                                        description: matchLabels is a map of {key,value}
+                                          pairs. A single {key,value} in the matchLabels
+                                          map is equivalent to an element of matchExpressions,
+                                          whose key field is "key", the operator is
+                                          "In", and the values array contains only
+                                          "value". The requirements are ANDed.
+                                        type: object
+                                    type: object
+                                    x-kubernetes-map-type: atomic
+                                  name:
+                                    description: Select a single ClusterTrustBundle
+                                      by object name.  Mutually-exclusive with signerName
+                                      and labelSelector.
+                                    type: string
+                                  optional:
+                                    description: If true, don't block pod startup
+                                      if the referenced ClusterTrustBundle(s) aren't
+                                      available.  If using name, then the named ClusterTrustBundle
+                                      is allowed not to exist.  If using signerName,
+                                      then the combination of signerName and labelSelector
+                                      is allowed to match zero ClusterTrustBundles.
+                                    type: boolean
+                                  path:
+                                    description: Relative path from the volume root
+                                      to write the bundle.
+                                    type: string
+                                  signerName:
+                                    description: Select all ClusterTrustBundles that
+                                      match this signer name. Mutually-exclusive with
+                                      name.  The contents of all selected ClusterTrustBundles
+                                      will be unified and deduplicated.
+                                    type: string
+                                required:
+                                - path
+                                type: object
                               configMap:
                                 description: configMap information about the configMap
                                   data to project

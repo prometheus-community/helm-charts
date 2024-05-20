@@ -2,6 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: {{ template "prometheus-mysql-exporter.fullname" . }}
+  namespace: {{ include "prometheus-mysql-exporter.namespace" . }}
   labels:
     {{- include "prometheus-mysql-exporter.labels" . | nindent 4 }}
 spec:
@@ -28,6 +29,9 @@ spec:
       {{- end }}
     spec:
       serviceAccountName: {{ template "prometheus-mysql-exporter.serviceAccountName" . }}
+      {{- with .Values.priorityClassName }}
+      priorityClassName: {{ . }}
+      {{- end }}
       securityContext:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
       {{- if and .Values.imagePullSecrets }}

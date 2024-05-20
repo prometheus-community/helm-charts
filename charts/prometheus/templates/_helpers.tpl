@@ -110,12 +110,7 @@ Return the appropriate apiVersion for deployment.
 {{- define "prometheus.deployment.apiVersion" -}}
 {{- print "apps/v1" -}}
 {{- end -}}
-{{/*
-Return the appropriate apiVersion for daemonset.
-*/}}
-{{- define "prometheus.daemonset.apiVersion" -}}
-{{- print "apps/v1" -}}
-{{- end -}}
+
 {{/*
 Return the appropriate apiVersion for networkpolicy.
 */}}
@@ -133,6 +128,7 @@ Return the appropriate apiVersion for poddisruptionbudget.
 {{- print "policy/v1beta1" -}}
 {{- end -}}
 {{- end -}}
+
 {{/*
 Return the appropriate apiVersion for rbac.
 */}}
@@ -143,6 +139,7 @@ Return the appropriate apiVersion for rbac.
 {{- print "rbac.authorization.k8s.io/v1beta1" -}}
 {{- end -}}
 {{- end -}}
+
 {{/*
 Return the appropriate apiVersion for ingress.
 */}}
@@ -169,6 +166,7 @@ Return if ingress supports ingressClassName.
 {{- define "ingress.supportsIngressClassName" -}}
   {{- or (eq (include "ingress.isStable" .) "true") (and (eq (include "ingress.apiVersion" .) "networking.k8s.io/v1beta1") (semverCompare ">= 1.18.x" (include "prometheus.kubeVersion" .))) -}}
 {{- end -}}
+
 {{/*
 Return if ingress supports pathType.
 */}}
@@ -211,3 +209,26 @@ Define template prometheus.namespaces producing a list of namespaces to monitor
 {{- end -}}
 {{ mustToJson $namespaces }}
 {{- end -}}
+
+{{/*
+Define prometheus.server.remoteWrite producing a list of remoteWrite configurations with URL templating
+*/}}
+{{- define "prometheus.server.remoteWrite" -}}
+{{- $remoteWrites := list }}
+{{- range $remoteWrite := .Values.server.remoteWrite }}
+  {{- $remoteWrites = tpl $remoteWrite.url $ | set $remoteWrite "url" | append $remoteWrites }}
+{{- end -}}
+{{ toYaml $remoteWrites }}
+{{- end -}}
+
+{{/*
+Define prometheus.server.remoteRead producing a list of remoteRead configurations with URL templating
+*/}}
+{{- define "prometheus.server.remoteRead" -}}
+{{- $remoteReads := list }}
+{{- range $remoteRead := .Values.server.remoteRead }}
+  {{- $remoteReads = tpl $remoteRead.url $ | set $remoteRead "url" | append $remoteReads }}
+{{- end -}}
+{{ toYaml $remoteReads }}
+{{- end -}}
+

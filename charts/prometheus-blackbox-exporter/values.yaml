@@ -31,6 +31,12 @@ automountServiceAccountToken: false
 ##   NO_PROXY: "localhost,127.0.0.1"
 extraEnv: {}
 
+## Additional blackbox-exporter container environment variables for secret
+## extraEnvFromSecret:
+##   - secretOne
+##   - secretTwo
+extraEnvFromSecret: ""
+
 extraVolumes: []
   # - name: secret-blackbox-oauth-htpasswd
   #   secret:
@@ -46,9 +52,12 @@ extraVolumeMounts:
   #   mountPath: /etc/ssl/certs/ca-certificates.crt
 
 ## Additional InitContainers to initialize the pod
-##
+## This supports either a structured array or a templatable string
 extraInitContainers: []
 
+## This supports either a structured array or a templatable string
+
+# Array mode
 extraContainers: []
   # - name: oAuth2-proxy
   #   args:
@@ -69,6 +78,16 @@ extraContainers: []
   #   volumeMounts:
   #     - mountPath: /etc/prometheus/secrets/blackbox-tls
   #       name: secret-blackbox-tls
+
+# String mode
+# extraContainers: |-
+#   - name: oAuth2-proxy
+#     args:
+#       - -https-address=:9116
+#       - -upstream=http://localhost:9115
+#       - -skip-auth-regex=^/metrics
+#       - -openshift-delegate-urls={"/":{"group":"monitoring.coreos.com","resource":"prometheuses","verb":"get"}}
+#     image: {{ .Values.global.imageRegistry }}/openshift/oauth-proxy:v1.1.0
 
 ## Enable pod security policy
 pspEnabled: true
@@ -194,6 +213,10 @@ service:
 # https://github.com/prometheus/blackbox_exporter/blob/998037b5b40c1de5fee348ffdea8820509d85171/main.go#L55
 containerPort: 9115
 
+# Number of port to expose on the host. If specified, this must be a valid port number, 0 < x < 65536. If zero, no port is exposed.
+# This is useful for communicating with Daemon Pods when kind is DaemonSet.
+hostPort: 0
+
 serviceAccount:
   # Specifies whether a ServiceAccount should be created
   create: true
@@ -227,6 +250,12 @@ ingress:
 
 podAnnotations: {}
 
+# Annotations for the Deployment
+deploymentAnnotations: {}
+
+# Annotations for the Secret
+secretAnnotations: {}
+
 # Hostaliases allow to add additional DNS entries to be injected directly into pods.
 # This will take precedence over your implemented DNS solution
 hostAliases: []
@@ -253,8 +282,12 @@ serviceMonitor:
     additionalRelabeling: []
     labels: {}
     path: /metrics
+    scheme: http
+    tlsConfig: {}
     interval: 30s
     scrapeTimeout: 30s
+    ## Port can be defined by assigning a value for the port key below
+    ## port:
 
   ## If true, a ServiceMonitor CRD is created for a prometheus operator
   ## https://github.com/coreos/prometheus-operator for each target
@@ -296,6 +329,49 @@ prometheusRule:
   additionalLabels: {}
   namespace: ""
   rules: []
+
+podMonitoring:
+  ## If true, a PodMonitoring CR is created for google managed prometheus
+  ## https://cloud.google.com/stackdriver/docs/managed-prometheus/setup-managed#gmp-pod-monitoring for blackbox-exporter itself
+  ##
+  selfMonitor:
+    enabled: false
+    additionalMetricsRelabels: {}
+    labels: {}
+    path: /metrics
+    interval: 30s
+    scrapeTimeout: 30s
+
+  ## If true, a PodMonitoring CR is created for a google managed prometheus
+  ## https://cloud.google.com/stackdriver/docs/managed-prometheus/setup-managed#gmp-pod-monitoring for each target
+  ##
+  enabled: false
+
+  ## Default values that will be used for all PodMonitoring created by `targets`
+  ## Following PodMonitoring API specs https://github.com/GoogleCloudPlatform/prometheus-engine/blob/main/doc/api.md#scrapeendpoint
+  defaults:
+    additionalMetricsRelabels: {}
+    labels: {}
+    interval: 30s
+    scrapeTimeout: 30s
+    module: http_2xx
+  ## scheme: Protocol scheme to use to scrape.
+  scheme: http
+  ## path: HTTP path. Needs to be adjusted, if web.route-prefix is set
+  path: "/probe"
+  ## tlsConfig: TLS configuration to use when scraping the endpoint. For example if using istio mTLS.
+  ## Of type: https://github.com/coreos/prometheus-operator/blob/master/Documentation/api.md#tlsconfig
+  tlsConfig: {}
+
+  targets:
+#    - name: example                    # Human readable URL that will appear in Google Managed Prometheus / AlertManager
+#      url: http://example.com/healthz  # The URL that blackbox will scrape
+#      hostname: example.com            # HTTP probes can accept an additional `hostname` parameter that will set `Host` header and TLS SNI
+#      labels: {}                       # Map of labels for PodMonitoring. Overrides value set in `defaults`
+#      interval: 60s                    # Scraping interval. Overrides value set in `defaults`
+#      scrapeTimeout: 60s               # Scrape timeout. Overrides value set in `defaults`
+#      module: http_2xx                 # Module used for scraping. Overrides value set in `defaults`
+#      additionalMetricsRelabels: {}    # Map of metric labels and values to add
 
 ## Network policy for chart
 networkPolicy:
@@ -354,3 +430,52 @@ verticalPodAutoscaler:
     # Specifies whether recommended updates are applied when a Pod is started and whether recommended updates
     # are applied during the life of a Pod. Possible values are "Off", "Initial", "Recreate", and "Auto".
     updateMode: Auto
+
+configReloader:
+  enabled: false
+  containerPort: 8080
+  config:
+    logFormat: logfmt
+    logLevel: info
+    watchInterval: 1m
+  image:
+    registry: quay.io
+    repository: prometheus-operator/prometheus-config-reloader
+    tag: "v0.71.2"
+    pullPolicy: IfNotPresent
+    digest: ""
+  securityContext:
+    runAsUser: 1000
+    runAsGroup: 1000
+    readOnlyRootFilesystem: true
+    runAsNonRoot: true
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop: ["ALL"]
+  resources:
+    limits:
+      memory: 50Mi
+    requests:
+      cpu: 10m
+      memory: 20Mi
+  livenessProbe:
+    httpGet:
+      path: /healthz
+      port: reloader-web
+      scheme: HTTP
+  readinessProbe:
+    httpGet:
+      path: /healthz
+      port: reloader-web
+      scheme: HTTP
+  service:
+    port: 8080
+  serviceMonitor:
+    selfMonitor:
+      additionalMetricsRelabels: {}
+      additionalRelabeling: []
+      path: /metrics
+      scheme: http
+      tlsConfig: {}
+      interval: 30s
+      scrapeTimeout: 30s

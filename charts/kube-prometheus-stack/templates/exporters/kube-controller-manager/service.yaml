@@ -10,8 +10,12 @@ metadata:
   namespace: kube-system
 spec:
   clusterIP: None
+  {{- if .Values.kubeControllerManager.service.ipDualStack.enabled }}
+  ipFamilies: {{ toYaml .Values.kubeControllerManager.service.ipDualStack.ipFamilies | nindent 4 }}
+  ipFamilyPolicy: {{ .Values.kubeControllerManager.service.ipDualStack.ipFamilyPolicy }}
+  {{- end }}
   ports:
-    - name: http-metrics
+    - name: {{ .Values.kubeControllerManager.serviceMonitor.port }}
       {{- $kubeControllerManagerDefaultInsecurePort := 10252 }}
       {{- $kubeControllerManagerDefaultSecurePort := 10257 }}
       port: {{ include "kube-prometheus-stack.kubeControllerManager.insecureScrape" (list . $kubeControllerManagerDefaultInsecurePort $kubeControllerManagerDefaultSecurePort .Values.kubeControllerManager.service.port) }}

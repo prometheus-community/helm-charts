@@ -55,9 +55,13 @@ spec:
             - name: REDIS_ADDR
             {{- if .Values.redisAddressConfig.enabled }}
               valueFrom:
+              {{- if .Values.redisAddressConfig.isSecret }}
+                secretKeyRef:
+              {{- else }}
                 configMapKeyRef:
-                  name: {{ .Values.redisAddressConfig.configmap.name }}
-                  key: {{ .Values.redisAddressConfig.configmap.key }}
+              {{- end }}
+                  name: {{ .Values.redisAddressConfig.source.name }}
+                  key: {{ .Values.redisAddressConfig.source.key }}
             {{- else }}
               value: {{ .Values.redisAddress }}
             {{- end }}
