@@ -174,6 +174,7 @@ def patch_dashboards_json(content, multicluster_key):
         overwrite_list = []
         for variable in content_struct['templating']['list']:
             if variable['name'] == 'cluster':
+                variable['allValue'] = '.*'
                 variable['hide'] = ':multicluster:'
             overwrite_list.append(variable)
         content_struct['templating']['list'] = overwrite_list
