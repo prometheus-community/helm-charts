@@ -261,6 +261,11 @@ spec:
   storage:
 {{ tpl (toYaml .Values.prometheus.prometheusSpec.storageSpec | indent 4) . }}
 {{- end }}
+{{- if semverCompare ">= 1.27.0" (include "kube-prometheus-stack.operator.kubeVersion" .) }}
+  persistentVolumeClaimRetentionPolicy:
+    whenDeleted: {{ ternary "Delete" "Retain" .Values.prometheusOperator.statefulSet.pvcDeleteOnStsDelete }}
+    whenScaled: {{ ternary "Delete" "Retain" .Values.prometheusOperator.statefulSet.pvcDeleteOnStsScale }}
+{{- end }}
 {{- if .Values.prometheus.prometheusSpec.podMetadata }}
   podMetadata:
 {{ tpl (toYaml .Values.prometheus.prometheusSpec.podMetadata | indent 4) . }}
