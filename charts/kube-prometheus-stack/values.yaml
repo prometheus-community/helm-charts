@@ -1056,6 +1056,7 @@ grafana:
       defaultDatasourceEnabled: true
       isDefaultDatasource: true
 
+      name: Prometheus
       uid: prometheus
 
       ## URL of prometheus datasource
@@ -1090,6 +1091,7 @@ grafana:
         # traceIdLabelName: trace_id
       alertmanager:
         enabled: true
+        name: Alertmanager
         uid: alertmanager
         handleGrafanaManagedAlerts: false
         implementation: prometheus
@@ -2480,6 +2482,12 @@ prometheusOperator:
         runAsUser: 2000
         seccompProfile:
           type: RuntimeDefault
+      ## Service account for Prometheus Operator Webhook Job Patch to use.
+      ## ref: https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-account/
+      ##
+      serviceAccount:
+        create: true
+        automountServiceAccountToken: true
 
     # Security context for create job container
     createSecretJob:
@@ -3357,6 +3365,15 @@ prometheus:
   ## ref: https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/api.md#prometheusspec
   ##
   prometheusSpec:
+    ## Statefulset's persistent volume claim retention policy
+    ## pvcDeleteOnStsDelete and pvcDeleteOnStsScale determine whether
+    ## statefulset's PVCs are deleted (true) or retained (false) on scaling down
+    ## and deleting statefulset, respectively. Requires 1.27.0+.
+    ## Ref: https://kubernetes.io/docs/concepts/workloads/controllers/statefulset/#persistentvolumeclaim-retention
+    persistentVolumeClaimRetentionPolicy: {}
+    #  whenDeleted: Retain
+    #  whenScaled: Retain
+
     ## If true, pass --storage.tsdb.max-block-duration=2h to prometheus. This is already done if using Thanos
     ##
     disableCompaction: false
