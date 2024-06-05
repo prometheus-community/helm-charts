@@ -31,10 +31,12 @@ spec:
   listenLocal: {{ .Values.thanosRuler.thanosRulerSpec.listenLocal }}
   serviceAccountName: {{ template "kube-prometheus-stack.thanosRuler.serviceAccountName" . }}
 {{- if .Values.thanosRuler.thanosRulerSpec.externalPrefix }}
-  externalPrefix: "{{ tpl .Values.thanosRuler.thanosRulerSpec.externalPrefix . }}"
+  externalPrefix: {{ tpl .Values.thanosRuler.thanosRulerSpec.externalPrefix . | quote }}
+{{- else if .Values.thanosRuler.thanosRulerSpec.externalPrefixNilUsesHelmValues }}
+  {{- /** If externalPrefix is empty and externalPrefixNilUsesHelmValues=true, omit externalPrefix **/}}
 {{- else if and .Values.thanosRuler.ingress.enabled .Values.thanosRuler.ingress.hosts }}
   externalPrefix: "http://{{ tpl (index .Values.thanosRuler.ingress.hosts 0) . }}{{ .Values.thanosRuler.thanosRulerSpec.routePrefix }}"
-{{- else if .Values.thanosRuler.thanosRulerSpec.externalPrefixNilUsesHelmValues }}
+{{- else }}
   externalPrefix: "http://{{ template "kube-prometheus-stack.thanosRuler.name" . }}.{{ template "kube-prometheus-stack.namespace" . }}:{{ .Values.thanosRuler.service.port }}"
 {{- end }}
 {{- if .Values.thanosRuler.thanosRulerSpec.additionalArgs }}
