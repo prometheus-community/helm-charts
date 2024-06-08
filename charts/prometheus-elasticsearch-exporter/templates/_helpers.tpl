@@ -74,9 +74,9 @@ global:
 {{- define "elasticsearch-exporter.imagePullSecrets" -}}
 {{- range .Values.global.imagePullSecrets }}
   {{- if eq (typeOf .) "map[string]interface {}" }}
-- {{ toYaml . | trim }}
+- {{ tpl (toYaml .) $ | trim }}
   {{- else }}
-- name: {{ . }}
+- name: {{ tpl . $ }}
   {{- end }}
 {{- end }}
 {{- end -}}
