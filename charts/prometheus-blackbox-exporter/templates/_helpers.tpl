@@ -78,6 +78,16 @@ Return the appropriate apiVersion for rbac.
 {{- end -}}
 {{- end -}}
 
+{{/*
+Get Policy API Version
+*/}}
+{{- define "prometheus-blackbox-exporter.policy.apiVersion" -}}
+  {{- if and (.Capabilities.APIVersions.Has "policy/v1") (semverCompare ">= 1.21-0" (include "prometheus-blackbox-exporter.kubeVersion" .)) -}}
+      {{- print "policy/v1" -}}
+  {{- else -}}
+    {{- print "policy/v1beta1" -}}
+  {{- end -}}
+  {{- end -}}
 
 {{- define "prometheus-blackbox-exporter.namespace" -}}
   {{- if .Values.namespaceOverride -}}
