@@ -80,7 +80,11 @@ spec:
           {{- end }}
             - --reload-url={{ default $default_url .Values.configmapReload.reloadUrl }}
           {{- range $key, $value := .Values.configmapReload.prometheus.extraArgs }}
+            {{- if $value }}
             - --{{ $key }}={{ $value }}
+            {{- else }}
+            - --{{ $key }}
+            {{- end }}
           {{- end }}
           {{- range .Values.configmapReload.prometheus.extraVolumeDirs }}
             - --watched-dir={{ . }}
@@ -101,6 +105,9 @@ spec:
             - name: config-volume
               mountPath: /etc/config
               readOnly: true
+          {{- with .Values.configmapReload.prometheus.extraVolumeMounts }}
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
           {{- range .Values.configmapReload.prometheus.extraConfigmapMounts }}
             - name: {{ $.Values.configmapReload.prometheus.name }}-{{ .name }}
               mountPath: {{ .mountPath }}
@@ -149,7 +156,11 @@ spec:
             - --{{ . }}
           {{- end }}
           {{- range $key, $value := .Values.server.extraArgs }}
+            {{- if $value }}
             - --{{ $key }}={{ $value }}
+            {{- else }}
+            - --{{ $key }}
+            {{- end }}
           {{- end }}
           {{- if .Values.server.baseURL }}
             - --web.external-url={{ .Values.server.baseURL }}
@@ -296,10 +307,29 @@ spec:
       tolerations:
 {{ toYaml .Values.server.tolerations | indent 8 }}
     {{- end }}
-    {{- if .Values.server.affinity }}
+    {{- if or .Values.server.affinity .Values.server.podAntiAffinity }}
       affinity:
-{{ toYaml .Values.server.affinity | indent 8 }}
     {{- end }}
+      {{- with .Values.server.affinity }}
+      {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- if eq .Values.server.podAntiAffinity "hard" }}
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - topologyKey: {{ .Values.server.podAntiAffinityTopologyKey }}
+              labelSelector:
+                matchExpressions:
+                  - {key: app.kubernetes.io/name, operator: In, values: [{{ template "prometheus.name" . }}]}
+      {{- else if eq .Values.server.podAntiAffinity "soft" }}
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                topologyKey: {{ .Values.server.podAntiAffinityTopologyKey }}
+                labelSelector:
+                  matchExpressions:
+                    - {key: app.kubernetes.io/name, operator: In, values: [{{ template "prometheus.name" . }}]}
+      {{- end }}
     {{- with .Values.server.topologySpreadConstraints }}
       topologySpreadConstraints:
         {{- toYaml . | nindent 8 }}
@@ -350,7 +380,9 @@ spec:
 {{- end }}
 {{- if .Values.server.persistentVolume.enabled }}
   volumeClaimTemplates:
-    - metadata:
+    - apiVersion: v1	
+      kind: PersistentVolumeClaim	
+      metadata:
         name: {{ .Values.server.persistentVolume.statefulSetNameOverride | default "storage-volume" }}
         {{- if .Values.server.persistentVolume.annotations }}
         annotations:

@@ -15,7 +15,18 @@ spec:
   - path: {{ .Values.serviceMonitor.selfMonitor.path }}
     interval: {{ .Values.serviceMonitor.selfMonitor.interval }}
     scrapeTimeout: {{ .Values.serviceMonitor.selfMonitor.scrapeTimeout }}
-    scheme: http
+    scheme: {{ .Values.serviceMonitor.selfMonitor.scheme }}
+    {{- with .Values.serviceMonitor.selfMonitor.port }}
+    port: {{ . }}
+    {{- end }}
+    {{- if .Values.serviceMonitor.selfMonitor.additionalMetricsRelabels }}
+    metricRelabelings:
+      {{- toYaml .Values.serviceMonitor.selfMonitor.additionalMetricsRelabels | nindent 6 }}
+    {{- end }}  
+    {{- if .Values.serviceMonitor.selfMonitor.tlsConfig }}
+    tlsConfig:
+      {{- toYaml .Values.serviceMonitor.selfMonitor.tlsConfig | nindent 6 }}
+    {{- end }}
     {{- if .Values.serviceMonitor.selfMonitor.additionalRelabeling }}
     relabelings:
       {{- toYaml .Values.serviceMonitor.selfMonitor.additionalRelabeling | nindent 6 }}
@@ -24,7 +35,11 @@ spec:
   - path: {{ .Values.configReloader.serviceMonitor.selfMonitor.path }}
     interval: {{ .Values.configReloader.serviceMonitor.selfMonitor.interval }}
     scrapeTimeout: {{ .Values.configReloader.serviceMonitor.selfMonitor.scrapeTimeout }}
-    scheme: http
+    scheme: {{ .Values.configReloader.serviceMonitor.selfMonitor.scheme }}
+    {{- if .Values.configReloader.serviceMonitor.selfMonitor.tlsConfig }}
+    tlsConfig:
+      {{- toYaml .Values.configReloader.serviceMonitor.selfMonitor.tlsConfig | nindent 6 }}
+    {{- end }}
     {{- if .Values.configReloader.serviceMonitor.selfMonitor.additionalRelabeling }}
     relabelings:
       {{- toYaml .Values.configReloader.serviceMonitor.selfMonitor.additionalRelabeling | indent 6 }}

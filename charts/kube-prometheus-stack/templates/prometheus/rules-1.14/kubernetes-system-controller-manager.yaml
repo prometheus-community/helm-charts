@@ -1,5 +1,5 @@
 {{- /*
-Generated from 'kubernetes-system-controller-manager' group from https://raw.githubusercontent.com/prometheus-operator/kube-prometheus/main/manifests/kubernetesControlPlane-prometheusRule.yaml
+Generated from 'kubernetes-system-controller-manager' group from https://raw.githubusercontent.com/prometheus-operator/kube-prometheus/65922b9fd8c3869c06686b44f5f3aa9f96560666/manifests/kubernetesControlPlane-prometheusRule.yaml
 Do not change in-place! In order to change this file first read following link:
 https://github.com/prometheus-community/helm-charts/tree/main/charts/kube-prometheus-stack/hack
 */ -}}
@@ -38,12 +38,12 @@ spec:
         runbook_url: {{ .Values.defaultRules.runbookUrl }}/kubernetes/kubecontrollermanagerdown
         summary: Target disappeared from Prometheus target discovery.
       expr: absent(up{job="kube-controller-manager"} == 1)
-      for: 15m
+      for: {{ dig "KubeControllerManagerDown" "for" "15m" .Values.customRules }}
       {{- with .Values.defaultRules.keepFiringFor }}
       keep_firing_for: "{{ . }}"
       {{- end }}
       labels:
-        severity: critical
+        severity: {{ dig "KubeControllerManagerDown" "severity" "critical" .Values.customRules }}
       {{- if or .Values.defaultRules.additionalRuleLabels .Values.defaultRules.additionalRuleGroupLabels.kubeControllerManager }}
         {{- with .Values.defaultRules.additionalRuleLabels }}
           {{- toYaml . | nindent 8 }}

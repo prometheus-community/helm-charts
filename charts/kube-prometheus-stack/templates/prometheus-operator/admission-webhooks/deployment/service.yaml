@@ -2,7 +2,7 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ template "kube-prometheus-stack.fullname" . }}-operator-webhook
+  name: {{ template "kube-prometheus-stack.operator.fullname" . }}-webhook
   namespace: {{ template "kube-prometheus-stack.namespace" . }}
   labels:
     app: {{ template "kube-prometheus-stack.name" . }}-operator-webhook
@@ -17,6 +17,10 @@ metadata:
 spec:
 {{- if .Values.prometheusOperator.admissionWebhooks.deployment.service.clusterIP }}
   clusterIP: {{ .Values.prometheusOperator.admissionWebhooks.deployment.service.clusterIP }}
+{{- end }}
+{{- if .Values.prometheusOperator.admissionWebhooks.deployment.service.ipDualStack.enabled }}
+  ipFamilies: {{ toYaml .Values.prometheusOperator.admissionWebhooks.deployment.service.ipDualStack.ipFamilies | nindent 4 }}
+  ipFamilyPolicy: {{ .Values.prometheusOperator.admissionWebhooks.deployment.service.ipDualStack.ipFamilyPolicy }}
 {{- end }}
 {{- if .Values.prometheusOperator.admissionWebhooks.deployment.service.externalIPs }}
   externalIPs:

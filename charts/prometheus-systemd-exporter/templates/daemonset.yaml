@@ -52,9 +52,9 @@ spec:
           args:
           - --log.level=info
           - --systemd.collector.unit-include=kubelet.service|docker.service
-            {{- with .Values.extraArgs }}
-            {{- toYaml . | nindent 12 }}
-            {{- end }}
+          {{- with .Values.extraArgs }}
+          {{- toYaml . | nindent 10 }}
+          {{- end }}
           {{- with .Values.containerSecurityContext }}
           securityContext:
             {{- toYaml . | nindent 12 }}
@@ -75,12 +75,15 @@ spec:
             {{- toYaml . | nindent 12 }}
           {{- end }}
           volumeMounts:
-            - name: proc
-              mountPath: /host/proc
-              readOnly:  true
             - name: systemd
-              mountPath: /host/systemd
+              mountPath: /run/systemd
               readOnly: true
+            - name: dbus
+              mountPath: /var/run/dbus
+              readOnly: true
+            {{- with .Values.extraVolumeMounts }}
+              {{- toYaml . | nindent 12 }}
+            {{- end }}
       hostNetwork: {{ .Values.hostNetwork }}
       hostPID: {{ .Values.hostPID }}
       {{- with .Values.affinity }}
@@ -96,9 +99,12 @@ spec:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       volumes:
-        - name: proc
-          hostPath:
-            path: /proc
         - name: systemd
           hostPath:
             path: /run/systemd
+        - name: dbus
+          hostPath:
+            path: /var/run/dbus
+        {{- with .Values.extraVolumes }}
+          {{- toYaml . | nindent 8 }}
+        {{- end }}
