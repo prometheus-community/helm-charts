@@ -22,7 +22,8 @@ extraArgs: {}
 
 ## Additional Alertmanager Secret mounts
 # Defines additional mounts with secrets. Secrets must be manually created in the namespace.
-extraSecretMounts: []
+extraSecretMounts:
+  []
   # - name: secret-files
   #   mountPath: /etc/secrets
   #   subPath: ""
@@ -54,7 +55,8 @@ schedulerName: ""
 
 podSecurityContext:
   fsGroup: 65534
-dnsConfig: {}
+dnsConfig:
+  {}
   # nameservers:
   #   - 1.2.3.4
   # searches:
@@ -64,7 +66,8 @@ dnsConfig: {}
   #   - name: ndots
   #     value: "2"
   #   - name: edns0
-hostAliases: []
+hostAliases:
+  []
   # - ip: "127.0.0.1"
   #   hostnames:
   #   - "foo.local"
@@ -109,8 +112,8 @@ service:
   type: ClusterIP
   port: 9093
   clusterPort: 9094
-  loadBalancerIP: ""  # Assign ext IP when Service type is LoadBalancer
-  loadBalancerSourceRanges: []  # Only allow access to loadBalancerIP from these IPs
+  loadBalancerIP: "" # Assign ext IP when Service type is LoadBalancer
+  loadBalancerSourceRanges: [] # Only allow access to loadBalancerIP from these IPs
   # if you want to force a specific nodePort. Must be use with service.type=NodePort
   # nodePort:
 
@@ -141,10 +144,114 @@ servicePerReplica:
   #
   type: ClusterIP
 
+## Configuration for creating a ServiceMonitor for AlertManager
+##
+serviceMonitor:
+  ## If true, a ServiceMonitor will be created for the AlertManager service.
+  ##
+  enabled: true
+
+  ## Additional labels
+  ##
+  additionalLabels: {}
+
+  ## Additional metadata which is added to the discovered targets
+  ## Will attempt to add node metatadata if enabled. Only valid in Prometheus versions 2.37.0 and newer.
+  attachMetadata: false
+
+  ## Selects the label from the associated Kubernetes Service object
+  ## which will be used as the job label for all metrics.
+  ## Defaults to service name if unspecified.
+  jobLabel: ""
+
+  ## Per-scrape limit on the number of targets dropped by relabeling that will be
+  ## kept in memory. 0 means no limit. Only valid in Prometheus versions 2.47.0 and newer.
+  keepDroppedTargets: 0
+
+  ## Per-scrape limit on number of labels that will be accepted for a sample. Only valid in Prometheus versions 2.27.0 and newer.
+  ##
+  labelLimit: 0
+
+  ## Per-scrape limit on length of labels name that will be accepted for a sample. Only valid in Prometheus versions 2.27.0 and newer.
+  ##
+  labelNameLengthLimit: 0
+
+  ## Per-scrape limit on length of labels value that will be accepted for a sample. Only valid in Prometheus versions 2.27.0 and newer.
+  ##
+  labelValueLengthLimit: 0
+
+  ## Defines the labels which are transferred from the associated Kubernetes
+  ## Pod object onto the ingested metrics.
+  ##
+  podTargetLabels: []
+
+  ## SampleLimit defines per-scrape limit on number of scraped samples that will be accepted.
+  ##
+  sampleLimit: 0
+
+  ## TargetLabels defines the labels which are transferred from the associated
+  ## Kubernetes Service object onto the ingested metrics.
+  ##
+  targetLabels: []
+
+  ## TargetLimit defines a limit on the number of scraped targets that will be accepted.
+  ##
+  targetLimit: 0
+
+  ## Endpoint options
+  #
+  ## enableHttp2: Whether to enable HTTP2.
+  ## See https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/api.md#endpoint
+  ##
+  enableHttp2: true
+
+  ## Interval at which Prometheus scrapes the metrics from the target. If empty, Prometheus uses the global scrape interval
+  ##
+  interval: ""
+
+  ## proxyUrl: URL of a proxy that should be used for scraping.
+  ##
+  proxyUrl: ""
+
+  ## scheme: HTTP scheme to use for scraping. Can be used with `tlsConfig` for example if using istio mTLS.
+  ##
+  scheme: ""
+
+  ## tlsConfig: TLS configuration to use when scraping the endpoint. For example if using istio mTLS.
+  ## Of type: https://github.com/coreos/prometheus-operator/blob/main/Documentation/api.md#tlsconfig
+  ##
+  tlsConfig: {}
+
+  ## MetricRelabelConfigs to apply to samples after scraping, but before ingestion.
+  ## ref: https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/api.md#relabelconfig
+  ##
+  metricRelabelings: []
+  # - action: keep
+  #   regex: 'kube_(daemonset|deployment|pod|namespace|node|statefulset).+'
+  #   sourceLabels: [__name__]
+
+  ## RelabelConfigs to apply to samples before scraping
+  ## ref: https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/api.md#relabelconfig
+  ##
+  relabelings: []
+  # - sourceLabels: [__meta_kubernetes_pod_node_name]
+  #   separator: ;
+  #   regex: ^(.*)$
+  #   targetLabel: nodename
+  #   replacement: $1
+  #   action: replace
+
+  ## Additional Endpoints
+  ##
+  additionalEndpoints: []
+  # - port: oauth-metrics
+  #   path: /metrics
+
 ingress:
   enabled: false
   className: ""
-  annotations: {}
+  annotations:
+    {}
     # kubernetes.io/ingress.class: nginx
     # kubernetes.io/tls-acme: "true"
   hosts:
@@ -201,7 +308,8 @@ ingressPerReplica:
     #
     prefix: "alertmanager"
 
-resources: {}
+resources:
+  {}
   # We usually recommend not to specify default resources and to leave this as a conscious
   # choice for the user. This also increases chances charts run on environments with little
   # resources, such as Minikube. If you do want to specify resources, uncomment the following
@@ -233,7 +341,8 @@ podAntiAffinityTopologyKey: kubernetes.io/hostname
 
 ## Topology spread constraints rely on node labels to identify the topology domain(s) that each Node is in.
 ## Ref: https://kubernetes.io/docs/concepts/workloads/pods/pod-topology-spread-constraints/
-topologySpreadConstraints: []
+topologySpreadConstraints:
+  []
   # - maxSkew: 1
   #   topologyKey: failure-domain.beta.kubernetes.io/zone
   #   whenUnsatisfiable: DoNotSchedule
@@ -255,7 +364,8 @@ podAnnotations: {}
 podLabels: {}
 
 # Ref: https://kubernetes.io/docs/tasks/run-application/configure-pdb/
-podDisruptionBudget: {}
+podDisruptionBudget:
+  {}
   # maxUnavailable: 1
   # minAvailable: 1
 
@@ -274,7 +384,8 @@ persistence:
     - ReadWriteOnce
   size: 50Mi
 
-configAnnotations: {}
+configAnnotations:
+  {}
   ## For example if you want to provide private data from a secret vault
   ## https://github.com/banzaicloud/bank-vaults/tree/main/charts/vault-secrets-webhook
   ## P.s.: Add option `configMapMutation: true` for vault-secrets-webhook
@@ -287,11 +398,12 @@ configAnnotations: {}
 
 config:
   enabled: true
-  global: {}
+  global:
+    {}
     # slack_api_url: ''
 
   templates:
-    - '/etc/alertmanager/*.tmpl'
+    - "/etc/alertmanager/*.tmpl"
 
   receivers:
     - name: default-receiver
@@ -334,17 +446,20 @@ configmapReload:
   extraArgs: {}
 
   ## Optionally specify extra list of additional volumeMounts
-  extraVolumeMounts: []
+  extraVolumeMounts:
+    []
     # - name: extras
     #   mountPath: /usr/share/extras
     #   readOnly: true
 
   ## Optionally specify extra environment variables to add to alertmanager container
-  extraEnv: []
+  extraEnv:
+    []
     # - name: FOO
     #   value: BAR
 
-  securityContext: {}
+  securityContext:
+    {}
     # capabilities:
     #   drop:
     #   - ALL
@@ -357,18 +472,21 @@ templates: {}
 #   alertmanager.tmpl: |-
 
 ## Optionally specify extra list of additional volumeMounts
-extraVolumeMounts: []
+extraVolumeMounts:
+  []
   # - name: extras
   #   mountPath: /usr/share/extras
   #   readOnly: true
 
 ## Optionally specify extra list of additional volumes
-extraVolumes: []
+extraVolumes:
+  []
   # - name: extras
   #   emptyDir: {}
 
 ## Optionally specify extra environment variables to add to alertmanager container
-extraEnv: []
+extraEnv:
+  []
   # - name: FOO
   #   value: BAR
 
