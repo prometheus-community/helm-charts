@@ -80,7 +80,11 @@ spec:
           {{- end }}
             - --reload-url={{ default $default_url .Values.configmapReload.reloadUrl }}
           {{- range $key, $value := .Values.configmapReload.prometheus.extraArgs }}
+            {{- if $value }}
             - --{{ $key }}={{ $value }}
+            {{- else }}
+            - --{{ $key }}
+            {{- end }}
           {{- end }}
           {{- range .Values.configmapReload.prometheus.extraVolumeDirs }}
             - --watched-dir={{ . }}
@@ -152,7 +156,11 @@ spec:
             - --{{ . }}
           {{- end }}
           {{- range $key, $value := .Values.server.extraArgs }}
+            {{- if $value }}
             - --{{ $key }}={{ $value }}
+            {{- else }}
+            - --{{ $key }}
+            {{- end }}
           {{- end }}
           {{- if .Values.server.baseURL }}
             - --web.external-url={{ .Values.server.baseURL }}
@@ -372,7 +380,9 @@ spec:
 {{- end }}
 {{- if .Values.server.persistentVolume.enabled }}
   volumeClaimTemplates:
-    - metadata:
+    - apiVersion: v1	
+      kind: PersistentVolumeClaim	
+      metadata:
         name: {{ .Values.server.persistentVolume.statefulSetNameOverride | default "storage-volume" }}
         {{- if .Values.server.persistentVolume.annotations }}
         annotations:

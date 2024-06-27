@@ -56,6 +56,10 @@ service:
   port: 8080
   # Default to clusterIP for backward compatibility
   type: ClusterIP
+  ipDualStack:
+    enabled: false
+    ipFamilies: ["IPv6", "IPv4"]
+    ipFamilyPolicy: "PreferDualStack"
   nodePort: 0
   loadBalancerIP: ""
   # Only allow access to the loadBalancerIP from these IPs
@@ -99,7 +103,7 @@ kubeRBACProxy:
   image:
     registry: quay.io
     repository: brancz/kube-rbac-proxy
-    tag: v0.16.0
+    tag: v0.18.0
     sha: ""
     pullPolicy: IfNotPresent
 
@@ -161,7 +165,6 @@ prometheus:
     jobLabel: ""
     targetLabels: []
     podTargetLabels: []
-    interval: ""
     ## SampleLimit defines per-scrape limit on number of scraped samples that will be accepted.
     ##
     sampleLimit: 0
@@ -181,24 +184,49 @@ prometheus:
     ## Per-scrape limit on length of labels value that will be accepted for a sample. Only valid in Prometheus versions 2.27.0 and newer.
     ##
     labelValueLengthLimit: 0
-    scrapeTimeout: ""
-    proxyUrl: ""
-    ## Whether to enable HTTP2 for servicemonitor
-    # enableHttp2: false
     selectorOverride: {}
-    honorLabels: false
-    metricRelabelings: []
-    relabelings: []
-    scheme: ""
-    ## File to read bearer token for scraping targets
-    bearerTokenFile: ""
-    ## Secret to mount to read bearer token for scraping targets. The secret needs
-    ## to be in the same namespace as the service monitor and accessible by the
-    ## Prometheus Operator
-    bearerTokenSecret: {}
-      # name: secret-name
-      # key:  key-name
-    tlsConfig: {}
+
+    ## kube-state-metrics endpoint
+    http:
+      interval: ""
+      scrapeTimeout: ""
+      proxyUrl: ""
+      ## Whether to enable HTTP2 for servicemonitor
+      enableHttp2: false
+      honorLabels: false
+      metricRelabelings: []
+      relabelings: []
+      scheme: ""
+      ## File to read bearer token for scraping targets
+      bearerTokenFile: ""
+      ## Secret to mount to read bearer token for scraping targets. The secret needs
+      ## to be in the same namespace as the service monitor and accessible by the
+      ## Prometheus Operator
+      bearerTokenSecret: {}
+        # name: secret-name
+        # key:  key-name
+      tlsConfig: {}
+
+    ## selfMonitor endpoint
+    metrics:
+      interval: ""
+      scrapeTimeout: ""
+      proxyUrl: ""
+      ## Whether to enable HTTP2 for servicemonitor
+      enableHttp2: false
+      honorLabels: false
+      metricRelabelings: []
+      relabelings: []
+      scheme: ""
+      ## File to read bearer token for scraping targets
+      bearerTokenFile: ""
+      ## Secret to mount to read bearer token for scraping targets. The secret needs
+      ## to be in the same namespace as the service monitor and accessible by the
+      ## Prometheus Operator
+      bearerTokenSecret: {}
+        # name: secret-name
+        # key:  key-name
+      tlsConfig: {}
 
 ## Specify if a Pod Security Policy for kube-state-metrics must be created
 ## Ref: https://kubernetes.io/docs/concepts/policy/pod-security-policy/
