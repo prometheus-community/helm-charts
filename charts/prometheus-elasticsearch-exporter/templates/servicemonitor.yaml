@@ -10,7 +10,14 @@ metadata:
   labels:
     chart: {{ template "elasticsearch-exporter.chart" . }}
     app: {{ template "elasticsearch-exporter.name" . }}
+    {{- range $key, $value := .Values.serviceMonitor.labels }}
+      {{- if ne $key "release" }}
+    {{ $key }}: {{ $value | quote }}
+      {{- end }}
+    {{- end }}
+    {{- if not (hasKey .Values.serviceMonitor.labels "release") }}
     release: "{{ .Release.Name }}"
+    {{- end }}
     heritage: "{{ .Release.Service }}"
     {{- if .Values.serviceMonitor.labels }}
     {{- toYaml .Values.serviceMonitor.labels | nindent 4 }}
