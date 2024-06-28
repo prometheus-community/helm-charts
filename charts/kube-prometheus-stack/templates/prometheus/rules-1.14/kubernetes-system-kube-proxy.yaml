@@ -1,5 +1,5 @@
 {{- /*
-Generated from 'kubernetes-system-kube-proxy' group from https://raw.githubusercontent.com/prometheus-operator/kube-prometheus/main/manifests/kubernetesControlPlane-prometheusRule.yaml
+Generated from 'kubernetes-system-kube-proxy' group from https://github.com/prometheus-operator/kube-prometheus.git
 Do not change in-place! In order to change this file first read following link:
 https://github.com/prometheus-community/helm-charts/tree/main/charts/kube-prometheus-stack/hack
 */ -}}
@@ -27,14 +27,12 @@ spec:
 {{- if not (.Values.defaultRules.disabled.KubeProxyDown | default false) }}
     - alert: KubeProxyDown
       annotations:
-      {{- if or .Values.defaultRules.additionalRuleLabels .Values.defaultRules.additionalRuleGroupAnnotations.kubeProxy }}
-        {{- with .Values.defaultRules.additionalRuleAnnotations }}
-          {{- toYaml . | nindent 8 }}
-        {{- end }}
-        {{- with .Values.defaultRules.additionalRuleGroupAnnotations.kubeProxy }}
-          {{- toYaml . | nindent 8 }}
-        {{- end }}
-      {{- end }}
+{{- if .Values.defaultRules.additionalRuleAnnotations }}
+{{ toYaml .Values.defaultRules.additionalRuleAnnotations | indent 8 }}
+{{- end }}
+{{- if .Values.defaultRules.additionalRuleGroupAnnotations.kubeProxy }}
+{{ toYaml .Values.defaultRules.additionalRuleGroupAnnotations.kubeProxy | indent 8 }}
+{{- end }}
         description: KubeProxy has disappeared from Prometheus target discovery.
         runbook_url: {{ .Values.defaultRules.runbookUrl }}/kubernetes/kubeproxydown
         summary: Target disappeared from Prometheus target discovery.
@@ -44,7 +42,7 @@ spec:
       keep_firing_for: "{{ . }}"
       {{- end }}
       labels:
-        severity: {{ dig "KubeProxyDown" "labelsSeverity" "critical" .Values.customRules }}
+        severity: {{ dig "KubeProxyDown" "severity" "critical" .Values.customRules }}
       {{- if or .Values.defaultRules.additionalRuleLabels .Values.defaultRules.additionalRuleGroupLabels.kubeProxy }}
         {{- with .Values.defaultRules.additionalRuleLabels }}
           {{- toYaml . | nindent 8 }}
