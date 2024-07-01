@@ -79,3 +79,11 @@ Return the appropriate apiVersion for rbac.
     {{- .Release.Namespace -}}
   {{- end -}}
 {{- end -}}
+
+
+{{/*
+The image to use for kubeRBACProxy
+*/}}
+{{- define "kubeRBACProxy.image" -}}
+{{- printf "%s:%s" .Values.kubeRBACProxy.image.repository .Values.kubeRBACProxy.image.tag }}
+{{- end }}
