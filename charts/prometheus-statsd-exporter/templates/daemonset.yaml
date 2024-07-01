@@ -1,16 +1,15 @@
-{{- if (eq .Values.kind "Deployment") }}
+{{- if (eq .Values.kind "DaemonSet") }}
 apiVersion: apps/v1
-kind: Deployment
+kind: DaemonSet
 metadata:
   name: {{ include "prometheus-statsd-exporter.fullname" . }}
   labels:
     {{- include "prometheus-statsd-exporter.labels" . | nindent 4 }}
 spec:
   {{- if not .Values.autoscaling.enabled }}
-  replicas: {{ .Values.replicaCount }}
   revisionHistoryLimit: {{ .Values.deploymentRevisionHistoryLimit | default 10 }}
-  {{- with .Values.strategy }}
-  strategy:
+  {{- with .Values.updateStrategy }}
+  updateStrategy:
     {{- toYaml . | nindent 4 }}
   {{- end }}
   {{- end }}
@@ -109,7 +108,7 @@ spec:
                 path: statsd-mapping.conf
       {{- end }}
       {{- with .Values.nodeSelector }}
-      dnsPolicy: {{ .Values.dnsPolicy }}      
+      dnsPolicy: {{ .Values.dnsPolicy }}
       hostNetwork: {{ .Values.hostNetwork }}
       hostPID: {{ .Values.hostPID }}
       nodeSelector:
