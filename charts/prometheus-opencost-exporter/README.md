@@ -1,4 +1,4 @@
-# Prometheus Opencost Exporter
+# Prometheus OpenCost Exporter
 
 Prometheus exporter for [OpenCost](https://www.opencost.io) Kubernetes cost monitoring data.
 
