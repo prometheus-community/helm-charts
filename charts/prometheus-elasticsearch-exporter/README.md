@@ -59,6 +59,11 @@ $ helm upgrade [RELEASE_NAME] [CHART] --install
 
 _See [helm upgrade](https://helm.sh/docs/helm/helm_upgrade/) for command documentation._
 
+### To 6.0.0
+
+The chart now follows the new Helm Standard Labels recommendations:
+<https://helm.sh/docs/chart_best_practices/labels/#standard-labels>
+
 ### To 5.0.0
 
 `securityContext` has been renamed to `podSecurityContext` and `securityContext.enabled` has no effect anymore. To mirror the behaviour of `securityContext.enabled=false` of 4.x unset `podSecurityContext`.

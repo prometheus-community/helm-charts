@@ -95,3 +95,38 @@ Return the correct (overridden global) image registry.
     {{- printf "%s" .Values.image.repository -}}
   {{- end }}
 {{- end -}}
+
+{{/*
+Common labels
+*/}}
+{{- define "elasticsearch-exporter.labels" -}}
+helm.sh/chart: {{ include "elasticsearch-exporter.chart" . }}
+{{ include "elasticsearch-exporter.selectorLabels" . }}
+{{- with .Chart.AppVersion }}
+app.kubernetes.io/version: {{ . | quote }}
+{{- end }}
+app.kubernetes.io/managed-by: {{ .Release.Service }}
+{{- range $key, $value := .Values.serviceMonitor.labels }}
+  {{- if ne $key "release" }}
+{{ $key }}: {{ $value | quote }}
+  {{- end }}
+{{- end }}
+{{- if not (hasKey .Values.serviceMonitor.labels "release") }}
+{{- if .Values.releaseLabel }}
+release: "{{ .Release.Name }}"
+{{- end }}
+{{- end }}
+{{- if .Values.commonLabels }}
+{{ toYaml .Values.commonLabels }}
+{{- end }}
+{{- end }}
+
+{{/*
+Selector labels
+*/}}
+{{- define "elasticsearch-exporter.selectorLabels" -}}
+app.kubernetes.io/name: {{ include "elasticsearch-exporter.name" . }}
+{{- if .Values.releaseLabel }}
+app.kubernetes.io/instance: {{ .Release.Name }}
+{{- end }}
+{{- end }}
