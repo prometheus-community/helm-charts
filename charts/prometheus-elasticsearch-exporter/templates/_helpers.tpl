@@ -126,7 +126,5 @@ Selector labels
 */}}
 {{- define "elasticsearch-exporter.selectorLabels" -}}
 app.kubernetes.io/name: {{ include "elasticsearch-exporter.name" . }}
-{{- if .Values.releaseLabel }}
 app.kubernetes.io/instance: {{ .Release.Name }}
-{{- end }}
 {{- end }}
