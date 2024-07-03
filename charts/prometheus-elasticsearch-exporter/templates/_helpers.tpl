@@ -106,16 +106,6 @@ helm.sh/chart: {{ include "elasticsearch-exporter.chart" . }}
 app.kubernetes.io/version: {{ . | quote }}
 {{- end }}
 app.kubernetes.io/managed-by: {{ .Release.Service }}
-{{- range $key, $value := .Values.serviceMonitor.labels }}
-  {{- if ne $key "release" }}
-{{ $key }}: {{ $value | quote }}
-  {{- end }}
-{{- end }}
-{{- if not (hasKey .Values.serviceMonitor.labels "release") }}
-{{- if .Values.releaseLabel }}
-release: "{{ .Release.Name }}"
-{{- end }}
-{{- end }}
 {{- if .Values.commonLabels }}
 {{ toYaml .Values.commonLabels }}
 {{- end }}
