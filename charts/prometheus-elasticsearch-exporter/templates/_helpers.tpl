@@ -57,31 +57,28 @@ Usage:
 
 
 {{/*
-Return the proper Docker Image Registry Secret Names evaluating values as templates
-{{ include "elasticsearch-exporter.image.pullSecret.name" ( dict "images" (list .Values.path.to.the.image1, .Values.path.to.the.image2) "context" $) }}
+To help compatibility with other charts which use global.imagePullSecrets.
+Allow either an array of {name: pullSecret} maps (k8s-style), or an array of strings (more common helm-style).
+global:
+  imagePullSecrets:
+  - name: pullSecret1
+  - name: pullSecret2
+
+or
+
+global:
+  imagePullSecrets:
+  - pullSecret1
+  - pullSecret2
 */}}
-{{- define "elasticsearch-exporter.image.pullSecret.name" -}}
-  {{- $pullSecrets := list }}
-  {{- $context := .context }}
-
-  {{- if $context.Values.global }}
-    {{- range $context.Values.global.imagePullSecrets -}}
-      {{/* Is plain array of strings, compatible with all bitnami charts */}}
-      {{- $pullSecrets = append $pullSecrets (include "elasticsearch-exporter.tplvalue.render" (dict "value" . "context" $context)) -}}
-    {{- end -}}
-  {{- end -}}
-  {{- range .images -}}
-    {{- if .pullSecret -}}
-      {{- $pullSecrets = append $pullSecrets (include "elasticsearch-exporter.tplvalue.render" (dict "value" .pullSecret "context" $context)) -}}
-    {{- end -}}
-  {{- end -}}
-
-  {{- if (not (empty $pullSecrets)) }}
-imagePullSecrets:
-    {{- range $pullSecrets | uniq }}
-  - name: {{ . }}
-    {{- end }}
+{{- define "elasticsearch-exporter.imagePullSecrets" -}}
+{{- range .Values.global.imagePullSecrets }}
+  {{- if eq (typeOf .) "map[string]interface {}" }}
+- {{ tpl (toYaml .) $ | trim }}
+  {{- else }}
+- name: {{ tpl . $ }}
   {{- end }}
+{{- end }}
 {{- end -}}
 
 {{/*
@@ -98,3 +95,26 @@ Return the correct (overridden global) image registry.
     {{- printf "%s" .Values.image.repository -}}
   {{- end }}
 {{- end -}}
+
+{{/*
+Common labels
+*/}}
+{{- define "elasticsearch-exporter.labels" -}}
+helm.sh/chart: {{ include "elasticsearch-exporter.chart" . }}
+{{ include "elasticsearch-exporter.selectorLabels" . }}
+{{- with .Chart.AppVersion }}
+app.kubernetes.io/version: {{ . | quote }}
+{{- end }}
+app.kubernetes.io/managed-by: {{ .Release.Service }}
+{{- if .Values.commonLabels }}
+{{ toYaml .Values.commonLabels }}
+{{- end }}
+{{- end }}
+
+{{/*
+Selector labels
+*/}}
+{{- define "elasticsearch-exporter.selectorLabels" -}}
+app.kubernetes.io/name: {{ include "elasticsearch-exporter.name" . }}
+app.kubernetes.io/instance: {{ .Release.Name }}
+{{- end }}
