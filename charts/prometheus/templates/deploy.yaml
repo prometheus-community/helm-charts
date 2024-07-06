@@ -92,6 +92,66 @@ spec:
           ports:
             - containerPort: {{ .Values.configmapReload.prometheus.containerPort }}
           {{- end }}
+          readinessProbe:
+            {{- if not .Values.configmapReload.prometheus.tcpSocketProbeEnabled }}
+            httpGet:
+              path: {{ .Values.configmapReload.prometheus.prefixURL }}/-/ready
+              port: 9090
+              scheme: {{ .Values.configmapReload.prometheus.probeScheme }}
+              {{- with .Values.configmapReload.prometheus.probeHeaders }}
+              httpHeaders:
+{{- toYaml . | nindent 14 }}
+              {{- end }}
+            {{- else }}
+            tcpSocket:
+              port: 9090
+            {{- end }}
+            initialDelaySeconds: {{ .Values.configmapReload.prometheus.readinessProbeInitialDelay }}
+            periodSeconds: {{ .Values.configmapReload.prometheus.readinessProbePeriodSeconds }}
+            timeoutSeconds: {{ .Values.configmapReload.prometheus.readinessProbeTimeout }}
+            failureThreshold: {{ .Values.configmapReload.prometheus.readinessProbeFailureThreshold }}
+            successThreshold: {{ .Values.configmapReload.prometheus.readinessProbeSuccessThreshold }}
+          livenessProbe:
+            {{- if not .Values.configmapReload.prometheus.tcpSocketProbeEnabled }}
+            httpGet:
+              path: {{ .Values.configmapReload.prometheus.prefixURL }}/-/healthy
+              port: 9090
+              scheme: {{ .Values.configmapReload.prometheus.probeScheme }}
+              {{- with .Values.configmapReload.prometheus.probeHeaders }}
+              httpHeaders:
+{{- toYaml . | nindent 14 }}
+              {{- end }}
+            {{- else }}
+            tcpSocket:
+              port: 9090
+            {{- end }}
+            initialDelaySeconds: {{ .Values.configmapReload.prometheus.livenessProbeInitialDelay }}
+            periodSeconds: {{ .Values.configmapReload.prometheus.livenessProbePeriodSeconds }}
+            timeoutSeconds: {{ .Values.configmapReload.prometheus.livenessProbeTimeout }}
+            failureThreshold: {{ .Values.configmapReload.prometheus.livenessProbeFailureThreshold }}
+            successThreshold: {{ .Values.configmapReload.prometheus.livenessProbeSuccessThreshold }}
+          {{- if .Values.configmapReload.prometheus.startupProbe.enabled }}
+          startupProbe:
+            {{- if not .Values.configmapReload.prometheus.tcpSocketProbeEnabled }}
+            httpGet:
+              path: {{ .Values.configmapReload.prometheus.prefixURL }}/-/healthy
+              port: 9090
+              scheme: {{ .Values.configmapReload.prometheus.probeScheme }}
+              {{- if .Values.configmapReload.prometheus.probeHeaders }}
+              httpHeaders:
+              {{- range .Values.configmapReload.prometheus.probeHeaders}}
+              - name: {{ .name }}
+                value: {{ .value }}
+              {{- end }}
+              {{- end }}
+            {{- else }}
+            tcpSocket:
+              port: 9090
+            {{- end }}
+            failureThreshold: {{ .Values.configmapReload.prometheus.startupProbe.failureThreshold }}
+            periodSeconds: {{ .Values.configmapReload.prometheus.startupProbe.periodSeconds }}
+            timeoutSeconds: {{ .Values.configmapReload.prometheus.startupProbe.timeoutSeconds }}
+          {{- end }}
           {{- with .Values.configmapReload.prometheus.resources }}
           resources:
             {{- toYaml . | nindent 12 }}
