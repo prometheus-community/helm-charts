@@ -38,10 +38,17 @@ spec:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
       {{- with .Values.extraInitContainers }}
       initContainers:
-        {{ toYaml . | nindent 8 }}
+        {{- toYaml . | nindent 8 }}
       {{- end }}
       containers:
         - name: {{ .Chart.Name }}
+          {{- with .Values.extraArgs }}
+          args:
+          {{- range . }}
+          - {{ .name | quote }}
+          - {{ .value | quote }}
+          {{- end }}
+          {{- end }}
           {{- with .Values.environmentVariables }}
           env:
             {{- toYaml . | nindent 12}}
