@@ -65,7 +65,8 @@ configmapReload:
       digest: ""
       pullPolicy: IfNotPresent
 
-    # containerPort: 9533
+    containerPort: 8080
+    containerPortName: metrics 
 
     ## Additional configmap-reload container arguments
     ## Set to null for argumentless flags
@@ -95,23 +96,30 @@ configmapReload:
     ## Prometheus reloader readiness and liveness probe initial delay and timeout
     ## Ref: https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/
     ##
+
     tcpSocketProbeEnabled: false
-    probeScheme: HTTP
-    readinessProbeInitialDelay: 30
-    readinessProbePeriodSeconds: 5
-    readinessProbeTimeout: 4
-    readinessProbeFailureThreshold: 3
-    readinessProbeSuccessThreshold: 1
-    livenessProbeInitialDelay: 30
-    livenessProbePeriodSeconds: 15
-    livenessProbeTimeout: 10
-    livenessProbeFailureThreshold: 3
-    livenessProbeSuccessThreshold: 1
+    livenessProbe:
+      httpGet:
+        path: /healthz
+        port: metrics
+        scheme: HTTP
+      periodSeconds: 10
+      initialDelaySeconds: 2
+
+    readinessProbe:
+      httpGet:
+        path: /healthz
+        port: metrics
+        scheme: HTTP
+      periodSeconds: 10
+
     startupProbe:
       enabled: false
-      periodSeconds: 5
-      failureThreshold: 30
-      timeoutSeconds: 10
+      httpGet:
+        path: /healthz
+        port: metrics
+        scheme: HTTP
+      periodSeconds: 10
 
     ## configmap-reload resource requests and limits
     ## Ref: http://kubernetes.io/docs/user-guide/compute-resources/

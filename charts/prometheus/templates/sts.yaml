@@ -78,6 +78,7 @@ spec:
           {{- with .Values.server.prefixURL }}
           {{- $default_url = printf "http://127.0.0.1:9090%s/-/reload" . }}
           {{- end }}
+            - --listen-address=0.0.0.0:{{ .Values.configmapReload.prometheus.containerPort }}
             - --reload-url={{ default $default_url .Values.configmapReload.reloadUrl }}
           {{- range $key, $value := .Values.configmapReload.prometheus.extraArgs }}
             {{- if $value }}
@@ -96,6 +97,45 @@ spec:
           {{- if .Values.configmapReload.prometheus.containerPort }}
           ports:
             - containerPort: {{ .Values.configmapReload.prometheus.containerPort }}
+              {{- if .Values.configmapReload.prometheus.containerPortName }}
+              name: {{ .Values.configmapReload.prometheus.containerPortName }}
+              {{- end }}
+          {{- end }}
+          readinessProbe:
+            {{- if not .Values.configmapReload.prometheus.tcpSocketProbeEnabled }}
+            httpGet:
+              path: {{ .Values.configmapReload.prometheus.readinessProbe.httpGet.path }}
+              port: {{ .Values.configmapReload.prometheus.readinessProbe.httpGet.port }}
+              scheme: {{ .Values.configmapReload.prometheus.readinessProbe.httpGet.scheme }}
+            {{- else }}
+            tcpSocket:
+              port: {{ .Values.configmapReload.prometheus.containerPort }}
+            {{- end }}
+            periodSeconds: {{ .Values.configmapReload.prometheus.readinessProbe.PeriodSeconds }}
+          livenessProbe:
+            {{- if not .Values.configmapReload.prometheus.tcpSocketProbeEnabled }}
+            httpGet:
+              path: {{ .Values.configmapReload.prometheus.livenessProbe.httpGet.path }}
+              port: {{ .Values.configmapReload.prometheus.livenessProbe.httpGet.port }}
+              scheme: {{ .Values.configmapReload.prometheus.livenessProbe.httpGet.scheme }}
+            {{- else }}
+            tcpSocket:
+              port: {{ .Values.configmapReload.prometheus.containerPort }}
+            {{- end }}
+            initialDelaySeconds: {{ .Values.configmapReload.prometheus.livenessProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.configmapReload.prometheus.livenessProbe.periodSeconds }}
+          {{- if .Values.configmapReload.prometheus.startupProbe.enabled }}
+          startupProbe:
+            {{- if not .Values.configmapReload.prometheus.tcpSocketProbeEnabled }}
+            httpGet:
+              path: {{ .Values.configmapReload.prometheus.startupProbe.httpGet.path }}
+              port: {{ .Values.configmapReload.prometheus.startupProbe.httpGet.port }}
+              scheme: {{ .Values.configmapReload.prometheus.startupProbe.httpGet.scheme }}
+            {{- else }}
+            tcpSocket:
+              port: {{ .Values.configmapReload.prometheus.containerPort }}
+            {{- end }}
+            periodSeconds: {{ .Values.configmapReload.prometheus.startupProbe.periodSeconds }}
           {{- end }}
           {{- with .Values.configmapReload.prometheus.resources }}
           resources:
