@@ -29,6 +29,7 @@ jobs:
           changed="$(ct list-changed --config .github/linters/ct.yaml)"
           if [[ -n "$changed" ]]; then
             echo "changed=true" >> "$GITHUB_OUTPUT"
+            echo "changed_list=\"${changed//$'\n'/ }\"" >> "$GITHUB_OUTPUT"
           fi
 
       # - name: install helm unittest plugin
@@ -47,6 +48,16 @@ jobs:
       - name: Apply Gateway API CRDs
         run: kubectl apply -k https://github.com/kubernetes-sigs/gateway-api/config/crd
         if: steps.list-changed.outputs.changed == 'true'
+
+      - name: Apply Prometheus Operator CRDs (unless for charts already installing it)
+        env:
+          CHANGED_LIST: ${{ steps.list-changed.outputs.changed_list }}
+        run: |
+          # Always run unless only changed chart is one of impacted charts
+          if [[ "$CHANGED_LIST" != "kube-prometheus-stack" ]] || [[ "$CHANGED_LIST" != "prometheus-operator-crds" ]]; then
+            helm repo add prometheus-community https://prometheus-community.github.io/helm-charts --force-update
+            helm install prometheus-operator-crds prometheus-community/prometheus-operator-crds
+          fi
 
       - name: Run chart-testing (install)
         run: ct install --config .github/linters/ct.yaml
