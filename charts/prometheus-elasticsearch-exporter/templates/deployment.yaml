@@ -3,10 +3,7 @@ kind: Deployment
 metadata:
   name: {{ template "elasticsearch-exporter.fullname" . }}
   labels:
-    chart: {{ template "elasticsearch-exporter.chart" . }}
-    app: {{ template "elasticsearch-exporter.name" . }}
-    release: "{{ .Release.Name }}"
-    heritage: "{{ .Release.Service }}"
+    {{- include "elasticsearch-exporter.labels" . | nindent 4 }}
   {{- with .Values.deployment.labels }}
     {{- toYaml . | nindent 4 }}
   {{- end }}
@@ -16,10 +13,10 @@ metadata:
   {{- end }}
 spec:
   replicas: {{ .Values.replicaCount }}
+  revisionHistoryLimit: {{ .Values.revisionHistoryLimit }}
   selector:
     matchLabels:
-      app: {{ template "elasticsearch-exporter.name" . }}
-      release: "{{ .Release.Name }}"
+      {{- include "elasticsearch-exporter.selectorLabels" . | nindent 6 }}
   strategy:
     rollingUpdate:
       maxSurge: 1
@@ -28,8 +25,10 @@ spec:
   template:
     metadata:
       labels:
-        app: {{ template "elasticsearch-exporter.name" . }}
-        release: "{{ .Release.Name }}"
+        {{- include "elasticsearch-exporter.selectorLabels" . | nindent 8 }}
+        {{- with .Values.commonLabels }}
+          {{- toYaml . | nindent 8 }}
+        {{- end }}
       {{- with .Values.podLabels }}
         {{- toYaml . | nindent 8 }}
       {{- end }}
@@ -46,7 +45,10 @@ spec:
 {{- if .Values.priorityClassName }}
       priorityClassName: "{{ .Values.priorityClassName }}"
 {{- end }}
-      {{- include "elasticsearch-exporter.image.pullSecret.name" (dict "images" (list .Values.image) "context" $) | nindent 6 }}
+      {{- if .Values.global.imagePullSecrets }}
+      imagePullSecrets:
+      {{- include "elasticsearch-exporter.imagePullSecrets" . | indent 8 }}
+      {{- end }}
       restartPolicy: {{ .Values.restartPolicy }}
       {{- with .Values.podSecurityContext }}
       securityContext:
@@ -75,7 +77,7 @@ spec:
           - secretRef:
               name: {{ .Values.envFromSecret }}
           {{- end }}
-          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          image: "{{- include "elasticsearch-exporter.image.repository" . }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           command: ["elasticsearch_exporter",
                     {{- with .Values.log.format }}

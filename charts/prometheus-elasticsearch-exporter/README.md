@@ -1,33 +1,28 @@
-# Elasticsearch Exporter
+# Prometheus Elasticsearch Exporter
 
-Prometheus exporter for various metrics about ElasticSearch, written in Go.
+Prometheus exporter for various metrics about Elasticsearch, written in Go. For more information, please, see the project's [repository](https://github.com/prometheus-community/elasticsearch_exporter).
 
-Learn more: <https://github.com/prometheus-community/elasticsearch_exporter>
-
-This chart creates an Elasticsearch-Exporter deployment on a [Kubernetes](http://kubernetes.io)
+This chart creates an Elasticsearch exporter deployment on a [Kubernetes](http://kubernetes.io)
 cluster using the [Helm](https://helm.sh) package manager.
 
 ## Prerequisites
 
-- Kubernetes 1.10+
+- Helm 3.7+
+- Kubernetes 1.19+
 
 ## Get Helm Repository Info
-
+<!-- textlint-disable terminology -->
 ```console
 helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
 helm repo update
 ```
 
-_See [`helm repo`](https://helm.sh/docs/helm/helm_repo/) for command documentation._
-
+_See [helm repo](https://helm.sh/docs/helm/helm_repo/) for command documentation._
+<!-- textlint-enable -->
 ## Install Helm Chart
 
 ```console
-# Helm 3
-$ helm install [RELEASE_NAME] prometheus-community/prometheus-elasticsearch-exporter
-
-# Helm 2
-$ helm install --name [RELEASE_NAME] prometheus-community/prometheus-elasticsearch-exporter
+helm install [RELEASE_NAME] prometheus-community/prometheus-elasticsearch-exporter
 ```
 
 The command deploys Elasticsearch Exporter on the Kubernetes cluster using the default configuration.
@@ -39,11 +34,7 @@ _See [helm install](https://helm.sh/docs/helm/helm_install/) for command documen
 ## Uninstall Helm Chart
 
 ```console
-# Helm 3
-$ helm uninstall [RELEASE_NAME]
-
-# Helm 2
-# helm delete --purge [RELEASE_NAME]
+helm uninstall [RELEASE_NAME]
 ```
 
 This removes all the Kubernetes components associated with the chart and deletes the release.
@@ -53,11 +44,38 @@ _See [helm uninstall](https://helm.sh/docs/helm/helm_uninstall/) for command doc
 ## Upgrading Helm Chart
 
 ```console
-# Helm 3 or 2
-$ helm upgrade [RELEASE_NAME] [CHART] --install
+helm upgrade [RELEASE_NAME] prometheus-community/prometheus-elasticsearch-exporter --install
 ```
 
 _See [helm upgrade](https://helm.sh/docs/helm/helm_upgrade/) for command documentation._
+
+## To 6.0.0
+
+In release 6.0, the chart API version has been increased to v2. From now on, the chart supports Helm 3 only.
+
+The minimum Kubernetes version supported by the chart has been raised to 1.19.
+
+Labels and selectors have been replaced following [Helm 3 label and annotation best practices](https://helmsh/docs/chart_best_practices/labels/):
+
+| Previous            | Current                      |
+|---------------------|------------------------------|
+| app                 | app.kubernetes.io/name       |
+| chart               | helm.sh/chart                |
+| [none]              | app.kubernetes.io/version    |
+| heritage            | app.kubernetes.io/managed-by |
+| release             | app.kubernetes.io/instance   |
+
+As the change is affecting immutable selector labels, the deployment must be deleted before upgrading the release, e.g.:
+
+```console
+kubectl delete deploy -l app=prometheus-elasticsearch-exporter
+```
+
+Once the resources have been deleted, you can upgrade the release:
+
+```console
+helm upgrade -i RELEASE_NAME prometheus-community/prometheus-elasticsearch-exporter
+```
 
 ### To 5.0.0
 
@@ -100,11 +118,7 @@ See [Customizing the Chart Before Installing](https://helm.sh/docs/intro/using_h
 To see all configurable options with detailed comments, visit the chart's [values.yaml](./values.yaml), or run these configuration commands:
 
 ```console
-# Helm 2
-$ helm inspect values prometheus-community/prometheus-elasticsearch-exporter
-
-# Helm 3
-$ helm show values prometheus-community/prometheus-elasticsearch-exporter
+helm show values prometheus-community/prometheus-elasticsearch-exporter
 ```
 
 > **Tip**: You can use the default [values.yaml](values.yaml)
