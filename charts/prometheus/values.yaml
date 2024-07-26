@@ -60,12 +60,14 @@ configmapReload:
     ##
     image:
       repository: quay.io/prometheus-operator/prometheus-config-reloader
-      tag: v0.73.2
+      tag: v0.74.0
       # When digest is set to a non-empty value, images will be pulled by digest (regardless of tag value).
       digest: ""
       pullPolicy: IfNotPresent
 
-    # containerPort: 9533
+    ## config-reloader's container port and port name for probes and metrics
+    containerPort: 8080
+    containerPortName: metrics
 
     ## Additional configmap-reload container arguments
     ## Set to null for argumentless flags
@@ -91,6 +93,33 @@ configmapReload:
 
     ## Security context to be added to configmap-reload container
     containerSecurityContext: {}
+
+    ## Settings for Prometheus reloader's readiness, liveness and startup probes
+    ## Ref: https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/
+    ##
+
+    livenessProbe:
+      httpGet:
+        path: /healthz
+        port: metrics
+        scheme: HTTP
+      periodSeconds: 10
+      initialDelaySeconds: 2
+
+    readinessProbe:
+      httpGet:
+        path: /healthz
+        port: metrics
+        scheme: HTTP
+      periodSeconds: 10
+
+    startupProbe:
+      enabled: false
+      httpGet:
+        path: /healthz
+        port: metrics
+        scheme: HTTP
+      periodSeconds: 10
 
     ## configmap-reload resource requests and limits
     ## Ref: http://kubernetes.io/docs/user-guide/compute-resources/
@@ -322,6 +351,9 @@ server:
 
   ## Extra labels for Prometheus server ConfigMap (ConfigMap that holds serverFiles)
   extraConfigmapLabels: {}
+
+  ## Override the prometheus.server.fullname for all objects related to the Prometheus server
+  fullnameOverride: ""
 
   ingress:
     ## If true, Prometheus server Ingress will be created
