@@ -147,6 +147,26 @@ spec:
           name: "metrics"
         {{- end }}
         {{- end }}
+        {{- if .Values.startupProbe.enabled }}
+        startupProbe:
+          failureThreshold: {{ .Values.startupProbe.failureThreshold }}
+          httpGet:
+            {{- if .Values.hostNetwork }}
+            host: 127.0.0.1
+            {{- end }}
+            httpHeaders:
+            {{- range $_, $header := .Values.startupProbe.httpGet.httpHeaders }}
+            - name: {{ $header.name }}
+              value: {{ $header.value }}
+            {{- end }}
+            path: /healthz
+            port: {{ $servicePort }}
+            scheme: {{ upper .Values.startupProbe.httpGet.scheme }}
+          initialDelaySeconds: {{ .Values.startupProbe.initialDelaySeconds }}
+          periodSeconds: {{ .Values.startupProbe.periodSeconds }}
+          successThreshold: {{ .Values.startupProbe.successThreshold }}
+          timeoutSeconds: {{ .Values.startupProbe.timeoutSeconds }}
+        {{- end }}
         livenessProbe:
           failureThreshold: {{ .Values.livenessProbe.failureThreshold }}
           httpGet:
