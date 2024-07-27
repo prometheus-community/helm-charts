@@ -2,13 +2,10 @@
 
 set -euo pipefail
 
-sedi () {
-  if [[ "$OSTYPE" == "darwin"* ]]; then
-    sed -i '' "$@"
-  else
-    sed -i "$@"
-  fi
-}
+case $(sed --help 2>&1) in
+*BusyBox* | *GNU*) _sed_i() { sed -i "$@"; } ;;
+*) _sed_i() { sed -i '' "$@"; } ;;
+esac
 
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 
@@ -25,8 +22,8 @@ for REPO_PATH in "${SCRIPT_DIR}/tmp/"*; do
   SHA=$(git -C "$REPO_PATH" log -1 --pretty=format:"%H")
   REPO_NAME=$(basename "$REPO_PATH")
   echo "Updating $REPO_NAME to $SHA"
-  sedi -e "s/'ref.$REPO_NAME'.*:.*'.*'/'ref.$REPO_NAME': '$SHA'/" "${SCRIPT_DIR}/sync_grafana_dashboards.py"
-  sedi -e "s/'ref.$REPO_NAME'.*:.*'.*'/'ref.$REPO_NAME': '$SHA'/" "${SCRIPT_DIR}/sync_prometheus_rules.py"
+  _sed_i -e "s/'ref.$REPO_NAME'.*:.*'.*'/'ref.$REPO_NAME': '$SHA'/" "${SCRIPT_DIR}/sync_grafana_dashboards.py"
+  _sed_i -e "s/'ref.$REPO_NAME'.*:.*'.*'/'ref.$REPO_NAME': '$SHA'/" "${SCRIPT_DIR}/sync_prometheus_rules.py"
 done
 
 export PIP_DISABLE_PIP_VERSION_CHECK=1
