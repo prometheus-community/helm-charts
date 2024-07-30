@@ -12,9 +12,14 @@ spec:
       {{- include "prom-label-proxy.selectorLabels" . | nindent 6 }}
   template:
     metadata:
-      {{- with .Values.podAnnotations }}
+      {{- if or .Values.podAnnotations (and .Values.kubeRBACProxy.enabled .Values.kubeRBACProxy.config) }}
       annotations:
+        {{- with .Values.podAnnotations }}
         {{- toYaml . | nindent 8 }}
+        {{- end }}
+        {{- if and .Values.kubeRBACProxy.enabled .Values.kubeRBACProxy.config }}
+        checksum/config: {{ .Values.kubeRBACProxy.config | toJson | sha256sum }}
+        {{- end }}
       {{- end }}
       labels:
         {{- include "prom-label-proxy.selectorLabels" . | nindent 8 }}
@@ -30,6 +35,7 @@ spec:
       securityContext:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
       containers:
+      {{- $configListenPort := tpl .Values.config.listenAddress $ | splitList ":" | last }}
         - name: {{ .Chart.Name }}
           securityContext:
             {{- toYaml .Values.securityContext | nindent 12 }}
@@ -47,7 +53,7 @@ spec:
             {{- end }}
           ports:
             - name: http
-              containerPort: {{ splitList ":" .Values.config.listenAddress | last }}
+              containerPort: {{ $configListenPort }}
               protocol: TCP
             {{- if .Values.metrics.enabled }}
             - name: http-metrics
@@ -60,6 +66,45 @@ spec:
             {{- toYaml .Values.readinessProbe | nindent 12 }}
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
+        {{-  if .Values.kubeRBACProxy.enabled  }}
+        - name: kube-rbac-proxy
+          args:
+          {{-  if .Values.kubeRBACProxy.extraArgs  }}
+          {{- .Values.kubeRBACProxy.extraArgs | toYaml | nindent 10 }}
+          {{-  end  }}
+          - --secure-listen-address=:{{ .Values.kubeRBACProxy.port }}
+          - --upstream=http://127.0.0.1:{{ $configListenPort }}/
+          - --proxy-endpoints-port=8888
+          {{- if .Values.kubeRBACProxy.config }}
+          - --config-file=/etc/kube-rbac-proxy-config/config-file.yaml
+          {{- end }}
+          volumeMounts:
+            - name: kube-rbac-proxy-config
+              mountPath: /etc/kube-rbac-proxy-config
+            {{- with .Values.kubeRBACProxy.volumeMounts }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+          imagePullPolicy: {{ .Values.kubeRBACProxy.image.pullPolicy }}
+          image: {{ include "kubeRBACProxy.image" . }}
+          ports:
+            - containerPort: {{ .Values.kubeRBACProxy.port }}
+              name: krp
+            - containerPort: 8888
+              name: krp-healthz
+          readinessProbe:
+            httpGet:
+              scheme: HTTPS
+              port: 8888
+              path: healthz
+            initialDelaySeconds: 5
+            timeoutSeconds: 5
+          {{- if .Values.kubeRBACProxy.resources }}
+          resources: {{ toYaml .Values.kubeRBACProxy.resources | nindent 10 }}
+          {{- end }}
+          {{- if .Values.kubeRBACProxy.containerSecurityContext }}
+          securityContext: {{ toYaml .Values.kubeRBACProxy.containerSecurityContext | nindent 12 }}
+          {{- end }}
+      {{- end }}
       {{- with .Values.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
@@ -71,4 +116,10 @@ spec:
       {{- with .Values.tolerations }}
       tolerations:
         {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{-  if and .Values.kubeRBACProxy.enabled .Values.kubeRBACProxy.config }}
+      volumes:
+        - name: kube-rbac-proxy-config
+          configMap:
+            name: {{ template "prom-label-proxy.fullname" . }}-rbac-config
       {{- end }}

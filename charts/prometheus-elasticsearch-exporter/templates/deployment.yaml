@@ -3,10 +3,7 @@ kind: Deployment
 metadata:
   name: {{ template "elasticsearch-exporter.fullname" . }}
   labels:
-    chart: {{ template "elasticsearch-exporter.chart" . }}
-    app: {{ template "elasticsearch-exporter.name" . }}
-    release: "{{ .Release.Name }}"
-    heritage: "{{ .Release.Service }}"
+    {{- include "elasticsearch-exporter.labels" . | nindent 4 }}
   {{- with .Values.deployment.labels }}
     {{- toYaml . | nindent 4 }}
   {{- end }}
@@ -19,8 +16,7 @@ spec:
   revisionHistoryLimit: {{ .Values.revisionHistoryLimit }}
   selector:
     matchLabels:
-      app: {{ template "elasticsearch-exporter.name" . }}
-      release: "{{ .Release.Name }}"
+      {{- include "elasticsearch-exporter.selectorLabels" . | nindent 6 }}
   strategy:
     rollingUpdate:
       maxSurge: 1
@@ -29,8 +25,10 @@ spec:
   template:
     metadata:
       labels:
-        app: {{ template "elasticsearch-exporter.name" . }}
-        release: "{{ .Release.Name }}"
+        {{- include "elasticsearch-exporter.selectorLabels" . | nindent 8 }}
+        {{- with .Values.commonLabels }}
+          {{- toYaml . | nindent 8 }}
+        {{- end }}
       {{- with .Values.podLabels }}
         {{- toYaml . | nindent 8 }}
       {{- end }}
