@@ -66,7 +66,7 @@ app.kubernetes.io/part-of: {{ template "kube-state-metrics.name" . }}
 app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
 {{- end }}
 {{- if .Values.customLabels }}
-{{ toYaml .Values.customLabels }}
+{{ tpl (toYaml .Values.customLabels) . }}
 {{- end }}
 {{- if .Values.releaseLabel }}
 release: {{ .Release.Name }}
