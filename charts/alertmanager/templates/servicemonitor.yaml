@@ -1,0 +1,88 @@
+{{- if .Values.serviceMonitor.enabled }}
+{{- if not ( .Capabilities.APIVersions.Has "monitoring.coreos.com/v1" ) }}
+{{- fail "Cluster API resources do not include monitoring.coreos.com/v1! Please install prometheus-operator CRDs first." }}
+{{- end }}
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: {{ template "alertmanager.fullname" . }}-alertmanager
+  namespace: {{ template "alertmanager.namespace" . }}
+  labels:
+    {{- include "alertmanager.labels" . | nindent 4 }}
+    {{- with .Values.serviceMonitor.additionalLabels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+spec:
+  {{- if .Values.serviceMonitor.attachMetadata }}
+  attachMetadata:
+    node: true
+  {{- end }}
+  endpoints:
+  - port: http
+    path: "/metrics"
+    enableHttp2: {{ .Values.serviceMonitor.enableHttp2 }}
+    {{- if .Values.serviceMonitor.interval }}
+    interval: {{ .Values.serviceMonitor.interval }}
+    {{- end }}
+    {{- if .Values.serviceMonitor.proxyUrl }}
+    proxyUrl: {{ .Values.serviceMonitor.proxyUrl}}
+    {{- end }}
+    {{- if .Values.serviceMonitor.scheme }}
+    scheme: {{ .Values.serviceMonitor.scheme }}
+    {{- end }}
+    {{- if .Values.serviceMonitor.tlsConfig }}
+    tlsConfig: {{- toYaml .Values.serviceMonitor.tlsConfig | nindent 6 }}
+    {{- end }}
+    {{- if .Values.serviceMonitor.metricRelabelings }}
+    metricRelabelings: {{- tpl (toYaml .Values.serviceMonitor.metricRelabelings | nindent 6) . }}
+    {{- end }}
+    {{- if .Values.serviceMonitor.relabelings }}
+    relabelings: {{- toYaml .Values.serviceMonitor.relabelings | nindent 6 }}
+    {{- end }}
+  {{- range .Values.serviceMonitor.additionalEndpoints }}
+  - port: {{ .port }}
+    {{- if or $.Values.serviceMonitor.interval .interval }}
+    interval: {{ default $.Values.serviceMonitor.interval .interval }}
+    {{- end }}
+    {{- if or $.Values.serviceMonitor.proxyUrl .proxyUrl }}
+    proxyUrl: {{ default $.Values.serviceMonitor.proxyUrl .proxyUrl }}
+    {{- end }}
+    {{- if or $.Values.serviceMonitor.scheme .scheme }}
+    scheme: {{ default $.Values.serviceMonitor.scheme .scheme }}
+    {{- end }}
+    {{- if or $.Values.serviceMonitor.tlsConfig .tlsConfig }}
+    tlsConfig: {{- default $.Values.serviceMonitor.tlsConfig .tlsConfig | toYaml | nindent 6 }}
+    {{- end }}
+    path: {{ .path }}
+    {{- if or $.Values.serviceMonitor.metricRelabelings .metricRelabelings }}
+    metricRelabelings: {{- tpl (default $.Values.serviceMonitor.metricRelabelings .metricRelabelings | toYaml | nindent 6) . }}
+    {{- end }}
+    {{- if or $.Values.serviceMonitor.relabelings .relabelings }}
+    relabelings: {{- default $.Values.serviceMonitor.relabelings .relabelings | toYaml | nindent 6 }}
+    {{- end }}
+  {{- end }}
+  {{- if .Values.serviceMonitor.jobLabel }}
+  jobLabel: {{ .Values.serviceMonitor.jobLabel | quote }}
+  {{- end }}
+  keepDroppedTargets: {{ .Values.serviceMonitor.keepDroppedTargets }}
+  labelLimit: {{ .Values.serviceMonitor.labelLimit }}
+  labelNameLengthLimit: {{ .Values.serviceMonitor.labelNameLengthLimit }}
+  labelValueLengthLimit: {{ .Values.serviceMonitor.labelValueLengthLimit }}
+  namespaceSelector:
+    matchNames:
+      - {{ printf "%s" (include "alertmanager.namespace" .) | quote }}
+  {{- if .Values.serviceMonitor.podTargetLabels }}
+  podTargetLabels: {{ .Values.serviceMonitor.podTargetLabels }}
+  {{- end }}
+  sampleLimit: {{ .Values.serviceMonitor.sampleLimit }}
+  selector:
+    matchLabels:
+      {{- include "alertmanager.selectorLabels" . | nindent 6 }}
+      {{- with .Values.service.labels }}
+      {{- toYaml . | nindent 6 }}
+      {{- end }}
+  {{- if .Values.serviceMonitor.targetLabels }}
+  targetLabels: {{ toYaml .Values.serviceMonitor.targetLabels | nindent 4 }}
+  {{- end }}
+  targetLimit: {{ .Values.serviceMonitor.targetLimit }}
+{{- end }}

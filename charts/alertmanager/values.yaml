@@ -109,8 +109,10 @@ service:
   type: ClusterIP
   port: 9093
   clusterPort: 9094
-  loadBalancerIP: ""  # Assign ext IP when Service type is LoadBalancer
-  loadBalancerSourceRanges: []  # Only allow access to loadBalancerIP from these IPs
+  # Assign ext IP when Service type is LoadBalancer
+  loadBalancerIP: ""
+  # Only allow access to loadBalancerIP from these IPs
+  loadBalancerSourceRanges: []
   # if you want to force a specific nodePort. Must be use with service.type=NodePort
   # nodePort:
 
@@ -140,6 +142,109 @@ servicePerReplica:
   # Service type
   #
   type: ClusterIP
+
+## Configuration for creating a ServiceMonitor for AlertManager
+##
+serviceMonitor:
+  ## If true, a ServiceMonitor will be created for the AlertManager service.
+  ##
+  enabled: false
+
+  ## Additional labels
+  ##
+  additionalLabels: {}
+
+  ## Additional metadata which is added to the discovered targets
+  ## Will attempt to add node metatadata if enabled. Only valid in Prometheus versions 2.37.0 and newer.
+  attachMetadata: false
+
+  ## Selects the label from the associated Kubernetes Service object
+  ## which will be used as the job label for all metrics.
+  ## Defaults to service name if unspecified.
+  jobLabel: ""
+
+  ## Per-scrape limit on the number of targets dropped by relabeling that will be
+  ## kept in memory. 0 means no limit. Only valid in Prometheus versions 2.47.0 and newer.
+  keepDroppedTargets: 0
+
+  ## Per-scrape limit on number of labels that will be accepted for a sample. Only valid in Prometheus versions 2.27.0 and newer.
+  ##
+  labelLimit: 0
+
+  ## Per-scrape limit on length of labels name that will be accepted for a sample. Only valid in Prometheus versions 2.27.0 and newer.
+  ##
+  labelNameLengthLimit: 0
+
+  ## Per-scrape limit on length of labels value that will be accepted for a sample. Only valid in Prometheus versions 2.27.0 and newer.
+  ##
+  labelValueLengthLimit: 0
+
+  ## Defines the labels which are transferred from the associated Kubernetes
+  ## Pod object onto the ingested metrics.
+  ##
+  podTargetLabels: []
+
+  ## SampleLimit defines per-scrape limit on number of scraped samples that will be accepted.
+  ##
+  sampleLimit: 0
+
+  ## TargetLabels defines the labels which are transferred from the associated
+  ## Kubernetes Service object onto the ingested metrics.
+  ##
+  targetLabels: []
+
+  ## TargetLimit defines a limit on the number of scraped targets that will be accepted.
+  ##
+  targetLimit: 0
+
+  ## Endpoint options
+  #
+  ## enableHttp2: Whether to enable HTTP2.
+  ## See https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/api.md#endpoint
+  ##
+  enableHttp2: true
+
+  ## Interval at which Prometheus scrapes the metrics from the target. If empty, Prometheus uses the global scrape interval
+  ##
+  interval: ""
+
+  ## proxyUrl: URL of a proxy that should be used for scraping.
+  ##
+  proxyUrl: ""
+
+  ## scheme: HTTP scheme to use for scraping. Can be used with `tlsConfig` for example if using istio mTLS.
+  ##
+  scheme: ""
+
+  ## tlsConfig: TLS configuration to use when scraping the endpoint. For example if using istio mTLS.
+  ## Of type: https://github.com/coreos/prometheus-operator/blob/main/Documentation/api.md#tlsconfig
+  ##
+  tlsConfig: {}
+
+  ## MetricRelabelConfigs to apply to samples after scraping, but before ingestion.
+  ## ref: https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/api.md#relabelconfig
+  ##
+  metricRelabelings: []
+  # - action: keep
+  #   regex: 'kube_(daemonset|deployment|pod|namespace|node|statefulset).+'
+  #   sourceLabels: [__name__]
+
+  ## RelabelConfigs to apply to samples before scraping
+  ## ref: https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/api.md#relabelconfig
+  ##
+  relabelings: []
+  # - sourceLabels: [__meta_kubernetes_pod_node_name]
+  #   separator: ;
+  #   regex: ^(.*)$
+  #   targetLabel: nodename
+  #   replacement: $1
+  #   action: replace
+
+  ## Additional Endpoints
+  ##
+  additionalEndpoints: []
+  # - port: oauth-metrics
+  #   path: /metrics
 
 ingress:
   enabled: false
@@ -291,7 +396,7 @@ config:
     # slack_api_url: ''
 
   templates:
-    - '/etc/alertmanager/*.tmpl'
+    - "/etc/alertmanager/*.tmpl"
 
   receivers:
     - name: default-receiver
