@@ -1,9 +1,9 @@
-{{- if and .Values.prometheus.enabled .Values.prometheus.gateway.httpRoute.enabled -}}
+{{- if and .Values.prometheus.enabled .Values.prometheus.gatewayAPI.httpRoute.enabled -}}
   {{- $serviceName := printf "%s-%s" (include "kube-prometheus-stack.fullname" .) "prometheus" -}}
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
 metadata:
-  {{- with .Values.prometheus.gateway.httpRoute.annotations }}
+  {{- with .Values.prometheus.gatewayAPI.httpRoute.annotations }}
   annotations:
     {{- toYaml . | nindent 4 }}
   {{- end }}
@@ -12,15 +12,15 @@ metadata:
   labels:
     app: {{ template "kube-prometheus-stack.name" . }}-prometheus
     {{- include "kube-prometheus-stack.labels" . | nindent 4 }}
-    {{- with .Values.prometheus.gateway.httpRoute.labels }}
+    {{- with .Values.prometheus.gatewayAPI.httpRoute.labels }}
     {{- toYaml . | nindent 4 }}
     {{- end }}
 spec:
-  {{- with .Values.prometheus.gateway.httpRoute.parentRefs }}
+  {{- with .Values.prometheus.gatewayAPI.httpRoute.parentRefs }}
   parentRefs:
     {{- toYaml . | nindent 4 }}
   {{- end }}
-  {{- with .Values.prometheus.gateway.httpRoute.hostnames }}
+  {{- with .Values.prometheus.gatewayAPI.httpRoute.hostnames }}
   hostnames:
     {{- tpl (toYaml .) $ | nindent 4 }}
   {{- end }}
@@ -28,11 +28,11 @@ spec:
     - backendRefs:
         - name: {{ $serviceName }}
           port: {{ .Values.prometheus.service.port }}
-      {{- with .Values.prometheus.gateway.httpRoute.filters }}
+      {{- with .Values.prometheus.gatewayAPI.httpRoute.filters }}
       filters:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      {{- with .Values.prometheus.gateway.httpRoute.matches }}
+      {{- with .Values.prometheus.gatewayAPI.httpRoute.matches }}
       matches:
         {{- toYaml . | nindent 8 }}
       {{- end }}
