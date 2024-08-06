@@ -73,6 +73,9 @@ spec:
           {{- with .Values.server.prefixURL }}
           {{- $default_url = printf "http://127.0.0.1:9090%s/-/reload" . }}
           {{- end }}
+          {{- if .Values.configmapReload.prometheus.containerPort }}
+            - --listen-address=0.0.0.0:{{ .Values.configmapReload.prometheus.containerPort }}
+          {{- end }}
             - --reload-url={{ default $default_url .Values.configmapReload.reloadUrl }}
           {{- range $key, $value := .Values.configmapReload.prometheus.extraArgs }}
             {{- if $value }}
@@ -91,6 +94,22 @@ spec:
           {{- if .Values.configmapReload.prometheus.containerPort }}
           ports:
             - containerPort: {{ .Values.configmapReload.prometheus.containerPort }}
+              {{- if .Values.configmapReload.prometheus.containerPortName }}
+              name: {{ .Values.configmapReload.prometheus.containerPortName }}
+              {{- end }}
+          {{- end }}
+          {{- with .Values.configmapReload.prometheus.livenessProbe }}
+          livenessProbe:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.configmapReload.prometheus.readinessProbe }}
+          readinessProbe:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- if .Values.configmapReload.prometheus.startupProbe.enabled }}
+          {{- $startupProbe := omit .Values.configmapReload.prometheus.startupProbe "enabled" }}
+          startupProbe:
+            {{- toYaml $startupProbe | nindent 12 }}
           {{- end }}
           {{- with .Values.configmapReload.prometheus.resources }}
           resources:

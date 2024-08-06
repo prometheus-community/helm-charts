@@ -48,6 +48,10 @@ helm upgrade [RELEASE_NAME] [CHART] --install
 
 _See [helm upgrade](https://helm.sh/docs/helm/helm_upgrade/) for command documentation._
 
+### To 9.0.0
+
+This version remove pod security policy as it is deprecated.
+
 ### To 8.0.0
 
 - The default image is set to `quay.io/prometheus/blackbox-exporter` instead `prom/blackbox-exporter`

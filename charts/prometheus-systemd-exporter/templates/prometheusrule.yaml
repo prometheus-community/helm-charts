@@ -1,0 +1,22 @@
+{{- if .Values.prometheus.rules.enabled }}
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: {{ template "prometheus-systemd-exporter.fullname" . }}
+  {{- with .Values.prometheus.rules.namespace }}
+  namespace: {{ . }}
+  {{- end }}
+  labels:
+    app: {{ template "prometheus-systemd-exporter.name" . }}
+    chart: {{ template "prometheus-systemd-exporter.chart" . }}
+    heritage: {{ .Release.Service }}
+    {{- if .Values.prometheus.rules.additionalLabels }}
+    {{- toYaml .Values.prometheus.rules.additionalLabels | nindent 4 }}
+    {{- end }}
+spec:
+{{- with .Values.prometheus.rules.rules }}
+  groups:
+    - name: {{ template "prometheus-systemd-exporter.fullname" $ }}
+      rules: {{ tpl (toYaml .) $ | nindent 8 }}
+{{- end }}
+{{- end }}

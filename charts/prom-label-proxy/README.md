@@ -48,3 +48,68 @@ See [Customizing the Chart Before Installing](https://helm.sh/docs/intro/using_h
 ```console
 helm show values prometheus-community/prom-label-proxy
 ```
+
+### kube-rbac-proxy
+
+You can enable `prom-label-proxy` endpoint protection using `kube-rbac-proxy`. By setting `kubeRBACProxy.enabled: true`, this chart will deploy one RBAC proxy container for `config.listenAddress`.
+
+With the below example `values.yaml` :
+
+```yaml
+config:
+  upstream: http://prometheus:9090
+  extraArgs:
+  - --enable-label-apis=true
+  - --header-name=X-Namespace
+
+kubeRBACProxy:
+  enabled: true
+  config:
+    authorization:
+      rewrites:
+        byHttpHeader:
+          name: X-Namespace
+      resourceAttributes:
+        apiVersion: v1
+        resource: namespaces
+        subresource: metrics
+        namespace: "{{ .Value }}"
+```
+
+To authorize access, authenticate your requests (via a `ServiceAccount` for example) with a `Role` attached such as:
+
+```yaml
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: tenant1-metrics-reader
+  namespace: tenant1
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: tenant1-metrics
+  namespace: tenant1
+rules:
+  - apiGroups: [ '' ]
+    resources:
+      - namespaces/metrics
+    verbs: [ "create", "get" ]
+---
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: tenant1-metrics-reader
+  namespace: tenant1
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: tenant1-metrics
+subjects:
+- kind: ServiceAccount
+  name: tenant1-metrics-reader
+  namespace: tenant1
+```
+
+See [kube-rbac-proxy examples](https://github.com/brancz/kube-rbac-proxy/tree/master/examples/rewrites) for more details.

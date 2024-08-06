@@ -1,0 +1,15 @@
+{{- if and .Values.kubeRBACProxy.enabled .Values.kubeRBACProxy.config }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ template "prom-label-proxy.fullname" . }}-rbac-config
+  namespace: {{ template "prom-label-proxy.namespace" . }}
+  labels: {{- include "prom-label-proxy.labels" . | nindent 4 }}
+  {{- if .Values.annotations }}
+  annotations:
+    {{ toYaml .Values.annotations | nindent 4 }}
+  {{- end }}
+data:
+  config-file.yaml: |
+    {{- .Values.kubeRBACProxy.config | toYaml | nindent 4 }}
+{{- end }}
