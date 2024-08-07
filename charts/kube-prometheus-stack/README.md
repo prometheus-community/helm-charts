@@ -42,6 +42,218 @@ To disable dependencies during installation, see [multiple releases](#multiple-r
 
 _See [helm dependency](https://helm.sh/docs/helm/helm_dependency/) for command documentation._
 
+## FAQ
+
+### I setup my email in grafana, but not getting alerts?
+
+Even though you can see the alerts are "firing" within grafana, those alerts are only SHOWN in the UI.
+Grafana native alert manager is not used. 
+
+Instead, what actually happens is that Prometheus evaluates these alert rules and if triggered sends them to the prometheus Alertmanager.
+
+Therefore, you need to configure the Alertmanager, here with emails using amazon SES:
+
+```yaml
+alertmanager:
+  config:
+    global:
+      smtp_from: alerts@grafana.mycluster.com
+      smtp_smarthost: email-smtp.eu-north-1.amazonaws.com:587
+      smtp_auth_username: $(AWS_ACCESS_KEY_ID)
+      smtp_auth_password: $(AWS_SECRET_ACCESS_KEY)
+    receivers:
+     - name: 'email'
+       email_configs:
+       - to: 'youremail@email.com, someone@email.com'
+         send_resolved: true
+     - name: 'thevoid'
+       email_configs:
+       - to: ''
+    route:
+      group_by:
+      - namespace
+      group_interval: 5m
+      group_wait: 30s
+      receiver: email
+      repeat_interval: 12h
+      routes:
+      - matchers:
+        - alertname = "Watchdog"
+        receiver: 'thevoid'
+  alertmanagerSpec:
+    containers:
+    - name: config-reloader
+      envFrom:
+      - secretRef:
+          name: aws-mail
+    initContainers:
+    - name: init-config-reloader
+      envFrom:
+      - secretRef:
+          name: aws-mail
+    nodeSelector:
+      kubernetes.io/os: linux
+```
+
+This ofcourse assumes you have a secret `aws-mail` with the `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` keys for a user that can send SES emails.
+
+See https://prometheus.io/docs/alerting/latest/configuration/ for other ways alertmanager can alert you.
+
+### I know grafana alerting is not used by anything in this helm, but I still want to configure it with an email
+
+Sure, here is the equivalent (to the above) config for grafana:
+
+```yaml
+  grafana:
+    alerting:
+      policies.yaml:
+        policies:
+          - orgId: 1
+            receiver: email
+            group_by:
+            - namespace
+      contactpoints.yaml:
+        contactPoints:
+        - name: email
+          org_id: 1
+          receivers:
+          - uid: "email"
+            type: email
+            settings:
+              addresses: |
+                youremail@email.com
+                someone@email.com
+              singleEmail: true
+            disableResolveMessage: false
+    smtp:
+      existingSecret: aws-mail
+      userKey: AWS_ACCESS_KEY_ID
+      passwordKey: AWS_SECRET_ACCESS_KEY
+    env:
+      GF_SMTP_ENABLED: "true"
+      GF_SMTP_FROM_NAME: "Grafana"
+      GF_SMTP_FROM_ADDRESS: "alerts@grafana.mycluster.com"
+  	  GF_SMTP_HOST: email-smtp.eu-north-1.amazonaws.com:587
+```
+
+### Alertmanager config has no way to inject secrets
+
+Actually it does, see the above config example for how to store an aws secret and inject it into the config parser. That will in turn create a valid config file at the end with your secrets replaced.
+
+Notice the config file needs to be valid BEFORE env substitutions. Example, this won't work since there is no port on the host:
+
+```yaml
+      smtp_smarthost: $(somesecret)
+```
+
+### How can you tell that the Prometheus or Alertmanager config ends up the way you want?
+
+```console
+kubectl -n monitoring exec prometheus-kube-prometheus-stack-prometheus-0 -c config-reloader -- cat /etc/prometheus/config_out/prometheus.env.yaml
+kubectl -n monitoring exec alertmanager-kube-prometheus-stack-alertmanager-0 -c config-reloader -- cat /etc/alertmanager/config_out/alertmanager.env.yaml
+```
+
+Replace `monitoring` with your namespace.
+
+### My chart that uses the 'cluster' label is empty
+
+By default there is no configuration for adding the cluster label to the scraped metrics.
+
+If using thanos, you can use the `externalLabels` in prometheus to add a virtual cluster label:
+
+```yaml
+prometheus:
+  prometheusSpec:
+    externalLabels:
+      cluster: myclustername
+```
+
+if not using thanos, you must configure prometheus to store the label on every scrape:
+
+```yaml
+prometheus:
+  prometheusSpec:
+    scrapeClasses:
+    - name: addCluster
+      default: true
+      relabelings:
+      - action: Replace
+        targetLabel: 'cluster'
+        replacement: myclustername
+```
+
+### I already have a grafana installation, I just want the data collection and dashboards
+
+Sure:
+
+```yaml
+  grafana:
+    enabled: false
+    forceDeployDashboards: true
+    forceDeployDatasources: true
+```
+
+### I want to store my collected data
+
+Sure, you can setup thanos to store it in S3, or you can configure Prometheus to store it in a PVC:
+
+```yaml
+prometheus:
+  prometheusSpec:
+    storageSpec:
+      volumeClaimTemplate:
+        spec:
+          accessModes:
+            - ReadWriteOnce
+          resources:
+            requests:
+              storage: 10Gi #also edit retentionSize below
+    retentionSize: "8GiB"
+    retention: ""
+```
+
+### Prometheus is not picking up my other `ServiceMonitor`, `PrometheusRule`, `PodMonitor` or `Probe`
+
+You probably need to set Prometheus to search ALL namespaces:
+
+```yaml
+prometheus:
+  prometheusSpec:
+    serviceMonitorSelectorNilUsesHelmValues: false
+    ruleSelectorNilUsesHelmValues: false
+    podMonitorSelectorNilUsesHelmValues: false
+    probeSelectorNilUsesHelmValues: false
+```
+
+### How do I get opentelemetry to send metrics to my prometheus
+
+```yaml
+prometheus:
+  prometheusSpec:
+    enableFeatures:
+    - exemplar-storage
+    - otlp-write-receiver
+    enableRemoteWriteReceiver: true
+opentelemetry-collector:
+  mode: deployment
+  presets:
+    kubernetesAttributes:
+      enabled: true
+  config:
+    service:
+      pipelines:
+        metrics:
+          receivers: [otlp]
+          exporters: [prometheusremotewrite]
+    exporters:
+      prometheusremotewrite:
+        resource_to_telemetry_conversion: 
+          enabled: true
+        endpoint: "http://kube-prometheus-stack-prometheus.monitoring.svc.cluster.local:9090/api/v1/write"
+```
+
+Adjust `.monitoring.` to your namespace. The extra features in `enableFeatures` are optional.
+
 ## Uninstall Helm Chart
 
 ```console
