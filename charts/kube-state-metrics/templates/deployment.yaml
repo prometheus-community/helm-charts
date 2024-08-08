@@ -31,9 +31,12 @@ spec:
     metadata:
       labels:
         {{- include "kube-state-metrics.labels" . | indent 8 }}
+        {{- with .Values.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
       {{- if .Values.podAnnotations }}
       annotations:
-{{ toYaml .Values.podAnnotations | indent 8 }}
+      {{ toYaml .Values.podAnnotations | nindent 8 }}
       {{- end }}
     spec:
       automountServiceAccountToken: {{ .Values.automountServiceAccountToken }}
@@ -147,6 +150,26 @@ spec:
           name: "metrics"
         {{- end }}
         {{- end }}
+        {{- if .Values.startupProbe.enabled }}
+        startupProbe:
+          failureThreshold: {{ .Values.startupProbe.failureThreshold }}
+          httpGet:
+            {{- if .Values.hostNetwork }}
+            host: 127.0.0.1
+            {{- end }}
+            httpHeaders:
+            {{- range $_, $header := .Values.startupProbe.httpGet.httpHeaders }}
+            - name: {{ $header.name }}
+              value: {{ $header.value }}
+            {{- end }}
+            path: /healthz
+            port: {{ $servicePort }}
+            scheme: {{ upper .Values.startupProbe.httpGet.scheme }}
+          initialDelaySeconds: {{ .Values.startupProbe.initialDelaySeconds }}
+          periodSeconds: {{ .Values.startupProbe.periodSeconds }}
+          successThreshold: {{ .Values.startupProbe.successThreshold }}
+          timeoutSeconds: {{ .Values.startupProbe.timeoutSeconds }}
+        {{- end }}
         livenessProbe:
           failureThreshold: {{ .Values.livenessProbe.failureThreshold }}
           httpGet:
@@ -158,7 +181,7 @@ spec:
             - name: {{ $header.name }}
               value: {{ $header.value }}
             {{- end }}
-            path: /healthz
+            path: /livez
             port: {{ $servicePort }}
             scheme: {{ upper .Values.livenessProbe.httpGet.scheme }}
           initialDelaySeconds: {{ .Values.livenessProbe.initialDelaySeconds }}
@@ -176,7 +199,7 @@ spec:
             - name: {{ $header.name }}
               value: {{ $header.value }}
             {{- end }}
-            path: /
+            path: /readyz
             port: {{ $servicePort }}
             scheme: {{ upper .Values.readinessProbe.httpGet.scheme }}
           initialDelaySeconds: {{ .Values.readinessProbe.initialDelaySeconds }}

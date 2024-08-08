@@ -1126,6 +1126,11 @@ grafana:
   #   url: https://{{ printf "%s-prometheus.svc" .Release.Name }}:9090
   #   version: 1
 
+  # Flag to mark provisioned data sources for deletion if they are no longer configured.
+  # It takes no effect if data sources are already listed in the deleteDatasources section.
+  # ref: https://grafana.com/docs/grafana/latest/administration/provisioning/#example-data-source-config-file
+  prune: false
+
   ## Passed to grafana subchart and used by servicemonitor below
   ##
   service:
@@ -2238,6 +2243,13 @@ prometheusOperator:
     namespaceSelector: {}
     objectSelector: {}
 
+    mutatingWebhookConfiguration:
+      annotations: {}
+      #   argocd.argoproj.io/hook: PreSync
+
+    validatingWebhookConfiguration:
+      annotations: {}
+      #   argocd.argoproj.io/hook: PreSync
 
     deployment:
       enabled: false
@@ -2868,7 +2880,7 @@ prometheusOperator:
   thanosImage:
     registry: quay.io
     repository: thanos/thanos
-    tag: v0.35.1
+    tag: v0.36.0
     sha: ""
 
   ## Set a Label Selector to filter watched prometheus and prometheusAgent
@@ -4446,7 +4458,7 @@ thanosRuler:
     image:
       registry: quay.io
       repository: thanos/thanos
-      tag: v0.35.1
+      tag: v0.36.0
       sha: ""
 
     ## Namespaces to be selected for PrometheusRules discovery.
