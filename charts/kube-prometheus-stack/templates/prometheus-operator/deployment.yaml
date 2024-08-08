@@ -167,6 +167,26 @@ spec:
           {{- with .Values.prometheusOperator.extraVolumeMounts }}
           {{- toYaml . | nindent 12 }}
           {{- end }}
+          livenessProbe:
+            httpGet:
+              path: /healthz
+            {{- if .Values.prometheusOperator.tls.enabled }}
+              port: https
+              scheme: HTTPS
+            {{- else }}
+              port: http
+              scheme: HTTP
+            {{- end }}
+          readinessProbe:
+            httpGet:
+              path: /healthz
+            {{- if .Values.prometheusOperator.tls.enabled }}
+              port: https
+              scheme: HTTPS
+            {{- else }}
+              port: http
+              scheme: HTTP
+            {{- end }}
       volumes:
         {{- if .Values.prometheusOperator.tls.enabled }}
         - name: tls-secret
