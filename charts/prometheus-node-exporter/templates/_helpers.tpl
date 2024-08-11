@@ -43,8 +43,8 @@ app.kubernetes.io/part-of: {{ include "prometheus-node-exporter.name" . }}
 {{- with .Chart.AppVersion }}
 app.kubernetes.io/version: {{ . | quote }}
 {{- end }}
-{{- with .Values.podLabels }}
-{{ toYaml . }}
+{{- with .Values.commonLabels }}
+{{ tpl (toYaml .) $ }}
 {{- end }}
 {{- if .Values.releaseLabel }}
 release: {{ .Release.Name }}
