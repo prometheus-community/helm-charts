@@ -19,10 +19,13 @@ data:
     deleteDatasources:
 {{ tpl (toYaml .Values.grafana.deleteDatasources | indent 6) . }}
 {{- end }}
+{{- if .Values.grafana.prune }}
+    prune: {{ .Values.grafana.prune }}
+{{- end }}
     datasources:
 {{- $scrapeInterval := .Values.grafana.sidecar.datasources.defaultDatasourceScrapeInterval | default .Values.prometheus.prometheusSpec.scrapeInterval | default "30s" }}
 {{- if .Values.grafana.sidecar.datasources.defaultDatasourceEnabled }}
-    - name: Prometheus
+    - name: "{{ .Values.grafana.sidecar.datasources.name }}"
       type: prometheus
       uid: {{ .Values.grafana.sidecar.datasources.uid }}
       {{- if .Values.grafana.sidecar.datasources.url }}
@@ -45,7 +48,7 @@ data:
 {{- end }}
 {{- if .Values.grafana.sidecar.datasources.createPrometheusReplicasDatasources }}
 {{- range until (int .Values.prometheus.prometheusSpec.replicas) }}
-    - name: Prometheus-{{ . }}
+    - name: "{{ $.Values.grafana.sidecar.datasources.name }}-{{ . }}"
       type: prometheus
       uid: {{ $.Values.grafana.sidecar.datasources.uid }}-replica-{{ . }}
       url: http://prometheus-{{ template "kube-prometheus-stack.prometheus.crname" $ }}-{{ . }}.prometheus-operated:9090/{{ trimPrefix "/" $.Values.prometheus.prometheusSpec.routePrefix }}
@@ -61,7 +64,7 @@ data:
 {{- end }}
 {{- end }}
 {{- if .Values.grafana.sidecar.datasources.alertmanager.enabled }}
-    - name: Alertmanager
+    - name: "{{ .Values.grafana.sidecar.datasources.alertmanager.name }}"
       type: alertmanager
       uid: {{ .Values.grafana.sidecar.datasources.alertmanager.uid }}
       {{- if .Values.grafana.sidecar.datasources.alertmanager.url }}

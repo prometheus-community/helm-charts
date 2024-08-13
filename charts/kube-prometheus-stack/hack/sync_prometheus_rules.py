@@ -29,49 +29,48 @@ def change_style(style, representer):
 
 refs = {
     # https://github.com/prometheus-operator/kube-prometheus
-    'ref.kube-prometheus': 'a8ba97a150c75be42010c75d10b720c55e182f1a',
+    'ref.kube-prometheus': 'defa2bd1e242519c62a5c2b3b786b1caa6d906d4',
     # https://github.com/kubernetes-monitoring/kubernetes-mixin
-    'ref.kubernetes-mixin': '883f294bc636e2cd019a64328a1dbfa53edbc985',
+    'ref.kubernetes-mixin': 'dd5c59ab4491159593ed370a344a553b57146a7d',
     # https://github.com/etcd-io/etcd
-    'ref.etcd': '786da8731e6ebc61d3482048fdfa64e505da1f8f',
+    'ref.etcd': '9f59ef8ead097f836271f125d0e3774ddae4e71d',
 }
 
 # Source files list
 charts = [
     {
-        'source': 'https://raw.githubusercontent.com/prometheus-operator/kube-prometheus/%s/manifests/alertmanager-prometheusRule.yaml' % (refs['ref.kube-prometheus'],),
+        'git': 'https://github.com/prometheus-operator/kube-prometheus.git',
+        'branch': refs['ref.kube-prometheus'],
+        'source': 'main.libsonnet',
+        'cwd': '',
         'destination': '../templates/prometheus/rules-1.14',
-        'min_kubernetes': '1.14.0-0'
-    },
-    {
-        'source': 'https://raw.githubusercontent.com/prometheus-operator/kube-prometheus/%s/manifests/kubePrometheus-prometheusRule.yaml'% (refs['ref.kube-prometheus'],),
-        'destination': '../templates/prometheus/rules-1.14',
-        'min_kubernetes': '1.14.0-0'
-    },
-    {
-        'source': 'https://raw.githubusercontent.com/prometheus-operator/kube-prometheus/%s/manifests/kubernetesControlPlane-prometheusRule.yaml'% (refs['ref.kube-prometheus'],),
-        'destination': '../templates/prometheus/rules-1.14',
-        'min_kubernetes': '1.14.0-0'
-    },
-    {
-        'source': 'https://raw.githubusercontent.com/prometheus-operator/kube-prometheus/%s/manifests/kubeStateMetrics-prometheusRule.yaml'% (refs['ref.kube-prometheus'],),
-        'destination': '../templates/prometheus/rules-1.14',
-        'min_kubernetes': '1.14.0-0'
-    },
-    {
-        'source': 'https://raw.githubusercontent.com/prometheus-operator/kube-prometheus/%s/manifests/nodeExporter-prometheusRule.yaml'% (refs['ref.kube-prometheus'],),
-        'destination': '../templates/prometheus/rules-1.14',
-        'min_kubernetes': '1.14.0-0'
-    },
-    {
-        'source': 'https://raw.githubusercontent.com/prometheus-operator/kube-prometheus/%s/manifests/prometheus-prometheusRule.yaml'% (refs['ref.kube-prometheus'],),
-        'destination': '../templates/prometheus/rules-1.14',
-        'min_kubernetes': '1.14.0-0'
-    },
-    {
-        'source': 'https://raw.githubusercontent.com/prometheus-operator/kube-prometheus/%s/manifests/prometheusOperator-prometheusRule.yaml'% (refs['ref.kube-prometheus'],),
-        'destination': '../templates/prometheus/rules-1.14',
-        'min_kubernetes': '1.14.0-0'
+        'min_kubernetes': '1.14.0-0',
+        'mixin': """
+        local kp =
+          (import 'jsonnet/kube-prometheus/main.libsonnet') + {
+            values+:: {
+              common+: {
+                namespace: 'monitoring',
+              },
+              kubernetesControlPlane+: {
+                kubeProxy: true,
+              },
+            },
+            grafana: {},
+          };
+
+        {
+          groups: std.flattenArrays([
+            kp[component][resource].spec.groups
+            for component in std.objectFields(kp)
+            for resource in std.filter(
+              function(resource)
+                kp[component][resource].kind == 'PrometheusRule',
+              std.objectFields(kp[component])
+            )
+          ]),
+        }
+        """
     },
     {
         'git': 'https://github.com/kubernetes-monitoring/kubernetes-mixin.git',
@@ -80,12 +79,18 @@ charts = [
         'cwd': 'rules',
         'destination': '../templates/prometheus/rules-1.14',
         'min_kubernetes': '1.14.0-0',
-        'is_mixin': True,
-        'mixin_vars': {'_config': {
-            'clusterLabel': 'cluster',
-            'windowsExporterSelector': 'job="windows-exporter"',
-            'kubeStateMetricsSelector': 'job="kube-state-metrics"',
-        }}
+        'mixin': """
+        local kp =
+            { prometheusAlerts+:: {}, prometheusRules+:: {}} +
+            (import "windows.libsonnet") +
+            {'_config': {
+                'clusterLabel': 'cluster',
+                'windowsExporterSelector': 'job="windows-exporter"',
+                'kubeStateMetricsSelector': 'job="kube-state-metrics"',
+            }};
+
+        kp.prometheusAlerts + kp.prometheusRules
+        """
     },
     {
         'git': 'https://github.com/etcd-io/etcd.git',
@@ -94,8 +99,11 @@ charts = [
         'cwd': 'contrib/mixin',
         'destination': '../templates/prometheus/rules-1.14',
         'min_kubernetes': '1.14.0-0',
-        'is_mixin': True,
-        'mixin_vars': {'_config+': {}}
+        'mixin': """
+        local kp = { prometheusAlerts+:: {}, prometheusRules+:: {}} + (import "mixin.libsonnet");
+
+        kp.prometheusAlerts + kp.prometheusRules
+        """
     },
 ]
 
@@ -185,6 +193,9 @@ replacement_map = {
         'init': ''},
     '(namespace,service)': {
         'replacement': '(namespace,service,cluster)',
+        'init': ''},
+    '(namespace, job, handler': {
+        'replacement': '(cluster, namespace, job, handler',
         'init': ''}
 }
 
@@ -332,7 +343,7 @@ def add_custom_labels(rules_str, group, indent=4, label_indent=2):
     # should only be added if there are .Values defaultRules.additionalRuleLabels defined
     rule_seperator = "\n" + " " * indent + "-.*"
     label_seperator = "\n" + " " * indent + "  labels:"
-    section_seperator = "\n" + " " * indent + "  \S"
+    section_seperator = "\n" + " " * indent + "  \\S"
     section_seperator_len = len(section_seperator)-1
     rules_positions = re.finditer(rule_seperator,rules_str)
 
@@ -508,7 +519,8 @@ def write_group_to_file(group, url, destination, min_kubernetes, max_kubernetes)
     lines += re.sub(
         r'\s(by|on) ?\(',
         r' \1 ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}',
-        rules
+        rules,
+        flags=re.IGNORECASE
     )
 
     # footer
@@ -539,6 +551,8 @@ https://github.com/prometheus-community/helm-charts/tree/main/charts/kube-promet
         f.write('{{- end }}')
 
 def main():
+    os.chdir(os.path.dirname(os.path.abspath(__file__)))
+
     init_yaml_styles()
     # read the rules, create a new template file per group
     for chart in charts:
@@ -561,7 +575,7 @@ def main():
             subprocess.run(["git", "-C", checkout_dir, "fetch", "--depth", "1", "origin", branch, "--quiet"])
             subprocess.run(["git", "-c", "advice.detachedHead=false", "-C", checkout_dir, "checkout", "FETCH_HEAD", "--quiet"])
 
-            if chart.get('is_mixin'):
+            if chart.get('mixin'):
                 cwd = os.getcwd()
 
                 source_cwd = chart['cwd']
@@ -577,22 +591,12 @@ def main():
                     f.write(chart['content'])
                     f.close()
 
-                mixin_vars = json.dumps(chart['mixin_vars'])
-
                 print("Generating rules from %s" % mixin_file)
                 print("Change cwd to %s" % checkout_dir + '/' + source_cwd)
                 os.chdir(mixin_dir)
 
-                mixin = """
-                local kp =
-                    { prometheusAlerts+:: {}, prometheusRules+:: {}} +
-                    (import "%s") +
-                    %s;
+                alerts = json.loads(_jsonnet.evaluate_snippet(mixin_file, chart['mixin'], import_callback=jsonnet_import_callback))
 
-                kp.prometheusAlerts + kp.prometheusRules
-                """
-
-                alerts = json.loads(_jsonnet.evaluate_snippet(mixin_file, mixin % (mixin_file, mixin_vars), import_callback=jsonnet_import_callback))
                 os.chdir(cwd)
             else:
                 with open(checkout_dir + '/' + chart['source'], "r") as f:
@@ -608,7 +612,7 @@ def main():
                 print('Skipping the file, response code %s not equals 200' % response.status_code)
                 continue
             raw_text = response.text
-            if chart.get('is_mixin'):
+            if chart.get('mixin'):
                 alerts = json.loads(_jsonnet.evaluate_snippet(url, raw_text + '.prometheusAlerts'))
             else:
                 alerts = yaml.full_load(raw_text)

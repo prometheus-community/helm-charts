@@ -45,7 +45,7 @@ kubeRBACProxy:
   image:
     registry: quay.io
     repository: brancz/kube-rbac-proxy
-    tag: v0.15.0
+    tag: v0.18.0
     sha: ""
     pullPolicy: IfNotPresent
 
@@ -87,7 +87,9 @@ kubeRBACProxy:
 service:
   enabled: true
   type: ClusterIP
+  clusterIP: ""
   port: 9100
+  servicePort: ""
   targetPort: 9100
   nodePort:
   portName: metrics
@@ -98,6 +100,7 @@ service:
     enabled: false
     ipFamilies: ["IPv6", "IPv4"]
     ipFamilyPolicy: "PreferDualStack"
+  externalTrafficPolicy: ""
 
 # Set a NetworkPolicy with:
 # ingress only on service.port
@@ -320,6 +323,9 @@ hostNetwork: true
 # Share the host process ID namespace
 hostPID: true
 
+# Share the host ipc namespace
+hostIPC: false
+
 # Mount the node's root file system (/) at /host/root in the container
 hostRootFsMount:
   enabled: true
@@ -357,8 +363,11 @@ podAnnotations:
   # Fix for very slow GKE cluster upgrades
   cluster-autoscaler.kubernetes.io/safe-to-evict: "true"
 
-# Extra labels to be added to node exporter pods
+# Extra labels to add to node exporter pods (can be templated)
 podLabels: {}
+
+## Extra labels to attach to all resources (can be templated)
+commonLabels: {}
 
 # Annotations to be added to node exporter daemonset
 daemonsetAnnotations: {}

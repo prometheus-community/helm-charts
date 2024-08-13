@@ -24,6 +24,19 @@ rules:
   verbs: ["get", "list", "watch"]
 - nonResourceURLs: ["/metrics", "/metrics/cadvisor"]
   verbs: ["get"]
+{{/* fix(#3338): add required rules to use node-exporter with the RBAC proxy */}}
+{{- if and .Values.nodeExporter.enabled (index .Values "prometheus-node-exporter").kubeRBACProxy.enabled }}
+- apiGroups: [ "" ]
+  resources:
+  - services/{{ include "prometheus-node-exporter.fullname" (index .Subcharts "prometheus-node-exporter") }}
+  verbs: [ "get", "list", "watch" ]
+{{- end }}
+{{- if and .Values.kubeStateMetrics.enabled (index .Values "kube-state-metrics").kubeRBACProxy.enabled }}
+- apiGroups: [ "" ]
+  resources:
+  - services/{{ include "kube-state-metrics.fullname" (index .Subcharts "kube-state-metrics") }}
+  verbs: [ "get", "list", "watch" ]
+{{- end }}
 {{- if .Values.prometheus.additionalRulesForClusterRole }}
 {{ toYaml .Values.prometheus.additionalRulesForClusterRole | indent 0 }}
 {{- end }}

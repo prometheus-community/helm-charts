@@ -1,7 +1,7 @@
 {{- if and .Values.podMonitor.enabled .Values.serviceMonitor.enabled }}
 {{- fail "Either .Values.podMonitor.enabled or .Values.serviceMonitor.enabled can be enabled at a time, but not both." }}
 {{- else if .Values.podMonitor.enabled }}
-apiVersion: monitoring.coreos.com/v1
+apiVersion: {{ .Values.podMonitor.apiVersion }}
 kind: PodMonitor
 metadata:
   name: {{ template "elasticsearch-exporter.fullname" . }}
@@ -9,10 +9,7 @@ metadata:
   namespace: {{ .Values.podMonitor.namespace }}
   {{- end }}
   labels:
-    chart: {{ template "elasticsearch-exporter.chart" . }}
-    app: {{ template "elasticsearch-exporter.name" . }}
-    release: "{{ .Release.Name }}"
-    heritage: "{{ .Release.Service }}"
+    {{- include "elasticsearch-exporter.labels" . | nindent 4 }}
     {{- if .Values.podMonitor.labels }}
     {{- toYaml .Values.podMonitor.labels | nindent 4 }}
     {{- end }}
@@ -45,6 +42,5 @@ spec:
   {{- end }}
   selector:
     matchLabels:
-      app: {{ template "elasticsearch-exporter.name" . }}
-      release: "{{ .Release.Name }}"
+      {{- include "elasticsearch-exporter.selectorLabels" . | nindent 6 }}
 {{- end }}

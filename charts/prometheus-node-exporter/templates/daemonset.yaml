@@ -26,6 +26,9 @@ spec:
       {{- end }}
       labels:
         {{- include "prometheus-node-exporter.labels" . | nindent 8 }}
+        {{- with .Values.podLabels }}
+        {{- tpl (toYaml .) $ | nindent 8 }}
+        {{- end }}
     spec:
       automountServiceAccountToken: {{ ternary true false (or .Values.serviceAccount.automountServiceAccountToken .Values.kubeRBACProxy.enabled) }}
       {{- with .Values.securityContext }}
@@ -245,6 +248,7 @@ spec:
       {{- end }}
       hostNetwork: {{ .Values.hostNetwork }}
       hostPID: {{ .Values.hostPID }}
+      hostIPC: {{ .Values.hostIPC }}
       {{- with .Values.affinity }}
       affinity:
         {{- toYaml . | nindent 8 }}

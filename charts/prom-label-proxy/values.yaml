@@ -93,7 +93,7 @@ nodeSelector: {}
 # -- Tolerations for pod assignment. Evaluated as a template.
 tolerations: []
 
-# -- Ingress hosts and annotations fields are passed through helm tpl function.
+# -- Ingress hosts, paths and annotations fields are passed through helm tpl function.
 ## ref: https://helm.sh/docs/developing_charts/#using-the-tpl-function
 ingress:
   enabled: false
@@ -198,3 +198,61 @@ metrics:
 
     # Additional settings for Endpoint.
     additionalEndpointConfigs: {}
+
+# Configure kube-rbac-proxy. When enabled, creates one kube-rbac-proxy container.
+# The requests are served through the same service but requests are then HTTPS.
+kubeRBACProxy:
+  enabled: false
+
+  # Configuration see [here](https://github.com/brancz/kube-rbac-proxy?tab=readme-ov-file#usage)
+  config: {}
+  #  authorization:
+  #    rewrites:
+  #      byHttpHeader:
+  #        name: X-Namespace
+  #    resourceAttributes:
+  #      resource: pods
+  #      subresource: metrics
+  #      namespace: "{{ .Value }}"
+
+  image:
+    repository: quay.io/brancz/kube-rbac-proxy
+    tag: v0.18.0
+    pullPolicy: IfNotPresent
+
+  # List of additional cli arguments to configure kube-rbac-prxy
+  # for example: --tls-cipher-suites, --log-file, etc.
+  # all the possible args can be found here: https://github.com/brancz/kube-rbac-proxy#usage
+  extraArgs: []
+
+  # targetPort of service
+  port: 8100
+
+  ## Specify security settings for a Container
+  ## Allows overrides and additional options compared to (Pod) securityContext
+  ## Ref: https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-the-security-context-for-a-container
+  containerSecurityContext:
+    readOnlyRootFilesystem: true
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+      - ALL
+
+  resources: {}
+    # We usually recommend not to specify default resources and to leave this as a conscious
+    # choice for the user. This also increases chances charts run on environments with little
+    # resources, such as Minikube. If you do want to specify resources, uncomment the following
+    # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+    # limits:
+    #  cpu: 100m
+    #  memory: 64Mi
+    # requests:
+    #  cpu: 10m
+    #  memory: 32Mi
+
+  ## volumeMounts enables mounting custom volumes in rbac-proxy containers
+  ## Useful for TLS certificates and keys
+  volumeMounts: []
+    # - mountPath: /etc/tls
+    #   name: kube-rbac-proxy-tls
+    #   readOnly: true

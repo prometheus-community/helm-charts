@@ -59,6 +59,9 @@ spec:
           args:
             {{- if .Values.prometheusOperator.kubeletService.enabled }}
             - --kubelet-service={{ .Values.prometheusOperator.kubeletService.namespace }}/{{ default $defaultKubeletSvcName .Values.prometheusOperator.kubeletService.name  }}
+            {{- if .Values.prometheusOperator.kubeletService.selector }}
+            - --kubelet-selector={{ .Values.prometheusOperator.kubeletService.selector }}
+            {{- end }}
             {{- end }}
             {{- if .Values.prometheusOperator.logFormat }}
             - --log-format={{ .Values.prometheusOperator.logFormat }}
@@ -163,6 +166,30 @@ spec:
           {{- end }}
           {{- with .Values.prometheusOperator.extraVolumeMounts }}
           {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- if .Values.prometheusOperator.readinessProbe.enabled }}
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: {{ .Values.prometheusOperator.tls.enabled | ternary "https" "http" }}
+              scheme: {{ .Values.prometheusOperator.tls.enabled | ternary "HTTPS" "HTTP" }}
+            initialDelaySeconds: {{ .Values.prometheusOperator.readinessProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.prometheusOperator.readinessProbe.periodSeconds }}
+            timeoutSeconds: {{ .Values.prometheusOperator.readinessProbe.timeoutSeconds }}
+            successThreshold: {{ .Values.prometheusOperator.readinessProbe.successThreshold }}
+            failureThreshold: {{ .Values.prometheusOperator.readinessProbe.failureThreshold }}
+          {{- end }}
+          {{- if .Values.prometheusOperator.livenessProbe.enabled }}
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: {{ .Values.prometheusOperator.tls.enabled | ternary "https" "http" }}
+              scheme: {{ .Values.prometheusOperator.tls.enabled | ternary "HTTPS" "HTTP" }}
+            initialDelaySeconds: {{ .Values.prometheusOperator.livenessProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.prometheusOperator.livenessProbe.periodSeconds }}
+            timeoutSeconds: {{ .Values.prometheusOperator.livenessProbe.timeoutSeconds }}
+            successThreshold: {{ .Values.prometheusOperator.livenessProbe.successThreshold }}
+            failureThreshold: {{ .Values.prometheusOperator.livenessProbe.failureThreshold }}
           {{- end }}
       volumes:
         {{- if .Values.prometheusOperator.tls.enabled }}

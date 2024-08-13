@@ -50,6 +50,10 @@ env: {}
 ##  env:
 ##    VARIABLE: value
 
+# extraArgs allows to pass command line arguments, as described on https://github.com/prometheus-community/systemd_exporter?tab=readme-ov-file#configuration
+extraArgs: []
+# - --systemd.collector.enable-resolved
+
 prometheus:
   monitor:
     enabled: false
@@ -58,6 +62,26 @@ prometheus:
     metricRelabelings: []
     interval: ""
     scrapeTimeout: 10s
+  rules:
+    enabled: false
+    additionalLabels: {}
+    namespace: ""
+    rules:
+      ## These are just examples rules, please adapt them to your needs.
+      ## Make sure to constraint the rules to the current service.
+      - alert: SystemdServiceFailed
+        expr: |
+          systemd_unit_state{state="failed", service="{{ template "prometheus-systemd-exporter.fullname" . }}"} == 1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          description: |
+            Systemd service {{ "{{ $labels.name }}" }} has entered failed state at {{ "{{ $labels.instance }}" }}
+          # We can re-use node_exporter systemd runbooks
+          runbook_url: |
+            https://runbooks.prometheus-operator.dev/runbooks/node/nodesystemdservicefailed
+          summary: Systemd service has entered failed state.
 
 ## Customize the updateStrategy if set
 updateStrategy:

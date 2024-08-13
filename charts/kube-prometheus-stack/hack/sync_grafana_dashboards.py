@@ -29,11 +29,11 @@ def change_style(style, representer):
 
 refs = {
     # https://github.com/prometheus-operator/kube-prometheus
-    'ref.kube-prometheus': 'a8ba97a150c75be42010c75d10b720c55e182f1a',
+    'ref.kube-prometheus': 'defa2bd1e242519c62a5c2b3b786b1caa6d906d4',
     # https://github.com/kubernetes-monitoring/kubernetes-mixin
-    'ref.kubernetes-mixin': '883f294bc636e2cd019a64328a1dbfa53edbc985',
+    'ref.kubernetes-mixin': 'dd5c59ab4491159593ed370a344a553b57146a7d',
     # https://github.com/etcd-io/etcd
-    'ref.etcd': '786da8731e6ebc61d3482048fdfa64e505da1f8f',
+    'ref.etcd': '9f59ef8ead097f836271f125d0e3774ddae4e71d',
 }
 
 # Source files list
@@ -174,6 +174,7 @@ def patch_dashboards_json(content, multicluster_key):
         overwrite_list = []
         for variable in content_struct['templating']['list']:
             if variable['name'] == 'cluster':
+                variable['allValue'] = '.*'
                 variable['hide'] = ':multicluster:'
             overwrite_list.append(variable)
         content_struct['templating']['list'] = overwrite_list
@@ -204,10 +205,10 @@ def patch_json_set_editable_as_variable(content):
 
 
 def jsonnet_import_callback(base, rel):
-    if "github.com" in base:
-        base = os.getcwd() + '/vendor/' + base[base.find('github.com'):]
-    elif "github.com" in rel:
+    if "github.com" in rel:
         base = os.getcwd() + '/vendor/'
+    elif "github.com" in base:
+        base = os.getcwd() + '/vendor/' + base[base.find('github.com'):]
 
     if os.path.isfile(base + rel):
         return base + rel, open(base + rel).read().encode('utf-8')
@@ -250,6 +251,8 @@ def write_group_to_file(resource_name, content, url, destination, min_kubernetes
 
 
 def main():
+    os.chdir(os.path.dirname(os.path.abspath(__file__)))
+
     init_yaml_styles()
     # read the rules, create a new template file per group
     for chart in charts:
