@@ -79,6 +79,10 @@ global:
 - name: {{ tpl . $ }}
   {{- end }}
 {{- end }}
+{{/* Include local image pullSecret */}}
+{{- with .Values.image.pullSecret }}
+- name: {{ tpl . $ }}
+{{- end }}
 {{- end -}}
 
 {{/*
