@@ -49,6 +49,13 @@ charts = [
         local kp =
           (import 'jsonnet/kube-prometheus/main.libsonnet') + {
             values+:: {
+              nodeExporter+: {
+                mixin+: {
+                  _config+: {
+                    fsSelector: '$.Values.defaultRules.node.fsSelector',
+                  },
+                },
+              },
               common+: {
                 namespace: 'monitoring',
               },
@@ -196,7 +203,10 @@ replacement_map = {
         'init': ''},
     '(namespace, job, handler': {
         'replacement': '(cluster, namespace, job, handler',
-        'init': ''}
+        'init': ''},
+    '$.Values.defaultRules.node.fsSelector': {
+        'replacement': '{{ $.Values.defaultRules.node.fsSelector }}',
+        'init': ''},
 }
 
 # standard header
