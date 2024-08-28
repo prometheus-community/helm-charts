@@ -246,21 +246,9 @@ spec:
   ruleSelector: {}
 {{- end }}
 {{- end }}
-{{- if .Values.prometheus.prometheusSpec.scrapeConfigSelector }}
+{{- if not (eq .Values.prometheus.prometheusSpec.scrapeConfigSelector nil)}}
   scrapeConfigSelector:
-{{ tpl (toYaml .Values.prometheus.prometheusSpec.scrapeConfigSelector | indent 4) . }}
-{{ else if .Values.prometheus.prometheusSpec.scrapeConfigSelectorNilUsesHelmValues  }}
-  scrapeConfigSelector:
-    matchLabels:
-      release: {{ $.Release.Name | quote }}
-{{ else if not (eq .Values.prometheus.prometheusSpec.scrapeConfigSelector nil) }}
-  scrapeConfigSelector: {}
-{{- end }}
-{{- if .Values.prometheus.prometheusSpec.scrapeConfigNamespaceSelector }}
-  scrapeConfigNamespaceSelector:
-{{ tpl (toYaml .Values.prometheus.prometheusSpec.scrapeConfigNamespaceSelector | indent 4) . }}
-{{ else if not (eq .Values.prometheus.prometheusSpec.scrapeConfigNamespaceSelector nil) }}
-  scrapeConfigNamespaceSelector: {}
+      {{- tpl (toYaml .Values.prometheus.prometheusSpec.scrapeConfigSelector | indent 4) . | nindent 2 }}
 {{- end }}
 {{- if .Values.prometheus.prometheusSpec.storageSpec }}
   storage:
