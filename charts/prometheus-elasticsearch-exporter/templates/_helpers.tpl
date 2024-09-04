@@ -79,6 +79,10 @@ global:
 - name: {{ tpl . $ }}
   {{- end }}
 {{- end }}
+{{/* Include local image pullSecret */}}
+{{- with .Values.image.pullSecret }}
+- name: {{ tpl . $ }}
+{{- end }}
 {{- end -}}
 
 {{/*
@@ -118,3 +122,14 @@ Selector labels
 app.kubernetes.io/name: {{ include "elasticsearch-exporter.name" . }}
 app.kubernetes.io/instance: {{ .Release.Name }}
 {{- end }}
+
+{{/*
+Create the name of the service account to use
+*/}}
+{{- define "elasticsearch-exporter.serviceAccountName" -}}
+{{- if .Values.serviceAccount.create -}}
+    {{ default (include "elasticsearch-exporter.fullname" .) .Values.serviceAccount.name }}
+{{- else -}}
+    {{ default "default" .Values.serviceAccount.name }}
+{{- end -}}
+{{- end -}}
