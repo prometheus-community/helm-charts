@@ -59,6 +59,11 @@ spec:
         volumeMounts:
         - mountPath: /hostdev
           name: dev
+{{- if ne $global.Values.drivedb "" }}
+        - name: config-volume
+          mountPath: /etc/smart_drivedb.h
+          subPath: smart_drivedb.h
+{{- end }}
       dnsPolicy: ClusterFirst
       hostNetwork: true
       restartPolicy: Always
@@ -67,6 +72,11 @@ spec:
       - hostPath:
           path: /dev
         name: dev
+{{- if ne $global.Values.drivedb "" }}
+      - name: config-volume
+        configMap:
+          name: {{ template "prometheus-smartctl-exporter.fullname" $global }}-drivedb
+{{- end }}
     {{- with $item.nodeSelector }}
       nodeSelector:
 {{ toYaml . | indent 8 }}
