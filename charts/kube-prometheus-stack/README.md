@@ -85,6 +85,8 @@ A major chart version change (like v1.2.3 -> v2.0.0) indicates that there is an 
 ### From 62.x to 63.x
 
 TODO
+If you used to set `scrapeConfigSelectorNilUsesHelmValues` to ` false`.  
+You now have to set `scrapeConfigSelector.matchLabels=null`.
 
 ### From 61.x to 62.x
 
