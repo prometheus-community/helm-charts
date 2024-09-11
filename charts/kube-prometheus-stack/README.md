@@ -84,9 +84,31 @@ A major chart version change (like v1.2.3 -> v2.0.0) indicates that there is an 
 
 ### From 62.x to 63.x
 
-TODO
-If you used to set `scrapeConfigSelectorNilUsesHelmValues` to ` false`.  
-You now have to set `scrapeConfigSelector.matchLabels=null`.
+Simplify setting empty selectors, by deprecating `*SelectorNilUsesHelmValues` properties.  
+Instead, setting `*Selector.matchLabels=null` will create an empty selector.
+
+If you set one of the following properties to `false`, you will have to convert them:
+
+* `podMonitorSelectorNilUsesHelmValues`
+* `probeSelectorNilUsesHelmValues`
+* `ruleSelectorNilUsesHelmValues`
+* `serviceMonitorSelectorNilUsesHelmValues`
+* `scrapeConfigSelectorNilUsesHelmValues`
+
+For example:
+
+```yaml
+scrapeConfigSelectorNilUsesHelmValues: false
+```
+Becomes:
+
+```yaml
+scrapeConfigSelector:
+  matchLabels: null
+```
+
+* TODO what about
+* `externalPrefixNilUsesHelmValues`
 
 ### From 61.x to 62.x
 
@@ -947,7 +969,7 @@ For information on how to use PodMonitors/ServiceMonitors, please see the docume
 By default, Prometheus discovers PodMonitors and ServiceMonitors within its namespace, that are labeled with the same release tag as the prometheus-operator release.
 Sometimes, you may need to discover custom PodMonitors/ServiceMonitors, for example used to scrape data from third-party applications.
 An easy way of doing this, without compromising the default PodMonitors/ServiceMonitors discovery, is allowing Prometheus to discover all PodMonitors/ServiceMonitors within its namespace, without applying label filtering.
-To do so, you can set `prometheus.prometheusSpec.podMonitorSelectorNilUsesHelmValues` and `prometheus.prometheusSpec.serviceMonitorSelectorNilUsesHelmValues` to `false`.
+To do so, you can set `prometheus.prometheusSpec.podMonitorSelector` and `prometheus.prometheusSpec.serviceMonitorSelector` to `matchLabels=null`.
 
 ## Migrating from stable/prometheus-operator chart
 
