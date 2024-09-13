@@ -107,8 +107,7 @@ scrapeConfigSelector:
   matchLabels: null
 ```
 
-* TODO what about
-* `externalPrefixNilUsesHelmValues`
+Note that `externalPrefixNilUsesHelmValues` remains as is.
 
 ### From 61.x to 62.x
 
