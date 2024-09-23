@@ -89,22 +89,26 @@ Instead, setting `*Selector.matchLabels=null` will create an empty selector.
 
 If you set one of the following properties to `false`, you will have to convert them:
 
-* `podMonitorSelectorNilUsesHelmValues`
-* `probeSelectorNilUsesHelmValues`
-* `ruleSelectorNilUsesHelmValues`
-* `serviceMonitorSelectorNilUsesHelmValues`
-* `scrapeConfigSelectorNilUsesHelmValues`
+* `prometheus.prometheusSpec.podMonitorSelectorNilUsesHelmValues`
+* `prometheus.prometheusSpec.probeSelectorNilUsesHelmValues`
+* `prometheus.prometheusSpec.ruleSelectorNilUsesHelmValues`
+* `prometheus.prometheusSpec.serviceMonitorSelectorNilUsesHelmValues`
+* `prometheus.prometheusSpec.scrapeConfigSelectorNilUsesHelmValues`
 
 For example:
 
 ```yaml
-scrapeConfigSelectorNilUsesHelmValues: false
+prometheus:
+  prometheusSpec:
+    scrapeConfigSelectorNilUsesHelmValues: false
 ```
 Becomes:
 
 ```yaml
-scrapeConfigSelector:
-  matchLabels: null
+prometheus:
+  prometheusSpec:
+    scrapeConfigSelector:
+      matchLabels: null
 ```
 
 Note that `externalPrefixNilUsesHelmValues` remains as is.
