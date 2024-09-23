@@ -33,6 +33,9 @@ spec:
 {{- if .Values.defaultRules.additionalRuleGroupAnnotations.general }}
 {{ toYaml .Values.defaultRules.additionalRuleGroupAnnotations.general | indent 8 }}
 {{- end }}
+{{- if .Values.defaultRules.additionalRuleSpecificAnnotations.TargetDown }}
+{{ toYaml .Values.defaultRules.additionalRuleSpecificAnnotations.TargetDown | indent 8 }}
+{{- end }}
         description: '{{`{{`}} printf "%.4g" $value {{`}}`}}% of the {{`{{`}} $labels.job {{`}}`}}/{{`{{`}} $labels.service {{`}}`}} targets in {{`{{`}} $labels.namespace {{`}}`}} namespace are down.'
         runbook_url: {{ .Values.defaultRules.runbookUrl }}/general/targetdown
         summary: One or more targets are unreachable.
@@ -43,11 +46,14 @@ spec:
       {{- end }}
       labels:
         severity: {{ dig "TargetDown" "severity" "warning" .Values.customRules }}
-      {{- if or .Values.defaultRules.additionalRuleLabels .Values.defaultRules.additionalRuleGroupLabels.general }}
+      {{- if or .Values.defaultRules.additionalRuleLabels .Values.defaultRules.additionalRuleGroupLabels.general .Values.defaultRules.additionalRuleSpecificLabels.TargetDown }}
         {{- with .Values.defaultRules.additionalRuleLabels }}
           {{- toYaml . | nindent 8 }}
         {{- end }}
         {{- with .Values.defaultRules.additionalRuleGroupLabels.general }}
+          {{- toYaml . | nindent 8 }}
+        {{- end }}
+        {{- with .Values.defaultRules.additionalRuleSpecificLabels.TargetDown }}
           {{- toYaml . | nindent 8 }}
         {{- end }}
       {{- end }}
@@ -60,6 +66,9 @@ spec:
 {{- end }}
 {{- if .Values.defaultRules.additionalRuleGroupAnnotations.general }}
 {{ toYaml .Values.defaultRules.additionalRuleGroupAnnotations.general | indent 8 }}
+{{- end }}
+{{- if .Values.defaultRules.additionalRuleSpecificAnnotations.Watchdog }}
+{{ toYaml .Values.defaultRules.additionalRuleSpecificAnnotations.Watchdog | indent 8 }}
 {{- end }}
         description: 'This is an alert meant to ensure that the entire alerting pipeline is functional.
 
@@ -77,11 +86,14 @@ spec:
       expr: vector(1)
       labels:
         severity: {{ dig "Watchdog" "severity" "none" .Values.customRules }}
-      {{- if or .Values.defaultRules.additionalRuleLabels .Values.defaultRules.additionalRuleGroupLabels.general }}
+      {{- if or .Values.defaultRules.additionalRuleLabels .Values.defaultRules.additionalRuleGroupLabels.general .Values.defaultRules.additionalRuleSpecificLabels.Watchdog }}
         {{- with .Values.defaultRules.additionalRuleLabels }}
           {{- toYaml . | nindent 8 }}
         {{- end }}
         {{- with .Values.defaultRules.additionalRuleGroupLabels.general }}
+          {{- toYaml . | nindent 8 }}
+        {{- end }}
+        {{- with .Values.defaultRules.additionalRuleSpecificLabels.Watchdog }}
           {{- toYaml . | nindent 8 }}
         {{- end }}
       {{- end }}
@@ -94,6 +106,9 @@ spec:
 {{- end }}
 {{- if .Values.defaultRules.additionalRuleGroupAnnotations.general }}
 {{ toYaml .Values.defaultRules.additionalRuleGroupAnnotations.general | indent 8 }}
+{{- end }}
+{{- if .Values.defaultRules.additionalRuleSpecificAnnotations.InfoInhibitor }}
+{{ toYaml .Values.defaultRules.additionalRuleSpecificAnnotations.InfoInhibitor | indent 8 }}
 {{- end }}
         description: 'This is an alert that is used to inhibit info alerts.
 
@@ -113,11 +128,14 @@ spec:
       expr: ALERTS{severity = "info"} == 1 unless on ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}namespace) ALERTS{alertname != "InfoInhibitor", severity =~ "warning|critical", alertstate="firing"} == 1
       labels:
         severity: {{ dig "InfoInhibitor" "severity" "none" .Values.customRules }}
-      {{- if or .Values.defaultRules.additionalRuleLabels .Values.defaultRules.additionalRuleGroupLabels.general }}
+      {{- if or .Values.defaultRules.additionalRuleLabels .Values.defaultRules.additionalRuleGroupLabels.general .Values.defaultRules.additionalRuleSpecificLabels.InfoInhibitor }}
         {{- with .Values.defaultRules.additionalRuleLabels }}
           {{- toYaml . | nindent 8 }}
         {{- end }}
         {{- with .Values.defaultRules.additionalRuleGroupLabels.general }}
+          {{- toYaml . | nindent 8 }}
+        {{- end }}
+        {{- with .Values.defaultRules.additionalRuleSpecificLabels.InfoInhibitor }}
           {{- toYaml . | nindent 8 }}
         {{- end }}
       {{- end }}

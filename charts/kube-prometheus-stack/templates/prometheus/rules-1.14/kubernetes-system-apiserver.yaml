@@ -33,6 +33,9 @@ spec:
 {{- if .Values.defaultRules.additionalRuleGroupAnnotations.kubernetesSystem }}
 {{ toYaml .Values.defaultRules.additionalRuleGroupAnnotations.kubernetesSystem | indent 8 }}
 {{- end }}
+{{- if .Values.defaultRules.additionalRuleSpecificAnnotations.KubeClientCertificateExpiration }}
+{{ toYaml .Values.defaultRules.additionalRuleSpecificAnnotations.KubeClientCertificateExpiration | indent 8 }}
+{{- end }}
         description: A client certificate used to authenticate to kubernetes apiserver is expiring in less than 7.0 days.
         runbook_url: {{ .Values.defaultRules.runbookUrl }}/kubernetes/kubeclientcertificateexpiration
         summary: Client certificate is about to expire.
@@ -43,11 +46,14 @@ spec:
       {{- end }}
       labels:
         severity: {{ dig "KubeClientCertificateExpiration" "severity" "warning" .Values.customRules }}
-      {{- if or .Values.defaultRules.additionalRuleLabels .Values.defaultRules.additionalRuleGroupLabels.kubernetesSystem }}
+      {{- if or .Values.defaultRules.additionalRuleLabels .Values.defaultRules.additionalRuleGroupLabels.kubernetesSystem .Values.defaultRules.additionalRuleSpecificLabels.KubeClientCertificateExpiration }}
         {{- with .Values.defaultRules.additionalRuleLabels }}
           {{- toYaml . | nindent 8 }}
         {{- end }}
         {{- with .Values.defaultRules.additionalRuleGroupLabels.kubernetesSystem }}
+          {{- toYaml . | nindent 8 }}
+        {{- end }}
+        {{- with .Values.defaultRules.additionalRuleSpecificLabels.KubeClientCertificateExpiration }}
           {{- toYaml . | nindent 8 }}
         {{- end }}
       {{- end }}
@@ -61,6 +67,9 @@ spec:
 {{- if .Values.defaultRules.additionalRuleGroupAnnotations.kubernetesSystem }}
 {{ toYaml .Values.defaultRules.additionalRuleGroupAnnotations.kubernetesSystem | indent 8 }}
 {{- end }}
+{{- if .Values.defaultRules.additionalRuleSpecificAnnotations.KubeClientCertificateExpiration }}
+{{ toYaml .Values.defaultRules.additionalRuleSpecificAnnotations.KubeClientCertificateExpiration | indent 8 }}
+{{- end }}
         description: A client certificate used to authenticate to kubernetes apiserver is expiring in less than 24.0 hours.
         runbook_url: {{ .Values.defaultRules.runbookUrl }}/kubernetes/kubeclientcertificateexpiration
         summary: Client certificate is about to expire.
@@ -71,11 +80,14 @@ spec:
       {{- end }}
       labels:
         severity: {{ dig "KubeClientCertificateExpiration" "severity" "critical" .Values.customRules }}
-      {{- if or .Values.defaultRules.additionalRuleLabels .Values.defaultRules.additionalRuleGroupLabels.kubernetesSystem }}
+      {{- if or .Values.defaultRules.additionalRuleLabels .Values.defaultRules.additionalRuleGroupLabels.kubernetesSystem .Values.defaultRules.additionalRuleSpecificLabels.KubeClientCertificateExpiration }}
         {{- with .Values.defaultRules.additionalRuleLabels }}
           {{- toYaml . | nindent 8 }}
         {{- end }}
         {{- with .Values.defaultRules.additionalRuleGroupLabels.kubernetesSystem }}
+          {{- toYaml . | nindent 8 }}
+        {{- end }}
+        {{- with .Values.defaultRules.additionalRuleSpecificLabels.KubeClientCertificateExpiration }}
           {{- toYaml . | nindent 8 }}
         {{- end }}
       {{- end }}
@@ -89,17 +101,23 @@ spec:
 {{- if .Values.defaultRules.additionalRuleGroupAnnotations.kubernetesSystem }}
 {{ toYaml .Values.defaultRules.additionalRuleGroupAnnotations.kubernetesSystem | indent 8 }}
 {{- end }}
+{{- if .Values.defaultRules.additionalRuleSpecificAnnotations.KubeAggregatedAPIErrors }}
+{{ toYaml .Values.defaultRules.additionalRuleSpecificAnnotations.KubeAggregatedAPIErrors | indent 8 }}
+{{- end }}
         description: Kubernetes aggregated API {{`{{`}} $labels.name {{`}}`}}/{{`{{`}} $labels.namespace {{`}}`}} has reported errors. It has appeared unavailable {{`{{`}} $value | humanize {{`}}`}} times averaged over the past 10m.
         runbook_url: {{ .Values.defaultRules.runbookUrl }}/kubernetes/kubeaggregatedapierrors
         summary: Kubernetes aggregated API has reported errors.
       expr: sum by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}name, namespace, cluster)(increase(aggregator_unavailable_apiservice_total{job="apiserver"}[10m])) > 4
       labels:
         severity: {{ dig "KubeAggregatedAPIErrors" "severity" "warning" .Values.customRules }}
-      {{- if or .Values.defaultRules.additionalRuleLabels .Values.defaultRules.additionalRuleGroupLabels.kubernetesSystem }}
+      {{- if or .Values.defaultRules.additionalRuleLabels .Values.defaultRules.additionalRuleGroupLabels.kubernetesSystem .Values.defaultRules.additionalRuleSpecificLabels.KubeAggregatedAPIErrors }}
         {{- with .Values.defaultRules.additionalRuleLabels }}
           {{- toYaml . | nindent 8 }}
         {{- end }}
         {{- with .Values.defaultRules.additionalRuleGroupLabels.kubernetesSystem }}
+          {{- toYaml . | nindent 8 }}
+        {{- end }}
+        {{- with .Values.defaultRules.additionalRuleSpecificLabels.KubeAggregatedAPIErrors }}
           {{- toYaml . | nindent 8 }}
         {{- end }}
       {{- end }}
@@ -113,6 +131,9 @@ spec:
 {{- if .Values.defaultRules.additionalRuleGroupAnnotations.kubernetesSystem }}
 {{ toYaml .Values.defaultRules.additionalRuleGroupAnnotations.kubernetesSystem | indent 8 }}
 {{- end }}
+{{- if .Values.defaultRules.additionalRuleSpecificAnnotations.KubeAggregatedAPIDown }}
+{{ toYaml .Values.defaultRules.additionalRuleSpecificAnnotations.KubeAggregatedAPIDown | indent 8 }}
+{{- end }}
         description: Kubernetes aggregated API {{`{{`}} $labels.name {{`}}`}}/{{`{{`}} $labels.namespace {{`}}`}} has been only {{`{{`}} $value | humanize {{`}}`}}% available over the last 10m.
         runbook_url: {{ .Values.defaultRules.runbookUrl }}/kubernetes/kubeaggregatedapidown
         summary: Kubernetes aggregated API is down.
@@ -123,11 +144,14 @@ spec:
       {{- end }}
       labels:
         severity: {{ dig "KubeAggregatedAPIDown" "severity" "warning" .Values.customRules }}
-      {{- if or .Values.defaultRules.additionalRuleLabels .Values.defaultRules.additionalRuleGroupLabels.kubernetesSystem }}
+      {{- if or .Values.defaultRules.additionalRuleLabels .Values.defaultRules.additionalRuleGroupLabels.kubernetesSystem .Values.defaultRules.additionalRuleSpecificLabels.KubeAggregatedAPIDown }}
         {{- with .Values.defaultRules.additionalRuleLabels }}
           {{- toYaml . | nindent 8 }}
         {{- end }}
         {{- with .Values.defaultRules.additionalRuleGroupLabels.kubernetesSystem }}
+          {{- toYaml . | nindent 8 }}
+        {{- end }}
+        {{- with .Values.defaultRules.additionalRuleSpecificLabels.KubeAggregatedAPIDown }}
           {{- toYaml . | nindent 8 }}
         {{- end }}
       {{- end }}
@@ -142,6 +166,9 @@ spec:
 {{- if .Values.defaultRules.additionalRuleGroupAnnotations.kubernetesSystem }}
 {{ toYaml .Values.defaultRules.additionalRuleGroupAnnotations.kubernetesSystem | indent 8 }}
 {{- end }}
+{{- if .Values.defaultRules.additionalRuleSpecificAnnotations.KubeAPIDown }}
+{{ toYaml .Values.defaultRules.additionalRuleSpecificAnnotations.KubeAPIDown | indent 8 }}
+{{- end }}
         description: KubeAPI has disappeared from Prometheus target discovery.
         runbook_url: {{ .Values.defaultRules.runbookUrl }}/kubernetes/kubeapidown
         summary: Target disappeared from Prometheus target discovery.
@@ -152,11 +179,14 @@ spec:
       {{- end }}
       labels:
         severity: {{ dig "KubeAPIDown" "severity" "critical" .Values.customRules }}
-      {{- if or .Values.defaultRules.additionalRuleLabels .Values.defaultRules.additionalRuleGroupLabels.kubernetesSystem }}
+      {{- if or .Values.defaultRules.additionalRuleLabels .Values.defaultRules.additionalRuleGroupLabels.kubernetesSystem .Values.defaultRules.additionalRuleSpecificLabels.KubeAPIDown }}
         {{- with .Values.defaultRules.additionalRuleLabels }}
           {{- toYaml . | nindent 8 }}
         {{- end }}
         {{- with .Values.defaultRules.additionalRuleGroupLabels.kubernetesSystem }}
+          {{- toYaml . | nindent 8 }}
+        {{- end }}
+        {{- with .Values.defaultRules.additionalRuleSpecificLabels.KubeAPIDown }}
           {{- toYaml . | nindent 8 }}
         {{- end }}
       {{- end }}
@@ -171,6 +201,9 @@ spec:
 {{- if .Values.defaultRules.additionalRuleGroupAnnotations.kubernetesSystem }}
 {{ toYaml .Values.defaultRules.additionalRuleGroupAnnotations.kubernetesSystem | indent 8 }}
 {{- end }}
+{{- if .Values.defaultRules.additionalRuleSpecificAnnotations.KubeAPITerminatedRequests }}
+{{ toYaml .Values.defaultRules.additionalRuleSpecificAnnotations.KubeAPITerminatedRequests | indent 8 }}
+{{- end }}
         description: The kubernetes apiserver has terminated {{`{{`}} $value | humanizePercentage {{`}}`}} of its incoming requests.
         runbook_url: {{ .Values.defaultRules.runbookUrl }}/kubernetes/kubeapiterminatedrequests
         summary: The kubernetes apiserver has terminated {{`{{`}} $value | humanizePercentage {{`}}`}} of its incoming requests.
@@ -181,11 +214,14 @@ spec:
       {{- end }}
       labels:
         severity: {{ dig "KubeAPITerminatedRequests" "severity" "warning" .Values.customRules }}
-      {{- if or .Values.defaultRules.additionalRuleLabels .Values.defaultRules.additionalRuleGroupLabels.kubernetesSystem }}
+      {{- if or .Values.defaultRules.additionalRuleLabels .Values.defaultRules.additionalRuleGroupLabels.kubernetesSystem .Values.defaultRules.additionalRuleSpecificLabels.KubeAPITerminatedRequests }}
         {{- with .Values.defaultRules.additionalRuleLabels }}
           {{- toYaml . | nindent 8 }}
         {{- end }}
         {{- with .Values.defaultRules.additionalRuleGroupLabels.kubernetesSystem }}
+          {{- toYaml . | nindent 8 }}
+        {{- end }}
+        {{- with .Values.defaultRules.additionalRuleSpecificLabels.KubeAPITerminatedRequests }}
           {{- toYaml . | nindent 8 }}
         {{- end }}
       {{- end }}

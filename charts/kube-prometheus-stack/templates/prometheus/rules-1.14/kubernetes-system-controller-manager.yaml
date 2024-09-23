@@ -34,6 +34,9 @@ spec:
 {{- if .Values.defaultRules.additionalRuleGroupAnnotations.kubeControllerManager }}
 {{ toYaml .Values.defaultRules.additionalRuleGroupAnnotations.kubeControllerManager | indent 8 }}
 {{- end }}
+{{- if .Values.defaultRules.additionalRuleSpecificAnnotations.KubeControllerManagerDown }}
+{{ toYaml .Values.defaultRules.additionalRuleSpecificAnnotations.KubeControllerManagerDown | indent 8 }}
+{{- end }}
         description: KubeControllerManager has disappeared from Prometheus target discovery.
         runbook_url: {{ .Values.defaultRules.runbookUrl }}/kubernetes/kubecontrollermanagerdown
         summary: Target disappeared from Prometheus target discovery.
@@ -44,11 +47,14 @@ spec:
       {{- end }}
       labels:
         severity: {{ dig "KubeControllerManagerDown" "severity" "critical" .Values.customRules }}
-      {{- if or .Values.defaultRules.additionalRuleLabels .Values.defaultRules.additionalRuleGroupLabels.kubeControllerManager }}
+      {{- if or .Values.defaultRules.additionalRuleLabels .Values.defaultRules.additionalRuleGroupLabels.kubeControllerManager .Values.defaultRules.additionalRuleSpecificLabels.KubeControllerManagerDown }}
         {{- with .Values.defaultRules.additionalRuleLabels }}
           {{- toYaml . | nindent 8 }}
         {{- end }}
         {{- with .Values.defaultRules.additionalRuleGroupLabels.kubeControllerManager }}
+          {{- toYaml . | nindent 8 }}
+        {{- end }}
+        {{- with .Values.defaultRules.additionalRuleSpecificLabels.KubeControllerManagerDown }}
           {{- toYaml . | nindent 8 }}
         {{- end }}
       {{- end }}
