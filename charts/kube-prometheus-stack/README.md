@@ -94,6 +94,7 @@ If you set one of the following properties to `false`, you will have to convert 
 * `prometheus.prometheusSpec.ruleSelectorNilUsesHelmValues`
 * `prometheus.prometheusSpec.serviceMonitorSelectorNilUsesHelmValues`
 * `prometheus.prometheusSpec.scrapeConfigSelectorNilUsesHelmValues`
+* `thanosRuler.thanosRulerSpec.ruleSelectorNilUsesHelmValues`
 
 For example:
 
