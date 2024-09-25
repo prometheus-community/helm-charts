@@ -28,6 +28,7 @@ spec:
         {{- end }}
       annotations:
         checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+        checksum/secrets: {{ include (print $.Template.BasePath "/secrets.yaml") . | sha256sum }}
         {{- with .Values.annotations }}
         {{- toYaml . | nindent 8 }}
         {{- end }}
@@ -49,7 +50,7 @@ spec:
       {{- end }}
       {{- end }}
       containers:
-        - name: {{ .Chart.Name }}
+        - name: {{ template "prometheus-postgres-exporter.name" . }}
           args:
           - "--config.file=/etc/postgres_exporter.yml"
           - "--web.listen-address=:{{ .Values.service.targetPort }}"
