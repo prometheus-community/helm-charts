@@ -89,12 +89,12 @@ Instead, setting `*Selector.matchLabels=null` will create an empty selector.
 
 If you set one of the following properties to `false`, you will have to convert them:
 
-* `prometheus.prometheusSpec.podMonitorSelectorNilUsesHelmValues`
-* `prometheus.prometheusSpec.probeSelectorNilUsesHelmValues`
-* `prometheus.prometheusSpec.ruleSelectorNilUsesHelmValues`
-* `prometheus.prometheusSpec.serviceMonitorSelectorNilUsesHelmValues`
-* `prometheus.prometheusSpec.scrapeConfigSelectorNilUsesHelmValues`
-* `thanosRuler.thanosRulerSpec.ruleSelectorNilUsesHelmValues`
+- `prometheus.prometheusSpec.podMonitorSelectorNilUsesHelmValues`
+- `prometheus.prometheusSpec.probeSelectorNilUsesHelmValues`
+- `prometheus.prometheusSpec.ruleSelectorNilUsesHelmValues`
+- `prometheus.prometheusSpec.serviceMonitorSelectorNilUsesHelmValues`
+- `prometheus.prometheusSpec.scrapeConfigSelectorNilUsesHelmValues`
+- `thanosRuler.thanosRulerSpec.ruleSelectorNilUsesHelmValues`
 
 For example:
 
@@ -103,6 +103,7 @@ prometheus:
   prometheusSpec:
     scrapeConfigSelectorNilUsesHelmValues: false
 ```
+
 Becomes:
 
 ```yaml
