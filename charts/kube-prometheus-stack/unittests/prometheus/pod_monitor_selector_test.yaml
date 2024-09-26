@@ -1,0 +1,39 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/helm-unittest/helm-unittest/main/schema/helm-testsuite.json
+suite: test podMonitorSelector
+templates:
+  - prometheus/prometheus.yaml
+tests:
+  - it: should match the release name by default 
+    asserts:
+      - equal:
+          path: spec.podMonitorSelector.matchLabels.release
+          value: RELEASE-NAME
+  - it: should be empty, when matchLabels is null
+    set:
+      prometheus:
+        prometheusSpec:
+          podMonitorSelector:
+            matchLabels: null
+    asserts:
+      - equal:
+          path: spec.podMonitorSelector
+          value: {}
+  - it: should be set to a specific label
+    set:
+      prometheus:
+        prometheusSpec:
+          podMonitorSelector:
+            matchLabels:
+              abc: def
+    asserts:
+      - equal:
+          path: spec.podMonitorSelector.matchLabels.abc
+          value: def
+  - it: should be ignored, if set to null
+    set:
+      prometheus:
+        prometheusSpec:
+          podMonitorSelector: null
+    asserts:
+      - notExists:
+          path: spec.podMonitorSelector

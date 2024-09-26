@@ -1,0 +1,39 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/helm-unittest/helm-unittest/main/schema/helm-testsuite.json
+suite: test serviceMonitorSelector
+templates:
+  - prometheus/prometheus.yaml
+tests:
+  - it: should match the release name by default 
+    asserts:
+      - equal:
+          path: spec.serviceMonitorSelector.matchLabels.release
+          value: RELEASE-NAME
+  - it: should be empty, when matchLabels is null
+    set:
+      prometheus:
+        prometheusSpec:
+          serviceMonitorSelector:
+            matchLabels: null
+    asserts:
+      - equal:
+          path: spec.serviceMonitorSelector
+          value: {}
+  - it: should be set to a specific label
+    set:
+      prometheus:
+        prometheusSpec:
+          serviceMonitorSelector:
+            matchLabels:
+              abc: def
+    asserts:
+      - equal:
+          path: spec.serviceMonitorSelector.matchLabels.abc
+          value: def
+  - it: should be ignored, if set to null
+    set:
+      prometheus:
+        prometheusSpec:
+          serviceMonitorSelector: null
+    asserts:
+      - notExists:
+          path: spec.serviceMonitorSelector
