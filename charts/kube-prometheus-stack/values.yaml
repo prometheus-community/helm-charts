@@ -28,6 +28,10 @@ commonLabels: {}
 # scmhash: abc123
 # myLabel: aakkmd
 
+## Checks if any deprecated values are used
+##
+checkDeprecation: true
+
 ## Install Prometheus Operator CRDs
 ##
 crds:
@@ -922,6 +926,9 @@ alertmanager:
     ## clusterPushpullInterval determines interval between pushpull attempts.
     ## Needs to be specified as GoDuration, a time duration that can be parsed by Go’s time.ParseDuration() (e.g. 45ms, 30s, 1m, 1h20m15s)
     clusterPushpullInterval: ""
+
+    ## clusterLabel defines the identifier that uniquely identifies the Alertmanager cluster.
+    clusterLabel: ""
 
     ## ForceEnableClusterMode ensures Alertmanager does not deactivate the cluster mode when running with a single replica.
     ## Use case is e.g. spanning an Alertmanager cluster across Kubernetes clusters with a single replica in each.
@@ -3594,16 +3601,17 @@ prometheus:
     #   matchLabels:
     #     prometheus: somelabel
 
-    ## If true, a nil or {} value for prometheus.prometheusSpec.ruleSelector will cause the
-    ## prometheus resource to be created with selectors based on values in the helm deployment,
-    ## which will also match the PrometheusRule resources created
-    ##
-    ruleSelectorNilUsesHelmValues: true
-
     ## PrometheusRules to be selected for target discovery.
-    ## If {}, select all PrometheusRules
+    ## If matchLabels.release: "{{ $.Release.Name }}" the prometheus resource will be created
+    ## with selectors based on values in the helm deployment, which will also match the scrapeConfigs created
+    ## To remove matchLabels from the selector condition, explicitly set matchLabels to null.
+    ## If no other selectors are configured, prometheus-operator will select all scrapeConfigs.
+    ## To remove the release label from the matchLabels condition, explicit set release to null.
+    ## If null, exclude the field from the prometheusSpec (keeping downward compatibility with older versions of CRD)
     ##
-    ruleSelector: {}
+    ruleSelector:
+      matchLabels:
+        release: "{{ $.Release.Name }}"
     ## Example which select all PrometheusRules resources
     ## with label "prometheus" with values any of "example-rules" or "example-rules-2"
     # ruleSelector:
@@ -3619,16 +3627,17 @@ prometheus:
     #   matchLabels:
     #     role: example-rules
 
-    ## If true, a nil or {} value for prometheus.prometheusSpec.serviceMonitorSelector will cause the
-    ## prometheus resource to be created with selectors based on values in the helm deployment,
-    ## which will also match the servicemonitors created
-    ##
-    serviceMonitorSelectorNilUsesHelmValues: true
-
     ## ServiceMonitors to be selected for target discovery.
-    ## If {}, select all ServiceMonitors
+    ## If matchLabels.release: "{{ $.Release.Name }}" the prometheus resource will be created
+    ## with selectors based on values in the helm deployment, which will also match the scrapeConfigs created
+    ## To remove matchLabels from the selector condition, explicitly set matchLabels to null.
+    ## If no other selectors are configured, prometheus-operator will select all scrapeConfigs.
+    ## To remove the release label from the matchLabels condition, explicit set release to null.
+    ## If null, exclude the field from the prometheusSpec (keeping downward compatibility with older versions of CRD)
     ##
-    serviceMonitorSelector: {}
+    serviceMonitorSelector:
+      matchLabels:
+        release: "{{ $.Release.Name }}"
     ## Example which selects ServiceMonitors with label "prometheus" set to "somelabel"
     # serviceMonitorSelector:
     #   matchLabels:
@@ -3642,16 +3651,17 @@ prometheus:
     #   matchLabels:
     #     prometheus: somelabel
 
-    ## If true, a nil or {} value for prometheus.prometheusSpec.podMonitorSelector will cause the
-    ## prometheus resource to be created with selectors based on values in the helm deployment,
-    ## which will also match the podmonitors created
-    ##
-    podMonitorSelectorNilUsesHelmValues: true
-
     ## PodMonitors to be selected for target discovery.
-    ## If {}, select all PodMonitors
+    ## If matchLabels.release: "{{ $.Release.Name }}" the prometheus resource will be created
+    ## with selectors based on values in the helm deployment, which will also match the scrapeConfigs created
+    ## To remove matchLabels from the selector condition, explicitly set matchLabels to null.
+    ## If no other selectors are configured, prometheus-operator will select all scrapeConfigs.
+    ## To remove the release label from the matchLabels condition, explicit set release to null.
+    ## If null, exclude the field from the prometheusSpec (keeping downward compatibility with older versions of CRD)
     ##
-    podMonitorSelector: {}
+    podMonitorSelector:
+      matchLabels:
+        release: "{{ $.Release.Name }}"
     ## Example which selects PodMonitors with label "prometheus" set to "somelabel"
     # podMonitorSelector:
     #   matchLabels:
@@ -3664,16 +3674,17 @@ prometheus:
     #   matchLabels:
     #     prometheus: somelabel
 
-    ## If true, a nil or {} value for prometheus.prometheusSpec.probeSelector will cause the
-    ## prometheus resource to be created with selectors based on values in the helm deployment,
-    ## which will also match the probes created
-    ##
-    probeSelectorNilUsesHelmValues: true
-
     ## Probes to be selected for target discovery.
-    ## If {}, select all Probes
+    ## If matchLabels.release: "{{ $.Release.Name }}" the prometheus resource will be created
+    ## with selectors based on values in the helm deployment, which will also match the scrapeConfigs created
+    ## To remove matchLabels from the selector condition, explicitly set matchLabels to null.
+    ## If no other selectors are configured, prometheus-operator will select all scrapeConfigs.
+    ## To remove the release label from the matchLabels condition, explicit set release to null.
+    ## If null, exclude the field from the prometheusSpec (keeping downward compatibility with older versions of CRD)
     ##
-    probeSelector: {}
+    probeSelector:
+      matchLabels:
+        release: "{{ $.Release.Name }}"
     ## Example which selects Probes with label "prometheus" set to "somelabel"
     # probeSelector:
     #   matchLabels:
@@ -3686,22 +3697,25 @@ prometheus:
     #   matchLabels:
     #     prometheus: somelabel
 
-    ## If true, a nil or {} value for prometheus.prometheusSpec.scrapeConfigSelector will cause the
-    ## prometheus resource to be created with selectors based on values in the helm deployment,
-    ## which will also match the scrapeConfigs created
-    ##
-    scrapeConfigSelectorNilUsesHelmValues: true
-
     ## scrapeConfigs to be selected for target discovery.
-    ## If {}, select all scrapeConfigs
+    ## If matchLabels.release: "{{ $.Release.Name }}" the prometheus resource will be created
+    ## with selectors based on values in the helm deployment, which will also match the scrapeConfigs created
+    ## To remove matchLabels from the selector condition, explicitly set matchLabels to null.
+    ## If no other selectors are configured, prometheus-operator will select all scrapeConfigs.
+    ## To remove the release label from the matchLabels condition, explicit set release to null.
+    ## If null, exclude the field from the prometheusSpec (keeping downward compatibility with older versions of CRD)
     ##
-    scrapeConfigSelector: {}
+    scrapeConfigSelector:
+      matchLabels:
+        release: "{{ $.Release.Name }}"
     ## Example which selects scrapeConfigs with label "prometheus" set to "somelabel"
     # scrapeConfigSelector:
     #   matchLabels:
+    #     release: ~
     #     prometheus: somelabel
 
     ## If nil, select own namespace. Namespaces to be selected for scrapeConfig discovery.
+    ## If null, exclude the field from the prometheusSpec (keeping downward compatibility with older versions of CRD)
     scrapeConfigNamespaceSelector: {}
     ## Example which selects scrapeConfig in namespaces with label "prometheus" set to "somelabel"
     # scrapeConfigNamespaceSelector:
@@ -4500,19 +4514,21 @@ thanosRuler:
     ##
     ruleNamespaceSelector: {}
 
-    ## If true, a nil or {} value for thanosRuler.thanosRulerSpec.ruleSelector will cause the
-    ## prometheus resource to be created with selectors based on values in the helm deployment,
-    ## which will also match the PrometheusRule resources created
-    ##
-    ruleSelectorNilUsesHelmValues: true
-
     ## PrometheusRules to be selected for target discovery.
-    ## If {}, select all PrometheusRules
+    ## If matchLabels.release: "{{ $.Release.Name }}" the prometheus resource will be created
+    ## with selectors based on values in the helm deployment, which will also match the scrapeConfigs created
+    ## To remove matchLabels from the selector condition, explicitly set matchLabels to null.
+    ## If no other selectors are configured, prometheus-operator will select all scrapeConfigs.
+    ## To remove the release label from the matchLabels condition, explicit set release to null.
+    ## If null, exclude the field from the prometheusSpec (keeping downward compatibility with older versions of CRD)
     ##
-    ruleSelector: {}
+    ruleSelector:
+      matchLabels:
+        release: "{{ $.Release.Name }}"
     ## Example which select all PrometheusRules resources
     ## with label "prometheus" with values any of "example-rules" or "example-rules-2"
     # ruleSelector:
+    #   matchLabels: ~
     #   matchExpressions:
     #     - key: prometheus
     #       operator: In
@@ -4523,6 +4539,7 @@ thanosRuler:
     ## Example which select all PrometheusRules resources with label "role" set to "example-rules"
     # ruleSelector:
     #   matchLabels:
+    #     release: ~
     #     role: example-rules
 
     ## Define Log Format
@@ -4566,7 +4583,7 @@ thanosRuler:
       existingSecret: {}
         # name: ""
         # key: ""
-      # will render render alertmanagersConfig secret data and configure it to be used by Thanos Ruler custom resource, ignored when alertmanagersConfig.existingSecret is set
+      # will render alertmanagersConfig secret data and configure it to be used by Thanos Ruler custom resource, ignored when alertmanagersConfig.existingSecret is set
       # https://thanos.io/tip/components/rule.md/#alertmanager
       secret: {}
         # alertmanagers:
