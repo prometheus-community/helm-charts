@@ -36,7 +36,7 @@ spec:
         description: A client certificate used to authenticate to kubernetes apiserver is expiring in less than 7.0 days.
         runbook_url: {{ .Values.defaultRules.runbookUrl }}/kubernetes/kubeclientcertificateexpiration
         summary: Client certificate is about to expire.
-      expr: apiserver_client_certificate_expiration_seconds_count{job="apiserver"} > 0 and on ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}job) histogram_quantile(0.01, sum by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}job, le) (rate(apiserver_client_certificate_expiration_seconds_bucket{job="apiserver"}[5m]))) < 604800
+      expr: apiserver_client_certificate_expiration_seconds_count{job="apiserver"} > 0 and on ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster, job) histogram_quantile(0.01, sum by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster, job, le) (rate(apiserver_client_certificate_expiration_seconds_bucket{job="apiserver"}[5m]))) < 604800
       for: {{ dig "KubeClientCertificateExpiration" "for" "5m" .Values.customRules }}
       {{- with .Values.defaultRules.keepFiringFor }}
       keep_firing_for: "{{ . }}"
@@ -64,7 +64,7 @@ spec:
         description: A client certificate used to authenticate to kubernetes apiserver is expiring in less than 24.0 hours.
         runbook_url: {{ .Values.defaultRules.runbookUrl }}/kubernetes/kubeclientcertificateexpiration
         summary: Client certificate is about to expire.
-      expr: apiserver_client_certificate_expiration_seconds_count{job="apiserver"} > 0 and on ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}job) histogram_quantile(0.01, sum by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}job, le) (rate(apiserver_client_certificate_expiration_seconds_bucket{job="apiserver"}[5m]))) < 86400
+      expr: apiserver_client_certificate_expiration_seconds_count{job="apiserver"} > 0 and on ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster, job) histogram_quantile(0.01, sum by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster, job, le) (rate(apiserver_client_certificate_expiration_seconds_bucket{job="apiserver"}[5m]))) < 86400
       for: {{ dig "KubeClientCertificateExpiration" "for" "5m" .Values.customRules }}
       {{- with .Values.defaultRules.keepFiringFor }}
       keep_firing_for: "{{ . }}"
@@ -174,7 +174,7 @@ spec:
         description: The kubernetes apiserver has terminated {{`{{`}} $value | humanizePercentage {{`}}`}} of its incoming requests.
         runbook_url: {{ .Values.defaultRules.runbookUrl }}/kubernetes/kubeapiterminatedrequests
         summary: The kubernetes apiserver has terminated {{`{{`}} $value | humanizePercentage {{`}}`}} of its incoming requests.
-      expr: sum(rate(apiserver_request_terminations_total{job="apiserver"}[10m]))  / (  sum(rate(apiserver_request_total{job="apiserver"}[10m])) + sum(rate(apiserver_request_terminations_total{job="apiserver"}[10m])) ) > 0.20
+      expr: sum by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster) (rate(apiserver_request_terminations_total{job="apiserver"}[10m])) / ( sum by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster) (rate(apiserver_request_total{job="apiserver"}[10m])) + sum by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster) (rate(apiserver_request_terminations_total{job="apiserver"}[10m])) ) > 0.20
       for: {{ dig "KubeAPITerminatedRequests" "for" "5m" .Values.customRules }}
       {{- with .Values.defaultRules.keepFiringFor }}
       keep_firing_for: "{{ . }}"
