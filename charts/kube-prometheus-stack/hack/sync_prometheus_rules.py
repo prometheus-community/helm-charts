@@ -29,11 +29,11 @@ def change_style(style, representer):
 
 refs = {
     # https://github.com/prometheus-operator/kube-prometheus
-    'ref.kube-prometheus': 'eb7f83a4071ea3aa8f98d0c8129fe6e6ac88bf34',
+    'ref.kube-prometheus': '2a14b95595fd6767bdeb03ca7460b15a3793d503',
     # https://github.com/kubernetes-monitoring/kubernetes-mixin
-    'ref.kubernetes-mixin': '50150c585ebee6e4d9cb72218182da8f3c616515',
+    'ref.kubernetes-mixin': '3cb7958a56688386e8f6cb0f1258bdb1234797d6',
     # https://github.com/etcd-io/etcd
-    'ref.etcd': 'bf63f917059072b5a33ea5fa6b71c5988b1168b7',
+    'ref.etcd': '4e9ed2cff3e411f32c4e185ae900fe08c7fb09f7',
 }
 
 # Source files list
@@ -120,8 +120,12 @@ condition_map = {
     'config-reloaders': ' .Values.defaultRules.rules.configReloaders',
     'etcd': ' .Values.kubeEtcd.enabled .Values.defaultRules.rules.etcd',
     'general.rules': ' .Values.defaultRules.rules.general',
+    'k8s.rules.container_cpu_limits': ' .Values.defaultRules.rules.k8sContainerCpuLimits',
+    'k8s.rules.container_cpu_requests': ' .Values.defaultRules.rules.k8sContainerCpuRequests',
     'k8s.rules.container_cpu_usage_seconds_total': ' .Values.defaultRules.rules.k8sContainerCpuUsageSecondsTotal',
     'k8s.rules.container_memory_cache': ' .Values.defaultRules.rules.k8sContainerMemoryCache',
+    'k8s.rules.container_memory_limits': ' .Values.defaultRules.rules.k8sContainerMemoryLimits',
+    'k8s.rules.container_memory_requests': ' .Values.defaultRules.rules.k8sContainerMemoryRequests',
     'k8s.rules.container_memory_rss': ' .Values.defaultRules.rules.k8sContainerMemoryRss',
     'k8s.rules.container_memory_swap': ' .Values.defaultRules.rules.k8sContainerMemorySwap',
     'k8s.rules.container_memory_working_set_bytes': ' .Values.defaultRules.rules.k8sContainerMemoryWorkingSetBytes',
