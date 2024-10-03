@@ -82,6 +82,45 @@ _See [helm upgrade](https://helm.sh/docs/helm/helm_upgrade/) for command documen
 
 A major chart version change (like v1.2.3 -> v2.0.0) indicates that there is an incompatible breaking change needing manual actions.
 
+### From 63.x to 64.x
+
+v64 reverts the v63 release.
+
+All changes mentioned in the v63 release notes must be reverted.
+
+### From 62.x to 63.x
+
+Simplify setting empty selectors, by deprecating `*SelectorNilUsesHelmValues` properties.  
+Instead, setting `*Selector.matchLabels=null` will create an empty selector.
+
+If you set one of the following properties to `false`, you will have to convert them:
+
+- `prometheus.prometheusSpec.podMonitorSelectorNilUsesHelmValues`
+- `prometheus.prometheusSpec.probeSelectorNilUsesHelmValues`
+- `prometheus.prometheusSpec.ruleSelectorNilUsesHelmValues`
+- `prometheus.prometheusSpec.serviceMonitorSelectorNilUsesHelmValues`
+- `prometheus.prometheusSpec.scrapeConfigSelectorNilUsesHelmValues`
+- `thanosRuler.thanosRulerSpec.ruleSelectorNilUsesHelmValues`
+
+For example:
+
+```yaml
+prometheus:
+  prometheusSpec:
+    scrapeConfigSelectorNilUsesHelmValues: false
+```
+
+Becomes:
+
+```yaml
+prometheus:
+  prometheusSpec:
+    scrapeConfigSelector:
+      matchLabels: null
+```
+
+Note that `externalPrefixNilUsesHelmValues` remains as is.
+
 ### From 61.x to 62.x
 
 This version upgrades Prometheus-Operator to v0.76.0
