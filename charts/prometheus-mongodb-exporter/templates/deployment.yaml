@@ -28,11 +28,27 @@ spec:
       containers:
         - name: mongodb-exporter
           env:
+          {{- if .Values.serviceMonitor.multiTarget.enabled }}
+            - name: MONGODB_URI
+              value: {{ include "prometheus-mongodb-exporter.mongodbUri" . }}
+            - name: MONGODB_USER
+              value: {{ .Values.serviceMonitor.multiTarget.username }}
+            - name: MONGODB_PASSWORD
+              {{- if .Values.serviceMonitor.multiTarget.password.existingSecret }}
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.serviceMonitor.multiTarget.password.existingSecret.name }}
+                  key: {{ .Values.serviceMonitor.multiTarget.password.existingSecret.key }}
+              {{- else }}
+              value: {{ .Values.serviceMonitor.multiTarget.password.value }}
+              {{- end }}
+          {{- else }}
             - name: MONGODB_URI
               valueFrom:
                 secretKeyRef:
                   name: {{ include "prometheus-mongodb-exporter.secretName" . }}
                   key: {{ .Values.existingSecret.key }}
+          {{- end }}
           {{- if .Values.env }}
           {{- range $key, $value := .Values.env }}
             - name: "{{ $key }}"
