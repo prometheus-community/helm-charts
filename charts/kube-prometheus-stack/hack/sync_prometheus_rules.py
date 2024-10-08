@@ -106,8 +106,18 @@ charts = [
         'cwd': 'contrib/mixin',
         'destination': '../templates/prometheus/rules-1.14',
         'min_kubernetes': '1.14.0-0',
+        # Override the default etcd_instance_labels to get proper aggregation for etcd instances in k8s clusters (#2720)
+        # see https://github.com/etcd-io/etcd/blob/1c22e7b36bc5d8543f1646212f2960f9fe503b8c/contrib/mixin/config.libsonnet#L13
         'mixin': """
-        local kp = { prometheusAlerts+:: {}, prometheusRules+:: {}} + (import "mixin.libsonnet");
+        local kp =
+            { prometheusAlerts+:: {}, prometheusRules+:: {}} +
+            (import "mixin.libsonnet") +
+            {'_config': {
+                'etcd_selector': 'job=~".*etcd.*"',
+                'etcd_instance_labels': 'instance, pod',
+                'scrape_interval_seconds': 30,
+                'clusterLabel': 'job',
+            }};
 
         kp.prometheusAlerts + kp.prometheusRules
         """
