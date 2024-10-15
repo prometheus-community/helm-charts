@@ -228,15 +228,7 @@ containers:
   {{- end }}
   {{- end }}
   args:
-  {{- if .Values.config }}
-  {{- if .Values.configPath }}
-  - "--config.file={{ .Values.configPath }}"
-  {{- else }}
-  - "--config.file=/config/blackbox.yaml"
-  {{- end }}
-  {{- else }}
-  - "--config.file=/etc/blackbox_exporter/config.yml"
-  {{- end }}
+  - --config-file={{ .Values.configPath | default "/config/blackbox.yaml" }}
   {{- with .Values.extraArgs }}
 {{ tpl (toYaml .) $ | indent 2 }}
   {{- end }}
