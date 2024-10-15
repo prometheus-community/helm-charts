@@ -228,7 +228,7 @@ containers:
   {{- end }}
   {{- end }}
   args:
-  - --config-file={{ .Values.configPath | default "/config/blackbox.yaml" }}
+  - --config.file={{ .Values.configPath | default "/config/blackbox.yaml" }}
   {{- with .Values.extraArgs }}
 {{ tpl (toYaml .) $ | indent 2 }}
   {{- end }}
