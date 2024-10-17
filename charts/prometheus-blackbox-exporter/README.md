@@ -48,6 +48,12 @@ helm upgrade [RELEASE_NAME] [CHART] --install
 
 _See [helm upgrade](https://helm.sh/docs/helm/helm_upgrade/) for command documentation._
 
+### To 10.0.0
+
+This version changed the config path handing.
+- The `configPath` value overwrites the default config path.
+- The default value, if no `config` is defined, got removed. You can set the removed default `/etc/blackbox_exporter/config.yml` via the `configPath` value.
+
 ### To 9.0.0
 
 This version remove pod security policy as it is deprecated.
