@@ -4,6 +4,10 @@ metadata:
   name: {{ template "stackdriver-exporter.fullname" . }}
   labels:
     {{- include "stackdriver-exporter.labels" . | indent 4 }}
+  {{- with .Values.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
 spec:
   replicas: {{ .Values.replicaCount }}
   selector:
@@ -18,9 +22,9 @@ spec:
     metadata:
       labels:
         {{- include "stackdriver-exporter.labels" . | indent 8 }}
-      {{- if .Values.annotations }}
+      {{- with .Values.annotations }}
       annotations:
-        {{- toYaml .Values.annotations | nindent 8 }}
+        {{- toYaml . | nindent 8 }}
       {{- end }}
     spec:
       {{- if .Values.securityContext }}
