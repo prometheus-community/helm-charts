@@ -354,11 +354,15 @@ def add_custom_labels(rules_str, group, indent=4, label_indent=2):
     rule_group_labels = get_rule_group_condition(condition_map.get(group['name'], ''), 'additionalRuleGroupLabels')
 
     additional_rule_labels = textwrap.indent("""
-{{- with .Values.defaultRules.additionalRuleLabels }}
-  {{- toYaml . | nindent 8 }}
+{{- range $k, $v := mergeOverwrite
+      (.Values.defaultRules.additionalRuleLabels | default (dict))
+      (%s | default (dict))
+    }}
+
+{{- if $v }}
+{{ $k | quote }}: {{ $v | quote }}
 {{- end }}
-{{- with %s }}
-  {{- toYaml . | nindent 8 }}
+
 {{- end }}""" % (rule_group_labels,), " " * (indent + label_indent * 2))
 
     additional_rule_labels_condition_start = "\n" + " " * (indent + label_indent) + '{{- if or .Values.defaultRules.additionalRuleLabels %s }}' % (rule_group_labels,)
@@ -409,13 +413,24 @@ def add_custom_labels(rules_str, group, indent=4, label_indent=2):
 
 def add_custom_annotations(rules, group, indent=4):
     """Add if wrapper for additional rules annotations"""
-    rule_condition = '{{- if .Values.defaultRules.additionalRuleAnnotations }}\n{{ toYaml .Values.defaultRules.additionalRuleAnnotations | indent 8 }}\n{{- end }}'
-    rule_group_labels = get_rule_group_condition(condition_map.get(group['name'], ''), 'additionalRuleGroupAnnotations')
-    rule_group_condition = '\n{{- if %s }}\n{{ toYaml %s | indent 8 }}\n{{- end }}' % (rule_group_labels, rule_group_labels)
+
+    rule_group_annotations = get_rule_group_condition(condition_map.get(group['name'], ''), 'additionalRuleGroupAnnotations')
+
+    annotations_body = textwrap.indent("""
+{{- range $k, $v := mergeOverwrite
+      (.Values.defaultRules.additionalRuleAnnotations | default (dict))
+      (%s | default (dict))
+    }}
+
+{{- if $v }}
+{{ $k | quote }}: {{ $v | quote }}
+{{- end }}
+
+{{- end }}""" % (rule_group_annotations,), " " * (indent * 2))
+
     annotations = "      annotations:"
     annotations_len = len(annotations) + 1
-    rule_condition_len = len(rule_condition) + 1
-    rule_group_condition_len = len(rule_group_condition)
+    annotations_body_len = len(annotations_body) + 1
 
     separator = " " * indent + "- alert:.*"
     alerts_positions = re.finditer(separator,rules)
@@ -423,8 +438,8 @@ def add_custom_annotations(rules, group, indent=4):
 
     for alert_position in alerts_positions:
         # Add rule_condition after 'annotations:' statement
-        index = alert_position.end() + annotations_len + (rule_condition_len + rule_group_condition_len) * alert
-        rules = rules[:index] + "\n" + rule_condition + rule_group_condition +  rules[index:]
+        index = alert_position.end() + annotations_len + annotations_body_len * alert
+        rules = rules[:index] + "\n" + annotations_body + rules[index:]
         alert += 1
 
     return rules

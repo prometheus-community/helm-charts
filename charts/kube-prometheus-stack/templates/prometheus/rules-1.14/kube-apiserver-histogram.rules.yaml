@@ -29,11 +29,15 @@ spec:
         quantile: '0.99'
         verb: read
       {{- if or .Values.defaultRules.additionalRuleLabels .Values.defaultRules.additionalRuleGroupLabels.kubeApiserverHistogram }}
-        {{- with .Values.defaultRules.additionalRuleLabels }}
-          {{- toYaml . | nindent 8 }}
+        {{- range $k, $v := mergeOverwrite
+              (.Values.defaultRules.additionalRuleLabels | default (dict))
+              (.Values.defaultRules.additionalRuleGroupLabels.kubeApiserverHistogram | default (dict))
+            }}
+
+        {{- if $v }}
+        {{ $k | quote }}: {{ $v | quote }}
         {{- end }}
-        {{- with .Values.defaultRules.additionalRuleGroupLabels.kubeApiserverHistogram }}
-          {{- toYaml . | nindent 8 }}
+
         {{- end }}
       {{- end }}
       record: cluster_quantile:apiserver_request_sli_duration_seconds:histogram_quantile
@@ -42,11 +46,15 @@ spec:
         quantile: '0.99'
         verb: write
       {{- if or .Values.defaultRules.additionalRuleLabels .Values.defaultRules.additionalRuleGroupLabels.kubeApiserverHistogram }}
-        {{- with .Values.defaultRules.additionalRuleLabels }}
-          {{- toYaml . | nindent 8 }}
+        {{- range $k, $v := mergeOverwrite
+              (.Values.defaultRules.additionalRuleLabels | default (dict))
+              (.Values.defaultRules.additionalRuleGroupLabels.kubeApiserverHistogram | default (dict))
+            }}
+
+        {{- if $v }}
+        {{ $k | quote }}: {{ $v | quote }}
         {{- end }}
-        {{- with .Values.defaultRules.additionalRuleGroupLabels.kubeApiserverHistogram }}
-          {{- toYaml . | nindent 8 }}
+
         {{- end }}
       {{- end }}
       record: cluster_quantile:apiserver_request_sli_duration_seconds:histogram_quantile
