@@ -3,10 +3,10 @@
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
-  name: {{ template "prometheus-blackbox-exporter.fullname" $ }}
-  namespace: {{ template "prometheus-blackbox-exporter.namespace" $ }}
+  name: {{ template "prometheus-snmp-exporter.fullname" $ }}
+  namespace: {{ template "prometheus-snmp-exporter.namespace" $ }}
   labels:
-    {{- include "prometheus-blackbox-exporter.labels" $ | nindent 4 }}
+    {{- include "prometheus-snmp-exporter.labels" $ | nindent 4 }}
     {{- if .Values.serviceMonitor.selfMonitor.labels  }}
     {{- toYaml (.Values.serviceMonitor.selfMonitor.labels) | nindent 4 }}
     {{- end }}
@@ -31,30 +31,12 @@ spec:
     relabelings:
       {{- toYaml .Values.serviceMonitor.selfMonitor.additionalRelabeling | nindent 6 }}
     {{- end }}
-  {{- if .Values.configReloader.enabled }}
-  - path: {{ .Values.configReloader.serviceMonitor.selfMonitor.path }}
-    interval: {{ .Values.configReloader.serviceMonitor.selfMonitor.interval }}
-    scrapeTimeout: {{ .Values.configReloader.serviceMonitor.selfMonitor.scrapeTimeout }}
-    scheme: {{ .Values.configReloader.serviceMonitor.selfMonitor.scheme }}
-    {{- if .Values.configReloader.serviceMonitor.selfMonitor.tlsConfig }}
-    tlsConfig:
-      {{- toYaml .Values.configReloader.serviceMonitor.selfMonitor.tlsConfig | nindent 6 }}
-    {{- end }}
-    {{- with .Values.configReloader.serviceMonitor.selfMonitor.additionalMetricsRelabels }}
-    metricRelabelings:
-      {{- toYaml . | nindent 6 }}
-    {{- end }}
-    {{- if .Values.configReloader.serviceMonitor.selfMonitor.additionalRelabeling }}
-    relabelings:
-      {{- toYaml .Values.configReloader.serviceMonitor.selfMonitor.additionalRelabeling | indent 6 }}
-    {{- end }}
-  {{- end }}
   jobLabel: "{{ .Release.Name }}"
   selector:
     matchLabels:
-      {{- include "prometheus-blackbox-exporter.selectorLabels" $ | nindent 6 }}
+      {{- include "prometheus-snmp-exporter.selectorLabels" $ | nindent 6 }}
   namespaceSelector:
     matchNames:
-      - {{ template "prometheus-blackbox-exporter.namespace" $ }}
+      - {{ template "prometheus-snmp-exporter.namespace" $ }}
 
 {{- end }}
