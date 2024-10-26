@@ -45,6 +45,10 @@ serviceMonitor:
   # metricRelabelings: []
   # Set relabel_configs as per https://prometheus.io/docs/prometheus/latest/configuration/configuration/#relabel_config
   # relabelings: []
+  # HTTP scheme to use for scraping. For example `http` or `https`. Default is `http`.
+  # scheme: http
+  # TLS configuration to use when scraping the metric endpoint by Prometheus.
+  # tlsConfig: {}
 
 prometheusRule:
   enabled: false
@@ -195,13 +199,25 @@ annotations: {}
 
 podLabels: {}
 
-# Configurable health checks
+# Configurable probes. If TLS client authentication is enabled at the exporter, TCP probe must be used.
 livenessProbe:
   initialDelaySeconds: 0
+  httpGet:
+    path: /
+    port: http
+    scheme: HTTP
+  # tcpSocket:
+  #   port: http
   timeoutSeconds: 3
 
 readinessProbe:
   initialDelaySeconds: 0
+  httpGet:
+    path: /
+    port: http
+    scheme: HTTP
+  # tcpSocket:
+  #   port: http
   timeoutSeconds: 1
 
 # Labels and annotations to attach to the deployment resource
