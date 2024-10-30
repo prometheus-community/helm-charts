@@ -15,6 +15,7 @@ spec:
   endpoints:
   {{- if .Values.serviceMonitor.multiTarget.enabled }}
   {{- range  .Values.serviceMonitor.multiTarget.targets }}
+  {{- $mongodburi := mustRegexFind "^mongodb(\\+srv)?://[^/]+" .uri }}
     - path: /scrape
       port: {{ $.Values.service.portName }}
       {{- with $.Values.serviceMonitor.scheme }}
@@ -29,15 +30,17 @@ spec:
         - action: replace
           sourceLabels: [instance]
           targetLabel: instance
-          replacement: {{ mustRegexFind "^mongodb(\\+srv)?://[^/]+" .uri }}
+          replacement: {{ $mongodburi }}
         - action: replace
           sourceLabels: [target]
           targetLabel: target
           replacement: {{ .name }}
+        {{- if or .metricRelabelings $.Values.serviceMonitor.metricRelabelings }}
         {{- toYaml (.metricRelabelings | default $.Values.serviceMonitor.metricRelabelings) | nindent 8 }}
+        {{- end }}
       params:
         target:
-          - {{ mustRegexFind "^mongodb(\\+srv)?://[^/]+" .uri }}
+          - {{ $mongodburi }}
   {{- end }}
   {{- else }}
     - port: {{ .Values.service.portName }}
