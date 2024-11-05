@@ -143,10 +143,8 @@ spec:
             - --web.key-file=/cert/{{ if .Values.prometheusOperator.admissionWebhooks.certManager.enabled }}tls.key{{ else }}key{{ end }}
             - --web.listen-address=:{{ .Values.prometheusOperator.tls.internalPort }}
             - --web.tls-min-version={{ .Values.prometheusOperator.tls.tlsMinVersion }}
-            {{- if .Values.prometheusOperator.extraArgs }}
-            {{- range .Values.prometheusOperator.extraArgs }}
-            - {{ . }}
-            {{- end }}
+            {{- with.Values.prometheusOperator.extraArgs }}
+            {{- tpl (toYaml .) $ | nindent 12 }}
             {{- end }}
           ports:
             - containerPort: {{ .Values.prometheusOperator.tls.internalPort }}
