@@ -13,22 +13,53 @@ metadata:
   {{- end }}
 spec:
   endpoints:
-  - port: {{ .Values.service.portName }}
-    interval: {{ .Values.serviceMonitor.interval }}
-    scrapeTimeout: {{ .Values.serviceMonitor.scrapeTimeout }}
-    {{- if .Values.serviceMonitor.metricRelabelings }}
-    metricRelabelings: {{ toYaml .Values.serviceMonitor.metricRelabelings | nindent 4 }}
-    {{- end }}
-    {{- if .Values.serviceMonitor.scheme }}
-    scheme: {{ .Values.serviceMonitor.scheme }}
-    {{- end }}
-    {{- if .Values.serviceMonitor.tlsConfig }}
-    tlsConfig:
-      {{- toYaml .Values.serviceMonitor.tlsConfig | nindent 6 }}
-    {{- end }}
+  {{- if .Values.serviceMonitor.multiTarget.enabled }}
+  {{- range  .Values.serviceMonitor.multiTarget.targets }}
+  {{- $mongodburi := mustRegexFind "^mongodb(\\+srv)?://[^/]+" .uri }}
+    - path: /scrape
+      port: {{ $.Values.service.portName }}
+      {{- with $.Values.serviceMonitor.scheme }}
+      scheme: {{ . }}
+      {{- end }}
+      {{- with $.Values.serviceMonitor.tlsConfig }}
+      tlsConfig: {{ toYaml . | nindent 6 }}
+      {{- end }}
+      interval: {{ .interval | default $.Values.serviceMonitor.interval }}
+      scrapeTimeout: {{ .scrapeTimeout | default $.Values.serviceMonitor.scrapeTimeout }}
+      metricRelabelings:
+        - action: replace
+          sourceLabels: [instance]
+          targetLabel: instance
+          replacement: {{ $mongodburi }}
+        - action: replace
+          sourceLabels: [target]
+          targetLabel: target
+          replacement: {{ .name }}
+        {{- if or .metricRelabelings $.Values.serviceMonitor.metricRelabelings }}
+        {{- toYaml (.metricRelabelings | default $.Values.serviceMonitor.metricRelabelings) | nindent 8 }}
+        {{- end }}
+      params:
+        target:
+          - {{ $mongodburi }}
+  {{- end }}
+  {{- else }}
+    - port: {{ .Values.service.portName }}
+      interval: {{ .Values.serviceMonitor.interval }}
+      scrapeTimeout: {{ .Values.serviceMonitor.scrapeTimeout }}
+      {{- with .Values.serviceMonitor.metricRelabelings }}
+      metricRelabelings: {{ toYaml . | nindent 6 }}
+      {{- end }}
+      {{- with .Values.serviceMonitor.scheme }}
+      scheme: {{ . }}
+      {{- end }}
+      {{- with .Values.serviceMonitor.tlsConfig }}
+      tlsConfig:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+  {{- end }}
   namespaceSelector:
     matchNames:
-    - {{ .Release.Namespace }}
+      - {{ .Release.Namespace }}
   selector:
     matchLabels:
       {{- include "prometheus-mongodb-exporter.selectorLabels" . | nindent 6 }}
