@@ -1,5 +1,5 @@
 {{- $global := . }}
-{{- $base := dict "annotations" .Values.annotations "resources" .Values.resources "nodeSelector" .Values.nodeSelector "affinity" .Values.affinity "tolerations" .Values.tolerations "config" .Values.config }}
+{{- $base := dict "annotations" .Values.annotations "resources" .Values.resources "nodeSelector" .Values.nodeSelector "affinity" .Values.affinity "tolerations" .Values.tolerations "config" .Values.config  "hostNetwork" .Values.hostNetwork }}
 {{- $items := prepend .Values.extraInstances $base }}
 {{- range $idx, $item := $items }}
 {{- $config := mergeOverwrite $item.config $global.Values.common.config }}
@@ -60,7 +60,7 @@ spec:
         - mountPath: /hostdev
           name: dev
       dnsPolicy: ClusterFirst
-      hostNetwork: true
+      hostNetwork: {{ $item.hostNetwork }}
       restartPolicy: Always
       serviceAccountName: {{ template "prometheus-smartctl-exporter.fullname" $global }}
       volumes:
