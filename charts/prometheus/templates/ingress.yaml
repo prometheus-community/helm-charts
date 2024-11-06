@@ -29,13 +29,13 @@ spec:
   rules:
   {{- range .Values.server.ingress.hosts }}
     {{- $url := splitList "/" . }}
-    - host: {{ first $url }}
+    - host: {{ tpl (first $url) $ }}
       http:
         paths:
 {{ if $extraPaths }}
-{{ toYaml $extraPaths | indent 10 }}
+{{ tpl (toYaml $extraPaths | indent 10) $ }}
 {{- end }}
-          - path: {{ $ingressPath }}
+          - path: {{ tpl ($ingressPath) $ }}
             {{- if $ingressSupportsPathType }}
             pathType: {{ $ingressPathType }}
             {{- end }}
@@ -52,6 +52,6 @@ spec:
   {{- end -}}
 {{- if .Values.server.ingress.tls }}
   tls:
-{{ toYaml .Values.server.ingress.tls | indent 4 }}
+{{ tpl (toYaml .Values.server.ingress.tls | indent 4) $ }}
   {{- end -}}
 {{- end -}}
