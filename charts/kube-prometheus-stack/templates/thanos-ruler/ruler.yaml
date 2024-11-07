@@ -52,11 +52,21 @@ spec:
 {{- if .Values.thanosRuler.thanosRulerSpec.evaluationInterval }}
   evaluationInterval: {{ .Values.thanosRuler.thanosRulerSpec.evaluationInterval }}
 {{- end }}
-{{- if not (kindIs "invalid" .Values.thanosRuler.thanosRulerSpec.ruleNamespaceSelector) }}
-  ruleNamespaceSelector: {{ tpl (toYaml .Values.thanosRuler.thanosRulerSpec.ruleNamespaceSelector) . | nindent 4 }}
+{{- if .Values.thanosRuler.thanosRulerSpec.ruleNamespaceSelector }}
+  ruleNamespaceSelector:
+{{ tpl (toYaml .Values.thanosRuler.thanosRulerSpec.ruleNamespaceSelector | indent 4) . }}
+{{ else }}
+  ruleNamespaceSelector: {}
 {{- end }}
-{{- if not (kindIs "invalid" .Values.thanosRuler.thanosRulerSpec.ruleSelector) }}
-  ruleSelector: {{ tpl (toYaml .Values.thanosRuler.thanosRulerSpec.ruleSelector) . | nindent 4 }}
+{{- if .Values.thanosRuler.thanosRulerSpec.ruleSelector }}
+  ruleSelector:
+{{ tpl (toYaml .Values.thanosRuler.thanosRulerSpec.ruleSelector | indent 4) .}}
+{{- else if .Values.thanosRuler.thanosRulerSpec.ruleSelectorNilUsesHelmValues }}
+  ruleSelector:
+    matchLabels:
+      release: {{ $.Release.Name | quote }}
+{{ else }}
+  ruleSelector: {}
 {{- end }}
 {{- if .Values.thanosRuler.thanosRulerSpec.alertQueryUrl }}
   alertQueryUrl: "{{ .Values.thanosRuler.thanosRulerSpec.alertQueryUrl }}"

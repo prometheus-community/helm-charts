@@ -29,11 +29,11 @@ def change_style(style, representer):
 
 refs = {
     # https://github.com/prometheus-operator/kube-prometheus
-    'ref.kube-prometheus': 'eb7f83a4071ea3aa8f98d0c8129fe6e6ac88bf34',
+    'ref.kube-prometheus': '69d9636b64192418d64912c032f5437361e88ea5',
     # https://github.com/kubernetes-monitoring/kubernetes-mixin
-    'ref.kubernetes-mixin': '50150c585ebee6e4d9cb72218182da8f3c616515',
+    'ref.kubernetes-mixin': '0348e09edc3961a29a55f199d1bf0060c847a608',
     # https://github.com/etcd-io/etcd
-    'ref.etcd': 'bf63f917059072b5a33ea5fa6b71c5988b1168b7',
+    'ref.etcd': '18eb5c6881d43064f4559034bf12c3ef6ce89e4b',
 }
 
 # Source files list
@@ -106,8 +106,18 @@ charts = [
         'cwd': 'contrib/mixin',
         'destination': '../templates/prometheus/rules-1.14',
         'min_kubernetes': '1.14.0-0',
+        # Override the default etcd_instance_labels to get proper aggregation for etcd instances in k8s clusters (#2720)
+        # see https://github.com/etcd-io/etcd/blob/1c22e7b36bc5d8543f1646212f2960f9fe503b8c/contrib/mixin/config.libsonnet#L13
         'mixin': """
-        local kp = { prometheusAlerts+:: {}, prometheusRules+:: {}} + (import "mixin.libsonnet");
+        local kp =
+            { prometheusAlerts+:: {}, prometheusRules+:: {}} +
+            (import "mixin.libsonnet") +
+            {'_config': {
+                'etcd_selector': 'job=~".*etcd.*"',
+                'etcd_instance_labels': 'instance, pod',
+                'scrape_interval_seconds': 30,
+                'clusterLabel': 'job',
+            }};
 
         kp.prometheusAlerts + kp.prometheusRules
         """
@@ -120,8 +130,12 @@ condition_map = {
     'config-reloaders': ' .Values.defaultRules.rules.configReloaders',
     'etcd': ' .Values.kubeEtcd.enabled .Values.defaultRules.rules.etcd',
     'general.rules': ' .Values.defaultRules.rules.general',
+    'k8s.rules.container_cpu_limits': ' .Values.defaultRules.rules.k8sContainerCpuLimits',
+    'k8s.rules.container_cpu_requests': ' .Values.defaultRules.rules.k8sContainerCpuRequests',
     'k8s.rules.container_cpu_usage_seconds_total': ' .Values.defaultRules.rules.k8sContainerCpuUsageSecondsTotal',
     'k8s.rules.container_memory_cache': ' .Values.defaultRules.rules.k8sContainerMemoryCache',
+    'k8s.rules.container_memory_limits': ' .Values.defaultRules.rules.k8sContainerMemoryLimits',
+    'k8s.rules.container_memory_requests': ' .Values.defaultRules.rules.k8sContainerMemoryRequests',
     'k8s.rules.container_memory_rss': ' .Values.defaultRules.rules.k8sContainerMemoryRss',
     'k8s.rules.container_memory_swap': ' .Values.defaultRules.rules.k8sContainerMemorySwap',
     'k8s.rules.container_memory_working_set_bytes': ' .Values.defaultRules.rules.k8sContainerMemoryWorkingSetBytes',

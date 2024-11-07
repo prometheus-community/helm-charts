@@ -28,10 +28,6 @@ commonLabels: {}
 # scmhash: abc123
 # myLabel: aakkmd
 
-## Checks if any deprecated values are used
-##
-checkDeprecation: true
-
 ## Install Prometheus Operator CRDs
 ##
 crds:
@@ -433,6 +429,42 @@ alertmanager:
     #   hosts:
     #   - alertmanager.example.com
 
+  # -- BETA: Configure the gateway routes for the chart here.
+  # More routes can be added by adding a dictionary key like the 'main' route.
+  # Be aware that this is an early beta of this feature,
+  # kube-prometheus-stack does not guarantee this works and is subject to change.
+  # Being BETA this can/will change in the future without notice, do not use unless you want to take that risk
+  # [[ref]](https://gateway-api.sigs.k8s.io/references/spec/#gateway.networking.k8s.io%2fv1alpha2)
+  route:
+    main:
+      # -- Enables or disables the route
+      enabled: false
+
+      # -- Set the route apiVersion, e.g. gateway.networking.k8s.io/v1 or gateway.networking.k8s.io/v1alpha2
+      apiVersion: gateway.networking.k8s.io/v1
+      # -- Set the route kind
+      # Valid options are GRPCRoute, HTTPRoute, TCPRoute, TLSRoute, UDPRoute
+      kind: HTTPRoute
+
+      annotations: {}
+      labels: {}
+
+      hostnames: []
+      # - my-filter.example.com
+      parentRefs: []
+      # - name: acme-gw
+
+      matches:
+        - path:
+            type: PathPrefix
+            value: /
+
+      ## Filters define the filters that are applied to requests that match this rule.
+      filters: []
+
+      ## Additional custom rules that can be added to the route
+      additionalRules: []
+
   ## Configuration for Alertmanager secret
   ##
   secret:
@@ -811,7 +843,7 @@ alertmanager:
     ## The value "hard" means that the scheduler is *required* to not schedule two replica pods onto the same node.
     ## The value "" will disable pod anti-affinity so that no anti-affinity rules will be configured.
     ##
-    podAntiAffinity: ""
+    podAntiAffinity: "soft"
 
     ## If anti-affinity is enabled sets the topologyKey to use for anti-affinity.
     ## This can be changed to, for example, failure-domain.beta.kubernetes.io/zone
@@ -1127,7 +1159,8 @@ grafana:
   # - name: prometheus-sample
   #   access: proxy
   #   basicAuth: true
-  #   basicAuthPassword: pass
+  #   secureJsonData:
+  #       basicAuthPassword: pass
   #   basicAuthUser: daco
   #   editable: false
   #   jsonData:
@@ -1260,6 +1293,10 @@ kubeApiServer:
     ##
     additionalLabels: {}
     #  foo: bar
+
+    ## defines the labels which are transferred from the associated Kubernetes Service object onto the ingested metrics.
+    ## https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/api.md#servicemonitor
+    targetLabels: []
 
 ## Component scraping the kubelet and kubelet-hosted cAdvisor
 ##
@@ -1467,6 +1504,10 @@ kubelet:
     additionalLabels: {}
     #  foo: bar
 
+    ## defines the labels which are transferred from the associated Kubernetes Service object onto the ingested metrics.
+    ## https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/api.md#servicemonitor
+    targetLabels: []
+
 ## Component scraping the kube controller manager
 ##
 kubeControllerManager:
@@ -1570,6 +1611,10 @@ kubeControllerManager:
     additionalLabels: {}
     #  foo: bar
 
+    ## defines the labels which are transferred from the associated Kubernetes Service object onto the ingested metrics.
+    ## https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/api.md#servicemonitor
+    targetLabels: []
+
 ## Component scraping coreDns. Use either this or kubeDns
 ##
 coreDns:
@@ -1647,6 +1692,10 @@ coreDns:
     ##
     additionalLabels: {}
     #  foo: bar
+
+    ## defines the labels which are transferred from the associated Kubernetes Service object onto the ingested metrics.
+    ## https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/api.md#servicemonitor
+    targetLabels: []
 
 ## Component scraping kubeDns. Use either this or coreDns
 ##
@@ -1741,6 +1790,10 @@ kubeDns:
     ##
     additionalLabels: {}
     #  foo: bar
+
+    ## defines the labels which are transferred from the associated Kubernetes Service object onto the ingested metrics.
+    ## https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/api.md#servicemonitor
+    targetLabels: []
 
 ## Component scraping etcd
 ##
@@ -1847,6 +1900,10 @@ kubeEtcd:
     additionalLabels: {}
     #  foo: bar
 
+    ## defines the labels which are transferred from the associated Kubernetes Service object onto the ingested metrics.
+    ## https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/api.md#servicemonitor
+    targetLabels: []
+
 ## Component scraping kube scheduler
 ##
 kubeScheduler:
@@ -1949,6 +2006,10 @@ kubeScheduler:
     additionalLabels: {}
     #  foo: bar
 
+    ## defines the labels which are transferred from the associated Kubernetes Service object onto the ingested metrics.
+    ## https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/api.md#servicemonitor
+    targetLabels: []
+
 ## Component scraping kube proxy
 ##
 kubeProxy:
@@ -2037,6 +2098,10 @@ kubeProxy:
     additionalLabels: {}
     #  foo: bar
 
+    ## defines the labels which are transferred from the associated Kubernetes Service object onto the ingested metrics.
+    ## https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/api.md#servicemonitor
+    targetLabels: []
+
 ## Component scraping kube state metrics
 ##
 kubeStateMetrics:
@@ -2117,6 +2182,8 @@ nodeExporter:
   enabled: true
   operatingSystems:
     linux:
+      enabled: true
+    aix:
       enabled: true
     darwin:
       enabled: true
@@ -2701,6 +2768,16 @@ prometheusOperator:
     selector: ""
     ## Use '{{ template "kube-prometheus-stack.fullname" . }}-kubelet' by default
     name: ""
+
+  ## Create Endpoints objects for kubelet targets.
+  kubeletEndpointsEnabled: true
+  ## Create EndpointSlice objects for kubelet targets.
+  kubeletEndpointSliceEnabled: false
+
+  ## Extra arguments to pass to prometheusOperator
+  # https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/operator.md
+  extraArgs: []
+  #  - --labels="cluster=talos-cluster"
 
   ## Create a servicemonitor for the operator
   ##
@@ -3299,6 +3376,42 @@ prometheus:
       #   hosts:
       #     - prometheus.example.com
 
+  # -- BETA: Configure the gateway routes for the chart here.
+  # More routes can be added by adding a dictionary key like the 'main' route.
+  # Be aware that this is an early beta of this feature,
+  # kube-prometheus-stack does not guarantee this works and is subject to change.
+  # Being BETA this can/will change in the future without notice, do not use unless you want to take that risk
+  # [[ref]](https://gateway-api.sigs.k8s.io/references/spec/#gateway.networking.k8s.io%2fv1alpha2)
+  route:
+    main:
+      # -- Enables or disables the route
+      enabled: false
+
+      # -- Set the route apiVersion, e.g. gateway.networking.k8s.io/v1 or gateway.networking.k8s.io/v1alpha2
+      apiVersion: gateway.networking.k8s.io/v1
+      # -- Set the route kind
+      # Valid options are GRPCRoute, HTTPRoute, TCPRoute, TLSRoute, UDPRoute
+      kind: HTTPRoute
+
+      annotations: {}
+      labels: {}
+
+      hostnames: []
+      # - my-filter.example.com
+      parentRefs: []
+      # - name: acme-gw
+
+      matches:
+      - path:
+          type: PathPrefix
+          value: /
+
+      ## Filters define the filters that are applied to requests that match this rule.
+      filters: []
+
+      ## Additional custom rules that can be added to the route
+      additionalRules: []
+
   ## Configuration for creating an Ingress that will map to each Prometheus replica service
   ## prometheus.servicePerReplica must be enabled
   ##
@@ -3506,7 +3619,7 @@ prometheus:
     image:
       registry: quay.io
       repository: prometheus/prometheus
-      tag: v2.54.1
+      tag: v2.55.0
       sha: ""
 
     ## Tolerations for use with node taints
@@ -3601,17 +3714,16 @@ prometheus:
     #   matchLabels:
     #     prometheus: somelabel
 
-    ## PrometheusRules to be selected for target discovery.
-    ## If matchLabels.release: "{{ $.Release.Name }}" the prometheus resource will be created
-    ## with selectors based on values in the helm deployment, which will also match the scrapeConfigs created
-    ## To remove matchLabels from the selector condition, explicitly set matchLabels to null.
-    ## If no other selectors are configured, prometheus-operator will select all scrapeConfigs.
-    ## To remove the release label from the matchLabels condition, explicit set release to null.
-    ## If null, exclude the field from the prometheusSpec (keeping downward compatibility with older versions of CRD)
+    ## If true, a nil or {} value for prometheus.prometheusSpec.ruleSelector will cause the
+    ## prometheus resource to be created with selectors based on values in the helm deployment,
+    ## which will also match the PrometheusRule resources created
     ##
-    ruleSelector:
-      matchLabels:
-        release: "{{ $.Release.Name }}"
+    ruleSelectorNilUsesHelmValues: true
+
+    ## PrometheusRules to be selected for target discovery.
+    ## If {}, select all PrometheusRules
+    ##
+    ruleSelector: {}
     ## Example which select all PrometheusRules resources
     ## with label "prometheus" with values any of "example-rules" or "example-rules-2"
     # ruleSelector:
@@ -3627,17 +3739,16 @@ prometheus:
     #   matchLabels:
     #     role: example-rules
 
-    ## ServiceMonitors to be selected for target discovery.
-    ## If matchLabels.release: "{{ $.Release.Name }}" the prometheus resource will be created
-    ## with selectors based on values in the helm deployment, which will also match the scrapeConfigs created
-    ## To remove matchLabels from the selector condition, explicitly set matchLabels to null.
-    ## If no other selectors are configured, prometheus-operator will select all scrapeConfigs.
-    ## To remove the release label from the matchLabels condition, explicit set release to null.
-    ## If null, exclude the field from the prometheusSpec (keeping downward compatibility with older versions of CRD)
+    ## If true, a nil or {} value for prometheus.prometheusSpec.serviceMonitorSelector will cause the
+    ## prometheus resource to be created with selectors based on values in the helm deployment,
+    ## which will also match the servicemonitors created
     ##
-    serviceMonitorSelector:
-      matchLabels:
-        release: "{{ $.Release.Name }}"
+    serviceMonitorSelectorNilUsesHelmValues: true
+
+    ## ServiceMonitors to be selected for target discovery.
+    ## If {}, select all ServiceMonitors
+    ##
+    serviceMonitorSelector: {}
     ## Example which selects ServiceMonitors with label "prometheus" set to "somelabel"
     # serviceMonitorSelector:
     #   matchLabels:
@@ -3651,17 +3762,16 @@ prometheus:
     #   matchLabels:
     #     prometheus: somelabel
 
-    ## PodMonitors to be selected for target discovery.
-    ## If matchLabels.release: "{{ $.Release.Name }}" the prometheus resource will be created
-    ## with selectors based on values in the helm deployment, which will also match the scrapeConfigs created
-    ## To remove matchLabels from the selector condition, explicitly set matchLabels to null.
-    ## If no other selectors are configured, prometheus-operator will select all scrapeConfigs.
-    ## To remove the release label from the matchLabels condition, explicit set release to null.
-    ## If null, exclude the field from the prometheusSpec (keeping downward compatibility with older versions of CRD)
+    ## If true, a nil or {} value for prometheus.prometheusSpec.podMonitorSelector will cause the
+    ## prometheus resource to be created with selectors based on values in the helm deployment,
+    ## which will also match the podmonitors created
     ##
-    podMonitorSelector:
-      matchLabels:
-        release: "{{ $.Release.Name }}"
+    podMonitorSelectorNilUsesHelmValues: true
+
+    ## PodMonitors to be selected for target discovery.
+    ## If {}, select all PodMonitors
+    ##
+    podMonitorSelector: {}
     ## Example which selects PodMonitors with label "prometheus" set to "somelabel"
     # podMonitorSelector:
     #   matchLabels:
@@ -3674,17 +3784,16 @@ prometheus:
     #   matchLabels:
     #     prometheus: somelabel
 
-    ## Probes to be selected for target discovery.
-    ## If matchLabels.release: "{{ $.Release.Name }}" the prometheus resource will be created
-    ## with selectors based on values in the helm deployment, which will also match the scrapeConfigs created
-    ## To remove matchLabels from the selector condition, explicitly set matchLabels to null.
-    ## If no other selectors are configured, prometheus-operator will select all scrapeConfigs.
-    ## To remove the release label from the matchLabels condition, explicit set release to null.
-    ## If null, exclude the field from the prometheusSpec (keeping downward compatibility with older versions of CRD)
+    ## If true, a nil or {} value for prometheus.prometheusSpec.probeSelector will cause the
+    ## prometheus resource to be created with selectors based on values in the helm deployment,
+    ## which will also match the probes created
     ##
-    probeSelector:
-      matchLabels:
-        release: "{{ $.Release.Name }}"
+    probeSelectorNilUsesHelmValues: true
+
+    ## Probes to be selected for target discovery.
+    ## If {}, select all Probes
+    ##
+    probeSelector: {}
     ## Example which selects Probes with label "prometheus" set to "somelabel"
     # probeSelector:
     #   matchLabels:
@@ -3697,21 +3806,22 @@ prometheus:
     #   matchLabels:
     #     prometheus: somelabel
 
-    ## scrapeConfigs to be selected for target discovery.
-    ## If matchLabels.release: "{{ $.Release.Name }}" the prometheus resource will be created
-    ## with selectors based on values in the helm deployment, which will also match the scrapeConfigs created
-    ## To remove matchLabels from the selector condition, explicitly set matchLabels to null.
-    ## If no other selectors are configured, prometheus-operator will select all scrapeConfigs.
-    ## To remove the release label from the matchLabels condition, explicit set release to null.
-    ## If null, exclude the field from the prometheusSpec (keeping downward compatibility with older versions of CRD)
+    ## If true, a nil or {} value for prometheus.prometheusSpec.scrapeConfigSelector will cause the
+    ## prometheus resource to be created with selectors based on values in the helm deployment,
+    ## which will also match the scrapeConfigs created
     ##
-    scrapeConfigSelector:
-      matchLabels:
-        release: "{{ $.Release.Name }}"
+    ## If null and scrapeConfigSelector is also null, exclude field from the prometheusSpec
+    ## (keeping downward compatibility with older versions of CRD)
+    ##
+    scrapeConfigSelectorNilUsesHelmValues: true
+
+    ## scrapeConfigs to be selected for target discovery.
+    ## If {}, select all scrapeConfigs
+    ##
+    scrapeConfigSelector: {}
     ## Example which selects scrapeConfigs with label "prometheus" set to "somelabel"
     # scrapeConfigSelector:
     #   matchLabels:
-    #     release: ~
     #     prometheus: somelabel
 
     ## If nil, select own namespace. Namespaces to be selected for scrapeConfig discovery.
@@ -3782,7 +3892,7 @@ prometheus:
     ## The default value "soft" means that the scheduler should *prefer* to not schedule two replica pods onto the same node but no guarantee is provided.
     ## The value "hard" means that the scheduler is *required* to not schedule two replica pods onto the same node.
     ## The value "" will disable pod anti-affinity so that no anti-affinity rules will be configured.
-    podAntiAffinity: ""
+    podAntiAffinity: "soft"
 
     ## If anti-affinity is enabled sets the topologyKey to use for anti-affinity.
     ## This can be changed to, for example, failure-domain.beta.kubernetes.io/zone
@@ -4191,6 +4301,18 @@ prometheus:
     ## Label selector for services to which this ServiceMonitor applies
     ##
     # selector: {}
+      ## Example which selects all services to be monitored
+      ## with label "monitoredby" with values any of "example-service-1" or "example-service-2"
+      # matchExpressions:
+      #   - key: "monitoredby"
+      #     operator: In
+      #     values:
+      #       - example-service-1
+      #       - example-service-2
+
+      ## label selector for services
+      ##
+      # matchLabels: {}
 
     ## Namespaces from which services are selected
     ##
@@ -4291,6 +4413,18 @@ prometheus:
     ## Label selector for pods to which this PodMonitor applies
     ##
     # selector: {}
+      ## Example which selects all Pods to be monitored
+      ## with label "monitoredby" with values any of "example-pod-1" or "example-pod-2"
+      # matchExpressions:
+      #   - key: "monitoredby"
+      #     operator: In
+      #     values:
+      #       - example-pod-1
+      #       - example-pod-2
+
+      ## label selector for pods
+      ##
+      # matchLabels: {}
 
     ## PodTargetLabels transfers labels on the Kubernetes Pod onto the target.
     ##
@@ -4377,6 +4511,42 @@ thanosRuler:
     # - secretName: thanosruler-general-tls
     #   hosts:
     #   - thanosruler.example.com
+
+  # -- BETA: Configure the gateway routes for the chart here.
+  # More routes can be added by adding a dictionary key like the 'main' route.
+  # Be aware that this is an early beta of this feature,
+  # kube-prometheus-stack does not guarantee this works and is subject to change.
+  # Being BETA this can/will change in the future without notice, do not use unless you want to take that risk
+  # [[ref]](https://gateway-api.sigs.k8s.io/references/spec/#gateway.networking.k8s.io%2fv1alpha2)
+  route:
+    main:
+      # -- Enables or disables the route
+      enabled: false
+
+      # -- Set the route apiVersion, e.g. gateway.networking.k8s.io/v1 or gateway.networking.k8s.io/v1alpha2
+      apiVersion: gateway.networking.k8s.io/v1
+      # -- Set the route kind
+      # Valid options are GRPCRoute, HTTPRoute, TCPRoute, TLSRoute, UDPRoute
+      kind: HTTPRoute
+
+      annotations: {}
+      labels: {}
+
+      hostnames: []
+      # - my-filter.example.com
+      parentRefs: []
+      # - name: acme-gw
+
+      matches:
+        - path:
+            type: PathPrefix
+            value: /
+
+      ## Filters define the filters that are applied to requests that match this rule.
+      filters: []
+
+      ## Additional custom rules that can be added to the route
+      additionalRules: []
 
   ## Configuration for ThanosRuler service
   ##
@@ -4514,21 +4684,19 @@ thanosRuler:
     ##
     ruleNamespaceSelector: {}
 
-    ## PrometheusRules to be selected for target discovery.
-    ## If matchLabels.release: "{{ $.Release.Name }}" the prometheus resource will be created
-    ## with selectors based on values in the helm deployment, which will also match the scrapeConfigs created
-    ## To remove matchLabels from the selector condition, explicitly set matchLabels to null.
-    ## If no other selectors are configured, prometheus-operator will select all scrapeConfigs.
-    ## To remove the release label from the matchLabels condition, explicit set release to null.
-    ## If null, exclude the field from the prometheusSpec (keeping downward compatibility with older versions of CRD)
+    ## If true, a nil or {} value for thanosRuler.thanosRulerSpec.ruleSelector will cause the
+    ## prometheus resource to be created with selectors based on values in the helm deployment,
+    ## which will also match the PrometheusRule resources created
     ##
-    ruleSelector:
-      matchLabels:
-        release: "{{ $.Release.Name }}"
+    ruleSelectorNilUsesHelmValues: true
+
+    ## PrometheusRules to be selected for target discovery.
+    ## If {}, select all PrometheusRules
+    ##
+    ruleSelector: {}
     ## Example which select all PrometheusRules resources
     ## with label "prometheus" with values any of "example-rules" or "example-rules-2"
     # ruleSelector:
-    #   matchLabels: ~
     #   matchExpressions:
     #     - key: prometheus
     #       operator: In
@@ -4539,7 +4707,6 @@ thanosRuler:
     ## Example which select all PrometheusRules resources with label "role" set to "example-rules"
     # ruleSelector:
     #   matchLabels:
-    #     release: ~
     #     role: example-rules
 
     ## Define Log Format
@@ -4695,7 +4862,7 @@ thanosRuler:
     ## The value "hard" means that the scheduler is *required* to not schedule two replica pods onto the same node.
     ## The value "" will disable pod anti-affinity so that no anti-affinity rules will be configured.
     ##
-    podAntiAffinity: ""
+    podAntiAffinity: "soft"
 
     ## If anti-affinity is enabled sets the topologyKey to use for anti-affinity.
     ## This can be changed to, for example, failure-domain.beta.kubernetes.io/zone

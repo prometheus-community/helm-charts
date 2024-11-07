@@ -45,7 +45,7 @@ kubeRBACProxy:
   image:
     registry: quay.io
     repository: brancz/kube-rbac-proxy
-    tag: v0.18.0
+    tag: v0.18.1
     sha: ""
     pullPolicy: IfNotPresent
 
@@ -83,6 +83,37 @@ kubeRBACProxy:
     # requests:
     #  cpu: 10m
     #  memory: 32Mi
+
+  ## Additional volume mounts in the kube-rbac-proxy container
+  ## See extraVolumes below
+  extraVolumeMounts: []
+    # - name: extra-volume
+    #   mountPath: /extra
+    #   readOnly: true
+
+  ## tls enables using TLS resources from a volume on secret referred to in tlsSecret below.
+  ## When enabling tlsClientAuth, client CA certificate must be set in tlsSecret.caItem.
+  ## Ref. https://github.com/brancz/kube-rbac-proxy/issues/187
+  tls:
+    enabled: false
+    tlsClientAuth: false
+
+## tlsSecret refers to an existing secret holding TLS items: client CA certificate, private key and certificate.
+## secretName and volumeName can be templated.
+## If enabled, volume volumeName gets created on secret secretName.
+## The volume's resources will be used by kube-rbac-proxy if kubeRBACProxy.tls.enabled is set.
+tlsSecret:
+  enabled: false
+  ## Key with client CA certificate (optional)
+  caItem: ""
+  ## Key with certificate
+  certItem: tls.crt
+  ## Key with private key
+  keyItem: tls.key
+  ## Name of an existing secret
+  secretName: prometheus-node-exporter-tls
+  ## Name of the volume to be created
+  volumeName: prometheus-node-exporter-tls
 
 ## Service configuration
 service:
@@ -126,10 +157,13 @@ service:
   externalTrafficPolicy: ""
 
 # Set a NetworkPolicy with:
-# ingress only on service.port
+# ingress only on service.port or custom policy
 # no egress permitted
 networkPolicy:
   enabled: false
+
+  # ingress:
+  # - {}
 
 # Additional environment variables that will be passed to the daemonset
 env: {}
@@ -147,6 +181,10 @@ prometheus:
     # List of pod labels to add to node exporter metrics
     # https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/api.md#servicemonitor
     podTargetLabels: []
+
+    # List of target labels to add to node exporter metrics
+    # https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/api.md#servicemonitor
+    targetLabels: []
 
     scheme: http
     basicAuth: {}
@@ -458,9 +496,11 @@ extraHostVolumeMounts: []
 configmaps: []
 # - name: <configMapName>
 #   mountPath: <mountPath>
+
 secrets: []
 # - name: <secretName>
 #   mountPath: <mountPatch>
+
 ## Override the deployment namespace
 ##
 namespaceOverride: ""
@@ -558,6 +598,20 @@ extraManifests: []
   #     name: prometheus-extra
   #   data:
   #     extra-data: "value"
+
+## Extra volumes to become available in the pod
+extraVolumes: []
+  # - name: extra-volume
+  #   secret:
+  #     defaultMode: 420
+  #     optional: false
+  #     secretName: node-exporter-secret
+
+## Extra volume mounts in the node-exporter container
+extraVolumeMounts: []
+  # - name: extra-volume
+  #   mountPath: /extra
+  #   readOnly: true
 
 # Override version of app, required if image.tag is defined and does not follow semver
 version: ""

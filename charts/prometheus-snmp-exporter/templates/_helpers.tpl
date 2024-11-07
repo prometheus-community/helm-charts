@@ -73,6 +73,6 @@ Namespace override
   {{- if .Values.namespaceOverride -}}
     {{- .Values.namespaceOverride -}}
   {{- else -}}
-    {{- .Release.namespace -}}
+    {{- .Release.Namespace -}}
   {{- end -}}
 {{- end -}}
