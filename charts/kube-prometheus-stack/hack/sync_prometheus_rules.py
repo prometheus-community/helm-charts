@@ -31,9 +31,9 @@ refs = {
     # https://github.com/prometheus-operator/kube-prometheus
     'ref.kube-prometheus': '69d9636b64192418d64912c032f5437361e88ea5',
     # https://github.com/kubernetes-monitoring/kubernetes-mixin
-    'ref.kubernetes-mixin': '0348e09edc3961a29a55f199d1bf0060c847a608',
+    'ref.kubernetes-mixin': 'bdbf7f45cedf37d07567be7519fa4139043f9335',
     # https://github.com/etcd-io/etcd
-    'ref.etcd': '18eb5c6881d43064f4559034bf12c3ef6ce89e4b',
+    'ref.etcd': 'b12540977a9cceb6ad37b6ffafa262fb667bd805',
 }
 
 # Source files list
