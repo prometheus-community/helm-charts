@@ -74,3 +74,14 @@ Determine secret name, can either be the self-created of an existing one
     {{ include "prometheus-mongodb-exporter.fullname" . }}
 {{- end -}}
 {{- end -}}
+
+{{/*
+Generate the MongoDB URI from the serviceMonitor multi-target list
+*/}}
+{{- define "prometheus-mongodb-exporter.mongodbUri" -}}
+{{- $uriList := list }}
+{{- range .Values.serviceMonitor.multiTarget.targets }}
+{{- $uriList = append $uriList (printf "%s" .uri ) }}
+{{- end }}
+{{- join "," $uriList }}
+{{- end }}

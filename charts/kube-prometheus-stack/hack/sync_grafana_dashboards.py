@@ -29,11 +29,11 @@ def change_style(style, representer):
 
 refs = {
     # https://github.com/prometheus-operator/kube-prometheus
-    'ref.kube-prometheus': 'defa2bd1e242519c62a5c2b3b786b1caa6d906d4',
+    'ref.kube-prometheus': '69d9636b64192418d64912c032f5437361e88ea5',
     # https://github.com/kubernetes-monitoring/kubernetes-mixin
-    'ref.kubernetes-mixin': 'dd5c59ab4491159593ed370a344a553b57146a7d',
+    'ref.kubernetes-mixin': 'bdbf7f45cedf37d07567be7519fa4139043f9335',
     # https://github.com/etcd-io/etcd
-    'ref.etcd': '9f59ef8ead097f836271f125d0e3774ddae4e71d',
+    'ref.etcd': 'b12540977a9cceb6ad37b6ffafa262fb667bd805',
 }
 
 # Source files list
@@ -88,6 +88,7 @@ condition_map = {
     'node-rsrc-use': ' (or .Values.nodeExporter.enabled .Values.nodeExporter.forceDeployDashboards)',
     'node-cluster-rsrc-use': ' (or .Values.nodeExporter.enabled .Values.nodeExporter.forceDeployDashboards)',
     'nodes': ' (and (or .Values.nodeExporter.enabled .Values.nodeExporter.forceDeployDashboards) .Values.nodeExporter.operatingSystems.linux.enabled)',
+    'nodes-aix': ' (and (or .Values.nodeExporter.enabled .Values.nodeExporter.forceDeployDashboards) .Values.nodeExporter.operatingSystems.aix.enabled)',
     'nodes-darwin': ' (and (or .Values.nodeExporter.enabled .Values.nodeExporter.forceDeployDashboards) .Values.nodeExporter.operatingSystems.darwin.enabled)',
     'prometheus-remote-write': ' .Values.prometheus.prometheusSpec.remoteWriteDashboards',
     'k8s-coredns': ' .Values.coreDns.enabled',

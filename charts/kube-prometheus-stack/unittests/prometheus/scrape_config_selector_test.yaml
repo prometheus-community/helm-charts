@@ -1,0 +1,41 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/helm-unittest/helm-unittest/main/schema/helm-testsuite.json
+suite: test scrapeConfigSelector
+templates:
+  - prometheus/prometheus.yaml
+tests:
+  - it: should match the release name by default 
+    asserts:
+      - equal:
+          path: spec.scrapeConfigSelector.matchLabels.release
+          value: RELEASE-NAME
+  - it: should be set to a specific label
+    set:
+      prometheus:
+        prometheusSpec:
+          scrapeConfigSelector:
+            abc: def
+    asserts:
+      - equal:
+          path: spec.scrapeConfigSelector
+          value:
+            abc: def
+  - it: should be set to a specific label
+    set:
+      prometheus:
+        prometheusSpec:
+          scrapeConfigSelector:
+            matchLabels:
+              abc: def
+    asserts:
+      - equal:
+          path: spec.scrapeConfigSelector.matchLabels.abc
+          value: def
+  - it: should be ignored, if set to null
+    set:
+      prometheus:
+        prometheusSpec:
+          scrapeConfigSelector: null
+          scrapeConfigSelectorNilUsesHelmValues: null
+    asserts:
+      - notExists:
+          path: spec.scrapeConfigSelector

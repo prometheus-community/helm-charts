@@ -1,4 +1,4 @@
-# https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/v0.75.2/example/prometheus-operator-crd/monitoring.coreos.com_alertmanagers.yaml
+# https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/v0.78.1/example/prometheus-operator-crd/monitoring.coreos.com_alertmanagers.yaml
 ---
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
@@ -7,8 +7,8 @@ metadata:
 {{- with .Values.annotations }}
 {{- toYaml . | nindent 4 }}
 {{- end }}
-    controller-gen.kubebuilder.io/version: v0.15.0
-    operator.prometheus.io/version: 0.75.2
+    controller-gen.kubebuilder.io/version: v0.16.4
+    operator.prometheus.io/version: 0.78.1
   name: alertmanagers.monitoring.coreos.com
 spec:
   group: monitoring.coreos.com
@@ -53,7 +53,12 @@ spec:
     name: v1
     schema:
       openAPIV3Schema:
-        description: Alertmanager describes an Alertmanager cluster.
+        description: |-
+          The `Alertmanager` custom resource definition (CRD) defines a desired [Alertmanager](https://prometheus.io/docs/alerting) setup to run in a Kubernetes cluster. It allows to specify many options such as the number of replicas, persistent storage and many more.
+
+          For each `Alertmanager` resource, the Operator deploys a `StatefulSet` in the same namespace. When there are two or more configured replicas, the Operator runs the Alertmanager instances in high-availability mode.
+
+          The resource defines via label and namespace selectors which `AlertmanagerConfig` objects should be associated to the deployed Alertmanager instances.
         properties:
           apiVersion:
             description: |-
@@ -367,7 +372,7 @@ spec:
                                     pod labels will be ignored. The default value is empty.
                                     The same key is forbidden to exist in both matchLabelKeys and labelSelector.
                                     Also, matchLabelKeys cannot be set when labelSelector isn't set.
-                                    This is an alpha field and requires enabling MatchLabelKeysInPodAffinity feature gate.
+                                    This is a beta field and requires enabling MatchLabelKeysInPodAffinity feature gate (enabled by default).
                                   items:
                                     type: string
                                   type: array
@@ -382,7 +387,7 @@ spec:
                                     pod labels will be ignored. The default value is empty.
                                     The same key is forbidden to exist in both mismatchLabelKeys and labelSelector.
                                     Also, mismatchLabelKeys cannot be set when labelSelector isn't set.
-                                    This is an alpha field and requires enabling MatchLabelKeysInPodAffinity feature gate.
+                                    This is a beta field and requires enabling MatchLabelKeysInPodAffinity feature gate (enabled by default).
                                   items:
                                     type: string
                                   type: array
@@ -548,7 +553,7 @@ spec:
                                 pod labels will be ignored. The default value is empty.
                                 The same key is forbidden to exist in both matchLabelKeys and labelSelector.
                                 Also, matchLabelKeys cannot be set when labelSelector isn't set.
-                                This is an alpha field and requires enabling MatchLabelKeysInPodAffinity feature gate.
+                                This is a beta field and requires enabling MatchLabelKeysInPodAffinity feature gate (enabled by default).
                               items:
                                 type: string
                               type: array
@@ -563,7 +568,7 @@ spec:
                                 pod labels will be ignored. The default value is empty.
                                 The same key is forbidden to exist in both mismatchLabelKeys and labelSelector.
                                 Also, mismatchLabelKeys cannot be set when labelSelector isn't set.
-                                This is an alpha field and requires enabling MatchLabelKeysInPodAffinity feature gate.
+                                This is a beta field and requires enabling MatchLabelKeysInPodAffinity feature gate (enabled by default).
                               items:
                                 type: string
                               type: array
@@ -726,7 +731,7 @@ spec:
                                     pod labels will be ignored. The default value is empty.
                                     The same key is forbidden to exist in both matchLabelKeys and labelSelector.
                                     Also, matchLabelKeys cannot be set when labelSelector isn't set.
-                                    This is an alpha field and requires enabling MatchLabelKeysInPodAffinity feature gate.
+                                    This is a beta field and requires enabling MatchLabelKeysInPodAffinity feature gate (enabled by default).
                                   items:
                                     type: string
                                   type: array
@@ -741,7 +746,7 @@ spec:
                                     pod labels will be ignored. The default value is empty.
                                     The same key is forbidden to exist in both mismatchLabelKeys and labelSelector.
                                     Also, mismatchLabelKeys cannot be set when labelSelector isn't set.
-                                    This is an alpha field and requires enabling MatchLabelKeysInPodAffinity feature gate.
+                                    This is a beta field and requires enabling MatchLabelKeysInPodAffinity feature gate (enabled by default).
                                   items:
                                     type: string
                                   type: array
@@ -907,7 +912,7 @@ spec:
                                 pod labels will be ignored. The default value is empty.
                                 The same key is forbidden to exist in both matchLabelKeys and labelSelector.
                                 Also, matchLabelKeys cannot be set when labelSelector isn't set.
-                                This is an alpha field and requires enabling MatchLabelKeysInPodAffinity feature gate.
+                                This is a beta field and requires enabling MatchLabelKeysInPodAffinity feature gate (enabled by default).
                               items:
                                 type: string
                               type: array
@@ -922,7 +927,7 @@ spec:
                                 pod labels will be ignored. The default value is empty.
                                 The same key is forbidden to exist in both mismatchLabelKeys and labelSelector.
                                 Also, mismatchLabelKeys cannot be set when labelSelector isn't set.
-                                This is an alpha field and requires enabling MatchLabelKeysInPodAffinity feature gate.
+                                This is a beta field and requires enabling MatchLabelKeysInPodAffinity feature gate (enabled by default).
                               items:
                                 type: string
                               type: array
@@ -1005,15 +1010,17 @@ spec:
                 type: object
               alertmanagerConfigMatcherStrategy:
                 description: |-
-                  The AlertmanagerConfigMatcherStrategy defines how AlertmanagerConfig objects match the alerts.
-                  In the future more options may be added.
+                  AlertmanagerConfigMatcherStrategy defines how AlertmanagerConfig objects
+                  process incoming alerts.
                 properties:
                   type:
                     default: OnNamespace
                     description: |-
-                      If set to `OnNamespace`, the operator injects a label matcher matching the namespace of the AlertmanagerConfig object for all its routes and inhibition rules.
-                      `None` will not add any additional matchers other than the ones specified in the AlertmanagerConfig.
-                      Default is `OnNamespace`.
+                      AlertmanagerConfigMatcherStrategyType defines the strategy used by
+                      AlertmanagerConfig objects to match alerts in the routes and inhibition
+                      rules.
+
+                      The default value is `OnNamespace`.
                     enum:
                     - OnNamespace
                     - None
@@ -1118,9 +1125,7 @@ spec:
                 description: |-
                   alertmanagerConfiguration specifies the configuration of Alertmanager.
 
-
                   If defined, it takes precedence over the `configSecret` field.
-
 
                   This is an *experimental feature*, it may change in any upcoming release
                   in a breaking way.
@@ -1152,9 +1157,7 @@ spec:
                                       This field is effectively required, but due to backwards compatibility is
                                       allowed to be empty. Instances of this type with an empty value here are
                                       almost certainly wrong.
-                                      TODO: Add other useful fields. apiVersion, kind, uid?
                                       More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                      TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.
                                     type: string
                                   optional:
                                     description: Specify whether the Secret or its
@@ -1168,9 +1171,7 @@ spec:
                                 description: |-
                                   Defines the authentication type. The value is case-insensitive.
 
-
                                   "Basic" is not a supported value.
-
 
                                   Default: "Bearer"
                                 type: string
@@ -1196,9 +1197,7 @@ spec:
                                       This field is effectively required, but due to backwards compatibility is
                                       allowed to be empty. Instances of this type with an empty value here are
                                       almost certainly wrong.
-                                      TODO: Add other useful fields. apiVersion, kind, uid?
                                       More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                      TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.
                                     type: string
                                   optional:
                                     description: Specify whether the Secret or its
@@ -1224,9 +1223,7 @@ spec:
                                       This field is effectively required, but due to backwards compatibility is
                                       allowed to be empty. Instances of this type with an empty value here are
                                       almost certainly wrong.
-                                      TODO: Add other useful fields. apiVersion, kind, uid?
                                       More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                      TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.
                                     type: string
                                   optional:
                                     description: Specify whether the Secret or its
@@ -1255,9 +1252,7 @@ spec:
                                   This field is effectively required, but due to backwards compatibility is
                                   allowed to be empty. Instances of this type with an empty value here are
                                   almost certainly wrong.
-                                  TODO: Add other useful fields. apiVersion, kind, uid?
                                   More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                  TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.
                                 type: string
                               optional:
                                 description: Specify whether the Secret or its key
@@ -1271,6 +1266,14 @@ spec:
                             description: FollowRedirects specifies whether the client
                               should follow HTTP 3xx redirects.
                             type: boolean
+                          noProxy:
+                            description: |-
+                              `noProxy` is a comma-separated string that can contain IPs, CIDR notation, domain names
+                              that should be excluded from proxying. IP and domain names can
+                              contain port numbers.
+
+                              It requires Prometheus >= v2.43.0 or Alertmanager >= 0.25.0.
+                            type: string
                           oauth2:
                             description: OAuth2 client credentials used to fetch a
                               token for the targets.
@@ -1294,9 +1297,7 @@ spec:
                                           This field is effectively required, but due to backwards compatibility is
                                           allowed to be empty. Instances of this type with an empty value here are
                                           almost certainly wrong.
-                                          TODO: Add other useful fields. apiVersion, kind, uid?
                                           More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                          TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.
                                         type: string
                                       optional:
                                         description: Specify whether the ConfigMap
@@ -1321,9 +1322,7 @@ spec:
                                           This field is effectively required, but due to backwards compatibility is
                                           allowed to be empty. Instances of this type with an empty value here are
                                           almost certainly wrong.
-                                          TODO: Add other useful fields. apiVersion, kind, uid?
                                           More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                          TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.
                                         type: string
                                       optional:
                                         description: Specify whether the Secret or
@@ -1350,9 +1349,7 @@ spec:
                                       This field is effectively required, but due to backwards compatibility is
                                       allowed to be empty. Instances of this type with an empty value here are
                                       almost certainly wrong.
-                                      TODO: Add other useful fields. apiVersion, kind, uid?
                                       More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                      TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.
                                     type: string
                                   optional:
                                     description: Specify whether the Secret or its
@@ -1369,12 +1366,236 @@ spec:
                                   `endpointParams` configures the HTTP parameters to append to the token
                                   URL.
                                 type: object
+                              noProxy:
+                                description: |-
+                                  `noProxy` is a comma-separated string that can contain IPs, CIDR notation, domain names
+                                  that should be excluded from proxying. IP and domain names can
+                                  contain port numbers.
+
+                                  It requires Prometheus >= v2.43.0 or Alertmanager >= 0.25.0.
+                                type: string
+                              proxyConnectHeader:
+                                additionalProperties:
+                                  items:
+                                    description: SecretKeySelector selects a key of
+                                      a Secret.
+                                    properties:
+                                      key:
+                                        description: The key of the secret to select
+                                          from.  Must be a valid secret key.
+                                        type: string
+                                      name:
+                                        default: ""
+                                        description: |-
+                                          Name of the referent.
+                                          This field is effectively required, but due to backwards compatibility is
+                                          allowed to be empty. Instances of this type with an empty value here are
+                                          almost certainly wrong.
+                                          More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                        type: string
+                                      optional:
+                                        description: Specify whether the Secret or
+                                          its key must be defined
+                                        type: boolean
+                                    required:
+                                    - key
+                                    type: object
+                                    x-kubernetes-map-type: atomic
+                                  type: array
+                                description: |-
+                                  ProxyConnectHeader optionally specifies headers to send to
+                                  proxies during CONNECT requests.
+
+                                  It requires Prometheus >= v2.43.0 or Alertmanager >= 0.25.0.
+                                type: object
+                                x-kubernetes-map-type: atomic
+                              proxyFromEnvironment:
+                                description: |-
+                                  Whether to use the proxy configuration defined by environment variables (HTTP_PROXY, HTTPS_PROXY, and NO_PROXY).
+
+                                  It requires Prometheus >= v2.43.0 or Alertmanager >= 0.25.0.
+                                type: boolean
+                              proxyUrl:
+                                description: '`proxyURL` defines the HTTP proxy server
+                                  to use.'
+                                pattern: ^http(s)?://.+$
+                                type: string
                               scopes:
                                 description: '`scopes` defines the OAuth2 scopes used
                                   for the token request.'
                                 items:
                                   type: string
                                 type: array
+                              tlsConfig:
+                                description: |-
+                                  TLS configuration to use when connecting to the OAuth2 server.
+                                  It requires Prometheus >= v2.43.0.
+                                properties:
+                                  ca:
+                                    description: Certificate authority used when verifying
+                                      server certificates.
+                                    properties:
+                                      configMap:
+                                        description: ConfigMap containing data to
+                                          use for the targets.
+                                        properties:
+                                          key:
+                                            description: The key to select.
+                                            type: string
+                                          name:
+                                            default: ""
+                                            description: |-
+                                              Name of the referent.
+                                              This field is effectively required, but due to backwards compatibility is
+                                              allowed to be empty. Instances of this type with an empty value here are
+                                              almost certainly wrong.
+                                              More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                            type: string
+                                          optional:
+                                            description: Specify whether the ConfigMap
+                                              or its key must be defined
+                                            type: boolean
+                                        required:
+                                        - key
+                                        type: object
+                                        x-kubernetes-map-type: atomic
+                                      secret:
+                                        description: Secret containing data to use
+                                          for the targets.
+                                        properties:
+                                          key:
+                                            description: The key of the secret to
+                                              select from.  Must be a valid secret
+                                              key.
+                                            type: string
+                                          name:
+                                            default: ""
+                                            description: |-
+                                              Name of the referent.
+                                              This field is effectively required, but due to backwards compatibility is
+                                              allowed to be empty. Instances of this type with an empty value here are
+                                              almost certainly wrong.
+                                              More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                            type: string
+                                          optional:
+                                            description: Specify whether the Secret
+                                              or its key must be defined
+                                            type: boolean
+                                        required:
+                                        - key
+                                        type: object
+                                        x-kubernetes-map-type: atomic
+                                    type: object
+                                  cert:
+                                    description: Client certificate to present when
+                                      doing client-authentication.
+                                    properties:
+                                      configMap:
+                                        description: ConfigMap containing data to
+                                          use for the targets.
+                                        properties:
+                                          key:
+                                            description: The key to select.
+                                            type: string
+                                          name:
+                                            default: ""
+                                            description: |-
+                                              Name of the referent.
+                                              This field is effectively required, but due to backwards compatibility is
+                                              allowed to be empty. Instances of this type with an empty value here are
+                                              almost certainly wrong.
+                                              More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                            type: string
+                                          optional:
+                                            description: Specify whether the ConfigMap
+                                              or its key must be defined
+                                            type: boolean
+                                        required:
+                                        - key
+                                        type: object
+                                        x-kubernetes-map-type: atomic
+                                      secret:
+                                        description: Secret containing data to use
+                                          for the targets.
+                                        properties:
+                                          key:
+                                            description: The key of the secret to
+                                              select from.  Must be a valid secret
+                                              key.
+                                            type: string
+                                          name:
+                                            default: ""
+                                            description: |-
+                                              Name of the referent.
+                                              This field is effectively required, but due to backwards compatibility is
+                                              allowed to be empty. Instances of this type with an empty value here are
+                                              almost certainly wrong.
+                                              More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                            type: string
+                                          optional:
+                                            description: Specify whether the Secret
+                                              or its key must be defined
+                                            type: boolean
+                                        required:
+                                        - key
+                                        type: object
+                                        x-kubernetes-map-type: atomic
+                                    type: object
+                                  insecureSkipVerify:
+                                    description: Disable target certificate validation.
+                                    type: boolean
+                                  keySecret:
+                                    description: Secret containing the client key
+                                      file for the targets.
+                                    properties:
+                                      key:
+                                        description: The key of the secret to select
+                                          from.  Must be a valid secret key.
+                                        type: string
+                                      name:
+                                        default: ""
+                                        description: |-
+                                          Name of the referent.
+                                          This field is effectively required, but due to backwards compatibility is
+                                          allowed to be empty. Instances of this type with an empty value here are
+                                          almost certainly wrong.
+                                          More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                        type: string
+                                      optional:
+                                        description: Specify whether the Secret or
+                                          its key must be defined
+                                        type: boolean
+                                    required:
+                                    - key
+                                    type: object
+                                    x-kubernetes-map-type: atomic
+                                  maxVersion:
+                                    description: |-
+                                      Maximum acceptable TLS version.
+
+                                      It requires Prometheus >= v2.41.0.
+                                    enum:
+                                    - TLS10
+                                    - TLS11
+                                    - TLS12
+                                    - TLS13
+                                    type: string
+                                  minVersion:
+                                    description: |-
+                                      Minimum acceptable TLS version.
+
+                                      It requires Prometheus >= v2.35.0.
+                                    enum:
+                                    - TLS10
+                                    - TLS11
+                                    - TLS12
+                                    - TLS13
+                                    type: string
+                                  serverName:
+                                    description: Used to verify the hostname for the
+                                      targets.
+                                    type: string
+                                type: object
                               tokenUrl:
                                 description: '`tokenURL` configures the URL to fetch
                                   the token from.'
@@ -1385,8 +1606,51 @@ spec:
                             - clientSecret
                             - tokenUrl
                             type: object
-                          proxyURL:
-                            description: Optional proxy URL.
+                          proxyConnectHeader:
+                            additionalProperties:
+                              items:
+                                description: SecretKeySelector selects a key of a
+                                  Secret.
+                                properties:
+                                  key:
+                                    description: The key of the secret to select from.  Must
+                                      be a valid secret key.
+                                    type: string
+                                  name:
+                                    default: ""
+                                    description: |-
+                                      Name of the referent.
+                                      This field is effectively required, but due to backwards compatibility is
+                                      allowed to be empty. Instances of this type with an empty value here are
+                                      almost certainly wrong.
+                                      More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                    type: string
+                                  optional:
+                                    description: Specify whether the Secret or its
+                                      key must be defined
+                                    type: boolean
+                                required:
+                                - key
+                                type: object
+                                x-kubernetes-map-type: atomic
+                              type: array
+                            description: |-
+                              ProxyConnectHeader optionally specifies headers to send to
+                              proxies during CONNECT requests.
+
+                              It requires Prometheus >= v2.43.0 or Alertmanager >= 0.25.0.
+                            type: object
+                            x-kubernetes-map-type: atomic
+                          proxyFromEnvironment:
+                            description: |-
+                              Whether to use the proxy configuration defined by environment variables (HTTP_PROXY, HTTPS_PROXY, and NO_PROXY).
+
+                              It requires Prometheus >= v2.43.0 or Alertmanager >= 0.25.0.
+                            type: boolean
+                          proxyUrl:
+                            description: '`proxyURL` defines the HTTP proxy server
+                              to use.'
+                            pattern: ^http(s)?://.+$
                             type: string
                           tlsConfig:
                             description: TLS configuration for the client.
@@ -1409,9 +1673,7 @@ spec:
                                           This field is effectively required, but due to backwards compatibility is
                                           allowed to be empty. Instances of this type with an empty value here are
                                           almost certainly wrong.
-                                          TODO: Add other useful fields. apiVersion, kind, uid?
                                           More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                          TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.
                                         type: string
                                       optional:
                                         description: Specify whether the ConfigMap
@@ -1436,9 +1698,7 @@ spec:
                                           This field is effectively required, but due to backwards compatibility is
                                           allowed to be empty. Instances of this type with an empty value here are
                                           almost certainly wrong.
-                                          TODO: Add other useful fields. apiVersion, kind, uid?
                                           More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                          TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.
                                         type: string
                                       optional:
                                         description: Specify whether the Secret or
@@ -1467,9 +1727,7 @@ spec:
                                           This field is effectively required, but due to backwards compatibility is
                                           allowed to be empty. Instances of this type with an empty value here are
                                           almost certainly wrong.
-                                          TODO: Add other useful fields. apiVersion, kind, uid?
                                           More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                          TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.
                                         type: string
                                       optional:
                                         description: Specify whether the ConfigMap
@@ -1494,9 +1752,7 @@ spec:
                                           This field is effectively required, but due to backwards compatibility is
                                           allowed to be empty. Instances of this type with an empty value here are
                                           almost certainly wrong.
-                                          TODO: Add other useful fields. apiVersion, kind, uid?
                                           More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                          TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.
                                         type: string
                                       optional:
                                         description: Specify whether the Secret or
@@ -1525,9 +1781,7 @@ spec:
                                       This field is effectively required, but due to backwards compatibility is
                                       allowed to be empty. Instances of this type with an empty value here are
                                       almost certainly wrong.
-                                      TODO: Add other useful fields. apiVersion, kind, uid?
                                       More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                      TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.
                                     type: string
                                   optional:
                                     description: Specify whether the Secret or its
@@ -1537,6 +1791,28 @@ spec:
                                 - key
                                 type: object
                                 x-kubernetes-map-type: atomic
+                              maxVersion:
+                                description: |-
+                                  Maximum acceptable TLS version.
+
+                                  It requires Prometheus >= v2.41.0.
+                                enum:
+                                - TLS10
+                                - TLS11
+                                - TLS12
+                                - TLS13
+                                type: string
+                              minVersion:
+                                description: |-
+                                  Minimum acceptable TLS version.
+
+                                  It requires Prometheus >= v2.35.0.
+                                enum:
+                                - TLS10
+                                - TLS11
+                                - TLS12
+                                - TLS13
+                                type: string
                               serverName:
                                 description: Used to verify the hostname for the targets.
                                 type: string
@@ -1556,9 +1832,7 @@ spec:
                               This field is effectively required, but due to backwards compatibility is
                               allowed to be empty. Instances of this type with an empty value here are
                               almost certainly wrong.
-                              TODO: Add other useful fields. apiVersion, kind, uid?
                               More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                              TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.
                             type: string
                           optional:
                             description: Specify whether the Secret or its key must
@@ -1582,9 +1856,7 @@ spec:
                               This field is effectively required, but due to backwards compatibility is
                               allowed to be empty. Instances of this type with an empty value here are
                               almost certainly wrong.
-                              TODO: Add other useful fields. apiVersion, kind, uid?
                               More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                              TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.
                             type: string
                           optional:
                             description: Specify whether the Secret or its key must
@@ -1618,9 +1890,7 @@ spec:
                               This field is effectively required, but due to backwards compatibility is
                               allowed to be empty. Instances of this type with an empty value here are
                               almost certainly wrong.
-                              TODO: Add other useful fields. apiVersion, kind, uid?
                               More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                              TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.
                             type: string
                           optional:
                             description: Specify whether the Secret or its key must
@@ -1650,9 +1920,7 @@ spec:
                                   This field is effectively required, but due to backwards compatibility is
                                   allowed to be empty. Instances of this type with an empty value here are
                                   almost certainly wrong.
-                                  TODO: Add other useful fields. apiVersion, kind, uid?
                                   More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                  TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.
                                 type: string
                               optional:
                                 description: Specify whether the Secret or its key
@@ -1676,9 +1944,7 @@ spec:
                                   This field is effectively required, but due to backwards compatibility is
                                   allowed to be empty. Instances of this type with an empty value here are
                                   almost certainly wrong.
-                                  TODO: Add other useful fields. apiVersion, kind, uid?
                                   More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                  TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.
                                 type: string
                               optional:
                                 description: Specify whether the Secret or its key
@@ -1751,9 +2017,7 @@ spec:
                                 This field is effectively required, but due to backwards compatibility is
                                 allowed to be empty. Instances of this type with an empty value here are
                                 almost certainly wrong.
-                                TODO: Add other useful fields. apiVersion, kind, uid?
                                 More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.
                               type: string
                             optional:
                               description: Specify whether the ConfigMap or its key
@@ -1777,9 +2041,7 @@ spec:
                                 This field is effectively required, but due to backwards compatibility is
                                 allowed to be empty. Instances of this type with an empty value here are
                                 almost certainly wrong.
-                                TODO: Add other useful fields. apiVersion, kind, uid?
                                 More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.
                               type: string
                             optional:
                               description: Specify whether the Secret or its key must
@@ -1840,12 +2102,10 @@ spec:
                   Alertmanager object, which contains the configuration for this Alertmanager
                   instance. If empty, it defaults to `alertmanager-<alertmanager-name>`.
 
-
                   The Alertmanager configuration should be available under the
                   `alertmanager.yaml` key. Additional keys from the original secret are
                   copied to the generated secret and mounted into the
                   `/etc/alertmanager/config` directory in the `alertmanager` container.
-
 
                   If either the secret or the `alertmanager.yaml` key is missing, the
                   operator provisions a minimal Alertmanager configuration with one empty
@@ -1934,9 +2194,7 @@ spec:
                                       This field is effectively required, but due to backwards compatibility is
                                       allowed to be empty. Instances of this type with an empty value here are
                                       almost certainly wrong.
-                                      TODO: Add other useful fields. apiVersion, kind, uid?
                                       More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                      TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.
                                     type: string
                                   optional:
                                     description: Specify whether the ConfigMap or
@@ -2002,9 +2260,7 @@ spec:
                                       This field is effectively required, but due to backwards compatibility is
                                       allowed to be empty. Instances of this type with an empty value here are
                                       almost certainly wrong.
-                                      TODO: Add other useful fields. apiVersion, kind, uid?
                                       More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                      TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.
                                     type: string
                                   optional:
                                     description: Specify whether the Secret or its
@@ -2044,9 +2300,7 @@ spec:
                                   This field is effectively required, but due to backwards compatibility is
                                   allowed to be empty. Instances of this type with an empty value here are
                                   almost certainly wrong.
-                                  TODO: Add other useful fields. apiVersion, kind, uid?
                                   More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                  TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.
                                 type: string
                               optional:
                                 description: Specify whether the ConfigMap must be
@@ -2068,9 +2322,7 @@ spec:
                                   This field is effectively required, but due to backwards compatibility is
                                   allowed to be empty. Instances of this type with an empty value here are
                                   almost certainly wrong.
-                                  TODO: Add other useful fields. apiVersion, kind, uid?
                                   More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                  TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.
                                 type: string
                               optional:
                                 description: Specify whether the Secret must be defined
@@ -2355,10 +2607,10 @@ spec:
                               format: int32
                               type: integer
                             service:
+                              default: ""
                               description: |-
                                 Service is the name of the service to place in the gRPC HealthCheckRequest
                                 (see https://github.com/grpc/grpc/blob/master/doc/health-checking.md).
-
 
                                 If this is not specified, the default behavior is defined by gRPC.
                               type: string
@@ -2567,10 +2819,10 @@ spec:
                               format: int32
                               type: integer
                             service:
+                              default: ""
                               description: |-
                                 Service is the name of the service to place in the gRPC HealthCheckRequest
                                 (see https://github.com/grpc/grpc/blob/master/doc/health-checking.md).
-
 
                                 If this is not specified, the default behavior is defined by gRPC.
                               type: string
@@ -2719,10 +2971,8 @@ spec:
                             Claims lists the names of resources, defined in spec.resourceClaims,
                             that are used by this container.
 
-
                             This is an alpha field and requires enabling the
                             DynamicResourceAllocation feature gate.
-
 
                             This field is immutable. It can only be set for containers.
                           items:
@@ -2733,6 +2983,12 @@ spec:
                                   Name must match the name of one entry in pod.spec.resourceClaims of
                                   the Pod where this field is used. It makes that resource available
                                   inside a container.
+                                type: string
+                              request:
+                                description: |-
+                                  Request is the name chosen for a request in the referenced claim.
+                                  If empty, everything from the claim is made available, otherwise
+                                  only the result of this request.
                                 type: string
                             required:
                             - name
@@ -2857,7 +3113,7 @@ spec:
                         procMount:
                           description: |-
                             procMount denotes the type of proc mount to use for the containers.
-                            The default is DefaultProcMount which uses the container runtime defaults for
+                            The default value is Default which uses the container runtime defaults for
                             readonly paths and masked paths.
                             This requires the ProcMountType feature flag to be enabled.
                             Note that this field cannot be set when spec.os.name is windows.
@@ -2939,7 +3195,6 @@ spec:
                                 type indicates which kind of seccomp profile will be applied.
                                 Valid options are:
 
-
                                 Localhost - a profile defined in a file on the node should be used.
                                 RuntimeDefault - the container runtime default profile should be used.
                                 Unconfined - no profile should be applied.
@@ -3020,10 +3275,10 @@ spec:
                               format: int32
                               type: integer
                             service:
+                              default: ""
                               description: |-
                                 Service is the name of the service to place in the gRPC HealthCheckRequest
                                 (see https://github.com/grpc/grpc/blob/master/doc/health-checking.md).
-
 
                                 If this is not specified, the default behavior is defined by gRPC.
                               type: string
@@ -3238,9 +3493,7 @@ spec:
                               RecursiveReadOnly specifies whether read-only mounts should be handled
                               recursively.
 
-
                               If ReadOnly is false, this field has no meaning and must be unspecified.
-
 
                               If ReadOnly is true, and this field is set to Disabled, the mount is not made
                               recursively read-only.  If this field is set to IfPossible, the mount is made
@@ -3249,10 +3502,8 @@ spec:
                               supported by the container runtime, otherwise the pod will not be started and
                               an error will be generated to indicate the reason.
 
-
                               If this field is set to IfPossible or Enabled, MountPropagation must be set to
                               None (or be unspecified, which defaults to None).
-
 
                               If this field is not specified, it is treated as an equivalent of Disabled.
                             type: string
@@ -3287,13 +3538,66 @@ spec:
                   - name
                   type: object
                 type: array
+              dnsConfig:
+                description: Defines the DNS configuration for the pods.
+                properties:
+                  nameservers:
+                    description: |-
+                      A list of DNS name server IP addresses.
+                      This will be appended to the base nameservers generated from DNSPolicy.
+                    items:
+                      minLength: 1
+                      type: string
+                    type: array
+                    x-kubernetes-list-type: set
+                  options:
+                    description: |-
+                      A list of DNS resolver options.
+                      This will be merged with the base options generated from DNSPolicy.
+                      Resolution options given in Options
+                      will override those that appear in the base DNSPolicy.
+                    items:
+                      description: PodDNSConfigOption defines DNS resolver options
+                        of a pod.
+                      properties:
+                        name:
+                          description: Name is required and must be unique.
+                          minLength: 1
+                          type: string
+                        value:
+                          description: Value is optional.
+                          type: string
+                      required:
+                      - name
+                      type: object
+                    type: array
+                    x-kubernetes-list-map-keys:
+                    - name
+                    x-kubernetes-list-type: map
+                  searches:
+                    description: |-
+                      A list of DNS search domains for host-name lookup.
+                      This will be appended to the base search paths generated from DNSPolicy.
+                    items:
+                      minLength: 1
+                      type: string
+                    type: array
+                    x-kubernetes-list-type: set
+                type: object
+              dnsPolicy:
+                description: Defines the DNS policy for the pods.
+                enum:
+                - ClusterFirstWithHostNet
+                - ClusterFirst
+                - Default
+                - None
+                type: string
               enableFeatures:
                 description: |-
                   Enable access to Alertmanager feature flags. By default, no features are enabled.
                   Enabling features which are disabled by default is entirely outside the
                   scope of what the maintainers will support and by doing so, you accept
                   that this behaviour may break at any time without notice.
-
 
                   It requires Alertmanager >= 0.27.0.
                 items:
@@ -3367,9 +3671,7 @@ spec:
                         This field is effectively required, but due to backwards compatibility is
                         allowed to be empty. Instances of this type with an empty value here are
                         almost certainly wrong.
-                        TODO: Add other useful fields. apiVersion, kind, uid?
                         More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                        TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.
                       type: string
                   type: object
                   x-kubernetes-map-type: atomic
@@ -3458,9 +3760,7 @@ spec:
                                       This field is effectively required, but due to backwards compatibility is
                                       allowed to be empty. Instances of this type with an empty value here are
                                       almost certainly wrong.
-                                      TODO: Add other useful fields. apiVersion, kind, uid?
                                       More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                      TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.
                                     type: string
                                   optional:
                                     description: Specify whether the ConfigMap or
@@ -3526,9 +3826,7 @@ spec:
                                       This field is effectively required, but due to backwards compatibility is
                                       allowed to be empty. Instances of this type with an empty value here are
                                       almost certainly wrong.
-                                      TODO: Add other useful fields. apiVersion, kind, uid?
                                       More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                      TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.
                                     type: string
                                   optional:
                                     description: Specify whether the Secret or its
@@ -3568,9 +3866,7 @@ spec:
                                   This field is effectively required, but due to backwards compatibility is
                                   allowed to be empty. Instances of this type with an empty value here are
                                   almost certainly wrong.
-                                  TODO: Add other useful fields. apiVersion, kind, uid?
                                   More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                  TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.
                                 type: string
                               optional:
                                 description: Specify whether the ConfigMap must be
@@ -3592,9 +3888,7 @@ spec:
                                   This field is effectively required, but due to backwards compatibility is
                                   allowed to be empty. Instances of this type with an empty value here are
                                   almost certainly wrong.
-                                  TODO: Add other useful fields. apiVersion, kind, uid?
                                   More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                  TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.
                                 type: string
                               optional:
                                 description: Specify whether the Secret must be defined
@@ -3879,10 +4173,10 @@ spec:
                               format: int32
                               type: integer
                             service:
+                              default: ""
                               description: |-
                                 Service is the name of the service to place in the gRPC HealthCheckRequest
                                 (see https://github.com/grpc/grpc/blob/master/doc/health-checking.md).
-
 
                                 If this is not specified, the default behavior is defined by gRPC.
                               type: string
@@ -4091,10 +4385,10 @@ spec:
                               format: int32
                               type: integer
                             service:
+                              default: ""
                               description: |-
                                 Service is the name of the service to place in the gRPC HealthCheckRequest
                                 (see https://github.com/grpc/grpc/blob/master/doc/health-checking.md).
-
 
                                 If this is not specified, the default behavior is defined by gRPC.
                               type: string
@@ -4243,10 +4537,8 @@ spec:
                             Claims lists the names of resources, defined in spec.resourceClaims,
                             that are used by this container.
 
-
                             This is an alpha field and requires enabling the
                             DynamicResourceAllocation feature gate.
-
 
                             This field is immutable. It can only be set for containers.
                           items:
@@ -4257,6 +4549,12 @@ spec:
                                   Name must match the name of one entry in pod.spec.resourceClaims of
                                   the Pod where this field is used. It makes that resource available
                                   inside a container.
+                                type: string
+                              request:
+                                description: |-
+                                  Request is the name chosen for a request in the referenced claim.
+                                  If empty, everything from the claim is made available, otherwise
+                                  only the result of this request.
                                 type: string
                             required:
                             - name
@@ -4381,7 +4679,7 @@ spec:
                         procMount:
                           description: |-
                             procMount denotes the type of proc mount to use for the containers.
-                            The default is DefaultProcMount which uses the container runtime defaults for
+                            The default value is Default which uses the container runtime defaults for
                             readonly paths and masked paths.
                             This requires the ProcMountType feature flag to be enabled.
                             Note that this field cannot be set when spec.os.name is windows.
@@ -4463,7 +4761,6 @@ spec:
                                 type indicates which kind of seccomp profile will be applied.
                                 Valid options are:
 
-
                                 Localhost - a profile defined in a file on the node should be used.
                                 RuntimeDefault - the container runtime default profile should be used.
                                 Unconfined - no profile should be applied.
@@ -4544,10 +4841,10 @@ spec:
                               format: int32
                               type: integer
                             service:
+                              default: ""
                               description: |-
                                 Service is the name of the service to place in the gRPC HealthCheckRequest
                                 (see https://github.com/grpc/grpc/blob/master/doc/health-checking.md).
-
 
                                 If this is not specified, the default behavior is defined by gRPC.
                               type: string
@@ -4762,9 +5059,7 @@ spec:
                               RecursiveReadOnly specifies whether read-only mounts should be handled
                               recursively.
 
-
                               If ReadOnly is false, this field has no meaning and must be unspecified.
-
 
                               If ReadOnly is true, and this field is set to Disabled, the mount is not made
                               recursively read-only.  If this field is set to IfPossible, the mount is made
@@ -4773,10 +5068,8 @@ spec:
                               supported by the container runtime, otherwise the pod will not be started and
                               an error will be generated to indicate the reason.
 
-
                               If this field is set to IfPossible or Enabled, MountPropagation must be set to
                               None (or be unspecified, which defaults to None).
-
 
                               If this field is not specified, it is treated as an equivalent of Disabled.
                             type: string
@@ -4855,7 +5148,6 @@ spec:
                 description: |-
                   PodMetadata configures labels and annotations which are propagated to the Alertmanager pods.
 
-
                   The following items are reserved and cannot be overridden:
                   * "alertmanager" label, set to the name of the Alertmanager instance.
                   * "app.kubernetes.io/instance" label, set to the name of the Alertmanager instance.
@@ -4916,10 +5208,8 @@ spec:
                       Claims lists the names of resources, defined in spec.resourceClaims,
                       that are used by this container.
 
-
                       This is an alpha field and requires enabling the
                       DynamicResourceAllocation feature gate.
-
 
                       This field is immutable. It can only be set for containers.
                     items:
@@ -4930,6 +5220,12 @@ spec:
                             Name must match the name of one entry in pod.spec.resourceClaims of
                             the Pod where this field is used. It makes that resource available
                             inside a container.
+                          type: string
+                        request:
+                          description: |-
+                            Request is the name chosen for a request in the referenced claim.
+                            If empty, everything from the claim is made available, otherwise
+                            only the result of this request.
                           type: string
                       required:
                       - name
@@ -5020,11 +5316,9 @@ spec:
                       Some volume types allow the Kubelet to change the ownership of that volume
                       to be owned by the pod:
 
-
                       1. The owning GID will be the FSGroup
                       2. The setgid bit is set (new files created in the volume will be owned by FSGroup)
                       3. The permission bits are OR'd with rw-rw----
-
 
                       If unset, the Kubelet will not modify the ownership and permissions of any volume.
                       Note that this field cannot be set when spec.os.name is windows.
@@ -5112,7 +5406,6 @@ spec:
                           type indicates which kind of seccomp profile will be applied.
                           Valid options are:
 
-
                           Localhost - a profile defined in a file on the node should be used.
                           RuntimeDefault - the container runtime default profile should be used.
                           Unconfined - no profile should be applied.
@@ -5122,18 +5415,28 @@ spec:
                     type: object
                   supplementalGroups:
                     description: |-
-                      A list of groups applied to the first process run in each container, in addition
-                      to the container's primary GID, the fsGroup (if specified), and group memberships
-                      defined in the container image for the uid of the container process. If unspecified,
-                      no additional groups are added to any container. Note that group memberships
-                      defined in the container image for the uid of the container process are still effective,
-                      even if they are not included in this list.
+                      A list of groups applied to the first process run in each container, in
+                      addition to the container's primary GID and fsGroup (if specified).  If
+                      the SupplementalGroupsPolicy feature is enabled, the
+                      supplementalGroupsPolicy field determines whether these are in addition
+                      to or instead of any group memberships defined in the container image.
+                      If unspecified, no additional groups are added, though group memberships
+                      defined in the container image may still be used, depending on the
+                      supplementalGroupsPolicy field.
                       Note that this field cannot be set when spec.os.name is windows.
                     items:
                       format: int64
                       type: integer
                     type: array
                     x-kubernetes-list-type: atomic
+                  supplementalGroupsPolicy:
+                    description: |-
+                      Defines how supplemental groups of the first container processes are calculated.
+                      Valid values are "Merge" and "Strict". If not specified, "Merge" is used.
+                      (Alpha) Using the field requires the SupplementalGroupsPolicy feature gate to be enabled
+                      and the container runtime must implement support for this feature.
+                      Note that this field cannot be set when spec.os.name is windows.
+                    type: string
                   sysctls:
                     description: |-
                       Sysctls hold a list of namespaced sysctls used for the pod. Pods with unsupported
@@ -5252,7 +5555,6 @@ spec:
                           entry. Pod validation will reject the pod if the concatenated name
                           is not valid for a PVC (for example, too long).
 
-
                           An existing PVC with that name that is not owned by the pod
                           will *not* be used for the pod to avoid using an unrelated
                           volume by mistake. Starting the pod is then blocked until
@@ -5262,10 +5564,8 @@ spec:
                           this should not be necessary, but it may be useful when
                           manually reconstructing a broken cluster.
 
-
                           This field is read-only and no changes will be made by Kubernetes
                           to the PVC after it has been created.
-
 
                           Required, must not be nil.
                         properties:
@@ -5469,7 +5769,7 @@ spec:
                                   set to a Pending state, as reflected by the modifyVolumeStatus field, until such as a resource
                                   exists.
                                   More info: https://kubernetes.io/docs/concepts/storage/volume-attributes-classes/
-                                  (Alpha) Using this field requires the VolumeAttributesClass feature gate to be enabled.
+                                  (Beta) Using this field requires the VolumeAttributesClass feature gate to be enabled (off by default).
                                 type: string
                               volumeMode:
                                 description: |-
@@ -5725,7 +6025,7 @@ spec:
                               set to a Pending state, as reflected by the modifyVolumeStatus field, until such as a resource
                               exists.
                               More info: https://kubernetes.io/docs/concepts/storage/volume-attributes-classes/
-                              (Alpha) Using this field requires the VolumeAttributesClass feature gate to be enabled.
+                              (Beta) Using this field requires the VolumeAttributesClass feature gate to be enabled (off by default).
                             type: string
                           volumeMode:
                             description: |-
@@ -5763,8 +6063,8 @@ spec:
                               use implementation-defined prefixed names such as \"example.com/my-custom-resource\"\nApart
                               from above values - keys that are unprefixed or have
                               kubernetes.io prefix are considered\nreserved and hence
-                              may not be used.\n\n\nClaimResourceStatus can be in
-                              any of following states:\n\t- ControllerResizeInProgress:\n\t\tState
+                              may not be used.\n\nClaimResourceStatus can be in any
+                              of following states:\n\t- ControllerResizeInProgress:\n\t\tState
                               set when resize controller starts resizing the volume
                               in control-plane.\n\t- ControllerResizeFailed:\n\t\tState
                               set when resize has failed in resize controller with
@@ -5783,12 +6083,12 @@ spec:
                               = \"NodeResizeInProgress\"\n     - pvc.status.allocatedResourceStatus['storage']
                               = \"NodeResizeFailed\"\nWhen this field is not set,
                               it means that no resize operation is in progress for
-                              the given PVC.\n\n\nA controller that receives PVC update
+                              the given PVC.\n\nA controller that receives PVC update
                               with previously unknown resourceName or ClaimResourceStatus\nshould
                               ignore the update for the purpose it was designed. For
                               example - a controller that\nonly is responsible for
                               resizing capacity of the volume, should ignore PVC updates
-                              that change other valid\nresources associated with PVC.\n\n\nThis
+                              that change other valid\nresources associated with PVC.\n\nThis
                               is an alpha field and requires enabling RecoverVolumeExpansionFailure
                               feature."
                             type: object
@@ -5808,21 +6108,21 @@ spec:
                               use implementation-defined prefixed names such as \"example.com/my-custom-resource\"\nApart
                               from above values - keys that are unprefixed or have
                               kubernetes.io prefix are considered\nreserved and hence
-                              may not be used.\n\n\nCapacity reported here may be
-                              larger than the actual capacity when a volume expansion
-                              operation\nis requested.\nFor storage quota, the larger
-                              value from allocatedResources and PVC.spec.resources
-                              is used.\nIf allocatedResources is not set, PVC.spec.resources
-                              alone is used for quota calculation.\nIf a volume expansion
+                              may not be used.\n\nCapacity reported here may be larger
+                              than the actual capacity when a volume expansion operation\nis
+                              requested.\nFor storage quota, the larger value from
+                              allocatedResources and PVC.spec.resources is used.\nIf
+                              allocatedResources is not set, PVC.spec.resources alone
+                              is used for quota calculation.\nIf a volume expansion
                               capacity request is lowered, allocatedResources is only\nlowered
                               if there are no expansion operations in progress and
                               if the actual volume capacity\nis equal or lower than
-                              the requested capacity.\n\n\nA controller that receives
+                              the requested capacity.\n\nA controller that receives
                               PVC update with previously unknown resourceName\nshould
                               ignore the update for the purpose it was designed. For
                               example - a controller that\nonly is responsible for
                               resizing capacity of the volume, should ignore PVC updates
-                              that change other valid\nresources associated with PVC.\n\n\nThis
+                              that change other valid\nresources associated with PVC.\n\nThis
                               is an alpha field and requires enabling RecoverVolumeExpansionFailure
                               feature."
                             type: object
@@ -5867,8 +6167,16 @@ spec:
                                 status:
                                   type: string
                                 type:
-                                  description: PersistentVolumeClaimConditionType
-                                    is a valid value of PersistentVolumeClaimCondition.Type
+                                  description: |-
+                                    PersistentVolumeClaimConditionType defines the condition of PV claim.
+                                    Valid values are:
+                                      - "Resizing", "FileSystemResizePending"
+
+                                    If RecoverVolumeExpansionFailure feature gate is enabled, then following additional values can be expected:
+                                      - "ControllerResizeError", "NodeResizeError"
+
+                                    If VolumeAttributesClass feature gate is enabled, then following additional values can be expected:
+                                      - "ModifyVolumeError", "ModifyingVolume"
                                   type: string
                               required:
                               - status
@@ -5882,13 +6190,13 @@ spec:
                             description: |-
                               currentVolumeAttributesClassName is the current name of the VolumeAttributesClass the PVC is using.
                               When unset, there is no VolumeAttributeClass applied to this PersistentVolumeClaim
-                              This is an alpha field and requires enabling VolumeAttributesClass feature.
+                              This is a beta field and requires enabling VolumeAttributesClass feature (off by default).
                             type: string
                           modifyVolumeStatus:
                             description: |-
                               ModifyVolumeStatus represents the status object of ControllerModifyVolume operation.
                               When this is unset, there is no ModifyVolume operation being attempted.
-                              This is an alpha field and requires enabling VolumeAttributesClass feature.
+                              This is a beta field and requires enabling VolumeAttributesClass feature (off by default).
                             properties:
                               status:
                                 description: "status is the status of the ControllerModifyVolume
@@ -6029,7 +6337,6 @@ spec:
                         Keys that don't exist in the incoming pod labels will
                         be ignored. A null or empty list means only match against labelSelector.
 
-
                         This is a beta field and requires the MatchLabelKeysInPodTopologySpread feature gate to be enabled (enabled by default).
                       items:
                         type: string
@@ -6069,7 +6376,6 @@ spec:
                         Valid values are integers greater than 0.
                         When value is not nil, WhenUnsatisfiable must be DoNotSchedule.
 
-
                         For example, in a 3-zone cluster, MaxSkew is set to 2, MinDomains is set to 5 and pods with the same
                         labelSelector spread as 2/2/2:
                         | zone1 | zone2 | zone3 |
@@ -6087,7 +6393,6 @@ spec:
                         - Honor: only nodes matching nodeAffinity/nodeSelector are included in the calculations.
                         - Ignore: nodeAffinity/nodeSelector are ignored. All nodes are included in the calculations.
 
-
                         If this value is nil, the behavior is equivalent to the Honor policy.
                         This is a beta-level feature default enabled by the NodeInclusionPolicyInPodTopologySpread feature flag.
                       type: string
@@ -6098,7 +6403,6 @@ spec:
                         - Honor: nodes without taints, along with tainted nodes for which the incoming pod
                         has a toleration, are included.
                         - Ignore: node taints are ignored. All nodes are included.
-
 
                         If this value is nil, the behavior is equivalent to the Ignore policy.
                         This is a beta-level feature default enabled by the NodeInclusionPolicyInPodTopologySpread feature flag.
@@ -6182,9 +6486,7 @@ spec:
                         RecursiveReadOnly specifies whether read-only mounts should be handled
                         recursively.
 
-
                         If ReadOnly is false, this field has no meaning and must be unspecified.
-
 
                         If ReadOnly is true, and this field is set to Disabled, the mount is not made
                         recursively read-only.  If this field is set to IfPossible, the mount is made
@@ -6193,10 +6495,8 @@ spec:
                         supported by the container runtime, otherwise the pod will not be started and
                         an error will be generated to indicate the reason.
 
-
                         If this field is set to IfPossible or Enabled, MountPropagation must be set to
                         None (or be unspecified, which defaults to None).
-
 
                         If this field is not specified, it is treated as an equivalent of Disabled.
                       type: string
@@ -6238,7 +6538,6 @@ spec:
                             Tip: Ensure that the filesystem type is supported by the host operating system.
                             Examples: "ext4", "xfs", "ntfs". Implicitly inferred to be "ext4" if unspecified.
                             More info: https://kubernetes.io/docs/concepts/storage/volumes#awselasticblockstore
-                            TODO: how do we prevent errors in the filesystem from compromising the machine
                           type: string
                         partition:
                           description: |-
@@ -6278,6 +6577,7 @@ spec:
                             storage
                           type: string
                         fsType:
+                          default: ext4
                           description: |-
                             fsType is Filesystem type to mount.
                             Must be a filesystem type supported by the host operating system.
@@ -6290,6 +6590,7 @@ spec:
                             disk (only in managed availability set). defaults to shared'
                           type: string
                         readOnly:
+                          default: false
                           description: |-
                             readOnly Defaults to false (read/write). ReadOnly here will force
                             the ReadOnly setting in VolumeMounts.
@@ -6357,9 +6658,7 @@ spec:
                                 This field is effectively required, but due to backwards compatibility is
                                 allowed to be empty. Instances of this type with an empty value here are
                                 almost certainly wrong.
-                                TODO: Add other useful fields. apiVersion, kind, uid?
                                 More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.
                               type: string
                           type: object
                           x-kubernetes-map-type: atomic
@@ -6401,9 +6700,7 @@ spec:
                                 This field is effectively required, but due to backwards compatibility is
                                 allowed to be empty. Instances of this type with an empty value here are
                                 almost certainly wrong.
-                                TODO: Add other useful fields. apiVersion, kind, uid?
                                 More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.
                               type: string
                           type: object
                           x-kubernetes-map-type: atomic
@@ -6475,9 +6772,7 @@ spec:
                             This field is effectively required, but due to backwards compatibility is
                             allowed to be empty. Instances of this type with an empty value here are
                             almost certainly wrong.
-                            TODO: Add other useful fields. apiVersion, kind, uid?
                             More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                            TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.
                           type: string
                         optional:
                           description: optional specify whether the ConfigMap or its
@@ -6516,9 +6811,7 @@ spec:
                                 This field is effectively required, but due to backwards compatibility is
                                 allowed to be empty. Instances of this type with an empty value here are
                                 almost certainly wrong.
-                                TODO: Add other useful fields. apiVersion, kind, uid?
                                 More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.
                               type: string
                           type: object
                           x-kubernetes-map-type: atomic
@@ -6655,7 +6948,6 @@ spec:
                         The volume's lifecycle is tied to the pod that defines it - it will be created before the pod starts,
                         and deleted when the pod is removed.
 
-
                         Use this if:
                         a) the volume is only needed while the pod runs,
                         b) features of normal volumes like restoring from snapshot or capacity
@@ -6666,16 +6958,13 @@ spec:
                            information on the connection between this volume type
                            and PersistentVolumeClaim).
 
-
                         Use PersistentVolumeClaim or one of the vendor-specific
                         APIs for volumes that persist for longer than the lifecycle
                         of an individual pod.
 
-
                         Use CSI for light-weight local ephemeral volumes if the CSI driver is meant to
                         be used that way - see the documentation of the driver for
                         more information.
-
 
                         A pod can use both types of ephemeral volumes and
                         persistent volumes at the same time.
@@ -6690,7 +6979,6 @@ spec:
                             entry. Pod validation will reject the pod if the concatenated name
                             is not valid for a PVC (for example, too long).
 
-
                             An existing PVC with that name that is not owned by the pod
                             will *not* be used for the pod to avoid using an unrelated
                             volume by mistake. Starting the pod is then blocked until
@@ -6700,10 +6988,8 @@ spec:
                             this should not be necessary, but it may be useful when
                             manually reconstructing a broken cluster.
 
-
                             This field is read-only and no changes will be made by Kubernetes
                             to the PVC after it has been created.
-
 
                             Required, must not be nil.
                           properties:
@@ -6907,7 +7193,7 @@ spec:
                                     set to a Pending state, as reflected by the modifyVolumeStatus field, until such as a resource
                                     exists.
                                     More info: https://kubernetes.io/docs/concepts/storage/volume-attributes-classes/
-                                    (Alpha) Using this field requires the VolumeAttributesClass feature gate to be enabled.
+                                    (Beta) Using this field requires the VolumeAttributesClass feature gate to be enabled (off by default).
                                   type: string
                                 volumeMode:
                                   description: |-
@@ -6933,7 +7219,6 @@ spec:
                             fsType is the filesystem type to mount.
                             Must be a filesystem type supported by the host operating system.
                             Ex. "ext4", "xfs", "ntfs". Implicitly inferred to be "ext4" if unspecified.
-                            TODO: how do we prevent errors in the filesystem from compromising the machine
                           type: string
                         lun:
                           description: 'lun is Optional: FC target lun number'
@@ -7001,9 +7286,7 @@ spec:
                                 This field is effectively required, but due to backwards compatibility is
                                 allowed to be empty. Instances of this type with an empty value here are
                                 almost certainly wrong.
-                                TODO: Add other useful fields. apiVersion, kind, uid?
                                 More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.
                               type: string
                           type: object
                           x-kubernetes-map-type: atomic
@@ -7037,7 +7320,6 @@ spec:
                             Tip: Ensure that the filesystem type is supported by the host operating system.
                             Examples: "ext4", "xfs", "ntfs". Implicitly inferred to be "ext4" if unspecified.
                             More info: https://kubernetes.io/docs/concepts/storage/volumes#gcepersistentdisk
-                            TODO: how do we prevent errors in the filesystem from compromising the machine
                           type: string
                         partition:
                           description: |-
@@ -7118,9 +7400,6 @@ spec:
                         used for system agents or other privileged things that are allowed
                         to see the host machine. Most containers will NOT need this.
                         More info: https://kubernetes.io/docs/concepts/storage/volumes#hostpath
-                        ---
-                        TODO(jonesdl) We need to restrict who can use host directory mounts and who can/can not
-                        mount host directories as read/write.
                       properties:
                         path:
                           description: |-
@@ -7136,6 +7415,41 @@ spec:
                           type: string
                       required:
                       - path
+                      type: object
+                    image:
+                      description: |-
+                        image represents an OCI object (a container image or artifact) pulled and mounted on the kubelet's host machine.
+                        The volume is resolved at pod startup depending on which PullPolicy value is provided:
+
+                        - Always: the kubelet always attempts to pull the reference. Container creation will fail If the pull fails.
+                        - Never: the kubelet never pulls the reference and only uses a local image or artifact. Container creation will fail if the reference isn't present.
+                        - IfNotPresent: the kubelet pulls if the reference isn't already present on disk. Container creation will fail if the reference isn't present and the pull fails.
+
+                        The volume gets re-resolved if the pod gets deleted and recreated, which means that new remote content will become available on pod recreation.
+                        A failure to resolve or pull the image during pod startup will block containers from starting and may add significant latency. Failures will be retried using normal volume backoff and will be reported on the pod reason and message.
+                        The types of objects that may be mounted by this volume are defined by the container runtime implementation on a host machine and at minimum must include all valid types supported by the container image field.
+                        The OCI object gets mounted in a single directory (spec.containers[*].volumeMounts.mountPath) by merging the manifest layers in the same way as for container images.
+                        The volume will be mounted read-only (ro) and non-executable files (noexec).
+                        Sub path mounts for containers are not supported (spec.containers[*].volumeMounts.subpath).
+                        The field spec.securityContext.fsGroupChangePolicy has no effect on this volume type.
+                      properties:
+                        pullPolicy:
+                          description: |-
+                            Policy for pulling OCI objects. Possible values are:
+                            Always: the kubelet always attempts to pull the reference. Container creation will fail If the pull fails.
+                            Never: the kubelet never pulls the reference and only uses a local image or artifact. Container creation will fail if the reference isn't present.
+                            IfNotPresent: the kubelet pulls if the reference isn't already present on disk. Container creation will fail if the reference isn't present and the pull fails.
+                            Defaults to Always if :latest tag is specified, or IfNotPresent otherwise.
+                          type: string
+                        reference:
+                          description: |-
+                            Required: Image or artifact reference to be used.
+                            Behaves in the same way as pod.spec.containers[*].image.
+                            Pull secrets will be assembled in the same way as for the container image by looking up node credentials, SA image pull secrets, and pod spec image pull secrets.
+                            More info: https://kubernetes.io/docs/concepts/containers/images
+                            This field is optional to allow higher level config management to default or override
+                            container images in workload controllers like Deployments and StatefulSets.
+                          type: string
                       type: object
                     iscsi:
                       description: |-
@@ -7157,7 +7471,6 @@ spec:
                             Tip: Ensure that the filesystem type is supported by the host operating system.
                             Examples: "ext4", "xfs", "ntfs". Implicitly inferred to be "ext4" if unspecified.
                             More info: https://kubernetes.io/docs/concepts/storage/volumes#iscsi
-                            TODO: how do we prevent errors in the filesystem from compromising the machine
                           type: string
                         initiatorName:
                           description: |-
@@ -7169,6 +7482,7 @@ spec:
                           description: iqn is the target iSCSI Qualified Name.
                           type: string
                         iscsiInterface:
+                          default: default
                           description: |-
                             iscsiInterface is the interface Name that uses an iSCSI transport.
                             Defaults to 'default' (tcp).
@@ -7201,9 +7515,7 @@ spec:
                                 This field is effectively required, but due to backwards compatibility is
                                 allowed to be empty. Instances of this type with an empty value here are
                                 almost certainly wrong.
-                                TODO: Add other useful fields. apiVersion, kind, uid?
                                 More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.
                               type: string
                           type: object
                           x-kubernetes-map-type: atomic
@@ -7320,23 +7632,23 @@ spec:
                           format: int32
                           type: integer
                         sources:
-                          description: sources is the list of volume projections
+                          description: |-
+                            sources is the list of volume projections. Each entry in this list
+                            handles one source.
                           items:
-                            description: Projection that may be projected along with
-                              other supported volume types
+                            description: |-
+                              Projection that may be projected along with other supported volume types.
+                              Exactly one of these fields must be set.
                             properties:
                               clusterTrustBundle:
                                 description: |-
                                   ClusterTrustBundle allows a pod to access the `.spec.trustBundle` field
                                   of ClusterTrustBundle objects in an auto-updating file.
 
-
                                   Alpha, gated by the ClusterTrustBundleProjection feature gate.
-
 
                                   ClusterTrustBundle objects can either be selected by name, or by the
                                   combination of signer name and a label selector.
-
 
                                   Kubelet performs aggressive normalization of the PEM contents written
                                   into the pod filesystem.  Esoteric PEM features such as inter-block
@@ -7471,9 +7783,7 @@ spec:
                                       This field is effectively required, but due to backwards compatibility is
                                       allowed to be empty. Instances of this type with an empty value here are
                                       almost certainly wrong.
-                                      TODO: Add other useful fields. apiVersion, kind, uid?
                                       More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                      TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.
                                     type: string
                                   optional:
                                     description: optional specify whether the ConfigMap
@@ -7611,9 +7921,7 @@ spec:
                                       This field is effectively required, but due to backwards compatibility is
                                       allowed to be empty. Instances of this type with an empty value here are
                                       almost certainly wrong.
-                                      TODO: Add other useful fields. apiVersion, kind, uid?
                                       More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                      TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.
                                     type: string
                                   optional:
                                     description: optional field specify whether the
@@ -7703,7 +8011,6 @@ spec:
                             Tip: Ensure that the filesystem type is supported by the host operating system.
                             Examples: "ext4", "xfs", "ntfs". Implicitly inferred to be "ext4" if unspecified.
                             More info: https://kubernetes.io/docs/concepts/storage/volumes#rbd
-                            TODO: how do we prevent errors in the filesystem from compromising the machine
                           type: string
                         image:
                           description: |-
@@ -7711,6 +8018,7 @@ spec:
                             More info: https://examples.k8s.io/volumes/rbd/README.md#how-to-use-it
                           type: string
                         keyring:
+                          default: /etc/ceph/keyring
                           description: |-
                             keyring is the path to key ring for RBDUser.
                             Default is /etc/ceph/keyring.
@@ -7725,6 +8033,7 @@ spec:
                           type: array
                           x-kubernetes-list-type: atomic
                         pool:
+                          default: rbd
                           description: |-
                             pool is the rados pool name.
                             Default is rbd.
@@ -7750,13 +8059,12 @@ spec:
                                 This field is effectively required, but due to backwards compatibility is
                                 allowed to be empty. Instances of this type with an empty value here are
                                 almost certainly wrong.
-                                TODO: Add other useful fields. apiVersion, kind, uid?
                                 More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.
                               type: string
                           type: object
                           x-kubernetes-map-type: atomic
                         user:
+                          default: admin
                           description: |-
                             user is the rados user name.
                             Default is admin.
@@ -7771,6 +8079,7 @@ spec:
                         attached and mounted on Kubernetes nodes.
                       properties:
                         fsType:
+                          default: xfs
                           description: |-
                             fsType is the filesystem type to mount.
                             Must be a filesystem type supported by the host operating system.
@@ -7802,9 +8111,7 @@ spec:
                                 This field is effectively required, but due to backwards compatibility is
                                 allowed to be empty. Instances of this type with an empty value here are
                                 almost certainly wrong.
-                                TODO: Add other useful fields. apiVersion, kind, uid?
                                 More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.
                               type: string
                           type: object
                           x-kubernetes-map-type: atomic
@@ -7813,6 +8120,7 @@ spec:
                             with Gateway, default false
                           type: boolean
                         storageMode:
+                          default: ThinProvisioned
                           description: |-
                             storageMode indicates whether the storage for a volume should be ThickProvisioned or ThinProvisioned.
                             Default is ThinProvisioned.
@@ -7926,9 +8234,7 @@ spec:
                                 This field is effectively required, but due to backwards compatibility is
                                 allowed to be empty. Instances of this type with an empty value here are
                                 almost certainly wrong.
-                                TODO: Add other useful fields. apiVersion, kind, uid?
                                 More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.
                               type: string
                           type: object
                           x-kubernetes-map-type: atomic
@@ -8064,9 +8370,7 @@ spec:
                                   This field is effectively required, but due to backwards compatibility is
                                   allowed to be empty. Instances of this type with an empty value here are
                                   almost certainly wrong.
-                                  TODO: Add other useful fields. apiVersion, kind, uid?
                                   More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                  TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.
                                 type: string
                               optional:
                                 description: Specify whether the ConfigMap or its
@@ -8090,9 +8394,7 @@ spec:
                                   This field is effectively required, but due to backwards compatibility is
                                   allowed to be empty. Instances of this type with an empty value here are
                                   almost certainly wrong.
-                                  TODO: Add other useful fields. apiVersion, kind, uid?
                                   More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                  TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.
                                 type: string
                               optional:
                                 description: Specify whether the Secret or its key
@@ -8103,6 +8405,11 @@ spec:
                             type: object
                             x-kubernetes-map-type: atomic
                         type: object
+                      certFile:
+                        description: |-
+                          Path to the TLS certificate file in the Prometheus container for the server.
+                          Mutually exclusive with `cert`.
+                        type: string
                       cipherSuites:
                         description: |-
                           List of supported cipher suites for TLS versions up to TLS 1.2. If empty,
@@ -8129,9 +8436,7 @@ spec:
                                   This field is effectively required, but due to backwards compatibility is
                                   allowed to be empty. Instances of this type with an empty value here are
                                   almost certainly wrong.
-                                  TODO: Add other useful fields. apiVersion, kind, uid?
                                   More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                  TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.
                                 type: string
                               optional:
                                 description: Specify whether the ConfigMap or its
@@ -8155,9 +8460,7 @@ spec:
                                   This field is effectively required, but due to backwards compatibility is
                                   allowed to be empty. Instances of this type with an empty value here are
                                   almost certainly wrong.
-                                  TODO: Add other useful fields. apiVersion, kind, uid?
                                   More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                  TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.
                                 type: string
                               optional:
                                 description: Specify whether the Secret or its key
@@ -8174,6 +8477,11 @@ spec:
                           For more detail on clientAuth options:
                           https://golang.org/pkg/crypto/tls/#ClientAuthType
                         type: string
+                      clientCAFile:
+                        description: |-
+                          Path to the CA certificate file for client certificate authentication to the server.
+                          Mutually exclusive with `client_ca`.
+                        type: string
                       curvePreferences:
                         description: |-
                           Elliptic curves that will be used in an ECDHE handshake, in preference
@@ -8182,6 +8490,11 @@ spec:
                         items:
                           type: string
                         type: array
+                      keyFile:
+                        description: |-
+                          Path to the TLS key file in the Prometheus container for the server.
+                          Mutually exclusive with `keySecret`.
+                        type: string
                       keySecret:
                         description: Secret containing the TLS key for the server.
                         properties:
@@ -8196,9 +8509,7 @@ spec:
                               This field is effectively required, but due to backwards compatibility is
                               allowed to be empty. Instances of this type with an empty value here are
                               almost certainly wrong.
-                              TODO: Add other useful fields. apiVersion, kind, uid?
                               More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                              TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.
                             type: string
                           optional:
                             description: Specify whether the Secret or its key must
@@ -8223,9 +8534,6 @@ spec:
                           cipher suite. If true then the server's preference, as expressed in
                           the order of elements in cipherSuites, is used.
                         type: boolean
-                    required:
-                    - cert
-                    - keySecret
                     type: object
                 type: object
             type: object
@@ -8295,6 +8603,10 @@ spec:
                   object (their labels match the selector).
                 format: int32
                 type: integer
+              selector:
+                description: The selector used to match the pods targeted by this
+                  Alertmanager object.
+                type: string
               unavailableReplicas:
                 description: Total number of unavailable pods targeted by this Alertmanager
                   object.
@@ -8319,4 +8631,8 @@ spec:
     served: true
     storage: true
     subresources:
+      scale:
+        labelSelectorPath: .status.selector
+        specReplicasPath: .spec.replicas
+        statusReplicasPath: .status.replicas
       status: {}

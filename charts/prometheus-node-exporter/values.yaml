@@ -45,7 +45,7 @@ kubeRBACProxy:
   image:
     registry: quay.io
     repository: brancz/kube-rbac-proxy
-    tag: v0.18.0
+    tag: v0.18.1
     sha: ""
     pullPolicy: IfNotPresent
 
@@ -80,33 +80,90 @@ kubeRBACProxy:
     # limits:
     #  cpu: 100m
     #  memory: 64Mi
-  # requests:
-  #  cpu: 10m
-  #  memory: 32Mi
+    # requests:
+    #  cpu: 10m
+    #  memory: 32Mi
 
+  ## Additional volume mounts in the kube-rbac-proxy container
+  ## See extraVolumes below
+  extraVolumeMounts: []
+    # - name: extra-volume
+    #   mountPath: /extra
+    #   readOnly: true
+
+  ## tls enables using TLS resources from a volume on secret referred to in tlsSecret below.
+  ## When enabling tlsClientAuth, client CA certificate must be set in tlsSecret.caItem.
+  ## Ref. https://github.com/brancz/kube-rbac-proxy/issues/187
+  tls:
+    enabled: false
+    tlsClientAuth: false
+
+## tlsSecret refers to an existing secret holding TLS items: client CA certificate, private key and certificate.
+## secretName and volumeName can be templated.
+## If enabled, volume volumeName gets created on secret secretName.
+## The volume's resources will be used by kube-rbac-proxy if kubeRBACProxy.tls.enabled is set.
+tlsSecret:
+  enabled: false
+  ## Key with client CA certificate (optional)
+  caItem: ""
+  ## Key with certificate
+  certItem: tls.crt
+  ## Key with private key
+  keyItem: tls.key
+  ## Name of an existing secret
+  secretName: prometheus-node-exporter-tls
+  ## Name of the volume to be created
+  volumeName: prometheus-node-exporter-tls
+
+## Service configuration
 service:
+  ## Creating a service is enabled by default
   enabled: true
+
+  ## Service type
   type: ClusterIP
+  ## IP address for type ClusterIP
   clusterIP: ""
+  ## Default service port. Sets the port of the exposed container as well (NE or kubeRBACProxy).
+  ## Use "servicePort" below if changing the service port only is desired.
   port: 9100
+  ## Service port. Use this field if you wish to set a different service port
+  ## without changing the container port ("port" above).
   servicePort: ""
+  ## Targeted port in the pod. Must refer to an open container port ("port" or "portName").
+  ## (IntOrString)
   targetPort: 9100
-  nodePort:
+  ## Name of the service port. Sets the port name of the main container (NE) as well.
   portName: metrics
+  ## Port number for service type NodePort
+  nodePort: null
+
+  ## If true, node exporter will listen on all interfaces
   listenOnAllInterfaces: true
+
+  ## Additional annotations and labels for the service
   annotations:
     prometheus.io/scrape: "true"
+  labels: {}
+
+  ## Dual stack settings for the service
+  ## https://kubernetes.io/docs/concepts/services-networking/dual-stack/#services
   ipDualStack:
     enabled: false
     ipFamilies: ["IPv6", "IPv4"]
     ipFamilyPolicy: "PreferDualStack"
+
+  ## External traffic policy setting (Cluster, Local)
   externalTrafficPolicy: ""
 
 # Set a NetworkPolicy with:
-# ingress only on service.port
+# ingress only on service.port or custom policy
 # no egress permitted
 networkPolicy:
   enabled: false
+
+  # ingress:
+  # - {}
 
 # Additional environment variables that will be passed to the daemonset
 env: {}
@@ -124,6 +181,10 @@ prometheus:
     # List of pod labels to add to node exporter metrics
     # https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/api.md#servicemonitor
     podTargetLabels: []
+
+    # List of target labels to add to node exporter metrics
+    # https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/api.md#servicemonitor
+    targetLabels: []
 
     scheme: http
     basicAuth: {}
@@ -323,6 +384,9 @@ hostNetwork: true
 # Share the host process ID namespace
 hostPID: true
 
+# Share the host ipc namespace
+hostIPC: false
+
 # Mount the node's root file system (/) at /host/root in the container
 hostRootFsMount:
   enabled: true
@@ -360,8 +424,11 @@ podAnnotations:
   # Fix for very slow GKE cluster upgrades
   cluster-autoscaler.kubernetes.io/safe-to-evict: "true"
 
-# Extra labels to be added to node exporter pods
+# Extra labels to add to node exporter pods (can be templated)
 podLabels: {}
+
+## Extra labels to attach to all resources (can be templated)
+commonLabels: {}
 
 # Annotations to be added to node exporter daemonset
 daemonsetAnnotations: {}
@@ -429,9 +496,11 @@ extraHostVolumeMounts: []
 configmaps: []
 # - name: <configMapName>
 #   mountPath: <mountPath>
+
 secrets: []
 # - name: <secretName>
 #   mountPath: <mountPatch>
+
 ## Override the deployment namespace
 ##
 namespaceOverride: ""
@@ -529,6 +598,20 @@ extraManifests: []
   #     name: prometheus-extra
   #   data:
   #     extra-data: "value"
+
+## Extra volumes to become available in the pod
+extraVolumes: []
+  # - name: extra-volume
+  #   secret:
+  #     defaultMode: 420
+  #     optional: false
+  #     secretName: node-exporter-secret
+
+## Extra volume mounts in the node-exporter container
+extraVolumeMounts: []
+  # - name: extra-volume
+  #   mountPath: /extra
+  #   readOnly: true
 
 # Override version of app, required if image.tag is defined and does not follow semver
 version: ""

@@ -28,11 +28,27 @@ spec:
       containers:
         - name: mongodb-exporter
           env:
+          {{- if .Values.serviceMonitor.multiTarget.enabled }}
+            - name: MONGODB_URI
+              value: {{ include "prometheus-mongodb-exporter.mongodbUri" . }}
+            - name: MONGODB_USER
+              value: {{ required "The MongoDB username must be set" .Values.serviceMonitor.multiTarget.username }}
+            - name: MONGODB_PASSWORD
+              {{- if and .Values.serviceMonitor.multiTarget.password.existingSecret.name .Values.serviceMonitor.multiTarget.password.existingSecret.key }}
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.serviceMonitor.multiTarget.password.existingSecret.name }}
+                  key: {{ .Values.serviceMonitor.multiTarget.password.existingSecret.key }}
+              {{- else }}
+              value: {{ .Values.serviceMonitor.multiTarget.password.value }}
+              {{- end }}
+          {{- else }}
             - name: MONGODB_URI
               valueFrom:
                 secretKeyRef:
                   name: {{ include "prometheus-mongodb-exporter.secretName" . }}
                   key: {{ .Values.existingSecret.key }}
+          {{- end }}
           {{- if .Values.env }}
           {{- range $key, $value := .Values.env }}
             - name: "{{ $key }}"
@@ -66,13 +82,17 @@ spec:
       {{- end }}
       imagePullSecrets:
         {{- toYaml .Values.imagePullSecrets | nindent 8 }}
+      {{- with .Values.nodeSelector }}
       nodeSelector:
-        {{- toYaml .Values.nodeSelector | nindent 8 }}
+        {{- tpl (toYaml .) $ | nindent 8 }}
+      {{- end }}
       {{- if .Values.priorityClassName }}
       priorityClassName: {{ .Values.priorityClassName }}
       {{- end }}
       terminationGracePeriodSeconds: 30
+      {{- with .Values.tolerations }}
       tolerations:
-        {{- toYaml .Values.tolerations | nindent 8 }}
+        {{- tpl (toYaml .) $ | nindent 8 }}
+      {{- end }}
       volumes:
         {{- toYaml .Values.volumes | nindent 8 }}
