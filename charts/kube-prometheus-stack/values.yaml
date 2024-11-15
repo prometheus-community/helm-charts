@@ -429,6 +429,42 @@ alertmanager:
     #   hosts:
     #   - alertmanager.example.com
 
+  # -- BETA: Configure the gateway routes for the chart here.
+  # More routes can be added by adding a dictionary key like the 'main' route.
+  # Be aware that this is an early beta of this feature,
+  # kube-prometheus-stack does not guarantee this works and is subject to change.
+  # Being BETA this can/will change in the future without notice, do not use unless you want to take that risk
+  # [[ref]](https://gateway-api.sigs.k8s.io/references/spec/#gateway.networking.k8s.io%2fv1alpha2)
+  route:
+    main:
+      # -- Enables or disables the route
+      enabled: false
+
+      # -- Set the route apiVersion, e.g. gateway.networking.k8s.io/v1 or gateway.networking.k8s.io/v1alpha2
+      apiVersion: gateway.networking.k8s.io/v1
+      # -- Set the route kind
+      # Valid options are GRPCRoute, HTTPRoute, TCPRoute, TLSRoute, UDPRoute
+      kind: HTTPRoute
+
+      annotations: {}
+      labels: {}
+
+      hostnames: []
+      # - my-filter.example.com
+      parentRefs: []
+      # - name: acme-gw
+
+      matches:
+        - path:
+            type: PathPrefix
+            value: /
+
+      ## Filters define the filters that are applied to requests that match this rule.
+      filters: []
+
+      ## Additional custom rules that can be added to the route
+      additionalRules: []
+
   ## Configuration for Alertmanager secret
   ##
   secret:
@@ -1258,6 +1294,10 @@ kubeApiServer:
     additionalLabels: {}
     #  foo: bar
 
+    ## defines the labels which are transferred from the associated Kubernetes Service object onto the ingested metrics.
+    ## https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/api.md#servicemonitor
+    targetLabels: []
+
 ## Component scraping the kubelet and kubelet-hosted cAdvisor
 ##
 kubelet:
@@ -1464,6 +1504,10 @@ kubelet:
     additionalLabels: {}
     #  foo: bar
 
+    ## defines the labels which are transferred from the associated Kubernetes Service object onto the ingested metrics.
+    ## https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/api.md#servicemonitor
+    targetLabels: []
+
 ## Component scraping the kube controller manager
 ##
 kubeControllerManager:
@@ -1567,6 +1611,10 @@ kubeControllerManager:
     additionalLabels: {}
     #  foo: bar
 
+    ## defines the labels which are transferred from the associated Kubernetes Service object onto the ingested metrics.
+    ## https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/api.md#servicemonitor
+    targetLabels: []
+
 ## Component scraping coreDns. Use either this or kubeDns
 ##
 coreDns:
@@ -1644,6 +1692,10 @@ coreDns:
     ##
     additionalLabels: {}
     #  foo: bar
+
+    ## defines the labels which are transferred from the associated Kubernetes Service object onto the ingested metrics.
+    ## https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/api.md#servicemonitor
+    targetLabels: []
 
 ## Component scraping kubeDns. Use either this or coreDns
 ##
@@ -1738,6 +1790,10 @@ kubeDns:
     ##
     additionalLabels: {}
     #  foo: bar
+
+    ## defines the labels which are transferred from the associated Kubernetes Service object onto the ingested metrics.
+    ## https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/api.md#servicemonitor
+    targetLabels: []
 
 ## Component scraping etcd
 ##
@@ -1844,6 +1900,10 @@ kubeEtcd:
     additionalLabels: {}
     #  foo: bar
 
+    ## defines the labels which are transferred from the associated Kubernetes Service object onto the ingested metrics.
+    ## https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/api.md#servicemonitor
+    targetLabels: []
+
 ## Component scraping kube scheduler
 ##
 kubeScheduler:
@@ -1946,6 +2006,10 @@ kubeScheduler:
     additionalLabels: {}
     #  foo: bar
 
+    ## defines the labels which are transferred from the associated Kubernetes Service object onto the ingested metrics.
+    ## https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/api.md#servicemonitor
+    targetLabels: []
+
 ## Component scraping kube proxy
 ##
 kubeProxy:
@@ -2033,6 +2097,10 @@ kubeProxy:
     ##
     additionalLabels: {}
     #  foo: bar
+
+    ## defines the labels which are transferred from the associated Kubernetes Service object onto the ingested metrics.
+    ## https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/api.md#servicemonitor
+    targetLabels: []
 
 ## Component scraping kube state metrics
 ##
@@ -2706,6 +2774,11 @@ prometheusOperator:
   ## Create EndpointSlice objects for kubelet targets.
   kubeletEndpointSliceEnabled: false
 
+  ## Extra arguments to pass to prometheusOperator
+  # https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/operator.md
+  extraArgs: []
+  #  - --labels="cluster=talos-cluster"
+
   ## Create a servicemonitor for the operator
   ##
   serviceMonitor:
@@ -3303,6 +3376,42 @@ prometheus:
       #   hosts:
       #     - prometheus.example.com
 
+  # -- BETA: Configure the gateway routes for the chart here.
+  # More routes can be added by adding a dictionary key like the 'main' route.
+  # Be aware that this is an early beta of this feature,
+  # kube-prometheus-stack does not guarantee this works and is subject to change.
+  # Being BETA this can/will change in the future without notice, do not use unless you want to take that risk
+  # [[ref]](https://gateway-api.sigs.k8s.io/references/spec/#gateway.networking.k8s.io%2fv1alpha2)
+  route:
+    main:
+      # -- Enables or disables the route
+      enabled: false
+
+      # -- Set the route apiVersion, e.g. gateway.networking.k8s.io/v1 or gateway.networking.k8s.io/v1alpha2
+      apiVersion: gateway.networking.k8s.io/v1
+      # -- Set the route kind
+      # Valid options are GRPCRoute, HTTPRoute, TCPRoute, TLSRoute, UDPRoute
+      kind: HTTPRoute
+
+      annotations: {}
+      labels: {}
+
+      hostnames: []
+      # - my-filter.example.com
+      parentRefs: []
+      # - name: acme-gw
+
+      matches:
+      - path:
+          type: PathPrefix
+          value: /
+
+      ## Filters define the filters that are applied to requests that match this rule.
+      filters: []
+
+      ## Additional custom rules that can be added to the route
+      additionalRules: []
+
   ## Configuration for creating an Ingress that will map to each Prometheus replica service
   ## prometheus.servicePerReplica must be enabled
   ##
@@ -3510,7 +3619,7 @@ prometheus:
     image:
       registry: quay.io
       repository: prometheus/prometheus
-      tag: v2.55.0
+      tag: v2.55.1
       sha: ""
 
     ## Tolerations for use with node taints
@@ -4192,6 +4301,18 @@ prometheus:
     ## Label selector for services to which this ServiceMonitor applies
     ##
     # selector: {}
+      ## Example which selects all services to be monitored
+      ## with label "monitoredby" with values any of "example-service-1" or "example-service-2"
+      # matchExpressions:
+      #   - key: "monitoredby"
+      #     operator: In
+      #     values:
+      #       - example-service-1
+      #       - example-service-2
+
+      ## label selector for services
+      ##
+      # matchLabels: {}
 
     ## Namespaces from which services are selected
     ##
@@ -4292,6 +4413,18 @@ prometheus:
     ## Label selector for pods to which this PodMonitor applies
     ##
     # selector: {}
+      ## Example which selects all Pods to be monitored
+      ## with label "monitoredby" with values any of "example-pod-1" or "example-pod-2"
+      # matchExpressions:
+      #   - key: "monitoredby"
+      #     operator: In
+      #     values:
+      #       - example-pod-1
+      #       - example-pod-2
+
+      ## label selector for pods
+      ##
+      # matchLabels: {}
 
     ## PodTargetLabels transfers labels on the Kubernetes Pod onto the target.
     ##
@@ -4378,6 +4511,42 @@ thanosRuler:
     # - secretName: thanosruler-general-tls
     #   hosts:
     #   - thanosruler.example.com
+
+  # -- BETA: Configure the gateway routes for the chart here.
+  # More routes can be added by adding a dictionary key like the 'main' route.
+  # Be aware that this is an early beta of this feature,
+  # kube-prometheus-stack does not guarantee this works and is subject to change.
+  # Being BETA this can/will change in the future without notice, do not use unless you want to take that risk
+  # [[ref]](https://gateway-api.sigs.k8s.io/references/spec/#gateway.networking.k8s.io%2fv1alpha2)
+  route:
+    main:
+      # -- Enables or disables the route
+      enabled: false
+
+      # -- Set the route apiVersion, e.g. gateway.networking.k8s.io/v1 or gateway.networking.k8s.io/v1alpha2
+      apiVersion: gateway.networking.k8s.io/v1
+      # -- Set the route kind
+      # Valid options are GRPCRoute, HTTPRoute, TCPRoute, TLSRoute, UDPRoute
+      kind: HTTPRoute
+
+      annotations: {}
+      labels: {}
+
+      hostnames: []
+      # - my-filter.example.com
+      parentRefs: []
+      # - name: acme-gw
+
+      matches:
+        - path:
+            type: PathPrefix
+            value: /
+
+      ## Filters define the filters that are applied to requests that match this rule.
+      filters: []
+
+      ## Additional custom rules that can be added to the route
+      additionalRules: []
 
   ## Configuration for ThanosRuler service
   ##
