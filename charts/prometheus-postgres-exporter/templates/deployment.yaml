@@ -159,7 +159,7 @@ spec:
             {{- toYaml . | nindent 12 }}
           {{- end }}
           volumeMounts:
-            {{- if .Values.config.postgresExporter }}
+            {{- if or .Values.config.postgresExporter .Values.config.existingSecret.enabled }}
             - name: postgres-exporter
               mountPath: /etc/postgres_exporter.yml
               subPath: postgres_exporter.yml
@@ -195,7 +195,13 @@ spec:
           defaultMode: 420
           name: {{ template "prometheus-postgres-exporter.fullname" . }}
         name: postgres-exporter
-      {{- end }}
+      {{- else if .Values.config.existingSecret.enabled }}
+      - secret:
+          defaultMode: 420
+          secretName: {{ .Values.config.existingSecret.name }}
+        name: postgres-exporter
+      {{ end}}
+
       {{- with .Values.extraVolumes }}
       {{ toYaml . | nindent 6 }}
       {{- end }}
