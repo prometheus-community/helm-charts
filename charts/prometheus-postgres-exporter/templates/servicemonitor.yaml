@@ -12,6 +12,52 @@ metadata:
   namespace: {{ .Values.serviceMonitor.namespace }}
 {{- end }}
 spec:
+{{- if .Values.serviceMonitor.multipleTargets.enabled }}
+  endpoints:
+  {{- range  .Values.serviceMonitor.multipleTargets.targets }}
+    - path: /probe
+      port: {{ $.Values.service.name }}
+  {{- if $.Values.serviceMonitor.interval }}
+      interval: {{ $.Values.serviceMonitor.interval }}
+  {{- end }}
+  {{- if $.Values.serviceMonitor.timeout }}
+      scrapeTimeout: {{ $.Values.serviceMonitor.timeout }}
+  {{- end }}
+  {{- if $.Values.serviceMonitor.scheme }}
+      scheme: {{ $.Values.serviceMonitor.scheme }}
+  {{- end }}
+  {{- with $.Values.serviceMonitor.tlsConfig }}
+      tlsConfig:
+  {{- toYaml . | nindent 6 }}
+  {{- end }}
+      metricRelabelings:
+        - action: replace
+          replacement: {{ .endpoint }}
+          sourceLabels: [instance]
+          targetLabel: instance
+        - action: replace
+          replacement: {{ .name }}
+          sourceLabels: [target]
+          targetLabel: target
+      {{- if $.Values.serviceMonitor.metricRelabelings -}}
+        {{ toYaml $.Values.serviceMonitor.metricRelabelings | nindent 8 }}
+      {{- end }}
+  {{- if $.Values.serviceMonitor.relabelings }}
+      relabelings: {{ toYaml $.Values.serviceMonitor.relabelings | nindent 8 }}
+  {{- end }}
+      params:
+        target:
+          - {{ .endpoint }}:{{ .port | default 5432 }}/postgres
+        {{- if $.Values.serviceMonitor.multipleTargets.sharedAuthModule.enabled }}
+        auth_module:
+          - {{ $.Values.serviceMonitor.multipleTargets.sharedAuthModule.name }}
+        {{- else }}
+        auth_module:
+          - client.{{ .name }}
+        {{- end }}
+  {{- end }}
+{{- end }}
+{{- if not .Values.serviceMonitor.multipleTargets.enabled -}}
   endpoints:
   - port: {{ .Values.service.name }}
 {{- if .Values.serviceMonitor.interval }}
@@ -37,6 +83,7 @@ spec:
 {{- with .Values.serviceMonitor.tlsConfig }}
     tlsConfig:
 {{- toYaml . | nindent 6 }}
+{{- end }}
 {{- end }}
   jobLabel: {{ template "prometheus-postgres-exporter.fullname" . }}
   namespaceSelector:
