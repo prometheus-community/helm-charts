@@ -48,6 +48,10 @@ helm upgrade [RELEASE_NAME] [CHART] --install
 
 _See [helm upgrade](https://helm.sh/docs/helm/helm_upgrade/) for command documentation._
 
+### To 10.0.0
+
+This version changes `extraManifests` to be a string array input, allowing things like templating the `labels` field of an object.
+
 ### To 9.0.0
 
 This version remove pod security policy as it is deprecated.
