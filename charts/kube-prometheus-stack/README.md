@@ -84,7 +84,7 @@ A major chart version change (like v1.2.3 -> v2.0.0) indicates that there is an 
 
 ### From 65.x to 66.x
 
-This version upgrades Prometheus-Operator to v0.78.1
+This version upgrades Prometheus-Operator to v0.77.1
 
 Run these commands to update the CRDs before applying the upgrade.
 
