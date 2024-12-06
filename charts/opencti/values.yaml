@@ -1,0 +1,757 @@
+# -- Global section contains configuration options that are applied to all services
+global:
+  # -- Specifies the registry to pull images from. Leave empty for the default registry
+  imageRegistry: ""
+  # -- Specifies the secrets to use for pulling images from private registries
+  # Leave empty if no secrets are required
+  # E.g.
+  # imagePullSecrets:
+  #   - name: myRegistryKeySecretName
+  imagePullSecrets: []
+
+# -- Number of replicas for the service
+replicaCount: 1
+
+# -- Image registry configuration for the base service
+image:
+  # -- Repository of the image
+  repository: opencti/platform
+  # -- Pull policy for the image
+  pullPolicy: IfNotPresent
+  # -- Overrides the image tag whose default is the chart appVersion
+  tag: ""
+
+# -- String to partially override opencti.fullname template (will maintain the release name)
+nameOverride: ""
+
+# -- String to fully override opencti.fullname template
+fullnameOverride: ""
+
+# -- Global Docker registry secret names as an array
+imagePullSecrets: []
+
+# -- Enable creation of ServiceAccount
+serviceAccount:
+  # -- Specifies whether a service account should be created
+  create: true
+  # -- Annotations to add to the service account
+  annotations: {}
+  # -- Name of the service account to use.
+  # If not set and create is true, a name is generated using the fullname template
+  name: ""
+  # -- Specifies if you don't want the kubelet to automatically mount
+  # a ServiceAccount's API credentials
+  automountServiceAccountToken: false
+
+# -- Enable or disable test connection
+testConnection: false
+
+# -- Environment variables to configure application
+# </br> Ref: https://docs.openbas.io/latest/deployment/configuration/#platform
+env:
+  # APP OPENCTI
+  APP__ADMIN__EMAIL: admin@opencti.io
+  APP__ADMIN__PASSWORD: ChangeMe
+  APP__ADMIN__TOKEN: ChangeMe
+  APP__BASE_PATH: "/"
+  APP__GRAPHQL__PLAYGROUND__ENABLED: false
+  APP__GRAPHQL__PLAYGROUND__FORCE_DISABLED_INTROSPECTION: false
+  # MINIO
+  MINIO__ENDPOINT: release-name-minio:9000
+  # ELASTICSEARCH
+  ELASTICSEARCH__URL: http://release-name-elasticsearch:9200
+  # RABBITMQ
+  RABBITMQ__HOSTNAME: release-name-rabbitmq
+  RABBITMQ__PORT_MANAGEMENT: 15672
+  RABBITMQ__PORT: 5672
+  RABBITMQ__USERNAME: user
+  RABBITMQ__PASSWORD: ChangeMe
+  # REDIS
+  REDIS__HOSTNAME: release-name-redis-master
+  REDIS__PORT: 6379
+  REDIS__MODE: single
+  # METRICS AND HEALTHCHECK
+  APP__TELEMETRY__METRICS__ENABLED: true
+  APP__HEALTH_ACCESS_KEY: ChangeMe
+
+# -- Secrets from variables
+envFromSecrets: {}
+  # MY_VARIABLE:
+  #  name: <release-name>-credentials
+  #  key: secret_key
+
+# -- Secrets values to create credentials and reference by envFromSecrets
+# Generate Secret with following name: `<release-name>-credentials`
+secrets: {}
+
+# -- Kubernetes service to expose Pod
+# </br> Ref: https://kubernetes.io/docs/concepts/services-networking/service/
+service:
+  # -- Kubernetes Service type. Allowed values: NodePort, LoadBalancer or ClusterIP
+  type: ClusterIP
+  # -- Kubernetes Service port
+  port: 80
+  # -- NodePort port (only when type is NodePort)
+  # nodePort: 32000
+  # -- Pod expose port
+  targetPort: 4000
+  # -- Pod extra ports
+  # extraPorts:
+  # - name: metrics
+  #   port: 9080
+  #   targetPort: 9080
+
+# -- NetworkPolicy configuration
+# </br> Ref: https://kubernetes.io/docs/concepts/services-networking/network-policies/
+networkPolicy:
+  # -- Enable or disable NetworkPolicy
+  enabled: false
+  # -- Policy types
+  policyTypes: []
+    # - Ingress
+    # - Egress
+  ingress: []
+    # - from:
+    #   - ipBlock:
+    #       cidr: 172.17.0.0/16
+    #       except:
+    #       - 172.17.1.0/24
+    #   - namespaceSelector:
+    #       matchLabels:
+    #         project: myproject
+    #   - podSelector:
+    #       matchLabels:
+    #         role: frontend
+    #   ports:
+    #   - protocol: TCP
+    #     port: 6379
+  egress: []
+    # - to:
+    #   - ipBlock:
+    #       cidr: 10.0.0.0/24
+    #   ports:
+    #   - protocol: TCP
+    #     port: 5978
+
+# -- Enable ServiceMonitor to get metrics
+# </br> Ref: https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/api.md#servicemonitor
+serviceMonitor:
+  # -- Enable or disable
+  enabled: false
+  interval: 30s
+  scrapeTimeout: 10s
+  metricRelabelings: []
+  relabelings: []
+
+# -- Configure lifecycle hooks
+# </br> Ref: https://kubernetes.io/docs/concepts/containers/container-lifecycle-hooks/
+# </br> Ref: https://learnk8s.io/graceful-shutdown
+lifecycle: {}
+  # preStop:
+  #   exec:
+  #     command: ["sh", "-c", "sleep 10"]
+
+# -- Configure Pod termination grace period
+# </br> Ref: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/#pod-termination
+terminationGracePeriodSeconds: 30
+
+# -- Configure liveness checker
+# </br> Ref: https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#define-startup-probes
+livenessProbe:
+  enabled: true
+  failureThreshold: 3
+  initialDelaySeconds: 180
+  periodSeconds: 10
+  successThreshold: 1
+  timeoutSeconds: 5
+
+# -- Custom livenessProbe
+livenessProbeCustom: {}
+  # httpGet:
+  #   path: /dashboard
+  #   port: 4000
+  # failureThreshold: 3
+  # initialDelaySeconds: 200
+  # periodSeconds: 30
+  # successThreshold: 1
+  # timeoutSeconds: 5
+
+# -- Configure readinessProbe checker
+# </br> Ref: https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#define-startup-probes
+readinessProbe:
+  enabled: true
+  failureThreshold: 3
+  initialDelaySeconds: 10
+  periodSeconds: 10
+  successThreshold: 1
+  timeoutSeconds: 1
+
+# -- Custom readinessProbe
+readinessProbeCustom: {}
+  # httpGet:
+  #   path: /dashboard
+  #   port: 4000
+  # failureThreshold: 3
+  # initialDelaySeconds: 200
+  # periodSeconds: 30
+  # successThreshold: 1
+  # timeoutSeconds: 5
+
+# -- Configure startupProbe checker
+# </br> Ref: https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#define-startup-probes
+startupProbe:
+  enabled: true
+  failureThreshold: 30
+  initialDelaySeconds: 180
+  periodSeconds: 10
+  successThreshold: 1
+  timeoutSeconds: 5
+
+# -- Custom startupProbe
+startupProbeCustom: {}
+  # httpGet:
+  #   path: /dashboard
+  #   port: 4000
+  # failureThreshold: 3
+  # initialDelaySeconds: 200
+  # periodSeconds: 30
+  # successThreshold: 1
+  # timeoutSeconds: 5
+
+# -- Enable or disable ready-checker
+#
+readyChecker:
+  # -- Enable or disable ready-checker
+  enabled: true
+  # -- Repository of the image
+  repository: busybox
+  # -- Pull policy for the image
+  pullPolicy: IfNotPresent
+  # -- Overrides the image tag
+  tag: latest
+  # -- Number of retries before giving up
+  retries: 30
+  # -- Timeout for each check
+  timeout: 5
+  # -- List services
+  services:
+  - name: elasticsearch
+    port: 9200
+  - name: minio
+    port: 9000
+  - name: rabbitmq
+    port: 5672
+  - name: redis-master
+    port: 6379
+
+# -- Configure annotations on Pods
+podAnnotations: {}
+
+# -- Configure labels on Pods
+podLabels: {}
+
+# -- Defines privilege and access control settings for a Pod
+# </br> Ref: https://kubernetes.io/docs/concepts/security/pod-security-standards/
+# </br> Ref: https://kubernetes.io/docs/tasks/configure-pod-container/security-context/
+
+podSecurityContext: {}
+  # fsGroup: 2000
+
+# -- Defines privilege and access control settings for a Container
+# </br> Ref: https://kubernetes.io/docs/concepts/security/pod-security-standards/
+# </br> Ref: https://kubernetes.io/docs/tasks/configure-pod-container/security-context/
+securityContext: {}
+  # capabilities:
+  #   drop:
+  #   - ALL
+  # readOnlyRootFilesystem: true
+  # runAsNonRoot: true
+  # runAsUser: 1000
+
+# -- Ingress configuration to expose app
+# </br> Ref: https://kubernetes.io/docs/concepts/services-networking/ingress/
+ingress:
+  enabled: false
+  className: ""
+  annotations: {}
+    # kubernetes.io/ingress.class: nginx
+    # kubernetes.io/tls-acme: "true"
+  hosts:
+    - host: chart-example.local
+      paths:
+        - path: /
+          pathType: ImplementationSpecific
+  tls: []
+  #  - secretName: chart-example-tls
+  #    hosts:
+  #      - chart-example.local
+
+# -- The resources limits and requested
+# </br> Ref: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
+resources: {}
+  # limits:
+  #   cpu: "1500m"
+  #   memory: 2048Mi
+  # requests:
+  #   cpu: 1
+  #   memory: 256Mi
+
+# -- Pod Disruption Budget
+# </br> Ref: https://kubernetes.io/docs/reference/kubernetes-api/policy-resources/pod-disruption-budget-v1/
+podDisruptionBudget:
+  enabled: false
+  maxUnavailable: 1
+  minAvailable:
+
+# -- Autoscaling with CPU or memory utilization percentage
+# </br> Ref: https://kubernetes.io/docs/tasks/run-application/horizontal-pod-autoscale/
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 100
+  targetCPUUtilizationPercentage: 80
+  # targetMemoryUtilizationPercentage: 80
+
+# -- Additional volumes on the output Deployment definition
+volumes: []
+# - name: foo
+#   secret:
+#     secretName: mysecret
+#     optional: false
+
+# -- Additional volumeMounts on the output Deployment definition
+volumeMounts: []
+# - name: foo
+#   mountPath: "/etc/foo"
+#   readOnly: true
+
+# -- Node labels for pod assignment
+# </br> Ref: https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#nodeselector
+nodeSelector: {}
+
+# -- Tolerations for pod assignment
+# </br> Ref: https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/
+tolerations: []
+
+# -- Affinity for pod assignment
+# </br> Ref: https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#affinity-and-anti-affinity
+affinity: {}
+
+# -- Control how Pods are spread across your cluster
+# </br> Ref: https://kubernetes.io/docs/concepts/scheduling-eviction/topology-spread-constraints/#example-multiple-topologyspreadconstraints
+topologySpreadConstraints: []
+  # - maxSkew: 1
+  #   topologyKey: zone
+  #   whenUnsatisfiable: DoNotSchedule
+
+# -- Connectors Globals
+connectorsGlobal:
+  # -- Secrets from variables
+  envFromSecrets: {}
+  # MY_VARIABLE:
+  #  name: <release-name>-credentials
+  #  key: secret_key
+
+  # -- Additional environment variables on the output connector definition
+  env: {}
+  # MY_VARIABLE: my_value
+
+  # -- Additional volumes on the output connector Deployment definition
+  volumes: []
+  # - name: foo
+  #   secret:
+  #     secretName: mysecret
+  #     optional: false
+
+  # -- Additional volumeMounts on the output connector Deployment definition
+  volumeMounts: []
+  # - name: foo
+  #   mountPath: "/etc/foo"
+  #   readOnly: true
+
+# -- Connectors
+# </br> Ref: https://github.com/OpenCTI-Platform/connectors/tree/master
+connectors: []
+# - name: connector-name
+#   enabled: true
+#   replicas: 1
+#   # -- Service Account for connector
+#   serviceAccount: {}
+#     # create: false
+#   # -- Image registry
+#   image: {}
+#     # repository:
+#     # pullPolicy:
+#     # tag: ""
+#   # -- Deployment annotations
+#   deploymentAnnotations: {}
+#   # -- Pod annotations
+#   podAnnotations: {}
+#   # -- Enable or disable ready-checker waiting server is ready
+#   readyChecker: {}
+#     # enabled: true
+#     # repository: busybox
+#     # pullPolicy: IfNotPresent
+#     # tag: latest
+#     # retries: 30
+#     # timeout: 5
+#   # -- Lifecycle configuration
+#   lifecycle: {}
+#     # preStop:
+#     #   exec:
+#     #     command: ["sh", "-c", "sleep 10"]
+#   # -- Configure Pod termination grace period
+#   terminationGracePeriodSeconds: 30
+#   # -- Environment variables to configure application
+#   env: {}
+#     # my_env: my_value
+#     # -- Secrets from variables
+#   envFromSecrets: {}
+#     # my_env:
+#     #  name: release-name-credentials
+#     #  key: secret_key
+#   # -- The resources limits and requested
+#   resources: {}
+#     # limits:
+#     #   memory: 256Mi
+#     #   cpu: "250m"
+#     # requests:
+#     #   memory: 56Mi
+#     #   cpu: "50m"
+#   # -- Node labels for pod assignment
+#   nodeSelector: {}
+#     # project: "opencti"
+#   # -- Tolerations for pod assignment
+#   tolerations: []
+#     # - key: "project"
+#     #   operator: "Equal"
+#     #   value: "opencti"
+#     #   effect: "NoSchedule"
+#   # -- Affinity for pod assignment
+#   affinity: {}
+#   # -- Control how Pods are spread across your cluster
+#   topologySpreadConstraints: []
+#     # - maxSkew: 1
+#     #   topologyKey: zone
+#     #   whenUnsatisfiable: DoNotSchedule
+
+# -- OpenCTI worker deployment configuration
+# </br> Ref: https://docs.opencti.io/latest/deployment/overview/#workers
+worker:
+  # -- Enable or disable worker
+  enabled: true
+
+  # -- Number of replicas for the service
+  replicaCount: 1
+
+  # -- Enable or disable ready-checker waiting server is ready
+  readyChecker:
+    # -- Enable or disable ready-checker
+    enabled: true
+    # -- Repository of the image
+    repository: busybox
+    # -- Pull policy for the image
+    pullPolicy: IfNotPresent
+    # -- Overrides the image tag
+    tag: latest
+    # -- Number of retries before giving up
+    retries: 30
+    # -- Timeout for each check
+    timeout: 5
+
+  # -- Configure lifecycle hooks
+  # </br> Ref: https://kubernetes.io/docs/concepts/containers/container-lifecycle-hooks/
+  # </br> Ref: https://learnk8s.io/graceful-shutdown
+  lifecycle: {}
+    # preStop:
+    #   exec:
+    #     command: ["sh", "-c", "sleep 10"]
+
+  # -- Configure Pod termination grace period
+  # </br> Ref: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/#pod-termination
+  terminationGracePeriodSeconds: 30
+
+  # -- Image registry configuration for the base service
+  image:
+    # -- Repository of the image
+    repository: opencti/worker
+    # -- Pull policy for the image
+    pullPolicy: IfNotPresent
+    # -- Overrides the image tag whose default is the chart appVersion
+    tag: ""
+
+  # -- Environment variables to configure application
+  # </br> Ref: https://docs.opencti.io/latest/deployment/configuration/#platform
+  env:
+    WORKER_LOG_LEVEL: info
+    # METRICS
+    WORKER_TELEMETRY_ENABLED: true
+
+  # -- Secrets from variables
+  envFromSecrets: {}
+    # MY_VARIABLE:
+    #  name: <release-name>-credentials
+    #  key: secret_key
+
+  # -- NetworkPolicy configuration
+  # </br> Ref: https://kubernetes.io/docs/concepts/services-networking/network-policies/
+  networkPolicy:
+    # -- Enable or disable NetworkPolicy
+    enabled: false
+    # -- Policy types
+    policyTypes: []
+      # - Ingress
+      # - Egress
+    ingress: []
+      # - from:
+      #   - ipBlock:
+      #       cidr: 172.17.0.0/16
+      #       except:
+      #       - 172.17.1.0/24
+      #   - namespaceSelector:
+      #       matchLabels:
+      #         project: myproject
+      #   - podSelector:
+      #       matchLabels:
+      #         role: frontend
+      #   ports:
+      #   - protocol: TCP
+      #     port: 6379
+    egress: []
+      # - to:
+      #   - ipBlock:
+      #       cidr: 10.0.0.0/24
+      #   ports:
+      #   - protocol: TCP
+      #     port: 5978
+
+  # -- Enable ServiceMonitor to get metrics
+  # </br> Ref: https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/api.md#servicemonitor
+  serviceMonitor:
+    # -- Enable or disable
+    enabled: false
+    interval: 30s
+    scrapeTimeout: 10s
+    metricRelabelings: []
+    relabelings: []
+
+  # -- The resources limits and requested
+  # </br> Ref: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
+  resources: {}
+    # We usually recommend not to specify default resources and to leave this as a conscious
+    # choice for the user. This also increases chances charts run on environments with little
+    # resources, such as Minikube. If you do want to specify resources, uncomment the following
+    # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+    # limits:
+    #   cpu: "250m"
+    #   memory: 256Mi
+    # requests:
+    #   cpu: "100m"
+    #   memory: 56Mi
+
+  # -- Pod Disruption Budget
+  # </br> Ref: https://kubernetes.io/docs/reference/kubernetes-api/policy-resources/pod-disruption-budget-v1/
+  podDisruptionBudget:
+    enabled: false
+    maxUnavailable: 1
+    minAvailable:
+
+  # -- Autoscaling with CPU or memory utilization percentage
+  # </br> Ref: https://kubernetes.io/docs/tasks/run-application/horizontal-pod-autoscale/
+  autoscaling:
+    enabled: false
+    minReplicas: 1
+    maxReplicas: 100
+    targetCPUUtilizationPercentage: 80
+    # targetMemoryUtilizationPercentage: 80
+
+  # -- Additional volumes on the output Deployment definition
+  volumes: []
+  # - name: foo
+  #   secret:
+  #     secretName: mysecret
+  #     optional: false
+
+  # -- Additional volumeMounts on the output Deployment definition
+  volumeMounts: []
+  # - name: foo
+  #   mountPath: "/etc/foo"
+  #   readOnly: true
+
+  # -- Node labels for pod assignment
+  # </br> Ref: https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#nodeselector
+  nodeSelector: {}
+
+  # -- Tolerations for pod assignment
+  # </br> Ref: https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/
+  tolerations: []
+
+  # -- Affinity for pod assignment
+  # </br> Ref: https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#affinity-and-anti-affinity
+  affinity: {}
+
+  # -- Control how Pods are spread across your cluster
+  # </br> Ref: https://kubernetes.io/docs/concepts/scheduling-eviction/topology-spread-constraints/#example-multiple-topologyspreadconstraints
+  topologySpreadConstraints: []
+    # - maxSkew: 1
+    #   topologyKey: zone
+    #   whenUnsatisfiable: DoNotSchedule
+
+# -- OpenSearch subchart deployment
+# </br> Ref: https://github.com/opensearch-project/helm-charts/blob/opensearch-2.16.1/charts/opensearch/values.yaml
+opensearch:
+  # -- Enable or disable OpenSearch subchart
+  enabled: false
+
+  # OpenSearch Java options
+  opensearchJavaOpts: "-Xmx512M -Xms512M"
+
+  # If discovery.type in the opensearch configuration is set to "single-node",
+  # this should be set to "true"
+  # If "true", replicas will be forced to 1
+  singleNode: true
+
+  # Enable persistence using Persistent Volume Claims
+  # </br> Ref: https://kubernetes.io/docs/user-guide/persistent-volumes/
+  persistence:
+    enabled: false
+
+# -- ElasticSearch subchart deployment
+# </br> Ref: https://github.com/bitnami/charts/blob/main/bitnami/elasticsearch/values.yaml
+elasticsearch:
+  # -- Enable or disable ElasticSearch subchart
+  enabled: true
+
+  # Kernel settings modifier image
+  sysctlImage:
+    # Enable kernel settings modifier image
+    enabled: false
+
+  # Elasticsearch cluster name
+  clusterName: elastic
+
+  # Extra variables
+  extraEnvVars:
+    - name: ES_JAVA_OPTS
+      value: "-Xms512M -Xmx512M"
+
+  # Master-eligible nodes parameters
+  master:
+    # Deploy the Elasticsearch master-eligible nodes as master-only nodes. Recommended for high-demand deployments.
+    masterOnly: true
+    # Number of master-eligible replicas to deploy
+    replicaCount: 1
+    # Enable persistence using Persistent Volume Claims
+    # </br> Ref: https://kubernetes.io/docs/user-guide/persistent-volumes/
+    persistence:
+      # Enable persistence using a `PersistentVolumeClaim`
+      enabled: false
+
+  # Data-only nodes parameters
+
+  data:
+    # Number of data-only replicas to deploy
+    replicaCount: 1
+
+    # Enable persistence using Persistent Volume Claims
+    # </br> Ref: https://kubernetes.io/docs/user-guide/persistent-volumes/
+    persistence:
+      # Enable persistence using a `PersistentVolumeClaim`
+      enabled: false
+
+  # Ingest-only nodes parameters
+  ingest:
+    # Enable ingest nodes
+    enabled: false
+
+  # Coordinating-only nodes parameters
+  coordinating:
+    # Number of coordinating-only replicas to deploy
+    replicaCount: 0
+
+# -- MinIO subchart deployment
+# </br> Ref: https://github.com/bitnami/charts/blob/main/bitnami/minio/values.yaml
+minio:
+  # -- Enable or disable MinIO subchart
+  enabled: true
+
+  # mode Minio server mode (`standalone` or `distributed`)
+  # </br> Ref: https://docs.minio.io/docs/distributed-minio-quickstart-guide
+  mode: standalone
+
+  # Minio authentication parameters
+  auth:
+    # Minio root username
+    rootUser: ChangeMe
+    # Password for Minio root user
+    rootPassword: ChangeMe
+
+  # Enable persistence using Persistent Volume Claims
+  # </br> Ref: https://kubernetes.io/docs/user-guide/persistent-volumes/
+  persistence:
+    # Enable MinIO data persistence using PVC. If false, use emptyDir
+    enabled: false
+
+# -- RabbitMQ subchart deployment
+# </br> Ref: https://github.com/bitnami/charts/blob/main/bitnami/rabbitmq/values.yaml
+rabbitmq:
+  # -- Enable or disable RabbitMQ subchart
+  enabled: true
+
+  # Number of RabbitMQ replicas to deploy
+  replicaCount: 1
+
+  # Clustering settings
+  clustering:
+    # Enable RabbitMQ clustering
+    enabled: false
+
+  # RabbitMQ Authentication parameters
+  auth:
+    # RabbitMQ application username
+    # </br> Ref: https://github.com/bitnami/containers/tree/main/bitnami/rabbitmq#environment-variables
+    username: user
+    # RabbitMQ application password
+    # </br> Ref: https://github.com/bitnami/containers/tree/main/bitnami/rabbitmq#environment-variables
+    password: ChangeMe
+    erlangCookie: ChangeMe
+
+  # Persistence parameters
+  persistence:
+    # Enable RabbitMQ data persistence using PVC
+    enabled: false
+
+# -- Redis subchart deployment
+# </br> Ref: https://github.com/bitnami/charts/blob/main/bitnami/redis/values.yaml
+
+redis:
+  # -- Enable or disable Redis subchart
+  enabled: true
+
+  # Redis architecture. Allowed values: `standalone` or `replication`
+  architecture: standalone
+  #  Redis Authentication parameters
+  # </br> Ref: https://github.com/bitnami/containers/tree/main/bitnami/redis#setting-the-server-password-on-first-run
+  auth:
+    # Enable password authentication
+    enabled: false
+
+  # Redis master configuration parameters
+  master:
+    # Number of Redis master instances to deploy (experimental, requires additional configuration)
+    count: 1
+    # Persistence parameters
+    # </br> Ref: https://kubernetes.io/docs/user-guide/persistent-volumes/
+    persistence:
+      # Enable persistence on Redis master nodes using Persistent Volume Claims
+      enabled: false
+
+  # Redis replicas configuration parameters
+  replica:
+    # Number of Redis replicas to deploy
+    replicaCount: 1
+    # Persistence parameters
+    # </br> Ref: https://kubernetes.io/docs/user-guide/persistent-volumes/
+    persistence:
+      # Enable persistence on Redis master nodes using Persistent Volume Claims
+      enabled: false

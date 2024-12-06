@@ -1,0 +1,48 @@
+{{- if .Values.worker.networkPolicy.enabled }}
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ include "opencti.fullname" . }}-worker
+  labels:
+    {{- include "opencti.workerLabels" . | nindent 4 }}
+spec:
+  {{- if and (not .Values.worker.networkPolicy.policyTypes) (not .Values.worker.networkPolicy.ingress) (not .Values.worker.networkPolicy.egress) }}
+  podSelector: {}
+  {{- else }}
+  podSelector:
+    matchLabels:
+      {{- include "opencti.selectorWorkerLabels" . | nindent 6 }}
+  {{- end }}
+
+  {{- if .Values.worker.networkPolicy.policyTypes }}
+  {{- with .Values.worker.networkPolicy.policyTypes }}
+  policyTypes:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  {{- else }}
+  policyTypes:
+    - Ingress
+    - Egress
+  {{- end }}
+
+  {{- if .Values.worker.networkPolicy.ingress }}
+  {{- with .Values.worker.networkPolicy.ingress }}
+  ingress:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  {{- else }}
+  ingress:
+  - {}
+  {{- end }}
+
+  {{- if .Values.worker.networkPolicy.egress }}
+  {{- with .Values.worker.networkPolicy.egress }}
+  egress:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  {{- else }}
+  egress:
+  - {}
+  {{- end }}
+
+{{- end }}

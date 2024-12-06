@@ -1,0 +1,17 @@
+{{- if .Values.networkPolicy.create -}}
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ template "opensearch.uname" . }}-opensearch-net
+  labels:
+    {{- include "opensearch.labels" . | nindent 4 }}
+spec:
+  ingress:
+  - from:
+    - podSelector:
+        matchLabels:
+          {{ template "opensearch.uname" . }}-transport-client: "true"
+  podSelector:
+    matchLabels:
+      {{ template "opensearch.uname" . }}-transport-client: "true"
+{{- end }}

@@ -1,0 +1,21 @@
+{{- if .Values.rbac.create -}}
+{{- $fullName := include "opensearch.uname" . -}}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: {{ $fullName | quote }}
+  labels:
+    {{- include "opensearch.labels" . | nindent 4 }}
+subjects:
+  - kind: ServiceAccount
+    {{- if eq .Values.rbac.serviceAccountName "" }}
+    name: {{ $fullName | quote }}
+    {{- else }}
+    name: {{ .Values.rbac.serviceAccountName | quote }}
+    {{- end }}
+    namespace: {{ .Release.Namespace | quote }}
+roleRef:
+  kind: Role
+  name: {{ $fullName | quote }}
+  apiGroup: rbac.authorization.k8s.io
+{{- end -}}

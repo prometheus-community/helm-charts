@@ -1,0 +1,19 @@
+{{- if .Values.securityConfig.config.data -}}
+apiVersion: v1
+kind: Secret
+metadata:
+  name: {{ include "opensearch.uname" . }}-securityconfig
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "opensearch.labels" . | nindent 4 }}
+type: Opaque
+stringData:
+{{- range $key, $val := .Values.securityConfig.config.data }}
+  {{ $key }}: |
+    {{- if (eq (kindOf $val) "map")}}
+    {{- tpl (toYaml $val) $ | nindent 4 }}
+    {{- else }}
+    {{- tpl $val $ | nindent 4 }}
+    {{- end }}
+{{- end }}
+{{- end }}

@@ -1,0 +1,20 @@
+{{- if .Values.serviceMonitor.enabled }}
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: {{ template "opensearch.uname" . }}-service-monitor
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "opensearch.labels" . | nindent 4 }}
+    {{- with .Values.serviceMonitor.labels }}
+      {{- toYaml . | nindent 4 }}
+    {{- end }}
+spec:
+  selector:
+    matchLabels:
+      {{- include "opensearch.selectorLabels" . | nindent 6 }}
+  endpoints:
+  - port: {{ .Values.service.metricsPortName | default "metrics" }}
+    interval: {{ .Values.serviceMonitor.interval }}
+    path: {{ .Values.serviceMonitor.path }}
+{{- end }}

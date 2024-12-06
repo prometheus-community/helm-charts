@@ -1,0 +1,30 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "opencti.fullname" . }}-server
+  labels:
+    {{- include "opencti.serverLabels" . | nindent 4 }}
+spec:
+  type: {{ .Values.service.type }}
+  ports:
+    - port: {{ .Values.service.port }}
+      targetPort: {{ .Values.service.targetPort | default .Values.service.port }}
+      protocol: TCP
+      name: http
+      {{- if and (eq "NodePort" .Values.service.type) .Values.service.nodePort }}
+      nodePort: {{ .Values.service.nodePort }}
+      {{- end }}
+    {{- range $port := .Values.service.extraPorts }}
+    - name: {{ $port.name }}
+      port: {{ $port.port }}
+      targetPort: {{ $port.targetPort }}
+      protocol: TCP
+    {{- end }}
+    {{- if .Values.env.APP__TELEMETRY__METRICS__ENABLED }}
+    - name: metrics
+      port: {{ .Values.env.APP__TELEMETRY__METRICS__EXPORTER_PROMETHEUS | default 14269 }}
+      targetPort: {{ .Values.env.APP__TELEMETRY__METRICS__EXPORTER_PROMETHEUS | default 14269 }}
+      protocol: TCP
+    {{- end }}
+  selector:
+    {{- include "opencti.selectorServerLabels" . | nindent 4 }}

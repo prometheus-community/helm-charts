@@ -1,0 +1,24 @@
+{{- if and .Values.serviceMonitor.enabled .Values.env.APP__TELEMETRY__METRICS__ENABLED }}
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: {{ include "opencti.fullname" . }}-server
+  labels:
+    {{- include "opencti.serverLabels" . | nindent 4 }}
+spec:
+  selector:
+    matchLabels:
+      {{- include "opencti.selectorServerLabels" . | nindent 8 }}
+  endpoints:
+  - port: metrics
+    interval: {{ .Values.serviceMonitor.interval | quote }}
+    scrapeTimeout: {{ .Values.serviceMonitor.scrapeTimeout | quote }}
+    {{- if .Values.serviceMonitor.metricRelabelings }}
+    metricRelabelings:
+    {{- toYaml .Values.serviceMonitor.metricRelabelings | nindent 4 }}
+    {{- end }}
+    {{- if .Values.serviceMonitor.relabelings }}
+    relabelings:
+    {{- toYaml .Values.serviceMonitor.relabelings | nindent 4 }}
+    {{- end }}
+{{- end -}}

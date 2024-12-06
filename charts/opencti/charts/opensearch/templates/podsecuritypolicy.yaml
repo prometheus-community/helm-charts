@@ -1,0 +1,17 @@
+{{- if semverCompare "<1.25-0" .Capabilities.KubeVersion.GitVersion -}}
+{{- if .Values.podSecurityPolicy.create -}}
+{{- $fullName := include "opensearch.uname" . -}}
+apiVersion: policy/v1beta1
+kind: PodSecurityPolicy
+metadata:
+  name: {{ default $fullName .Values.podSecurityPolicy.name | quote }}
+  labels:
+    {{- include "opensearch.labels" . | nindent 4 }}
+spec:
+{{ toYaml .Values.podSecurityPolicy.spec | indent 2 }}
+{{- if .Values.sysctl.enabled }}
+  allowedUnsafeSysctls:
+  - vm.max_map_count
+{{- end }}
+{{- end }}
+{{- end }}

@@ -1,0 +1,24 @@
+{{- if and .Values.worker.serviceMonitor.enabled .Values.worker.env.WORKER_TELEMETRY_ENABLED }}
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: {{ include "opencti.fullname" . }}-worker
+  labels:
+    {{- include "opencti.workerLabels" . | nindent 4 }}
+spec:
+  selector:
+    matchLabels:
+      {{- include "opencti.selectorWorkerLabels" . | nindent 8 }}
+  endpoints:
+  - port: metrics
+    interval: {{ .Values.worker.serviceMonitor.interval | quote }}
+    scrapeTimeout: {{ .Values.worker.serviceMonitor.scrapeTimeout | quote }}
+    {{- if .Values.worker.serviceMonitor.metricRelabelings }}
+    metricRelabelings:
+    {{- toYaml .Values.worker.serviceMonitor.metricRelabelings | nindent 4 }}
+    {{- end }}
+    {{- if .Values.worker.serviceMonitor.relabelings }}
+    relabelings:
+    {{- toYaml .Values.worker.serviceMonitor.relabelings | nindent 4 }}
+    {{- end }}
+{{- end -}}

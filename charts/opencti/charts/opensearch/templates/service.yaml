@@ -1,0 +1,75 @@
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: {{ template "opensearch.serviceName" . }}
+  labels:
+    {{- include "opensearch.labels" . | nindent 4 }}
+{{- if .Values.service.labels }}
+{{ toYaml .Values.service.labels | indent 4 }}
+{{- end }}
+  annotations:
+{{ toYaml .Values.service.annotations | indent 4 }}
+spec:
+  type: {{ .Values.service.type }}
+  {{- if (semverCompare ">= 1.23-0" .Capabilities.KubeVersion.Version) }}
+  {{- if .Values.service.ipFamilyPolicy }}
+  ipFamilyPolicy: {{ .Values.service.ipFamilyPolicy }}
+  {{- end }}
+  {{- if .Values.service.ipFamilies }}
+  ipFamilies: {{ .Values.service.ipFamilies }}
+  {{- end }}
+  {{- end }}
+  selector:
+    {{- include "opensearch.selectorLabels" . | nindent 4 }}
+  ports:
+  - name: {{ .Values.service.httpPortName | default "http" }}
+    protocol: TCP
+    port: {{ .Values.httpPort }}
+{{- if .Values.service.nodePort }}
+    nodePort: {{ .Values.service.nodePort }}
+{{- end }}
+  - name: {{ .Values.service.transportPortName | default "transport" }}
+    protocol: TCP
+    port: {{ .Values.transportPort }}
+  - name: {{ .Values.service.metricsPortName | default "metrics" }}
+    protocol: TCP
+    port: {{ .Values.metricsPort }}
+{{- if .Values.service.loadBalancerIP }}
+  loadBalancerIP: {{ .Values.service.loadBalancerIP }}
+{{- end }}
+{{- with .Values.service.loadBalancerSourceRanges }}
+  loadBalancerSourceRanges:
+{{ toYaml . | indent 4 }}
+{{- end }}
+{{- if .Values.service.externalTrafficPolicy }}
+  externalTrafficPolicy: {{ .Values.service.externalTrafficPolicy }}
+{{- end }}
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: {{ template "opensearch.serviceName" . }}-headless
+  labels:
+    {{- include "opensearch.labels" . | nindent 4 }}
+{{- if .Values.service.labelsHeadless }}
+{{ toYaml .Values.service.labelsHeadless | indent 4 }}
+{{- end }}
+  annotations:
+    service.alpha.kubernetes.io/tolerate-unready-endpoints: "true"
+{{- if .Values.service.headless.annotations }}
+{{ toYaml .Values.service.headless.annotations | indent 4 }}
+{{- end }}
+spec:
+  clusterIP: None # This is needed for statefulset hostnames like opensearch-0 to resolve
+  # Create endpoints also if the related pod isn't ready
+  publishNotReadyAddresses: true
+  selector:
+    {{- include "opensearch.selectorLabels" . | nindent 4 }}
+  ports:
+  - name: {{ .Values.service.httpPortName | default "http" }}
+    port: {{ .Values.httpPort }}
+  - name: {{ .Values.service.transportPortName | default "transport" }}
+    port: {{ .Values.transportPort }}
+  - name: {{ .Values.service.metricsPortName | default "metrics" }}
+    port: {{ .Values.metricsPort }}

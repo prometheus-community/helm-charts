@@ -1,0 +1,65 @@
+{{- if .Values.ingress.enabled -}}
+{{- $fullName := include "opensearch.serviceName" . -}}
+{{- $servicePort := .Values.httpPort -}}
+{{- $ingressPath := .Values.ingress.path -}}
+{{- $ingressApiIsStable := eq (include "opensearch.ingress.isStable" .) "true" -}}
+{{- $ingressSupportsIngressClassName := eq (include "opensearch.ingress.supportsIngressClassName" .) "true" -}}
+{{- if semverCompare ">=1.19-0" .Capabilities.KubeVersion.GitVersion -}}
+apiVersion: networking.k8s.io/v1
+{{- else if semverCompare ">=1.14-0" .Capabilities.KubeVersion.GitVersion -}}
+apiVersion: networking.k8s.io/v1beta1
+{{- else -}}
+apiVersion: extensions/v1beta1
+{{- end }}
+kind: Ingress
+metadata:
+  name: {{ $fullName }}
+  labels:
+    {{- include "opensearch.labels" . | nindent 4 }}
+    {{- with .Values.ingress.ingressLabels }}
+      {{- toYaml . | nindent 4 }}
+    {{- end }}
+{{- with .Values.ingress.annotations }}
+  annotations:
+{{ toYaml . | indent 4 }}
+{{- end }}
+spec:
+  {{- if and $ingressSupportsIngressClassName .Values.ingress.ingressClassName }}
+  ingressClassName: {{ .Values.ingress.ingressClassName }}
+  {{- end -}}
+{{- if .Values.ingress.tls }}
+  tls:
+  {{- range .Values.ingress.tls }}
+    - hosts:
+      {{- range .hosts }}
+        - {{ . }}
+      {{- end }}
+      secretName: {{ .secretName }}
+  {{- end }}
+{{- end }}
+  rules:
+    {{- if semverCompare ">=1.19-0" .Capabilities.KubeVersion.GitVersion -}}
+    {{- range .Values.ingress.hosts }}
+    - host: {{ . | quote }}
+      http:
+        paths:
+          - path: {{ $ingressPath }}
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ $fullName }}
+                port:
+                  number: {{ $servicePort }}
+    {{- end }}
+    {{- else -}}
+    {{- range .Values.ingress.hosts }}
+    - host: {{ . | quote }}
+      http:
+        paths:
+          - path: {{ $ingressPath }}
+            backend:
+              serviceName: {{ $fullName }}
+              servicePort: {{ $servicePort }}
+    {{- end }}
+    {{- end }}
+{{- end }}

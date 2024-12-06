@@ -1,0 +1,32 @@
+{{- $connectorsGlobal := .Values.connectorsGlobal }}
+{{- range .Values.connectors }}
+{{- $connectorName := .name }}
+
+{{- if and ((.serviceMonitor).enabled) .env.CONNECTOR_EXPOSE_METRICS }}
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: {{ $connectorName }}
+  labels:
+    opencti.connector: {{ $connectorName }}
+    {{- include "opencti.labels" $ | nindent 4 }}
+spec:
+  selector:
+    matchLabels:
+      opencti.connector: {{ $connectorName }}
+      {{- include "opencti.selectorLabels" $ | nindent 6 }}
+  endpoints:
+  - port: metrics
+    interval: {{ default "30s" .serviceMonitor.interval | quote }}
+    scrapeTimeout: {{ default "10s" .serviceMonitor.scrapeTimeout | quote }}
+    {{- if .serviceMonitor.metricRelabelings }}
+    metricRelabelings:
+    {{- toYaml .serviceMonitor.metricRelabelings | nindent 4 }}
+    {{- end }}
+    {{- if .serviceMonitor.relabelings }}
+    relabelings:
+    {{- toYaml .serviceMonitor.relabelings | nindent 4 }}
+    {{- end }}
+{{- end -}}
+{{- end }}

@@ -1,0 +1,182 @@
+replicaCount: 1
+fullnameOverride: opencti-ci
+
+env:
+  APP__ADMIN__EMAIL: admin@opencti.io
+  APP__ADMIN__PASSWORD: test
+  APP__BASE_PATH: "/"
+  APP__HEALTH_ACCESS_KEY: f93747ff-2ea1-4717-900c-9df20b8e4429
+  APP__TELEMETRY__METRICS__ENABLED: true
+  APP__GRAPHQL__PLAYGROUND__ENABLED: false
+  APP__GRAPHQL__PLAYGROUND__FORCE_DISABLED_INTROSPECTION: false
+  ELASTICSEARCH__ENGINE_SELECTOR: elk
+  ELASTICSEARCH__URL: http://opencti-ci-elasticsearch:9200
+  MINIO__ENDPOINT: opencti-ci-minio
+  RABBITMQ__HOSTNAME: opencti-ci-rabbitmq
+  RABBITMQ__PORT_MANAGEMENT: 15672
+  RABBITMQ__PORT: 5672
+  RABBITMQ__USERNAME: user
+  REDIS__HOSTNAME: opencti-ci-redis-master
+  REDIS__MODE: single
+  REDIS__PORT: 6379
+
+testConnection: true
+
+lifecycle:
+  preStop:
+    exec:
+      command: ["sh", "-c", "sleep 10"]
+
+terminationGracePeriodSeconds: 40
+
+networkPolicy:
+  enabled: true
+
+podDisruptionBudget:
+  enabled: true
+
+autoscaling:
+  enabled: true
+
+secrets:
+  APP__ADMIN__TOKEN: "b1976749-8a53-4f49-bf04-cafa2a3458c1"
+  RABBITMQ__PASSWORD: ChangeMe
+
+envFromSecrets:
+  APP__ADMIN__TOKEN:
+    name: opencti-ci-credentials
+    key: APP__ADMIN__TOKEN
+  OPENCTI_TOKEN:
+    name: opencti-ci-credentials
+    key: APP__ADMIN__TOKEN
+  RABBITMQ__PASSWORD:
+    name: opencti-ci-credentials
+    key: RABBITMQ__PASSWORD
+
+topologySpreadConstraints:
+  - maxSkew: 1
+    topologyKey: kubernetes.io/os
+    whenUnsatisfiable: DoNotSchedule
+
+worker:
+  enabled: true
+
+  readyChecker:
+    enabled: true
+    retries: 40
+    timeout: 10
+
+  lifecycle:
+    preStop:
+      exec:
+        command: ["sh", "-c", "sleep 10"]
+
+  terminationGracePeriodSeconds: 40
+
+  networkPolicy:
+    enabled: true
+
+  podDisruptionBudget:
+    enabled: true
+
+  autoscaling:
+    enabled: true
+
+  topologySpreadConstraints:
+    - maxSkew: 1
+      topologyKey: kubernetes.io/os
+      whenUnsatisfiable: DoNotSchedule
+
+connectors:
+- name: opencti
+  enabled: true
+  replicas: 1
+  serviceMonitor:
+    enabled: true
+    interval: 30s
+    scrapeTimeout: 10s
+  image:
+    repository: opencti/connector-opencti
+  serviceAccount:
+    create: true
+    name: ci-sa
+    automountServiceAccountToken: true
+  readyChecker:
+    enabled: true
+    retries: 40
+    timeout: 10
+  lifecycle:
+    preStop:
+      exec:
+        command: ["sh", "-c", "sleep 10"]
+  terminationGracePeriodSeconds: 40
+  deploymentAnnotations:
+    ci: "true"
+  podAnnotations:
+    ci: "true"
+  env:
+    CONNECTOR_ID: 399e6354-cc2c-4fe1-bb85-145a5bb043a9
+    CONNECTOR_NAME: "OpenCTI"
+    CONNECTOR_SCOPE: "marking-definition,identity,location"
+    CONNECTOR_TYPE: EXTERNAL_IMPORT
+  envFromSecrets:
+    OPENCTI_TOKEN:
+      name: opencti-ci-credentials
+      key: APP__ADMIN__TOKEN
+  topologySpreadConstraints:
+    - maxSkew: 1
+      topologyKey: kubernetes.io/os
+      whenUnsatisfiable: DoNotSchedule
+
+elasticsearch:
+  fullnameOverride: opencti-ci-elasticsearch
+  master:
+    masterOnly: true
+    replicaCount: 1
+    resourcesPreset: "medium"
+    networkPolicy:
+      enabled: false
+    persistence:
+      enabled: false
+  data:
+    replicaCount: 1
+    resourcesPreset: "medium"
+    networkPolicy:
+      enabled: false
+    persistence:
+      enabled: false
+  coordinating:
+    replicaCount: 0
+  ingest:
+    enabled: false
+  sysctlImage:
+    enabled: false
+
+minio:
+  fullnameOverride: opencti-ci-minio
+  networkPolicy:
+    enabled: false
+  persistence:
+    enabled: false
+
+rabbitmq:
+  fullnameOverride: opencti-ci-rabbitmq
+  auth:
+    existingPasswordSecret: opencti-ci-credentials
+    existingSecretPasswordKey: RABBITMQ__PASSWORD
+    erlangCookie: b25c953e-2193-4b8e-9f3b-9a3a5ba76d75
+  clustering:
+    enabled: false
+  networkPolicy:
+    enabled: false
+  persistence:
+    enabled: false
+
+redis:
+  fullnameOverride: opencti-ci-redis
+  architecture: standalone
+  auth:
+    enabled: false
+    sentinel: false
+  networkPolicy:
+    enabled: false

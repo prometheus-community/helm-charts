@@ -1,0 +1,189 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "opencti.fullname" . }}-server
+  labels:
+    {{- include "opencti.serverLabels" . | nindent 4 }}
+spec:
+  {{- if not .Values.autoscaling.enabled }}
+  replicas: {{ .Values.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "opencti.selectorServerLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "opencti.selectorServerLabels" . | nindent 8 }}
+        {{- with .Values.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      {{- if .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml .Values.imagePullSecrets | nindent 8 }}
+      {{- else if .Values.global.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml .Values.global.imagePullSecrets | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "opencti.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      {{- if .Values.readyChecker.enabled }}
+      initContainers:
+      {{- range $service := .Values.readyChecker.services }}
+      - name: ready-checker-{{ $service.name }}
+        {{- if $.Values.global.imageRegistry }}
+        image: "{{ $.Values.global.imageRegistry }}/{{ $.Values.readyChecker.repository }}:{{ $.Values.readyChecker.tag }}"
+        {{- else }}
+        image: {{ $.Values.readyChecker.repository }}:{{ $.Values.readyChecker.tag }}
+        {{- end }}
+        imagePullPolicy: {{ $.Values.readyChecker.pullPolicy }}
+        command:
+          - 'sh'
+          - '-c'
+          - |
+            RETRY=0;
+            until [ $RETRY -eq {{ $.Values.readyChecker.retries }} ];
+            do
+              nc -zv {{ $.Values.fullnameOverride | default $.Release.Name }}-{{ $service.name }} {{ $service.port }} && break;
+              echo "[$RETRY/{{ $.Values.readyChecker.retries }}] waiting service {{ $.Values.fullnameOverride | default $.Release.Name }}-{{ $service.name }}:{{ $service.port }} is ready";
+              sleep {{ $.Values.readyChecker.timeout }};
+              RETRY=$(($RETRY + 1));
+            done
+      {{- end }}
+      {{- end }}
+      containers:
+        - name: {{ .Chart.Name }}-server
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          {{- if .Values.global.imageRegistry }}
+          image: "{{ .Values.global.imageRegistry }}/{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          {{- else }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          {{- end }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.service.targetPort | default .Values.service.port }}
+              protocol: TCP
+            {{- range $port := .Values.service.extraPorts }}
+            - name: {{ $port.name }}
+              containerPort: {{ $port.targetPort }}
+              protocol: TCP
+            {{- end }}
+            {{- if .Values.serviceMonitor.enabled }}
+            - name: metrics
+              containerPort: {{ .Values.env.APP__TELEMETRY__METRICS__EXPORTER_PROMETHEUS | default 14269 }}
+              protocol: TCP
+            {{- end }}
+          lifecycle:
+            {{- with .Values.lifecycle }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+          {{- if .Values.livenessProbe.enabled }}
+          livenessProbe:
+            {{- if .Values.livenessProbeCustom }}
+            {{- toYaml .Values.livenessProbeCustom | nindent 12 }}
+            {{- else }}
+            httpGet:
+              path: {{ .Values.service.healthPath | default (printf "/health?health_access_key=%s" .Values.env.APP__HEALTH_ACCESS_KEY) | quote }}
+              port: {{ .Values.service.targetPort | default .Values.service.port }}
+            failureThreshold: {{ .Values.livenessProbe.failureThreshold }}
+            initialDelaySeconds: {{ .Values.livenessProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.livenessProbe.periodSeconds }}
+            successThreshold: {{ .Values.livenessProbe.successThreshold }}
+            timeoutSeconds: {{ .Values.livenessProbe.timeoutSeconds }}
+            {{- end }}
+          {{- end }}
+          {{- if .Values.readinessProbe.enabled }}
+          readinessProbe:
+            {{- if .Values.readinessProbeCustom }}
+            {{- toYaml .Values.readinessProbeCustom | nindent 12 }}
+            {{- else }}
+            httpGet:
+              path: {{ .Values.service.healthPath | default (printf "/health?health_access_key=%s" .Values.env.APP__HEALTH_ACCESS_KEY) | quote }}
+              port: {{ .Values.service.targetPort | default .Values.service.port }}
+            failureThreshold: {{ .Values.readinessProbe.failureThreshold }}
+            initialDelaySeconds: {{ .Values.readinessProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.readinessProbe.periodSeconds }}
+            successThreshold: {{ .Values.readinessProbe.successThreshold }}
+            timeoutSeconds: {{ .Values.readinessProbe.timeoutSeconds }}
+            {{- end }}
+          {{- end }}
+          {{- if .Values.startupProbe.enabled }}
+          startupProbe:
+            {{- if .Values.startupProbeCustom }}
+            {{- toYaml .Values.startupProbeCustom | nindent 12 }}
+            {{- else }}
+            httpGet:
+              path: {{ .Values.service.healthPath | default (printf "/health?health_access_key=%s" .Values.env.APP__HEALTH_ACCESS_KEY) | quote }}
+              port: {{ .Values.service.targetPort | default .Values.service.port }}
+            failureThreshold: {{ .Values.startupProbe.failureThreshold }}
+            initialDelaySeconds: {{ .Values.startupProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.startupProbe.periodSeconds }}
+            successThreshold: {{ .Values.startupProbe.successThreshold }}
+            timeoutSeconds: {{ .Values.startupProbe.timeoutSeconds }}
+            {{- end }}
+          {{- end }}
+          env:
+          - name: NODE_OPTIONS
+            value: --max-old-space-size=8096
+          - name: PROVIDERS__LOCAL__STRATEGY
+            value: LocalStrategy
+          # Variables from secrets have precedence
+          {{- $envList := dict -}}
+          {{- if .Values.envFromSecrets }}
+          {{- range $key, $value := .Values.envFromSecrets }}
+          {{- if not (hasKey $envList $key) }}
+          - name: {{ $key | upper }}
+            valueFrom:
+              secretKeyRef:
+                name: {{ $value.name }}
+                key: {{ $value.key | default $key }}
+          {{- $_ := set $envList $key true }}
+          {{- end }}
+          {{- end }}
+          {{- end }}
+          # Add variables in plain text if they were not already added from secrets
+          {{- if .Values.env }}
+          {{- range $key, $value := .Values.env }}
+          {{- if not (hasKey $envList $key) }}
+          - name: {{ $key | upper }}
+            value: {{ $value | quote }}
+          {{- $_ := set $envList $key true }}
+          {{- end }}
+          {{- end }}
+          {{- end }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+         {{- with .Values.volumeMounts }}
+          volumeMounts:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+      terminationGracePeriodSeconds: {{ .Values.terminationGracePeriodSeconds }}
+      {{- with .Values.volumes }}
+      volumes:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.topologySpreadConstraints }}
+      {{- $_ := include "opencti.patchTopologySpreadConstraintsServer" $ }}
+      topologySpreadConstraints:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
