@@ -1,0 +1,37 @@
+{{- if .Values.webhook.create }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "external-secrets.fullname" . }}-webhook
+  namespace: {{ template "external-secrets.namespace" . }}
+  labels:
+    {{- include "external-secrets-webhook.labels" . | nindent 4 }}
+    external-secrets.io/component: webhook
+  {{- if .Values.webhook.metrics.service.enabled }}
+  {{- with .Values.webhook.metrics.service.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  {{- end }}
+spec:
+  type: ClusterIP
+  {{- if .Values.service.ipFamilyPolicy }}
+  ipFamilyPolicy: {{ .Values.service.ipFamilyPolicy }}
+  {{- end }}
+  {{- if .Values.service.ipFamilies }}
+  ipFamilies: {{ .Values.service.ipFamilies | toYaml | nindent 2 }}
+  {{- end }}
+  ports:
+  - port: 443
+    targetPort: {{ .Values.webhook.port }}
+    protocol: TCP
+    name: webhook
+  {{- if .Values.webhook.metrics.service.enabled }}
+  - port: {{ .Values.webhook.metrics.service.port }}
+    protocol: TCP
+    targetPort: metrics
+    name: metrics
+  {{- end }}
+  selector:
+    {{- include "external-secrets-webhook.selectorLabels" . | nindent 4 }}
+{{- end }}
