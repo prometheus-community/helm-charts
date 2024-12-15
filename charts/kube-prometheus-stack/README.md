@@ -82,6 +82,10 @@ _See [helm upgrade](https://helm.sh/docs/helm/helm_upgrade/) for command documen
 
 A major chart version change (like v1.2.3 -> v2.0.0) indicates that there is an incompatible breaking change needing manual actions.
 
+### From 66.x to 67.x
+
+This version upgrades Prometheus Image to v3.0.1 as it is the default version starting with operator version v0.79.0
+
 ### From 65.x to 66.x
 
 This version upgrades Prometheus-Operator to v0.78.1
