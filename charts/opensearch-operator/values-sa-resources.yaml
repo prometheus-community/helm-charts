@@ -1,0 +1,123 @@
+nameOverride: ""
+fullnameOverride: ""
+
+podAnnotations: {}
+podLabels: {}
+nodeSelector: {}
+tolerations: []
+securityContext:
+  runAsNonRoot: true
+priorityClassName: ""
+manager:
+  securityContext:
+    allowPrivilegeEscalation: false
+  extraEnv: []
+  resources:
+    limits:
+      cpu: 200m
+      memory: 500Mi
+    requests:
+      cpu: 100m
+      memory: 350Mi
+
+  livenessProbe:
+    failureThreshold: 3
+    httpGet:
+      path: /healthz
+      port: 8081
+    periodSeconds: 15
+    successThreshold: 1
+    timeoutSeconds: 3
+    initialDelaySeconds: 10
+
+  readinessProbe:
+    failureThreshold: 3
+    httpGet:
+      path: /readyz
+      port: 8081
+    periodSeconds: 15
+    successThreshold: 1
+    timeoutSeconds: 3
+    initialDelaySeconds: 10
+
+  # Set this to false to disable the experimental parallel recovery in case you are experiencing problems
+  parallelRecoveryEnabled: true
+  # Set this to true to enable the standard go pprof endpoints on port 6060 (https://pkg.go.dev/net/http/pprof)
+  # Should only be used for debugging purposes
+  pprofEndpointsEnabled: false
+
+  image:
+    repository: opensearchproject/opensearch-operator
+    ## tag default uses appVersion from Chart.yaml, to override specify tag tag: "v1.1"
+    tag: ""
+    pullPolicy: "Always"
+
+  ## Optional array of imagePullSecrets containing private registry credentials
+  imagePullSecrets: []
+  # - name: secretName
+
+  dnsBase: cluster.local
+
+  # Log level of the operator. Possible values: debug, info, warn, error
+  loglevel: info
+
+  # If a watchNamespace is specified, the manager's cache will be restricted to
+  # watch objects in the desired namespace. Defaults is to watch all namespaces.
+  watchNamespace:
+
+# Install the Custom Resource Definitions with Helm
+installCRDs: true
+
+serviceAccount:
+  # Specifies whether a service account should be created
+  create: true
+  # Override the service account name. Defaults to opensearch-operator-controller-manager
+  name: ""
+
+kubeRbacProxy:
+  enable: true
+  securityContext:
+    allowPrivilegeEscalation: false
+    readOnlyRootFilesystem: true
+    capabilities:
+      drop:
+        - ALL
+  resources:
+    limits:
+      cpu: 50m
+      memory: 50Mi
+    requests:
+      cpu: 25m
+      memory: 25Mi
+
+  livenessProbe:
+    failureThreshold: 3
+    httpGet:
+      path: /healthz
+      port: 10443
+      scheme: HTTPS
+    periodSeconds: 15
+    successThreshold: 1
+    timeoutSeconds: 3
+    initialDelaySeconds: 10
+
+  readinessProbe:
+    failureThreshold: 3
+    httpGet:
+      path: /healthz
+      port: 10443
+      scheme: HTTPS
+    periodSeconds: 15
+    successThreshold: 1
+    timeoutSeconds: 3
+    initialDelaySeconds: 10
+
+  image:
+    repository: "gcr.io/kubebuilder/kube-rbac-proxy"
+    tag: "v0.15.0"
+
+## If this is set to true, RoleBindings will be used instead of ClusterRoleBindings, inorder to restrict ClusterRoles
+## to the namespace where the operator and OpenSearch cluster are in. In that case, specify the namespace where they
+## are in in manager.watchNamespace field.
+## If false, ClusterRoleBindings will be used
+useRoleBindings: false

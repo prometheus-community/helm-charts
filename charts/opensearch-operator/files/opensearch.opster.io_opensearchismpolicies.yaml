@@ -1,0 +1,454 @@
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.14.0
+  name: opensearchismpolicies.opensearch.opster.io
+spec:
+  group: opensearch.opster.io
+  names:
+    kind: OpenSearchISMPolicy
+    listKind: OpenSearchISMPolicyList
+    plural: opensearchismpolicies
+    shortNames:
+    - ismp
+    - ismpolicy
+    singular: opensearchismpolicy
+  scope: Namespaced
+  versions:
+  - name: v1
+    schema:
+      openAPIV3Schema:
+        properties:
+          apiVersion:
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+            type: string
+          kind:
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: ISMPolicySpec is the specification for the ISM policy for
+              OS.
+            properties:
+              defaultState:
+                description: The default starting state for each index that uses this
+                  policy.
+                type: string
+              description:
+                description: A human-readable description of the policy.
+                type: string
+              errorNotification:
+                properties:
+                  channel:
+                    type: string
+                  destination:
+                    description: The destination URL.
+                    properties:
+                      amazon:
+                        properties:
+                          url:
+                            type: string
+                        type: object
+                      chime:
+                        properties:
+                          url:
+                            type: string
+                        type: object
+                      customWebhook:
+                        properties:
+                          url:
+                            type: string
+                        type: object
+                      slack:
+                        properties:
+                          url:
+                            type: string
+                        type: object
+                    type: object
+                  messageTemplate:
+                    description: The text of the message
+                    properties:
+                      source:
+                        type: string
+                    type: object
+                type: object
+              ismTemplate:
+                description: Specify an ISM template pattern that matches the index
+                  to apply the policy.
+                properties:
+                  indexPatterns:
+                    description: Index patterns on which this policy has to be applied
+                    items:
+                      type: string
+                    type: array
+                  priority:
+                    description: Priority of the template, defaults to 0
+                    type: integer
+                required:
+                - indexPatterns
+                type: object
+              opensearchCluster:
+                description: |-
+                  LocalObjectReference contains enough information to let you locate the
+                  referenced object inside the same namespace.
+                properties:
+                  name:
+                    description: |-
+                      Name of the referent.
+                      More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                      TODO: Add other useful fields. apiVersion, kind, uid?
+                    type: string
+                type: object
+                x-kubernetes-map-type: atomic
+              policyId:
+                type: string
+              states:
+                description: The states that you define in the policy.
+                items:
+                  properties:
+                    actions:
+                      description: The actions to execute after entering a state.
+                      items:
+                        description: Actions are the steps that the policy sequentially
+                          executes on entering a specific state.
+                        properties:
+                          alias:
+                            properties:
+                              actions:
+                                description: Allocate the index to a node with a specified
+                                  attribute.
+                                items:
+                                  properties:
+                                    add:
+                                      properties:
+                                        aliases:
+                                          description: The name of the alias.
+                                          items:
+                                            type: string
+                                          type: array
+                                        index:
+                                          description: The name of the index that
+                                            the alias points to.
+                                          type: string
+                                        isWriteIndex:
+                                          description: Specify the index that accepts
+                                            any write operations to the alias.
+                                          type: boolean
+                                        routing:
+                                          description: Limit search to an associated
+                                            shard value
+                                          type: string
+                                      type: object
+                                    remove:
+                                      properties:
+                                        aliases:
+                                          description: The name of the alias.
+                                          items:
+                                            type: string
+                                          type: array
+                                        index:
+                                          description: The name of the index that
+                                            the alias points to.
+                                          type: string
+                                        isWriteIndex:
+                                          description: Specify the index that accepts
+                                            any write operations to the alias.
+                                          type: boolean
+                                        routing:
+                                          description: Limit search to an associated
+                                            shard value
+                                          type: string
+                                      type: object
+                                  type: object
+                                type: array
+                            required:
+                            - actions
+                            type: object
+                          allocation:
+                            description: Allocate the index to a node with a specific
+                              attribute set
+                            properties:
+                              exclude:
+                                description: Allocate the index to a node with a specified
+                                  attribute.
+                                type: string
+                              include:
+                                description: Allocate the index to a node with any
+                                  of the specified attributes.
+                                type: string
+                              require:
+                                description: Don’t allocate the index to a node with
+                                  any of the specified attributes.
+                                type: string
+                              waitFor:
+                                description: Wait for the policy to execute before
+                                  allocating the index to a node with a specified
+                                  attribute.
+                                type: string
+                            required:
+                            - exclude
+                            - include
+                            - require
+                            - waitFor
+                            type: object
+                          close:
+                            description: Closes the managed index.
+                            type: object
+                          delete:
+                            description: Deletes a managed index.
+                            type: object
+                          forceMerge:
+                            description: Reduces the number of Lucene segments by
+                              merging the segments of individual shards.
+                            properties:
+                              maxNumSegments:
+                                description: The number of segments to reduce the
+                                  shard to.
+                                format: int64
+                                type: integer
+                            required:
+                            - maxNumSegments
+                            type: object
+                          indexPriority:
+                            description: Set the priority for the index in a specific
+                              state.
+                            properties:
+                              priority:
+                                description: The priority for the index as soon as
+                                  it enters a state.
+                                format: int64
+                                type: integer
+                            required:
+                            - priority
+                            type: object
+                          notification:
+                            description: Name          string        `json:"name,omitempty"`
+                            properties:
+                              destination:
+                                type: string
+                              messageTemplate:
+                                properties:
+                                  source:
+                                    type: string
+                                type: object
+                            required:
+                            - destination
+                            - messageTemplate
+                            type: object
+                          open:
+                            description: Opens a managed index.
+                            type: object
+                          readOnly:
+                            description: Sets a managed index to be read only.
+                            type: object
+                          readWrite:
+                            description: Sets a managed index to be writeable.
+                            type: object
+                          replicaCount:
+                            description: Sets the number of replicas to assign to
+                              an index.
+                            properties:
+                              numberOfReplicas:
+                                format: int64
+                                type: integer
+                            required:
+                            - numberOfReplicas
+                            type: object
+                          retry:
+                            description: The retry configuration for the action.
+                            properties:
+                              backoff:
+                                description: The backoff policy type to use when retrying.
+                                type: string
+                              count:
+                                description: The number of retry counts.
+                                format: int64
+                                type: integer
+                              delay:
+                                description: The time to wait between retries.
+                                type: string
+                            required:
+                            - count
+                            type: object
+                          rollover:
+                            description: Rolls an alias over to a new index when the
+                              managed index meets one of the rollover conditions.
+                            properties:
+                              minDocCount:
+                                description: The minimum number of documents required
+                                  to roll over the index.
+                                format: int64
+                                type: integer
+                              minIndexAge:
+                                description: The minimum age required to roll over
+                                  the index.
+                                type: string
+                              minPrimaryShardSize:
+                                description: The minimum storage size of a single
+                                  primary shard required to roll over the index.
+                                type: string
+                              minSize:
+                                description: The minimum size of the total primary
+                                  shard storage (not counting replicas) required to
+                                  roll over the index.
+                                type: string
+                            type: object
+                          rollup:
+                            description: Periodically reduce data granularity by rolling
+                              up old data into summarized indexes.
+                            type: object
+                          shrink:
+                            description: Allows you to reduce the number of primary
+                              shards in your indexes
+                            properties:
+                              forceUnsafe:
+                                description: If true, executes the shrink action even
+                                  if there are no replicas.
+                                type: boolean
+                              maxShardSize:
+                                description: The maximum size in bytes of a shard
+                                  for the target index.
+                                type: string
+                              numNewShards:
+                                description: The maximum number of primary shards
+                                  in the shrunken index.
+                                type: integer
+                              percentageOfSourceShards:
+                                description: Percentage of the number of original
+                                  primary shards to shrink.
+                                format: int64
+                                type: integer
+                              targetIndexNameTemplate:
+                                description: The name of the shrunken index.
+                                type: string
+                            type: object
+                          snapshot:
+                            description: Back up your cluster’s indexes and state
+                            properties:
+                              repository:
+                                description: The repository name that you register
+                                  through the native snapshot API operations.
+                                type: string
+                              snapshot:
+                                description: The name of the snapshot.
+                                type: string
+                            required:
+                            - repository
+                            - snapshot
+                            type: object
+                          timeout:
+                            description: The timeout period for the action. Accepts
+                              time units for minutes, hours, and days.
+                            type: string
+                        type: object
+                      type: array
+                    name:
+                      description: The name of the state.
+                      type: string
+                    transitions:
+                      description: The next states and the conditions required to
+                        transition to those states. If no transitions exist, the policy
+                        assumes that it’s complete and can now stop managing the index
+                      items:
+                        properties:
+                          conditions:
+                            description: conditions for the transition.
+                            properties:
+                              cron:
+                                description: The cron job that triggers the transition
+                                  if no other transition happens first.
+                                properties:
+                                  cron:
+                                    description: A wrapper for the cron job that triggers
+                                      the transition if no other transition happens
+                                      first. This wrapper is here to adhere to the
+                                      OpenSearch API.
+                                    properties:
+                                      expression:
+                                        description: The cron expression that triggers
+                                          the transition.
+                                        type: string
+                                      timezone:
+                                        description: The timezone that triggers the
+                                          transition.
+                                        type: string
+                                    required:
+                                    - expression
+                                    - timezone
+                                    type: object
+                                required:
+                                - cron
+                                type: object
+                              minDocCount:
+                                description: The minimum document count of the index
+                                  required to transition.
+                                format: int64
+                                type: integer
+                              minIndexAge:
+                                description: The minimum age of the index required
+                                  to transition.
+                                type: string
+                              minRolloverAge:
+                                description: The minimum age required after a rollover
+                                  has occurred to transition to the next state.
+                                type: string
+                              minSize:
+                                description: The minimum size of the total primary
+                                  shard storage (not counting replicas) required to
+                                  transition.
+                                type: string
+                            type: object
+                          stateName:
+                            description: The name of the state to transition to if
+                              the conditions are met.
+                            type: string
+                        required:
+                        - conditions
+                        - stateName
+                        type: object
+                      type: array
+                  required:
+                  - actions
+                  - name
+                  type: object
+                type: array
+            required:
+            - defaultState
+            - description
+            - states
+            type: object
+          status:
+            description: OpensearchISMPolicyStatus defines the observed state of OpensearchISMPolicy
+            properties:
+              existingISMPolicy:
+                type: boolean
+              managedCluster:
+                description: |-
+                  UID is a type that holds unique ID values, including UUIDs.  Because we
+                  don't ONLY use UUIDs, this is an alias to string.  Being a type captures
+                  intent and helps make sure that UIDs and names do not get conflated.
+                type: string
+              policyId:
+                type: string
+              reason:
+                type: string
+              state:
+                type: string
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}

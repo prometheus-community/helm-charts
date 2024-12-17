@@ -1,0 +1,94 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    control-plane: controller-manager
+  name: {{ include "opensearch-operator.fullname" . }}-controller-manager
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      control-plane: controller-manager
+  template:
+    metadata:
+      labels:
+        control-plane: controller-manager
+        {{- with .Values.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+    spec:
+      containers:
+      {{- if or (.Values.kubeRbacProxy.enable) (eq (.Values.kubeRbacProxy.enable | toString) "<nil>") }}
+      - args:
+        - --secure-listen-address=0.0.0.0:8443
+        - --upstream=http://127.0.0.1:8080/
+        - --proxy-endpoints-port=10443
+        - --logtostderr=true
+        - --v=10
+        image: "{{ .Values.kubeRbacProxy.image.repository }}:{{ .Values.kubeRbacProxy.image.tag}}"
+        name: kube-rbac-proxy
+        resources:
+{{- toYaml .Values.kubeRbacProxy.resources | nindent 10 }}
+        readinessProbe:
+{{- toYaml .Values.kubeRbacProxy.readinessProbe | nindent 10 }}
+        livenessProbe:
+{{- toYaml .Values.kubeRbacProxy.livenessProbe | nindent 10 }}
+        securityContext:
+{{- toYaml .Values.kubeRbacProxy.securityContext | nindent 10 }}
+        ports:
+        - containerPort: 8443
+          name: https
+        - containerPort: 10443
+          name: https-proxy
+          protocol: TCP
+      {{- end}}
+      - args:
+        - --health-probe-bind-address=:8081
+        - --metrics-bind-address=127.0.0.1:8080
+        - --leader-elect
+        {{- if .Values.manager.watchNamespace }}
+        - --watch-namespace={{ .Values.manager.watchNamespace }}
+        {{- end }}
+        - --loglevel={{ .Values.manager.loglevel }}
+        command:
+        - /manager
+        image: "{{ .Values.manager.image.repository }}:{{ .Values.manager.image.tag | default .Chart.AppVersion }}"
+        name: operator-controller-manager
+        imagePullPolicy: "{{ .Values.manager.image.pullPolicy }}"
+        resources:
+{{- toYaml .Values.manager.resources | nindent 10 }}
+        readinessProbe:
+{{- toYaml .Values.manager.readinessProbe | nindent 10 }}
+        livenessProbe:
+{{- toYaml .Values.manager.livenessProbe | nindent 10 }}
+        env:
+        - name: DNS_BASE
+          value: {{ .Values.manager.dnsBase }}
+        - name: PARALLEL_RECOVERY_ENABLED
+          value: "{{ .Values.manager.parallelRecoveryEnabled }}"
+        - name: PPROF_ENDPOINTS_ENABLED
+          value: "{{ .Values.manager.pprofEndpointsEnabled }}"
+        {{- if .Values.manager.extraEnv }}
+        {{- toYaml .Values.manager.extraEnv | nindent 8 }}
+        {{- end }}
+        securityContext:
+{{- toYaml .Values.manager.securityContext | nindent 10 }}
+      nodeSelector:
+{{- toYaml .Values.nodeSelector | nindent 8 }}
+      tolerations:
+{{- toYaml .Values.tolerations | nindent 8 }}
+      securityContext:
+{{- toYaml .Values.securityContext | nindent 8}}
+      {{- if .Values.manager.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml .Values.manager.imagePullSecrets | nindent 6 }}
+      {{- end }}
+      serviceAccountName: {{ include "opensearch-operator.serviceAccountName" . }}
+      terminationGracePeriodSeconds: 10
+      {{- if .Values.priorityClassName }}
+      priorityClassName: {{ .Values.priorityClassName }}
+      {{- end }}

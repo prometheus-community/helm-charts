@@ -1,0 +1,160 @@
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.14.0
+  name: opensearchindextemplates.opensearch.opster.io
+spec:
+  group: opensearch.opster.io
+  names:
+    kind: OpensearchIndexTemplate
+    listKind: OpensearchIndexTemplateList
+    plural: opensearchindextemplates
+    shortNames:
+    - opensearchindextemplate
+    singular: opensearchindextemplate
+  scope: Namespaced
+  versions:
+  - name: v1
+    schema:
+      openAPIV3Schema:
+        description: OpensearchIndexTemplate is the schema for the OpenSearch index
+          templates API
+        properties:
+          apiVersion:
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+            type: string
+          kind:
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+            type: string
+          metadata:
+            type: object
+          spec:
+            properties:
+              _meta:
+                description: Optional user metadata about the index template
+                x-kubernetes-preserve-unknown-fields: true
+              composedOf:
+                description: |-
+                  An ordered list of component template names. Component templates are merged in the order specified,
+                  meaning that the last component template specified has the highest precedence
+                items:
+                  type: string
+                type: array
+              dataStream:
+                description: The dataStream config that should be applied
+                properties:
+                  timestamp_field:
+                    description: TimestampField for dataStream
+                    properties:
+                      name:
+                        description: Name of the field that are used for the DataStream
+                        type: string
+                    required:
+                    - name
+                    type: object
+                type: object
+              indexPatterns:
+                description: Array of wildcard expressions used to match the names
+                  of indices during creation
+                items:
+                  type: string
+                type: array
+              name:
+                description: The name of the index template. Defaults to metadata.name
+                type: string
+              opensearchCluster:
+                description: |-
+                  LocalObjectReference contains enough information to let you locate the
+                  referenced object inside the same namespace.
+                properties:
+                  name:
+                    description: |-
+                      Name of the referent.
+                      More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                      TODO: Add other useful fields. apiVersion, kind, uid?
+                    type: string
+                type: object
+                x-kubernetes-map-type: atomic
+              priority:
+                description: |-
+                  Priority to determine index template precedence when a new data stream or index is created.
+                  The index template with the highest priority is chosen
+                type: integer
+              template:
+                description: The template that should be applied
+                properties:
+                  aliases:
+                    additionalProperties:
+                      description: Describes the specs of an index alias
+                      properties:
+                        alias:
+                          description: The name of the alias.
+                          type: string
+                        filter:
+                          description: Query used to limit documents the alias can
+                            access.
+                          x-kubernetes-preserve-unknown-fields: true
+                        index:
+                          description: The name of the index that the alias points
+                            to.
+                          type: string
+                        isWriteIndex:
+                          description: If true, the index is the write index for the
+                            alias
+                          type: boolean
+                        routing:
+                          description: Value used to route indexing and search operations
+                            to a specific shard.
+                          type: string
+                      type: object
+                    description: Aliases to add
+                    type: object
+                  mappings:
+                    description: Mapping for fields in the index
+                    x-kubernetes-preserve-unknown-fields: true
+                  settings:
+                    description: Configuration options for the index
+                    x-kubernetes-preserve-unknown-fields: true
+                type: object
+              version:
+                description: Version number used to manage the component template
+                  externally
+                type: integer
+            required:
+            - indexPatterns
+            - opensearchCluster
+            type: object
+          status:
+            properties:
+              existingIndexTemplate:
+                type: boolean
+              indexTemplateName:
+                description: Name of the currently managed index template
+                type: string
+              managedCluster:
+                description: |-
+                  UID is a type that holds unique ID values, including UUIDs.  Because we
+                  don't ONLY use UUIDs, this is an alias to string.  Being a type captures
+                  intent and helps make sure that UIDs and names do not get conflated.
+                type: string
+              reason:
+                type: string
+              state:
+                type: string
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}
