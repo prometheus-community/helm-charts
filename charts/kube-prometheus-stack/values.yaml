@@ -684,6 +684,16 @@ alertmanager:
   ## ref: https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/api.md#alertmanagerspec
   ##
   alertmanagerSpec:
+    ## Statefulset's persistent volume claim retention policy
+    ## whenDeleted and whenScaled determine whether
+    ## statefulset's PVCs are deleted (true) or retained (false)
+    ## on scaling down and deleting statefulset, respectively.
+    ## Requires Kubernetes version 1.27.0+.
+    ## Ref: https://kubernetes.io/docs/concepts/workloads/controllers/statefulset/#persistentvolumeclaim-retention
+    persistentVolumeClaimRetentionPolicy: {}
+    #  whenDeleted: Retain
+    #  whenScaled: Retain
+
     ## Standard object's metadata. More info: https://github.com/kubernetes/community/blob/master/contributors/devel/sig-architecture/api-conventions.md#metadata
     ## Metadata Labels and Annotations gets propagated to the Alertmanager pods.
     ##
@@ -1324,7 +1334,7 @@ kubelet:
 
     ## If true, defines whether Prometheus tracks staleness of the metrics that have an explicit timestamp present in scraped data. Has no effect if `honorTimestamps` is false.
     ## We recommend enabling this if you want the best possible accuracy for container_ metrics scraped from cadvisor.
-    ##
+    ## For more details see: https://github.com/prometheus-community/helm-charts/pull/5063#issuecomment-2545374849
     trackTimestampsStaleness: true
 
     ## SampleLimit defines per-scrape limit on number of scraped samples that will be accepted.
@@ -1362,10 +1372,6 @@ kubelet:
     ##
     insecureSkipVerify: true
 
-    ## Enable scraping /metrics/cadvisor from kubelet's service
-    ##
-    cAdvisor: true
-
     ## Enable scraping /metrics/probes from kubelet's service
     ##
     probes: true
@@ -1376,7 +1382,18 @@ kubelet:
     resource: false
     # From kubernetes 1.18, /metrics/resource/v1alpha1 renamed to /metrics/resource
     resourcePath: "/metrics/resource/v1alpha1"
+    ## Configure the scrape interval for resource metrics. This is configured to the default Kubelet cAdvisor
+    ## minimum housekeeping interval in order to avoid missing samples. Note, this value is ignored
+    ## if kubelet.serviceMonitor.interval is not empty.
+    resourceInterval: 10s
 
+    ## Enable scraping /metrics/cadvisor from kubelet's service
+    ##
+    cAdvisor: true
+    ## Configure the scrape interval for cAdvisor. This is configured to the default Kubelet cAdvisor
+    ## minimum housekeeping interval in order to avoid missing samples. Note, this value is ignored
+    ## if kubelet.serviceMonitor.interval is not empty.
+    cAdvisorInterval: 10s
     ## MetricRelabelConfigs to apply to samples after scraping, but before ingestion.
     ## ref: https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/api.md#relabelconfig
     ##
@@ -3544,9 +3561,10 @@ prometheus:
   ##
   prometheusSpec:
     ## Statefulset's persistent volume claim retention policy
-    ## pvcDeleteOnStsDelete and pvcDeleteOnStsScale determine whether
-    ## statefulset's PVCs are deleted (true) or retained (false) on scaling down
-    ## and deleting statefulset, respectively. Requires 1.27.0+.
+    ## whenDeleted and whenScaled determine whether
+    ## statefulset's PVCs are deleted (true) or retained (false)
+    ## on scaling down and deleting statefulset, respectively.
+    ## Requires Kubernetes version 1.27.0+.
     ## Ref: https://kubernetes.io/docs/concepts/workloads/controllers/statefulset/#persistentvolumeclaim-retention
     persistentVolumeClaimRetentionPolicy: {}
     #  whenDeleted: Retain
@@ -3630,7 +3648,7 @@ prometheus:
     image:
       registry: quay.io
       repository: prometheus/prometheus
-      tag: v2.55.1
+      tag: v3.0.1
       sha: ""
 
     ## Tolerations for use with node taints
