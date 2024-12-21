@@ -8,8 +8,8 @@
 
 ## GitHub Workflows & Renovate maintainers
 
-- Jan-Otto Kröpke @jkroepke
-- Gabriel Martinez @GMartinez-Sisti
+- Jan-Otto Kröpke (@jkroepke)
+- Gabriel Martinez (@GMartinez-Sisti)
 
 ## Helm charts maintainers
 
