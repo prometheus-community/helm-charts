@@ -35,12 +35,24 @@ spec:
         {{- include "prometheus-smartctl-exporter.selectorLabels" $global | nindent 8 }}
         idx: i{{ $idx }}
     spec:
+      {{- if $global.Values.image.pullSecrets }}
+      imagePullSecrets:
+        {{- range $secret := $global.Values.image.pullSecrets }}
+        - name: {{ $secret }}
+        {{- end }}
+      {{- end }}
       containers:
       - image: "{{ $global.Values.image.repository }}:{{ $global.Values.image.tag | default $global.Chart.AppVersion }}"
         imagePullPolicy: {{ $global.Values.image.pullPolicy }}
         args:
         - '--smartctl.path={{ $config.smartctl_location }}'
         - '--smartctl.interval={{ $config.collect_not_more_than_period }}'
+{{- if $config.device_exclude }}
+        - '--smartctl.device-exclude={{ $config.device_exclude }}'
+{{- end }}
+{{- if $config.device_include }}
+        - '--smartctl.device-include={{ $config.device_include }}'
+{{- end }}
 {{ range $config.devices }}
         - '--smartctl.device={{ . }}'
 {{ end }}
