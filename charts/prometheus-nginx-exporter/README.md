@@ -44,6 +44,13 @@ helm upgrade [RELEASE_NAME] prometheus-community/prometheus-nginx-exporter --ins
 
 _See [helm upgrade](https://helm.sh/docs/helm/helm_upgrade/) for command documentation._
 
+### To 1.0
+
+Chart release 1.0 reflects a major bump of the default NGINX Exporter image tag from major number 0 to 1.
+
+This release has switched to using flags in the new format (`--flag`) but still supports the
+deprecated format (`-flag`) transparently for NGINX Exporter below release 1.0.0.
+
 ## Configuring
 
 See [Customizing the Chart Before Installing](https://helm.sh/docs/intro/using_helm/#customizing-the-chart-before-installing). To see all configurable options with detailed comments, visit the chart's [values.yaml](./values.yaml), or run these configuration commands:
