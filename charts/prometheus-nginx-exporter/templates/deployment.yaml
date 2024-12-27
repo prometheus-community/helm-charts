@@ -37,10 +37,17 @@ spec:
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           args:
+            {{- if semverCompare ">=1.0.0-0" (coalesce .Values.image.tag .Chart.AppVersion) }}
+            - "--nginx.scrape-uri={{ tpl .Values.nginxServer . }}"
+            {{- range $key, $value := .Values.options }}
+            - "--{{ $key }}{{ if $value }}={{ $value }}{{ end }}"
+            {{- end }}
+            {{- else }}
             - "-nginx.scrape-uri={{ tpl .Values.nginxServer . }}"
             {{- range $key, $value := .Values.options }}
             - "-{{ $key }}{{ if $value }}={{ $value }}{{ end }}"
-            {{- end }}
+            {{- end}}
+            {{- end}}
           ports:
             - name: http
               containerPort: {{ .Values.service.port }}
