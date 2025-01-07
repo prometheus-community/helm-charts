@@ -91,6 +91,17 @@ spec:
                   key: {{ .Values.mysql.existingPasswordSecret.key }}
           {{- end }}
           {{- end }}
+          {{- with .Values.extraEnvs }}
+          {{- if kindIs "map" . }}
+          {{- range $name, $value := . }}
+          - name: {{ $name }}
+            value: {{ tpl $value $ | quote }}
+          {{- end }}
+          {{- end }}
+          {{- if kindIs "slice" . -}}
+          {{ toYaml . | nindent 10 }}
+          {{- end }}
+          {{- end }}
           ports:
             - containerPort: {{ .Values.service.internalPort }}
           livenessProbe:
