@@ -1417,6 +1417,17 @@ kubelet:
       - sourceLabels: [__name__]
         action: drop
         regex: 'container_(file_descriptors|tasks_state|threads_max)'
+      # Drop container_memory_failures_total{scope="hierarchy"} metrics,
+      # we only need the container scope.
+      - sourceLabels: [__name__, scope]
+        action: drop
+        regex: 'container_memory_failures_total;hierarchy'
+      # Drop container_network_... metrics that match various interfaces that
+      # correspond to CNI and similar interfaces. This avoids capturing network
+      # metrics for host network containers.
+      - sourceLabels: [__name__, interface]
+        action: drop
+        regex: 'container_network_.*;(cali|cilium|cni|lxc|nodelocaldns|tunl).*'
       # Drop container spec metrics that overlap with kube-state-metrics.
       - sourceLabels: [__name__]
         action: drop
