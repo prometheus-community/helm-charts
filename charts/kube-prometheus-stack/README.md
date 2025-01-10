@@ -82,6 +82,28 @@ _See [helm upgrade](https://helm.sh/docs/helm/helm_upgrade/) for command documen
 
 A major chart version change (like v1.2.3 -> v2.0.0) indicates that there is an incompatible breaking change needing manual actions.
 
+### From 67.x to 68.x
+
+This version drops several metrics by default in order to reduce unnecessary cardinality.
+
+This version also fixes histogram bucket matching for Prometheus 3.x.
+
+From `{job="apiserver"}` drop excessive histogram buckets for the following metrics:
+
+- `apiserver_request_sli_duration_seconds_bucket`
+- `apiserver_request_slo_duration_seconds_bucket`
+- `etcd_request_duration_seconds_bucket`
+
+From `{job="kubelet",metrics_path="/metrics"}` reduce bucket cardinality of kubelet storage operations:
+
+- `csi_operations_seconds_bucket`
+- `storage_operation_duration_seconds_bucket`
+
+From `{job="kubelet",metrics_path="/metrics/cadvisor"}`:
+
+- Drop `container_memory_failures_total{scope="hierarchy"}` metrics, we only need the container scope here.
+- Drop `container_network_...` metrics that match various interfaces correspond to CNI and similar interfaces.
+
 ### From 66.x to 67.x
 
 This version upgrades Prometheus Image to v3.0.1 as it is the default version starting with operator version v0.79.0
