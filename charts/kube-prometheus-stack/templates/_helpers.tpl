@@ -318,3 +318,16 @@ global:
 {{ $fullname }}-webhook.{{ $namespace }}.svc
 {{- end }}
 {{- end }}
+
+{{/* To help configure the kubelet servicemonitor for http or https. */}}
+{{- define "kube-prometheus-stack.kubelet.scheme" }}
+{{- if .Values.kubelet.serviceMonitor.https }}https{{ else }}http{{ end }}
+{{- end }}
+{{- define "kube-prometheus-stack.kubelet.authConfig" }}
+{{- if .Values.kubelet.serviceMonitor.https }}
+tlsConfig:
+  caFile: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+  insecureSkipVerify: {{ .Values.kubelet.serviceMonitor.insecureSkipVerify }}
+bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
+{{- end }}
+{{- end }}

@@ -94,6 +94,10 @@ This version contain major changes & The [configmap-reload](https://github.com/j
 
 This version changes the default image repository from using Dockerhub to Quay.
 
+### To 6.0.0
+
+This version changes the default health check path from `/health` to `/`
+
 ## Configuration
 
 See [Customizing the Chart Before Installing](https://helm.sh/docs/intro/using_helm/#customizing-the-chart-before-installing). To see all configurable options with detailed comments, visit the chart's [values.yaml](./values.yaml), or run these configuration commands:

@@ -50,6 +50,23 @@ serviceMonitor:
   # TLS configuration to use when scraping the metric endpoint by Prometheus.
   # tlsConfig: {}
 
+   # Use multipleTarget mode
+  multipleTarget:
+    enabled: false
+    # Use the same auth module for every target
+    # The config file should have a section like [$name]
+    sharedAuthModule:
+      enabled: false
+      name: ""
+
+    # Define each target's endpoint and name
+    # When not using sharedAuthModule the config file should have one authModule for each target with key "client.$name"
+    targets: []
+      # - endpoint: pg01.local
+      #   name: pg01 (there needs to exist an authModule with key "client.pg01" if not using sharedAuthModule)
+      #   port: default 5432
+      #   databaseName: default '' (Set the database name to connect to)
+
 prometheusRule:
   enabled: false
   additionalLabels: {}
@@ -189,6 +206,12 @@ config:
     #     options:
     #       sslmode: disable
 
+  # define an existing secret to be mounted as the config file
+  # needs to have the key 'postgres_exporter.yml'
+  existingSecret:
+    enabled: false
+    name: ""
+
 nodeSelector: {}
 
 tolerations: []
@@ -201,7 +224,6 @@ podLabels: {}
 
 # Configurable probes. If TLS client authentication is enabled at the exporter, TCP probe must be used.
 livenessProbe:
-  initialDelaySeconds: 0
   httpGet:
     path: /
     port: http
@@ -211,7 +233,6 @@ livenessProbe:
   timeoutSeconds: 3
 
 readinessProbe:
-  initialDelaySeconds: 0
   httpGet:
     path: /
     port: http
