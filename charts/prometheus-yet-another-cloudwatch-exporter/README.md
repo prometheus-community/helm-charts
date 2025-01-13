@@ -1,16 +1,44 @@
 # yet-another-cloudwatch-exporter
 
-Helm chart for YACE.
+YACE, or `yet another cloudwatch exporter`, is a Prometheus exporter for AWS CloudWatch metrics.
 
-**Homepage:** <https://github.com/prometheus-community/helm-charts>
+This chart bootstraps a [YACE](https://github.com/prometheus-community/yet-another-cloudwatch-exporter) deployment on a [Kubernetes](http://kubernetes.io) cluster using the [Helm](https://helm.sh) package manager.
 
-## Installation
+## Get Helm Repository Info
 
-```sh
+```console
 helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
-helm install prometheus-community/yet-another-cloudwatch-exporter
+helm repo update
 ```
 
-## Source Code
+_See [`helm repo`](https://helm.sh/docs/helm/helm_repo/) for command documentation._
 
-* <https://github.com/prometheus-community/yet-another-cloudwatch-exporter>
+## Install Chart
+
+```console
+helm install [RELEASE_NAME] prometheus-community/prometheus-yet-another-cloudwatch-exporter
+```
+
+_See [configuration](#configuration) below._
+
+_See [helm install](https://helm.sh/docs/helm/helm_install/) for command documentation._
+
+## Uninstall Chart
+
+```console
+helm uninstall [RELEASE_NAME]
+```
+
+This removes all the Kubernetes components associated with the chart and deletes the release.
+
+_See [helm uninstall](https://helm.sh/docs/helm/helm_uninstall/) for command documentation._
+
+_See [helm upgrade](https://helm.sh/docs/helm/helm_upgrade/) for command documentation._
+
+## Configuring
+
+See [Customizing the Chart Before Installing](https://helm.sh/docs/intro/using_helm/#customizing-the-chart-before-installing). To see all configurable options with detailed comments, visit the chart's [values.yaml](./values.yaml), or run these configuration commands:
+
+```console
+helm show values prometheus-community/prometheus-yet-another-cloudwatch-exporter
+```
