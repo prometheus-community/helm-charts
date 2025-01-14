@@ -16,7 +16,7 @@ _See [`helm repo`](https://helm.sh/docs/helm/helm_repo/) for command documentati
 ## Install Chart
 
 ```console
-helm install [RELEASE_NAME] prometheus-community/prometheus-yet-another-cloudwatch-exporter
+helm install [RELEASE_NAME] prometheus-community/yet-another-cloudwatch-exporter
 ```
 
 _See [configuration](#configuration) below._
@@ -40,5 +40,5 @@ _See [helm upgrade](https://helm.sh/docs/helm/helm_upgrade/) for command documen
 See [Customizing the Chart Before Installing](https://helm.sh/docs/intro/using_helm/#customizing-the-chart-before-installing). To see all configurable options with detailed comments, visit the chart's [values.yaml](./values.yaml), or run these configuration commands:
 
 ```console
-helm show values prometheus-community/prometheus-yet-another-cloudwatch-exporter
+helm show values prometheus-community/yet-another-cloudwatch-exporter
 ```
