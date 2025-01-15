@@ -14,10 +14,26 @@ set -euo pipefail
       echo "Please run ./hack/update_crds.sh"
 
       echo "Diff:"
+      ls -l /tmp/crds.tar.xz charts/crds/files/crds.tar.xz
+      echo "Diff:"
+      shasum -a 256 /tmp/crds.tar.xz charts/crds/files/crds.tar.xz
+      echo "Diff:"
+      tar tvf /tmp/crds.tar.xz
+      echo "-----"
+      tar tvf charts/crds/files/crds.tar.xz
+      echo "Diff:"
+
       git diff --color=always <(
         strings /tmp/crds.tar.xz
       ) <(
         strings charts/crds/files/crds.tar.xz
+      )
+      echo "Diff:"
+
+      git diff --color=always <(
+        xxd /tmp/crds.tar.xz
+      ) <(
+        xxd charts/crds/files/crds.tar.xz
       )
 
       exit 1

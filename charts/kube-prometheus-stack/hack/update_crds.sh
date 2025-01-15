@@ -39,23 +39,26 @@ for line in "${FILES[@]}"; do
     fi
 done
 
-_TAR=$(which gtar 2>/dev/null || which tar 2>/dev/null)
-
-case $($_TAR --help) in
-  *GNU*) ;;
-  *)
-    echo "Please install GNU tar"
-    echo "On macOS: brew install gnu-tar"
-    exit 1
-    ;;
-esac
+_TAR=$(which tar 2>/dev/null)
 
 cd "${SCRIPT_DIR}/../charts/crds/crds/"
 
-$_TAR --sort=name --format=posix \
-  --pax-option='exthdr.name=%d/PaxHeaders/%f,delete=atime,delete=ctime,delete=btime,delete=mtime' \
-  --mtime="@0" \
-  --numeric-owner --owner=0 --group=0 \
-  --mode='go+u,go-w' \
-  --no-xattrs --no-acls --no-selinux \
-  --xz -cf ../files/crds.tar.xz crd-*.yaml
+case $($_TAR --help) in
+  *GNU*)
+    find crd-*.yaml -print0 | sort -z | env XZ_OPT=-9 $_TAR --sort=name --format=ustar \
+      --mtime="@0" \
+      --numeric-owner --owner=0 --group=0 \
+      --mode='go+u,go-w' \
+      --no-xattrs --no-acls --no-selinux \
+      --no-recursion --null --files-from - \
+      -cJpf ../files/crds.tar.xz
+    ;;
+  *)
+    find crd-*.yaml -exec touch -d 1970-01-01T00:00:00Z {} + -print0 | sort -z | env COPYFILE_DISABLE=1 $_TAR --format=ustar \
+      --numeric-owner --uid=0 --gid=0 \
+      --no-xattrs \
+      --no-recursion --null --files-from - \
+      --options xz:compression-level=9 \
+      -cJf ../files/crds.tar.xz
+    ;;
+esac
