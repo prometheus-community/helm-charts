@@ -7,24 +7,21 @@ set -euo pipefail
 
     cd "${SCRIPT_DIR}/../"
 
+    cp charts/crds/files/crds.tar.xz /tmp/crds.tar.xz
+
     ./hack/update_crds.sh
-    if ! git diff "$GITHUB_SHA" --color=always --exit-code -- ':!*.tar.xz'; then
+    if ! git diff "$GITHUB_SHA" --color=always --exit-code; then
       echo "Please run ./hack/update_crds.sh"
+
+      echo "Diff:"
+      git diff --color=always <(
+        strings /tmp/crds.tar.xz
+      ) <(
+        strings charts/crds/files/crds.tar.xz
+      )
+
       exit 1
     fi
-
-    cd "${SCRIPT_DIR}/../charts/crds/crds/"
-
-    rm ./*.yaml
-
-    tar xJf "${SCRIPT_DIR}/../charts/crds/files/crds.tar.xz"
-
-    if ! git diff "$GITHUB_SHA" --color=always --exit-code -- ':!*.tar.xz'; then
-      echo "Suspicious crds.tar.xz. Please run ./hack/update_crds.sh"
-      exit 1
-    fi
-
-    cd "${SCRIPT_DIR}/../"
 
     cd hack
 

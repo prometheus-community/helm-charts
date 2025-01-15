@@ -39,8 +39,23 @@ for line in "${FILES[@]}"; do
     fi
 done
 
+_TAR=$(which gtar 2>/dev/null || which tar 2>/dev/null)
+
+case $($_TAR --help) in
+  *GNU*) ;;
+  *)
+    echo "Please install GNU tar"
+    echo "On macOS: brew install gnu-tar"
+    exit 1
+    ;;
+esac
+
 cd "${SCRIPT_DIR}/../charts/crds/crds/"
 
-# COPYFILE_DISABLE is used to prevent tar from including BSD metadata in the tarball
-# ref: https://unix.stackexchange.com/a/282142/433641
-env COPYFILE_DISABLE=1 tar cJf ../files/crds.tar.xz crd-*
+$_TAR --sort=name --format=posix \
+  --pax-option='exthdr.name=%d/PaxHeaders/%f,delete=atime,delete=ctime,delete=btime,delete=mtime' \
+  --mtime="@0" \
+  --numeric-owner --owner=0 --group=0 \
+  --mode='go+u,go-w' \
+  --no-xattrs --no-acls --no-selinux \
+  --xz -cf ../files/crds.tar.xz crd-*.yaml
