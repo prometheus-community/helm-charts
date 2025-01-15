@@ -1,0 +1,35 @@
+{{- if .Values.upgradeJob.enabled }}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ template "kube-prometheus-stack.upgradeCRD.name" . }}
+  namespace: {{ template "kube-prometheus-stack.namespace" . }}
+  annotations:
+    "helm.sh/hook": pre-install,pre-upgrade,pre-rollback
+    "helm.sh/hook-weight": "-5"
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+  labels:
+    {{- include "kube-prometheus-stack.upgradeCRD.labels" . | nindent 4 }}
+rules:
+  - apiGroups:
+      - "apiextensions.k8s.io"
+    resources:
+      - "customresourcedefinitions"
+    verbs:
+      - create
+      - patch
+      - update
+      - get
+      - list
+    resourceNames:
+      - alertmanagerconfigs.monitoring.coreos.com
+      - alertmanagers.monitoring.coreos.com
+      - podmonitors.monitoring.coreos.com
+      - probes.monitoring.coreos.com
+      - prometheusagents.monitoring.coreos.com
+      - prometheuses.monitoring.coreos.com
+      - prometheusrules.monitoring.coreos.com
+      - scrapeconfigs.monitoring.coreos.com
+      - servicemonitors.monitoring.coreos.com
+      - thanosrulers.monitoring.coreos.com
+{{- end }}

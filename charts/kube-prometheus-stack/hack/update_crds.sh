@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -e
+
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 
 if [[ $(uname -s) = "Darwin" ]]; then
@@ -36,3 +38,9 @@ for line in "${FILES[@]}"; do
       exit 1
     fi
 done
+
+cd "${SCRIPT_DIR}/../charts/crds/crds/"
+
+# COPYFILE_DISABLE is used to prevent tar from including BSD metadata in the tarball
+# ref: https://unix.stackexchange.com/a/282142/433641
+env COPYFILE_DISABLE=1 tar cJf ../files/crds.tar.xz crd-*

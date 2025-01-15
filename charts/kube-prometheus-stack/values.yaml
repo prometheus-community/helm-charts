@@ -32,6 +32,126 @@ commonLabels: {}
 ##
 crds:
   enabled: true
+  ## The CRD upgrade job mitigates the limitation of helm not being able to upgrade CRDs.
+  ## The job will apply the CRDs to the cluster before the operator is deployed, using helm hooks.
+  ## It deploy a corresponding clusterrole, clusterrolebinding and serviceaccount to apply the CRDs.
+  ## This feature is in preview, off by default and may change in the future.
+  upgradeJob:
+    enabled: false
+    image:
+      busybox:
+        registry: docker.io
+        repository: busybox
+        tag: "latest"
+        sha: ""
+        pullPolicy: IfNotPresent
+      kubectl:
+        registry: registry.k8s.io
+        repository: kubectl
+        tag: "" # defaults to the Kubernetes version
+        sha: ""
+        pullPolicy: IfNotPresent
+
+    env: {}
+    ## Define resources requests and limits for single Pods.
+    ## ref: https://kubernetes.io/docs/user-guide/compute-resources/
+    ##
+    resources: {}
+
+    ## Additional volumes
+    ##
+    extraVolumes: []
+
+    ## Additional volume mounts
+    ##
+    extraVolumeMounts: []
+
+    ## Define which Nodes the Pods are scheduled on.
+    ## ref: https://kubernetes.io/docs/user-guide/node-selection/
+    ##
+    nodeSelector: {}
+
+    ## Assign custom affinity rules to the upgrade-crd job
+    ## ref: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/
+    ##
+    affinity: {}
+    # nodeAffinity:
+    #   requiredDuringSchedulingIgnoredDuringExecution:
+    #     nodeSelectorTerms:
+    #     - matchExpressions:
+    #       - key: kubernetes.io/e2e-az-name
+    #         operator: In
+    #         values:
+    #         - e2e-az1
+    #         - e2e-az2
+
+    ## If specified, the pod's tolerations.
+    ## ref: https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/
+    ##
+    tolerations: []
+    # - key: "key"
+    #   operator: "Equal"
+    #   value: "value"
+    #   effect: "NoSchedule"
+
+    ## If specified, the pod's topology spread constraints.
+    ## ref: https://kubernetes.io/docs/concepts/workloads/pods/pod-topology-spread-constraints/
+    ##
+    topologySpreadConstraints: []
+    # - maxSkew: 1
+    #   topologyKey: topology.kubernetes.io/zone
+    #   whenUnsatisfiable: DoNotSchedule
+    #   labelSelector:
+    #     matchLabels:
+    #       app: alertmanager
+
+    # ## Labels to add to the upgrade-crd job
+    # ##
+    labels: {}
+
+    ## Annotations to add to the upgrade-crd job
+    ##
+    annotations: {}
+
+    ## Labels to add to the upgrade-crd pod
+    ##
+    podLabels: {}
+
+    ## Annotations to add to the upgrade-crd pod
+    ##
+    podAnnotations: {}
+
+    ## Service account for upgrade crd job to use.
+    ## ref: https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-account/
+    ##
+    serviceAccount:
+      create: true
+      name: ""
+      annotations: {}
+      labels: {}
+      automountServiceAccountToken: true
+
+    ## Container-specific security context configuration
+    ## ref: https://kubernetes.io/docs/tasks/configure-pod-container/security-context/
+    ##
+    containerSecurityContext:
+      allowPrivilegeEscalation: false
+      readOnlyRootFilesystem: true
+      capabilities:
+        drop:
+          - ALL
+
+    ## SecurityContext holds pod-level security attributes and common container settings.
+    ## This defaults to non root user with uid 1000 and gid 2000. *v1.PodSecurityContext  false
+    ## ref: https://kubernetes.io/docs/tasks/configure-pod-container/security-context/
+    ##
+    securityContext:
+      fsGroup: 65534
+      runAsGroup: 65534
+      runAsNonRoot: true
+      runAsUser: 65534
+      seccompProfile:
+        type: RuntimeDefault
 
 ## custom Rules to override "for" and "severity" in defaultRules
 ##
