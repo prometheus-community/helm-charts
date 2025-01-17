@@ -65,6 +65,11 @@ helm upgrade [RELEASE_NAME] prometheus-community/prometheus --install
 
 _See [helm upgrade](https://helm.sh/docs/helm/helm_upgrade/) for command documentation._
 
+### To 27.0
+
+Prometheus' configuration parameter `insecure_skip_verify` in scrape configs `serverFiles."prometheus.yml".scrape_configs` has been commented out keeping thus the default Prometheus' value.
+If certificate verification must be skipped, please, uncomment the line before upgrading.
+
 ### To 26.0
 
 This release changes default version of promethues to v3.0.0, See official [migration guide](https://prometheus.io/docs/prometheus/latest/migration/#prometheus-3-0-migration-guide
