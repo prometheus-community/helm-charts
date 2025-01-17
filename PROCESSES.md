@@ -26,8 +26,8 @@ using the following format:
 
 ```yaml
 maintainers:
-- name:   # A free choicen display name. Required
-  email:  # a contact mail. Optional
+- name:   # A freely chosen display name. Required.
+  email:  # A contact mail. Optional
   url:    # The URL of the GitHub profile, using the format https://github.com/<username>. Required. 
 ```
 
