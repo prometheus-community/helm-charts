@@ -1,0 +1,92 @@
+name: Renovate Bump Chart Version
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'charts/**/*'
+
+jobs:
+  renovate-bump-chart-version:
+    name: Renovate Bump Chart Version
+    runs-on: ubuntu-latest
+    if: github.actor == 'renovate[bot]'
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Set up chart-testing
+        uses: helm/chart-testing-action@v2.6.1
+
+      - name: Detect changed charts
+        id: list-changed
+        run: |
+          changed="$(ct list-changed --config .github/linters/ct.yaml)"
+          if [[ -n "$changed" ]]; then
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+            echo "changed_list=\"${changed//$'\n'/ }\"" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Bump chart version
+        if: steps.list-changed.outputs.changed == 'true'
+        env:
+          CHART: ${{ steps.list-changed.outputs.changed_list }}
+        run: |
+          if [[ $CHANGED_LIST == *" "* ]]; then
+            echo "Multiple charts changed, skipping bumping chart version"
+            exit 0
+          fi
+
+          CHART_VERSION=$(grep -e "^version:" "$CHART/Chart.yaml" | cut -d ":" -f 2 | tr -d '[:space:]' | tr -d '"')
+          CHART_MAJOR_VERSION=$(printf '%s' "$CHART_VERSION" | cut -d "." -f 1)
+          CHART_MINOR_VERSION=$(printf '%s' "$CHART_VERSION" | cut -d "." -f 2)
+          CHART_MINOR_VERSION=$((CHART_MINOR_VERSION+1))
+          CHART_NEW_VERSION="${CHART_MAJOR_VERSION}.${CHART_MINOR_VERSION}.0"
+          sed -i "s/^version:.*/version: \"${CHART_NEW_VERSION}\"/" "$CHART/Chart.yaml"
+
+      - name: Commit changes
+        if: steps.list-changed.outputs.changed == 'true'
+        env:
+          CHART: ${{ steps.list-changed.outputs.changed_list }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          curl https://api.github.com/graphql -f \
+               -sSf -H "Authorization: Bearer $GITHUB_TOKEN" \
+               --data @- <<GRAPHQL | jq
+          {
+            "query": "mutation (\$input: CreateCommitOnBranchInput!) {
+              createCommitOnBranch(input: \$input) { 
+                commit { 
+                  url 
+                } 
+              } 
+            }",
+            "variables": {
+              "input": {
+                "branch": {
+                  "repositoryNameWithOwner": "${{ github.repository }}",
+                  "branchName": "${{ github.ref_name }}"
+                },
+                "message": { "headline": "Update Chart.yaml" },
+                "fileChanges": {
+                  "additions": [
+                    {
+                      "path": "$CHART/Chart.yaml",
+                      "contents": "$(base64 -w 0 <"$CHART/Chart.yaml")"
+                    }
+                  ]
+                },
+                "expectedHeadOid": "${{ github.sha }}"
+              }
+            }
+          }
+          GRAPHQL
