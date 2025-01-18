@@ -1,11 +1,54 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": [
-    "config:recommended"
+    "config:recommended",
+    "helpers:pinGitHubActionDigestsToSemver"
   ],
   "dependencyDashboardApproval": true,
+  "customManagers": [
+    {
+      "customType": "regex",
+      "fileMatch": [
+        "(^|/).+\\.(py|yaml)$"
+      ],
+      "matchStrings": [
+        "\\s*#\\s?renovate: (?<datasource>.*?)=(?<depName>.*?)( versioning=(?<versioning>.*?))?\\s+[\\w+\\.\\-]+(?:[:=]|\\s+\\S+)\\s*[\\\"']?(?<currentValue>[\\w+\\.\\-]*)(?:@(?<currentDigest>sha256:[a-f0-9]+))?[\\\"']?"
+      ],
+      "datasourceTemplate": "{{#if (equals datasource 'github')}}github-tags{{else}}{{{datasource}}}{{/if}}",
+      "versioningTemplate": "{{#if (equals datasource 'docker')}}docker{{else if versioning}}{{{versioning}}}{{else}}semver{{/if}}"
+    },
+    {
+      "customType": "regex",
+      "fileMatch": [
+        "(^|/).+\\.yaml$"
+      ],
+      "matchStrings": [
+        "\\s*image:\\s+registry:\\s*[\\\"']?(?<registry>.*?)[\\\"']?\\s+name:\\s*[\\\"']?(?<repository>.*?)[\\\"']?\\s+tag:\\s*[\\\"']?(?<currentValue>[\\w+\\.\\-]*)(?:@(?<currentDigest>sha256:[a-f0-9]+))?[\\\"']?"
+      ],
+      "depNameTemplate": "{{{ registry }}}/{{{ repository }}}",
+      "datasourceTemplate": "docker"
+    },
+    {
+      "customType": "regex",
+      "fileMatch": [
+        "(^|/).+\\.yaml$"
+      ],
+      "matchStrings": [
+        "\\s*image:\\s+[\\\"']?(?<registry>.+\\..+?)\\/(?<repository>.*?):(?<currentValue>[\\w+\\.\\-]*)(?:@(?<currentDigest>sha256:[a-f0-9]+))?[\\\"']?"
+      ],
+      "depNameTemplate": "{{{ registry }}}/{{{ repository }}}",
+      "datasourceTemplate": "docker"
+    }
+  ],
   "packageRules": [
     {
+      "enabled": false,
+      "matchPackageNames": [
+        "*"
+      ]
+    },
+    {
+      "enabled": true,
       "matchPackagePatterns": [
         "*"
       ],
@@ -16,34 +59,20 @@
       "groupName": "github-workflow dependency updates"
     },
     {
+      "enabled": true,
       "matchPackagePatterns": [
         "*"
       ],
       "matchPaths": [
         "charts/kube-prometheus-stack/**"
       ],
-      "matchUpdateTypes": [
-        "major"
-      ],
-      "commitMessagePrefix": "[kube-prometheus-stack] ",
-      "groupName": "kube-prometheus-stack dependency major updates"
-    },
-    {
-      "matchPackagePatterns": [
-        "*"
-      ],
-      "matchPaths": [
-        "charts/kube-prometheus-stack/**"
-      ],
-      "matchUpdateTypes": [
-        "minor",
-        "patch",
-        "digest",
-        "pin",
-        "pinDigest"
-      ],
-      "commitMessagePrefix": "[kube-prometheus-stack] ",
-      "groupName": "kube-prometheus-stack dependency non-major updates"
+      "commitMessagePrefix": "[{{ lookup (split packageFileDir '/') 1 }}] ",
+      "groupName": "{{ lookup (split packageFileDir '/') 1 }} dependency non-major updates",
+      "separateMajorMinor": true,
+      "postUpdateOptions": "helmUpdateSubChartArchives",
+      "major": {
+        "groupName": "{{ lookup (split packageFileDir '/') 1 }} dependency major updates"
+      }
     }
   ]
 }
