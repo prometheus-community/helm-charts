@@ -115,14 +115,16 @@ replacement_map = {
     },
 }
 
-# standard header
+# standard header for both ConfigMap and GrafanaDashboard CRD
 header = '''{{- /*
 Generated from '%(name)s' from %(url)s
 Do not change in-place! In order to change this file first read following link:
 https://github.com/prometheus-community/helm-charts/tree/main/charts/kube-prometheus-stack/hack
 */ -}}
 {{- $kubeTargetVersion := default .Capabilities.KubeVersion.GitVersion .Values.kubeTargetVersionOverride }}
-{{- if and (or .Values.grafana.enabled .Values.grafana.forceDeployDashboards) (semverCompare ">=%(min_kubernetes)s" $kubeTargetVersion) (semverCompare "<%(max_kubernetes)s" $kubeTargetVersion) .Values.grafana.defaultDashboardsEnabled%(condition)s }}
+{{- if and (or (and .Values.grafana.enabled .Values.grafana.defaultDashboardsEnabled) .Values.grafana.forceDeployDashboards) (semverCompare ">=%(min_kubernetes)s" $kubeTargetVersion) (semverCompare "<%(max_kubernetes)s" $kubeTargetVersion) .Values.grafana.defaultDashboardsEnabled%(condition)s }}
+
+{{- if .Values.grafana.grafanaConfigMapDashboards }}
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -139,6 +141,28 @@ metadata:
 data:
 '''
 
+grafana_operator_template = '''
+{{- if and .Values.grafana.grafanaOperatorDashboards .Values.grafana.grafanaConfigMapDashboards }}
+---
+apiVersion: grafana.integreatly.org/v1beta1
+kind: GrafanaDashboard
+metadata:
+  namespace: {{ template "kube-prometheus-stack-grafana.namespace" . }}
+  name: {{ printf "%%s-%%s" (include "kube-prometheus-stack.fullname" $) "%(name)s" | trunc 63 | trimSuffix "-" }}
+  labels:
+    {{- if $.Values.grafana.sidecar.dashboards.label }}
+    {{ $.Values.grafana.sidecar.dashboards.label }}: {{ ternary $.Values.grafana.sidecar.dashboards.labelValue "1" (not (empty $.Values.grafana.sidecar.dashboards.labelValue)) | quote }}
+    {{- end }}
+    app: {{ template "kube-prometheus-stack.name" $ }}-grafana
+{{ include "kube-prometheus-stack.labels" $ | indent 4 }}
+spec:
+  instanceSelector:
+    matchLabels: {{- toYaml $.Values.grafana.operator.instanceSelector | nindent 6 }}
+  configMapRef:
+    name: {{ printf "%%s-%%s" (include "kube-prometheus-stack.fullname" $) "%(name)s" | trunc 63 | trimSuffix "-" }}
+    key: %(name)s.json
+{{- end }}
+'''
 
 def init_yaml_styles():
     represent_literal_str = change_style('|', SafeRepresenter.represent_str)
@@ -228,15 +252,25 @@ def write_group_to_file(resource_name, content, url, destination, min_kubernetes
         'max_kubernetes': max_kubernetes
     }
 
-    content = patch_dashboards_json(content, multicluster_key)
-    content = patch_json_set_timezone_as_variable(content)
-    content = patch_json_set_editable_as_variable(content)
+    # Process dashboard content - use the same processing for both ConfigMap and CRD
+    processed_content = patch_dashboards_json(content, multicluster_key)
+    processed_content = patch_json_set_timezone_as_variable(processed_content)
+    processed_content = patch_json_set_editable_as_variable(processed_content)
 
-    filename_struct = {resource_name + '.json': (LiteralStr(content))}
-    # rules themselves
+    # Add ConfigMap data section
+    filename_struct = {resource_name + '.json': (LiteralStr(processed_content))}
     lines += yaml_str_repr(filename_struct)
+    lines += '{{- end }}'  # End of ConfigMap section
 
-    # footer
+    # Add GrafanaDashboard CRD section with the same processed content
+    # Just add proper indentation after |-
+    crd_content = '\n    ' + processed_content
+    lines += grafana_operator_template % {
+        'name': resource_name,
+        'dashboard_content': crd_content
+    }
+
+    # Final end of the template
     lines += '{{- end }}'
 
     filename = resource_name + '.yaml'
@@ -250,7 +284,6 @@ def write_group_to_file(resource_name, content, url, destination, min_kubernetes
         f.write(lines)
 
     print("Generated %s" % new_filename)
-
 
 def main():
     os.chdir(os.path.dirname(os.path.abspath(__file__)))
