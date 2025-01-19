@@ -4,7 +4,7 @@ Do not change in-place! In order to change this file first read following link:
 https://github.com/prometheus-community/helm-charts/tree/main/charts/kube-prometheus-stack/hack
 */ -}}
 {{- $kubeTargetVersion := default .Capabilities.KubeVersion.GitVersion .Values.kubeTargetVersionOverride }}
-{{- if and (or .Values.grafana.enabled .Values.grafana.forceDeployDashboards) (semverCompare ">=1.14.0-0" $kubeTargetVersion) (semverCompare "<9.9.9-9" $kubeTargetVersion) .Values.grafana.defaultDashboardsEnabled (or .Values.nodeExporter.enabled .Values.nodeExporter.forceDeployDashboards) }}
+{{- if and (or (and .Values.grafana.enabled .Values.grafana.defaultDashboardsEnabled) .Values.grafana.forceDeployDashboards) (semverCompare ">=1.14.0-0" $kubeTargetVersion) (semverCompare "<9.9.9-9" $kubeTargetVersion) .Values.grafana.defaultDashboardsEnabled (or .Values.nodeExporter.enabled .Values.nodeExporter.forceDeployDashboards) }}
 
 {{- if .Values.grafana.grafanaConfigMapDashboards }}
 apiVersion: v1
@@ -612,7 +612,7 @@ data:
         "uid": "3e97d1d02672cdd0861f4c97c64f89b2"
     }`}}
 {{- end }}
-{{- if .Values.grafana.grafanaOperatorDashboards }}
+{{- if and .Values.grafana.grafanaOperatorDashboards .Values.grafana.grafanaConfigMapDashboards }}
 ---
 apiVersion: grafana.integreatly.org/v1beta1
 kind: GrafanaDashboard
@@ -627,7 +627,7 @@ metadata:
 {{ include "kube-prometheus-stack.labels" $ | indent 4 }}
 spec:
   instanceSelector:
-    matchLabels: {{- toYaml $.Values.grafana.operator.instanceSelector | nindent 6 }}
+    matchLabels: {{- toYaml $.Values.grafana.grafanaOperatorInstanceSelector.instanceSelector | nindent 6 }}
   configMapRef:
     name: {{ printf "%s-%s" (include "kube-prometheus-stack.fullname" $) "node-cluster-rsrc-use" | trunc 63 | trimSuffix "-" }}
     key: node-cluster-rsrc-use.json

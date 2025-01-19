@@ -1,0 +1,145 @@
+{{- if and .Values.grafana.grafanaOperatorDatasources (or (and .Values.grafana.enabled .Values.grafana.sidecar.datasources.enabled) .Values.grafana.forceDeployDatasources) }}
+{{- if .Values.grafana.grafanaConfigMapDatasources }}
+{{- $scrapeInterval := .Values.grafana.sidecar.datasources.defaultDatasourceScrapeInterval | default .Values.prometheus.prometheusSpec.scrapeInterval | default "30s" }}
+
+# Default Prometheus datasource
+{{- if .Values.grafana.sidecar.datasources.defaultDatasourceEnabled }}
+apiVersion: grafana.integreatly.org/v1beta1
+kind: GrafanaDatasource
+metadata:
+  name: prometheus-datasource
+  namespace: {{ template "kube-prometheus-stack-grafana.namespace" . }}
+  labels:
+    app: {{ template "kube-prometheus-stack.name" $ }}-grafana
+{{ include "kube-prometheus-stack.labels" $ | indent 4 }}
+spec:
+  instanceSelector:
+    matchLabels:
+      {{- if .Values.grafana.grafanaOperatorInstanceSelector }}
+      {{- toYaml .Values.grafana.grafanaOperatorInstanceSelector.instanceSelector | nindent 6 }}
+      {{- else }}
+      app.kubernetes.io/instance: grafana
+      app.kubernetes.io/name: grafana-operator
+      {{- end }}
+  datasource:
+    name: "{{ .Values.grafana.sidecar.datasources.name }}"
+    type: prometheus
+    access: proxy
+    {{- if .Values.grafana.sidecar.datasources.url }}
+    url: {{ .Values.grafana.sidecar.datasources.url }}
+    {{- else }}
+    url: http://{{ template "kube-prometheus-stack.fullname" . }}-prometheus.{{ template "kube-prometheus-stack.namespace" . }}:{{ .Values.prometheus.service.port }}/{{ trimPrefix "/" .Values.prometheus.prometheusSpec.routePrefix }}
+    {{- end }}
+    isDefault: {{ .Values.grafana.sidecar.datasources.isDefaultDatasource }}
+    uid: {{ .Values.grafana.sidecar.datasources.uid }}
+    jsonData:
+      httpMethod: {{ .Values.grafana.sidecar.datasources.httpMethod }}
+      timeInterval: {{ $scrapeInterval }}
+      {{- if .Values.grafana.sidecar.datasources.timeout }}
+      timeout: {{ .Values.grafana.sidecar.datasources.timeout }}
+      {{- end }}
+      {{- if .Values.grafana.sidecar.datasources.exemplarTraceIdDestinations }}
+      exemplarTraceIdDestinations:
+        - datasourceUid: {{ .Values.grafana.sidecar.datasources.exemplarTraceIdDestinations.datasourceUid }}
+          name: {{ .Values.grafana.sidecar.datasources.exemplarTraceIdDestinations.traceIdLabelName }}
+      {{- end }}
+{{- end }}
+
+{{- if .Values.grafana.sidecar.datasources.createPrometheusReplicasDatasources }}
+{{- range until (int .Values.prometheus.prometheusSpec.replicas) }}
+---
+apiVersion: grafana.integreatly.org/v1beta1
+kind: GrafanaDatasource
+metadata:
+  name: prometheus-replica-{{ . }}-datasource
+  namespace: {{ template "kube-prometheus-stack-grafana.namespace" . }}
+  labels:
+    app: {{ template "kube-prometheus-stack.name" $ }}-grafana
+{{ include "kube-prometheus-stack.labels" $ | indent 4 }}
+spec:
+  instanceSelector:
+    matchLabels:
+      {{- if $.Values.grafana.grafanaOperatorInstanceSelector }}
+      {{- toYaml $.Values.grafana.grafanaOperatorInstanceSelector.instanceSelector | nindent 6 }}
+      {{- else }}
+      app.kubernetes.io/instance: grafana
+      app.kubernetes.io/name: grafana-operator
+      {{- end }}
+  datasource:
+    name: "{{ $.Values.grafana.sidecar.datasources.name }}-{{ . }}"
+    type: prometheus
+    access: proxy
+    url: http://prometheus-{{ template "kube-prometheus-stack.prometheus.crname" $ }}-{{ . }}.prometheus-operated:9090/{{ trimPrefix "/" $.Values.prometheus.prometheusSpec.routePrefix }}
+    isDefault: false
+    uid: {{ $.Values.grafana.sidecar.datasources.uid }}-replica-{{ . }}
+    jsonData:
+      timeInterval: {{ $scrapeInterval }}
+      {{- if $.Values.grafana.sidecar.datasources.exemplarTraceIdDestinations }}
+      exemplarTraceIdDestinations:
+        - datasourceUid: {{ $.Values.grafana.sidecar.datasources.exemplarTraceIdDestinations.datasourceUid }}
+          name: {{ $.Values.grafana.sidecar.datasources.exemplarTraceIdDestinations.traceIdLabelName }}
+      {{- end }}
+{{- end }}
+{{- end }}
+
+{{- if .Values.grafana.sidecar.datasources.alertmanager.enabled }}
+---
+apiVersion: grafana.integreatly.org/v1beta1
+kind: GrafanaDatasource
+metadata:
+  name: alertmanager-datasource
+  namespace: {{ template "kube-prometheus-stack-grafana.namespace" . }}
+  labels:
+    app: {{ template "kube-prometheus-stack.name" $ }}-grafana
+{{ include "kube-prometheus-stack.labels" $ | indent 4 }}
+spec:
+  instanceSelector:
+    matchLabels:
+      {{- if .Values.grafana.grafanaOperatorInstanceSelector }}
+      {{- toYaml .Values.grafana.grafanaOperatorInstanceSelector.instanceSelector | nindent 6 }}
+      {{- else }}
+      app.kubernetes.io/instance: grafana
+      app.kubernetes.io/name: grafana-operator
+      {{- end }}
+  datasource:
+    name: "{{ .Values.grafana.sidecar.datasources.alertmanager.name }}"
+    type: alertmanager
+    access: proxy
+    {{- if .Values.grafana.sidecar.datasources.alertmanager.url }}
+    url: {{ .Values.grafana.sidecar.datasources.alertmanager.url }}
+    {{- else }}
+    url: http://{{ template "kube-prometheus-stack.fullname" . }}-alertmanager.{{ template "kube-prometheus-stack.namespace" . }}:{{ .Values.alertmanager.service.port }}/{{ trimPrefix "/" .Values.alertmanager.alertmanagerSpec.routePrefix }}
+    {{- end }}
+    uid: {{ .Values.grafana.sidecar.datasources.alertmanager.uid }}
+    jsonData:
+      handleGrafanaManagedAlerts: {{ .Values.grafana.sidecar.datasources.alertmanager.handleGrafanaManagedAlerts }}
+      implementation: {{ .Values.grafana.sidecar.datasources.alertmanager.implementation }}
+{{- end }}
+
+{{- if .Values.grafana.additionalDataSources }}
+{{- range .Values.grafana.additionalDataSources }}
+---
+apiVersion: grafana.integreatly.org/v1beta1
+kind: GrafanaDatasource
+metadata:
+  name: {{ .name | lower | replace " " "-" }}-datasource
+  namespace: {{ template "kube-prometheus-stack-grafana.namespace" $ }}
+  labels:
+    app: {{ template "kube-prometheus-stack.name" $ }}-grafana
+{{ include "kube-prometheus-stack.labels" $ | indent 4 }}
+spec:
+  instanceSelector:
+    matchLabels:
+      {{- if $.Values.grafana.grafanaOperatorInstanceSelector }}
+      {{- toYaml $.Values.grafana.grafanaOperatorInstanceSelector.instanceSelector | nindent 6 }}
+      {{- else }}
+      app.kubernetes.io/instance: grafana
+      app.kubernetes.io/name: grafana-operator
+      {{- end }}
+  datasource:
+    {{- toYaml . | nindent 4 }}
+{{- end }}
+{{- end }}
+
+{{- end }}
+{{- end }}

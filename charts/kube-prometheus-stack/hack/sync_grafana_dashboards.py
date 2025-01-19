@@ -157,7 +157,7 @@ metadata:
 {{ include "kube-prometheus-stack.labels" $ | indent 4 }}
 spec:
   instanceSelector:
-    matchLabels: {{- toYaml $.Values.grafana.operator.instanceSelector | nindent 6 }}
+    matchLabels: {{- toYaml $.Values.grafana.grafanaOperatorInstanceSelector.instanceSelector | nindent 6 }}
   configMapRef:
     name: {{ printf "%%s-%%s" (include "kube-prometheus-stack.fullname" $) "%(name)s" | trunc 63 | trimSuffix "-" }}
     key: %(name)s.json

@@ -1,4 +1,5 @@
 {{- if and (or (and .Values.grafana.enabled .Values.grafana.defaultDashboardsEnabled) .Values.grafana.forceDeployDashboards) .Values.grafana.grafanaOperatorDashboards }}
+{{- if .Values.grafana.grafanaOperatorDashboards }}
 {{- $files := .Files.Glob "dashboards-1.14/*.json" }}
 {{- if $files }}
 {{- range $path, $fileContents := $files }}
@@ -17,8 +18,9 @@ metadata:
     {{ include "kube-prometheus-stack.labels" $ | indent 4 }}
 spec:
   instanceSelector:
-    matchLabels: {{- toYaml $.Values.grafana.operator.instanceSelector | nindent 6 }}
+    matchLabels: {{- toYaml $.Values.grafana.grafanaOperatorInstanceSelector.instanceSelector | nindent 6 }}
   json: {{ $.Files.Get $path | toJson }}
+{{- end }}
 {{- end }}
 {{- end }}
 {{- end }}
