@@ -19,7 +19,7 @@ You can then run `helm search repo prometheus-community` to see the charts.
 
 ## Contributing
 
-The source code of all [Prometheus](https://prometheus.io) community [Helm](https://helm.sh) charts can be found on Github: <https://github.com/prometheus-community/helm-charts/>
+The source code of all [Prometheus](https://prometheus.io) community [Helm](https://helm.sh) charts can be found on GitHub: <https://github.com/prometheus-community/helm-charts/>
 
 <!-- Keep full URL links to repo files because this README syncs from main to gh-pages.  -->
 We'd love to have you contribute! Please refer to our [contribution guidelines](https://github.com/prometheus-community/helm-charts/blob/main/CONTRIBUTING.md) for details.
