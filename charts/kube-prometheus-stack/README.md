@@ -1,10 +1,10 @@
 # kube-prometheus-stack
 
-Installs the [kube-prometheus stack](https://github.com/prometheus-operator/kube-prometheus), a collection of Kubernetes manifests, [Grafana](http://grafana.com/) dashboards, and [Prometheus rules](https://prometheus.io/docs/prometheus/latest/configuration/recording_rules/) combined with documentation and scripts to provide easy to operate end-to-end Kubernetes cluster monitoring with [Prometheus](https://prometheus.io/) using the [Prometheus Operator](https://github.com/prometheus-operator/prometheus-operator).
+Installs core components of the [kube-prometheus stack](https://github.com/prometheus-operator/kube-prometheus), a collection of Kubernetes manifests, [Grafana](http://grafana.com/) dashboards, and [Prometheus rules](https://prometheus.io/docs/prometheus/latest/configuration/recording_rules/) combined with documentation and scripts to provide easy to operate end-to-end Kubernetes cluster monitoring with [Prometheus](https://prometheus.io/) using the [Prometheus Operator](https://github.com/prometheus-operator/prometheus-operator).
 
 See the [kube-prometheus](https://github.com/prometheus-operator/kube-prometheus) README for details about components, dashboards, and alerts.
 
-_Note: This chart was formerly named `prometheus-operator` chart, now renamed to more clearly reflect that it installs the `kube-prometheus` project stack, within which Prometheus Operator is only one component._
+_Note: This chart was formerly named `prometheus-operator` chart, now renamed to more clearly reflect that it installs the `kube-prometheus` project stack, within which Prometheus Operator is only one component. This chart does not install all components of `kube-prometheus`, notably excluding the Prometheus Adapter and Prometheus black-box exporter._
 
 ## Prerequisites
 
@@ -81,6 +81,28 @@ _See [helm upgrade](https://helm.sh/docs/helm/helm_upgrade/) for command documen
 ### Upgrading an existing Release to a new major version
 
 A major chart version change (like v1.2.3 -> v2.0.0) indicates that there is an incompatible breaking change needing manual actions.
+
+### From 67.x to 68.x
+
+This version drops several metrics by default in order to reduce unnecessary cardinality.
+
+This version also fixes histogram bucket matching for Prometheus 3.x.
+
+From `{job="apiserver"}` drop excessive histogram buckets for the following metrics:
+
+- `apiserver_request_sli_duration_seconds_bucket`
+- `apiserver_request_slo_duration_seconds_bucket`
+- `etcd_request_duration_seconds_bucket`
+
+From `{job="kubelet",metrics_path="/metrics"}` reduce bucket cardinality of kubelet storage operations:
+
+- `csi_operations_seconds_bucket`
+- `storage_operation_duration_seconds_bucket`
+
+From `{job="kubelet",metrics_path="/metrics/cadvisor"}`:
+
+- Drop `container_memory_failures_total{scope="hierarchy"}` metrics, we only need the container scope here.
+- Drop `container_network_...` metrics that match various interfaces correspond to CNI and similar interfaces.
 
 ### From 66.x to 67.x
 
