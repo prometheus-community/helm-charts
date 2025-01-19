@@ -7,33 +7,33 @@ set -euo pipefail
 
     cd "${SCRIPT_DIR}/../"
 
-    cp charts/crds/files/crds.tar.xz /tmp/crds.tar.xz
+    cp charts/crds/files/crds.xz /tmp/crds.xz
 
     ./hack/update_crds.sh
     if ! git diff "$GITHUB_SHA" --color=always --exit-code; then
       echo "Please run ./hack/update_crds.sh"
 
       echo "Diff:"
-      ls -l /tmp/crds.tar.xz charts/crds/files/crds.tar.xz
+      ls -l /tmp/crds.xz charts/crds/files/crds.xz
       echo "Diff:"
-      shasum -a 256 /tmp/crds.tar.xz charts/crds/files/crds.tar.xz
+      shasum -a 256 /tmp/crds.xz charts/crds/files/crds.xz
       echo "Diff:"
-      tar tvf /tmp/crds.tar.xz
+      tar tvf /tmp/crds.xz
       echo "-----"
-      tar tvf charts/crds/files/crds.tar.xz
+      tar tvf charts/crds/files/crds.xz
       echo "Diff:"
 
       git diff --color=always <(
-        strings /tmp/crds.tar.xz
+        strings /tmp/crds.xz
       ) <(
-        strings charts/crds/files/crds.tar.xz
+        strings charts/crds/files/crds.xz
       )
       echo "Diff:"
 
       git diff --color=always <(
-        xxd /tmp/crds.tar.xz
+        xxd /tmp/crds.xz
       ) <(
-        xxd charts/crds/files/crds.tar.xz
+        xxd charts/crds/files/crds.xz
       )
 
       exit 1
