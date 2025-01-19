@@ -224,6 +224,9 @@ containers:
     securityContext:
       {{- toYaml . | nindent 6 }}
     {{- end }}
+    {{- with .Values.lifecycle }}
+    lifecycle: {{ toYaml . | nindent 6 }}
+    {{- end }}
     volumeMounts:
       - name: storage-volume
         mountPath: "{{ .Values.persistentVolume.mountPath }}"
