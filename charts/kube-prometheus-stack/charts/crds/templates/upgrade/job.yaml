@@ -45,10 +45,10 @@ spec:
           imagePullPolicy: "{{ .Values.upgradeJob.image.busybox.pullPolicy }}"
           workingDir: /tmp/
           command:
-            - tar
+            - sh
           args:
-            - xvJf
-            - /crds/crds.tar.xz
+            - -c
+            - bzcat /crds/crds.tar.xz > /tmp/crds.yaml
           {{- with .Values.upgradeJob.resources }}
           resources:
             {{- toYaml . | nindent 12 }}
@@ -86,9 +86,8 @@ spec:
           args:
             - apply
             - --server-side
-            - --recursive
             - --filename
-            - /tmp/
+            - /tmp/crds.yaml
           {{- with .Values.upgradeJob.resources }}
           resources:
             {{- toYaml . | nindent 12 }}

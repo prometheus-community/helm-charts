@@ -40,20 +40,8 @@ for line in "${FILES[@]}"; do
 done
 
 {
-  for file in "${SCRIPT_DIR}/../charts/crds/crds/"crd*.yaml; do
-    cat "${file}"
-    echo "---"
-  done
-} | xz -6 --compress --keep --stdout - > "${SCRIPT_DIR}/../charts/crds/files/crds.xz"
-{
-  for file in "${SCRIPT_DIR}/../charts/crds/crds/"crd*.yaml; do
-    cat "${file}"
-    echo "---"
-  done
-} | gzip --best --keep --stdout - > "${SCRIPT_DIR}/../charts/crds/files/crds.gz"
-{
-  for file in "${SCRIPT_DIR}/../charts/crds/crds/"crd*.yaml; do
-    cat "${file}"
-    echo "---"
-  done
+    for file in "${SCRIPT_DIR}/../charts/crds/crds/"crd*.yaml; do
+        cat "${file}"
+        echo "---"
+    done
 } | bzip2 --best --compress --keep --stdout - > "${SCRIPT_DIR}/../charts/crds/files/crds.bz2"

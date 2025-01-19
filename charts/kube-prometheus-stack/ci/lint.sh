@@ -7,34 +7,9 @@ set -euo pipefail
 
     cd "${SCRIPT_DIR}/../"
 
-    cp charts/crds/files/crds.xz /tmp/crds.xz
-
     ./hack/update_crds.sh
     if ! git diff "$GITHUB_SHA" --color=always --exit-code; then
       echo "Please run ./hack/update_crds.sh"
-
-      echo "Diff:"
-      ls -l /tmp/crds.xz charts/crds/files/crds.xz
-      echo "Diff:"
-      shasum -a 256 /tmp/crds.xz charts/crds/files/crds.xz
-      echo "Diff:"
-      tar tvf /tmp/crds.xz
-      echo "-----"
-      tar tvf charts/crds/files/crds.xz
-      echo "Diff:"
-
-      git diff --color=always <(
-        strings /tmp/crds.xz
-      ) <(
-        strings charts/crds/files/crds.xz
-      )
-      echo "Diff:"
-
-      git diff --color=always <(
-        xxd /tmp/crds.xz
-      ) <(
-        xxd charts/crds/files/crds.xz
-      )
 
       exit 1
     fi
