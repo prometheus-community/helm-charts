@@ -29,11 +29,11 @@ def change_style(style, representer):
 
 refs = {
     # https://github.com/prometheus-operator/kube-prometheus
-    'ref.kube-prometheus': 'c503e5cc5403dd5d56b1c0c5933827baee64aeaf',
+    'ref.kube-prometheus': '16ba4827a699f7c6f74a1bc503d518e8c89dd6a8',
     # https://github.com/kubernetes-monitoring/kubernetes-mixin
-    'ref.kubernetes-mixin': 'bdbf7f45cedf37d07567be7519fa4139043f9335',
+    'ref.kubernetes-mixin': '35aebcabd8b3c166dbcc150ea0cd7387130830da',
     # https://github.com/etcd-io/etcd
-    'ref.etcd': 'e1b4ffb969a90e74c1429b9fc565991eb8eb2a52',
+    'ref.etcd': 'aac7ef6bcc78c6aa3b558fdb2d330f3c782652da',
 }
 
 # Source files list
@@ -78,6 +78,7 @@ charts = [
 
 # Additional conditions map
 condition_map = {
+    'alertmanager-overview': ' (or .Values.alertmanager.enabled .Values.alertmanager.forceDeployDashboards)',
     'grafana-coredns-k8s': ' .Values.coreDns.enabled',
     'etcd': ' .Values.kubeEtcd.enabled',
     'apiserver': ' .Values.kubeApiServer.enabled',
