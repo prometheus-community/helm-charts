@@ -2,7 +2,7 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: {{ template "kube-prometheus-stack.upgradeCRD.name" . }}
+  name: {{ template "kube-prometheus-stack.crd.upgradeJob.name" . }}
   namespace: {{ template "kube-prometheus-stack.namespace" . }}
   annotations:
     "helm.sh/hook": pre-install,pre-upgrade,pre-rollback
@@ -12,7 +12,7 @@ metadata:
     {{- toYaml . | nindent 4 }}
     {{- end }}
   labels:
-    {{- include "kube-prometheus-stack.upgradeCRD.labels" . | nindent 4 }}
+    {{- include "kube-prometheus-stack.crd.upgradeJob.labels" . | nindent 4 }}
     {{- with .Values.upgradeJob.labels }}
     {{- toYaml . | nindent 4 }}
     {{- end }}
@@ -29,11 +29,11 @@ spec:
         {{- toYaml . | nindent 8 }}
       {{- end }}
     spec:
-    {{- if .Values.global.imagePullSecrets }}
+      {{- if .Values.global.imagePullSecrets }}
       imagePullSecrets:
-      {{- include "kube-prometheus-stack.imagePullSecrets" . | indent 8 }}
-    {{- end }}
-      serviceAccountName: {{ include "kube-prometheus-stack.upgradeCRD.serviceAccountName" . }}
+        {{- include "kube-prometheus-stack.imagePullSecrets" . | indent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "kube-prometheus-stack.crd.upgradeJob.serviceAccountName" . }}
       initContainers:
         - name: busybox
           {{- $busyboxRegistry := .Values.global.imageRegistry | default .Values.upgradeJob.image.busybox.registry -}}
@@ -114,7 +114,7 @@ spec:
           emptyDir: {}
         - name: crds
           configMap:
-            name: {{ template "kube-prometheus-stack.upgradeCRD.name" . }}
+            name: {{ template "kube-prometheus-stack.crd.upgradeJob.name" . }}
         {{- with .Values.upgradeJob.extraVolumes }}
         {{- toYaml . | nindent 8 }}
         {{- end }}
