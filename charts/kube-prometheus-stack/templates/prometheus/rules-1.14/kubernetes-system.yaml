@@ -33,7 +33,7 @@ spec:
 {{- if .Values.defaultRules.additionalRuleGroupAnnotations.kubernetesSystem }}
 {{ toYaml .Values.defaultRules.additionalRuleGroupAnnotations.kubernetesSystem | indent 8 }}
 {{- end }}
-        description: There are {{`{{`}} $value {{`}}`}} different semantic versions of Kubernetes components running.
+        description: There are {{`{{`}} $value {{`}}`}} different semantic versions of Kubernetes components running on cluster {{`{{`}} $labels.cluster {{`}}`}}.
         runbook_url: {{ .Values.defaultRules.runbookUrl }}/kubernetes/kubeversionmismatch
         summary: Different semantic versions of Kubernetes components running.
       expr: count by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster) (count by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}git_version, cluster) (label_replace(kubernetes_build_info{job!~"kube-dns|coredns"},"git_version","$1","git_version","(v[0-9]*.[0-9]*).*"))) > 1
@@ -61,7 +61,7 @@ spec:
 {{- if .Values.defaultRules.additionalRuleGroupAnnotations.kubernetesSystem }}
 {{ toYaml .Values.defaultRules.additionalRuleGroupAnnotations.kubernetesSystem | indent 8 }}
 {{- end }}
-        description: Kubernetes API server client '{{`{{`}} $labels.job {{`}}`}}/{{`{{`}} $labels.instance {{`}}`}}' is experiencing {{`{{`}} $value | humanizePercentage {{`}}`}} errors.'
+        description: Kubernetes API server client '{{`{{`}} $labels.job {{`}}`}}/{{`{{`}} $labels.instance {{`}}`}}' is experiencing {{`{{`}} $value | humanizePercentage {{`}}`}} errors on cluster {{`{{`}} $labels.cluster {{`}}`}}.
         runbook_url: {{ .Values.defaultRules.runbookUrl }}/kubernetes/kubeclienterrors
         summary: Kubernetes API server client is experiencing errors.
       expr: |-

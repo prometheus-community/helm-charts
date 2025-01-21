@@ -1,7 +1,10 @@
 #!/usr/bin/env bash
 
+# Make sure sort works predictably.
+export LC_ALL=C
+
 cat <<EOF
-# See https://github.com/scottrigby/prometheus-helm-charts/issues/12
+# See https://github.com/prometheus-community/helm-charts/issues/12
 # https://docs.github.com/en/github/creating-cloning-and-archiving-repositories/about-code-owners
 # https://docs.github.com/en/github/creating-cloning-and-archiving-repositories/about-code-owners#codeowners-syntax
 
@@ -9,15 +12,12 @@ cat <<EOF
 # Unless a later match takes precedence, they will be requested for review when someone opens a pull request.
 * @prometheus-community/helm-charts-admins
 
-/.github/workflows/ @prometheus-community/helm-charts-admins @jkroepke @GMartinez-Sisti
-/renovate.json @prometheus-community/helm-charts-admins @jkroepke @GMartinez-Sisti
+/.github/workflows/ @prometheus-community/helm-charts-admins @GMartinez-Sisti
+/renovate.json @prometheus-community/helm-charts-admins @GMartinez-Sisti
 
 EOF
 
-for DIR in $(ls -1 -d ./charts/*)
-do
-  FILE="$DIR/Chart.yaml"
-  DIR=$(echo $DIR | sed 's/^\.//')
-  MAINTAINERS=$(yq e '.maintainers.[].url' $FILE | sed 's!^https://github.com/!@!' | sort --ignore-case)
-  echo $DIR/ $MAINTAINERS
-done
+yq_script='"/charts/" + .name + "/ " + ([.maintainers[].url | sub("https://github.com/", "@")] | sort | join(" "))'
+
+yq e "${yq_script}" charts/*/Chart.yaml |
+  sort -t '/' -k 3
