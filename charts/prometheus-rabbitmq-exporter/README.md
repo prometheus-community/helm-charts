@@ -56,7 +56,7 @@ _See [helm upgrade](https://helm.sh/docs/helm/helm_upgrade/) for command documen
 
 ### To 2.0.0
 
-From 2.0.0 redis exporter is using the prometheus-rabbit-exporter image 1.0.0.
+From 2.0.0 rabbit exporter is using the prometheus-rabbit-exporter image 1.0.0.
 
 ## Configuration
 
