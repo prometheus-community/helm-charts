@@ -15,7 +15,7 @@ helm repo add prometheus-community https://prometheus-community.github.io/helm-c
 helm repo update
 ```
 
-_See [`helm repo`]](https://helm.sh/docs/helm/helm_repo/) for command documentation._
+_See [`helm repo`](https://helm.sh/docs/helm/helm_repo/) for command documentation._
 
 ## Install Chart
 
@@ -53,6 +53,10 @@ $ helm upgrade [RELEASE_NAME] [CHART] --install
 ```
 
 _See [helm upgrade](https://helm.sh/docs/helm/helm_upgrade/) for command documentation._
+
+### To 2.0.0
+
+From 2.0.0 rabbit exporter is using the prometheus-rabbit-exporter image 1.0.0.
 
 ## Configuration
 
