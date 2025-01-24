@@ -79,6 +79,9 @@ spec:
         {{-  if .Values.extraArgs  }}
         {{- .Values.extraArgs | toYaml | nindent 8 }}
         {{-  end  }}
+        {{- if .Values.kubeRBACProxy.enabled }}
+        - --host=127.0.0.1
+        {{-  end  }}
         - --port={{ $servicePort }}
         {{-  if .Values.collectors  }}
         - --resources={{ .Values.collectors | join "," }}
@@ -171,8 +174,13 @@ spec:
               value: {{ $header.value }}
             {{- end }}
             path: /healthz
+            {{- if .Values.kubeRBACProxy.enabled }}
+            port: {{ .Values.service.port | default 8080 }}
+            scheme: HTTPS
+            {{- else }}
             port: {{ $servicePort }}
             scheme: {{ upper .Values.startupProbe.httpGet.scheme }}
+            {{-  end  }}
           initialDelaySeconds: {{ .Values.startupProbe.initialDelaySeconds }}
           periodSeconds: {{ .Values.startupProbe.periodSeconds }}
           successThreshold: {{ .Values.startupProbe.successThreshold }}
@@ -190,8 +198,13 @@ spec:
               value: {{ $header.value }}
             {{- end }}
             path: /livez
+            {{- if .Values.kubeRBACProxy.enabled }}
+            port: {{ .Values.service.port | default 8080 }}
+            scheme: HTTPS
+            {{- else }}
             port: {{ $servicePort }}
             scheme: {{ upper .Values.livenessProbe.httpGet.scheme }}
+            {{-  end  }}
           initialDelaySeconds: {{ .Values.livenessProbe.initialDelaySeconds }}
           periodSeconds: {{ .Values.livenessProbe.periodSeconds }}
           successThreshold: {{ .Values.livenessProbe.successThreshold }}
@@ -208,8 +221,13 @@ spec:
               value: {{ $header.value }}
             {{- end }}
             path: /readyz
+            {{- if .Values.kubeRBACProxy.enabled }}
+            port: {{ .Values.service.port | default 8081 }}
+            scheme: HTTPS
+            {{- else }}
             port: {{ $telemetryPort }}
             scheme: {{ upper .Values.readinessProbe.httpGet.scheme }}
+            {{-  end  }}
           initialDelaySeconds: {{ .Values.readinessProbe.initialDelaySeconds }}
           periodSeconds: {{ .Values.readinessProbe.periodSeconds }}
           successThreshold: {{ .Values.readinessProbe.successThreshold }}
@@ -230,6 +248,9 @@ spec:
         - --upstream=http://127.0.0.1:{{ $servicePort }}/
         - --proxy-endpoints-port=8888
         - --config-file=/etc/kube-rbac-proxy-config/config-file.yaml
+        {{- if .Values.kubeRBACProxy.enabled }}
+        - --ignore-paths=/livez
+        {{-  end  }}
         volumeMounts:
           - name: kube-rbac-proxy-config
             mountPath: /etc/kube-rbac-proxy-config
@@ -268,6 +289,9 @@ spec:
         - --upstream=http://127.0.0.1:{{ $telemetryPort }}/
         - --proxy-endpoints-port=8889
         - --config-file=/etc/kube-rbac-proxy-config/config-file.yaml
+        {{- if .Values.kubeRBACProxy.enabled }}
+        - --ignore-paths=/readyz
+        {{-  end  }}
         volumeMounts:
           - name: kube-rbac-proxy-config
             mountPath: /etc/kube-rbac-proxy-config
