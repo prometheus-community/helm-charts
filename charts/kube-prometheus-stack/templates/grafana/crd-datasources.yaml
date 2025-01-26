@@ -1,0 +1,25 @@
+{{- if and .Values.grafana.operatorDatasources (or (and .Values.grafana.enabled .Values.grafana.sidecar.datasources.enabled) .Values.grafana.forceDeployDatasources) }}
+{{- $datasources := fromYaml (include "kube-prometheus-stack.datasources" .) }}
+{{- range $ds := $datasources.datasources }}
+---
+apiVersion: grafana.integreatly.org/v1beta1
+kind: GrafanaDatasource
+metadata:
+  name: {{ $ds.name }}-datasource
+  namespace: {{ template "kube-prometheus-stack-grafana.namespace" $ }}
+  labels:
+    app: {{ template "kube-prometheus-stack.name" $ }}-grafana
+    {{ include "kube-prometheus-stack.labels" $ | nindent 4 }}
+spec:
+  instanceSelector:
+    matchLabels:
+      {{- if $.Values.grafana.operatorInstanceSelector }}
+      {{- toYaml $.Values.grafana.operatorInstanceSelector | nindent 6 }}
+      {{- else }}
+      app.kubernetes.io/instance: grafana
+      app.kubernetes.io/name: grafana-operator
+      {{- end }}
+  datasource:
+    {{- $ds | toYaml | nindent 4 }}
+{{- end }}
+{{- end }}
