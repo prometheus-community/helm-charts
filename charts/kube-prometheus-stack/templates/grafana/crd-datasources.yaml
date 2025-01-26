@@ -1,4 +1,5 @@
-{{- if and .Values.grafana.operatorDatasources (or (and .Values.grafana.enabled .Values.grafana.sidecar.datasources.enabled) .Values.grafana.forceDeployDatasources) }}
+{{- if or (and .Values.grafana.enabled .Values.grafana.sidecar.datasources.enabled) .Values.grafana.forceDeployDatasources }}
+{{- if .Values.grafana.operatorDatasources }}
 {{- $datasources := fromYaml (include "kube-prometheus-stack.datasources" .) }}
 {{- range $ds := $datasources.datasources }}
 ---
@@ -21,5 +22,6 @@ spec:
       {{- end }}
   datasource:
     {{- $ds | toYaml | nindent 4 }}
+{{- end }}
 {{- end }}
 {{- end }}
