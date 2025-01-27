@@ -1,12 +1,12 @@
 {{- if or (and .Values.grafana.enabled .Values.grafana.sidecar.datasources.enabled) .Values.grafana.forceDeployDatasources }}
 {{- if .Values.grafana.operatorDatasources }}
-{{- $datasources := fromYaml (include "kube-prometheus-stack.datasources" .) }}
+{{- $datasources := fromYaml (include "kube-prometheus-stack.grafana.datasources" .) }}
 {{- range $ds := $datasources.datasources }}
 ---
 apiVersion: grafana.integreatly.org/v1beta1
 kind: GrafanaDatasource
 metadata:
-  name: {{ $ds.name }}-datasource
+  name: {{ include "kube-prometheus-stack.fullname" $ }}-{{ include "kube-prometheus-stack.grafana.sanitizeName" $ds.name }}
   namespace: {{ template "kube-prometheus-stack-grafana.namespace" $ }}
   labels:
     app: {{ template "kube-prometheus-stack.name" $ }}-grafana

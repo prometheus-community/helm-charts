@@ -1,4 +1,4 @@
-{{- define "kube-prometheus-stack.datasources" -}}
+{{- define "kube-prometheus-stack.grafana.datasources" -}}
 {{- $scrapeInterval := .Values.grafana.sidecar.datasources.defaultDatasourceScrapeInterval | default .Values.prometheus.prometheusSpec.scrapeInterval | default "30s" -}}
 {{- $datasources := list -}}
 {{- if .Values.grafana.sidecar.datasources.defaultDatasourceEnabled }}
@@ -81,3 +81,18 @@
 {{- $result := dict "datasources" $datasources -}}
 {{- $result | toYaml -}}
 {{- end }}
+
+{{/* Helper function to sanitize names */}}
+{{- define "kube-prometheus-stack.grafana.sanitizeName" -}}
+{{- $name := lower . -}}
+{{- $name := regexReplaceAll "[^a-z0-9-]" $name "-" -}}
+{{- $name := regexReplaceAll "^[^a-z]" $name "x" -}}
+{{- $name := regexReplaceAll "-+$" $name "" -}}
+{{- $name := regexReplaceAll "^-+" $name "" -}}
+{{- $name := regexReplaceAll "-+'" $name "-" -}}
+{{- if eq $name "" -}}
+{{- "default" -}}
+{{- else -}}
+{{- $name -}}
+{{- end -}}
+{{- end -}}
