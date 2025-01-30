@@ -1,0 +1,15 @@
+{{- if .Values.upgradeJob.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "kube-prometheus-stack.crd.upgradeJob.serviceAccountName" . }}
+  namespace: {{ template "kube-prometheus-stack.namespace" . }}
+  annotations:
+    "helm.sh/hook": pre-install,pre-upgrade,pre-rollback
+    "helm.sh/hook-weight": "-2"
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+  labels:
+    {{- include "kube-prometheus-stack.crd.upgradeJob.labels" . | nindent 4 }}
+binaryData:
+  crds.bz2: {{ .Files.Get "files/crds.bz2" | b64enc }}
+{{- end }}

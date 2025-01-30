@@ -7,7 +7,7 @@ case $(sed --help 2>&1) in
 *) _sed_i() { sed -i '' "$@"; } ;;
 esac
 
-SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &>/dev/null && pwd)
 
 trap 'rm -rf "${SCRIPT_DIR}/tmp"' EXIT
 
