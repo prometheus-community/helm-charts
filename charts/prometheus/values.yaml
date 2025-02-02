@@ -60,7 +60,7 @@ configmapReload:
     ##
     image:
       repository: quay.io/prometheus-operator/prometheus-config-reloader
-      tag: v0.76.0
+      tag: v0.79.2
       # When digest is set to a non-empty value, images will be pulled by digest (regardless of tag value).
       digest: ""
       pullPolicy: IfNotPresent
@@ -287,6 +287,13 @@ server:
   tsdb: {}
     # out_of_order_time_window: 0s
 
+  ## https://prometheus.io/docs/guides/opentelemetry
+  ##
+  otlp: {}
+    # promote_resource_attributes: []
+    # keep_identifying_resource_attributes: false
+    # translation_strategy: NoUTF8EscapingWithSuffixes
+
   ## https://prometheus.io/docs/prometheus/latest/configuration/configuration/#exemplars
   ## Must be enabled via --enable-feature=exemplar-storage
   ##
@@ -377,7 +384,7 @@ server:
     ## Redirect ingress to an additional defined port on the service
     # servicePort: 8081
 
-    ## Prometheus server Ingress hostnames with optional path
+    ## Prometheus server Ingress hostnames with optional path (passed through tpl)
     ## Must be provided if Ingress is enabled
     ##
     hosts: []
@@ -389,14 +396,14 @@ server:
     # pathType is only for k8s >= 1.18
     pathType: Prefix
 
-    ## Extra paths to prepend to every host configuration. This is useful when working with annotation based services.
+    ## Extra paths to prepend to every host configuration. This is useful when working with annotation based services. (passed through tpl)
     extraPaths: []
     # - path: /*
     #   backend:
     #     serviceName: ssl-redirect
     #     servicePort: use-annotation
 
-    ## Prometheus server Ingress TLS configuration
+    ## Prometheus server Ingress TLS configuration (hosts passed through tpl)
     ## Secrets must be manually created in the namespace
     ##
     tls: []
@@ -453,7 +460,7 @@ server:
   ##
   podDisruptionBudget:
     enabled: false
-    maxUnavailable: 1
+    # maxUnavailable: 1
     # minAvailable: 1
     ## unhealthyPodEvictionPolicy is available since 1.27.0 (beta)
     ## https://kubernetes.io/docs/tasks/run-application/configure-pdb/#unhealthy-pod-eviction-policy
@@ -835,7 +842,7 @@ serverFiles:
           # so this should only be disabled in a controlled environment. You can
           # disable certificate verification by uncommenting the line below.
           #
-          insecure_skip_verify: true
+          # insecure_skip_verify: true
         bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
 
         # Keep only the default/kubernetes service endpoints for the https port. This
@@ -866,7 +873,7 @@ serverFiles:
           # so this should only be disabled in a controlled environment. You can
           # disable certificate verification by uncommenting the line below.
           #
-          insecure_skip_verify: true
+          # insecure_skip_verify: true
         bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
 
         kubernetes_sd_configs:
@@ -903,7 +910,7 @@ serverFiles:
           # so this should only be disabled in a controlled environment. You can
           # disable certificate verification by uncommenting the line below.
           #
-          insecure_skip_verify: true
+          # insecure_skip_verify: true
         bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
 
         kubernetes_sd_configs:

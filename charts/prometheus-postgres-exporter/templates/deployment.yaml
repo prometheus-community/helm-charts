@@ -144,18 +144,14 @@ spec:
             - name: http
               containerPort: {{ .Values.service.targetPort }}
               protocol: TCP
+          {{- with .Values.livenessProbe }}
           livenessProbe:
-            initialDelaySeconds: {{ .Values.livenessProbe.initialDelaySeconds }}
-            timeoutSeconds: {{ .Values.livenessProbe.timeoutSeconds }}
-            httpGet:
-              path: /
-              port: http
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.readinessProbe }}
           readinessProbe:
-            initialDelaySeconds: {{ .Values.readinessProbe.initialDelaySeconds }}
-            timeoutSeconds: {{ .Values.readinessProbe.timeoutSeconds }}
-            httpGet:
-              path: /
-              port: http
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
           resources:
 {{ toYaml .Values.resources | indent 12 }}
           {{- with .Values.securityContext }}
@@ -163,7 +159,7 @@ spec:
             {{- toYaml . | nindent 12 }}
           {{- end }}
           volumeMounts:
-            {{- if .Values.config.postgresExporter }}
+            {{- if or .Values.config.postgresExporter .Values.config.existingSecret.enabled }}
             - name: postgres-exporter
               mountPath: /etc/postgres_exporter.yml
               subPath: postgres_exporter.yml
@@ -199,7 +195,13 @@ spec:
           defaultMode: 420
           name: {{ template "prometheus-postgres-exporter.fullname" . }}
         name: postgres-exporter
-      {{- end }}
+      {{- else if .Values.config.existingSecret.enabled }}
+      - secret:
+          defaultMode: 420
+          secretName: {{ .Values.config.existingSecret.name }}
+        name: postgres-exporter
+      {{ end}}
+
       {{- with .Values.extraVolumes }}
       {{ toYaml . | nindent 6 }}
       {{- end }}

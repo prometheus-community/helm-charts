@@ -39,7 +39,7 @@ spec:
       serviceAccountName: {{ template "prometheus-rabbitmq-exporter.serviceAccountName" . }}
       containers:
         - name: {{ .Chart.Name }}
-          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           envFrom:
             - configMapRef:
@@ -57,7 +57,10 @@ spec:
                   key: "{{ .Values.rabbitmq.existingPasswordSecretKey }}"
             {{- else if .Values.rabbitmq.password  }}
             - name: RABBIT_PASSWORD
-              value: {{ .Values.rabbitmq.password }}
+              valueFrom:
+                secretKeyRef:
+                  name: {{ template "prometheus-rabbitmq-exporter.fullname" . }}
+                  key: RABBIT_PASSWORD
             {{- end }}
             {{- if .Values.rabbitmq.existingUserSecret }}
             - name: RABBIT_USER
@@ -67,7 +70,10 @@ spec:
                   key: "{{ .Values.rabbitmq.existingUserSecretKey }}"
             {{- else if .Values.rabbitmq.user }}
             - name: RABBIT_USER
-              value: {{ .Values.rabbitmq.user }}
+              valueFrom:
+                secretKeyRef:
+                  name: {{ template "prometheus-rabbitmq-exporter.fullname" . }}
+                  key: RABBIT_USER
             {{- end }}
             {{- if .Values.rabbitmq.url }}
             - name: RABBIT_URL

@@ -73,10 +73,22 @@ spec:
               mountPath: /etc/secrets/service-account/
           {{- end}}
           args:
+            {{- if .Values.stackdriver.projectIds }}
+            {{- range .Values.stackdriver.projectIds }}
+            - --google.project-ids={{ . }}
+            {{- end }}
+            {{- else }}
             - --google.project-id={{ .Values.stackdriver.projectId }}
+            {{- end }}
             - --monitoring.metrics-interval={{ .Values.stackdriver.metrics.interval }}
             - --monitoring.metrics-offset={{ .Values.stackdriver.metrics.offset }}
+            {{- if .Values.stackdriver.metrics.prefixes }}
+            {{- range .Values.stackdriver.metrics.prefixes }}
+            - --monitoring.metrics-prefixes={{ . }}
+            {{- end }}
+            {{- else }}
             - --monitoring.metrics-type-prefixes={{ .Values.stackdriver.metrics.typePrefixes | replace " " "" }}
+            {{- end }}
             {{- range .Values.stackdriver.metrics.filters }}
             - --monitoring.filters={{ . }}
             {{- end }}
@@ -104,10 +116,15 @@ spec:
             {{- end }}
           {{- end }}
           {{- end }}
-          {{- if or .Values.stackdriver.serviceAccountSecret .Values.stackdriver.serviceAccountKey }}
+          {{- if or .Values.stackdriver.serviceAccountSecret .Values.stackdriver.serviceAccountKey .Values.extraEnv }}
           env:
+            {{- if or .Values.stackdriver.serviceAccountSecret .Values.stackdriver.serviceAccountKey }}
             - name: GOOGLE_APPLICATION_CREDENTIALS
               value: /etc/secrets/service-account/credentials.json
+            {{- end }}
+            {{- with .Values.extraEnv }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
           {{- end }}
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
@@ -116,13 +133,13 @@ spec:
               name: http
           livenessProbe:
             httpGet:
-              path: /health
+              path: /
               port: http
             initialDelaySeconds: 30
             timeoutSeconds: 10
           readinessProbe:
             httpGet:
-              path: /health
+              path: /
               port: http
             initialDelaySeconds: 10
             timeoutSeconds: 10

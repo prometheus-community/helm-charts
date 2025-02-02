@@ -29,11 +29,11 @@ def change_style(style, representer):
 
 refs = {
     # https://github.com/prometheus-operator/kube-prometheus
-    'ref.kube-prometheus': '2a14b95595fd6767bdeb03ca7460b15a3793d503',
+    'ref.kube-prometheus': '8e16c980bf74e26709484677181e6f94808a45a3',
     # https://github.com/kubernetes-monitoring/kubernetes-mixin
-    'ref.kubernetes-mixin': '3cb7958a56688386e8f6cb0f1258bdb1234797d6',
+    'ref.kubernetes-mixin': 'af5e89820645ab7f99c8be0c247ab2f9f845869d',
     # https://github.com/etcd-io/etcd
-    'ref.etcd': '4e9ed2cff3e411f32c4e185ae900fe08c7fb09f7',
+    'ref.etcd': '2f37f4841e65206f1b38d00ede999ddee58a3720',
 }
 
 # Source files list
@@ -78,6 +78,7 @@ charts = [
 
 # Additional conditions map
 condition_map = {
+    'alertmanager-overview': ' (or .Values.alertmanager.enabled .Values.alertmanager.forceDeployDashboards)',
     'grafana-coredns-k8s': ' .Values.coreDns.enabled',
     'etcd': ' .Values.kubeEtcd.enabled',
     'apiserver': ' .Values.kubeApiServer.enabled',
@@ -88,6 +89,7 @@ condition_map = {
     'node-rsrc-use': ' (or .Values.nodeExporter.enabled .Values.nodeExporter.forceDeployDashboards)',
     'node-cluster-rsrc-use': ' (or .Values.nodeExporter.enabled .Values.nodeExporter.forceDeployDashboards)',
     'nodes': ' (and (or .Values.nodeExporter.enabled .Values.nodeExporter.forceDeployDashboards) .Values.nodeExporter.operatingSystems.linux.enabled)',
+    'nodes-aix': ' (and (or .Values.nodeExporter.enabled .Values.nodeExporter.forceDeployDashboards) .Values.nodeExporter.operatingSystems.aix.enabled)',
     'nodes-darwin': ' (and (or .Values.nodeExporter.enabled .Values.nodeExporter.forceDeployDashboards) .Values.nodeExporter.operatingSystems.darwin.enabled)',
     'prometheus-remote-write': ' .Values.prometheus.prometheusSpec.remoteWriteDashboards',
     'k8s-coredns': ' .Values.coreDns.enabled',
