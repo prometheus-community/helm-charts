@@ -1,5 +1,12 @@
-{{- if or (and .Values.grafana.enabled .Values.grafana.sidecar.datasources.enabled) .Values.grafana.forceDeployDatasources }}
+{{/* Define helper variables for complex conditions */}}
+{{- $grafanaEnabled := and .Values.grafana.enabled .Values.grafana.sidecar.datasources.enabled }}
+{{- $shouldDeploy := or $grafanaEnabled .Values.grafana.forceDeployDatasources }}
+
+{{/* Only proceed if all required conditions are met */}}
+{{- if $shouldDeploy }}
 {{- if .Values.grafana.operatorDatasources }}
+
+{{/* Process datasources */}}
 {{- $datasources := fromYaml (include "kube-prometheus-stack.grafana.datasources" .) }}
 {{- range $ds := $datasources.datasources }}
 ---
@@ -10,18 +17,18 @@ metadata:
   namespace: {{ template "kube-prometheus-stack-grafana.namespace" $ }}
   labels:
     app: {{ template "kube-prometheus-stack.name" $ }}-grafana
-    {{ include "kube-prometheus-stack.labels" $ | nindent 4 }}
+    {{- include "kube-prometheus-stack.labels" $ | nindent 4 }}
+
 spec:
+  {{/* Instance selector configuration */}}
   instanceSelector:
     matchLabels:
-      {{- if $.Values.grafana.operatorInstanceSelector }}
       {{- toYaml $.Values.grafana.operatorInstanceSelector | nindent 6 }}
-      {{- else }}
-      app.kubernetes.io/instance: grafana
-      app.kubernetes.io/name: grafana-operator
-      {{- end }}
+  
+  {{/* Datasource configuration */}}
   datasource:
     {{- $ds | toYaml | nindent 4 }}
-{{- end }}
-{{- end }}
-{{- end }}
+
+{{- end }}{{/* end range datasources */}}
+{{- end }}{{/* end if .Values.grafana.operatorDatasources */}}
+{{- end }}{{/* end if $shouldDeploy */}}
