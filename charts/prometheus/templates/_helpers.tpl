@@ -27,7 +27,6 @@ Create unified labels for prometheus components
 {{- define "prometheus.common.metaLabels" -}}
 app.kubernetes.io/version: {{ .Chart.AppVersion }}
 helm.sh/chart: {{ include "prometheus.chart" . }}
-app.kubernetes.io/managed-by: {{ .Release.Service }}
 app.kubernetes.io/part-of: {{ include "prometheus.name" . }}
 {{- with .Values.commonMetaLabels}}
 {{ toYaml . }}

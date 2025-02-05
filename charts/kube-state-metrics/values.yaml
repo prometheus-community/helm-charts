@@ -106,7 +106,7 @@ kubeRBACProxy:
   image:
     registry: quay.io
     repository: brancz/kube-rbac-proxy
-    tag: v0.18.0
+    tag: v0.18.2
     sha: ""
     pullPolicy: IfNotPresent
 
@@ -159,6 +159,13 @@ serviceAccount:
   annotations: {}
   # If false then the user will opt out of automounting API credentials.
   automountServiceAccountToken: true
+
+# Additional Environment variables
+env: {}
+  # - name: GOMAXPROCS
+  #   valueFrom:
+  #     resourceFieldRef:
+  #       resource: limits.cpu
 
 prometheus:
   monitor:
@@ -297,8 +304,16 @@ containerSecurityContext:
 nodeSelector: {}
 
 ## Affinity settings for pod assignment
+## Can be defined as either a dict or string. String is useful for `tpl` templating.
 ## Ref: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/
 affinity: {}
+# affinity: |
+#   podAntiAffinity:
+#     requiredDuringSchedulingIgnoredDuringExecution:
+#       - labelSelector:
+#           matchLabels:
+#             {{- include "kube-state-metrics.selectorLabels" . | indent 10 }}
+#         topologyKey: kubernetes.io/hostname
 
 ## Tolerations for pod assignment
 ## Ref: https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/

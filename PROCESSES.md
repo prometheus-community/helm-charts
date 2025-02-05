@@ -21,6 +21,16 @@ The pull request which does that should also update [CODEOWNERS](./.github/CODEO
 One of the existing chart maintainers needs to approve the PR in addition one of the repository admins needs to approve it.
 They are then responsible for also granting the new maintainer write permissions to this repository.
 
+Each maintainer has defined in the Chart.yaml of the chart itself unter the maintainer section,
+using the following format:
+
+```yaml
+maintainers:
+- name:   # A freely chosen display name. Required.
+  email:  # A contact mail. Optional
+  url:    # The URL of the GitHub profile, using the format https://github.com/<username>. Required. 
+```
+
 ## GitHub Settings
 
 As not everyone is able to see which settings are configured for this repository these are also documented here.
@@ -84,7 +94,7 @@ The `main` branch is protected and the following settings are configured:
 
     [Developer Certificate of Origin](https://developercertificate.org/) (DCO) check is performed by [DCO GitHub App](https://github.com/apps/dco)
 
-  - Lint Code Base
+  - Lint codebase
 
     Linting is done using [Super-Linter](https://github.com/github/super-linter).
     It is configured in [linter.yaml](.github/workflows/linter.yml)
