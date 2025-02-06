@@ -75,10 +75,11 @@ spec:
       containers:
         - name: kubectl
           {{- $kubectlRegistry := .Values.global.imageRegistry | default .Values.upgradeJob.image.kubectl.registry -}}
+          {{- $defaultKubernetesVersion := regexReplaceAll "\\+.*" .Capabilities.KubeVersion.Version "" }}
           {{- if .Values.upgradeJob.image.kubectl.sha }}
-          image: "{{ $kubectlRegistry }}/{{ .Values.upgradeJob.image.kubectl.repository }}:{{ .Values.upgradeJob.image.kubectl.tag | default .Capabilities.KubeVersion.Version }}@sha256:{{ .Values.upgradeJob.image.kubectl.sha }}"
+          image: "{{ $kubectlRegistry }}/{{ .Values.upgradeJob.image.kubectl.repository }}:{{ .Values.upgradeJob.image.kubectl.tag | default $defaultKubernetesVersion }}@sha256:{{ .Values.upgradeJob.image.kubectl.sha }}"
           {{- else }}
-          image: "{{ $kubectlRegistry }}/{{ .Values.upgradeJob.image.kubectl.repository }}:{{ .Values.upgradeJob.image.kubectl.tag | default .Capabilities.KubeVersion.Version }}"
+          image: "{{ $kubectlRegistry }}/{{ .Values.upgradeJob.image.kubectl.repository }}:{{ .Values.upgradeJob.image.kubectl.tag | default $defaultKubernetesVersion }}"
           {{- end }}
           imagePullPolicy: "{{ .Values.upgradeJob.image.kubectl.pullPolicy }}"
           command:
