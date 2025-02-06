@@ -2,7 +2,7 @@
 
 set -euo pipefail
 
-if ! which jb &>/dev/null;then
+if ! which jb &>/dev/null; then
   echo "'jb' command not found
 Install jsonnet-bundler from https://github.com/jsonnet-bundler/jsonnet-bundler"
   exit 1
