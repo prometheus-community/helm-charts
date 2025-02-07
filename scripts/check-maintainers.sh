@@ -8,17 +8,17 @@ cat <<EOF
 
 ## General maintainers
 
-- André Bauer (@monotek)
-- Jan-Otto Kröpke (@jkroepke)
-- Scott Rigby (@scottrigby)
-- Torsten Walter (@torstenwalter)
+- André Bauer (<monotek23@gmail.com> / @monotek)
+- Jan-Otto Kröpke (<github@jkroepke.de> / @jkroepke)
+- Scott Rigby (<scott@r6by.com> / @scottrigby)
+- Torsten Walter (<mail@torstenwalter.de> / @torstenwalter)
 
 ## GitHub Workflows & Renovate maintainers
 
-- Gabriel Martinez (@GMartinez-Sisti)
+- Gabriel Martinez (<kube-prometheus-stack@sisti.pt> / @GMartinez-Sisti)
 
 ## Helm charts maintainers
 EOF
 
-yq_script='"\n### " + .name + "\n\n" + ([.maintainers[] | "- " + .name + " <" + .email + "> (" + (.url | sub("https://github.com/", "@") + ")")] | sort | join("\n"))'
+yq_script='"\n### " + .name + "\n\n" + ([.maintainers[] | "- " + .name + " (<" + .email + "> / " + (.url | sub("https://github.com/", "@") + ")")] | sort | join("\n"))'
 yq e "${yq_script}" charts/*/Chart.yaml

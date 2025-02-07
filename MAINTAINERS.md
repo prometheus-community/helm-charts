@@ -2,248 +2,246 @@
 
 ## General maintainers
 
-- André Bauer (@monotek)
-- Jan-Otto Kröpke (@jkroepke)
-- Scott Rigby (@scottrigby)
-- Torsten Walter (@torstenwalter)
+- André Bauer (<monotek23@gmail.com> / @monotek)
+- Jan-Otto Kröpke (<github@jkroepke.de> / @jkroepke)
+- Scott Rigby (<scott@r6by.com> / @scottrigby)
+- Torsten Walter (<mail@torstenwalter.de> / @torstenwalter)
 
 ## GitHub Workflows & Renovate maintainers
 
-- Gabriel Martinez (@GMartinez-Sisti)
+- Gabriel Martinez (<kube-prometheus-stack@sisti.pt> / @GMartinez-Sisti)
 
 ## Helm charts maintainers
 
 ### alertmanager-snmp-notifier
 
-- maxwo (@maxwo)
+- maxwo (<maxime.wojtczak.pub@icloud.com> / @maxwo)
 
 ### alertmanager
 
-- monotek (@monotek)
-- naseemkullah (@naseemkullah)
+- monotek (<monotek23@gmail.com> / @monotek)
+- naseemkullah (<naseem@transit.app> / @naseemkullah)
 
 ### jiralert
 
-- Jan-Otto Kröpke (@jkroepke)
-- zanhsieh (@zanhsieh)
+- Jan-Otto Kröpke (<github@jkroepke.de> / @jkroepke)
+- zanhsieh (<zanhsieh@gmail.com> / @zanhsieh)
 
 ### kube-prometheus-stack
 
-- GMartinez-Sisti (@GMartinez-Sisti)
-- QuentinBisson (@QuentinBisson)
-- Xtigyro (@Xtigyro)
-- andrewgkew (@andrewgkew)
-- gianrubio (@gianrubio)
-- gkarthiks (@gkarthiks)
-- jkroepke (@jkroepke)
-- scottrigby (@scottrigby)
+- GMartinez-Sisti (<kube-prometheus-stack@sisti.pt> / @GMartinez-Sisti)
+- QuentinBisson (<quentin.bisson@gmail.com> / @QuentinBisson)
+- Xtigyro (<miroslav.hadzhiev@gmail.com> / @Xtigyro)
+- andrewgkew (<andrew@quadcorps.co.uk> / @andrewgkew)
+- gianrubio (<gianrubio@gmail.com> / @gianrubio)
+- gkarthiks (<github.gkarthiks@gmail.com> / @gkarthiks)
+- jkroepke (<github@jkroepke.de> / @jkroepke)
+- scottrigby (<scott@r6by.com> / @scottrigby)
 
 ### kube-state-metrics
 
-- dotdc (@dotdc)
-- mrueg (@mrueg)
-- tariq1890 (@tariq1890)
+- dotdc (<david@0xdc.me> / @dotdc)
+- mrueg (<manuel@rueg.eu> / @mrueg)
+- tariq1890 (<tariq.ibrahim@mulesoft.com> / @tariq1890)
 
 ### prom-label-proxy
 
-- Jan-Otto Kröpke (@jkroepke)
+- Jan-Otto Kröpke (<github@jkroepke.de> / @jkroepke)
 
 ### prometheus-adapter
 
-- hectorj2f (@hectorj2f)
-- mattiasgees (@mattiasgees)
-- steven-sheehy (@steven-sheehy)
+- hectorj2f (<hfernandez@mesosphere.com> / @hectorj2f)
+- mattiasgees (<mattias.gees@jetstack.io> / @mattiasgees)
 
 ### prometheus-blackbox-exporter
 
-- desaintmartin (@desaintmartin)
-- gianrubio (@gianrubio)
-- monotek (@monotek)
-- rsotnychenko (@rsotnychenko)
+- desaintmartin (<cedric@desaintmartin.fr> / @desaintmartin)
+- gianrubio (<gianrubio@gmail.com> / @gianrubio)
+- monotek (<monotek23@gmail.com> / @monotek)
+- rsotnychenko (<me@sota.sh> / @rsotnychenko)
 
 ### prometheus-cloudwatch-exporter
 
-- asherf (@asherf)
-- gianrubio (@gianrubio)
-- torstenwalter (@torstenwalter)
+- asherf (<asher@asherfoa.com> / @asherf)
+- gianrubio (<gianrubio@gmail.com> / @gianrubio)
+- torstenwalter (<mail@torstenwalter.de> / @torstenwalter)
 
 ### prometheus-conntrack-stats-exporter
 
-- monotek (@monotek)
+- monotek (<monotek23@gmail.com> / @monotek)
 
 ### prometheus-consul-exporter
 
-- gkarthiks (@gkarthiks)
-- timm088 (@timm088)
+- gkarthiks (<github.gkarthiks@gmail.com> / @gkarthiks)
+- timm088 (<8890118+timm088@users.noreply.github.com> / @timm088)
 
 ### prometheus-couchdb-exporter
 
-- gkarthiks (@gkarthiks)
+- gkarthiks (<github.gkarthiks@gmail.com> / @gkarthiks)
 
 ### prometheus-druid-exporter
 
-- iamabhishek-dubey (@iamabhishek-dubey)
-- sandy724 (@sandy724)
+- iamabhishek-dubey (<abhishekbhardwaj510@gmail.com> / @iamabhishek-dubey)
+- sandy724 (<sandeep@opstree.com> / @sandy724)
 
 ### prometheus-elasticsearch-exporter
 
-- desaintmartin (@desaintmartin)
-- svenmueller (@svenmueller)
-- zeritti (@zeritti)
+- desaintmartin (<cedric@desaintmartin.fr> / @desaintmartin)
+- svenmueller (<sven.mueller@commercetools.com> / @svenmueller)
+- zeritti (<rootsandtrees@posteo.de> / @zeritti)
 
 ### prometheus-fastly-exporter
 
-- arslanbekov (@arslanbekov)
+- arslanbekov (<arslanbekov@gmail.com> / @arslanbekov)
 
 ### prometheus-ipmi-exporter
 
-- lexfrei (@lexfrei)
+- lexfrei (<f@lex.la> / @lexfrei)
 
 ### prometheus-json-exporter
 
-- schmiddim (@schmiddim)
-- xiu (@xiu)
-- zanhsieh (@zanhsieh)
+- schmiddim (<schmiddim@gmx.at> / @schmiddim)
+- xiu (<github@xiu.io> / @xiu)
+- zanhsieh (<zanhsieh@gmail.com> / @zanhsieh)
 
 ### prometheus-kafka-exporter
 
-- gkarthiks (@gkarthiks)
-- golgoth31 (@golgoth31)
-- zeritti (@zeritti)
+- gkarthiks (<github.gkarthiks@gmail.com> / @gkarthiks)
+- golgoth31 (<golgoth31@notrenet.com> / @golgoth31)
+- zeritti (<rootsandtrees@posteo.de> / @zeritti)
 
 ### prometheus-memcached-exporter
 
-- rsicart (@rsicart)
+- rsicart (<roger.sicart@gmail.com> / @rsicart)
 
 ### prometheus-modbus-exporter
 
-- openenergyprojects (@openenergyprojects)
+- openenergyprojects (<openenergyprojects@gmail.com> / @openenergyprojects)
 
 ### prometheus-mongodb-exporter
 
-- steven-sheehy (@steven-sheehy)
-- zeritti (@zeritti)
+- steven-sheehy (<ssheehy@firescope.com> / @steven-sheehy)
+- zeritti (<rootsandtrees@posteo.de> / @zeritti)
 
 ### prometheus-mysql-exporter
 
-- juanchimienti (@juanchimienti)
-- monotek (@monotek)
+- juanchimienti (<juan.chimienti@gmail.com> / @juanchimienti)
+- monotek (<monotek23@gmail.com> / @monotek)
 
 ### prometheus-nats-exporter
 
-- caarlos0 (@caarlos0)
-- okgolove (@okgolove)
+- caarlos0 (<carlos@carlosbecker.com> / @caarlos0)
+- okgolove (<okgolove@markeloff.net> / @okgolove)
 
 ### prometheus-nginx-exporter
 
-- nlamirault (@nlamirault)
-- zeritti (@zeritti)
+- nlamirault (<nicolas.lamirault@gmail.com> / @nlamirault)
+- zeritti (<rootsandtrees@posteo.de> / @zeritti)
 
 ### prometheus-node-exporter
 
-- gianrubio (@gianrubio)
-- zanhsieh (@zanhsieh)
-- zeritti (@zeritti)
+- gianrubio (<gianrubio@gmail.com> / @gianrubio)
+- zanhsieh (<zanhsieh@gmail.com> / @zanhsieh)
+- zeritti (<rootsandtrees@posteo.de> / @zeritti)
 
 ### prometheus-opencost-exporter
 
-- mattray (@mattray)
+- mattray (<mattray@kubecost.com> / @mattray)
 
 ### prometheus-operator-admission-webhook
 
-- zeritti (@zeritti)
+- zeritti (<rootsandtrees@posteo.de> / @zeritti)
 
 ### prometheus-operator-crds
 
-- Jan-Otto Kröpke (@jkroepke)
-- QuentinBisson (@QuentinBisson)
-- dacamposol (@dacamposol)
-- desaintmartin (@desaintmartin)
+- Jan-Otto Kröpke (<github@jkroepke.de> / @jkroepke)
+- QuentinBisson (<quentin.bisson@gmail.com> / @QuentinBisson)
+- dacamposol (<dacamposol@gmail.com> / @dacamposol)
+- desaintmartin (<cedric@desaintmartin.fr> / @desaintmartin)
 
 ### prometheus-pgbouncer-exporter
 
-- stewartshea (@stewartshea)
-- zeritti (@zeritti)
+- stewartshea (<stewart.shea@gmail.com> / @stewartshea)
+- zeritti (<rootsandtrees@posteo.de> / @zeritti)
 
 ### prometheus-pingdom-exporter
 
-- monotek (@monotek)
-- rpahli (@rpahli)
+- monotek (<monotek23@gmail.com> / @monotek)
+- rpahli (<pahli88@googlemail.com> / @rpahli)
 
 ### prometheus-pingmesh-exporter
 
-- dongjiang1989 (@dongjiang1989)
+- dongjiang1989 (<dongjiang1989@126.com> / @dongjiang1989)
 
 ### prometheus-postgres-exporter
 
-- gianrubio (@gianrubio)
-- zanhsieh (@zanhsieh)
-- zeritti (@zeritti)
+- gianrubio (<gianrubio@gmail.com> / @gianrubio)
+- zanhsieh (<zanhsieh@gmail.com> / @zanhsieh)
+- zeritti (<rootsandtrees@posteo.de> / @zeritti)
 
 ### prometheus-pushgateway
 
-- cstaud (@cstaud)
-- gianrubio (@gianrubio)
-- zeritti (@zeritti)
+- cstaud (<christian.staude@staffbase.com> / @cstaud)
+- gianrubio (<gianrubio@gmail.com> / @gianrubio)
+- zeritti (<rootsandtrees@posteo.de> / @zeritti)
 
 ### prometheus-rabbitmq-exporter
 
-- desaintmartin (@desaintmartin)
-- iamabhishek-dubey (@iamabhishek-dubey)
-- juanchimienti (@juanchimienti)
-- monotek (@monotek)
+- desaintmartin (<cedric@desaintmartin.fr> / @desaintmartin)
+- iamabhishek-dubey (<abhishekbhardwaj510@gmail.com> / @iamabhishek-dubey)
+- juanchimienti (<juan.chimienti@gmail.com> / @juanchimienti)
+- monotek (<monotek23@gmail.com> / @monotek)
 
 ### prometheus-redis-exporter
 
-- acondrat (@acondrat)
-- zanhsieh (@zanhsieh)
+- acondrat (<arcadie.condrat@gmail.com> / @acondrat)
+- zanhsieh (<zanhsieh@gmail.com> / @zanhsieh)
 
 ### prometheus-smartctl-exporter
 
-- kfox1111 (@kfox1111)
-- zeritti (@zeritti)
+- zeritti (<rootsandtrees@posteo.de> / @zeritti)
 
 ### prometheus-snmp-exporter
 
-- miouge1 (@miouge1)
-- walker-tom (@walker-tom)
-- xiu (@xiu)
+- miouge1 (<maxime@root314.com> / @miouge1)
+- walker-tom (<walker.thomas.p@gmail.com> / @walker-tom)
+- xiu (<github@xiu.io> / @xiu)
 
 ### prometheus-sql-exporter
 
-- wilfriedroset (@wilfriedroset)
+
 
 ### prometheus-stackdriver-exporter
 
-- apenney (@apenney)
-- rpahli (@rpahli)
+- apenney (<apenney@gmail.com> / @apenney)
+- rpahli (<pahli88@googlemail.com> / @rpahli)
 
 ### prometheus-statsd-exporter
 
-- scDisorder (@scDisorder)
+- scDisorder (<d@rovergulf.net> / @scDisorder)
 
 ### prometheus-systemd-exporter
 
-- capuche2412 (@capuche2412)
-- maxime1907 (@maxime1907)
+- capuche2412 (<aleroux@wiremind.io> / @capuche2412)
+- maxime1907 (<19607336+maxime1907@users.noreply.github.com> / @maxime1907)
 
 ### prometheus-to-sd
 
-- acondrat (@acondrat)
+- acondrat (<arcadie.condrat@gmail.com> / @acondrat)
 
 ### prometheus-windows-exporter
 
-- Jan-Otto Kröpke (@jkroepke)
+- Jan-Otto Kröpke (<github@jkroepke.de> / @jkroepke)
 
 ### prometheus-yet-another-cloudwatch-exporter
 
-- cristiangreco (@cristiangreco)
-- thomaspeitz (@thomaspeitz)
+- cristiangreco (<cristian.greco@grafana.com> / @cristiangreco)
+- thomaspeitz (<info@thomas-peitz.de> / @thomaspeitz)
 
 ### prometheus
 
-- Xtigyro (@Xtigyro)
-- gianrubio (@gianrubio)
-- naseemkullah (@naseemkullah)
-- zanhsieh (@zanhsieh)
-- zeritti (@zeritti)
+- Xtigyro (<miroslav.hadzhiev@gmail.com> / @Xtigyro)
+- gianrubio (<gianrubio@gmail.com> / @gianrubio)
+- naseemkullah (<naseem@transit.app> / @naseemkullah)
+- zanhsieh (<zanhsieh@gmail.com> / @zanhsieh)
+- zeritti (<rootsandtrees@posteo.de> / @zeritti)
