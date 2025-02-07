@@ -41,6 +41,19 @@ helm upgrade [RELEASE_NAME] prometheus-community/prometheus-pushgateway --instal
 
 _See [helm upgrade](https://helm.sh/docs/helm/helm_upgrade/) for command documentation._
 
+### To 3.0.0
+
+Previously, as dynamic labels were also set on the statefulset's volume claim template, it was not possible
+to upgrade a chart release in a usual manner whilst using a statefulset and persistence due to the volume claim template's fields being immutable.
+
+This release removes the dynamic labels from the statefulset's volume claim template.
+If you have configured a statefulset with persistent storage,
+please, delete the statefulset before upgrading:
+
+```console
+kubectl delete sts -l app.kubernetes.io/name=prometheus-pushgateway --cascade=orphan
+```
+
 ### To 2.0.0
 
 Chart API version has been upgraded to v2 so Helm 3 is needed from now on.
