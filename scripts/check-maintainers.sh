@@ -20,5 +20,5 @@ cat <<EOF
 ## Helm charts maintainers
 EOF
 
-yq_script='"\n### " + .name + "\n\n" + ([.maintainers[] | "- " + .name + " (<" + .email + "> / " + (.url | sub("https://github.com/", "@") + ")")] | sort | join("\n"))'
+yq_script='"\n### " + .name + "\n\n" + ([.maintainers[] | "- " + .name + " (<" + (.email // "unknown") + "> / " + (.url | sub("https://github.com/", "@") + ")")] | sort | join("\n"))'
 yq e "${yq_script}" charts/*/Chart.yaml

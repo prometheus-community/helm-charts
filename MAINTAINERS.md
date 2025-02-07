@@ -52,6 +52,7 @@
 
 - hectorj2f (<hfernandez@mesosphere.com> / @hectorj2f)
 - mattiasgees (<mattias.gees@jetstack.io> / @mattiasgees)
+- steven-sheehy (<unknown> / @steven-sheehy)
 
 ### prometheus-blackbox-exporter
 
@@ -199,6 +200,7 @@
 
 ### prometheus-smartctl-exporter
 
+- kfox1111 (<unknown> / @kfox1111)
 - zeritti (<rootsandtrees@posteo.de> / @zeritti)
 
 ### prometheus-snmp-exporter
@@ -209,7 +211,7 @@
 
 ### prometheus-sql-exporter
 
-
+- wilfriedroset (<unknown> / @wilfriedroset)
 
 ### prometheus-stackdriver-exporter
 
