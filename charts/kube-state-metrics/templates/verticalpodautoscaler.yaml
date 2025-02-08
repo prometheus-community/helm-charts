@@ -31,8 +31,10 @@ spec:
       {{- end }}
   targetRef:
     apiVersion: apps/v1
-    {{- if .Values.autosharding.enabled }}
+    {{- if and .Values.autosharding.enabled (eq (.Values.controller | default "deployment") "deployment") }}
     kind: StatefulSet
+    {{- else if eq (.Values.controller | default "deployment") "daemonset" }}
+    kind: DaemonSet
     {{- else }}
     kind: Deployment
     {{- end }}

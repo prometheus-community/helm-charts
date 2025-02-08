@@ -1,10 +1,6 @@
-{{- if eq (.Values.controller | default "deployment") "deployment" }}
+{{- if eq (.Values.controller | default "deployment") "daemonset" }}
 apiVersion: apps/v1
-{{- if .Values.autosharding.enabled }}
-kind: StatefulSet
-{{- else }}
-kind: Deployment
-{{- end }}
+kind: DaemonSet
 metadata:
   name: {{ template "kube-state-metrics.fullname" . }}
   namespace: {{ template "kube-state-metrics.namespace" . }}
@@ -19,15 +15,8 @@ spec:
     matchLabels:
       {{- include "kube-state-metrics.selectorLabels" . | indent 6 }}
   replicas: {{ .Values.replicas }}
-  {{- if not .Values.autosharding.enabled }}
-  strategy:
+  updateStrategy:
     type: {{ .Values.updateStrategy | default "RollingUpdate" }}
-  {{- end }}
-  revisionHistoryLimit: {{ .Values.revisionHistoryLimit }}
-  {{- if .Values.autosharding.enabled }}
-  serviceName: {{ template "kube-state-metrics.fullname" . }}
-  volumeClaimTemplates: []
-  {{- end }}
   template:
     metadata:
       labels:
@@ -57,32 +46,18 @@ spec:
       {{- $servicePort := ternary 9090 (.Values.service.port | default 8080) .Values.kubeRBACProxy.enabled}}
       {{- $telemetryPort := ternary 9091 (.Values.selfMonitor.telemetryPort | default 8081) .Values.kubeRBACProxy.enabled}}
       - name: {{ template "kube-state-metrics.name" . }}
-        {{- if  .Values.autosharding.enabled }}
         env:
-        - name: POD_NAME
-          valueFrom:
-            fieldRef:
-              fieldPath: metadata.name
-        - name: POD_NAMESPACE
-          valueFrom:
-            fieldRef:
-              fieldPath: metadata.namespace
-        {{- if .Values.env }}
-        {{- toYaml .Values.env | nindent 8 }}
-        {{- end }}
-        {{ else }}
-        {{- if .Values.env }}
-        env:
-        {{- toYaml .Values.env | nindent 8 }}
-        {{- end }}
-        {{- end }}
+          - name: NODE_NAME
+            valueFrom:
+              fieldRef:
+                apiVersion: v1
+                fieldPath: spec.nodeName
         args:
+        - --resources=pods
+        - --node=$(NODE_NAME)
         {{-  if .Values.extraArgs  }}
         {{- .Values.extraArgs | toYaml | nindent 8 }}
         {{-  end  }}
-        {{- if .Values.kubeRBACProxy.enabled }}
-        - --host=127.0.0.1
-        {{- end }}
         - --port={{ $servicePort }}
         {{-  if .Values.collectors  }}
         - --resources={{ .Values.collectors | join "," }}
@@ -113,10 +88,6 @@ spec:
         {{- end }}
         {{- if .Values.namespacesDenylist }}
         - --namespaces-denylist={{ tpl (.Values.namespacesDenylist | join ",") $ }}
-        {{- end }}
-        {{- if .Values.autosharding.enabled }}
-        - --pod=$(POD_NAME)
-        - --pod-namespace=$(POD_NAMESPACE)
         {{- end }}
         {{- if .Values.kubeconfig.enabled }}
         - --kubeconfig=/opt/k8s/.kube/config
@@ -175,13 +146,8 @@ spec:
               value: {{ $header.value }}
             {{- end }}
             path: /healthz
-            {{- if .Values.kubeRBACProxy.enabled }}
-            port: {{ .Values.service.port | default 8080 }}
-            scheme: HTTPS
-            {{- else }}
             port: {{ $servicePort }}
             scheme: {{ upper .Values.startupProbe.httpGet.scheme }}
-            {{- end }}
           initialDelaySeconds: {{ .Values.startupProbe.initialDelaySeconds }}
           periodSeconds: {{ .Values.startupProbe.periodSeconds }}
           successThreshold: {{ .Values.startupProbe.successThreshold }}
@@ -199,13 +165,8 @@ spec:
               value: {{ $header.value }}
             {{- end }}
             path: /livez
-            {{- if .Values.kubeRBACProxy.enabled }}
-            port: {{ .Values.service.port | default 8080 }}
-            scheme: HTTPS
-            {{- else }}
             port: {{ $servicePort }}
             scheme: {{ upper .Values.livenessProbe.httpGet.scheme }}
-            {{- end }}
           initialDelaySeconds: {{ .Values.livenessProbe.initialDelaySeconds }}
           periodSeconds: {{ .Values.livenessProbe.periodSeconds }}
           successThreshold: {{ .Values.livenessProbe.successThreshold }}
@@ -222,13 +183,8 @@ spec:
               value: {{ $header.value }}
             {{- end }}
             path: /readyz
-            {{- if .Values.kubeRBACProxy.enabled }}
-            port: {{ .Values.selfMonitor.telemetryPort | default 8081 }}
-            scheme: HTTPS
-            {{- else }}
             port: {{ $telemetryPort }}
             scheme: {{ upper .Values.readinessProbe.httpGet.scheme }}
-            {{- end }}
           initialDelaySeconds: {{ .Values.readinessProbe.initialDelaySeconds }}
           periodSeconds: {{ .Values.readinessProbe.periodSeconds }}
           successThreshold: {{ .Values.readinessProbe.successThreshold }}
@@ -326,19 +282,15 @@ spec:
       {{- end }}
       {{- if .Values.affinity }}
       affinity:
-        {{- if kindIs "map" .Values.affinity }}
-        {{- toYaml .Values.affinity | nindent 8 }}
-        {{- else }}
-        {{- tpl .Values.affinity $ | nindent 8 }}
-        {{- end }}
+{{ toYaml .Values.affinity | indent 8 }}
       {{- end }}
-      {{- with .Values.nodeSelector }}
+      {{- if .Values.nodeSelector }}
       nodeSelector:
-{{ tpl (toYaml .) $ | indent 8 }}
+{{ toYaml .Values.nodeSelector | indent 8 }}
       {{- end }}
-      {{- with .Values.tolerations }}
+      {{- if .Values.tolerations }}
       tolerations:
-{{ tpl (toYaml .) $ | indent 8 }}
+{{ toYaml .Values.tolerations | indent 8 }}
       {{- end }}
       {{- if .Values.topologySpreadConstraints }}
       topologySpreadConstraints:
