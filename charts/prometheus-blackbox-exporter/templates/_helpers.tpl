@@ -180,7 +180,7 @@ containers:
   image: {{ include "prometheus-blackbox-exporter.config-reloader.image" . }}
   imagePullPolicy: {{ .Values.configReloader.image.pullPolicy }}
   args:
-    - --config-file={{ .Values.configPath | default "/config/blackbox.yaml" }}
+    - --config-file={{ .Values.configFile | default "/config/blackbox.yaml" }}
     - --watch-interval={{ .Values.configReloader.config.watchInterval }}
     - --reload-url=http://127.0.0.1:{{ .Values.containerPort }}/-/reload
     - --listen-address=:{{ .Values.configReloader.containerPort }}

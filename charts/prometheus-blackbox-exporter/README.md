@@ -50,9 +50,9 @@ _See [helm upgrade](https://helm.sh/docs/helm/helm_upgrade/) for command documen
 
 ### To 10.0.0
 
-This version changed the config path handing.
-- The `configPath` value overwrites the default config path.
-- The default value, if no `config` is defined, got removed. You can set the removed default `/etc/blackbox_exporter/config.yml` via the `configPath` value.
+This version renamed the `configPath` value to `configFile` and changed the config handing.
+- The `configFile` value overwrites the default config file path.
+- The default value, if no `config` is defined, got removed. You can set the removed default `/etc/blackbox_exporter/config.yml` via the `configFile` value.
 
 ### To 9.0.0
 
