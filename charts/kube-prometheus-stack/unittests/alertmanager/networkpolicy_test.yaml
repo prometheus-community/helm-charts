@@ -1,0 +1,65 @@
+suite: test networkpolicy
+templates:
+  - alertmanager/networkpolicy.yaml
+tests:
+  - it: should be empty if alertmanager is not enabled
+    set:
+      alertmanager.enabled: false
+      alertmanager.networkPolicy.enabled: true
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: should be empty if networkpolicy is not enabled
+    set:
+      alertmanager.enabled: true
+      alertmanager.networkPolicy.enabled: false
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: should have apiVersion networking.k8s.io/v1
+    set:
+      alertmanager.enabled: true
+      alertmanager.networkPolicy.enabled: true
+    asserts:
+      - hasDocuments:
+          count: 1
+      - isKind:
+          of: NetworkPolicy
+      - isAPIVersion:
+          of: networking.k8s.io/v1
+
+  - it: should configure default ingress namespace correctly
+    set:
+      alertmanager.enabled: true
+      alertmanager.networkPolicy.enabled: true
+      alertmanager.networkPolicy.ingressNS: ingress-nginx
+    asserts:
+      - equal:
+          path: spec.ingress[0].from[0].namespaceSelector.matchLabels
+          value:
+            kubernetes.io/metadata.name: ingress-nginx
+
+  - it: should configure custom ingress namespace correctly
+    set:
+      alertmanager.enabled: true
+      alertmanager.networkPolicy.enabled: true
+      alertmanager.networkPolicy.ingressNS: custom-ingress
+    asserts:
+      - equal:
+          path: spec.ingress[0].from[0].namespaceSelector.matchLabels
+          value:
+            kubernetes.io/metadata.name: custom-ingress
+
+  - it: should have correct pod selector labels
+    set:
+      alertmanager.enabled: true
+      alertmanager.networkPolicy.enabled: true
+    asserts:
+      - hasDocuments:
+          count: 1
+      - equal:
+          path: spec.podSelector.matchLabels
+          value:
+            app.kubernetes.io/name: alertmanager
