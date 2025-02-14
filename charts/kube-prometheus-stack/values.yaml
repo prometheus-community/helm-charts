@@ -412,24 +412,70 @@ alertmanager:
   ##
   networkPolicy:
     # -- Enable network policy for Alertmanager
-    ## Allows ingress from:
-    ## - Specified ingress controller
-    ## - Prometheus pods
-    ## - Other Alertmanager pods (for clustering)
-    ## Allows egress for:
-    ## - DNS resolution (port 53)
-    ## - SMTP notifications (ports 25, 587, 465)
-    ## - Webhook notifications (ports 80, 443)
     enabled: false
-    # -- Ingress controller namespace
-    ## Namespace of the ingress controller
+
+    # -- Define policy types. If egress is enabled, both Ingress and Egress will be used
+    # Valid values are ["Ingress"] or ["Ingress", "Egress"]
     ##
-    ingressNS: "ingress-nginx"
-    # -- Ingress controller pod labels
-    ## Pod labels of the ingress controller
+    policyTypes: 
+      - Ingress
+
+    # -- Gateway (formerly ingress controller) configuration
     ##
-    ingressPodLabels:
-      app.kubernetes.io/name: ingress-nginx
+    gateway:
+      # -- Gateway namespace
+      ##
+      namespace: "ingress-nginx"
+      # -- Gateway pod labels
+      ##
+      podLabels:
+        app.kubernetes.io/name: ingress-nginx
+
+    # -- Additional custom ingress rules
+    ##
+    additionalIngress: []
+    # - from:
+    #   - namespaceSelector:
+    #       matchLabels:
+    #         name: another-namespace
+    #     podSelector:
+    #       matchLabels:
+    #         app: another-app
+
+    # -- Configure egress rules
+    ##
+    egress:
+      # -- Enable egress rules. When enabled, policyTypes will include Egress
+      ##
+      enabled: false
+      # -- Custom egress rules
+      ##
+      rules: []
+      # - to:
+      #   - namespaceSelector: {}
+      #     podSelector:
+      #       matchLabels:
+      #         name: smtp-relay
+      #   ports:
+      #   - port: 25
+      #     protocol: TCP
+
+    # -- Enable rules for alertmanager cluster traffic
+    ##
+    enableClusterRules: true
+
+    # -- Configure monitoring component rules
+    ##
+    monitoringRules:
+      # -- Enable ingress from Prometheus
+      ##
+      prometheus: true
+      # -- Enable ingress from Loki
+      ##
+      loki: true
+      # -- Enable ingress for config reloader metrics
+      ##
+      configReloader: true
 
   ## Service account for Alertmanager to use.
   ## ref: https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-account/
