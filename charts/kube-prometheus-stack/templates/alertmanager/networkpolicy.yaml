@@ -12,22 +12,22 @@ spec:
     matchLabels:
       app.kubernetes.io/name: alertmanager
   policyTypes:
-    - Ingress
-    - Egress
+    {{- toYaml .Values.alertmanager.networkPolicy.policyTypes | nindent 4 }}
   ingress:
-    # Allow ingress from the ingress controller
+    # Allow ingress from gateway
     - from:
         - namespaceSelector:
             matchLabels:
-              kubernetes.io/metadata.name: {{ .Values.alertmanager.networkPolicy.ingressNS }}
+              kubernetes.io/metadata.name: {{ .Values.alertmanager.networkPolicy.gateway.namespace }}
           podSelector:
             matchLabels:
-              {{- toYaml .Values.alertmanager.networkPolicy.ingressPodLabels | nindent 14 }}
+              {{- toYaml .Values.alertmanager.networkPolicy.gateway.podLabels | nindent 14 }}
       ports:
         - port: {{ .Values.alertmanager.service.port }}
           protocol: TCP
         - port: {{ .Values.alertmanager.service.clusterPort }}
           protocol: TCP
+    {{- if .Values.alertmanager.networkPolicy.monitoringRules.prometheus }}
     # Allow ingress from Prometheus
     - from:
         - podSelector:
@@ -36,44 +36,45 @@ spec:
       ports:
         - port: {{ .Values.alertmanager.service.port }}
           protocol: TCP
-  egress:
-    # Allow DNS resolution
-    - to:
-        - namespaceSelector: {}
-          podSelector:
+    {{- end }}
+    {{- if .Values.alertmanager.networkPolicy.monitoringRules.loki }}
+    # Allow ingress from Loki
+    - from:
+        - podSelector:
             matchLabels:
-              k8s-app: kube-dns
+              app.kubernetes.io/name: loki
       ports:
-        - port: 53
-          protocol: UDP
-        - port: 53
+        - port: {{ .Values.alertmanager.service.port }}
           protocol: TCP
-    # Allow outbound SMTP for email notifications
-    - to:
-        - ipBlock:
-            cidr: 0.0.0.0/0
-            except:
-              - 10.0.0.0/8
-              - 172.16.0.0/12
-              - 192.168.0.0/16
+    {{- end }}
+    {{- if .Values.alertmanager.networkPolicy.enableClusterRules }}
+    # Allow ingress from other Alertmanager pods (for clustering)
+    - from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: alertmanager
       ports:
-        - port: 25
+        - port: {{ .Values.alertmanager.service.clusterPort }}
           protocol: TCP
-        - port: 587
-          protocol: TCP
-        - port: 465
-          protocol: TCP
-    # Allow webhook notifications
-    - to:
-        - ipBlock:
-            cidr: 0.0.0.0/0
-            except:
-              - 10.0.0.0/8
-              - 172.16.0.0/12
-              - 192.168.0.0/16
+    {{- end }}
+    {{- if .Values.alertmanager.networkPolicy.monitoringRules.configReloader }}
+    # Allow ingress for config reloader metrics
+    - from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: alertmanager
+              component: config-reloader
       ports:
-        - port: 443
+        - port: 8080
           protocol: TCP
-        - port: 80
-          protocol: TCP
+    {{- end }}
+    {{- with .Values.alertmanager.networkPolicy.additionalIngress }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+  {{- if .Values.alertmanager.networkPolicy.egress.enabled }}
+  egress:
+    {{- with .Values.alertmanager.networkPolicy.egress.rules }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+  {{- end }}
 {{- end }}
