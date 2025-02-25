@@ -42,3 +42,10 @@ See [Customizing the Chart Before Installing](https://helm.sh/docs/intro/using_h
 ```console
 helm show values prometheus-community/prometheus-yet-another-cloudwatch-exporter
 ```
+
+## Migrate from nerdswords/helm-charts (before version 0.39.0)
+
+If you are migrate from the [`nerdswords/helm-charts` repository](https://github.com/nerdswords/helm-charts/tree/main/charts/yet-another-cloudwatch-exporter), you must consider the following changes:
+
+* the chart name has changed from `yet-another-cloudwatch-exporter` to `prometheus-yet-another-cloudwatch-exporter`.
+* to avoid conflicts with the new chart name, you can set the `nameOverride` value to `yet-another-cloudwatch-exporter` in your `values.yaml` file.
