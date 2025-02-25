@@ -770,6 +770,34 @@ spec:
         {{- end }}
       {{- end }}
 {{- end }}
+{{- if not (.Values.defaultRules.disabled.NodeSystemdServiceCrashlooping | default false) }}
+    - alert: NodeSystemdServiceCrashlooping
+      annotations:
+{{- if .Values.defaultRules.additionalRuleAnnotations }}
+{{ toYaml .Values.defaultRules.additionalRuleAnnotations | indent 8 }}
+{{- end }}
+{{- if .Values.defaultRules.additionalRuleGroupAnnotations.nodeExporterAlerting }}
+{{ toYaml .Values.defaultRules.additionalRuleGroupAnnotations.nodeExporterAlerting | indent 8 }}
+{{- end }}
+        description: Systemd service {{`{{`}} $labels.name {{`}}`}} has being restarted too many times at {{`{{`}} $labels.instance {{`}}`}} for the last 15 minutes. Please check if service is crash looping.
+        runbook_url: {{ .Values.defaultRules.runbookUrl }}/node/nodesystemdservicecrashlooping
+        summary: Systemd service keeps restaring, possibly crash looping.
+      expr: increase(node_systemd_service_restart_total{job="node-exporter"}[5m]) > 2
+      for: {{ dig "NodeSystemdServiceCrashlooping" "for" "15m" .Values.customRules }}
+      {{- with .Values.defaultRules.keepFiringFor }}
+      keep_firing_for: "{{ . }}"
+      {{- end }}
+      labels:
+        severity: {{ dig "NodeSystemdServiceCrashlooping" "severity" "warning" .Values.customRules }}
+      {{- if or .Values.defaultRules.additionalRuleLabels .Values.defaultRules.additionalRuleGroupLabels.nodeExporterAlerting }}
+        {{- with .Values.defaultRules.additionalRuleLabels }}
+          {{- toYaml . | nindent 8 }}
+        {{- end }}
+        {{- with .Values.defaultRules.additionalRuleGroupLabels.nodeExporterAlerting }}
+          {{- toYaml . | nindent 8 }}
+        {{- end }}
+      {{- end }}
+{{- end }}
 {{- if not (.Values.defaultRules.disabled.NodeBondingDegraded | default false) }}
     - alert: NodeBondingDegraded
       annotations:
