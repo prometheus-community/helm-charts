@@ -31,8 +31,9 @@ spec:
           {{- if .Values.serviceMonitor.multiTarget.enabled }}
             - name: MONGODB_URI
               value: {{ include "prometheus-mongodb-exporter.mongodbUri" . }}
+            {{- if .Values.serviceMonitor.multiTarget.username }}
             - name: MONGODB_USER
-              value: {{ required "The MongoDB username must be set" .Values.serviceMonitor.multiTarget.username }}
+              value: {{ .Values.serviceMonitor.multiTarget.username }}
             - name: MONGODB_PASSWORD
               {{- if and .Values.serviceMonitor.multiTarget.password.existingSecret.name .Values.serviceMonitor.multiTarget.password.existingSecret.key }}
               valueFrom:
@@ -42,6 +43,7 @@ spec:
               {{- else }}
               value: {{ .Values.serviceMonitor.multiTarget.password.value }}
               {{- end }}
+            {{- end }}
           {{- else }}
             - name: MONGODB_URI
               valueFrom:
