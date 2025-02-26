@@ -4,6 +4,11 @@ Prometheus Exporter for [RabbitMQ](https://www.rabbitmq.com/) metrics.
 
 This chart bootstraps a [RabbitMQ Exporter](https://github.com/kbudde/rabbitmq_exporter) deployment on a [Kubernetes](http://kubernetes.io) cluster using the [Helm](https://helm.sh) package manager.
 
+## DEPRECATION WARNING
+
+The exporter used in this chart is deprecated and will not receive further updates!
+See: <https://github.com/kbudde/rabbitmq_exporter/issues/383>
+
 ## Prerequisites
 
 - Kubernetes 1.8+ with Beta APIs enabled

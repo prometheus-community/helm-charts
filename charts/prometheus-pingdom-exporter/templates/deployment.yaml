@@ -21,37 +21,14 @@ spec:
       serviceAccountName: {{ template "prometheus-pingdom-exporter.serviceAccountName" . }}
       containers:
         - name: {{ .Chart.Name }}
-          args:
-            - server
-            - "$(PINGDOM_USER)"
-            - "$(PINGDOM_PASSWORD)"
-            - "$(PINGDOM_APPID)"
-            - "$(PINGDOM_ACCOUNT)"
-            - "--port={{ .Values.service.port }}"
-            - "--wait={{ .Values.pingdom.wait }}"
-          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           env:
-            - name: PINGDOM_USER
+            - name: PINGDOM_API_TOKEN
               valueFrom:
                 secretKeyRef:
                   name: {{ include "prometheus-pingdom-exporter.secretName" . }}
-                  key: user
-            - name: PINGDOM_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: {{ include "prometheus-pingdom-exporter.secretName" . }}
-                  key: password
-            - name: PINGDOM_APPID
-              valueFrom:
-                secretKeyRef:
-                  name: {{ include "prometheus-pingdom-exporter.secretName" . }}
-                  key: appId
-            - name: PINGDOM_ACCOUNT
-              valueFrom:
-                secretKeyRef:
-                  name: {{ include "prometheus-pingdom-exporter.secretName" . }}
-                  key: accountEmail
+                  key: apiToken
           ports:
             - name: http
               containerPort: {{ .Values.service.port }}
