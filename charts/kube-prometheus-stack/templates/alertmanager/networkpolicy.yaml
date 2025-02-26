@@ -14,6 +14,7 @@ spec:
   policyTypes:
     {{- toYaml .Values.alertmanager.networkPolicy.policyTypes | nindent 4 }}
   ingress:
+    {{- if and (.Values.alertmanager.networkPolicy.gateway.namespace) (.Values.alertmanager.networkPolicy.gateway.podLabels) }}
     # Allow ingress from gateway
     - from:
         - namespaceSelector:
@@ -27,8 +28,11 @@ spec:
       ports:
         - port: {{ .Values.alertmanager.service.port }}
           protocol: TCP
+        {{- if .Values.alertmanager.service.clusterPort }}
         - port: {{ .Values.alertmanager.service.clusterPort }}
           protocol: TCP
+        {{- end }}
+    {{- end }}
     {{- if .Values.alertmanager.networkPolicy.monitoringRules.prometheus }}
     # Allow ingress from Prometheus
     - from:
@@ -39,17 +43,7 @@ spec:
         - port: {{ .Values.alertmanager.service.port }}
           protocol: TCP
     {{- end }}
-    {{- if .Values.alertmanager.networkPolicy.monitoringRules.loki }}
-    # Allow ingress from Loki
-    - from:
-        - podSelector:
-            matchLabels:
-              app.kubernetes.io/name: loki
-      ports:
-        - port: {{ .Values.alertmanager.service.port }}
-          protocol: TCP
-    {{- end }}
-    {{- if .Values.alertmanager.networkPolicy.enableClusterRules }}
+    {{- if and (.Values.alertmanager.networkPolicy.enableClusterRules) (.Values.alertmanager.service.clusterPort) }}
     # Allow ingress from other Alertmanager pods (for clustering)
     - from:
         - podSelector:
