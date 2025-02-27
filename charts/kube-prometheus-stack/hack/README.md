@@ -1,8 +1,22 @@
 # kube-prometheus-stack hacks
 
+## [update_mixins.sh](update_mixins.sh)
+
+This script is a useful wrapper to run `sync_prometheus_rules.py` and
+`sync_grafana_dashboards.py`.
+
+It clones all dependency dashboards into a tmp folder.
+
+And it lets you know if you are missing commandline-tools necessary for the
+update to complete.
+
+Therefore, if you want to create a PR that updates the mixins, please
+run `./hack/update_mixins.sh` from the charts directory
+(`./charts/kube-prometheus-stack`).
+
 ## [sync_prometheus_rules.py](sync_prometheus_rules.py)
 
-This script generates prometheus rules set for alertmanager from any properly formatted kubernetes yaml based on defined input, splitting rules to separate files based on group name.
+This script generates prometheus rules set for alertmanager from any properly formatted kubernetes YAML based on defined input, splitting rules to separate files based on group name.
 
 Currently following imported:
 

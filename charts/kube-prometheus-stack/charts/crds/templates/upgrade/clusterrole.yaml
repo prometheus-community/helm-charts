@@ -1,0 +1,28 @@
+{{- if .Values.upgradeJob.enabled }}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ template "kube-prometheus-stack.crd.upgradeJob.name" . }}
+  namespace: {{ template "kube-prometheus-stack.namespace" . }}
+  annotations:
+    "helm.sh/hook": pre-install,pre-upgrade,pre-rollback
+    "helm.sh/hook-weight": "-5"
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+  labels:
+    {{- include "kube-prometheus-stack.crd.upgradeJob.labels" . | nindent 4 }}
+rules:
+  - apiGroups:
+      - "apiextensions.k8s.io"
+    resources:
+      - "customresourcedefinitions"
+    verbs:
+      - create
+      - patch
+      - update
+      - get
+      - list
+    resourceNames:
+      {{- range $path, $_ := $.Files.Glob "crds/*.yaml" }}
+      - {{ ($.Files.Get $path | fromYaml ).metadata.name }}
+      {{- end }}
+{{- end }}

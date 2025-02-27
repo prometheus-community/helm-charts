@@ -29,11 +29,11 @@ def change_style(style, representer):
 
 refs = {
     # https://github.com/prometheus-operator/kube-prometheus
-    'ref.kube-prometheus': '16ba4827a699f7c6f74a1bc503d518e8c89dd6a8',
+    'ref.kube-prometheus': '997df34c70eb3eebc12b9839c972b01a892f9d73',
     # https://github.com/kubernetes-monitoring/kubernetes-mixin
-    'ref.kubernetes-mixin': '35aebcabd8b3c166dbcc150ea0cd7387130830da',
+    'ref.kubernetes-mixin': '4ff562d5e8145940cf355f62cf2308895c4dca81',
     # https://github.com/etcd-io/etcd
-    'ref.etcd': 'aac7ef6bcc78c6aa3b558fdb2d330f3c782652da',
+    'ref.etcd': '498bbc598224c46d27a55a483c0c428a8deab4ca',
 }
 
 # Source files list
@@ -660,10 +660,17 @@ def sanitize_name(name):
 
 
 def jsonnet_import_callback(base, rel):
-    if "github.com" in base:
-        base = os.getcwd() + '/vendor/' + base[base.find('github.com'):]
-    elif "github.com" in rel:
+    # rel_base is the path relative to the current cwd.
+    # see https://github.com/prometheus-community/helm-charts/issues/5283
+    # for more details.
+    rel_base = base
+    if rel_base.startswith(os.getcwd()):
+        rel_base = base[len(os.getcwd()):]
+
+    if "github.com" in rel:
         base = os.getcwd() + '/vendor/'
+    elif "github.com" in rel_base:
+        base = os.getcwd() + '/vendor/' + rel_base[rel_base.find('github.com'):]
 
     if os.path.isfile(base + rel):
         return base + rel, open(base + rel).read().encode('utf-8')
