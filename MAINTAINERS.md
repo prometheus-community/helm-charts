@@ -83,7 +83,6 @@
 ### prometheus-druid-exporter
 
 - iamabhishek-dubey (<abhishekbhardwaj510@gmail.com> / @iamabhishek-dubey)
-- sandy724 (<sandeep@opstree.com> / @sandy724)
 
 ### prometheus-elasticsearch-exporter
 
@@ -205,7 +204,6 @@
 
 ### prometheus-snmp-exporter
 
-- miouge1 (<maxime@root314.com> / @miouge1)
 - walker-tom (<walker.thomas.p@gmail.com> / @walker-tom)
 - xiu (<github@xiu.io> / @xiu)
 
