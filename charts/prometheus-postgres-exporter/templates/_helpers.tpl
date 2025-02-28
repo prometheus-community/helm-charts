@@ -62,6 +62,12 @@ Create the name of the service account to use
 {{- end -}}
 {{- end -}}
 
+{{/*
+Define the prometheus-postgres-exporter.namespace template if set with forceNamespace or .Release.Namespace is set
+*/}}
+{{- define "prometheus-postgres-exporter.namespace" -}}
+  {{- default .Release.Namespace .Values.forceNamespace -}}
+{{- end }}
 
 {{/*
 Set DATA_SOURCE_URI environment variable
