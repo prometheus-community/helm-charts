@@ -83,7 +83,6 @@
 ### prometheus-druid-exporter
 
 - iamabhishek-dubey (<abhishekbhardwaj510@gmail.com> / @iamabhishek-dubey)
-- sandy724 (<sandeep@opstree.com> / @sandy724)
 
 ### prometheus-elasticsearch-exporter
 
