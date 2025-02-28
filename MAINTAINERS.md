@@ -213,7 +213,6 @@
 
 ### prometheus-stackdriver-exporter
 
-- apenney (<apenney@gmail.com> / @apenney)
 - rpahli (<pahli88@googlemail.com> / @rpahli)
 
 ### prometheus-statsd-exporter
