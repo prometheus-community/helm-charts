@@ -204,7 +204,6 @@
 
 ### prometheus-snmp-exporter
 
-- miouge1 (<maxime@root314.com> / @miouge1)
 - walker-tom (<walker.thomas.p@gmail.com> / @walker-tom)
 - xiu (<github@xiu.io> / @xiu)
 
