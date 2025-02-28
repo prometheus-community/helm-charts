@@ -199,7 +199,6 @@
 
 ### prometheus-smartctl-exporter
 
-- kfox1111 (unknown / @kfox1111)
 - zeritti (<rootsandtrees@posteo.de> / @zeritti)
 
 ### prometheus-snmp-exporter
