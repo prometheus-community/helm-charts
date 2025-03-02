@@ -1,0 +1,146 @@
+{{- if .Values.upgradeJob.enabled }}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ template "kube-prometheus-stack.crd.upgradeJob.name" . }}
+  namespace: {{ template "kube-prometheus-stack.namespace" . }}
+  annotations:
+    "helm.sh/hook": pre-install,pre-upgrade,pre-rollback
+    "helm.sh/hook-weight": "5"
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+    {{- with .Values.upgradeJob.annotations }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+  labels:
+    {{- include "kube-prometheus-stack.crd.upgradeJob.labels" . | nindent 4 }}
+    {{- with .Values.upgradeJob.labels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+spec:
+  backoffLimit: 3
+  template:
+    metadata:
+      {{- with .Values.upgradeJob.podLabels }}
+      labels:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.upgradeJob.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+    spec:
+      {{- if .Values.global.imagePullSecrets }}
+      imagePullSecrets:
+        {{- include "kube-prometheus-stack.imagePullSecrets" . | indent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "kube-prometheus-stack.crd.upgradeJob.serviceAccountName" . }}
+      initContainers:
+        - name: busybox
+          {{- $busyboxRegistry := .Values.global.imageRegistry | default .Values.upgradeJob.image.busybox.registry -}}
+          {{- if .Values.upgradeJob.image.sha }}
+          image: "{{ $busyboxRegistry }}/{{ .Values.upgradeJob.image.busybox.repository }}:{{ .Values.upgradeJob.image.busybox.tag }}@sha256:{{ .Values.upgradeJob.image.busybox.sha }}"
+          {{- else }}
+          image: "{{ $busyboxRegistry }}/{{ .Values.upgradeJob.image.busybox.repository }}:{{ .Values.upgradeJob.image.busybox.tag }}"
+          {{- end }}
+          imagePullPolicy: "{{ .Values.upgradeJob.image.busybox.pullPolicy }}"
+          workingDir: /tmp/
+          command:
+            - sh
+          args:
+            - -c
+            - bzcat /crds/crds.bz2 > /tmp/crds.yaml
+          {{- with .Values.upgradeJob.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.upgradeJob.containerSecurityContext }}
+          securityContext:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          volumeMounts:
+            - mountPath: /crds/
+              name: crds
+            - mountPath: /tmp/
+              name: tmp
+            {{- with .Values.upgradeJob.extraVolumeMounts }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+          {{- with .Values.upgradeJob.env }}
+          env:
+            {{- range $key, $value := . }}
+            - name: {{ $key }}
+              value: {{ $value | quote }}
+            {{- end }}
+          {{- end }}
+      containers:
+        - name: kubectl
+          {{- $kubectlRegistry := .Values.global.imageRegistry | default .Values.upgradeJob.image.kubectl.registry -}}
+          {{- $defaultKubernetesVersion := regexFind "v\\d+\\.\\d+\\.\\d+" .Capabilities.KubeVersion.Version }}
+          {{- if .Values.upgradeJob.image.kubectl.sha }}
+          image: "{{ $kubectlRegistry }}/{{ .Values.upgradeJob.image.kubectl.repository }}:{{ .Values.upgradeJob.image.kubectl.tag | default $defaultKubernetesVersion }}@sha256:{{ .Values.upgradeJob.image.kubectl.sha }}"
+          {{- else }}
+          image: "{{ $kubectlRegistry }}/{{ .Values.upgradeJob.image.kubectl.repository }}:{{ .Values.upgradeJob.image.kubectl.tag | default $defaultKubernetesVersion }}"
+          {{- end }}
+          imagePullPolicy: "{{ .Values.upgradeJob.image.kubectl.pullPolicy }}"
+          command:
+            - kubectl
+          args:
+            - apply
+            - --server-side
+            {{- if .Values.upgradeJob.forceConflicts }}
+            - --force-conflicts
+            {{- end }}
+            - --filename
+            - /tmp/crds.yaml
+          {{- with .Values.upgradeJob.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.upgradeJob.containerSecurityContext }}
+          securityContext:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          volumeMounts:
+            - mountPath: /tmp/
+              name: tmp
+            {{- with .Values.upgradeJob.extraVolumeMounts }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+          {{- with .Values.upgradeJob.env }}
+          env:
+            {{- range $key, $value := . }}
+            - name: {{ $key }}
+              value: {{ $value | quote }}
+            {{- end }}
+          {{- end }}
+      volumes:
+        - name: tmp
+          emptyDir: {}
+        - name: crds
+          configMap:
+            name: {{ template "kube-prometheus-stack.crd.upgradeJob.name" . }}
+        {{- with .Values.upgradeJob.extraVolumes }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      restartPolicy: OnFailure
+      {{- with .Values.upgradeJob.podSecurityContext }}
+      securityContext:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.upgradeJob.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.upgradeJob.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.upgradeJob.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.upgradeJob.topologySpreadConstraints }}
+      topologySpreadConstraints:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+{{- end }}

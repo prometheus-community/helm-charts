@@ -1,11 +1,13 @@
 #!/bin/bash
 
-SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+set -e
+
+SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &>/dev/null && pwd)
 
 if [[ $(uname -s) = "Darwin" ]]; then
-    VERSION="$(grep ^appVersion "${SCRIPT_DIR}/../Chart.yaml" | sed 's/appVersion: //g')"
+  VERSION="$(grep ^appVersion "${SCRIPT_DIR}/../Chart.yaml" | sed 's/appVersion: //g')"
 else
-    VERSION="$(grep ^appVersion "${SCRIPT_DIR}/../Chart.yaml" | sed 's/appVersion:\s//g')"
+  VERSION="$(grep ^appVersion "${SCRIPT_DIR}/../Chart.yaml" | sed 's/appVersion:\s//g')"
 fi
 
 FILES=(
@@ -22,17 +24,24 @@ FILES=(
 )
 
 for line in "${FILES[@]}"; do
-    DESTINATION=$(echo "${line%%:*}" | xargs)
-    SOURCE=$(echo "${line##*:}" | xargs)
+  DESTINATION=$(echo "${line%%:*}" | xargs)
+  SOURCE=$(echo "${line##*:}" | xargs)
 
-    URL="https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/$VERSION/example/prometheus-operator-crd/$SOURCE"
+  URL="https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/$VERSION/example/prometheus-operator-crd/$SOURCE"
 
-    echo -e "Downloading Prometheus Operator CRD with Version ${VERSION}:\n${URL}\n"
+  echo -e "Downloading Prometheus Operator CRD with Version ${VERSION}:\n${URL}\n"
 
-    echo "# ${URL}" > "${SCRIPT_DIR}/../charts/crds/crds/${DESTINATION}"
+  echo "# ${URL}" >"${SCRIPT_DIR}/../charts/crds/crds/${DESTINATION}"
 
-    if ! curl --silent --retry-all-errors --fail --location "${URL}" >> "${SCRIPT_DIR}/../charts/crds/crds/${DESTINATION}"; then
-      echo -e "Failed to download ${URL}!"
-      exit 1
-    fi
+  if ! curl --silent --retry-all-errors --fail --location "${URL}" >>"${SCRIPT_DIR}/../charts/crds/crds/${DESTINATION}"; then
+    echo -e "Failed to download ${URL}!"
+    exit 1
+  fi
 done
+
+{
+  for file in "${SCRIPT_DIR}/../charts/crds/crds/"crd*.yaml; do
+    cat "${file}"
+    echo "---"
+  done
+} | bzip2 --best --compress --keep --stdout - >"${SCRIPT_DIR}/../charts/crds/files/crds.bz2"
