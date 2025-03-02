@@ -1,5 +1,5 @@
 {{- define "kube-prometheus-stack.grafana.datasources" -}}
-{{- $scrapeInterval := .Values.grafana.sidecar.datasources.defaultDatasourceScrapeInterval | default .Values.prometheus.prometheusSpec.scrapeInterval | default "30s" -}}
+{{- $scrapeInterval := .Values.grafana.sidecar.datasources.defaultDatasourceScrapeInterval | default .Values.prometheus.prometheusSpec.scrapeInterval | default "30s" }}
 {{- $datasources := list -}}
 
 {{/* Prometheus Datasource */}}
@@ -7,7 +7,6 @@
   {{- $jsonData := dict 
     "httpMethod"  .Values.grafana.sidecar.datasources.httpMethod
     "timeInterval" $scrapeInterval
-    "timeout"     .Values.grafana.sidecar.datasources.timeout
   -}}
   {{- if .Values.grafana.sidecar.datasources.exemplarTraceIdDestinations -}}
     {{- $_ := set $jsonData "exemplarTraceIdDestinations" (list (dict 
@@ -17,13 +16,13 @@
     )) -}}
   {{- end -}}
   {{- $datasources = append $datasources (dict
-    "name"     .Values.grafana.sidecar.datasources.name
-    "type"     "prometheus"
-    "uid"      .Values.grafana.sidecar.datasources.uid
-    "url"      (coalesce .Values.grafana.sidecar.datasources.url (include "kube-prometheus-stack.grafana.datasourceUrl.defaultPrometheus" .))
-    "access"   "proxy"
-    "isDefault" (.Values.grafana.sidecar.datasources.isDefaultDatasource | default false)
-    "jsonData" $jsonData
+    "name"      .Values.grafana.sidecar.datasources.name
+    "type"      "prometheus"
+    "uid"       .Values.grafana.sidecar.datasources.uid
+    "url"       (coalesce .Values.grafana.sidecar.datasources.url (include "kube-prometheus-stack.grafana.datasourceUrl.defaultPrometheus" .))
+    "access"    "proxy"
+    "isDefault" .Values.grafana.sidecar.datasources.isDefaultDatasource
+    "jsonData"  $jsonData
   ) -}}
 {{- end }}
 
@@ -39,13 +38,13 @@
       )) -}}
     {{- end -}}
     {{- $datasources = append $datasources (dict
-      "name"     (printf "%s-%d" $.Values.grafana.sidecar.datasources.name $index)
-      "type"     "prometheus"
-      "uid"      (printf "%s-replica-%d" $.Values.grafana.sidecar.datasources.uid $index)
-      "url"      (include "kube-prometheus-stack.grafana.datasourceUrl.replica" (dict "context" $ "index" $index))
-      "access"   "proxy"
+      "name"      (printf "%s-%d" $.Values.grafana.sidecar.datasources.name $index)
+      "type"      "prometheus"
+      "uid"       (printf "%s-replica-%d" $.Values.grafana.sidecar.datasources.uid $index)
+      "url"       (include "kube-prometheus-stack.grafana.datasourceUrl.replica" (dict "context" $ "index" $index))
+      "access"    "proxy"
       "isDefault" false
-      "jsonData" $jsonData
+      "jsonData"  $jsonData
     ) -}}
   {{- end -}}
 {{- end }}
@@ -53,15 +52,15 @@
 {{/* Alertmanager Datasource */}}
 {{- if .Values.grafana.sidecar.datasources.alertmanager.enabled }}
   {{- $datasources = append $datasources (dict
-    "name"     (.Values.grafana.sidecar.datasources.alertmanager.name | default "Alertmanager")
-    "type"     "alertmanager"
-    "uid"      (.Values.grafana.sidecar.datasources.alertmanager.uid | default "alertmanager")
-    "url"      (coalesce .Values.grafana.sidecar.datasources.alertmanager.url (include "kube-prometheus-stack.grafana.datasourceUrl.alertmanager" .))
-    "access"   "proxy"
+    "name"      .Values.grafana.sidecar.datasources.alertmanager.name
+    "type"      "alertmanager"
+    "uid"       .Values.grafana.sidecar.datasources.alertmanager.uid
+    "url"       (coalesce .Values.grafana.sidecar.datasources.alertmanager.url (include "kube-prometheus-stack.grafana.datasourceUrl.alertmanager" .))
+    "access"    "proxy"
     "isDefault" false
-    "jsonData" (dict
-      "handleGrafanaManagedAlerts" (.Values.grafana.sidecar.datasources.alertmanager.handleGrafanaManagedAlerts | default false)
-      "implementation"            (.Values.grafana.sidecar.datasources.alertmanager.implementation | default "prometheus")
+    "jsonData"  (dict
+      "handleGrafanaManagedAlerts" .Values.grafana.sidecar.datasources.alertmanager.handleGrafanaManagedAlerts
+      "implementation"            .Values.grafana.sidecar.datasources.alertmanager.implementation
     )
   ) -}}
 {{- end }}
