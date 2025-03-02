@@ -1,0 +1,33 @@
+{{/* Define helper variables for complex conditions */}}
+{{- $grafanaEnabled := and .Values.grafana.enabled .Values.grafana.sidecar.datasources.enabled }}
+{{- $shouldDeploy := or $grafanaEnabled .Values.grafana.forceDeployDatasources }}
+
+{{/* Only proceed if all required conditions are met */}}
+{{- if $shouldDeploy }}
+{{- if .Values.grafana.operatorDatasources }}
+
+{{/* Process datasources */}}
+{{- $datasources := fromYaml (include "kube-prometheus-stack.grafana.datasources" .) }}
+{{- range $ds := $datasources.datasources }}
+---
+apiVersion: grafana.integreatly.org/v1beta1
+kind: GrafanaDatasource
+metadata:
+  name: {{ include "kube-prometheus-stack.fullname" $ }}-{{ include "kube-prometheus-stack.grafana.sanitizeName" $ds.name }}
+  namespace: {{ template "kube-prometheus-stack-grafana.namespace" $ }}
+  labels:
+    app: {{ template "kube-prometheus-stack.name" $ }}-grafana
+    {{- include "kube-prometheus-stack.labels" $ | nindent 4 }}
+spec:
+  {{/* Instance selector configuration */}}
+  instanceSelector:
+    matchLabels:
+      {{- toYaml $.Values.grafana.operatorInstanceSelector | nindent 6 }}
+  
+  {{/* Datasource configuration */}}
+  datasource:
+    {{- $ds | toYaml | nindent 4 }}
+
+{{- end }}{{/* end range datasources */}}
+{{- end }}{{/* end if .Values.grafana.operatorDatasources */}}
+{{- end }}{{/* end if $shouldDeploy */}}
