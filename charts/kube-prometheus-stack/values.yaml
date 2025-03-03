@@ -425,11 +425,11 @@ alertmanager:
     gateway:
       # -- Gateway namespace
       ##
-      namespace: "ingress-nginx"
+      namespace: ""
       # -- Gateway pod labels
       ##
-      podLabels:
-        app.kubernetes.io/name: ingress-nginx
+      podLabels: {}
+      # app.kubernetes.io/name: ingress-nginx
 
     # -- Additional custom ingress rules
     ##
@@ -441,6 +441,13 @@ alertmanager:
     #     podSelector:
     #       matchLabels:
     #         app: another-app
+    # - from:
+    #     - podSelector:
+    #         matchLabels:
+    #           app.kubernetes.io/name: loki
+    #   ports:
+    #     - port: 9093
+    #       protocol: TCP
 
     # -- Configure egress rules
     ##
@@ -470,9 +477,6 @@ alertmanager:
       # -- Enable ingress from Prometheus
       ##
       prometheus: true
-      # -- Enable ingress from Loki
-      ##
-      loki: true
       # -- Enable ingress for config reloader metrics
       ##
       configReloader: true
@@ -727,6 +731,9 @@ alertmanager:
     ## Port for Alertmanager Service to listen on
     ##
     port: 9093
+    ## Port for Alertmanager cluster communication
+    ##
+    # clusterPort: 9094
     ## To be used with a proxy extraContainer port
     ##
     targetPort: 9093
@@ -3894,7 +3901,7 @@ prometheus:
     image:
       registry: quay.io
       repository: prometheus/prometheus
-      tag: v3.2.0
+      tag: v3.2.1
       sha: ""
 
     ## Tolerations for use with node taints
@@ -4502,6 +4509,10 @@ prometheus:
     ## AllowOverlappingBlocks enables vertical compaction and vertical query merge in Prometheus. This is still experimental
     ## in Prometheus so it may change in any upcoming release.
     allowOverlappingBlocks: false
+
+    ## Specifies the validation scheme for metric and label names.
+    ## Supported values are: Legacy, UTF8
+    nameValidationScheme: ""
 
     ## Minimum number of seconds for which a newly created pod should be ready without any of its container crashing for it to
     ## be considered available. Defaults to 0 (pod will be considered available as soon as it is ready).
