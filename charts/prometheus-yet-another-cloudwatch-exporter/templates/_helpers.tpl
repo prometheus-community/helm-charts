@@ -59,3 +59,19 @@ Create the name of the service account to use
 {{- default "default" .Values.serviceAccount.name }}
 {{- end }}
 {{- end }}
+
+{{/*
+Return the correct (overridden global) image registry.
+*/}}
+{{- define "yet-another-cloudwatch-exporter.image.repository" -}}
+  {{- $registry := .Values.image.registry -}}
+  {{- if .Values.global.imageRegistry }}
+    {{- $registry = .Values.global.imageRegistry -}}
+  {{- end }}
+  {{- if $registry -}}
+    {{- printf "%s/%s" $registry .Values.image.repository -}}
+  {{- else -}}
+    {{- printf "%s" .Values.image.repository -}}
+  {{- end }}
+{{- end -}}
+
