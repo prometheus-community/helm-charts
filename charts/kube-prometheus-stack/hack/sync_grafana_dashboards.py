@@ -33,7 +33,7 @@ refs = {
     # https://github.com/kubernetes-monitoring/kubernetes-mixin
     'ref.kubernetes-mixin': '1fa3b6731c93eac6d5b8c3c3b087afab2baabb42',
     # https://github.com/etcd-io/etcd
-    'ref.etcd': 'f0a1ec501b03da6090bfbf3a1cbe078f952c46f9',
+    'ref.etcd': '9f1709e015640838269bfbecae9ee2be41b47939',
 }
 
 # Source files list
