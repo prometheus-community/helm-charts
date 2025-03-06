@@ -210,7 +210,6 @@ def patch_json_set_interval_as_variable(content):
     # content is no more in json format, so we have to replace using regex
     return re.sub(r'"interval"\s*:\s*"(?:\\.|[^\"])*"', '"interval":"`}}{{ .Values.grafana.defaultDashboardsInterval }}{{`"', content, flags=re.IGNORECASE)
 
-
 def jsonnet_import_callback(base, rel):
     # rel_base is the path relative to the current cwd.
     # see https://github.com/prometheus-community/helm-charts/issues/5283
