@@ -19,15 +19,15 @@ Chart admins are responsible for managing the repository, such as housekeeping a
 They are also the point of contact for existing maintainers of the repository.
 While chart admins can also serve as chart maintainers, they should still respect the existing maintainers.
 
-A Helm Chart admin is part of the `@prometheus-community/helm-charts-admins` GitHub group 
-and must be listed as a general maintainer in `MAINTAINERS.md`. 
+A Helm Chart admin is part of the `@prometheus-community/helm-charts-admins` GitHub group
+and must be listed as a general maintainer in `MAINTAINERS.md`.
 Additionally, they should be added to `artifacthub-repo.yaml`.
 
 Helm Chart admins may not have sufficient permissions to invite new GitHub users to the `prometheus-community` organization.  
 For assistance, they should ask in the CNCF Slack channel `#prometheus-dev`.
 
 Becoming an admin requires a majority vote from all existing admins.  
-The process is tracked through GitHub issues in the [prometheus-community/helm-charts](https://github.com/prometheus-community/helm-charts/) repository. 
+The process is tracked through GitHub issues in the [prometheus-community/helm-charts](https://github.com/prometheus-community/helm-charts/) repository.
 See [this example](https://github.com/prometheus-community/helm-charts/issues/5137).
 
 Since the Prometheus Team oversees the entire ecosystem and the GitHub organization, they have additional capabilities — see [Prometheus Governance](https://prometheus.io/governance/).  
