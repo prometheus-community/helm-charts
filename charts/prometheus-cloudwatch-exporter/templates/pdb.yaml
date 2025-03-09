@@ -1,0 +1,23 @@
+{{- if .Values.podDisruptionBudget.enabled -}}
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ template "prometheus-cloudwatch-exporter.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: {{ template "prometheus-cloudwatch-exporter.name" . }}
+    chart: {{ template "prometheus-cloudwatch-exporter.chart" . }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+spec:
+  {{- if .Values.podDisruptionBudget.minAvailable }}
+  minAvailable: {{ .Values.podDisruptionBudget.minAvailable }}
+  {{- end }}
+  {{- if .Values.podDisruptionBudget.maxUnavailable }}
+  maxUnavailable: {{ .Values.podDisruptionBudget.maxUnavailable }}
+  {{- end }}
+  selector:
+    matchLabels:
+      app: {{ template "prometheus-cloudwatch-exporter.name" . }}
+      release: {{ .Release.Name }}
+{{- end -}}
