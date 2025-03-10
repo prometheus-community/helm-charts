@@ -327,7 +327,7 @@ spec:
 {{- end }}
 {{- if .Values.prometheus.prometheusSpec.additionalScrapeConfigsSecret.enabled }}
   additionalScrapeConfigs:
-    name: {{ .Values.prometheus.prometheusSpec.additionalScrapeConfigsSecret.name }}
+    name: {{ tpl (.Values.prometheus.prometheusSpec.additionalScrapeConfigsSecret.name) . }}
     key: {{ .Values.prometheus.prometheusSpec.additionalScrapeConfigsSecret.key }}
 {{- end }}
 {{- if not .Values.prometheus.agentMode }}
@@ -338,7 +338,7 @@ spec:
     key: additional-alertmanager-configs.yaml
 {{- end }}
 {{- if .Values.prometheus.prometheusSpec.additionalAlertManagerConfigsSecret }}
-    name: {{ .Values.prometheus.prometheusSpec.additionalAlertManagerConfigsSecret.name }}
+    name: {{ tpl (.Values.prometheus.prometheusSpec.additionalAlertManagerConfigsSecret.name) . }}
     key: {{ .Values.prometheus.prometheusSpec.additionalAlertManagerConfigsSecret.key }}
     {{- if hasKey .Values.prometheus.prometheusSpec.additionalAlertManagerConfigsSecret "optional" }}
     optional: {{ .Values.prometheus.prometheusSpec.additionalAlertManagerConfigsSecret.optional }}
@@ -352,7 +352,7 @@ spec:
 {{- end }}
 {{- if .Values.prometheus.prometheusSpec.additionalAlertRelabelConfigsSecret }}
   additionalAlertRelabelConfigs:
-    name: {{ .Values.prometheus.prometheusSpec.additionalAlertRelabelConfigsSecret.name }}
+    name: {{ tpl (.Values.prometheus.prometheusSpec.additionalAlertRelabelConfigsSecret.name) . }}
     key: {{ .Values.prometheus.prometheusSpec.additionalAlertRelabelConfigsSecret.key }}
 {{- end }}
 {{- end }}
@@ -370,7 +370,7 @@ spec:
 {{- if not .Values.prometheus.agentMode }}
 {{- if .Values.prometheus.prometheusSpec.thanos }}
   thanos:
-{{- with (omit .Values.prometheus.prometheusSpec.thanos "objectStorageConfig")}}
+{{- with (omit .Values.prometheus.prometheusSpec.thanos "objectStorageConfig" "secretProviderClass") }}
 {{ toYaml . | indent 4 }}
 {{- end }}
 {{- if ((.Values.prometheus.prometheusSpec.thanos.objectStorageConfig).existingSecret) }}
@@ -459,6 +459,9 @@ spec:
 {{- end }}
 {{- if and (not .Values.prometheus.agentMode) .Values.prometheus.prometheusSpec.allowOverlappingBlocks }}
   allowOverlappingBlocks: {{ .Values.prometheus.prometheusSpec.allowOverlappingBlocks }}
+{{- end }}
+{{- if .Values.prometheus.prometheusSpec.nameValidationScheme }}
+  nameValidationScheme: {{ .Values.prometheus.prometheusSpec.nameValidationScheme }}
 {{- end }}
 {{- if .Values.prometheus.prometheusSpec.minReadySeconds }}
   minReadySeconds: {{ .Values.prometheus.prometheusSpec.minReadySeconds }}

@@ -1,0 +1,72 @@
+{{- if and .Values.alertmanager.enabled .Values.alertmanager.networkPolicy.enabled }}
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ template "kube-prometheus-stack.fullname" . }}-alertmanager
+  namespace: {{ template "kube-prometheus-stack.namespace" . }}
+  labels:
+    app: {{ template "kube-prometheus-stack.name" . }}-alertmanager
+    {{- include "kube-prometheus-stack.labels" . | nindent 4 }}
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: alertmanager
+  policyTypes:
+    {{- toYaml .Values.alertmanager.networkPolicy.policyTypes | nindent 4 }}
+  ingress:
+    {{- if and (.Values.alertmanager.networkPolicy.gateway.namespace) (.Values.alertmanager.networkPolicy.gateway.podLabels) }}
+    # Allow ingress from gateway
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: {{ .Values.alertmanager.networkPolicy.gateway.namespace }}
+          {{- if and .Values.alertmanager.networkPolicy.gateway.podLabels (not (empty .Values.alertmanager.networkPolicy.gateway.podLabels)) }}
+          podSelector:
+            matchLabels:
+              {{- toYaml .Values.alertmanager.networkPolicy.gateway.podLabels | nindent 14 }}
+          {{- end }}
+      ports:
+        - port: {{ .Values.alertmanager.service.port }}
+          protocol: TCP
+    {{- end }}
+    {{- if .Values.alertmanager.networkPolicy.monitoringRules.prometheus }}
+    # Allow ingress from Prometheus
+    - from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: prometheus
+      ports:
+        - port: {{ .Values.alertmanager.service.port }}
+          protocol: TCP
+    {{- end }}
+    {{- if and (.Values.alertmanager.networkPolicy.enableClusterRules) (.Values.alertmanager.service.clusterPort) }}
+    # Allow ingress from other Alertmanager pods (for clustering)
+    - from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: alertmanager
+      ports:
+        - port: {{ .Values.alertmanager.service.clusterPort }}
+          protocol: TCP
+    {{- end }}
+    {{- if .Values.alertmanager.networkPolicy.monitoringRules.configReloader }}
+    # Allow ingress for config reloader metrics
+    - from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: alertmanager
+              component: config-reloader
+      ports:
+        - port: 8080
+          protocol: TCP
+    {{- end }}
+    {{- with .Values.alertmanager.networkPolicy.additionalIngress }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+  {{- if .Values.alertmanager.networkPolicy.egress.enabled }}
+  egress:
+    {{- with .Values.alertmanager.networkPolicy.egress.rules }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+  {{- end }}
+{{- end }}
