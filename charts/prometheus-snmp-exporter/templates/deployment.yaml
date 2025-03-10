@@ -1,3 +1,4 @@
+
 {{- if (eq .Values.kind "Deployment") }}
 apiVersion: apps/v1
 kind: Deployment
@@ -93,19 +94,29 @@ spec:
           {{- with .Values.extraVolumeMounts }}
           {{ toYaml . | nindent 12 }}
           {{- end }}
-      {{- if .Values.config }}
+      {{- if .Values.configmapReload.enabled }} #adding
         - name: configmap-reload
           image: "{{ .Values.configmapReload.image.repository }}:{{ .Values.configmapReload.image.tag }}"
           imagePullPolicy: "{{ .Values.configmapReload.image.pullPolicy }}"
           args:
+          {{ if .Values.config }}
             - --watched-dir=/etc/config
+          {{- end }}
             - --reload-url=http://localhost:{{ .Values.service.port }}/-/reload
+        {{- if .Values.configmapReload.extraArgs }}
+{{ toYaml .Values.configmapReload.extraArgs | indent 12 }}
+        {{- end }}
           resources:
 {{ toYaml .Values.configmapReload.resources | indent 12 }}
           volumeMounts:
+           {{ if .Values.config }} #adding
             - mountPath: /etc/config
-              name: "{{ .Values.configmapReload.volumeName }}"
+              name: config
               readOnly: true
+           {{- end }}
+          {{- with .Values.configmapReload.extraVolumeMounts }} #adding
+          {{ toYaml . | nindent 12 }}
+          {{- end }}
       {{- end }}
       {{- if .Values.imagePullSecrets }}
       imagePullSecrets:
