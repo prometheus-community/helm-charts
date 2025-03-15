@@ -4,7 +4,8 @@
 
 This version upgrades Prometheus-Operator to v0.81.0 now supporting serviceName for Prometheus/AM/ThanosRuler CRDs. If empty there is no changes to the creation of an operated service. If defined operated service will not be created and new serviceName will be used as governing service.
 
-Run these commands to update the CRDs before applying the upgrade.
+Since [68.4.0](https://github.com/prometheus-community/helm-charts/pull/5175) it is also possible to use `crds.upgradeJob.enabled` for upgrading the CRDs.
+For traditional upgrades, please run these commands to update the CRDs before applying the upgrade.
 
 ```console
 kubectl apply --server-side -f https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/v0.81.0/example/prometheus-operator-crd/monitoring.coreos.com_alertmanagerconfigs.yaml
