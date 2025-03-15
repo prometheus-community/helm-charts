@@ -132,6 +132,17 @@ Define Authorization
 {{- end }}
 
 {{/*
+Define basicAuth
+*/}}
+{{- define "prometheus-pushgateway.basicAuth" -}}
+{{- $users := keys .Values.webConfiguration.basicAuthUsers }}
+{{- $user := first $users }}
+{{- $password := index .Values.webConfiguration.basicAuthUsers $user -}}
+user: {{ $user | b64enc | quote }}
+password: {{ $password | b64enc | quote }}
+{{- end }}
+
+{{/*
 Returns pod spec
 */}}
 {{- define "prometheus-pushgateway.podSpec" -}}
