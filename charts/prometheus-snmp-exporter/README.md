@@ -107,6 +107,10 @@ Update your scrape definitions to include the system module if you need sysUpTim
 
 This version changes the additional metrics values to always be a string.
 
+## To 9.0.0
+
+This version adds ability for config-reloader to specify custom --watched-dir and ability to mount snmp-exporter pods extraVolumeMounts
+
 ## Configuration
 
 See [Customizing the Chart Before Installing](https://helm.sh/docs/intro/using_helm/#customizing-the-chart-before-installing). To see all configurable options with detailed comments, visit the chart's [values.yaml](./values.yaml), or run these configuration commands:
