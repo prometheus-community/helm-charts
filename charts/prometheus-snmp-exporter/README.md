@@ -107,7 +107,7 @@ Update your scrape definitions to include the system module if you need sysUpTim
 
 This version changes the additional metrics values to always be a string.
 
-## To 9.0.0
+### To 9.0.0
 
 This version adds ability for config-reloader to specify custom --watched-dir and ability to mount snmp-exporter pods extraVolumeMounts
 
