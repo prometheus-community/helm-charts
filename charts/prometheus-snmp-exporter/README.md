@@ -109,7 +109,7 @@ This version changes the additional metrics values to always be a string.
 
 ### To 9.0.0
 
-This version adds ability for config-reloader to specify custom --watched-dir and ability to mount snmp-exporter pods extraVolumeMounts
+This version adds ability to enable config-reloader on demand, also to specify custom --watched-dir and ability to mount snmp-exporter pods extraVolumeMounts for consistency of mounted configs.
 
 ## Configuration
 
