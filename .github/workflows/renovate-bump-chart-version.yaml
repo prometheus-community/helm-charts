@@ -12,17 +12,24 @@ jobs:
     name: Renovate Bump Chart Version
     runs-on: ubuntu-latest
     if: github.actor == 'renovate[bot]'
-    permissions:
-      contents: write
-      pull-requests: write
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           fetch-depth: 0
 
+      # Using a GitHub App token, because GitHub Actions doesn't run on commits from github-actions bot
+      # Used App:
+      # https://github.com/organizations/prometheus-community/settings/apps/helm-charts-renovate-helper.
+      # Ref: https://github.com/prometheus-community/helm-charts/issues/5213.
+      - uses: actions/create-github-app-token@21cfef2b496dd8ef5b904c159339626a10ad380e # v1.11.6
+        id: app-token
+        with:
+          app-id: 1179738
+          private-key: ${{ secrets.APP_RENOVATE_HELPER_PRIVATE_KEY }}
+
       - uses: actions/setup-python@42375524e23c412d93fb67b49958b491fce71c38 # v5.4.0
         with:
-          python-version: '3.11'
+          python-version: '3.13'
 
       - name: Set up chart-testing
         uses: helm/chart-testing-action@0d28d3144d3a25ea2cc349d6e59901c4ff469b3b # v2.7.0
@@ -57,7 +64,7 @@ jobs:
         if: steps.list-changed.outputs.changed == 'true'
         env:
           CHART: ${{ steps.list-changed.outputs.changed_list }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
           GITHUB_HEAD_REF: ${{ github.head_ref }}
         run: |
           curl https://api.github.com/graphql -f \
