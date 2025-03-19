@@ -36,6 +36,7 @@ jobs:
 
       - name: Detect changed charts
         id: list-changed
+        #language=bash
         run: |
           changed="$(ct list-changed --config .github/linters/ct.yaml)"
           if [[ -n "$changed" ]]; then
@@ -47,9 +48,10 @@ jobs:
         if: steps.list-changed.outputs.changed == 'true'
         env:
           CHART: ${{ steps.list-changed.outputs.changed_list }}
+        #language=bash
         run: |
-          if [[ $CHANGED_LIST == *" "* ]]; then
-            echo "Multiple charts changed, skipping bumping chart version"
+          if [[ ! -d "${CHART}" ]]; then
+            echo "${CHART} directory not found"
             exit 0
           fi
 
@@ -58,7 +60,18 @@ jobs:
           CHART_MINOR_VERSION=$(printf '%s' "$CHART_VERSION" | cut -d "." -f 2)
           CHART_MINOR_VERSION=$((CHART_MINOR_VERSION+1))
           CHART_NEW_VERSION="${CHART_MAJOR_VERSION}.${CHART_MINOR_VERSION}.0"
-          sed -i "s/^version:.*/version: \"${CHART_NEW_VERSION}\"/" "$CHART/Chart.yaml"
+          sed -i "s/^version:.*/version: ${CHART_NEW_VERSION}/" "$CHART/Chart.yaml"
+
+      - name: run renovate-post-upgrade-hook
+        if: steps.list-changed.outputs.changed == 'true'
+        env:
+          CHART: ${{ steps.list-changed.outputs.changed_list }}
+        #language=bash
+        run: |
+          if [[ -x "$CHART/hack/renovate-post-upgrade-hook.sh" ]]; then
+            cd "$CHART"
+            ./hack/renovate-post-upgrade-hook.sh
+          fi
 
       - name: Commit changes
         if: steps.list-changed.outputs.changed == 'true'
@@ -66,35 +79,59 @@ jobs:
           CHART: ${{ steps.list-changed.outputs.changed_list }}
           GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
           GITHUB_HEAD_REF: ${{ github.head_ref }}
+        #language=bash
         run: |
+          # Define the target directory
+          TARGET_DIR="$CHART"
+          
+          # Fetch deleted files in the target directory
+          DELETED_FILES=$(git diff --diff-filter=D --name-only HEAD -- "$TARGET_DIR")
+          
+          # Fetch added/modified files in the target directory
+          MODIFIED_FILES=$(git diff --diff-filter=ACM --name-only HEAD -- "$TARGET_DIR")
+            
+          # Initialize JSON structure
+          FILE_CHANGES_JSON='{ "deletions": [], "additions": [] }'
+          
+          # Add deletions
+          for file in $DELETED_FILES; do
+            FILE_CHANGES_JSON=$(echo "$FILE_CHANGES_JSON" | jq --arg path "$file" '.deletions += [{"path": $path}]')
+          done
+          
+          # Add additions (new or modified files)
+          for file in $MODIFIED_FILES; do
+            BASE64_CONTENT=$(base64 -w 0 <"$file")
+            FILE_CHANGES_JSON=$(echo "$FILE_CHANGES_JSON" | jq --arg path "$file" --arg content "$BASE64_CONTENT" '.additions += [{"path": $path, "contents": $content}]')
+          done
+          
+          # Construct final JSON using jq
+          JSON_PAYLOAD=$(jq -n --arg repo "$GITHUB_REPOSITORY" \
+                              --arg branch "$GITHUB_HEAD_REF" \
+                              --arg message "post upgrade changes from renovate" \
+                              --arg expectedOid "$GITHUB_SHA" \
+                              --argjson fileChanges "$FILE_CHANGES_JSON" \
+                              '{
+                                query: "mutation ($input: CreateCommitOnBranchInput!) {
+                                  createCommitOnBranch(input: $input) { 
+                                    commit { 
+                                      url 
+                                    } 
+                                  } 
+                                }",
+                                variables: {
+                                  input: {
+                                    branch: {
+                                      repositoryNameWithOwner: $repo,
+                                      branchName: $branch
+                                    },
+                                    message: { headline: $message },
+                                    fileChanges: $fileChanges,
+                                    expectedHeadOid: $expectedOid
+                                  }
+                                }
+                              }')
+          
+          # Call GitHub API
           curl https://api.github.com/graphql -f \
                -sSf -H "Authorization: Bearer $GITHUB_TOKEN" \
-               --data @- <<GRAPHQL | jq
-          {
-            "query": "mutation (\$input: CreateCommitOnBranchInput!) {
-              createCommitOnBranch(input: \$input) { 
-                commit { 
-                  url 
-                } 
-              } 
-            }",
-            "variables": {
-              "input": {
-                "branch": {
-                  "repositoryNameWithOwner": "${{ github.repository }}",
-                  "branchName": "$GITHUB_HEAD_REF"
-                },
-                "message": { "headline": "Update Chart.yaml" },
-                "fileChanges": {
-                  "additions": [
-                    {
-                      "path": "$CHART/Chart.yaml",
-                      "contents": "$(base64 -w 0 <"$CHART/Chart.yaml")"
-                    }
-                  ]
-                },
-                "expectedHeadOid": "${{ github.sha }}"
-              }
-            }
-          }
-          GRAPHQL
+               --data "$JSON_PAYLOAD"
