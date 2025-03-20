@@ -21,6 +21,19 @@ spec:
       serviceAccountName: {{ template "prometheus-pingdom-exporter.serviceAccountName" . }}
       containers:
         - name: {{ .Chart.Name }}
+          args:
+            - "-default-uptime-slo"
+            - {{ .Values.config.defaultUptimeSLO | quote }}
+            - "-metrics-path"
+            - "/metrics"
+            - "-outage-check-period"
+            - {{ .Values.config.outageCheckPeriodInDays | quote }}
+            - "-port"
+            - {{ .Values.service.port | quote }}
+            {{- if gt (len .Values.config.tags ) 0 }}
+            - -tags
+            - {{ join "," .Values.config.tags | quote }}
+            {{- end }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           env:
