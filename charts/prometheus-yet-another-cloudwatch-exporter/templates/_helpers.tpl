@@ -71,4 +71,3 @@ Return the correct image registry.
     {{- printf "%s" .Values.image.repository -}}
   {{- end }}
 {{- end -}}
-
