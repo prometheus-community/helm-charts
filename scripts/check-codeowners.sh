@@ -17,7 +17,7 @@ cat <<EOF
 
 EOF
 
-yq_script='"/charts/" + .name + "/ " + ([.maintainers[].url | sub("https://github.com/", "@")] | sort | join(" "))'
+yq_script='select(.maintainers | length > 0) | "/charts/" + .name + "/ " + ([.maintainers[].url | sub("https://github.com/", "@")] | sort | join(" "))'
 
 yq e "${yq_script}" charts/*/Chart.yaml |
   sort -t '/' -k 3

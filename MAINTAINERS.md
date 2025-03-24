@@ -13,10 +13,6 @@
 
 ## Helm charts maintainers
 
-### alertmanager-snmp-notifier
-
-- maxwo (<maxime.wojtczak.pub@icloud.com> / @maxwo)
-
 ### alertmanager
 
 - monotek (<monotek23@gmail.com> / @monotek)
