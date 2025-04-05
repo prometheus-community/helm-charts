@@ -22,15 +22,7 @@ spec:
     {{- with .Values.serviceMonitor.scheme }}
     scheme: {{ . }}
     {{- end }}
-    {{- if .Values.serviceMonitor.basicAuth.existingSecret }}
-    basicAuth:
-      password:
-        name: {{ .Values.serviceMonitor.basicAuth.existingSecret }}
-        key: password
-      username:
-        name: {{ .Values.serviceMonitor.basicAuth.existingSecret }}
-        key: user
-    {{- else }}
+    {{- if and .Values.webConfiguration (empty .Values.serviceMonitor.basicAuth) }}
     basicAuth:
       password:
         name: {{ include "prometheus-pushgateway.fullname" . }}-basic-auth
@@ -38,6 +30,8 @@ spec:
       username:
         name: {{ include "prometheus-pushgateway.fullname" . }}-basic-auth
         key: user
+    {{- else if not (empty .Values.serviceMonitor.basicAuth) }}
+    basicAuth: {{ toYaml .Values.serviceMonitor.basicAuth | nindent 6 }}
     {{- end }}
     {{- with .Values.serviceMonitor.bearerTokenFile }}
     bearerTokenFile: {{ . }}
