@@ -136,15 +136,15 @@ rules:
       containerLabel: container
     memory:
       containerQuery: |
-        sum by (<<.GroupBy>>) (
+        round(sum by (<<.GroupBy>>) (
           avg_over_time(container_memory_working_set_bytes{container!="",<<.LabelMatchers>>}[3m])
-        )
+        ))
       nodeQuery: |
-        sum by (<<.GroupBy>>) (
+        round(sum by (<<.GroupBy>>) (
           avg_over_time(node_memory_MemTotal_bytes{<<.LabelMatchers>>}[3m])
           -
           avg_over_time(node_memory_MemAvailable_bytes{<<.LabelMatchers>>}[3m])
-        )
+        ))
       resources:
         overrides:
           node:
