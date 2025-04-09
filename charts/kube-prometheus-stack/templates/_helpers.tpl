@@ -166,7 +166,7 @@ Use the Alertmanager namespace override for multi-namespace deployments in combi
   {{- if .Values.alertmanager.namespaceOverride -}}
     {{- .Values.alertmanager.namespaceOverride -}}
   {{- else -}}
-    {{- .Release.Namespace -}}
+    {{- include "kube-prometheus-stack.namespace" . -}}
   {{- end -}}
 {{- end -}}
 
