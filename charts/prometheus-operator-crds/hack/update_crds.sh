@@ -1,4 +1,5 @@
 #!/bin/bash
+set -euo pipefail
 
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 
@@ -8,22 +9,23 @@ else
     VERSION="$(grep ^appVersion "${SCRIPT_DIR}/../Chart.yaml" | sed 's/appVersion:\s//g')"
 fi
 
-FILES=(
-  "crd-alertmanagerconfigs.yaml :  monitoring.coreos.com_alertmanagerconfigs.yaml"
-  "crd-alertmanagers.yaml       :  monitoring.coreos.com_alertmanagers.yaml"
-  "crd-podmonitors.yaml         :  monitoring.coreos.com_podmonitors.yaml"
-  "crd-probes.yaml              :  monitoring.coreos.com_probes.yaml"
-  "crd-prometheusagents.yaml    :  monitoring.coreos.com_prometheusagents.yaml"
-  "crd-prometheuses.yaml        :  monitoring.coreos.com_prometheuses.yaml"
-  "crd-prometheusrules.yaml     :  monitoring.coreos.com_prometheusrules.yaml"
-  "crd-scrapeconfigs.yaml       :  monitoring.coreos.com_scrapeconfigs.yaml"
-  "crd-servicemonitors.yaml     :  monitoring.coreos.com_servicemonitors.yaml"
-  "crd-thanosrulers.yaml        :  monitoring.coreos.com_thanosrulers.yaml"
+CRDS=(
+  "alertmanagerconfigs :  monitoring.coreos.com_alertmanagerconfigs.yaml"
+  "alertmanagers       :  monitoring.coreos.com_alertmanagers.yaml"
+  "podmonitors         :  monitoring.coreos.com_podmonitors.yaml"
+  "probes              :  monitoring.coreos.com_probes.yaml"
+  "prometheusagents    :  monitoring.coreos.com_prometheusagents.yaml"
+  "prometheuses        :  monitoring.coreos.com_prometheuses.yaml"
+  "prometheusrules     :  monitoring.coreos.com_prometheusrules.yaml"
+  "scrapeconfigs       :  monitoring.coreos.com_scrapeconfigs.yaml"
+  "servicemonitors     :  monitoring.coreos.com_servicemonitors.yaml"
+  "thanosrulers        :  monitoring.coreos.com_thanosrulers.yaml"
 )
 
-for line in "${FILES[@]}"; do
-    DESTINATION=$(echo "${line%%:*}" | xargs)
+for line in "${CRDS[@]}"; do
+    CRD=$(echo "${line%%:*}" | xargs)
     SOURCE=$(echo "${line##*:}" | xargs)
+    DESTINATION="crd-${CRD}".yaml
 
     URL="https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/$VERSION/example/prometheus-operator-crd/$SOURCE"
 
@@ -42,4 +44,8 @@ for line in "${FILES[@]}"; do
     else
       sed -i '/^metadata:$/a {{- with .Values.annotations }}\n  annotations:\n{{- toYaml . | nindent 4 }}\n{{- end }}' "${SCRIPT_DIR}/../charts/crds/templates/${DESTINATION}"
     fi
+
+    # Insert enable option
+    sed -i "1i\{{- if .Values.${CRD}.enabled -}}" "${SCRIPT_DIR}/../charts/crds/templates/${DESTINATION}"
+    echo "{{- end -}}" >> "${SCRIPT_DIR}/../charts/crds/templates/${DESTINATION}"
 done
