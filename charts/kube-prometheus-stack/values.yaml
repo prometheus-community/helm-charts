@@ -5300,8 +5300,10 @@ thanosRuler:
 ##
 cleanPrometheusOperatorObjectNames: false
 
-## Extra manifests to deploy as an array
-extraManifests: []
+## Extra manifests to deploy.  Can be of type dict or list.
+## If dict, keys are ignored and only values are used.
+## Items contained within extraObjects can be defined as dict or string and are passed through tpl.
+extraManifests: null
   # - apiVersion: v1
   #   kind: ConfigMap
   #   metadata:
@@ -5309,3 +5311,18 @@ extraManifests: []
   #     name: prometheus-extra
   #   data:
   #     extra-data: "value"
+  #
+  # can also be defined as a string, useful for templating field names
+  # - |
+  #   apiVersion: v1
+  #   kind: Secret
+  #   type: Opaque
+  #   metadata:
+  #     name: super-secret
+  #     labels:
+  #       {{- range $key, $value := .Values.commonLabels }}
+  #       {{ $key }}: {{ $value }}
+  #       {{- end }}
+  #   data:
+  #     plaintext: Zm9vYmFy
+  #     templated: '{{ print "foobar" | upper | b64enc }}'
