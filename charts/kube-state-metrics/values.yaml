@@ -239,6 +239,46 @@ prometheus:
         # name: secret-name
         # key:  key-name
       tlsConfig: {}
+  ## Create a scrapeConfig resource for scraping the kube-state-metrics service. Use this instead of serviceMonitor
+  ## to have more instances of kube-state-metrics safety.
+  scrapeconfig:
+    ## To avoid duplicate metrics, first disable the serviceMonitor creation via prometheus.monitor.enabled=false
+    enabled: false
+    annotations: {}
+    additionalLabels: {}
+    jobName: kube-state-metrics
+    ## SampleLimit defines per-scrape limit on number of scraped samples that will be accepted.
+    ##
+    sampleLimit: 0
+
+    ## TargetLimit defines a limit on the number of scraped targets that will be accepted.
+    ##
+    targetLimit: 0
+
+    ## Per-scrape limit on number of labels that will be accepted for a sample. Only valid in Prometheus versions 2.27.0 and newer.
+    ##
+    labelLimit: 0
+
+    ## Per-scrape limit on length of labels name that will be accepted for a sample. Only valid in Prometheus versions 2.27.0 and newer.
+    ##
+    labelNameLengthLimit: 0
+
+    ## Per-scrape limit on length of labels value that will be accepted for a sample. Only valid in Prometheus versions 2.27.0 and newer.
+    ##
+    labelValueLengthLimit: 0
+
+    ## StaticConfigLabels defines the labels to be used in the Prometheus static configuration for scraping.
+    staticConfigLabels: {}
+    scrapeInterval: ""
+    scrapeTimeout: ""
+    proxyUrl: ""
+    ## Whether to enable HTTP2 for scrapeconfig
+    enableHttp2: false
+    honorLabels: true
+    metricRelabelings: []
+    relabelings: []
+    scheme: ""
+    tlsConfig: {}
 
 ## Specify if a Pod Security Policy for kube-state-metrics must be created
 ## Ref: https://kubernetes.io/docs/concepts/policy/pod-security-policy/
@@ -518,6 +558,14 @@ containers: []
 initContainers: []
   # - name: crd-sidecar
   #   image: kiwigrid/k8s-sidecar:latest
+
+## dnsPolicy allows to change the default DNS configuration for the pod
+## Ref: https://kubernetes.io/docs/concepts/services-networking/dns-pod-service/#pod-s-dns-policy
+dnsPolicy: ClusterFirst
+
+## dnsConfig allows setting up specific DNS configuration for the pod
+## Ref: https://kubernetes.io/docs/concepts/services-networking/dns-pod-service/#pod-dns-config
+dnsConfig: {}
 
 ## Settings for startup, liveness and readiness probes
 ## Ref: https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/
