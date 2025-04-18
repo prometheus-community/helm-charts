@@ -392,6 +392,9 @@ alertmanager:
   ##
   enabled: true
 
+  # Optional: Override the namespace where Alertmanager will be deployed.
+  namespaceOverride: ""
+
   ## Annotations for Alertmanager
   ##
   annotations: {}
@@ -1497,7 +1500,7 @@ kubeApiServer:
     metricRelabelings:
       # Drop excessively noisy apiserver buckets.
       - action: drop
-        regex: (etcd_request|apiserver_request_slo|apiserver_request_sli|apiserver_request)_duration_seconds_bucket;(0\.15|0\.2|0\.3|0\.35|0\.4|0\.45|0\.6|0\.7|0\.8|0\.9|1\.25|1\.5|1\.75|2|3|3\.5|4|4\.5|6|7|8|9|15|20|30|40|45|50)(\.0)?
+        regex: (etcd_request|apiserver_request_slo|apiserver_request_sli|apiserver_request)_duration_seconds_bucket;(0\.15|0\.2|0\.3|0\.35|0\.4|0\.45|0\.6|0\.7|0\.8|0\.9|1\.25|1\.5|1\.75|2|3|3\.5|4|4\.5|6|7|8|9|15|20|40|45|50)(\.0)?
         sourceLabels:
           - __name__
           - le
@@ -3281,7 +3284,7 @@ prometheusOperator:
   thanosImage:
     registry: quay.io
     repository: thanos/thanos
-    tag: v0.37.2
+    tag: v0.38.0
     sha: ""
 
   ## Set a Label Selector to filter watched prometheus and prometheusAgent
@@ -3928,7 +3931,7 @@ prometheus:
     image:
       registry: quay.io
       repository: prometheus/prometheus
-      tag: v3.2.1
+      tag: v3.3.0
       sha: ""
 
     ## Tolerations for use with node taints
@@ -5007,7 +5010,7 @@ thanosRuler:
     image:
       registry: quay.io
       repository: thanos/thanos
-      tag: v0.37.2
+      tag: v0.38.0
       sha: ""
 
     ## Namespaces to be selected for PrometheusRules discovery.
@@ -5300,8 +5303,10 @@ thanosRuler:
 ##
 cleanPrometheusOperatorObjectNames: false
 
-## Extra manifests to deploy as an array
-extraManifests: []
+## Extra manifests to deploy.  Can be of type dict or list.
+## If dict, keys are ignored and only values are used.
+## Items contained within extraObjects can be defined as dict or string and are passed through tpl.
+extraManifests: null
   # - apiVersion: v1
   #   kind: ConfigMap
   #   metadata:
@@ -5309,3 +5314,18 @@ extraManifests: []
   #     name: prometheus-extra
   #   data:
   #     extra-data: "value"
+  #
+  # can also be defined as a string, useful for templating field names
+  # - |
+  #   apiVersion: v1
+  #   kind: Secret
+  #   type: Opaque
+  #   metadata:
+  #     name: super-secret
+  #     labels:
+  #       {{- range $key, $value := .Values.commonLabels }}
+  #       {{ $key }}: {{ $value }}
+  #       {{- end }}
+  #   data:
+  #     plaintext: Zm9vYmFy
+  #     templated: '{{ print "foobar" | upper | b64enc }}'
