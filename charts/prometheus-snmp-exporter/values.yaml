@@ -36,7 +36,13 @@ containerSecurityContext:
 customLabels: {}
   # app: snmp-exporter
 
-# config:
+## Custom snmp-exporter configuration
+# This will replace the container's default configuration but that is still available at /etc/snmp_exporter/snmp.yml and can be used in addition via `extraArgs`
+# config: |-
+#   auths:
+#     custom_v1:
+#       community: custom
+#       version: 1
 
 extraConfigmapMounts: []
   # - name: snmp-exporter-configmap
@@ -129,7 +135,7 @@ ingress:
 podAnnotations: {}
 
 extraArgs: []
-#  --history.limit=1000
+# - --history.limit=1000
 
 envFrom: []
 #  - secretRef:
@@ -141,18 +147,28 @@ replicas: 1
 # revisionHistoryLimit: 3
 
 ## Monitors ConfigMap changes and POSTs to a URL
-## Ref: https://github.com/jimmidyson/configmap-reload
+## Ref: https://github.com/prometheus-operator/prometheus-operator/tree/main/cmd/prometheus-config-reloader
 ##
 configmapReload:
   ## configmap-reload container name
   ##
+  enabled: false
   name: configmap-reload
+
+  extraArgs: []
+  # - "--watched-dir=/etc/configuration"
+
+  # Mounts extraVolumes specified for snmp-exporter pod. Can use projected volumes to mounts multiple configMaps into same directory
+  extraVolumeMounts: []
+  # - name: projeted-volume
+  #   mountPath: "/etc/configuration"
+  #   readOnly: true
 
   ## configmap-reload container image
   ##
   image:
     repository: quay.io/prometheus-operator/prometheus-config-reloader
-    tag: v0.79.2
+    tag: v0.81.0
     pullPolicy: IfNotPresent
 
   ## configmap-reload resource requests and limits

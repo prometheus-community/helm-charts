@@ -104,9 +104,9 @@ spec:
         summary: An Alertmanager instance failed to send notifications.
       expr: |-
         (
-          rate(alertmanager_notifications_failed_total{job="{{ $alertmanagerJob }}",namespace="{{ $namespace }}"}[5m])
+          rate(alertmanager_notifications_failed_total{job="{{ $alertmanagerJob }}",namespace="{{ $namespace }}"}[15m])
         /
-          ignoring (reason) group_left rate(alertmanager_notifications_total{job="{{ $alertmanagerJob }}",namespace="{{ $namespace }}"}[5m])
+          ignoring (reason) group_left rate(alertmanager_notifications_total{job="{{ $alertmanagerJob }}",namespace="{{ $namespace }}"}[15m])
         )
         > 0.01
       for: {{ dig "AlertmanagerFailedToSendAlerts" "for" "5m" .Values.customRules }}
@@ -138,9 +138,9 @@ spec:
         summary: All Alertmanager instances in a cluster failed to send notifications to a critical integration.
       expr: |-
         min by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}namespace,service, integration) (
-          rate(alertmanager_notifications_failed_total{job="{{ $alertmanagerJob }}",namespace="{{ $namespace }}", integration=~`.*`}[5m])
+          rate(alertmanager_notifications_failed_total{job="{{ $alertmanagerJob }}",namespace="{{ $namespace }}", integration=~`.*`}[15m])
         /
-          ignoring (reason) group_left rate(alertmanager_notifications_total{job="{{ $alertmanagerJob }}",namespace="{{ $namespace }}", integration=~`.*`}[5m])
+          ignoring (reason) group_left rate(alertmanager_notifications_total{job="{{ $alertmanagerJob }}",namespace="{{ $namespace }}", integration=~`.*`}[15m])
         )
         > 0.01
       for: {{ dig "AlertmanagerClusterFailedToSendAlerts" "for" "5m" .Values.customRules }}
@@ -172,9 +172,9 @@ spec:
         summary: All Alertmanager instances in a cluster failed to send notifications to a non-critical integration.
       expr: |-
         min by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}namespace,service, integration) (
-          rate(alertmanager_notifications_failed_total{job="{{ $alertmanagerJob }}",namespace="{{ $namespace }}", integration!~`.*`}[5m])
+          rate(alertmanager_notifications_failed_total{job="{{ $alertmanagerJob }}",namespace="{{ $namespace }}", integration!~`.*`}[15m])
         /
-          ignoring (reason) group_left rate(alertmanager_notifications_total{job="{{ $alertmanagerJob }}",namespace="{{ $namespace }}", integration!~`.*`}[5m])
+          ignoring (reason) group_left rate(alertmanager_notifications_total{job="{{ $alertmanagerJob }}",namespace="{{ $namespace }}", integration!~`.*`}[15m])
         )
         > 0.01
       for: {{ dig "AlertmanagerClusterFailedToSendAlerts" "for" "5m" .Values.customRules }}

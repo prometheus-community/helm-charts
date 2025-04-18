@@ -40,3 +40,19 @@ See [Customizing the Chart Before Installing](https://helm.sh/docs/intro/using_h
 ```console
 helm show values prometheus-community/prometheus-systemd-exporter
 ```
+
+### Exported Systemd units
+
+Default values generate metrics for `kubelet.service` and `docker.service` systemd units.
+
+Units to generate metrics for are configurable by means of `config.systemd.collector.unitInclude`.
+
+To generate metrics for all units override default values with:
+
+```yaml
+config:
+  systemd:
+    collector:
+      unitInclude:
+        - '.+'
+```

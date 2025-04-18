@@ -41,6 +41,9 @@ spec:
 {{- if .Values.server.priorityClassName }}
       priorityClassName: "{{ .Values.server.priorityClassName }}"
 {{- end }}
+{{- if .Values.server.runtimeClassName }}
+      runtimeClassName: "{{ .Values.server.runtimeClassName }}"
+{{- end }}
 {{- if .Values.server.schedulerName }}
       schedulerName: "{{ .Values.server.schedulerName }}"
 {{- end }}
@@ -63,9 +66,9 @@ spec:
         {{- if .Values.configmapReload.prometheus.enabled }}
         - name: {{ template "prometheus.name" . }}-{{ .Values.server.name }}-{{ .Values.configmapReload.prometheus.name }}
           {{- if .Values.configmapReload.prometheus.image.digest }}
-          image: "{{ .Values.configmapReload.prometheus.image.repository }}@{{ .Values.configmapReload.prometheus.image.digest }}"
+          image: "{{ tpl .Values.configmapReload.prometheus.image.repository . }}@{{ tpl .Values.configmapReload.prometheus.image.digest . }}"
           {{- else }}
-          image: "{{ .Values.configmapReload.prometheus.image.repository }}:{{ .Values.configmapReload.prometheus.image.tag }}"
+          image: "{{ tpl .Values.configmapReload.prometheus.image.repository . }}:{{ tpl .Values.configmapReload.prometheus.image.tag . }}"
           {{- end }}
           imagePullPolicy: "{{ .Values.configmapReload.prometheus.image.pullPolicy }}"
           {{- with .Values.configmapReload.prometheus.containerSecurityContext }}
@@ -137,9 +140,9 @@ spec:
 
         - name: {{ template "prometheus.name" . }}-{{ .Values.server.name }}
           {{- if .Values.server.image.digest }}
-          image: "{{ .Values.server.image.repository }}@{{ .Values.server.image.digest }}"
+          image: "{{ tpl .Values.server.image.repository . }}@{{ tpl .Values.server.image.digest . }}"
           {{- else }}
-          image: "{{ .Values.server.image.repository }}:{{ .Values.server.image.tag | default .Chart.AppVersion }}"
+          image: "{{ tpl .Values.server.image.repository . }}:{{ tpl .Values.server.image.tag . | default .Chart.AppVersion }}"
           {{- end }}
           imagePullPolicy: "{{ .Values.server.image.pullPolicy }}"
           {{- with .Values.server.command }}

@@ -56,6 +56,37 @@ spec:
         {{- end }}
       {{- end }}
 {{- end }}
+{{- if not (.Values.defaultRules.disabled.KubeNodePressure | default false) }}
+    - alert: KubeNodePressure
+      annotations:
+{{- if .Values.defaultRules.additionalRuleAnnotations }}
+{{ toYaml .Values.defaultRules.additionalRuleAnnotations | indent 8 }}
+{{- end }}
+{{- if .Values.defaultRules.additionalRuleGroupAnnotations.kubernetesSystem }}
+{{ toYaml .Values.defaultRules.additionalRuleGroupAnnotations.kubernetesSystem | indent 8 }}
+{{- end }}
+        description: '{{`{{`}} $labels.node {{`}}`}} on cluster {{`{{`}} $labels.cluster {{`}}`}} has active Condition {{`{{`}} $labels.condition {{`}}`}}. This is caused by resource usage exceeding eviction thresholds.'
+        runbook_url: {{ .Values.defaultRules.runbookUrl }}/kubernetes/kubenodepressure
+        summary: Node has as active Condition.
+      expr: |-
+        kube_node_status_condition{job="{{ $kubeStateMetricsJob }}",condition=~"(MemoryPressure|DiskPressure|PIDPressure)",status="true"} == 1
+        and on ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster, node)
+        kube_node_spec_unschedulable{job="{{ $kubeStateMetricsJob }}"} == 0
+      for: {{ dig "KubeNodePressure" "for" "10m" .Values.customRules }}
+      {{- with .Values.defaultRules.keepFiringFor }}
+      keep_firing_for: "{{ . }}"
+      {{- end }}
+      labels:
+        severity: {{ dig "KubeNodePressure" "severity" "info" .Values.customRules }}
+      {{- if or .Values.defaultRules.additionalRuleLabels .Values.defaultRules.additionalRuleGroupLabels.kubernetesSystem }}
+        {{- with .Values.defaultRules.additionalRuleLabels }}
+          {{- toYaml . | nindent 8 }}
+        {{- end }}
+        {{- with .Values.defaultRules.additionalRuleGroupLabels.kubernetesSystem }}
+          {{- toYaml . | nindent 8 }}
+        {{- end }}
+      {{- end }}
+{{- end }}
 {{- if not (.Values.defaultRules.disabled.KubeNodeUnreachable | default false) }}
     - alert: KubeNodeUnreachable
       annotations:
@@ -147,6 +178,40 @@ spec:
       {{- end }}
       labels:
         severity: {{ dig "KubeNodeReadinessFlapping" "severity" "warning" .Values.customRules }}
+      {{- if or .Values.defaultRules.additionalRuleLabels .Values.defaultRules.additionalRuleGroupLabels.kubernetesSystem }}
+        {{- with .Values.defaultRules.additionalRuleLabels }}
+          {{- toYaml . | nindent 8 }}
+        {{- end }}
+        {{- with .Values.defaultRules.additionalRuleGroupLabels.kubernetesSystem }}
+          {{- toYaml . | nindent 8 }}
+        {{- end }}
+      {{- end }}
+{{- end }}
+{{- if not (.Values.defaultRules.disabled.KubeNodeEviction | default false) }}
+    - alert: KubeNodeEviction
+      annotations:
+{{- if .Values.defaultRules.additionalRuleAnnotations }}
+{{ toYaml .Values.defaultRules.additionalRuleAnnotations | indent 8 }}
+{{- end }}
+{{- if .Values.defaultRules.additionalRuleGroupAnnotations.kubernetesSystem }}
+{{ toYaml .Values.defaultRules.additionalRuleGroupAnnotations.kubernetesSystem | indent 8 }}
+{{- end }}
+        description: Node {{`{{`}} $labels.node {{`}}`}} on {{`{{`}} $labels.cluster {{`}}`}} is evicting Pods due to {{`{{`}} $labels.eviction_signal {{`}}`}}.  Eviction occurs when eviction thresholds are crossed, typically caused by Pods exceeding RAM/ephemeral-storage limits.
+        runbook_url: {{ .Values.defaultRules.runbookUrl }}/kubernetes/kubenodeeviction
+        summary: Node is evicting pods.
+      expr: |-
+        sum(rate(kubelet_evictions{job="kubelet", metrics_path="/metrics"}[15m])) by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster, eviction_signal, instance)
+        * on ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster, instance) group_left(node)
+        max by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster, instance, node) (
+          kubelet_node_name{job="kubelet", metrics_path="/metrics"}
+        )
+        > 0
+      for: {{ dig "KubeNodeEviction" "for" "0s" .Values.customRules }}
+      {{- with .Values.defaultRules.keepFiringFor }}
+      keep_firing_for: "{{ . }}"
+      {{- end }}
+      labels:
+        severity: {{ dig "KubeNodeEviction" "severity" "info" .Values.customRules }}
       {{- if or .Values.defaultRules.additionalRuleLabels .Values.defaultRules.additionalRuleGroupLabels.kubernetesSystem }}
         {{- with .Values.defaultRules.additionalRuleLabels }}
           {{- toYaml . | nindent 8 }}

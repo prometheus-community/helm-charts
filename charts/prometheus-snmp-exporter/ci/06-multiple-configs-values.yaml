@@ -1,0 +1,51 @@
+## Test case: set multiple custom snmp-exporter configs whilst using configmap-reloader
+configmapReload:
+  enabled: true
+  extraVolumeMounts:
+    - name: extra-config
+      mountPath: /etc/configuration
+      readOnly: true
+  extraArgs:
+    - --watched-dir=/etc/configuration
+
+extraArgs:
+  - --config.file=/etc/configuration/config.yaml
+
+config: |-
+  auths:
+    custom_v1:
+      community: custom
+      version: 1
+  modules:
+    custom:
+      walk:
+      - 1.2.3.4.5.6.7.8.9.10.11
+      metrics:
+      - name: customMetric
+        oid: 1.2.3.4.5.6.7.8.9.10.11.1
+        type: gauge
+        help: A custom metric. - 1.2.3.4.5.6.7.8.9.10.11.1
+
+extraConfigmapMounts:
+  - name: extra-config
+    mountPath: /etc/configuration
+    configMap: prometheus-snmp-exporter-extra-config
+    readOnly: true
+
+extraManifests:
+  - |
+    apiVersion: v1
+    kind: ConfigMap
+    metadata:
+      name: prometheus-snmp-exporter-extra-config
+    data:
+      config.yaml: |-
+        modules:
+          another_custom:
+            walk:
+            - 2.2.3.4.5.6.7.8.9.10.11
+            metrics:
+            - name: anotherCustomMetric
+              oid: 2.2.3.4.5.6.7.8.9.10.11.1
+              type: gauge
+              help: Another custom metric. - 2.2.3.4.5.6.7.8.9.10.11.1
