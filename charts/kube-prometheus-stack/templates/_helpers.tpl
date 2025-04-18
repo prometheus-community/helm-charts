@@ -160,6 +160,17 @@ Use the grafana namespace override for multi-namespace deployments in combined c
 {{- end -}}
 
 {{/*
+Use the Alertmanager namespace override for multi-namespace deployments in combined charts
+*/}}
+{{- define "kube-prometheus-stack-alertmanager.namespace" -}}
+  {{- if .Values.alertmanager.namespaceOverride -}}
+    {{- .Values.alertmanager.namespaceOverride -}}
+  {{- else -}}
+    {{- include "kube-prometheus-stack.namespace" . -}}
+  {{- end -}}
+{{- end -}}
+
+{{/*
 Allow kube-state-metrics job name to be overridden
 */}}
 {{- define "kube-prometheus-stack-kube-state-metrics.name" -}}
