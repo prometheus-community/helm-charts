@@ -1,3 +1,4 @@
+{{- if and .Values.webhooks.enabled.prometheusrulevalidate .Values.webhooks.enabled.alertmanagerconfigsvalidate }}
 apiVersion: admissionregistration.k8s.io/v1
 kind: ValidatingWebhookConfiguration
 metadata:
@@ -21,6 +22,7 @@ metadata:
     {{- toYaml . | nindent 4 }}
     {{- end }}
 webhooks:
+  {{- if .Values.webhooks.enabled.prometheusrulevalidate }}
   - name: prometheusrulevalidate.monitoring.coreos.com
     failurePolicy: {{ default "Fail" .Values.webhooks.failurePolicy }}
     {{- with .Values.webhooks.namespaceSelector }}
@@ -48,6 +50,8 @@ webhooks:
     timeoutSeconds: {{ default 10 .Values.webhooks.timeoutSeconds }}
     admissionReviewVersions: ["v1", "v1beta1"]
     sideEffects: None
+  {{- end }}
+  {{- if .Values.webhooks.enabled.alertmanagerconfigsvalidate }}
   - name: alertmanagerconfigsvalidate.monitoring.coreos.com
     failurePolicy: {{ default "Fail" .Values.webhooks.failurePolicy }}
     {{- with .Values.webhooks.namespaceSelector }}
@@ -75,3 +79,5 @@ webhooks:
     timeoutSeconds: {{ default 10 .Values.webhooks.timeoutSeconds }}
     admissionReviewVersions: ["v1", "v1beta1"]
     sideEffects: None
+  {{- end }}
+{{- end }}
