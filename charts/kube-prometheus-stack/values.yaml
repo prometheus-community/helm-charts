@@ -392,6 +392,9 @@ alertmanager:
   ##
   enabled: true
 
+  # Optional: Override the namespace where Alertmanager will be deployed.
+  namespaceOverride: ""
+
   ## Annotations for Alertmanager
   ##
   annotations: {}
@@ -3281,7 +3284,7 @@ prometheusOperator:
   thanosImage:
     registry: quay.io
     repository: thanos/thanos
-    tag: v0.37.2
+    tag: v0.38.0
     sha: ""
 
   ## Set a Label Selector to filter watched prometheus and prometheusAgent
@@ -3928,7 +3931,7 @@ prometheus:
     image:
       registry: quay.io
       repository: prometheus/prometheus
-      tag: v3.2.1
+      tag: v3.3.0
       sha: ""
 
     ## Tolerations for use with node taints
@@ -5007,7 +5010,7 @@ thanosRuler:
     image:
       registry: quay.io
       repository: thanos/thanos
-      tag: v0.37.2
+      tag: v0.38.0
       sha: ""
 
     ## Namespaces to be selected for PrometheusRules discovery.
@@ -5300,8 +5303,10 @@ thanosRuler:
 ##
 cleanPrometheusOperatorObjectNames: false
 
-## Extra manifests to deploy as an array
-extraManifests: []
+## Extra manifests to deploy.  Can be of type dict or list.
+## If dict, keys are ignored and only values are used.
+## Items contained within extraObjects can be defined as dict or string and are passed through tpl.
+extraManifests: null
   # - apiVersion: v1
   #   kind: ConfigMap
   #   metadata:
@@ -5309,3 +5314,18 @@ extraManifests: []
   #     name: prometheus-extra
   #   data:
   #     extra-data: "value"
+  #
+  # can also be defined as a string, useful for templating field names
+  # - |
+  #   apiVersion: v1
+  #   kind: Secret
+  #   type: Opaque
+  #   metadata:
+  #     name: super-secret
+  #     labels:
+  #       {{- range $key, $value := .Values.commonLabels }}
+  #       {{ $key }}: {{ $value }}
+  #       {{- end }}
+  #   data:
+  #     plaintext: Zm9vYmFy
+  #     templated: '{{ print "foobar" | upper | b64enc }}'
