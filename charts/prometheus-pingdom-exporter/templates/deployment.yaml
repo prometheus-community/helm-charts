@@ -22,17 +22,33 @@ spec:
       containers:
         - name: {{ .Chart.Name }}
           args:
+            {{ with .Values.config }}
             - "-default-uptime-slo"
-            - {{ .Values.config.defaultUptimeSLO | quote }}
+            - {{ .defaultUptimeSLO | quote }}
             - "-metrics-path"
             - "/metrics"
             - "-outage-check-period"
-            - {{ .Values.config.outageCheckPeriodInDays | quote }}
+            - {{ .outageCheckPeriodInDays | quote }}
             - "-port"
-            - {{ .Values.service.port | quote }}
-            {{- if gt (len .Values.config.tags ) 0 }}
-            - -tags
-            - {{ join "," .Values.config.tags | quote }}
+            - {{ $.Values.service.port | quote }}
+            {{- if gt (len .tags ) 0 }}
+            - "-tags"
+            - {{ join "," .tags | quote }}
+            {{- end }}
+            {{- if kindIs "bool" .parserTags }}
+            {{- if .parserTags }}
+            - "-parser-tags"
+            - "true"
+            {{- if .tagFormat }}
+            - "-tag-format"
+            - {{ .tagFormat | quote }}
+            {{- end }}
+            {{- if gt (len .tagExtraLabels ) 0 }}
+            - "-tag-extra-labels"
+            - {{ join "," .tagExtraLabels | quote }}
+            {{- end }}
+            {{- end }}
+            {{- end }}
             {{- end }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}

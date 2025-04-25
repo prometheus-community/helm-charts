@@ -21,6 +21,11 @@ kubeVersionOverride: ""
 ## For info on converting Alertmanagerconfigs,
 ## see https://prometheus-operator.dev/docs/user-guides/webhook/#converting-alertmanagerconfig-resources
 webhooks:
+  enabled:
+    prometheusruleValidate: true
+    alertmanagerconfigsValidate: true
+    prometheusruleMutate: true
+
   failurePolicy: Fail
   timeoutSeconds: 10
   namespaceSelector: {}
@@ -60,7 +65,7 @@ jobs:
   image:
     registry: registry.k8s.io
     repository: ingress-nginx/kube-webhook-certgen
-    tag: "v1.5.1"
+    tag: "v1.5.2"
     ## sha256 digest overrides tag
     # digest: 4d99688e557396f5baa150e019ff7d5b7334f9b9f9a8dab64038c5c2a006f6b5
     digest: ""
@@ -167,6 +172,13 @@ podDisruptionBudget: {}
 
 ## affinity
 affinity: {}
+# affinity: |
+#   podAntiAffinity:
+#     requiredDuringSchedulingIgnoredDuringExecution:
+#       - labelSelector:
+#           matchLabels:
+#             {{- include "prometheus-operator-admission-webhook.selectorLabels" . | nindent 10 }}
+#         topologyKey: kubernetes.io/hostname
 
 ## automountServiceAccountToken allows mounting the service account token automatically
 ## for other containers to consume

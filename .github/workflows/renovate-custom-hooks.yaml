@@ -1,4 +1,4 @@
-name: Renovate Bump Chart Version
+name: renovate hooks
 
 on:
   pull_request:
@@ -8,7 +8,7 @@ on:
       - 'charts/**/*'
 
 jobs:
-  renovate-bump-chart-version:
+  renovate-post-run:
     name: Renovate Bump Chart Version
     runs-on: ubuntu-latest
     if: github.actor == 'renovate[bot]'
@@ -21,13 +21,13 @@ jobs:
       # Used App:
       # https://github.com/organizations/prometheus-community/settings/apps/helm-charts-renovate-helper.
       # Ref: https://github.com/prometheus-community/helm-charts/issues/5213.
-      - uses: actions/create-github-app-token@af35edadc00be37caa72ed9f3e6d5f7801bfdf09 # v1.11.7
+      - uses: actions/create-github-app-token@3ff1caaa28b64c9cc276ce0a02e2ff584f3900c5 # v2.0.2
         id: app-token
         with:
           app-id: 1179738
           private-key: ${{ secrets.APP_RENOVATE_HELPER_PRIVATE_KEY }}
 
-      - uses: actions/setup-python@42375524e23c412d93fb67b49958b491fce71c38 # v5.4.0
+      - uses: actions/setup-python@8d9ed9ac5c53483de85588cdf95a591a75ab9f55 # v5.5.0
         with:
           python-version: '3.13'
 
@@ -89,49 +89,61 @@ jobs:
           
           # Fetch added/modified files in the target directory
           MODIFIED_FILES=$(git diff --diff-filter=ACM --name-only HEAD -- "$TARGET_DIR")
-            
-          # Initialize JSON structure
-          FILE_CHANGES_JSON='{ "deletions": [], "additions": [] }'
+          
+          # Create a temporary file for JSON output
+          FILE_CHANGES_JSON_FILE=$(mktemp)
+          
+          # Initialize JSON structure in the file
+          echo '{ "deletions": [], "additions": [] }' > "$FILE_CHANGES_JSON_FILE"
           
           # Add deletions
           for file in $DELETED_FILES; do
-            FILE_CHANGES_JSON=$(echo "$FILE_CHANGES_JSON" | jq --arg path "$file" '.deletions += [{"path": $path}]')
+            jq --arg path "$file" '.deletions += [{"path": $path}]' "$FILE_CHANGES_JSON_FILE" > "$FILE_CHANGES_JSON_FILE.tmp"
+            mv "$FILE_CHANGES_JSON_FILE.tmp" "$FILE_CHANGES_JSON_FILE"
           done
           
           # Add additions (new or modified files)
           for file in $MODIFIED_FILES; do
-            BASE64_CONTENT=$(base64 -w 0 <"$file")
-            FILE_CHANGES_JSON=$(echo "$FILE_CHANGES_JSON" | jq --arg path "$file" --arg content "$BASE64_CONTENT" '.additions += [{"path": $path, "contents": $content}]')
+            BASE64_CONTENT=$(base64 -w 0 <"$file")  # Encode file content
+            jq --arg path "$file" --arg content "$BASE64_CONTENT" \
+              '.additions += [{"path": $path, "contents": $content}]' "$FILE_CHANGES_JSON_FILE" > "$FILE_CHANGES_JSON_FILE.tmp"
+            mv "$FILE_CHANGES_JSON_FILE.tmp" "$FILE_CHANGES_JSON_FILE"
           done
           
-          # Construct final JSON using jq
-          JSON_PAYLOAD=$(jq -n --arg repo "$GITHUB_REPOSITORY" \
-                              --arg branch "$GITHUB_HEAD_REF" \
-                              --arg message "post upgrade changes from renovate" \
-                              --arg expectedOid "$GITHUB_SHA" \
-                              --argjson fileChanges "$FILE_CHANGES_JSON" \
-                              '{
-                                query: "mutation ($input: CreateCommitOnBranchInput!) {
-                                  createCommitOnBranch(input: $input) { 
-                                    commit { 
-                                      url 
-                                    } 
-                                  } 
-                                }",
-                                variables: {
-                                  input: {
-                                    branch: {
-                                      repositoryNameWithOwner: $repo,
-                                      branchName: $branch
-                                    },
-                                    message: { headline: $message },
-                                    fileChanges: $fileChanges,
-                                    expectedHeadOid: $expectedOid
-                                  }
-                                }
-                              }')
+          # Create a temporary file for the final JSON payload
+          JSON_PAYLOAD_FILE=$(mktemp)
+          
+          # Construct the final JSON using jq and store it in a file
+          jq -n --arg repo "$GITHUB_REPOSITORY" \
+                --arg branch "$GITHUB_HEAD_REF" \
+                --arg message "post upgrade changes from renovate" \
+                --arg expectedOid "$GITHUB_SHA" \
+                --slurpfile fileChanges "$FILE_CHANGES_JSON_FILE" \
+                '{
+                  query: "mutation ($input: CreateCommitOnBranchInput!) {
+                    createCommitOnBranch(input: $input) { 
+                      commit { 
+                        url 
+                      } 
+                    } 
+                  }",
+                  variables: {
+                    input: {
+                      branch: {
+                        repositoryNameWithOwner: $repo,
+                        branchName: $branch
+                      },
+                      message: { headline: $message },
+                      fileChanges: $fileChanges[0],
+                      expectedHeadOid: $expectedOid
+                    }
+                  }
+                }' > "$JSON_PAYLOAD_FILE"
           
           # Call GitHub API
           curl https://api.github.com/graphql -f \
                -sSf -H "Authorization: Bearer $GITHUB_TOKEN" \
-               --data "$JSON_PAYLOAD"
+               --data "@$JSON_PAYLOAD_FILE"
+          
+          # Clean up temporary files
+          rm "$FILE_CHANGES_JSON_FILE" "$JSON_PAYLOAD_FILE"
