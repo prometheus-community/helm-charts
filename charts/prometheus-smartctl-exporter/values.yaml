@@ -38,75 +38,67 @@ prometheusRules:
   # Add Extra labels if needed. Prometeus operator may need them to find it.
   extraLabels: {}
   # release: prometheus-operator
-  defaultRules:
-    # Annotation `message` was superseded by `description` in 0.14.0 but remained for compatibility
-    - alert: SmartCTLDeviceMediaErrors
+  rules:
+    smartCTLDeviceMediaErrors:
+      alert: SmartCTLDeviceMediaErrors
       expr: smartctl_device_media_errors != 0
       for: 1m
       annotations:
         summary: Device has media errors
         description: |
           Device {{ "{{ $labels.device }}" }} on instance {{ "{{ $labels.instance }}" }} has media errors
-        message: |
-          Device {{ "{{ $labels.device }}" }} on instance {{ "{{ $labels.instance }}" }} has media errors
       labels:
         severity: critical
-    - alert: SmartCTLDeviceCriticalWarning
+    smartCTLDeviceCriticalWarning:
+      alert: SmartCTLDeviceCriticalWarning
       expr: smartctl_device_critical_warning != 0
       for: 1m
       annotations:
         summary: Device has critical controller warnings
         description: |
           Device {{ "{{ $labels.device }}" }} on instance {{ "{{ $labels.instance }}" }} has critical controller warnings
-        message: |
-          Device {{ "{{ $labels.device }}" }} on instance {{ "{{ $labels.instance }}" }} has critical controller warnings
       labels:
         severity: critical
-    - alert: SmartCTLDeviceAvailableSpareUnderThreshold
+    smartCTLDeviceAvailableSpareUnderThreshold:
+      alert: SmartCTLDeviceAvailableSpareUnderThreshold
       expr: smartctl_device_available_spare_threshold > smartctl_device_available_spare
       for: 1m
       annotations:
         summary: Device is under available spare threshold
         description: |
           Device {{ "{{ $labels.device }}" }} on instance {{ "{{ $labels.instance }}" }} is under available spare threshold
-        message: |
-          Device {{ "{{ $labels.device }}" }} on instance {{ "{{ $labels.instance }}" }} is under available spare threshold
       labels:
         severity: warning
-    - alert: SmartCTLDeviceStatus
+    smartCTLDeviceStatus:
+      alert: SmartCTLDeviceStatus
       expr: smartctl_device_status != 1
       for: 1m
       annotations:
         summary: Device has bad status
         description: |
           Device {{ "{{ $labels.device }}" }} on instance {{ "{{ $labels.instance }}" }} has bad status
-        message: |
-          Device {{ "{{ $labels.device }}" }} on instance {{ "{{ $labels.instance }}" }} has bad status
       labels:
         severity: critical
-    - alert: SmartCTLDInterfaceSlow
+    smartCTLDInterfaceSlow:
+      alert: SmartCTLDInterfaceSlow
       expr: smartctl_device_interface_speed{speed_type="current"} != on(device, instance, namespace, pod) smartctl_device_interface_speed{speed_type="max"}
       for: 1m
       annotations:
         summary: Device interface is slower then it should be
         description: |
           Device {{ "{{ $labels.device }}" }} on instance {{ "{{ $labels.instance }}" }} interface is slower then it should be
-        message: |
-          Device {{ "{{ $labels.device }}" }} on instance {{ "{{ $labels.instance }}" }} interface is slower then it should be
       labels:
         severity: warning
-    - alert: SmartCTLDDeviceTemperature
+    smartCTLDDeviceTemperature:
+      alert: SmartCTLDDeviceTemperature
       expr: smartctl_device_temperature{temperature_type="current"} > 60
       for: 1m
       annotations:
         summary: Device has temperature higher than 60°C
         description: |
           Device {{ "{{ $labels.device }}" }} on instance {{ "{{ $labels.instance }}" }} has temperature higher than 60°C
-        message: |
-          Device {{ "{{ $labels.device }}" }} on instance {{ "{{ $labels.instance }}" }} has temperature higher than 60°C
       labels:
         severity: warning
-  customRules: []
 
 image:
   repository: quay.io/prometheuscommunity/smartctl-exporter
