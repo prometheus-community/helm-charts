@@ -34,7 +34,7 @@ spec:
 {{- if .Values.defaultRules.additionalRuleGroupAnnotations.kubernetesResources }}
 {{ toYaml .Values.defaultRules.additionalRuleGroupAnnotations.kubernetesResources | indent 8 }}
 {{- end }}
-        description: Cluster {{`{{`}} $labels.cluster {{`}}`}} has overcommitted CPU resource requests for Pods by {{`{{`}} $value {{`}}`}} CPU shares and cannot tolerate node failure.
+        description: Cluster {{`{{`}} $labels.cluster {{`}}`}} has overcommitted CPU resource requests for Pods by {{`{{`}} printf "%.2f" $value {{`}}`}} CPU shares and cannot tolerate node failure.
         runbook_url: {{ .Values.defaultRules.runbookUrl }}/kubernetes/kubecpuovercommit
         summary: Cluster has overcommitted CPU resource requests.
       expr: |-
@@ -128,7 +128,7 @@ spec:
 {{- if .Values.defaultRules.additionalRuleGroupAnnotations.kubernetesResources }}
 {{ toYaml .Values.defaultRules.additionalRuleGroupAnnotations.kubernetesResources | indent 8 }}
 {{- end }}
-        description: Cluster {{`{{`}} $labels.cluster {{`}}`}}  has overcommitted memory resource requests for Namespaces.
+        description: Cluster {{`{{`}} $labels.cluster {{`}}`}} has overcommitted memory resource requests for Namespaces.
         runbook_url: {{ .Values.defaultRules.runbookUrl }}/kubernetes/kubememoryquotaovercommit
         summary: Cluster has overcommitted memory resource requests.
       expr: |-
@@ -261,7 +261,7 @@ spec:
         summary: Processes experience elevated CPU throttling.
       expr: |-
         sum(increase(container_cpu_cfs_throttled_periods_total{container!="", job="kubelet", metrics_path="/metrics/cadvisor", }[5m])) without (id, metrics_path, name, image, endpoint, job, node)
-          /
+          / on ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster, namespace, pod, container, instance) group_left
         sum(increase(container_cpu_cfs_periods_total{job="kubelet", metrics_path="/metrics/cadvisor", }[5m])) without (id, metrics_path, name, image, endpoint, job, node)
           > ( 25 / 100 )
       for: {{ dig "CPUThrottlingHigh" "for" "15m" .Values.customRules }}

@@ -21,7 +21,7 @@ spec:
     {{- end }}
     scrapeTimeout: {{ .scrapeTimeout | default $.Values.serviceMonitor.scrapeTimeout }}
     params:
-      module: {{ .module | default $.Values.serviceMonitor.module }}
+      module: {{- toYaml (default $.Values.serviceMonitor.module .module) | nindent 6 }}
       auth: {{ .auth | default $.Values.serviceMonitor.auth }}
       target:
       - {{ .target }}
@@ -36,7 +36,7 @@ spec:
         action: replace
         {{- range $targetLabel, $replacement := .additionalMetricsRelabels | default $.Values.serviceMonitor.additionalMetricsRelabels }}
       - targetLabel: {{ $targetLabel }}
-        replacement: {{ $replacement }}
+        replacement: {{ $replacement | quote }}
         action: replace
         {{- end }}
       {{- if (or .additionalMetricsRelabelConfigs $.Values.serviceMonitor.additionalMetricsRelabelConfigs) }}

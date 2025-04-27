@@ -19,6 +19,9 @@ metadata:
 spec:
   secretName: {{ template "prometheus-operator-admission-webhook.fullname" . }}-root-cert
   duration: {{ .Values.certManager.rootCert.duration | default "43800h0m0s" | quote }}
+  {{- with .Values.certManager.rootCert.revisionHistoryLimit }}
+  revisionHistoryLimit: {{ . }}
+  {{- end }}
   issuerRef:
     name: {{ template "prometheus-operator-admission-webhook.fullname" . }}-self-signed-issuer
   commonName: "ca.webhook.prometheus-operator-admission-webhook"
@@ -44,6 +47,9 @@ metadata:
 spec:
   secretName: {{ template "prometheus-operator-admission-webhook.fullname" . }}-cert
   duration: {{ .Values.certManager.webhookCert.duration | default "8760h0m0s" | quote }}
+  {{- with .Values.certManager.webhookCert.revisionHistoryLimit }}
+  revisionHistoryLimit: {{ . }}
+  {{- end }}
   issuerRef:
     {{- if .Values.certManager.issuerRef }}
     {{- toYaml .Values.certManager.issuerRef | nindent 4 }}

@@ -1,8 +1,8 @@
 # Prometheus Pingdom Exporter
 
-- **Source:** <https://github.com/giantswarm/prometheus-pingdom-exporter>
+- **Source:** <https://github.com/kokuwaio/pingdom-exporter>
 
-The [prometheus-pingdom-exporter](https://github.com/giantswarm/prometheus-pingdom-exporter) processes [Pingdom](https://www.pingdom.com/) uptime check results for consumption by Prometheus.
+The [prometheus-pingdom-exporter](https://github.com/kokuwaio/pingdom-exporter) processes [Pingdom](https://www.pingdom.com/) uptime check results for consumption by Prometheus.
 
 ## Prerequisites
 

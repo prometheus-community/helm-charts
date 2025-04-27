@@ -6,6 +6,10 @@ This chart bootstraps a Prometheus [OpenCost exporter](https://www.opencost.io/d
 
 The original source for this Helm chart is <https://github.com/opencost/opencost-helm-chart>.
 
+## **Deprecated**
+
+**This chart is deprecated in favor of the the [upstream support](https://opencost.io/docs/installation/prometheus/). The chart source code will be removed in 1st Jun 2025.**
+
 ## Prerequisites
 
 - Kubernetes 1.23+
