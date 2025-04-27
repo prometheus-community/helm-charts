@@ -17,7 +17,22 @@ spec:
       rules:
       {{- range .Values.prometheusRules.rules }}
         {{- if .enabled }}
-        - {{ toYaml (unset (deepCopy .) "enabled" ) | nindent 10 | trim }}
+        - alert: {{ .alert | required "A rule requires a valid `alert` clause" }}
+          expr: {{ .expr | required "A rule requires a valid `expr` clause" }}
+          {{- with .for }}
+          for: {{ . }}
+          {{- end }}
+          {{- with .keep_firing_for }}
+          keep_firing_for: {{ . }}
+          {{- end }}
+          {{- with .annotations }}
+          annotations:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .labels }}
+          labels:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
         {{- end }}
       {{- end }}
 {{- end }}
