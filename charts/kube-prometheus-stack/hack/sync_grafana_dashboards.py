@@ -142,7 +142,7 @@ data:
     # Add GrafanaDashboard custom resource
 grafana_dashboard_operator = """
 ---
-{{- if and .Values.grafana.operatorDashboardsConfigMapRef (or .Values.grafana.enabled .Values.grafana.forceDeployDashboards) (semverCompare ">=%(min_kubernetes)s" $kubeTargetVersion) (semverCompare "<%(max_kubernetes)s" $kubeTargetVersion) .Values.grafana.defaultDashboardsEnabled%(condition)s }}
+{{- if and .Values.grafana.operator.dashboardsConfigMapRefEnabled (or .Values.grafana.enabled .Values.grafana.forceDeployDashboards) (semverCompare ">=%(min_kubernetes)s" $kubeTargetVersion) (semverCompare "<%(max_kubernetes)s" $kubeTargetVersion) .Values.grafana.defaultDashboardsEnabled%(condition)s }}
 apiVersion: grafana.integreatly.org/v1beta1
 kind: GrafanaDashboard
 metadata:
@@ -156,10 +156,9 @@ metadata:
 spec:
   allowCrossNamespaceImport: true
   instanceSelector:
+    resyncPeriod: {{ .Values.grafana.operator.resyncPeriod | quote | default "10m" }}
     matchLabels:
-    {{- if $.Values.grafana.sidecar.dashboards.label }}
-        {{ $.Values.grafana.sidecar.dashboards.label }}: {{ ternary $.Values.grafana.sidecar.dashboards.labelValue "1" (not (empty $.Values.grafana.sidecar.dashboards.labelValue)) | quote }}
-    {{- end }}
+        {{ .Values.grafana.operator.matchLabels | indent 8 }}
   configMapRef:
     name: {{ printf "%%s-%%s" (include "kube-prometheus-stack.fullname" $) "%(name)s" | trunc 63 | trimSuffix "-" }}
     key: %(name)s.json
