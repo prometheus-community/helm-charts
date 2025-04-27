@@ -28,12 +28,14 @@ apiVersion: grafana.integreatly.org/v1beta1
 kind: GrafanaDashboard
 metadata:
   name: {{ printf "%s-%s" (include "kube-prometheus-stack.fullname" $) "k8s-windows-cluster-rsrc-use" | trunc 63 | trimSuffix "-" }}
+  namespace: {{ template "kube-prometheus-stack-grafana.namespace" . }}
   labels:
     {{- if $.Values.grafana.sidecar.dashboards.label }}
     {{ $.Values.grafana.sidecar.dashboards.label }}: {{ ternary $.Values.grafana.sidecar.dashboards.labelValue "1" (not (empty $.Values.grafana.sidecar.dashboards.labelValue)) | quote }}
     {{- end }}
     app: {{ template "kube-prometheus-stack.name" $ }}-grafana
 spec:
+  allowCrossNamespaceImport: true
   instanceSelector:
     matchLabels:
     {{- if $.Values.grafana.sidecar.dashboards.label }}
