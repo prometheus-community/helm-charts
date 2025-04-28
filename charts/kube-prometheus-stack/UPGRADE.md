@@ -2,7 +2,9 @@
 
 ## From 70.x to 71.x
 
-This version upgrades Prometheus-Operator to v0.82.0.
+This version upgrades Prometheus-Operator to v0.82.0
+Since [68.4.0](https://github.com/prometheus-community/helm-charts/pull/5175) it is also possible to use `crds.upgradeJob.enabled` for upgrading the CRDs.
+For traditional upgrades, please run these commands to update the CRDs before applying the upgrade.
 
 ```console
 kubectl apply --server-side -f https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/v0.82.0/example/prometheus-operator-crd/monitoring.coreos.com_alertmanagerconfigs.yaml
