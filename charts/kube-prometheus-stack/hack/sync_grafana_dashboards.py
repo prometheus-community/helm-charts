@@ -157,6 +157,7 @@ spec:
   allowCrossNamespaceImport: true
   instanceSelector:
     resyncPeriod: {{ .Values.grafana.operator.resyncPeriod | quote | default "10m" }}
+    folder: {{ .Values.grafana.operator.folder | quote }}
     matchLabels:
         {{ .Values.grafana.operator.matchLabels | indent 8 }}
   configMapRef:
