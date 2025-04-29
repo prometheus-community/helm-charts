@@ -31,6 +31,22 @@ serviceMonitor:
   relabelings: []
   metricRelabelings: []
 
+# PodMonitor may be more appropriate than Service Monitor, especially if more than 1000 Pods
+# background info: https://github.com/prometheus-operator/prometheus-operator/pull/6672, https://github.com/prometheus-operator/prometheus-operator/issues/3119
+# You most likely do not want to use a PodMonitor AND serviceMonitor at the same time.
+podMonitor:
+  enabled: false
+  # Specify namespace to load the monitor if not in the same namespace
+  # namespace: prometheus-operator
+  # Add Extra labels if needed. Prometeus operator may need them to find it.
+  extraLabels: {}
+  # release: prometheus-operator
+  interval: 60s
+  scrapeTimeout: 30s
+  # Set relabel_configs as per https://prometheus.io/docs/prometheus/latest/configuration/configuration/#relabel_config
+  relabelings: []
+  metricRelabelings: []
+
 prometheusRules:
   enabled: false
   # Specify namespace to load the rule if not in the same namespace
@@ -111,6 +127,10 @@ updateStrategy:
   rollingUpdate:
     maxUnavailable: 1
   type: RollingUpdate
+
+# optional priority class name
+# If set, the DaemonSet will use this priority class.
+priorityClassName: ""
 
 serviceAccount:
   # Specifies whether a service account should be created
