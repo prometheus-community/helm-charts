@@ -146,7 +146,7 @@ password: {{ $password | b64enc | quote }}
 Set the image with or without the registry
 */}}
 {{- define "prometheus-pushgateway.image" -}}
-{{- $registry := default (.Values.global).imageRegistry .Values.image.registry }}
+{{- $registry := default .Values.image.registry (.Values.global).imageRegistry }}
 {{- $repository := .Values.image.repository }}
 {{- $tag := default .Chart.AppVersion .Values.image.tag }}
 {{- if $registry }}
@@ -169,7 +169,7 @@ priorityClassName: {{ . | quote }}
 hostAliases:
 {{- toYaml . | nindent 2 }}
 {{- end }}
-{{- with .Values.imagePullSecrets | default (.Values.global).imagePullSecrets }}
+{{- with (.Values.global).imagePullSecrets | default .Values.imagePullSecrets }}
 imagePullSecrets:
   {{- toYaml . | nindent 2 }}
 {{- end }}
