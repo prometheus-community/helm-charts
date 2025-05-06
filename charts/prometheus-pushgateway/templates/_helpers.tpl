@@ -132,6 +132,31 @@ Define Authorization
 {{- end }}
 
 {{/*
+Define basicAuth
+*/}}
+{{- define "prometheus-pushgateway.basicAuth" -}}
+{{- $users := keys .Values.webConfiguration.basicAuthUsers }}
+{{- $user := first $users }}
+{{- $password := index .Values.webConfiguration.basicAuthUsers $user -}}
+user: {{ $user | b64enc | quote }}
+password: {{ $password | b64enc | quote }}
+{{- end }}
+
+{{/*
+Set the image with or without the registry
+*/}}
+{{- define "prometheus-pushgateway.image" -}}
+{{- $registry := default .Values.image.registry (.Values.global).imageRegistry }}
+{{- $repository := .Values.image.repository }}
+{{- $tag := default .Chart.AppVersion .Values.image.tag }}
+{{- if $registry }}
+    {{- printf "%s/%s:%s" $registry $repository $tag -}}
+{{- else -}}
+    {{- printf "%s:%s"  $repository $tag -}}
+{{- end -}}
+{{- end -}}
+
+{{/*
 Returns pod spec
 */}}
 {{- define "prometheus-pushgateway.podSpec" -}}
@@ -144,7 +169,7 @@ priorityClassName: {{ . | quote }}
 hostAliases:
 {{- toYaml . | nindent 2 }}
 {{- end }}
-{{- with .Values.imagePullSecrets }}
+{{- with (.Values.global).imagePullSecrets | default .Values.imagePullSecrets }}
 imagePullSecrets:
   {{- toYaml . | nindent 2 }}
 {{- end }}
@@ -157,7 +182,7 @@ containers:
   {{- toYaml . | nindent 2 }}
   {{- end }}
   - name: pushgateway
-    image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+    image: {{ include "prometheus-pushgateway.image" . }}
     imagePullPolicy: {{ .Values.image.pullPolicy }}
     {{- with .Values.extraVars }}
     env:
