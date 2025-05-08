@@ -565,4 +565,38 @@ spec:
         {{- end }}
       {{- end }}
 {{- end }}
+{{- if not (.Values.defaultRules.disabled.KubePdbNotEnoughHealthyPods | default false) }}
+    - alert: KubePdbNotEnoughHealthyPods
+      annotations:
+{{- if .Values.defaultRules.additionalRuleAnnotations }}
+{{ toYaml .Values.defaultRules.additionalRuleAnnotations | indent 8 }}
+{{- end }}
+{{- if .Values.defaultRules.additionalRuleGroupAnnotations.kubernetesApps }}
+{{ toYaml .Values.defaultRules.additionalRuleGroupAnnotations.kubernetesApps | indent 8 }}
+{{- end }}
+        description: PDB {{`{{`}} $labels.cluster {{`}}`}}/{{`{{`}} $labels.namespace {{`}}`}}/{{`{{`}} $labels.poddisruptionbudget {{`}}`}} expects {{`{{`}} $value {{`}}`}} more healthy pods. The desired number of healthy pods has not been met for at least 15m.
+        runbook_url: {{ .Values.defaultRules.runbookUrl }}/kubernetes/kubepdbnotenoughhealthypods
+        summary: PDB does not have enough healthy pods.
+      expr: |-
+        (
+          kube_poddisruptionbudget_status_desired_healthy{job="{{ $kubeStateMetricsJob }}", namespace=~"{{ $targetNamespace }}"}
+          -
+          kube_poddisruptionbudget_status_current_healthy{job="{{ $kubeStateMetricsJob }}", namespace=~"{{ $targetNamespace }}"}
+        )
+        > 0
+      for: {{ dig "KubePdbNotEnoughHealthyPods" "for" "15m" .Values.customRules }}
+      {{- with .Values.defaultRules.keepFiringFor }}
+      keep_firing_for: "{{ . }}"
+      {{- end }}
+      labels:
+        severity: {{ dig "KubePdbNotEnoughHealthyPods" "severity" "warning" .Values.customRules }}
+      {{- if or .Values.defaultRules.additionalRuleLabels .Values.defaultRules.additionalRuleGroupLabels.kubernetesApps }}
+        {{- with .Values.defaultRules.additionalRuleLabels }}
+          {{- toYaml . | nindent 8 }}
+        {{- end }}
+        {{- with .Values.defaultRules.additionalRuleGroupLabels.kubernetesApps }}
+          {{- toYaml . | nindent 8 }}
+        {{- end }}
+      {{- end }}
+{{- end }}
 {{- end }}
