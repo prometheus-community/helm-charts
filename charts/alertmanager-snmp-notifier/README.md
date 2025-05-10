@@ -6,7 +6,7 @@ This chart creates a [SNMP Notifier](https://github.com/maxwo/snmp_notifier) dep
 
 ## Prerequisites
 
-- Kubernetes 1.21+
+- Kubernetes 1.23+
 
 ## Get Repository Info
 
