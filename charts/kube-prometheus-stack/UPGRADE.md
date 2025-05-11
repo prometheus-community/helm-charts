@@ -1,5 +1,9 @@
 # Upgrade
 
+## From 71.x to 72.x
+
+This version adds an `enabled` flag to the `prometheusOperator.admissionWebhooks.deployment.podDisruptionBudget` settings. Users who want this chart to deploy a `podDisruptionBudget` must now set the flag `podDisruptionBudget.enabled` to `true` for each `podDisruptionBudget` resource to be created.
+
 ## From 70.x to 71.x
 
 This version upgrades Prometheus-Operator to v0.82.0
