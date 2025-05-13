@@ -153,9 +153,6 @@ metadata:
     {{- toYaml . | nindent 4 }}
   {{ end }}
   labels:
-    {{- if $.Values.grafana.sidecar.dashboards.label }}
-    {{ $.Values.grafana.sidecar.dashboards.label }}: {{ ternary $.Values.grafana.sidecar.dashboards.labelValue "1" (not (empty $.Values.grafana.sidecar.dashboards.labelValue)) | quote }}
-    {{- end }}
     app: {{ template "kube-prometheus-stack.name" $ }}-grafana
 spec:
   allowCrossNamespaceImport: true
