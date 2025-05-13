@@ -1233,6 +1233,27 @@ grafana:
 
   ## Deploy GrafanaDashboard CRDs that reference dashboards from ConfigMaps when grafana-operator is used
   ## These settings control how dashboards are integrated with the Grafana Operator
+  ## Note: End user still need to create is own kind: GrafanaDataSource for Prometheus
+  ## eg:
+  ## apiVersion: grafana.integreatly.org/v1beta1
+  ## kind: GrafanaDatasource
+  ## metadata:
+  ##   name: prometheus
+  ##   annotations: {}
+  ## spec:
+  ##   allowCrossNamespaceImport: true
+  ##   instanceSelector:
+  ##     matchLabels:
+  ##       app: grafana
+  ##   datasource:
+  ##     name: prometheus
+  ##     type: prometheus
+  ##     access: proxy
+  ##     url: http://prometheus-operated.prometheus-stack.svc.cluster.local:9090
+  ##     isDefault: true
+  ##     jsonData:
+  ##       "tlsSkipVerify": true
+  ##       "timeInterval": "5s"
   ##
   operator:
     ## Enable references to ConfigMaps containing dashboards in GrafanaDashboard CRs
@@ -1241,14 +1262,15 @@ grafana:
 
     ## Annotations for GrafanaDashboard Cr
     ##
-    ##
     annotations: {}
     ## Labels that should be matched kind: Grafana instance
     ## Example: { app: grafana, category: dashboard }
+    ##
     matchLabels: {}
 
     ## How frequently the operator should resync resources (in duration format)
     ## Controls how often dashboards are reconciled by the operator
+    ##
     resyncPeriod: 10m
 
     ## Which folder all ddashboard in Grafana General means on Root level
