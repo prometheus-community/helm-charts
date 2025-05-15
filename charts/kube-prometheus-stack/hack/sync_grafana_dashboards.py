@@ -139,6 +139,37 @@ metadata:
 data:
 '''
 
+    # Add GrafanaDashboard custom resource
+grafana_dashboard_operator = """
+---
+{{- if and .Values.grafana.operator.dashboardsConfigMapRefEnabled (or .Values.grafana.enabled .Values.grafana.forceDeployDashboards) (semverCompare ">=%(min_kubernetes)s" $kubeTargetVersion) (semverCompare "<%(max_kubernetes)s" $kubeTargetVersion) .Values.grafana.defaultDashboardsEnabled%(condition)s }}
+apiVersion: grafana.integreatly.org/v1beta1
+kind: GrafanaDashboard
+metadata:
+  name: {{ printf "%%s-%%s" (include "kube-prometheus-stack.fullname" $) "%(name)s" | trunc 63 | trimSuffix "-" }}
+  namespace: {{ template "kube-prometheus-stack-grafana.namespace" . }}
+  {{ with .Values.grafana.operator.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{ end }}
+  labels:
+    app: {{ template "kube-prometheus-stack.name" $ }}-grafana
+spec:
+  allowCrossNamespaceImport: true
+  resyncPeriod: {{ .Values.grafana.operator.resyncPeriod | quote | default "10m" }}
+  folder: {{ .Values.grafana.operator.folder | quote }}
+  instanceSelector:
+    matchLabels:
+    {{- if .Values.grafana.operator.matchLabels }}
+      {{- toYaml .Values.grafana.operator.matchLabels | nindent 6 }}
+    {{- else }}
+      {{- fail "grafana.operator.matchLabels must be specified when grafana.operator.dashboardsConfigMapRefEnabled is true" }}
+    {{- end }}
+  configMapRef:
+    name: {{ printf "%%s-%%s" (include "kube-prometheus-stack.fullname" $) "%(name)s" | trunc 63 | trimSuffix "-" }}
+    key: %(name)s.json
+{{- end }}
+"""
 
 def init_yaml_styles():
     represent_literal_str = change_style('|', SafeRepresenter.represent_str)
@@ -250,6 +281,15 @@ def write_group_to_file(resource_name, content, url, destination, min_kubernetes
 
     # footer
     lines += '{{- end }}'
+
+    lines_grafana_operator = grafana_dashboard_operator % {
+        'name': resource_name,
+        'condition': condition_map.get(resource_name, ''),
+        'min_kubernetes': min_kubernetes,
+        'max_kubernetes': max_kubernetes
+    }
+
+    lines += lines_grafana_operator
 
     filename = resource_name + '.yaml'
     new_filename = "%s/%s" % (destination, filename)
