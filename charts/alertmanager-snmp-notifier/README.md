@@ -6,7 +6,7 @@ This chart creates a [SNMP Notifier](https://github.com/maxwo/snmp_notifier) dep
 
 ## Prerequisites
 
-- Kubernetes 1.21+
+- Kubernetes 1.23+
 
 ## Get Repository Info
 
@@ -44,6 +44,35 @@ helm upgrade [RELEASE_NAME] [CHART] --install
 ```
 
 _See [helm upgrade](https://helm.sh/docs/helm/helm_upgrade/) for command documentation._
+
+### Upgrading an existing Release to a new major version
+
+A major chart version change (like v1.2.3 -> v2.0.0) indicates that there is an incompatible breaking change needing manual actions.
+
+### To 1.0.0
+
+This version uses SNMP Notifier 2.0.0, with the introduction of the generic `--trap.user-object` instead of `--snmp.trap-extra-field` arguments.
+
+The chart therefore accepts the `trapTemplates` object with the `description` and `userObjects` variables instead of the previous `snmpTemplates`:
+
+```yaml
+trapTemplates:
+    userObjects:
+    - subOid: 1
+        template: |
+        {{- if .Alerts -}}
+        Status: NOK
+        {{- else -}}
+        Status: OK
+        {{- end -}}
+    - subOid: 5
+        template: |
+        This is a constant
+```
+
+See [SNMP Notifier Repository](https://github.com/maxwo/snmp_notifier) for more details about new arguments.
+
+It also updates the `HorizontalPodAutoscaler` to the `autoscaling/v2` API version.
 
 ## Configuration
 
