@@ -351,6 +351,6 @@ bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
 - {key: app.kubernetes.io/instance, operator: In, values: [{{ template "kube-prometheus-stack.prometheus.crname" . }}]}
 {{- else }}
 - {key: app.kubernetes.io/name, operator: In, values: [prometheus]}
-- {key: prometheus, operator: In, values: [{{ template "kube-prometheus-stack.prometheus.crname" . }}]}
+- {key: app.kubernetes.io/instance, operator: In, values: [{{ template "kube-prometheus-stack.prometheus.crname" . }}]}
 {{- end }}
 {{- end }}
