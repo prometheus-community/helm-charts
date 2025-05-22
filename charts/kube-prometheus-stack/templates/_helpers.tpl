@@ -342,3 +342,15 @@ tlsConfig:
 bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
 {{- end }}
 {{- end }}
+
+
+{{/* To help configure anti-affinity rules for Prometheus pods */}}
+{{- define "kube-prometheus-stack.prometheus.pod-anti-affinity.matchExpressions" }}
+{{- if .Values.prometheus.agentMode }}
+- {key: app.kubernetes.io/name, operator: In, values: [prometheus-agent]}
+- {key: app.kubernetes.io/instance, operator: In, values: [{{ template "kube-prometheus-stack.prometheus.crname" . }}]}
+{{- else }}
+- {key: app.kubernetes.io/name, operator: In, values: [prometheus]}
+- {key: app.kubernetes.io/instance, operator: In, values: [{{ template "kube-prometheus-stack.prometheus.crname" . }}]}
+{{- end }}
+{{- end }}
