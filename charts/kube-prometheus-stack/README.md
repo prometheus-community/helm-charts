@@ -52,7 +52,6 @@ The dashboards originate from various upstream projects and are gathered and pro
 
 If you wish to contribute or modify dashboards, please follow the guidance in the `hack/README.md` to ensure consistency and reproducibility.
 
-
 ## Uninstall Helm Chart
 
 ```console
