@@ -28,7 +28,7 @@ automountServiceAccountToken: false
 
 serviceMonitor:
   # When set true then use a ServiceMonitor to configure scraping
-  enabled: false
+  enabled: true
   # Set the namespace the ServiceMonitor should be deployed
   # namespace: monitoring
   # Set how frequently Prometheus should scrape
@@ -36,7 +36,8 @@ serviceMonitor:
   # Set path to cloudwatch-exporter telemtery-path
   # telemetryPath: /metrics
   # Set labels for the ServiceMonitor, use this to define your scrape label for Prometheus Operator
-  # labels:
+  labels:
+    release: monitoring
   # Set timeout for scrape
   # timeout: 10s
   # Set of labels to transfer from the Kubernetes Service onto the target
@@ -132,23 +133,27 @@ config:
   ## ref: https://helm.sh/docs/developing_charts/#using-the-tpl-function
   datasource:
     # Specify one of both datasource or datasourceSecret
-    host: ''
-    user: postgres
+    host: simbian-postgresql
+    # user: postgres
     # Specify userFile if DB username is stored in a file.
     # For example, to use with vault-injector from Hashicorp
     userFile: ''
-    userSecret: {}
+    userSecret:
+      name: simbian-postgresql-credentials
+      key: username
     # Secret name
     #  name:
     # User key inside secret
     #  key:
     # Only one of password, passwordFile, passwordSecret and pgpassfile can be specified
-    password:
+    # password:
     # Specify passwordFile if DB password is stored in a file.
     # For example, to use with vault-injector from Hashicorp
     passwordFile: ''
     # Specify passwordSecret if DB password is stored in secret.
-    passwordSecret: {}
+    passwordSecret:
+      name: simbian-postgresql-credentials
+      key: password
     # Secret name
     #  name:
     # Password key inside secret
@@ -157,7 +162,7 @@ config:
     # If pgpassfile is set, it is used to initialize the PGPASSFILE environment variable.
     # See https://www.postgresql.org/docs/14/libpq-pgpass.html for more info.
     port: "5432"
-    database: ''
+    database: postgres
     sslmode: disable
     extraParams: ''
   datasourceSecret: {}
@@ -176,18 +181,20 @@ config:
   logLevel: ""
   # possible values logfmt, json
   logFormat: ""
-  extraArgs: []
+  # extraArgs: []
+  extraArgs:
+    - --collector.stat_statements  
 
   # postgres_exporter.yml
   postgresExporter: ""
-    # auth_modules:
-    #   first:
-    #     type: userpass
-    #     userpass:
-    #       username: first
-    #       password: firstpass
-    #     options:
-    #       sslmode: disable
+# auth_modules:
+#   first:
+#     type: userpass
+#     userpass:
+#       username: first
+#       password: firstpass
+#     options:
+#       sslmode: disable
 
   # define an existing secret to be mounted as the config file
   # needs to have the key 'postgres_exporter.yml'
