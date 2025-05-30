@@ -9,7 +9,6 @@
   ],
   "suppressNotifications": ["prEditedNotification"],
   "dependencyDashboardApproval": false,
-  "bumpVersion": "patch",
   "customManagers": [
     {
       "customType": "regex",
@@ -81,7 +80,24 @@
       },
       "matchPackageNames": [
         "*"
+      ],
+      "bumpVersions": [
+        {
+          "name": "Updating Chart version",
+          "filePatterns": ["/^({{#each (distinct (lookupArray upgrades \"packageFileDir\"))}}{{{.}}}{{#unless @last}}|{{/unless}}{{/each}})/Chart\\.(yaml|yml)$/"],
+          "matchStrings": ["(?:^|\\n)version:\\s\"?(?<version>\\d+\\.\\d+\\.\\d+)\"?(?:$|\\n)"],
+          "bumpType": "{{#if isPatch}}patch{{else}}minor{{/if}}"
+        }
       ]
+    },
+    {
+      "enabled": true,
+      "matchFileNames": [
+        "charts/prometheus-operator-crds/**"
+      ],
+      "schedule": null,
+      "automerge": true,
+      "platformAutomerge": true
     }
   ]
 }
