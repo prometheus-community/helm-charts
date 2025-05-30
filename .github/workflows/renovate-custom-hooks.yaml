@@ -44,24 +44,6 @@ jobs:
             echo "changed_list=${changed//$'\n'/ }" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Bump chart version
-        if: steps.list-changed.outputs.changed == 'true'
-        env:
-          CHART: ${{ steps.list-changed.outputs.changed_list }}
-        #language=bash
-        run: |
-          if [[ ! -d "${CHART}" ]]; then
-            echo "${CHART} directory not found"
-            exit 0
-          fi
-
-          CHART_VERSION=$(grep -e "^version:" "$CHART/Chart.yaml" | cut -d ":" -f 2 | tr -d '[:space:]' | tr -d '"')
-          CHART_MAJOR_VERSION=$(printf '%s' "$CHART_VERSION" | cut -d "." -f 1)
-          CHART_MINOR_VERSION=$(printf '%s' "$CHART_VERSION" | cut -d "." -f 2)
-          CHART_MINOR_VERSION=$((CHART_MINOR_VERSION+1))
-          CHART_NEW_VERSION="${CHART_MAJOR_VERSION}.${CHART_MINOR_VERSION}.0"
-          sed -i "s/^version:.*/version: ${CHART_NEW_VERSION}/" "$CHART/Chart.yaml"
-
       - name: run renovate-post-upgrade-hook
         if: steps.list-changed.outputs.changed == 'true'
         env:
@@ -89,6 +71,12 @@ jobs:
           
           # Fetch added/modified files in the target directory
           MODIFIED_FILES=$(git diff --diff-filter=ACM --name-only HEAD -- "$TARGET_DIR")
+          
+          # Exit early if no changes detected
+          if [ -z "$DELETED_FILES" ] && [ -z "$MODIFIED_FILES" ]; then
+            echo "No files added, modified, or deleted. Skipping."
+            exit 0
+          fi
           
           # Create a temporary file for JSON output
           FILE_CHANGES_JSON_FILE=$(mktemp)
