@@ -135,7 +135,10 @@ jobs:
       - lint-test
       - check-codeowners-maintainers
       - super-linter
-    if: github.event.pull_request.head.repo.full_name == github.repository && (github.actor == 'renovate[bot]' || github.actor == 'helm-charts-renovate-helper[bot]')
+    if: >-
+      github.event.pull_request.head.repo.full_name == github.repository 
+      && contains(github.event.pull_request.labels.*.name, 'dependencies/auto-merge') 
+      && (github.actor == 'renovate[bot]' || github.actor == 'helm-charts-renovate-helper[bot]')
     steps:
       # Using a GitHub App token, because GitHub Actions doesn't run on commits from github-actions bot
       # Used App:
@@ -150,5 +153,6 @@ jobs:
       - name: Approve PR
         run:
           gh pr review ${{ github.event.pull_request.number }} --approve --repo "${{ github.repository }}"
+          gh pr merge ${{ github.event.pull_request.number }} --admin --squash --repo "${{ github.repository }}" --match-head-commit "${{ github.event.pull_request.head.sha }}" --delete-branch
         env:
           GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
