@@ -4,6 +4,7 @@
 
 This version removes support for deprecated K8s API versions for `Ingress` resources and associated fields.
 This version also removes all `PodSecurityPolicy` resources and `global.pspEnabled` and `global.pspAnnotations` fields.
+The chart now requires a minimum K8s version of `1.25`
 
 ## From 71.x to 72.x
 
