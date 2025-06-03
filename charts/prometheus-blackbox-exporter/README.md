@@ -50,8 +50,8 @@ _See [helm upgrade](https://helm.sh/docs/helm/helm_upgrade/) for command documen
 
 ### To 10.0.0
 
-- `extraEnvFromSecret` got replaces with `extraEnvFrom`
-- `extraEnv` handling got changed to use valid k8s env definitions
+- `extraEnvFromSecret` got replaced with `extraEnvFrom`
+- `extraEnv` handling got changed to use k8s env definitions as list of maps
 
 ### To 9.0.0
 
