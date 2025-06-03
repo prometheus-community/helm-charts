@@ -118,6 +118,10 @@ spec:
   scrapeClasses:
     {{- tpl (toYaml . | nindent 4) $ }}
 {{- end }}
+{{- with .Values.prometheus.prometheusSpec.podTargetLabels }}
+  podTargetLabels:
+    {{- tpl (toYaml . | nindent 4) $ }}
+{{- end }}
 {{- if .Values.prometheus.prometheusSpec.scrapeFailureLogFile }}
   scrapeFailureLogFile: {{ .Values.prometheus.prometheusSpec.scrapeFailureLogFile }}
 {{- end }}
@@ -300,8 +304,7 @@ spec:
       - topologyKey: {{ .Values.prometheus.prometheusSpec.podAntiAffinityTopologyKey }}
         labelSelector:
           matchExpressions:
-            - {key: app.kubernetes.io/name, operator: In, values: [prometheus]}
-            - {key: prometheus, operator: In, values: [{{ template "kube-prometheus-stack.prometheus.crname" . }}]}
+{{- include "kube-prometheus-stack.prometheus.pod-anti-affinity.matchExpressions" . | indent 12 }}
 {{- else if eq .Values.prometheus.prometheusSpec.podAntiAffinity "soft" }}
     podAntiAffinity:
       preferredDuringSchedulingIgnoredDuringExecution:
@@ -310,8 +313,7 @@ spec:
           topologyKey: {{ .Values.prometheus.prometheusSpec.podAntiAffinityTopologyKey }}
           labelSelector:
             matchExpressions:
-              - {key: app.kubernetes.io/name, operator: In, values: [prometheus]}
-              - {key: prometheus, operator: In, values: [{{ template "kube-prometheus-stack.prometheus.crname" . }}]}
+{{- include "kube-prometheus-stack.prometheus.pod-anti-affinity.matchExpressions" . | indent 12 }}
 {{- end }}
 {{- end }}
 {{- if .Values.prometheus.prometheusSpec.tolerations }}

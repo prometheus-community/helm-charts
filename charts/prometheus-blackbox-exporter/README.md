@@ -48,6 +48,11 @@ helm upgrade [RELEASE_NAME] [CHART] --install
 
 _See [helm upgrade](https://helm.sh/docs/helm/helm_upgrade/) for command documentation._
 
+### To 10.0.0
+
+- `extraEnvFromSecret` got replaced with `extraEnvFrom`
+- `extraEnv` handling got changed to use k8s env definitions as list of maps
+
 ### To 9.0.0
 
 This version remove pod security policy as it is deprecated.

@@ -1,0 +1,37 @@
+---
+## Test case: httpRoute
+alertmanager:
+  enabled: false
+
+kube-state-metrics:
+  enabled: false
+
+prometheus-node-exporter:
+  enabled: false
+
+prometheus-pushgateway:
+  enabled: false
+
+server:
+  automountServiceAccountToken: true
+  persistentVolume:
+    enabled: false
+
+  route:
+    main:
+      enabled: true
+      hostnames:
+        - "an.example.com"
+      parentRefs:
+        - name: contour
+      filters:
+        - type: RequestHeaderModifier
+          requestHeaderModifier:
+            set:
+              - name: my-header-name
+                value: my-new-header-value
+      additionalRules:
+        - filters:
+            - type: RequestHeaderModifier
+              requestHeaderModifier:
+                remove: ["x-request-id"]

@@ -42,6 +42,16 @@ To disable dependencies during installation, see [multiple releases](#multiple-r
 
 _See [helm dependency](https://helm.sh/docs/helm/helm_dependency/) for command documentation._
 
+### Grafana Dashboards
+
+This chart provisions a collection of curated Grafana dashboards that are automatically loaded into Grafana via ConfigMaps. These dashboards are rendered into the Helm chart under [`templates/grafana/`](https://github.com/prometheus-community/helm-charts/tree/main/charts/kube-prometheus-stack/templates/grafana/), but **this is not their source of truth**.
+
+The dashboards originate from various upstream projects and are gathered and processed using scripts in the [`hack/`](https://github.com/prometheus-community/helm-charts/tree/main/charts/kube-prometheus-stack/hack) directory. For details on how these dashboards are sourced and kept up to date, refer to the [hack/README.md](https://github.com/prometheus-community/helm-charts/blob/main/charts/kube-prometheus-stack/hack/README.md).
+
+> **Note:** The dashboards referenced in the `hack` scripts are usually **not the original source** either. Most originate from separate **Prometheus mixin repositories** (e.g., [kubernetes-mixin](https://github.com/kubernetes-monitoring/kubernetes-mixin)) and are processed through `jsonnet` tooling before being included here. To find the original source in case you want to modify it you may have to search even further upstream.
+
+If you wish to contribute or modify dashboards, please follow the guidance in the `hack/README.md` to ensure consistency and reproducibility.
+
 ## Uninstall Helm Chart
 
 ```console
