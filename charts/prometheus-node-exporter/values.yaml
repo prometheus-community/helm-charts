@@ -45,7 +45,7 @@ kubeRBACProxy:
   image:
     registry: quay.io
     repository: brancz/kube-rbac-proxy
-    tag: v0.19.0
+    tag: v0.19.1
     sha: ""
     pullPolicy: IfNotPresent
 
@@ -153,8 +153,10 @@ service:
     ipFamilies: ["IPv6", "IPv4"]
     ipFamilyPolicy: "PreferDualStack"
 
-  ## External traffic policy setting (Cluster, Local)
+  ## External/Internal traffic policy setting (Cluster, Local)
+  ## https://kubernetes.io/docs/reference/networking/virtual-ips/#traffic-policies
   externalTrafficPolicy: ""
+  internalTrafficPolicy: ""
 
 # Set a NetworkPolicy with:
 # ingress only on service.port or custom policy
@@ -281,13 +283,13 @@ prometheus:
 
     # ProxyURL eg http://proxyserver:2195. Directs scrapes through proxy to this endpoint.
     proxyUrl: ""
-    # Interval at which endpoints should be scraped. If not specified Prometheus’ global scrape interval is used.
+    # Interval at which endpoints should be scraped. If not specified Prometheus' global scrape interval is used.
     interval: ""
     # Timeout after which the scrape is ended. If not specified, the Prometheus global scrape interval is used.
     scrapeTimeout: ""
     # HonorTimestamps controls whether Prometheus respects the timestamps present in scraped data.
     honorTimestamps: true
-    # HonorLabels chooses the metric’s labels on collisions with target labels.
+    # HonorLabels chooses the metric's labels on collisions with target labels.
     honorLabels: true
     # Whether to enable HTTP2. Default false.
     enableHttp2: ""
@@ -300,7 +302,7 @@ prometheus:
     params: {}
 
     # RelabelConfigs to apply to samples before scraping. Prometheus Operator automatically adds
-    # relabelings for a few standard Kubernetes fields. The original scrape job’s name
+    # relabelings for a few standard Kubernetes fields. The original scrape job's name
     # is available via the __tmp_prometheus_job_name label.
     # More info: https://prometheus.io/docs/prometheus/latest/configuration/configuration/#relabel_config
     relabelings: []
@@ -369,10 +371,6 @@ rbac:
   ## If true, create & use RBAC resources
   ##
   create: true
-  ## If true, create & use Pod Security Policy resources
-  ## https://kubernetes.io/docs/concepts/policy/pod-security-policy/
-  pspEnabled: true
-  pspAnnotations: {}
 
 # for deployments that have node_exporter deployed outside of the cluster, list
 # their addresses here
