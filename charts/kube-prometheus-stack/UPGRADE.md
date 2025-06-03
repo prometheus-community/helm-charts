@@ -1,5 +1,11 @@
 # Upgrade
 
+## From 72.x to 73.x
+
+This version removes support for deprecated K8s API versions for `Ingress` resources and associated fields.
+This version also removes all `PodSecurityPolicy` resources and `global.pspEnabled` and `global.pspAnnotations` fields.
+The chart now requires a minimum K8s version of `1.25`
+
 ## From 71.x to 72.x
 
 This version adds an `enabled` flag to the `prometheusOperator.admissionWebhooks.deployment.podDisruptionBudget` settings. Users who want this chart to deploy a `podDisruptionBudget` must now set the flag `podDisruptionBudget.enabled` to `true` for each `podDisruptionBudget` resource to be created.
