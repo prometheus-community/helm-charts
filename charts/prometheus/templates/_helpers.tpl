@@ -122,28 +122,6 @@ Return the appropriate apiVersion for networkpolicy.
 {{- end -}}
 
 {{/*
-Return the appropriate apiVersion for poddisruptionbudget.
-*/}}
-{{- define "prometheus.podDisruptionBudget.apiVersion" -}}
-{{- if .Capabilities.APIVersions.Has "policy/v1" }}
-{{- print "policy/v1" -}}
-{{- else -}}
-{{- print "policy/v1beta1" -}}
-{{- end -}}
-{{- end -}}
-
-{{/*
-Return the appropriate apiVersion for rbac.
-*/}}
-{{- define "rbac.apiVersion" -}}
-{{- if .Capabilities.APIVersions.Has "rbac.authorization.k8s.io/v1" }}
-{{- print "rbac.authorization.k8s.io/v1" -}}
-{{- else -}}
-{{- print "rbac.authorization.k8s.io/v1beta1" -}}
-{{- end -}}
-{{- end -}}
-
-{{/*
 Create the name of the service account to use for the server component
 */}}
 {{- define "prometheus.serviceAccountName.server" -}}
