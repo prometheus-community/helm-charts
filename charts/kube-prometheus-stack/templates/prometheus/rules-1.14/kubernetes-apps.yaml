@@ -6,8 +6,7 @@ https://github.com/prometheus-community/helm-charts/tree/main/charts/kube-promet
 {{- $kubeTargetVersion := default .Capabilities.KubeVersion.GitVersion .Values.kubeTargetVersionOverride }}
 {{- if and (semverCompare ">=1.14.0-0" $kubeTargetVersion) (semverCompare "<9.9.9-9" $kubeTargetVersion) .Values.defaultRules.create .Values.defaultRules.rules.kubernetesApps }}
 {{- $kubeStateMetricsJob := include "kube-prometheus-stack-kube-state-metrics.name" . }}
-{{- $namespaceOperator := .Values.defaultRules.appNamespacesOperator }}
-{{- $targetNamespace := .Values.defaultRules.appNamespacesTarget }}
+{{- $targetNamespace := .Values.defaultRules.appNamespacesTarget }}{{- $namespaceOperator := .Values.defaultRules.appNamespacesOperator | default "=~" }}
 apiVersion: monitoring.coreos.com/v1
 kind: PrometheusRule
 metadata:
@@ -364,7 +363,7 @@ spec:
         description: 'pod/{{`{{`}} $labels.pod {{`}}`}} in namespace {{`{{`}} $labels.namespace {{`}}`}} on container {{`{{`}} $labels.container{{`}}`}} has been in waiting state for longer than 1 hour. (reason: "{{`{{`}} $labels.reason {{`}}`}}") on cluster {{`{{`}} $labels.cluster {{`}}`}}.'
         runbook_url: {{ .Values.defaultRules.runbookUrl }}/kubernetes/kubecontainerwaiting
         summary: Pod container waiting longer than 1 hour
-      expr: kube_pod_container_status_waiting_reason{reason!="CrashLoopBackOff", job="{{ $kubeStateMetricsJob }}", namespace{{ $namespaceOperator }}"{{ $targetNamespace }}"}
+      expr: kube_pod_container_status_waiting_reason{reason!="CrashLoopBackOff", job="{{ $kubeStateMetricsJob }}", namespace{{ $namespaceOperator }}"{{ $targetNamespace }}"} > 0
       for: {{ dig "KubeContainerWaiting" "for" "1h" .Values.customRules }}
       {{- with .Values.defaultRules.keepFiringFor }}
       keep_firing_for: "{{ . }}"
@@ -423,7 +422,7 @@ spec:
         description: '{{`{{`}} $value {{`}}`}} Pods of DaemonSet {{`{{`}} $labels.namespace {{`}}`}}/{{`{{`}} $labels.daemonset {{`}}`}} are running where they are not supposed to run on cluster {{`{{`}} $labels.cluster {{`}}`}}.'
         runbook_url: {{ .Values.defaultRules.runbookUrl }}/kubernetes/kubedaemonsetmisscheduled
         summary: DaemonSet pods are misscheduled.
-      expr: kube_daemonset_status_number_misscheduled{job="{{ $kubeStateMetricsJob }}", namespace{{ $namespaceOperator }}"{{ $targetNamespace }}"}
+      expr: kube_daemonset_status_number_misscheduled{job="{{ $kubeStateMetricsJob }}", namespace{{ $namespaceOperator }}"{{ $targetNamespace }}"} > 0
       for: {{ dig "KubeDaemonSetMisScheduled" "for" "15m" .Values.customRules }}
       {{- with .Values.defaultRules.keepFiringFor }}
       keep_firing_for: "{{ . }}"
@@ -454,7 +453,7 @@ spec:
       expr: |-
         time() - max by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}namespace, job_name, cluster) (kube_job_status_start_time{job="{{ $kubeStateMetricsJob }}", namespace{{ $namespaceOperator }}"{{ $targetNamespace }}"}
           and
-        kube_job_status_active{job="{{ $kubeStateMetricsJob }}", namespace{{ $namespaceOperator }}"{{ $targetNamespace }}"}
+        kube_job_status_active{job="{{ $kubeStateMetricsJob }}", namespace{{ $namespaceOperator }}"{{ $targetNamespace }}"} > 0) > 43200
       labels:
         severity: {{ dig "KubeJobNotCompleted" "severity" "warning" .Values.customRules }}
       {{- if or .Values.defaultRules.additionalRuleLabels .Values.defaultRules.additionalRuleGroupLabels.kubernetesApps }}
@@ -478,7 +477,7 @@ spec:
         description: Job {{`{{`}} $labels.namespace {{`}}`}}/{{`{{`}} $labels.job_name {{`}}`}} failed to complete. Removing failed job after investigation should clear this alert on cluster {{`{{`}} $labels.cluster {{`}}`}}.
         runbook_url: {{ .Values.defaultRules.runbookUrl }}/kubernetes/kubejobfailed
         summary: Job failed to complete.
-      expr: kube_job_failed{job="{{ $kubeStateMetricsJob }}", namespace{{ $namespaceOperator }}"{{ $targetNamespace }}"}
+      expr: kube_job_failed{job="{{ $kubeStateMetricsJob }}", namespace{{ $namespaceOperator }}"{{ $targetNamespace }}"}  > 0
       for: {{ dig "KubeJobFailed" "for" "15m" .Values.customRules }}
       {{- with .Values.defaultRules.keepFiringFor }}
       keep_firing_for: "{{ . }}"
