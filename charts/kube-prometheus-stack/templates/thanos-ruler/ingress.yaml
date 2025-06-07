@@ -4,9 +4,7 @@
 {{- $servicePort := .Values.thanosRuler.service.port -}}
 {{- $routePrefix := list .Values.thanosRuler.thanosRulerSpec.routePrefix }}
 {{- $paths := .Values.thanosRuler.ingress.paths | default $routePrefix -}}
-{{- $apiIsStable := eq (include "kube-prometheus-stack.ingress.isStable" .) "true" -}}
-{{- $ingressSupportsPathType := eq (include "kube-prometheus-stack.ingress.supportsPathType" .) "true" -}}
-apiVersion: {{ include "kube-prometheus-stack.ingress.apiVersion" . }}
+apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: {{ $serviceName }}
@@ -22,10 +20,8 @@ metadata:
 {{- end }}
 {{ include "kube-prometheus-stack.labels" . | indent 4 }}
 spec:
-  {{- if $apiIsStable }}
   {{- if .Values.thanosRuler.ingress.ingressClassName }}
   ingressClassName: {{ .Values.thanosRuler.ingress.ingressClassName }}
-  {{- end }}
   {{- end }}
   rules:
   {{- if .Values.thanosRuler.ingress.hosts }}
@@ -35,19 +31,12 @@ spec:
         paths:
   {{- range $p := $paths }}
           - path: {{ tpl $p $ }}
-            {{- if and $pathType $ingressSupportsPathType }}
             pathType: {{ $pathType }}
-            {{- end }}
             backend:
-              {{- if $apiIsStable }}
               service:
                 name: {{ $serviceName }}
                 port:
                   number: {{ $servicePort }}
-              {{- else }}
-              serviceName: {{ $serviceName }}
-              servicePort: {{ $servicePort }}
-    {{- end }}
     {{- end -}}
   {{- end -}}
   {{- else }}
@@ -55,19 +44,12 @@ spec:
         paths:
   {{- range $p := $paths }}
           - path: {{ tpl $p $ }}
-            {{- if and $pathType $ingressSupportsPathType }}
             pathType: {{ $pathType }}
-            {{- end }}
             backend:
-              {{- if $apiIsStable }}
               service:
                 name: {{ $serviceName }}
                 port:
                   number: {{ $servicePort }}
-              {{- else }}
-              serviceName: {{ $serviceName }}
-              servicePort: {{ $servicePort }}
-  {{- end }}
   {{- end -}}
   {{- end -}}
   {{- if .Values.thanosRuler.ingress.tls }}
