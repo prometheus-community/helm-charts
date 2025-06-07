@@ -77,41 +77,6 @@ app.kubernetes.io/instance: {{ .Release.Name }}
 {{- end }}
 
 {{/*
-Return the appropriate apiVersion for networkpolicy.
-*/}}
-{{- define "prometheus-pushgateway.networkPolicy.apiVersion" -}}
-{{- if semverCompare ">=1.4-0, <1.7-0" .Capabilities.KubeVersion.GitVersion }}
-{{- print "extensions/v1beta1" }}
-{{- else if semverCompare "^1.7-0" .Capabilities.KubeVersion.GitVersion }}
-{{- print "networking.k8s.io/v1" }}
-{{- end }}
-{{- end }}
-
-{{/*
-Define PDB apiVersion
-*/}}
-{{- define "prometheus-pushgateway.pdb.apiVersion" -}}
-{{- if $.Capabilities.APIVersions.Has "policy/v1/PodDisruptionBudget" }}
-{{- print "policy/v1" }}
-{{- else }}
-{{- print "policy/v1beta1" }}
-{{- end }}
-{{- end }}
-
-{{/*
-Define Ingress apiVersion
-*/}}
-{{- define "prometheus-pushgateway.ingress.apiVersion" -}}
-{{- if semverCompare ">=1.19-0" .Capabilities.KubeVersion.GitVersion }}
-{{- print "networking.k8s.io/v1" }}
-{{- else if semverCompare ">=1.14-0" .Capabilities.KubeVersion.GitVersion }}
-{{- print "networking.k8s.io/v1beta1" }}
-{{- else }}
-{{- print "extensions/v1beta1" }}
-{{- end }}
-{{- end }}
-
-{{/*
 Define webConfiguration
 */}}
 {{- define "prometheus-pushgateway.webConfiguration" -}}
@@ -143,6 +108,20 @@ password: {{ $password | b64enc | quote }}
 {{- end }}
 
 {{/*
+Set the image with or without the registry
+*/}}
+{{- define "prometheus-pushgateway.image" -}}
+{{- $registry := default .Values.image.registry (.Values.global).imageRegistry }}
+{{- $repository := .Values.image.repository }}
+{{- $tag := default .Chart.AppVersion .Values.image.tag }}
+{{- if $registry }}
+    {{- printf "%s/%s:%s" $registry $repository $tag -}}
+{{- else -}}
+    {{- printf "%s:%s"  $repository $tag -}}
+{{- end -}}
+{{- end -}}
+
+{{/*
 Returns pod spec
 */}}
 {{- define "prometheus-pushgateway.podSpec" -}}
@@ -155,7 +134,7 @@ priorityClassName: {{ . | quote }}
 hostAliases:
 {{- toYaml . | nindent 2 }}
 {{- end }}
-{{- with .Values.imagePullSecrets }}
+{{- with (.Values.global).imagePullSecrets | default .Values.imagePullSecrets }}
 imagePullSecrets:
   {{- toYaml . | nindent 2 }}
 {{- end }}
@@ -168,7 +147,7 @@ containers:
   {{- toYaml . | nindent 2 }}
   {{- end }}
   - name: pushgateway
-    image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+    image: {{ include "prometheus-pushgateway.image" . }}
     imagePullPolicy: {{ .Values.image.pullPolicy }}
     {{- with .Values.extraVars }}
     env:

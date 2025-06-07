@@ -44,14 +44,14 @@ spec:
             - {{ $extraArg }}
         {{- end }}
         {{- end }}
-        {{- if (and .Values.snmpNotifier.snmpTemplates .Values.snmpNotifier.snmpTemplates.description) }}
-            - --snmp.trap-description-template=/templates/description-template.tpl
+        {{- if (and .Values.snmpNotifier.trapTemplates .Values.snmpNotifier.trapTemplates.description) }}
+            - --trap.description-template=/templates/description-template.tpl
         {{- else }}
-            - --snmp.trap-description-template=/etc/snmp_notifier/description-template.tpl
+            - --trap.description-template=/etc/snmp_notifier/description-template.tpl
         {{- end }}
-        {{- if (and .Values.snmpNotifier.snmpTemplates .Values.snmpNotifier.snmpTemplates.extraFields) }}
-        {{- range $element := .Values.snmpNotifier.snmpTemplates.extraFields }}
-            - --snmp.extra-field-template={{ $element.subId }}=/templates/extra-field-{{ $element.subId }}-template.tpl
+        {{- if (and .Values.snmpNotifier.trapTemplates .Values.snmpNotifier.trapTemplates.userObjects) }}
+        {{- range $element := .Values.snmpNotifier.trapTemplates.userObjects }}
+            - --trap.user-object={{ $element.subOid }}=/templates/user-object-{{ $element.subOid }}-template.tpl
         {{- end }}
         {{ end }}
           env:
@@ -104,7 +104,7 @@ spec:
           {{- end }}
           {{- end }}
           volumeMounts:
-          {{- if .Values.snmpNotifier.snmpTemplates }}
+          {{- if .Values.snmpNotifier.trapTemplates }}
             - mountPath: /templates
               name: templates
           {{- end }}
@@ -147,7 +147,7 @@ spec:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       volumes:
-      {{- if .Values.snmpNotifier.snmpTemplates }}
+      {{- if .Values.snmpNotifier.trapTemplates }}
         - name: templates
           configMap:
             name: {{ template "alertmanager-snmp-notifier.fullname" . }}
