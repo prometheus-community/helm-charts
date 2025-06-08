@@ -1,0 +1,25 @@
+{{- if .Values.networkPolicy.enabled }}
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ template "prometheus-redis-exporter.fullname" . }}
+  labels:
+    {{- include "prometheus-redis-exporter.labels" . | nindent 4 }}
+spec:
+  podSelector:
+    matchLabels:
+      {{- include "prometheus-redis-exporter.selectorLabels" . | nindent 6 }}
+  {{- if .Values.networkPolicy.enabled }}
+  ingress:
+    - from:
+      {{- toYaml .Values.networkPolicy.ingressFrom | nindent 8 }}
+      ports:
+        - protocol: TCP
+          port:  {{ .Values.service.port }}
+  {{- end }}
+
+
+  policyTypes:
+    - Ingress
+{{- end }}
+

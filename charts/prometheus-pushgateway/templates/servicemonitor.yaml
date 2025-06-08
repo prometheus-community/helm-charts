@@ -8,11 +8,7 @@ metadata:
     {{- toYaml .Values.serviceMonitor.additionalLabels | nindent 4 }}
     {{- end }}
   name: {{ include "prometheus-pushgateway.fullname" .  }}
-  {{- if .Values.serviceMonitor.namespace }}
-  namespace: {{ .Values.serviceMonitor.namespace }}
-  {{- else }}
-  namespace: {{ template "prometheus-pushgateway.namespace" . }}
-  {{- end }}
+  namespace: {{ default (include "prometheus-pushgateway.namespace" .) .Values.serviceMonitor.namespace }}
 spec:
   endpoints:
   - port: {{ .Values.service.portName }}
@@ -21,6 +17,17 @@ spec:
     {{- end }}
     {{- with .Values.serviceMonitor.scheme }}
     scheme: {{ . }}
+    {{- end }}
+    {{- if and .Values.webConfiguration (empty .Values.serviceMonitor.basicAuth) }}
+    basicAuth:
+      password:
+        name: {{ include "prometheus-pushgateway.fullname" . }}-basic-auth
+        key: password
+      username:
+        name: {{ include "prometheus-pushgateway.fullname" . }}-basic-auth
+        key: user
+    {{- else if not (empty .Values.serviceMonitor.basicAuth) }}
+    basicAuth: {{ toYaml .Values.serviceMonitor.basicAuth | nindent 6 }}
     {{- end }}
     {{- with .Values.serviceMonitor.bearerTokenFile }}
     bearerTokenFile: {{ . }}

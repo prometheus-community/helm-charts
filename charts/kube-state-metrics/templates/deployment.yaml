@@ -9,9 +9,12 @@ metadata:
   namespace: {{ template "kube-state-metrics.namespace" . }}
   labels:
     {{- include "kube-state-metrics.labels" . | indent 4 }}
-  {{- if .Values.annotations }}
+    {{- with .Values.labels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+  {{- with .Values.annotations }}
   annotations:
-{{ toYaml .Values.annotations | indent 4 }}
+    {{- toYaml . | nindent 4 }}
   {{- end }}
 spec:
   selector:
@@ -52,6 +55,10 @@ spec:
       initContainers:
       {{- toYaml . | nindent 6 }}
       {{- end }}
+      {{- if .Values.dnsConfig }}
+      dnsConfig: {{ toYaml .Values.dnsConfig | nindent 8 }}
+      {{- end }}
+      dnsPolicy: {{ .Values.dnsPolicy }}
       containers:
       {{- $servicePort := ternary 9090 (.Values.service.port | default 8080) .Values.kubeRBACProxy.enabled}}
       {{- $telemetryPort := ternary 9091 (.Values.selfMonitor.telemetryPort | default 8081) .Values.kubeRBACProxy.enabled}}
@@ -132,7 +139,7 @@ spec:
         {{- end }}
         {{- end }}
         {{- if .Values.customResourceState.enabled }}
-        - --custom-resource-state-config-file=/etc/customresourcestate/config.yaml
+        - --custom-resource-state-config-file=/etc/customresourcestate/{{ .Values.customResourceState.key }}
         {{- end }}
         {{- if or (.Values.kubeconfig.enabled) (.Values.customResourceState.enabled) (.Values.volumeMounts) }}
         volumeMounts:
@@ -161,6 +168,7 @@ spec:
           name: "metrics"
         {{- end }}
         {{- end }}
+        {{- if not .Values.kubeRBACProxy.enabled }}
         {{- if .Values.startupProbe.enabled }}
         startupProbe:
           failureThreshold: {{ .Values.startupProbe.failureThreshold }}
@@ -232,6 +240,7 @@ spec:
           periodSeconds: {{ .Values.readinessProbe.periodSeconds }}
           successThreshold: {{ .Values.readinessProbe.successThreshold }}
           timeoutSeconds: {{ .Values.readinessProbe.timeoutSeconds }}
+        {{- end }}
         resources:
 {{ toYaml .Values.resources | indent 10 }}
 {{- if .Values.containerSecurityContext }}
@@ -358,7 +367,7 @@ spec:
       {{- if .Values.customResourceState.enabled}}
         - name: customresourcestate-config
           configMap:
-            name: {{ template "kube-state-metrics.fullname" . }}-customresourcestate-config
+            name: {{ template "kube-state-metrics.crsConfigMapName" . }}
       {{- end }}
       {{- if .Values.volumes }}
 {{ toYaml .Values.volumes | indent 8 }}
