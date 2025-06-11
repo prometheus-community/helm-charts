@@ -98,6 +98,19 @@ This version changes the default image repository from using Dockerhub to Quay.
 
 This version changes the default health check path from `/health` to `/`
 
+### To 7.0.0
+
+This version changes the sysUpTime metric by removing from the if_mib module and including it as part of the new system module, along with other useful system related metrics.
+Update your scrape definitions to include the system module if you need sysUpTime.
+
+### To 8.0.0
+
+This version changes the additional metrics values to always be a string.
+
+### To 9.0.0
+
+This version adds ability to enable config-reloader on demand, also to specify custom --watched-dir and ability to mount snmp-exporter pods extraVolumeMounts for consistency of mounted configs.
+
 ## Configuration
 
 See [Customizing the Chart Before Installing](https://helm.sh/docs/intro/using_helm/#customizing-the-chart-before-installing). To see all configurable options with detailed comments, visit the chart's [values.yaml](./values.yaml), or run these configuration commands:

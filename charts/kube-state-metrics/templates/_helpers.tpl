@@ -104,6 +104,25 @@ labelValueLengthLimit: {{ . }}
 {{- end }}
 {{- end -}}
 
+{{/* Sets default scrape limits for scrapeconfig */}}
+{{- define "scrapeconfig.scrapeLimits" -}}
+{{- with .sampleLimit }}
+sampleLimit: {{ . }}
+{{- end }}
+{{- with .targetLimit }}
+targetLimit: {{ . }}
+{{- end }}
+{{- with .labelLimit }}
+labelLimit: {{ . }}
+{{- end }}
+{{- with .labelNameLengthLimit }}
+labelNameLengthLimit: {{ . }}
+{{- end }}
+{{- with .labelValueLengthLimit }}
+labelValueLengthLimit: {{ . }}
+{{- end }}
+{{- end -}}
+
 {{/*
 Formats imagePullSecrets. Input is (dict "Values" .Values "imagePullSecrets" .{specific imagePullSecrets})
 */}}
@@ -153,4 +172,15 @@ The image to use for kubeRBACProxy
 {{- printf "%s/%s:%s" .Values.kubeRBACProxy.image.registry .Values.kubeRBACProxy.image.repository (default (printf "v%s" .Chart.AppVersion) .Values.kubeRBACProxy.image.tag) }}
 {{- end }}
 {{- end }}
+{{- end }}
+
+{{/*
+The name of the ConfigMap for the customResourceState config.
+*/}}
+{{- define "kube-state-metrics.crsConfigMapName" -}}
+  {{- if ne .Values.customResourceState.name "" }}
+    {{- .Values.customResourceState.name }}
+  {{- else }}
+    {{- template "kube-state-metrics.fullname" . }}-customresourcestate-config
+  {{- end }}
 {{- end }}

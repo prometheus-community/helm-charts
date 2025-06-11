@@ -45,7 +45,7 @@ kubeRBACProxy:
   image:
     registry: quay.io
     repository: brancz/kube-rbac-proxy
-    tag: v0.18.2
+    tag: v0.19.1
     sha: ""
     pullPolicy: IfNotPresent
 
@@ -153,8 +153,10 @@ service:
     ipFamilies: ["IPv6", "IPv4"]
     ipFamilyPolicy: "PreferDualStack"
 
-  ## External traffic policy setting (Cluster, Local)
+  ## External/Internal traffic policy setting (Cluster, Local)
+  ## https://kubernetes.io/docs/reference/networking/virtual-ips/#traffic-policies
   externalTrafficPolicy: ""
+  internalTrafficPolicy: ""
 
 # Set a NetworkPolicy with:
 # ingress only on service.port or custom policy
@@ -179,11 +181,11 @@ prometheus:
     jobLabel: ""
 
     # List of pod labels to add to node exporter metrics
-    # https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/api.md#servicemonitor
+    # https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/api-reference/api.md#servicemonitor
     podTargetLabels: []
 
     # List of target labels to add to node exporter metrics
-    # https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/api.md#servicemonitor
+    # https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/api-reference/api.md#servicemonitor
     targetLabels: []
 
     scheme: http
@@ -232,7 +234,7 @@ prometheus:
     labelValueLengthLimit: 0
 
   # PodMonitor defines monitoring for a set of pods.
-  # ref. https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/api.md#monitoring.coreos.com/v1.PodMonitor
+  # ref. https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/api-reference/api.md#podmonitor
   # Using a PodMonitor may be preferred in some environments where there is very large number
   # of Node Exporter endpoints (1000+) behind a single service.
   # The PodMonitor is disabled by default. When switching from ServiceMonitor to PodMonitor,
@@ -273,21 +275,21 @@ prometheus:
     # TLS configuration to use when scraping the endpoint.
     tlsConfig: {}
     # Authorization section for this endpoint.
-    # https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/api.md#monitoring.coreos.com/v1.SafeAuthorization
+    # https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/api-reference/api.md#safeauthorization
     authorization: {}
     # OAuth2 for the URL. Only valid in Prometheus versions 2.27.0 and newer.
-    # https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/api.md#monitoring.coreos.com/v1.OAuth2
+    # https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/api-reference/api.md#oauth2
     oauth2: {}
 
     # ProxyURL eg http://proxyserver:2195. Directs scrapes through proxy to this endpoint.
     proxyUrl: ""
-    # Interval at which endpoints should be scraped. If not specified Prometheus’ global scrape interval is used.
+    # Interval at which endpoints should be scraped. If not specified Prometheus' global scrape interval is used.
     interval: ""
     # Timeout after which the scrape is ended. If not specified, the Prometheus global scrape interval is used.
     scrapeTimeout: ""
     # HonorTimestamps controls whether Prometheus respects the timestamps present in scraped data.
     honorTimestamps: true
-    # HonorLabels chooses the metric’s labels on collisions with target labels.
+    # HonorLabels chooses the metric's labels on collisions with target labels.
     honorLabels: true
     # Whether to enable HTTP2. Default false.
     enableHttp2: ""
@@ -300,7 +302,7 @@ prometheus:
     params: {}
 
     # RelabelConfigs to apply to samples before scraping. Prometheus Operator automatically adds
-    # relabelings for a few standard Kubernetes fields. The original scrape job’s name
+    # relabelings for a few standard Kubernetes fields. The original scrape job's name
     # is available via the __tmp_prometheus_job_name label.
     # More info: https://prometheus.io/docs/prometheus/latest/configuration/configuration/#relabel_config
     relabelings: []
@@ -369,10 +371,6 @@ rbac:
   ## If true, create & use RBAC resources
   ##
   create: true
-  ## If true, create & use Pod Security Policy resources
-  ## https://kubernetes.io/docs/concepts/policy/pod-security-policy/
-  pspEnabled: true
-  pspAnnotations: {}
 
 # for deployments that have node_exporter deployed outside of the cluster, list
 # their addresses here

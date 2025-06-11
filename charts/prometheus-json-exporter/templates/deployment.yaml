@@ -4,6 +4,9 @@ metadata:
   name: {{ include "prometheus-json-exporter.fullname" . }}
   namespace: {{ include "prometheus-json-exporter.namespace" . }}
   labels:
+    {{- with .Values.deploymentLabels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
     {{- include "prometheus-json-exporter.labels" . | nindent 4 }}
   {{- with .Values.deploymentAnnotations }}
   annotations:
@@ -13,6 +16,7 @@ spec:
   {{- if not .Values.autoscaling.enabled }}
   replicas: {{ .Values.replicaCount }}
   {{- end }}
+  revisionHistoryLimit: {{ .Values.revisionHistoryLimit }}
   selector:
     matchLabels:
       {{- include "prometheus-json-exporter.selectorLabels" . | nindent 6 }}
@@ -27,6 +31,9 @@ spec:
         {{- include "prometheus-json-exporter.selectorLabels" . | nindent 8 }}
         {{- if .Values.podLabels }}
           {{ toYaml .Values.podLabels | nindent 8 }}
+        {{- end }}
+        {{- if .Values.commonLabels }}
+          {{ toYaml .Values.commonLabels | nindent 8 }}
         {{- end }}
     spec:
       {{- with .Values.imagePullSecrets }}

@@ -2,7 +2,7 @@
   {{- $serviceName := printf "%s-%s" (include "kube-prometheus-stack.fullname" .) "alertmanager" }}
   {{- $servicePort := .Values.alertmanager.ingress.servicePort | default .Values.alertmanager.service.port -}}
   {{- range $name, $route := .Values.alertmanager.route }}
-    {{- if $route.enabled -}}
+  {{- if $route.enabled }}
 ---
 apiVersion: {{ $route.apiVersion | default "gateway.networking.k8s.io/v1" }}
 kind: {{ $route.kind | default "HTTPRoute" }}
@@ -12,7 +12,7 @@ metadata:
     {{- toYaml . | nindent 4 }}
   {{- end }}
   name: {{ $serviceName }}{{ if ne $name "main" }}-{{ $name }}{{ end }}
-  namespace: {{ template "kube-prometheus-stack.namespace" $ }}
+  namespace: {{ template "kube-prometheus-stack-alertmanager.namespace" $ }}
   labels:
     app: {{ template "kube-prometheus-stack.name" $ }}-alertmanager
     {{- include "kube-prometheus-stack.labels" $ | nindent 4 }}
@@ -32,6 +32,13 @@ spec:
     {{- if $route.additionalRules }}
     {{- tpl (toYaml $route.additionalRules) $ | nindent 4 }}
     {{- end }}
+    {{- if $route.httpsRedirect }}
+    - filters:
+        - type: RequestRedirect
+          requestRedirect:
+            scheme: https
+            statusCode: 301
+    {{- else }}
     - backendRefs:
         - name: {{ $serviceName }}
           port: {{ $servicePort }}
@@ -44,5 +51,6 @@ spec:
         {{- toYaml . | nindent 8 }}
       {{- end }}
     {{- end }}
+  {{- end }}
   {{- end }}
 {{- end }}

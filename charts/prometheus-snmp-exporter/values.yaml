@@ -36,7 +36,13 @@ containerSecurityContext:
 customLabels: {}
   # app: snmp-exporter
 
-# config:
+## Custom snmp-exporter configuration
+# This will replace the container's default configuration but that is still available at /etc/snmp_exporter/snmp.yml and can be used in addition via `extraArgs`
+# config: |-
+#   auths:
+#     custom_v1:
+#       community: custom
+#       version: 1
 
 extraConfigmapMounts: []
   # - name: snmp-exporter-configmap
@@ -129,7 +135,7 @@ ingress:
 podAnnotations: {}
 
 extraArgs: []
-#  --history.limit=1000
+# - --history.limit=1000
 
 envFrom: []
 #  - secretRef:
@@ -141,24 +147,40 @@ replicas: 1
 # revisionHistoryLimit: 3
 
 ## Monitors ConfigMap changes and POSTs to a URL
-## Ref: https://github.com/jimmidyson/configmap-reload
+## Ref: https://github.com/prometheus-operator/prometheus-operator/tree/main/cmd/prometheus-config-reloader
 ##
 configmapReload:
   ## configmap-reload container name
   ##
+  enabled: false
   name: configmap-reload
+
+  extraArgs: []
+  # - "--watched-dir=/etc/configuration"
+
+  # Mounts extraVolumes specified for snmp-exporter pod. Can use projected volumes to mounts multiple configMaps into same directory
+  extraVolumeMounts: []
+  # - name: projeted-volume
+  #   mountPath: "/etc/configuration"
+  #   readOnly: true
 
   ## configmap-reload container image
   ##
   image:
     repository: quay.io/prometheus-operator/prometheus-config-reloader
-    tag: v0.79.2
+    tag: v0.83.0
     pullPolicy: IfNotPresent
 
   ## configmap-reload resource requests and limits
   ## Ref: http://kubernetes.io/docs/user-guide/compute-resources/
   ##
   resources: {}
+
+  ## configmap-reload container security context
+  containerSecurityContext: {}
+    # runAsNonRoot: true
+    # runAsUser: 1000
+    # readOnlyRootFilesystem: true
 
 # Enable this if you're using https://github.com/prometheus-operator/prometheus-operator
 # A service monitor will be created per each item in serviceMonitor.params[]
@@ -180,7 +202,7 @@ serviceMonitor:
 
   # Relabelings dynamically rewrite the label set of a target before it gets scraped.
   # Set if defined unless overriden by params.relabelings.
-  # https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/api.md#monitoring.coreos.com/v1.RelabelConfig
+  # https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/api-reference/api.md#relabelconfig
   relabelings: []
     # - sourceLabels: [__address__]
     #   targetLabel: __param_target
@@ -197,7 +219,7 @@ serviceMonitor:
   # Metric relabeling is applied to samples as the last step before ingestion.
   # Set if defined unless overridden by params.additionalMetricsRelabelConfigs.
   # This allows setting arbitrary relabel configs.
-  # https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/api.md#monitoring.coreos.com/v1.RelabelConfig
+  # https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/api-reference/api.md#relabelconfig
   additionalMetricsRelabelConfigs: []
     # - sourceLabels: [__name__]
     #   targetLabel: __name__
@@ -206,12 +228,12 @@ serviceMonitor:
     #   replacement: prefix_$1
 
   # Label for selecting service monitors as set in Prometheus CRD.
-  # https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/api.md#monitoring.coreos.com/v1.PrometheusSpec
+  # https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/api-reference/api.md#prometheusspec
   selector:
     prometheus: kube-prometheus
 
   # Retain the job and instance labels of the metrics retrieved by the snmp-exporter
-  # https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/api.md#monitoring.coreos.com/v1.Endpoint
+  # https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/api-reference/api.md#endpoint
   honorLabels: true
 
   params: []

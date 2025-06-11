@@ -28,12 +28,12 @@ def change_style(style, representer):
 
 
 refs = {
-    # https://github.com/prometheus-operator/kube-prometheus
-    'ref.kube-prometheus': '8e16c980bf74e26709484677181e6f94808a45a3',
-    # https://github.com/kubernetes-monitoring/kubernetes-mixin
-    'ref.kubernetes-mixin': 'af5e89820645ab7f99c8be0c247ab2f9f845869d',
-    # https://github.com/etcd-io/etcd
-    'ref.etcd': '2f37f4841e65206f1b38d00ede999ddee58a3720',
+    # renovate: git-refs=https://github.com/prometheus-operator/kube-prometheus branch=main
+    'ref.kube-prometheus': '2c1dffebb7419f092b8eea40983f86e74fe41860',
+    # renovate: git-refs=https://github.com/kubernetes-monitoring/kubernetes-mixin branch=master
+    'ref.kubernetes-mixin': 'ddfa651bc295d2b6659bfef7333d154c72c6e376',
+    # renovate: git-refs=https://github.com/etcd-io/etcd branch=main
+    'ref.etcd': '142cdbfc5fc6361ffb17aa85531ffe6acfa08143',
 }
 
 # Source files list
@@ -202,13 +202,13 @@ replacement_map = {
         'replacement': 'job="{{ $kubeStateMetricsJob }}"',
         'init': '{{- $kubeStateMetricsJob := include "kube-prometheus-stack-kube-state-metrics.name" . }}'},
     'job="{{ $kubeStateMetricsJob }}"': {
-        'replacement': 'job="{{ $kubeStateMetricsJob }}", namespace=~"{{ $targetNamespace }}"',
+        'replacement': 'job="{{ $kubeStateMetricsJob }}", namespace{{ $namespaceOperator }}"{{ $targetNamespace }}"',
         'limitGroup': ['kubernetes-apps'],
-        'init': '{{- $targetNamespace := .Values.defaultRules.appNamespacesTarget }}'},
+        'init': '{{- $targetNamespace := .Values.defaultRules.appNamespacesTarget }}{{- $namespaceOperator := .Values.defaultRules.appNamespacesOperator | default "=~" }}'},
     'job="kubelet"': {
-        'replacement': 'job="kubelet", namespace=~"{{ $targetNamespace }}"',
+        'replacement': 'job="kubelet", namespace{{ $namespaceOperator }}"{{ $targetNamespace }}"',
         'limitGroup': ['kubernetes-storage'],
-        'init': '{{- $targetNamespace := .Values.defaultRules.appNamespacesTarget }}'},
+        'init': '{{- $targetNamespace := .Values.defaultRules.appNamespacesTarget }}{{- $namespaceOperator := .Values.defaultRules.appNamespacesOperator | default "=~" }}'},
     'runbook_url: https://runbooks.prometheus-operator.dev/runbooks/': {
         'replacement': 'runbook_url: {{ .Values.defaultRules.runbookUrl }}/',
         'init': ''},
@@ -660,10 +660,17 @@ def sanitize_name(name):
 
 
 def jsonnet_import_callback(base, rel):
-    if "github.com" in base:
-        base = os.getcwd() + '/vendor/' + base[base.find('github.com'):]
-    elif "github.com" in rel:
+    # rel_base is the path relative to the current cwd.
+    # see https://github.com/prometheus-community/helm-charts/issues/5283
+    # for more details.
+    rel_base = base
+    if rel_base.startswith(os.getcwd()):
+        rel_base = base[len(os.getcwd()):]
+
+    if "github.com" in rel:
         base = os.getcwd() + '/vendor/'
+    elif "github.com" in rel_base:
+        base = os.getcwd() + '/vendor/' + rel_base[rel_base.find('github.com'):]
 
     if os.path.isfile(base + rel):
         return base + rel, open(base + rel).read().encode('utf-8')

@@ -6,9 +6,6 @@
 rbac:
   create: true
 
-podSecurityPolicy:
-  enabled: false
-
 imagePullSecrets: []
 # - name: "image-pull-secret"
 
@@ -60,7 +57,7 @@ configmapReload:
     ##
     image:
       repository: quay.io/prometheus-operator/prometheus-config-reloader
-      tag: v0.78.2
+      tag: v0.83.0
       # When digest is set to a non-empty value, images will be pulled by digest (regardless of tag value).
       digest: ""
       pullPolicy: IfNotPresent
@@ -166,7 +163,7 @@ server:
   # OR for adding OAuth authentication to Prometheus
   #   sidecarContainers:
   #     oauth-proxy:
-  #       image: quay.io/oauth2-proxy/oauth2-proxy:v7.1.2
+  #       image: quay.io/oauth2-proxy/oauth2-proxy:v7.9.0
   #       args:
   #       - --upstream=http://127.0.0.1:9090
   #       - --http-address=0.0.0.0:8081
@@ -207,6 +204,9 @@ server:
   ## prometheus server priorityClassName
   ##
   priorityClassName: ""
+  ## prometheus server runtimeClassName
+  ##
+  runtimeClassName: ""
 
   ## EnableServiceLinks indicates whether information about services should be injected
   ## into pod's environment variables, matching the syntax of Docker links.
@@ -350,6 +350,12 @@ server:
     #   secretName: prom-secret-files
     #   readOnly: true
 
+  ## Prometheus server configuration from a secret
+  ## Do not set both `configMapOverrideName` and `configFromSecret` simultaneously.
+  ## Use either `configMapOverrideName` or `configFromSecret`.
+  ## If `configFromSecret` is defined, a ConfigMap resource will NOT be generated.
+  configFromSecret: ""
+
   ## ConfigMap override where fullname is {{.Release.Name}}-{{.Values.server.configMapOverrideName}}
   ## Defining configMapOverrideName will cause templates/server-configmap.yaml
   ## to NOT generate a ConfigMap resource
@@ -367,9 +373,7 @@ server:
     ##
     enabled: false
 
-    # For Kubernetes >= 1.18 you should specify the ingress-controller via the field ingressClassName
-    # See https://kubernetes.io/blog/2020/04/02/improvements-to-the-ingress-api-in-kubernetes-1.18/#specifying-the-class-of-an-ingress
-    # ingressClassName: nginx
+    ingressClassName: ""
 
     ## Prometheus server Ingress annotations
     ##
@@ -410,6 +414,54 @@ server:
     #   - secretName: prometheus-server-tls
     #     hosts:
     #       - prometheus.domain.com
+
+  ## route (map) allows configuration of HTTPRoute resources
+  ## Requires Gateway API resources and suitable controller installed within the cluster
+  ## Ref. https://gateway-api.sigs.k8s.io/guides/http-routing/
+  route:
+    main:
+      ## Enable this route
+      enabled: false
+
+      ## ApiVersion set by default to "gateway.networking.k8s.io/v1"
+      apiVersion: ""
+      ## kind set by default to HTTPRoute
+      kind: ""
+
+      ## Annotations to attach to the HTTPRoute resource
+      annotations: {}
+      ## Labels to attach to the HTTPRoute resource
+      labels: {}
+
+      ## ParentRefs refers to resources this HTTPRoute is to be attached to (Gateways)
+      parentRefs: []
+        # - name: contour
+        #   sectionName: http
+
+      ## Hostnames (templated) defines a set of hostnames that should match against the HTTP Host
+      ## header to select a HTTPRoute used to process the request
+      hostnames: []
+        # - my.example.com
+
+      ## additionalRules (templated) allows adding custom rules to the route
+      additionalRules: []
+
+      ## Filters define the filters that are applied to requests that match
+      ## this rule
+      filters: []
+
+      ## Matches define conditions used for matching the rule against incoming
+      ## HTTP requests
+      matches:
+        - path:
+            type: PathPrefix
+            value: /
+
+      ## httpsRedirect adds a filter for redirecting to https (HTTP 301 Moved Permanently).
+      ## To redirect HTTP traffic to HTTPS, you need to have a Gateway with both HTTP and HTTPS listeners.
+      ## Matches and filters do not take effect if enabled.
+      ## Ref. https://gateway-api.sigs.k8s.io/guides/http-redirect-rewrite/
+      httpsRedirect: false
 
   ## Server Deployment Strategy type
   strategy:
@@ -519,13 +571,6 @@ server:
     ##
     # storageClass: "-"
 
-    ## Prometheus server data Persistent Volume Binding Mode
-    ## If defined, volumeBindingMode: <volumeBindingMode>
-    ## If undefined (the default) or set to null, no volumeBindingMode spec is
-    ##   set, choosing the default mode.
-    ##
-    # volumeBindingMode: ""
-
     ## Subdirectory of Prometheus server data Persistent Volume to mount
     ## Useful if the volume's root directory is not empty
     ##
@@ -563,20 +608,6 @@ server:
   ## Prometheus AlertManager configuration
   ##
   alertmanagers: []
-
-  ## Specify if a Pod Security Policy for node-exporter must be created
-  ## Ref: https://kubernetes.io/docs/concepts/policy/pod-security-policy/
-  ##
-  podSecurityPolicy:
-    annotations: {}
-      ## Specify pod annotations
-      ## Ref: https://kubernetes.io/docs/concepts/policy/pod-security-policy/#apparmor
-      ## Ref: https://kubernetes.io/docs/concepts/policy/pod-security-policy/#seccomp
-      ## Ref: https://kubernetes.io/docs/concepts/policy/pod-security-policy/#sysctl
-      ##
-      # seccomp.security.alpha.kubernetes.io/allowedProfileNames: '*'
-      # seccomp.security.alpha.kubernetes.io/defaultProfileName: 'docker/default'
-      # apparmor.security.beta.kubernetes.io/defaultProfileName: 'runtime/default'
 
   ## Use a StatefulSet if replicaCount needs to be greater than 1 (see below)
   ##
@@ -724,6 +755,8 @@ server:
     servicePort: 80
     sessionAffinity: None
     type: ClusterIP
+    ## externalTrafficPolicy is applicable to service with externally-facing addresses (NodePorts, ExternalIPs, and LoadBalancer IPs)
+    externalTrafficPolicy: ""
 
     ## Enable gRPC port on service to allow auto discovery with thanos-querier
     gRPC:

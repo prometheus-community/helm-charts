@@ -4,37 +4,44 @@
     "config:recommended",
     "helpers:pinGitHubActionDigestsToSemver"
   ],
-  "dependencyDashboardApproval": true,
+  "schedule": [
+    "* * * * 5"
+  ],
+  "suppressNotifications": ["prEditedNotification"],
+  "dependencyDashboardApproval": false,
+  "labels": ["dependencies"],
   "customManagers": [
     {
       "customType": "regex",
-      "fileMatch": [
-        "(^|/).+\\.(py|yaml)$"
+      "managerFilePatterns": [
+        "/(^|/).+\\.(py|yaml)$/"
       ],
       "matchStrings": [
-        "\\s*#\\s?renovate: (?<datasource>.*?)=(?<depName>.*?)( versioning=(?<versioning>.*?))?\\s+[\\w+\\.\\-]+(?:[:=]|\\s+\\S+)\\s*[\\\"']?(?<currentValue>[\\w+\\.\\-]*)(?:@(?<currentDigest>sha256:[a-f0-9]+))?[\\\"']?"
+        "[\\t ]*(?:#|//) ?renovate: (?<datasource>git-refs)=(?<depName>\\S+)(?: branch=(?<currentValue>\\S+))?[\\t ]*\\r?\\n.+?[:=][\\t ]*[\"']?(?<currentDigest>[a-f0-9]+)[\"']?",
+        "[\\t ]*(?:#|//) ?renovate: (?<datasource>[^=]+)=(?<depName>\\S+)(?: registry=(?<registryUrl>\\S+))?(?: versioning=(?<versioning>\\S+))?[\\t ]*\\r?\\n.+?[:=][\\t ]*[\"']?(?<currentValue>[^@\\s\"'=]+)(?:@(?<currentDigest>sha256:[a-f0-9]+))?[\"']?"
       ],
+      "currentValueTemplate": "{{#if currentValue}}{{{currentValue}}}{{else if (equals datasource 'git-refs')}}main{{/if}}",
       "datasourceTemplate": "{{#if (equals datasource 'github')}}github-tags{{else}}{{{datasource}}}{{/if}}",
       "versioningTemplate": "{{#if (equals datasource 'docker')}}docker{{else if versioning}}{{{versioning}}}{{else}}semver{{/if}}"
     },
     {
       "customType": "regex",
-      "fileMatch": [
-        "(^|/).+\\.yaml$"
+      "managerFilePatterns": [
+        "/(^|/).+\\.yaml$/"
       ],
       "matchStrings": [
-        "\\s*image:\\s+registry:\\s*[\\\"']?(?<registry>.*?)[\\\"']?\\s+(?:repository|name):\\s*[\\\"']?(?<repository>.*?)[\\\"']?\\s+tag:\\s*[\\\"']?(?<currentValue>[\\w+\\.\\-]*)(?:@(?<currentDigest>sha256:[a-f0-9]+))?[\\\"']?"
+        "[\\t ]*image:\\s+registry:\\s*[\\\"']?(?<registry>\\S+\\.\\S+?)[\\\"']?[\\t ]*\\r?\\n[\\t ]*(?:repository|name):\\s*[\\\"']?(?<repository>.*?)[\\\"']?[\\t ]*\\r?\\n[\\t ]*tag:\\s*[\\\"']?(?<currentValue>[\\w+\\.\\-]*)(?:@(?<currentDigest>sha256:[a-f0-9]+))?[\\\"']?"
       ],
       "depNameTemplate": "{{{ registry }}}/{{{ repository }}}",
       "datasourceTemplate": "docker"
     },
     {
       "customType": "regex",
-      "fileMatch": [
-        "(^|/).+\\.yaml$"
+      "managerFilePatterns": [
+        "/(^|/).+\\.yaml$/"
       ],
       "matchStrings": [
-        "\\s*image:\\s+[\\\"']?(?<registry>.+\\..+?)\\/(?<repository>.*?):(?<currentValue>[\\w+\\.\\-]*)(?:@(?<currentDigest>sha256:[a-f0-9]+))?[\\\"']?"
+        "[\\t ]*image:\\s+[\\\"']?(?<registry>\\S+\\.\\S+?)\\/(?<repository>.*?):(?<currentValue>[\\w+\\.\\-]*)(?:@(?<currentDigest>sha256:[a-f0-9]+))?[\\\"']?"
       ],
       "depNameTemplate": "{{{ registry }}}/{{{ repository }}}",
       "datasourceTemplate": "docker"
@@ -61,7 +68,7 @@
     {
       "enabled": true,
       "matchFileNames": [
-        "charts/kube-prometheus-stack/**"
+        "charts/**"
       ],
       "commitMessagePrefix": "[{{ lookup (split packageFileDir '/') 1 }}] ",
       "groupName": "{{ lookup (split packageFileDir '/') 1 }} dependency non-major updates",
@@ -74,7 +81,31 @@
       },
       "matchPackageNames": [
         "*"
+      ],
+      "bumpVersions": [
+        {
+          "name": "Updating Chart version",
+          "filePatterns": ["/^({{#each (distinct (lookupArray upgrades \"packageFileDir\"))}}{{{.}}}{{#unless @last}}|{{/unless}}{{/each}})/Chart\\.(yaml|yml)$/"],
+          "matchStrings": ["(?:^|\\n)version:\\s\"?(?<version>\\d+\\.\\d+\\.\\d+)\"?(?:$|\\n)"],
+          "bumpType": "{{#if isPatch}}patch{{else}}minor{{/if}}"
+        }
       ]
+    },
+    {
+      "enabled": true,
+      "matchUpdateTypes": ["major"],
+      "automerge": false,
+      "platformAutomerge": false,
+      "labels": ["dependencies"]
+    },
+    {
+      "enabled": true,
+      "matchFileNames": [
+        ".github/workflows/**",
+        "charts/prometheus-operator-crds/**"
+      ],
+      "schedule": null,
+      "labels": ["dependencies", "dependencies/auto-merge"]
     }
   ]
 }

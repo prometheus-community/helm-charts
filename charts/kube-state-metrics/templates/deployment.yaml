@@ -9,9 +9,12 @@ metadata:
   namespace: {{ template "kube-state-metrics.namespace" . }}
   labels:
     {{- include "kube-state-metrics.labels" . | indent 4 }}
-  {{- if .Values.annotations }}
+    {{- with .Values.labels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+  {{- with .Values.annotations }}
   annotations:
-{{ toYaml .Values.annotations | indent 4 }}
+    {{- toYaml . | nindent 4 }}
   {{- end }}
 spec:
   selector:
@@ -52,6 +55,10 @@ spec:
       initContainers:
       {{- toYaml . | nindent 6 }}
       {{- end }}
+      {{- if .Values.dnsConfig }}
+      dnsConfig: {{ toYaml .Values.dnsConfig | nindent 8 }}
+      {{- end }}
+      dnsPolicy: {{ .Values.dnsPolicy }}
       containers:
       {{- $servicePort := ternary 9090 (.Values.service.port | default 8080) .Values.kubeRBACProxy.enabled}}
       {{- $telemetryPort := ternary 9091 (.Values.selfMonitor.telemetryPort | default 8081) .Values.kubeRBACProxy.enabled}}
@@ -79,6 +86,9 @@ spec:
         {{-  if .Values.extraArgs  }}
         {{- .Values.extraArgs | toYaml | nindent 8 }}
         {{-  end  }}
+        {{- if .Values.kubeRBACProxy.enabled }}
+        - --host=127.0.0.1
+        {{- end }}
         - --port={{ $servicePort }}
         {{-  if .Values.collectors  }}
         - --resources={{ .Values.collectors | join "," }}
@@ -129,7 +139,7 @@ spec:
         {{- end }}
         {{- end }}
         {{- if .Values.customResourceState.enabled }}
-        - --custom-resource-state-config-file=/etc/customresourcestate/config.yaml
+        - --custom-resource-state-config-file=/etc/customresourcestate/{{ .Values.customResourceState.key }}
         {{- end }}
         {{- if or (.Values.kubeconfig.enabled) (.Values.customResourceState.enabled) (.Values.volumeMounts) }}
         volumeMounts:
@@ -158,6 +168,7 @@ spec:
           name: "metrics"
         {{- end }}
         {{- end }}
+        {{- if not .Values.kubeRBACProxy.enabled }}
         {{- if .Values.startupProbe.enabled }}
         startupProbe:
           failureThreshold: {{ .Values.startupProbe.failureThreshold }}
@@ -171,8 +182,13 @@ spec:
               value: {{ $header.value }}
             {{- end }}
             path: /healthz
+            {{- if .Values.kubeRBACProxy.enabled }}
+            port: {{ .Values.service.port | default 8080 }}
+            scheme: HTTPS
+            {{- else }}
             port: {{ $servicePort }}
             scheme: {{ upper .Values.startupProbe.httpGet.scheme }}
+            {{- end }}
           initialDelaySeconds: {{ .Values.startupProbe.initialDelaySeconds }}
           periodSeconds: {{ .Values.startupProbe.periodSeconds }}
           successThreshold: {{ .Values.startupProbe.successThreshold }}
@@ -190,8 +206,13 @@ spec:
               value: {{ $header.value }}
             {{- end }}
             path: /livez
+            {{- if .Values.kubeRBACProxy.enabled }}
+            port: {{ .Values.service.port | default 8080 }}
+            scheme: HTTPS
+            {{- else }}
             port: {{ $servicePort }}
             scheme: {{ upper .Values.livenessProbe.httpGet.scheme }}
+            {{- end }}
           initialDelaySeconds: {{ .Values.livenessProbe.initialDelaySeconds }}
           periodSeconds: {{ .Values.livenessProbe.periodSeconds }}
           successThreshold: {{ .Values.livenessProbe.successThreshold }}
@@ -208,12 +229,18 @@ spec:
               value: {{ $header.value }}
             {{- end }}
             path: /readyz
+            {{- if .Values.kubeRBACProxy.enabled }}
+            port: {{ .Values.selfMonitor.telemetryPort | default 8081 }}
+            scheme: HTTPS
+            {{- else }}
             port: {{ $telemetryPort }}
             scheme: {{ upper .Values.readinessProbe.httpGet.scheme }}
+            {{- end }}
           initialDelaySeconds: {{ .Values.readinessProbe.initialDelaySeconds }}
           periodSeconds: {{ .Values.readinessProbe.periodSeconds }}
           successThreshold: {{ .Values.readinessProbe.successThreshold }}
           timeoutSeconds: {{ .Values.readinessProbe.timeoutSeconds }}
+        {{- end }}
         resources:
 {{ toYaml .Values.resources | indent 10 }}
 {{- if .Values.containerSecurityContext }}
@@ -307,7 +334,11 @@ spec:
       {{- end }}
       {{- if .Values.affinity }}
       affinity:
-{{ toYaml .Values.affinity | indent 8 }}
+        {{- if kindIs "map" .Values.affinity }}
+        {{- toYaml .Values.affinity | nindent 8 }}
+        {{- else }}
+        {{- tpl .Values.affinity $ | nindent 8 }}
+        {{- end }}
       {{- end }}
       {{- with .Values.nodeSelector }}
       nodeSelector:
@@ -336,7 +367,7 @@ spec:
       {{- if .Values.customResourceState.enabled}}
         - name: customresourcestate-config
           configMap:
-            name: {{ template "kube-state-metrics.fullname" . }}-customresourcestate-config
+            name: {{ template "kube-state-metrics.crsConfigMapName" . }}
       {{- end }}
       {{- if .Values.volumes }}
 {{ toYaml .Values.volumes | indent 8 }}

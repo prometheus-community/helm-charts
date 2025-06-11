@@ -37,13 +37,47 @@ spec:
         description: '{{`{{`}} $labels.node {{`}}`}} has been unready for more than 15 minutes on cluster {{`{{`}} $labels.cluster {{`}}`}}.'
         runbook_url: {{ .Values.defaultRules.runbookUrl }}/kubernetes/kubenodenotready
         summary: Node is not ready.
-      expr: kube_node_status_condition{job="{{ $kubeStateMetricsJob }}",condition="Ready",status="true"} == 0
+      expr: |-
+        kube_node_status_condition{job="{{ $kubeStateMetricsJob }}",condition="Ready",status="true"} == 0
+        and on ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster, node)
+        kube_node_spec_unschedulable{job="{{ $kubeStateMetricsJob }}"} == 0
       for: {{ dig "KubeNodeNotReady" "for" "15m" .Values.customRules }}
       {{- with .Values.defaultRules.keepFiringFor }}
       keep_firing_for: "{{ . }}"
       {{- end }}
       labels:
         severity: {{ dig "KubeNodeNotReady" "severity" "warning" .Values.customRules }}
+      {{- if or .Values.defaultRules.additionalRuleLabels .Values.defaultRules.additionalRuleGroupLabels.kubernetesSystem }}
+        {{- with .Values.defaultRules.additionalRuleLabels }}
+          {{- toYaml . | nindent 8 }}
+        {{- end }}
+        {{- with .Values.defaultRules.additionalRuleGroupLabels.kubernetesSystem }}
+          {{- toYaml . | nindent 8 }}
+        {{- end }}
+      {{- end }}
+{{- end }}
+{{- if not (.Values.defaultRules.disabled.KubeNodePressure | default false) }}
+    - alert: KubeNodePressure
+      annotations:
+{{- if .Values.defaultRules.additionalRuleAnnotations }}
+{{ toYaml .Values.defaultRules.additionalRuleAnnotations | indent 8 }}
+{{- end }}
+{{- if .Values.defaultRules.additionalRuleGroupAnnotations.kubernetesSystem }}
+{{ toYaml .Values.defaultRules.additionalRuleGroupAnnotations.kubernetesSystem | indent 8 }}
+{{- end }}
+        description: '{{`{{`}} $labels.node {{`}}`}} on cluster {{`{{`}} $labels.cluster {{`}}`}} has active Condition {{`{{`}} $labels.condition {{`}}`}}. This is caused by resource usage exceeding eviction thresholds.'
+        runbook_url: {{ .Values.defaultRules.runbookUrl }}/kubernetes/kubenodepressure
+        summary: Node has as active Condition.
+      expr: |-
+        kube_node_status_condition{job="{{ $kubeStateMetricsJob }}",condition=~"(MemoryPressure|DiskPressure|PIDPressure)",status="true"} == 1
+        and on ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster, node)
+        kube_node_spec_unschedulable{job="{{ $kubeStateMetricsJob }}"} == 0
+      for: {{ dig "KubeNodePressure" "for" "10m" .Values.customRules }}
+      {{- with .Values.defaultRules.keepFiringFor }}
+      keep_firing_for: "{{ . }}"
+      {{- end }}
+      labels:
+        severity: {{ dig "KubeNodePressure" "severity" "info" .Values.customRules }}
       {{- if or .Values.defaultRules.additionalRuleLabels .Values.defaultRules.additionalRuleGroupLabels.kubernetesSystem }}
         {{- with .Values.defaultRules.additionalRuleLabels }}
           {{- toYaml . | nindent 8 }}
@@ -94,14 +128,16 @@ spec:
         runbook_url: {{ .Values.defaultRules.runbookUrl }}/kubernetes/kubelettoomanypods
         summary: Kubelet is running at capacity.
       expr: |-
-        count by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster, node) (
-          (kube_pod_status_phase{job="{{ $kubeStateMetricsJob }}", phase="Running"} == 1)
-          * on ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster, namespace, pod) group_left (node)
-          group by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster, namespace, pod, node) (
-            kube_pod_info{job="{{ $kubeStateMetricsJob }}"}
+        (
+          max by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster, instance) (
+            kubelet_running_pods{job="kubelet", metrics_path="/metrics"} > 1
+          )
+          * on ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster, instance) group_left(node)
+          max by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster, instance, node) (
+            kubelet_node_name{job="kubelet", metrics_path="/metrics"}
           )
         )
-        /
+        / on ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster, node) group_left()
         max by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster, node) (
           kube_node_status_capacity{job="{{ $kubeStateMetricsJob }}", resource="pods"} != 1
         ) > 0.95
@@ -132,13 +168,50 @@ spec:
         description: The readiness status of node {{`{{`}} $labels.node {{`}}`}} has changed {{`{{`}} $value {{`}}`}} times in the last 15 minutes on cluster {{`{{`}} $labels.cluster {{`}}`}}.
         runbook_url: {{ .Values.defaultRules.runbookUrl }}/kubernetes/kubenodereadinessflapping
         summary: Node readiness status is flapping.
-      expr: sum(changes(kube_node_status_condition{job="{{ $kubeStateMetricsJob }}",status="true",condition="Ready"}[15m])) by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster, node) > 2
+      expr: |-
+        sum(changes(kube_node_status_condition{job="{{ $kubeStateMetricsJob }}",status="true",condition="Ready"}[15m])) by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster, node) > 2
+        and on ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster, node)
+        kube_node_spec_unschedulable{job="{{ $kubeStateMetricsJob }}"} == 0
       for: {{ dig "KubeNodeReadinessFlapping" "for" "15m" .Values.customRules }}
       {{- with .Values.defaultRules.keepFiringFor }}
       keep_firing_for: "{{ . }}"
       {{- end }}
       labels:
         severity: {{ dig "KubeNodeReadinessFlapping" "severity" "warning" .Values.customRules }}
+      {{- if or .Values.defaultRules.additionalRuleLabels .Values.defaultRules.additionalRuleGroupLabels.kubernetesSystem }}
+        {{- with .Values.defaultRules.additionalRuleLabels }}
+          {{- toYaml . | nindent 8 }}
+        {{- end }}
+        {{- with .Values.defaultRules.additionalRuleGroupLabels.kubernetesSystem }}
+          {{- toYaml . | nindent 8 }}
+        {{- end }}
+      {{- end }}
+{{- end }}
+{{- if not (.Values.defaultRules.disabled.KubeNodeEviction | default false) }}
+    - alert: KubeNodeEviction
+      annotations:
+{{- if .Values.defaultRules.additionalRuleAnnotations }}
+{{ toYaml .Values.defaultRules.additionalRuleAnnotations | indent 8 }}
+{{- end }}
+{{- if .Values.defaultRules.additionalRuleGroupAnnotations.kubernetesSystem }}
+{{ toYaml .Values.defaultRules.additionalRuleGroupAnnotations.kubernetesSystem | indent 8 }}
+{{- end }}
+        description: Node {{`{{`}} $labels.node {{`}}`}} on {{`{{`}} $labels.cluster {{`}}`}} is evicting Pods due to {{`{{`}} $labels.eviction_signal {{`}}`}}.  Eviction occurs when eviction thresholds are crossed, typically caused by Pods exceeding RAM/ephemeral-storage limits.
+        runbook_url: {{ .Values.defaultRules.runbookUrl }}/kubernetes/kubenodeeviction
+        summary: Node is evicting pods.
+      expr: |-
+        sum(rate(kubelet_evictions{job="kubelet", metrics_path="/metrics"}[15m])) by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster, eviction_signal, instance)
+        * on ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster, instance) group_left(node)
+        max by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster, instance, node) (
+          kubelet_node_name{job="kubelet", metrics_path="/metrics"}
+        )
+        > 0
+      for: {{ dig "KubeNodeEviction" "for" "0s" .Values.customRules }}
+      {{- with .Values.defaultRules.keepFiringFor }}
+      keep_firing_for: "{{ . }}"
+      {{- end }}
+      labels:
+        severity: {{ dig "KubeNodeEviction" "severity" "info" .Values.customRules }}
       {{- if or .Values.defaultRules.additionalRuleLabels .Values.defaultRules.additionalRuleGroupLabels.kubernetesSystem }}
         {{- with .Values.defaultRules.additionalRuleLabels }}
           {{- toYaml . | nindent 8 }}

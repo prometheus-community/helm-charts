@@ -43,11 +43,6 @@ The longest name that gets created adds and extra 37 characters, so truncation s
 {{- end }}
 {{- end }}
 
-{{/* Prometheus apiVersion for networkpolicy */}}
-{{- define "kube-prometheus-stack.prometheus.networkPolicy.apiVersion" -}}
-{{- print "networking.k8s.io/v1" -}}
-{{- end }}
-
 {{/* Alertmanager custom resource instance name */}}
 {{- define "kube-prometheus-stack.alertmanager.crname" -}}
 {{- if .Values.cleanPrometheusOperatorObjectNames }}
@@ -71,7 +66,6 @@ The longest name that gets created adds and extra 37 characters, so truncation s
 {{- define "kube-prometheus-stack.thanosRuler.name" -}}
 {{- default (printf "%s-thanos-ruler" (include "kube-prometheus-stack.name" .)) .Values.thanosRuler.name -}}
 {{- end }}
-
 
 {{/* Create chart name and version as used by the chart label. */}}
 {{- define "kube-prometheus-stack.chartref" -}}
@@ -126,6 +120,7 @@ heritage: {{ $.Release.Service | quote }}
 {{- else -}}
     {{ default "default" .Values.alertmanager.serviceAccount.name }}
 {{- end -}}
+
 {{- end -}}
 
 {{/* Create the name of thanosRuler service account to use */}}
@@ -156,6 +151,17 @@ Use the grafana namespace override for multi-namespace deployments in combined c
     {{- .Values.grafana.namespaceOverride -}}
   {{- else -}}
     {{- .Release.Namespace -}}
+  {{- end -}}
+{{- end -}}
+
+{{/*
+Use the Alertmanager namespace override for multi-namespace deployments in combined charts
+*/}}
+{{- define "kube-prometheus-stack-alertmanager.namespace" -}}
+  {{- if .Values.alertmanager.namespaceOverride -}}
+    {{- .Values.alertmanager.namespaceOverride -}}
+  {{- else -}}
+    {{- include "kube-prometheus-stack.namespace" . -}}
   {{- end -}}
 {{- end -}}
 
@@ -196,37 +202,6 @@ Use the prometheus-node-exporter namespace override for multi-namespace deployme
 {{- define "kube-prometheus-stack.kubeVersion" -}}
   {{- default .Capabilities.KubeVersion.Version .Values.kubeVersionOverride -}}
 {{- end -}}
-
-{{/* Get Ingress API Version */}}
-{{- define "kube-prometheus-stack.ingress.apiVersion" -}}
-  {{- if and (.Capabilities.APIVersions.Has "networking.k8s.io/v1") (semverCompare ">= 1.19-0" (include "kube-prometheus-stack.kubeVersion" .)) -}}
-      {{- print "networking.k8s.io/v1" -}}
-  {{- else if .Capabilities.APIVersions.Has "networking.k8s.io/v1beta1" -}}
-    {{- print "networking.k8s.io/v1beta1" -}}
-  {{- else -}}
-    {{- print "extensions/v1beta1" -}}
-  {{- end -}}
-{{- end -}}
-
-{{/* Check Ingress stability */}}
-{{- define "kube-prometheus-stack.ingress.isStable" -}}
-  {{- eq (include "kube-prometheus-stack.ingress.apiVersion" .) "networking.k8s.io/v1" -}}
-{{- end -}}
-
-{{/* Check Ingress supports pathType */}}
-{{/* pathType was added to networking.k8s.io/v1beta1 in Kubernetes 1.18 */}}
-{{- define "kube-prometheus-stack.ingress.supportsPathType" -}}
-  {{- or (eq (include "kube-prometheus-stack.ingress.isStable" .) "true") (and (eq (include "kube-prometheus-stack.ingress.apiVersion" .) "networking.k8s.io/v1beta1") (semverCompare ">= 1.18-0" (include "kube-prometheus-stack.kubeVersion" .))) -}}
-{{- end -}}
-
-{{/* Get Policy API Version */}}
-{{- define "kube-prometheus-stack.pdb.apiVersion" -}}
-  {{- if and (.Capabilities.APIVersions.Has "policy/v1") (semverCompare ">= 1.21-0" (include "kube-prometheus-stack.kubeVersion" .)) -}}
-      {{- print "policy/v1" -}}
-  {{- else -}}
-    {{- print "policy/v1beta1" -}}
-  {{- end -}}
-  {{- end -}}
 
 {{/* Get value based on current Kubernetes version */}}
 {{- define "kube-prometheus-stack.kubeVersionDefaultValue" -}}
@@ -329,5 +304,17 @@ tlsConfig:
   caFile: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
   insecureSkipVerify: {{ .Values.kubelet.serviceMonitor.insecureSkipVerify }}
 bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
+{{- end }}
+{{- end }}
+
+
+{{/* To help configure anti-affinity rules for Prometheus pods */}}
+{{- define "kube-prometheus-stack.prometheus.pod-anti-affinity.matchExpressions" }}
+{{- if .Values.prometheus.agentMode }}
+- {key: app.kubernetes.io/name, operator: In, values: [prometheus-agent]}
+- {key: app.kubernetes.io/instance, operator: In, values: [{{ template "kube-prometheus-stack.prometheus.crname" . }}]}
+{{- else }}
+- {key: app.kubernetes.io/name, operator: In, values: [prometheus]}
+- {key: app.kubernetes.io/instance, operator: In, values: [{{ template "kube-prometheus-stack.prometheus.crname" . }}]}
 {{- end }}
 {{- end }}
