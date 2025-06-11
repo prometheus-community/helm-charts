@@ -5,11 +5,11 @@
     "helpers:pinGitHubActionDigestsToSemver"
   ],
   "schedule": [
-    "* 16 * * 5"
+    "* * * * 5"
   ],
   "suppressNotifications": ["prEditedNotification"],
   "dependencyDashboardApproval": false,
-  "bumpVersion": "patch",
+  "labels": ["dependencies"],
   "customManagers": [
     {
       "customType": "regex",
@@ -81,7 +81,31 @@
       },
       "matchPackageNames": [
         "*"
+      ],
+      "bumpVersions": [
+        {
+          "name": "Updating Chart version",
+          "filePatterns": ["/^({{#each (distinct (lookupArray upgrades \"packageFileDir\"))}}{{{.}}}{{#unless @last}}|{{/unless}}{{/each}})/Chart\\.(yaml|yml)$/"],
+          "matchStrings": ["(?:^|\\n)version:\\s\"?(?<version>\\d+\\.\\d+\\.\\d+)\"?(?:$|\\n)"],
+          "bumpType": "{{#if isPatch}}patch{{else}}minor{{/if}}"
+        }
       ]
+    },
+    {
+      "enabled": true,
+      "matchUpdateTypes": ["major"],
+      "automerge": false,
+      "platformAutomerge": false,
+      "labels": ["dependencies"]
+    },
+    {
+      "enabled": true,
+      "matchFileNames": [
+        ".github/workflows/**",
+        "charts/prometheus-operator-crds/**"
+      ],
+      "schedule": null,
+      "labels": ["dependencies", "dependencies/auto-merge"]
     }
   ]
 }
