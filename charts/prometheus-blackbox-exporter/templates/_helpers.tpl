@@ -213,19 +213,13 @@ containers:
   securityContext:
     {{- toYaml . | nindent 4 }}
   {{- end }}
-  {{- if .Values.extraEnv }}
+  {{- with .Values.extraEnv }}
   env:
-  {{- range $key, $value := .Values.extraEnv }}
-  - name: {{ $key }}
-    value: {{ $value | quote }}
+    {{- toYaml . | nindent 4 }}
   {{- end }}
-  {{- end }}
-  {{- if .Values.extraEnvFromSecret }}
+  {{- with .Values.extraEnvFrom }}
   envFrom:
-  {{- range .Values.extraEnvFromSecret }}
-    - secretRef:
-        name: {{ . }}
-  {{- end }}
+    {{- toYaml . | nindent 4 }}
   {{- end }}
   args:
   {{- if .Values.config }}
