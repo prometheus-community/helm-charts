@@ -4,4 +4,4 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd -- "$(dirname -- "${0}")" &>/dev/null && pwd)"
 
-"${SCRIPT_DIR}/hack/update_crds.sh"
+"${SCRIPT_DIR}/update_crds.sh"
