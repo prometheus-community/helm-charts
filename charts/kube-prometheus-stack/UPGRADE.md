@@ -1,6 +1,6 @@
 # Upgrade
 
-## From 73.x to 74.x
+## From 74.x to 75.x
 
 This version renames objects created under `additionalPrometheusRules` and `additionalPrometheusRulesMap`.  They used to be prefixed with `.Chart.Name`; they are now prefixed with `.Release.name` so as to make the object names unique across multiple releases.
 
