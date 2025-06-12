@@ -1,5 +1,9 @@
 # Upgrade
 
+## From 73.x to 74.x
+
+This version renames objects created under `additionalPrometheusRules` and `additionalPrometheusRulesMap`.  They used to be prefixed with `.Chart.Name`; they are now prefixed with `.Release.name` so as to make the object names unique across multiple releases.
+
 ## From 72.x to 73.x
 
 This version removes support for deprecated K8s API versions for `Ingress` resources and associated fields.
