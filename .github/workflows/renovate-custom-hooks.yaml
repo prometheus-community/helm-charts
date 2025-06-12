@@ -92,10 +92,14 @@ jobs:
           
           # Add additions (new or modified files)
           for file in $MODIFIED_FILES; do
-            BASE64_CONTENT=$(base64 -w 0 <"$file")  # Encode file content
-            jq --arg path "$file" --arg content "$BASE64_CONTENT" \
-              '.additions += [{"path": $path, "contents": $content}]' "$FILE_CHANGES_JSON_FILE" > "$FILE_CHANGES_JSON_FILE.tmp"
+            TMP_CONTENT_FILE=$(mktemp)
+            base64 -w 0 <"$file" > "$TMP_CONTENT_FILE"
+          
+            jq --arg path "$file" --slurpfile content "$TMP_CONTENT_FILE" \
+            '.additions += [{"path": $path, "contents": ($content[0])}]' "$FILE_CHANGES_JSON_FILE" > "$FILE_CHANGES_JSON_FILE.tmp"
+          
             mv "$FILE_CHANGES_JSON_FILE.tmp" "$FILE_CHANGES_JSON_FILE"
+            rm "$TMP_CONTENT_FILE"
           done
           
           # Create a temporary file for the final JSON payload
