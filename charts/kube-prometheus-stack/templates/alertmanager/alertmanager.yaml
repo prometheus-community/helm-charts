@@ -6,11 +6,14 @@ metadata:
   namespace: {{ template "kube-prometheus-stack-alertmanager.namespace" . }}
   labels:
     app: {{ template "kube-prometheus-stack.name" . }}-alertmanager
-{{ include "kube-prometheus-stack.labels" . | indent 4 }}
-{{- if .Values.alertmanager.annotations }}
+    {{- include "kube-prometheus-stack.labels" . | nindent 4 }}
+    {{- with .Values.alertmanager.additionalLabels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+  {{- with .Values.alertmanager.annotations }}
   annotations:
-{{ toYaml .Values.alertmanager.annotations | indent 4 }}
-{{- end }}
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
 spec:
 {{- if .Values.alertmanager.alertmanagerSpec.image }}
   {{- $registry := .Values.global.imageRegistry | default .Values.alertmanager.alertmanagerSpec.image.registry -}}
@@ -23,6 +26,7 @@ spec:
   {{- else }}
   image: "{{ $registry }}/{{ .Values.alertmanager.alertmanagerSpec.image.repository }}"
   {{- end }}
+  imagePullPolicy: "{{ .Values.alertmanager.alertmanagerSpec.image.pullPolicy }}"
   version: {{ default .Values.alertmanager.alertmanagerSpec.image.tag .Values.alertmanager.alertmanagerSpec.version }}
   {{- if .Values.alertmanager.alertmanagerSpec.image.sha }}
   sha: {{ .Values.alertmanager.alertmanagerSpec.image.sha }}
