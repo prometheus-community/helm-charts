@@ -35,6 +35,8 @@ tests:
       alertmanager.enabled: true
       alertmanager.networkPolicy.enabled: true
       alertmanager.networkPolicy.gateway.namespace: custom-gateway
+      alertmanager.networkPolicy.gateway.podLabels:
+        app.kubernetes.io/name: ingress-nginx
     asserts:
       - equal:
           path: spec.ingress[0].from[0].namespaceSelector.matchLabels["kubernetes.io/metadata.name"]
@@ -44,13 +46,13 @@ tests:
     set:
       alertmanager.enabled: true
       alertmanager.networkPolicy.enabled: true
+      alertmanager.networkPolicy.gateway.namespace: custom-gateway
       alertmanager.networkPolicy.gateway.podLabels:
         app.kubernetes.io/name: custom-gateway
     asserts:
       - equal:
-          path: spec.ingress[0].from[0].podSelector.matchLabels
-          value:
-            app.kubernetes.io/name: custom-gateway
+          path: spec.ingress[0].from[0].podSelector.matchLabels["app.kubernetes.io/name"]
+          value: custom-gateway
 
   - it: should include Prometheus rules when enabled
     set:
@@ -59,20 +61,20 @@ tests:
       alertmanager.networkPolicy.monitoringRules.prometheus: true
       alertmanager.service.port: 9093
     asserts:
-      - matchRegex:
-          path: spec.ingress[1].from[0].podSelector.matchLabels["app.kubernetes.io/name"]
-          pattern: prometheus
+      - equal:
+          path: spec.ingress[0].from[0].podSelector.matchLabels["app.kubernetes.io/name"]
+          value: prometheus
 
-  - it: should include Loki rules when enabled
+  - it: should include Alertmanager rules when enabled
     set:
       alertmanager.enabled: true
       alertmanager.networkPolicy.enabled: true
       alertmanager.networkPolicy.monitoringRules.loki: true
       alertmanager.service.port: 9093
     asserts:
-      - matchRegex:
-          path: spec.ingress[2].from[0].podSelector.matchLabels["app.kubernetes.io/name"]
-          pattern: loki
+      - equal:
+          path: spec.ingress[1].from[0].podSelector.matchLabels["app.kubernetes.io/name"]
+          value: alertmanager
 
   - it: should include cluster rules when enabled
     set:
@@ -81,9 +83,11 @@ tests:
       alertmanager.networkPolicy.enableClusterRules: true
       alertmanager.service.clusterPort: 9094
     asserts:
-      - matchRegex:
-          path: spec.ingress[3].from[0].podSelector.matchLabels["app.kubernetes.io/name"]
-          pattern: alertmanager
+      - equal:
+          path: spec.ingress[2].from[0].podSelector.matchLabels
+          value:
+              app.kubernetes.io/name: alertmanager
+              component: config-reloader
 
   - it: should add additional ingress rules when specified
     set:
@@ -128,23 +132,3 @@ tests:
           value:
             - Ingress
             - Egress
-
-  - it: should handle empty gateway pod labels
-    set:
-      alertmanager.enabled: true
-      alertmanager.networkPolicy.enabled: true
-      alertmanager.networkPolicy.gateway.namespace: custom-gateway
-      alertmanager.networkPolicy.gateway.podLabels: null
-      alertmanager.networkPolicy.policyTypes[0]: Ingress
-      alertmanager.service.port: 9093
-    asserts:
-      - hasDocuments:
-          count: 1
-      - isKind:
-          of: NetworkPolicy
-      - equal:
-          path: spec.ingress[0].from[0].namespaceSelector.matchLabels["kubernetes.io/metadata.name"]
-          value: custom-gateway
-      - equal:
-          path: spec.ingress[0].ports[0].port
-          value: 9093

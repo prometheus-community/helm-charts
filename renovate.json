@@ -5,11 +5,12 @@
     "helpers:pinGitHubActionDigestsToSemver"
   ],
   "schedule": [
-    "* 16 * * 5"
+    "* * * * 5"
   ],
   "suppressNotifications": ["prEditedNotification"],
   "dependencyDashboardApproval": false,
   "labels": ["dependencies"],
+  "rebaseWhen": "behind-base-branch",
   "customManagers": [
     {
       "customType": "regex",
@@ -102,10 +103,36 @@
       "enabled": true,
       "matchFileNames": [
         ".github/workflows/**",
+        "charts/kube-prometheus-stack/**",
         "charts/prometheus-operator-crds/**"
       ],
       "schedule": null,
       "labels": ["dependencies", "dependencies/auto-merge"]
+    },
+    {
+      "matchDatasources": [
+        "git-refs"
+      ],
+      "schedule": [
+        "* * * * 2,5"
+      ]
+    },
+    {
+      "enabled": true,
+      "matchFileNames": [
+        "charts/prometheus-operator-crds/**"
+      ],
+      "matchPackageNames": [
+        "prometheus-operator/prometheus-operator"
+      ],
+      "bumpVersions": [
+        {
+          "name": "Updating Chart version",
+          "filePatterns": ["/^({{#each (distinct (lookupArray upgrades \"packageFileDir\"))}}{{{.}}}{{#unless @last}}|{{/unless}}{{/each}})/Chart\\.(yaml|yml)$/"],
+          "matchStrings": ["(?:^|\\n)version:\\s\"?(?<version>\\d+\\.\\d+\\.\\d+)\"?(?:$|\\n)"],
+          "bumpType": "{{#if isPatch}}patch{{else}}major{{/if}}"
+        }
+      ]
     }
   ]
 }
