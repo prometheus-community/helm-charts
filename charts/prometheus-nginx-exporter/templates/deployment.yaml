@@ -4,11 +4,13 @@ kind: Deployment
 metadata:
   name: {{ include "prometheus-nginx-exporter.fullname" . }}
   namespace: {{ template "prometheus-nginx-exporter.namespace" . }}
-  {{- with .Values.additionalAnnotations }}
-  annotations: {{ toYaml . | nindent 4 }}
-  {{- end }}
+  annotations:
+    {{- include "prometheus-nginx-exporter.deploymentAnnotations" . | indent 4}}
   labels:
     {{- include "prometheus-nginx-exporter.labels" . | indent 4 }}
+    {{- if .Values.deployment.labels }}
+    {{- toYaml .Values.deployment.labels | trim | nindent 4 }}
+    {{- end }}
 spec:
   replicas: {{ .Values.replicaCount }}
   selector:
