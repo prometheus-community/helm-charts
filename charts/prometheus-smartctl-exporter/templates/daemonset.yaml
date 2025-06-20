@@ -1,5 +1,5 @@
 {{- $global := . }}
-{{- $base := dict "annotations" .Values.annotations "resources" .Values.resources "nodeSelector" .Values.nodeSelector "affinity" .Values.affinity "tolerations" .Values.tolerations "config" .Values.config  "hostNetwork" .Values.hostNetwork "priorityClassName" .Values.priorityClassName}}
+{{- $base := dict "annotations" .Values.annotations "resources" .Values.resources "nodeSelector" .Values.nodeSelector "affinity" .Values.affinity "tolerations" .Values.tolerations "config" .Values.config  "hostNetwork" .Values.hostNetwork "priorityClassName" .Values.priorityClassName "extraArgs" .Values.extraArgs }}
 {{- $items := prepend .Values.extraInstances $base }}
 {{- range $idx, $item := $items }}
 {{- $config := mergeOverwrite $item.config $global.Values.common.config }}
@@ -57,6 +57,9 @@ spec:
 {{ end }}
         - '--web.listen-address={{ $config.bind_to }}'
         - '--web.telemetry-path={{ $config.url_path }}'
+        {{- range $key, $value := $item.extraArgs }}
+        - '--{{ $key }}={{ $value }}'
+        {{- end }}
         name: main
         securityContext:
           privileged: true
