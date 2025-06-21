@@ -10,6 +10,7 @@
   "suppressNotifications": ["prEditedNotification"],
   "dependencyDashboardApproval": false,
   "labels": ["dependencies"],
+  "rebaseWhen": "behind-base-branch",
   "customManagers": [
     {
       "customType": "regex",
@@ -85,13 +86,14 @@
       "bumpVersions": [
         {
           "name": "Updating Chart version",
-          "filePatterns": ["/^({{#each (distinct (lookupArray upgrades \"packageFileDir\"))}}{{{.}}}{{#unless @last}}|{{/unless}}{{/each}})/Chart\\.(yaml|yml)$/"],
+          "filePatterns": ["/^({{#each (distinct (lookupArray upgrades \"packageFileDir\"))}}{{{lookup (split . \"/\") 0}}}/{{{lookup (split . \"/\") 1}}}{{#unless @last}}|{{/unless}}{{/each}})/Chart\\.ya?ml$/"],
           "matchStrings": ["(?:^|\\n)version:\\s\"?(?<version>\\d+\\.\\d+\\.\\d+)\"?(?:$|\\n)"],
-          "bumpType": "{{#if isPatch}}patch{{else}}minor{{/if}}"
+          "bumpType": "{{#if (or isPinDigest isPatch)}}patch{{else}}minor{{/if}}"
         }
       ]
     },
     {
+      "description": "Disable automerge for all major updates.",
       "enabled": true,
       "matchUpdateTypes": ["major"],
       "automerge": false,
@@ -99,15 +101,30 @@
       "labels": ["dependencies"]
     },
     {
+      "description": "Opt-in to automerge updates charts.",
       "enabled": true,
       "matchFileNames": [
         ".github/workflows/**",
-        "charts/prometheus-operator-crds/**"
+        "charts/kube-prometheus-stack/**",
+        "charts/prometheus-operator-crds/**",
+        "charts/prometheus-windows-exporter/**",
+        "charts/jiralert/**",
+        "charts/prom-label-proxy/**",
+        "charts/prometheus-nats-exporter/**"
       ],
       "schedule": null,
       "labels": ["dependencies", "dependencies/auto-merge"]
     },
     {
+      "matchDatasources": [
+        "git-refs"
+      ],
+      "schedule": [
+        "* 14-17 * * 2,5"
+      ]
+    },
+    {
+      "description": "Prometheus Operator minor updates should result in a major bump of the chart version.",
       "enabled": true,
       "matchFileNames": [
         "charts/prometheus-operator-crds/**"
@@ -118,10 +135,23 @@
       "bumpVersions": [
         {
           "name": "Updating Chart version",
-          "filePatterns": ["/^({{#each (distinct (lookupArray upgrades \"packageFileDir\"))}}{{{.}}}{{#unless @last}}|{{/unless}}{{/each}})/Chart\\.(yaml|yml)$/"],
+          "filePatterns": ["/^({{#each (distinct (lookupArray upgrades \"packageFileDir\"))}}{{{lookup (split . \"/\") 0}}}/{{{lookup (split . \"/\") 1}}}{{#unless @last}}|{{/unless}}{{/each}})/Chart\\.ya?ml$/"],
           "matchStrings": ["(?:^|\\n)version:\\s\"?(?<version>\\d+\\.\\d+\\.\\d+)\"?(?:$|\\n)"],
-          "bumpType": "{{#if isPatch}}patch{{else}}major{{/if}}"
+          "bumpType": "{{#if (or isPinDigest isPatch)}}patch{{else}}major{{/if}}"
         }
+      ]
+    },
+    {
+      "description": "disable prometheus-operator major and minor updates for charts/prometheus-operator-crds",
+      "enabled": false,
+      "matchFileNames": [
+        "charts/prometheus-operator-crds/**"
+      ],
+      "matchPackageNames": [
+        "prometheus-operator/prometheus-operator"
+      ],
+      "matchUpdateTypes": [
+        "major", "minor"
       ]
     }
   ]

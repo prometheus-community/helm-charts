@@ -1,0 +1,144 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/helm-unittest/helm-unittest/main/schema/helm-testsuite.json
+suite: test additionalPrometheusRules
+templates:
+  - prometheus/additionalPrometheusRules.yaml
+tests:
+  - it: should not render PrometheusRule when no additional rules are provided
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: should prefer additionalPrometheusRulesMap over additionalPrometheusRules (deprecated)
+    release:
+      name: kps
+    set:
+      additionalPrometheusRulesMap:
+        example-rule-1:
+          groups: []
+      additionalPrometheusRules:
+        - name: example-rule-2
+          groups: []
+    asserts:
+      - hasDocuments:
+          count: 1
+      - equal:
+          path: metadata.name
+          value: kps-kube-prometheus-stack-example-rule-1
+
+  - it: should import additionalLabels (additionalPrometheusRulesMap)
+    set:
+      additionalPrometheusRulesMap:
+        example-rule:
+          additionalLabels:
+            foo: bar
+          groups: []
+    asserts:
+      - equal:
+          path: metadata.labels.foo
+          value: bar
+
+  - it: should import additionalLabels (additionalPrometheusRules)
+    set:
+      additionalPrometheusRules:
+        - name: example-rule
+          additionalLabels:
+            foo: bar
+          groups: []
+    asserts:
+      - equal:
+          path: metadata.labels.foo
+          value: bar
+
+  - it: should import groups (additionalPrometheusRulesMap)
+    release:
+      name: kps
+    set:
+      additionalPrometheusRulesMap:
+        example-rule-1:
+          groups:
+            - name: example-group-1
+              rules:
+                - alert: example-alert-1
+                  expr: vector(1) == 1
+                  for: 5m
+                  labels:
+                    severity: warning
+                  annotations:
+                    summary: example-alert-1 summary
+        example-rule-2:
+          groups:
+            - name: example-group-2
+              rules:
+                - alert: example-alert-2
+                  expr: vector(1) == 1
+                  for: 10m
+                  labels:
+                    severity: critical
+                  annotations:
+                    summary: example-alert-2 summary
+    documentSelector:
+      path: metadata.name
+      value: kps-kube-prometheus-stack-example-rule-1
+    asserts:
+      - hasDocuments:
+          count: 2
+      - equal:
+          path: spec
+          value:
+            groups:
+              - name: example-group-1
+                rules:
+                  - alert: example-alert-1
+                    annotations:
+                      summary: example-alert-1 summary
+                    expr: vector(1) == 1
+                    for: 5m
+                    labels:
+                      severity: warning
+
+  - it: should import groups (additionalPrometheusRules)
+    release:
+      name: kps
+    set:
+      additionalPrometheusRules:
+        - name: example-rule-1
+          groups:
+            - name: example-group-1
+              rules:
+                - alert: example-alert-1
+                  expr: vector(1) == 1
+                  for: 5m
+                  labels:
+                    severity: warning
+                  annotations:
+                    summary: example-alert-1 summary
+        - name: example-rule-2
+          groups:
+            - name: example-group-2
+              rules:
+                - alert: example-alert-2
+                  expr: vector(1) == 1
+                  for: 10m
+                  labels:
+                    severity: critical
+                  annotations:
+                    summary: example-alert-2 summary
+    documentSelector:
+      path: metadata.name
+      value: kps-kube-prometheus-stack-example-rule-1
+    asserts:
+      - hasDocuments:
+          count: 2
+      - equal:
+          path: spec
+          value:
+            groups:
+              - name: example-group-1
+                rules:
+                  - alert: example-alert-1
+                    annotations:
+                      summary: example-alert-1 summary
+                    expr: vector(1) == 1
+                    for: 5m
+                    labels:
+                      severity: warning

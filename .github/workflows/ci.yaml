@@ -39,11 +39,9 @@ jobs:
             echo "changed_list=\"${changed//$'\n'/ }\"" >> "$GITHUB_OUTPUT"
           fi
 
-      # - name: install helm unittest plugin
-      #   if: steps.list-changed.outputs.changed == 'true'
-      #   run: |
-      #     helm env
-      #     helm plugin install https://github.com/quintush/helm-unittest.git --version 0.2.8
+      - name: install helm unittest plugin
+        if: steps.list-changed.outputs.changed == 'true'
+        run: helm plugin install https://github.com/helm-unittest/helm-unittest.git --version 0.8.2
 
       - name: Run chart-testing (lint)
         run: ct lint --config .github/linters/ct.yaml
@@ -71,6 +69,7 @@ jobs:
 
       - name: Run chart-testing (install)
         run: ct install --config .github/linters/ct.yaml
+
   check-codeowners-maintainers:
     name: Check CODEOWNERS & MAINTAINERS.md
     runs-on: ubuntu-24.04
@@ -128,6 +127,7 @@ jobs:
           VALIDATE_RENOVATE: true # does not support newest renovate config
           VALIDATE_SHELL_SHFMT: true
           VALIDATE_XML: true
+
   renovate-auto-merge:
     name: Auto-approve PRs from Renovate
     runs-on: ubuntu-24.04
