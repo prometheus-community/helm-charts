@@ -43,6 +43,10 @@ helm upgrade [RELEASE_NAME] [CHART] --install
 
 _See [helm upgrade](https://helm.sh/docs/helm/helm_upgrade/) for command documentation._
 
+### To 5.0.0
+
+This version removes support for the deprecated Kubernetes API `policy/v1` for PDBs. and support for Pod Security Policy.
+
 ### To 4.2.0
 
 Readiness and liveness probes are now fully configurable through values `readinessProbe` and `livenessProbe`. The previous values have been kept as defaults.
