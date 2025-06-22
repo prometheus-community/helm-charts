@@ -173,3 +173,14 @@ The image to use for kubeRBACProxy
 {{- end }}
 {{- end }}
 {{- end }}
+
+{{/*
+The name of the ConfigMap for the customResourceState config.
+*/}}
+{{- define "kube-state-metrics.crsConfigMapName" -}}
+  {{- if ne .Values.customResourceState.name "" }}
+    {{- .Values.customResourceState.name }}
+  {{- else }}
+    {{- template "kube-state-metrics.fullname" . }}-customresourcestate-config
+  {{- end }}
+{{- end }}
