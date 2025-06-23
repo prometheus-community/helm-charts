@@ -48,6 +48,10 @@ helm upgrade [RELEASE_NAME] [CHART] --install
 
 _See [helm upgrade](https://helm.sh/docs/helm/helm_upgrade/) for command documentation._
 
+### To 11.0.0
+
+This version removes support for the deprecated Kubernetes API `extensions/v1beta1`, `networking.k8s.io/v1beta1`, and `rbac.authorization.k8s.io/v1beta1`. and associated attributes.
+
 ### To 10.0.0
 
 - `extraEnvFromSecret` got replaced with `extraEnvFrom`
