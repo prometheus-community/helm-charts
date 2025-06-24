@@ -403,8 +403,13 @@ spec:
             claimName: {{ if .Values.server.persistentVolume.existingClaim }}{{ .Values.server.persistentVolume.existingClaim }}{{- else }}{{ template "prometheus.server.fullname" . }}{{- end }}
         {{- else }}
           emptyDir:
+          {{- if or .Values.server.emptyDir.sizeLimit .Values.server.emptyDir.medium }}
+          {{- if .Values.server.emptyDir.medium }}
+            medium: {{ .Values.server.emptyDir.medium }}
+          {{- end }}
           {{- if .Values.server.emptyDir.sizeLimit }}
             sizeLimit: {{ .Values.server.emptyDir.sizeLimit }}
+          {{- end }}
           {{- else }}
             {}
           {{- end -}}

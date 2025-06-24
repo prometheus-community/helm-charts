@@ -1,12 +1,9 @@
 {{- if .Values.ingress.enabled -}}
-{{- $ingressApiIsStable := eq (include "ingress.isStable" .) "true" -}}
-{{- $ingressSupportsIngressClassName := eq (include "ingress.supportsIngressClassName" .) "true" -}}
-{{- $ingressSupportsPathType := eq (include "ingress.supportsPathType" .) "true" -}}
-{{- $ingressPathType := .Values.ingress.pathType -}}
 {{- $fullName := include "prometheus-cloudwatch-exporter.fullname" . -}}
+{{- $pathType := .Values.ingress.pathType -}}
 {{- $servicePort := .Values.service.port -}}
 {{- $ingressPath := .Values.ingress.path -}}
-apiVersion: {{ template "ingress.apiVersion" . }}
+apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: {{ $fullName }}
@@ -34,7 +31,7 @@ spec:
       secretName: {{ .secretName }}
   {{- end }}
 {{- end }}
-  {{- if and $ingressSupportsIngressClassName .Values.ingress.ingressClassName }}
+  {{- if .Values.ingress.ingressClassName }}
   ingressClassName: {{ .Values.ingress.ingressClassName }}
   {{- end }}
   rules:
@@ -43,19 +40,11 @@ spec:
       http:
         paths:
           - path: {{ $ingressPath }}
-            {{- if $ingressSupportsPathType }}
-            pathType: {{ $ingressPathType }}
-            {{- end }}
+            pathType: {{ $pathType }}
             backend:
-              {{- if $ingressApiIsStable }}
               service:
                 name: {{ $fullName }}
                 port:
                   number: {{ $servicePort }}
-              {{- else }}
-              serviceName: {{ $fullName }}
-              servicePort: {{ $servicePort }}
-              {{- end }}
   {{- end }}
 {{- end }}
-
