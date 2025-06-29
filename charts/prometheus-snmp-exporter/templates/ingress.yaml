@@ -2,18 +2,7 @@
 {{- $serviceName := include "prometheus-snmp-exporter.fullname" . -}}
 {{- $servicePort := .Values.service.port -}}
 {{- $kubeVersion := .Capabilities.KubeVersion.Version -}}
-{{- if and .Values.ingress.className (not (semverCompare ">=1.18-0" $kubeVersion)) }}
-  {{- if not (hasKey .Values.ingress.annotations "kubernetes.io/ingress.class") }}
-  {{- $_ := set .Values.ingress.annotations "kubernetes.io/ingress.class" .Values.ingress.className }}
-  {{- end }}
-{{- end }}
-{{- if semverCompare ">=1.19-0" $kubeVersion -}}
 apiVersion: networking.k8s.io/v1
-{{- else if semverCompare ">=1.14-0" $kubeVersion -}}
-apiVersion: networking.k8s.io/v1beta1
-{{- else -}}
-apiVersion: extensions/v1beta1
-{{- end }}
 kind: Ingress
 metadata:
   name: {{ template "prometheus-snmp-exporter.fullname" . }}
@@ -25,7 +14,7 @@ metadata:
     {{- toYaml . | nindent 4 }}
   {{- end }}
 spec:
-  {{- if and .Values.ingress.className (semverCompare ">=1.18-0" $kubeVersion) }}
+  {{- if .Values.ingress.className }}
   ingressClassName: {{ .Values.ingress.className }}
   {{- end }}
   rules:
@@ -34,19 +23,12 @@ spec:
       http:
         paths:
           - path: /
-            {{- if semverCompare ">=1.18-0" $kubeVersion }}
             pathType: {{ default "ImplementationSpecific" $.Values.ingress.pathType }}
-            {{- end }}
             backend:
-              {{- if semverCompare ">=1.19-0" $kubeVersion }}
               service:
                 name: {{ $serviceName }}
                 port:
                   number: {{ $servicePort }}
-              {{- else }}
-              serviceName: {{ $serviceName }}
-              servicePort: {{ $servicePort }}
-              {{- end }}
     {{- end }}
   {{- if .Values.ingress.tls }}
   tls:
