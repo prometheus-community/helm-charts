@@ -29,6 +29,4 @@ mkdir "${SCRIPT_DIR}/tmp"
 
 cd "${SCRIPT_DIR}"
 
-# Run dashboards/rules to build from refs.yaml
 go run ./cmd/dashboards/main.go
-go run ./cmd/rules/main.go
