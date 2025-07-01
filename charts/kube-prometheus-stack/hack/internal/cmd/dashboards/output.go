@@ -188,7 +188,7 @@ func writeGroupToFile(
 	content = patch.DashboardJsonSetIntervalAsVariable(content)
 
 	fileStruct := map[string]interface{}{
-		resourceName + ".json": content,
+		resourceName + ".json": literalStr(content),
 	}
 	yamlString, yamlStrErr := pythonish.YamlStrRepr(fileStruct, 2, false)
 	if yamlStrErr != nil {
@@ -219,4 +219,16 @@ func writeGroupToFile(
 	log.Log.Infof("Generated %s", newFilename)
 
 	return nil
+}
+
+// LiteralStr is a custom type to represent a literal block string
+type literalStr string
+
+func (l literalStr) MarshalYAML() (interface{}, error) {
+	return yaml.Node{
+		Kind:  yaml.ScalarNode,
+		Value: string(l),
+		Style: yaml.LiteralStyle, // This is the key part to make it a |- block
+		Tag:   "!!str",
+	}, nil
 }
