@@ -5,7 +5,7 @@ import (
 	"regexp"
 	"strings"
 	"unicode"
-	
+
 	"main/internal/cmd/rules/consts"
 	"main/internal/cmd/rules/types"
 	"main/internal/util"

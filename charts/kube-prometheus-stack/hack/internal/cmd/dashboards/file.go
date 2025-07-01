@@ -1,13 +1,15 @@
 package dashboards
 
 import (
-	"github.com/sirupsen/logrus"
-	"main/internal/config"
-	"main/internal/types"
-	"main/internal/util"
 	"os"
 	"path"
 	"path/filepath"
+
+	"main/internal/config"
+	"main/internal/types"
+	"main/internal/util"
+
+	"github.com/sirupsen/logrus"
 )
 
 func prepareFileDashboard(ctx *config.AppContext, currentState *chartState, chart *types.DashboardFileSource) error {

@@ -1,11 +1,12 @@
 package dashboards
 
 import (
-	"github.com/sirupsen/logrus"
 	"io"
 	"main/internal/config"
 	"main/internal/types"
 	"net/http"
+
+	"github.com/sirupsen/logrus"
 )
 
 func prepareUrlDashboard(ctx *config.AppContext, currentState *chartState, chart *types.DashboardURLSource) error {
