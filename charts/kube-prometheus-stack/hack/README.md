@@ -2,10 +2,10 @@
 
 ## [update_mixins.sh](update_mixins.sh)
 
-This script is a useful wrapper to run `sync_prometheus_rules.py` and
-`sync_grafana_dashboards.py`.
+This script is a useful wrapper to run `cmd/rules/main.go` and
+`cmd/dashboards/main.go`.
 
-It clones all dependency dashboards into a tmp folder.
+It clones all dependency repos into a tmp folder.
 
 And it lets you know if you are missing commandline-tools necessary for the
 update to complete.
@@ -14,7 +14,10 @@ Therefore, if you want to create a PR that updates the mixins, please
 run `./hack/update_mixins.sh` from the charts directory
 (`./charts/kube-prometheus-stack`).
 
-## [sync_prometheus_rules.py](sync_prometheus_rules.py)
+## [sync_prometheus_rules.sh](sync_prometheus_rules.sh)
+### Formerly `sync_prometheus_rules.py`
+
+This is a shell wrapper to invoke [cmd/rules/main.go](cmd/rules/main.go).
 
 This script generates prometheus rules set for alertmanager from any properly formatted kubernetes YAML based on defined input, splitting rules to separate files based on group name.
 
@@ -39,7 +42,10 @@ Currently following imported:
     - run sync_prometheus_rules.py inside your fork of this repository
     - send PR with changes to this repository
 
-## [sync_grafana_dashboards.py](sync_grafana_dashboards.py)
+## [sync_grafana_dashboards.sh](sync_grafana_dashboards.sh)
+### Formerly `sync_grafana_dashboards.py`
+
+This is a shell wrapper to invoke [cmd/dashboards/main.go](cmd/dashboards/main.go).
 
 This script generates grafana dashboards from json files, splitting them to separate files based on group name.
 
