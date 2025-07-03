@@ -46,6 +46,31 @@ helm upgrade [RELEASE_NAME] prometheus-community/prometheus-postgres-exporter --
 
 _See [helm upgrade](https://helm.sh/docs/helm/helm_upgrade/) for command documentation._
 
+
+### To 7.0.0
+
+Labels and selectors have been replaced following [Helm 3 label and annotation best practices](https://helmsh/docs/chart_best_practices/labels/):
+
+| Previous            | Current                      |
+|---------------------|------------------------------|
+| app                 | app.kubernetes.io/name       |
+| chart               | helm.sh/chart                |
+| [none]              | app.kubernetes.io/version    |
+| heritage            | [none]                       |
+| release             | app.kubernetes.io/instance   |
+
+As the change is affecting immutable selector labels, the deployment must be deleted before upgrading the release, e.g.:
+
+```console
+kubectl delete deploy -l app=prometheus-postgres-exporter --cascade=orphan
+```
+
+Once the resources have been deleted, you can upgrade the release:
+
+```console
+helm upgrade -i RELEASE_NAME prometheus-community/prometheus-postgres-exporter
+```
+
 ### To 6.0.0
 
 Image repository has been split into two values: the new `image.registry` value and the already existing `image.repository` value. No change is required when using the default for `image.repository`. If you have previously modified field `image.repository`, please, set the two fields accordingly.
