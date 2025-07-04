@@ -46,6 +46,14 @@ helm upgrade [RELEASE_NAME] prometheus-community/prometheus-postgres-exporter --
 
 _See [helm upgrade](https://helm.sh/docs/helm/helm_upgrade/) for command documentation._
 
+### To 7.0.0
+
+Due to changes in labels in Deployment selectors some resources needs to be recreated.
+
+```console
+helm upgrade [RELEASE_NAME] [CHART] --install --force
+```
+
 ### To 6.0.0
 
 Image repository has been split into two values: the new `image.registry` value and the already existing `image.repository` value. No change is required when using the default for `image.repository`. If you have previously modified field `image.repository`, please, set the two fields accordingly.
