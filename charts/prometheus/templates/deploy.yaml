@@ -298,7 +298,7 @@ spec:
           volumeMounts:
             - name: config-volume
               mountPath: /etc/config
-            - name: storage-volume
+            - name: {{ ternary .Values.server.persistentVolume.statefulSetNameOverride "storage-volume" (and .Values.server.persistentVolume.enabled (not (empty .Values.server.persistentVolume.statefulSetNameOverride))) }}
               mountPath: {{ .Values.server.persistentVolume.mountPath }}
               subPath: "{{ .Values.server.persistentVolume.subPath }}"
           {{- range .Values.server.extraHostPathMounts }}
@@ -438,7 +438,7 @@ spec:
 {{ toYaml .Values.server.extraVolumes | indent 8}}
 {{- end }}
       {{- if not .Values.server.statefulSet.enabled }}
-        - name: storage-volume
+        - name: {{ .Values.server.persistentVolume.statefulSetNameOverride | default "storage-volume" }}
         {{- if .Values.server.persistentVolume.enabled }}
           persistentVolumeClaim:
             claimName: {{ if .Values.server.persistentVolume.existingClaim }}{{ .Values.server.persistentVolume.existingClaim }}{{- else }}{{ template "prometheus.server.fullname" . }}{{- end }}
