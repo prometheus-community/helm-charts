@@ -46,7 +46,6 @@ helm upgrade [RELEASE_NAME] prometheus-community/prometheus-postgres-exporter --
 
 _See [helm upgrade](https://helm.sh/docs/helm/helm_upgrade/) for command documentation._
 
-
 ### To 7.0.0
 
 Labels and selectors have been replaced following [Helm 3 label and annotation best practices](https://helmsh/docs/chart_best_practices/labels/):
