@@ -108,13 +108,6 @@ Get KubeVersion removing pre-release information.
 {{- end -}}
 
 {{/*
-Return the appropriate apiVersion for deployment.
-*/}}
-{{- define "prometheus.deployment.apiVersion" -}}
-{{- print "apps/v1" -}}
-{{- end -}}
-
-{{/*
 Return the appropriate apiVersion for networkpolicy.
 */}}
 {{- define "prometheus.networkPolicy.apiVersion" -}}
@@ -178,4 +171,3 @@ Define prometheus.server.remoteRead producing a list of remoteRead configuration
 {{- end -}}
 {{ toYaml $remoteReads }}
 {{- end -}}
-
