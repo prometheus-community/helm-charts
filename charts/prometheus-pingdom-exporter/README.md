@@ -53,7 +53,7 @@ The Docker image has been change too <ghcr.io/monotek/pingdom-exporter>.
 
 The config uses `pingdom.apiToken` only which is used as env var.
 
-The docker port changed to `9158`.
+The Docker port changed to `9158`.
 
 ## Configuration
 
