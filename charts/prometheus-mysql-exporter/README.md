@@ -1,4 +1,4 @@
-# Prometheus Mysql Exporter
+# Prometheus MySQL Exporter
 
 A Prometheus exporter for [MySQL](https://www.mysql.com/) metrics.
 
@@ -159,7 +159,7 @@ helm show values oci://ghcr.io/prometheus-community/charts/prometheus-mysql-expo
 
 ### MySQL Connection
 
-The exporter can connect to mysql directly or using the [Cloud SQL Proxy](https://cloud.google.com/sql/docs/mysql/sql-proxy).
+The exporter can connect to MySQL directly or using the [Cloud SQL Proxy](https://cloud.google.com/sql/docs/mysql/sql-proxy).
 
 - To configure direct MySQL connection by value, set `mysql.user`, `mysql.pass`, `mysql.host` and `mysql.port` (see additional options in the `mysql` configuration block)
 - To configure direct MySQL connection by secret, you must store a connection string in a secret, and set `mysql.existingSecret` to `[SECRET_NAME]`
@@ -167,7 +167,7 @@ The exporter can connect to mysql directly or using the [Cloud SQL Proxy](https:
 ### Exporter Documentation and Params
 
 Documentation for the MySQL Exporter can be found here: (<https://github.com/prometheus/mysqld_exporter>)
-A mysql params overview can be found here: (<https://github.com/go-sql-driver/mysql#dsn-data-source-name>)
+A MySQL params overview can be found here: (<https://github.com/go-sql-driver/mysql#dsn-data-source-name>)
 
 ### Collector Flags
 
