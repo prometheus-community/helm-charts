@@ -49,7 +49,7 @@ _See [helm upgrade](https://helm.sh/docs/helm/helm_upgrade/) for command documen
 
 #### To version 3.0.0
 
-The docker image has been change too <ghcr.io/monotek/pingdom-exporter>.
+The Docker image has been change too <ghcr.io/monotek/pingdom-exporter>.
 
 The config uses `pingdom.apiToken` only which is used as env var.
 
