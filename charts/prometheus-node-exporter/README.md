@@ -4,26 +4,26 @@ Prometheus exporter for hardware and OS metrics exposed by *NIX kernels, written
 
 This chart bootstraps a Prometheus [Node Exporter](http://github.com/prometheus/node_exporter) daemonset on a [Kubernetes](http://kubernetes.io) cluster using the [Helm](https://helm.sh) package manager.
 
-## Get Repository Info
-<!-- textlint-disable terminology -->
-```console
-helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
-helm repo update
-```
+## Usage
 
-_See [helm repo](https://helm.sh/docs/helm/helm_repo/) for command documentation._
-<!-- textlint-enable -->
-## Install Chart
+The chart is distributed as an [OCI Artifact](https://helm.sh/docs/topics/registries/) as well as via a traditional [Helm Repository](https://helm.sh/docs/topics/chart_repository/).
+
+- OCI Artifact: `oci://ghcr.io/prometheus-community/charts/prometheus-node-exporter`
+- Helm Repository: `https://prometheus-community.github.io/helm-charts` with chart `prometheus-node-exporter`
+
+The installation instructions use the OCI registry. Refer to the [`helm repo`]([`helm repo`](https://helm.sh/docs/helm/helm_repo/)) command documentation for information on installing charts via the traditional repository.
+
+### Install Chart
 
 ```console
-helm install [RELEASE_NAME] prometheus-community/prometheus-node-exporter
+helm install [RELEASE_NAME] oci://ghcr.io/prometheus-community/charts/prometheus-node-exporter
 ```
 
 _See [configuration](#configuring) below._
 
 _See [helm install](https://helm.sh/docs/helm/helm_install/) for command documentation._
 
-## Uninstall Chart
+### Uninstall Chart
 
 ```console
 helm uninstall [RELEASE_NAME]
@@ -33,15 +33,15 @@ This removes all the Kubernetes components associated with the chart and deletes
 
 _See [helm uninstall](https://helm.sh/docs/helm/helm_uninstall/) for command documentation._
 
-## Upgrading Chart
+### Upgrading Chart
 
 ```console
-helm upgrade [RELEASE_NAME] prometheus-community/prometheus-node-exporter --install
+helm upgrade [RELEASE_NAME] oci://ghcr.io/prometheus-community/charts/prometheus-node-exporter --install
 ```
 
 _See [helm upgrade](https://helm.sh/docs/helm/helm_upgrade/) for command documentation._
 
-### 3.x to 4.x
+#### 3.x to 4.x
 
 Starting from version 4.0.0, the `node exporter` chart is using the [Kubernetes recommended labels](https://kubernetes.io/docs/concepts/overview/working-with-objects/common-labels/). Therefore you have to delete the daemonset before you upgrade.
 
@@ -52,7 +52,7 @@ helm upgrade -i prometheus-node-exporter prometheus-community/prometheus-node-ex
 
 If you use your own custom [ServiceMonitor](https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/api-reference/api.md#servicemonitor) or [PodMonitor](https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/api-reference/api.md#podmonitor), please ensure to upgrade their `selector` fields accordingly to the new labels.
 
-### From 2.x to 3.x
+#### From 2.x to 3.x
 
 Change the following:
 
@@ -73,7 +73,7 @@ hostRootFsMount:
 See [Customizing the Chart Before Installing](https://helm.sh/docs/intro/using_helm/#customizing-the-chart-before-installing). To see all configurable options with detailed comments, visit the chart's [values.yaml](./values.yaml), or run these configuration commands:
 
 ```console
-helm show values prometheus-community/prometheus-node-exporter
+helm show values oci://ghcr.io/prometheus-community/charts/prometheus-node-exporter
 ```
 
 ### kube-rbac-proxy
