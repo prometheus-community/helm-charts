@@ -8,26 +8,26 @@ This chart creates a [SNMP Notifier](https://github.com/maxwo/snmp_notifier) dep
 
 - Kubernetes 1.23+
 
-## Get Repository Info
+## Usage
+
+The chart is distributed as an [OCI Artifact](https://helm.sh/docs/topics/registries/) as well as via a traditional [Helm Repository](https://helm.sh/docs/topics/chart_repository/).
+
+- OCI Artifact: `oci://ghcr.io/prometheus-community/charts/alertmanager-snmp-notifier`
+- Helm Repository: `https://prometheus-community.github.io/helm-charts` with chart `alertmanager-snmp-notifier`
+
+The installation instructions use the OCI registry. Refer to the [`helm repo`]([`helm repo`](https://helm.sh/docs/helm/helm_repo/)) command documentation for information on installing charts via the traditional repository.
+
+### Install Chart
 
 ```console
-helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
-helm repo update
-```
-
-_See [helm repository](https://helm.sh/docs/helm/helm_repo/) for command documentation._
-
-## Install Chart
-
-```console
-helm install [RELEASE_NAME] prometheus-community/alertmanager-snmp-notifier
+helm install [RELEASE_NAME] oci://ghcr.io/prometheus-community/charts/alertmanager-snmp-notifier
 ```
 
 _See [configuration](#configuration) below._
 
 _See [helm install](https://helm.sh/docs/helm/helm_install/) for command documentation._
 
-## Uninstall Chart
+### Uninstall Chart
 
 ```console
 helm uninstall [RELEASE_NAME]
@@ -37,7 +37,7 @@ This removes all the Kubernetes components associated with the chart and deletes
 
 _See [helm uninstall](https://helm.sh/docs/helm/helm_uninstall/) for command documentation._
 
-## Upgrading Chart
+### Upgrading Chart
 
 ```console
 helm upgrade [RELEASE_NAME] [CHART] --install
@@ -45,11 +45,11 @@ helm upgrade [RELEASE_NAME] [CHART] --install
 
 _See [helm upgrade](https://helm.sh/docs/helm/helm_upgrade/) for command documentation._
 
-### Upgrading an existing Release to a new major version
+#### Upgrading an existing Release to a new major version
 
 A major chart version change (like v1.2.3 -> v2.0.0) indicates that there is an incompatible breaking change needing manual actions.
 
-### To 1.0.0
+#### To 1.0.0
 
 This version uses SNMP Notifier 2.0.0, with the introduction of the generic `--trap.user-object` instead of `--snmp.trap-extra-field` arguments.
 
@@ -79,7 +79,7 @@ It also updates the `HorizontalPodAutoscaler` to the `autoscaling/v2` API versio
 See [Customizing the Chart Before Installing](https://helm.sh/docs/intro/using_helm/#customizing-the-chart-before-installing). To see all configurable options with detailed comments, visit the chart's [values.yaml](./values.yaml), or run these configuration commands:
 
 ```console
-helm show values prometheus-community/alertmanager-snmp-notifier
+helm show values oci://ghcr.io/prometheus-community/charts/alertmanager-snmp-notifier
 ```
 
 ### Flags
