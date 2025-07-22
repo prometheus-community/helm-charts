@@ -295,10 +295,11 @@ spec:
           resources:
             {{- toYaml . | nindent 12 }}
           {{- end }}
+          {{- $storageVolumeName := ternary .Values.server.persistentVolume.statefulSetNameOverride "storage-volume" (and .Values.server.persistentVolume.enabled .Values.server.statefulSet.enabled (not (empty .Values.server.persistentVolume.statefulSetNameOverride))) }}
           volumeMounts:
             - name: config-volume
               mountPath: /etc/config
-            - name: {{ ternary .Values.server.persistentVolume.statefulSetNameOverride "storage-volume" (and .Values.server.persistentVolume.enabled .Values.server.statefulSet.enabled (not (empty .Values.server.persistentVolume.statefulSetNameOverride))) }}
+            - name: {{ $storageVolumeName }}
               mountPath: {{ .Values.server.persistentVolume.mountPath }}
               subPath: "{{ .Values.server.persistentVolume.subPath }}"
           {{- range .Values.server.extraHostPathMounts }}
@@ -438,12 +439,11 @@ spec:
 {{ toYaml .Values.server.extraVolumes | indent 8}}
 {{- end }}
         {{- if and .Values.server.persistentVolume.enabled (not .Values.server.statefulSet.enabled) }}
-        - name: "storage-volume"
+        - name: {{ $storageVolumeName }}
           persistentVolumeClaim:
             claimName: {{ if .Values.server.persistentVolume.existingClaim }}{{ .Values.server.persistentVolume.existingClaim }}{{- else }}{{ template "prometheus.server.fullname" . }}{{- end }}
-        {{- end }}
-        {{- if not .Values.server.persistentVolume.enabled }}
-        - name: "storage-volume"
+        {{- else if not .Values.server.persistentVolume.enabled }}
+        - name: {{ $storageVolumeName }}
           emptyDir:
           {{- if or .Values.server.emptyDir.sizeLimit .Values.server.emptyDir.medium }}
           {{- if .Values.server.emptyDir.medium }}
@@ -461,7 +461,7 @@ spec:
     - apiVersion: v1
       kind: PersistentVolumeClaim
       metadata:
-        name: {{ .Values.server.persistentVolume.statefulSetNameOverride | default "storage-volume" }}
+        name: {{ $storageVolumeName }}
         {{- with .Values.server.persistentVolume.annotations }}
         annotations:
           {{- toYaml . | nindent 10 }}
