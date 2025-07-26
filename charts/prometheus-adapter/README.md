@@ -45,7 +45,7 @@ _See [helm upgrade](https://helm.sh/docs/helm/helm_upgrade/) for command documen
 
 ### To 5.0.0
 
-This version removes support for the deprecated Kubernetes API `policy/v1` for PDBs. and support for Pod Security Policy.
+This version removes support for the deprecated Kubernetes API `policy/v1beta1` for PodDisruptionBudgets. It also removes the deprecated `PodSecurityPolicy` resource.
 
 ### To 4.2.0
 
