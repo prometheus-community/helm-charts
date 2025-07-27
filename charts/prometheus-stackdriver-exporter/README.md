@@ -24,8 +24,8 @@ package manager.
 
 The chart is distributed as an [OCI Artifact](https://helm.sh/docs/topics/registries/) as well as via a traditional [Helm Repository](https://helm.sh/docs/topics/chart_repository/).
 
-- OCI Artifact: `oci://ghcr.io/prometheus-community/charts/prometheus-stackdriver-exporter`
-- Helm Repository: `https://prometheus-community.github.io/helm-charts` with chart `prometheus-stackdriver-exporter`
+* OCI Artifact: `oci://ghcr.io/prometheus-community/charts/prometheus-stackdriver-exporter`
+* Helm Repository: `https://prometheus-community.github.io/helm-charts` with chart `prometheus-stackdriver-exporter`
 
 The installation instructions use the OCI registry. Refer to the [`helm repo`]([`helm repo`](https://helm.sh/docs/helm/helm_repo/)) command documentation for information on installing charts via the traditional repository.
 
