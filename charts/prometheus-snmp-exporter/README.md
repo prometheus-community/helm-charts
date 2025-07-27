@@ -92,7 +92,7 @@ This version contain major changes & The [configmap-reload](https://github.com/j
 
 #### To 5.0.0
 
-This version changes the default image repository from using Dockerhub to Quay.
+This version changes the default image repository from using DockerHub to Quay.
 
 #### To 6.0.0
 
