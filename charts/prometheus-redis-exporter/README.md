@@ -24,8 +24,6 @@ The installation instructions use the OCI registry. Refer to the [`helm repo`]([
 helm install [RELEASE_NAME] oci://ghcr.io/prometheus-community/charts/prometheus-redis-exporter
 ```
 
-_See [configuration](#configuration) below._
-
 _See [helm install](https://helm.sh/docs/helm/helm_install/) for command documentation._
 
 ### Uninstall Chart
