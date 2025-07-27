@@ -45,8 +45,13 @@ spec:
           {{- if .Values.kafkaBrokerVersion }}
             - '--kafka.version={{ .Values.kafkaBrokerVersion }}'
           {{- end }}
-          {{- if .Values.kafkaServerClusterLabel }}
-            - '--kafka.labels=cluster={{ .Values.kafkaServerClusterLabel }}'
+          {{- if .Values.kafkaServerLabels }}
+            {{- $serverLabelsList := list }}
+            {{- range $key, $value := .Values.kafkaServerLabels }}
+              {{- $serverLabelsList = append $serverLabelsList (printf "%s=%s" $key $value) }}
+            {{- end }}
+            {{- $serverLabelsArgs := join "," $serverLabelsList }}
+            - '--kafka.labels={{ $serverLabelsArgs }}'
           {{- end }}
           {{- if .Values.tls.enabled }}
             - '--tls.enabled'
