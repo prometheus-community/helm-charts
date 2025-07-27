@@ -1,6 +1,6 @@
 # jiralert
 
-JIRAlert implements Alertmanager's webhook HTTP API and connects to one or more JIRA instances to create highly configurable JIRA issues.
+JIRAlert implements Alertmanager's webhook HTTP API and connects to one or more Jira instances to create highly configurable Jira issues.
 
 **Homepage:** <https://github.com/prometheus-community/jiralert>
 
