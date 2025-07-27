@@ -45,6 +45,9 @@ spec:
           {{- if .Values.kafkaBrokerVersion }}
             - '--kafka.version={{ .Values.kafkaBrokerVersion }}'
           {{- end }}
+          {{- if .Values.kafkaLabels }}
+            - '--kafka.labels={{ include "prometheus-kafka-exporter.kafkaLabels" . }}'
+          {{- end }}
           {{- if .Values.tls.enabled }}
             - '--tls.enabled'
           {{- if .Values.tls.mountPath }}
@@ -62,6 +65,12 @@ spec:
             - '--sasl.enabled'
           {{- if not .Values.sasl.handshake }}
             - '--sasl.handshake=false'
+          {{- end }}
+          {{- if .Values.sasl.awsiam.enabled }}
+            - '--sasl.mechanism={{ .Values.sasl.awsiam.mechanism }}'
+            {{- if .Values.sasl.awsiam.awsRegion }}
+            - '--sasl.aws-region={{ .Values.sasl.awsiam.awsRegion }}'
+            {{- end }}
           {{- end }}
           {{- if .Values.sasl.scram.enabled }}
             - '--sasl.username=$(SCRAM_USERNAME)'
