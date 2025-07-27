@@ -23,8 +23,6 @@ $ helm install [RELEASE_NAME] oci://ghcr.io/prometheus-community/charts/promethe
 $ helm install --name [RELEASE_NAME] oci://ghcr.io/prometheus-community/charts/prometheus-nats-exporter
 ```
 
-_See [configuration](#configuration) below._
-
 _See [helm install](https://helm.sh/docs/helm/helm_install/) for command documentation._
 
 ### Uninstall Chart
