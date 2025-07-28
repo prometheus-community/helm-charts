@@ -55,9 +55,9 @@ v3.0.0 includes kube-state-metrics v2.0, see the [changelog](https://github.com/
 
 The upgraded chart now the following changes:
 
-* Dropped support for helm v2 (helm v3 or later is required)
-* collectors key was renamed to resources
-* namespace key was renamed to namespaces
+- Dropped support for helm v2 (helm v3 or later is required)
+- collectors key was renamed to resources
+- namespace key was renamed to namespaces
 
 ## Configuration
 
