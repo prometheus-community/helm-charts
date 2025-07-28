@@ -47,5 +47,5 @@ helm show values oci://ghcr.io/prometheus-community/charts/prometheus-yet-anothe
 
 If you are migrate from the [`nerdswords/helm-charts` repository](https://github.com/nerdswords/helm-charts/tree/main/charts/yet-another-cloudwatch-exporter), you must consider the following changes:
 
-* the chart name has changed from `yet-another-cloudwatch-exporter` to `prometheus-yet-another-cloudwatch-exporter`.
-* to avoid conflicts with the new chart name, you can set the `nameOverride` value to `yet-another-cloudwatch-exporter` in your `values.yaml` file.
+- the chart name has changed from `yet-another-cloudwatch-exporter` to `prometheus-yet-another-cloudwatch-exporter`.
+- to avoid conflicts with the new chart name, you can set the `nameOverride` value to `yet-another-cloudwatch-exporter` in your `values.yaml` file.
