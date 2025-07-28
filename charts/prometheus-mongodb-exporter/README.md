@@ -5,26 +5,26 @@ A Prometheus exporter for [MongoDB](https://www.mongodb.com/) metrics.
 Installs the [MongoDB Exporter](https://github.com/percona/mongodb_exporter) for [Prometheus](https://prometheus.io/). The
 MongoDB Exporter collects and exports oplog, replica set, server status, sharding and storage engine metrics.
 
-## Get Repository Info
+## Usage
+
+The chart is distributed as an [OCI Artifact](https://helm.sh/docs/topics/registries/) as well as via a traditional [Helm Repository](https://helm.sh/docs/topics/chart_repository/).
+
+- OCI Artifact: `oci://ghcr.io/prometheus-community/charts/prometheus-mongodb-exporter`
+- Helm Repository: `https://prometheus-community.github.io/helm-charts` with chart `prometheus-mongodb-exporter`
+
+The installation instructions use the OCI registry. Refer to the [`helm repo`]([`helm repo`](https://helm.sh/docs/helm/helm_repo/)) command documentation for information on installing charts via the traditional repository.
+
+### Install Chart
 
 ```console
-helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
-helm repo update
-```
-
-_See [`helm repo`](https://helm.sh/docs/helm/helm_repo/) for command documentation._
-
-## Install Chart
-
-```console
-helm install [RELEASE_NAME] prometheus-community/prometheus-mongodb-exporter
+helm install [RELEASE_NAME] oci://ghcr.io/prometheus-community/charts/prometheus-mongodb-exporter
 ```
 
 _See [configuration](#configuration) below._
 
 _See [helm install](https://helm.sh/docs/helm/helm_install/) for command documentation._
 
-## Uninstall Chart
+### Uninstall Chart
 
 ```console
 helm uninstall [RELEASE_NAME]
@@ -34,7 +34,7 @@ This removes all the Kubernetes components associated with the chart and deletes
 
 _See [helm uninstall](https://helm.sh/docs/helm/helm_uninstall/) for command documentation._
 
-## Upgrading Chart
+### Upgrading Chart
 
 ```console
 helm upgrade [RELEASE_NAME] [CHART] --install
@@ -42,13 +42,13 @@ helm upgrade [RELEASE_NAME] [CHART] --install
 
 _See [helm upgrade](https://helm.sh/docs/helm/helm_upgrade/) for command documentation._
 
-### Upgrading an existing Release to a new major version
+#### Upgrading an existing Release to a new major version
 
 A major chart version change (like v1.2.3 -> v2.0.0) indicates that there is an incompatible breaking change needing manual actions.
 
-#### From 2.x to 3.x
+##### From 2.x to 3.x
 
-This version uses the original percona/mongodb_exporter docker image again, as described in the readme and Chart.yaml. It's maintained and it uses frequent docker builds, so this is preferable for security reasons.
+This version uses the original percona/mongodb_exporter Docker image again, as described in the readme and Chart.yaml. It's maintained and it uses frequent Docker builds, so this is preferable for security reasons.
 
 The commnad arguments of the exporter have changed. If you have custom `extraArgs` settings you have to adjust them. Because of the newer version of the exporter image metrics may varry though, so you might need to adjust your dashboard querries or try out the "--compatible-mode" parameter in `extraArgs`.
 
@@ -63,7 +63,7 @@ The servicemonitor has been disabled by default as prometheus operator might not
 See [Customizing the Chart Before Installing](https://helm.sh/docs/intro/using_helm/#customizing-the-chart-before-installing). To see all configurable options with detailed comments, visit the chart's [values.yaml](./values.yaml), or run these configuration commands:
 
 ```console
-helm show values prometheus-community/prometheus-mongodb-exporter
+helm show values oci://ghcr.io/prometheus-community/charts/prometheus-mongodb-exporter
 ```
 
 ### MongoDB Server Connection

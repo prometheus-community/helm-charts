@@ -76,3 +76,17 @@ Formats imagePullSecrets. Input is (dict "Values" .Values "imagePullSecrets" .{s
   {{- end }}
 {{- end }}
 {{- end -}}
+
+{{/*
+Adds kafka cluster server label to prometheus metrics
+*/}}
+{{- define "prometheus-kafka-exporter.kafkaLabels" -}}
+{{- if .Values.kafkaLabels }}
+  {{- $kafkaLabelsList := list }}
+  {{- range $key, $value := .Values.kafkaLabels }}
+    {{- $kafkaLabelsList = append $kafkaLabelsList (printf "%s=%s" $key $value) }}
+  {{- end }}
+  {{- $kafkaLabelsArgs := join "," $kafkaLabelsList }}
+  {{- $kafkaLabelsArgs -}}
+{{- end -}}
+{{- end -}}
