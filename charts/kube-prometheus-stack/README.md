@@ -262,7 +262,7 @@ There is no simple and direct migration path between the charts as the changes a
 
 The capabilities of the old chart are all available in the new chart, including the ability to run multiple prometheus instances on a single cluster - you will need to disable the parts of the chart you do not wish to deploy.
 
-You can check out the tickets for this change [here](https://github.com/prometheus-operator/prometheus-operator/issues/592) and [here](https://github.com/helm/charts/pull/6765).
+You can check out the tickets for this change at [prometheus-operator/prometheus-operator #592](https://github.com/prometheus-operator/prometheus-operator/issues/592) and [helm/charts #6765](https://github.com/helm/charts/pull/6765).
 
 ### High-level overview of Changes
 
