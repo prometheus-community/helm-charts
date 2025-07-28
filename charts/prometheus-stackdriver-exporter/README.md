@@ -20,23 +20,23 @@ package manager.
 
 * Kubernetes 1.8+ with Beta APIs enabled
 
-## Get Helm Repository Info
+## Usage
 
-```console
-helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
-helm repo update
-```
+The chart is distributed as an [OCI Artifact](https://helm.sh/docs/topics/registries/) as well as via a traditional [Helm Repository](https://helm.sh/docs/topics/chart_repository/).
 
-_See [`helm repo`](https://helm.sh/docs/helm/helm_repo/) for command documentation._
+* OCI Artifact: `oci://ghcr.io/prometheus-community/charts/prometheus-stackdriver-exporter`
+* Helm Repository: `https://prometheus-community.github.io/helm-charts` with chart `prometheus-stackdriver-exporter`
 
-## Install Chart
+The installation instructions use the OCI registry. Refer to the [`helm repo`]([`helm repo`](https://helm.sh/docs/helm/helm_repo/)) command documentation for information on installing charts via the traditional repository.
+
+### Install Chart
 
 ```console
 # Helm 3
-$ helm install [RELEASE_NAME] prometheus-community/prometheus-stackdriver-exporter --set stackdriver.projectId=google-project-name
+$ helm install [RELEASE_NAME] oci://ghcr.io/prometheus-community/charts/prometheus-stackdriver-exporter --set stackdriver.projectId=google-project-name
 
 # Helm 2
-$ helm install --name [RELEASE_NAME] prometheus-community/prometheus-stackdriver-exporter --set stackdriver.projectId=google-project-name
+$ helm install --name [RELEASE_NAME] oci://ghcr.io/prometheus-community/charts/prometheus-stackdriver-exporter --set stackdriver.projectId=google-project-name
 ```
 
 The command deploys Stackdriver-Exporter on the Kubernetes cluster using the default configuration.
@@ -45,7 +45,7 @@ _See [configuration](#configuration) below._
 
 _See [helm install](https://helm.sh/docs/helm/helm_install/) for command documentation._
 
-## Uninstall Chart
+### Uninstall Chart
 
 ```console
 # Helm 3
@@ -59,7 +59,7 @@ This removes all the Kubernetes components associated with the chart and deletes
 
 _See [helm uninstall](https://helm.sh/docs/helm/helm_uninstall/) for command documentation._
 
-## Upgrading Chart
+### Upgrading Chart
 
 ```console
 # Helm 3 or 2
@@ -68,11 +68,11 @@ $ helm upgrade [RELEASE_NAME] [CHART] --install
 
 _See [helm upgrade](https://helm.sh/docs/helm/helm_upgrade/) for command documentation._
 
-### Upgrading an existing Release to a new major version
+#### Upgrading an existing Release to a new major version
 
 A major chart version change (like v1.2.3 -> v2.0.0) indicates that there is an incompatible breaking change needing manual actions.
 
-#### 3.x to 4.x
+##### 3.x to 4.x
 
 The Helm parameter `stackdriver.metrics.filters` is changed to support multiple values instead of a single value. If you are using this parameter, please adjust.
 
@@ -84,7 +84,7 @@ stackdriver:
       - filter-2
 ```
 
-#### 2.x to 3.x
+##### 2.x to 3.x
 
 Due to a change in deployment labels, **removal** of its deployment needs to done manually prior to upgrading:
 
@@ -122,7 +122,7 @@ spec:
 
 If you use your own custom [ServiceMonitor](https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/api-reference/api.md#servicemonitor) or [PodMonitor](https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/api-reference/api.md#podmonitor), please ensure to upgrade their `selector` fields accordingly to the new labels.
 
-#### 1.x to 2.x
+##### 1.x to 2.x
 
 Since chart version 2.0.0, the exporter is configured via flags/arguments instead of environment variables due to a [breaking change in the exporter](https://github.com/prometheus-community/stackdriver_exporter/pull/142).
 
@@ -135,10 +135,10 @@ To see all configurable options with detailed comments, visit the chart's [value
 
 ```console
 # Helm 2
-$ helm inspect values prometheus-community/prometheus-stackdriver-exporter
+$ helm inspect values oci://ghcr.io/prometheus-community/charts/prometheus-stackdriver-exporter
 
 # Helm 3
-$ helm show values prometheus-community/prometheus-stackdriver-exporter
+$ helm show values oci://ghcr.io/prometheus-community/charts/prometheus-stackdriver-exporter
 ```
 
 > **Tip**: You can use the default [values.yaml](values.yaml), as long as you provide a value for stackdriver.projectId
