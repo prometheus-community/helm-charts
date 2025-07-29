@@ -101,6 +101,7 @@ spec:
   logLevel:  {{ .Values.prometheus.prometheusSpec.logLevel }}
   logFormat:  {{ .Values.prometheus.prometheusSpec.logFormat }}
   listenLocal: {{ .Values.prometheus.prometheusSpec.listenLocal }}
+  enableOTLPReceiver: {{ .Values.prometheus.prometheusSpec.enableOTLPReceiver }}
 {{- if not .Values.prometheus.agentMode }}
   enableAdminAPI: {{ .Values.prometheus.prometheusSpec.enableAdminAPI }}
 {{- end }}
@@ -118,6 +119,10 @@ spec:
   - {{ tpl $enableFeatures $ }}
 {{- end }}
 {{- end }}
+{{- if .Values.prometheus.prometheusSpec.otlp }}
+  otlp:
+{{ toYaml .Values.prometheus.prometheusSpec.otlp | indent 4 }}
+{{- end }}
 {{- with .Values.prometheus.prometheusSpec.scrapeClasses }}
   scrapeClasses:
     {{- tpl (toYaml . | nindent 4) $ }}
@@ -132,8 +137,9 @@ spec:
 {{- if .Values.prometheus.prometheusSpec.scrapeInterval }}
   scrapeInterval: {{ .Values.prometheus.prometheusSpec.scrapeInterval }}
 {{- end }}
-{{- if .Values.prometheus.prometheusSpec.scrapeProtocols }}
-  scrapeProtocols: {{ .Values.prometheus.prometheusSpec.scrapeProtocols }}
+{{- with .Values.prometheus.prometheusSpec.scrapeProtocols }}
+  scrapeProtocols:
+    {{- toYaml . | nindent 4 }}
 {{- end }}
 {{- if .Values.prometheus.prometheusSpec.scrapeTimeout }}
   scrapeTimeout: {{ .Values.prometheus.prometheusSpec.scrapeTimeout }}

@@ -47,6 +47,10 @@ You can upgrade in-place:
 1. [get repository info](#get-repository-info)
 1. [upgrade](#upgrading-chart) your existing release name using the new chart repository
 
+## Upgrading to v6.0.0
+
+This version drops support for deprecated Pod Security Policy resources.
+
 ## Upgrading to v3.0.0
 
 v3.0.0 includes kube-state-metrics v2.0, see the [changelog](https://github.com/kubernetes/kube-state-metrics/blob/release-2.0/CHANGELOG.md) for major changes on the application-side.

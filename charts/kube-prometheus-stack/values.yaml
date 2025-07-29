@@ -1129,7 +1129,7 @@ alertmanager:
     containers: []
     # containers:
     # - name: oauth-proxy
-    #   image: quay.io/oauth2-proxy/oauth2-proxy:v7.9.0
+    #   image: quay.io/oauth2-proxy/oauth2-proxy:v7.10.0
     #   args:
     #   - --upstream=http://127.0.0.1:9093
     #   - --http-address=0.0.0.0:8081
@@ -2903,7 +2903,7 @@ prometheusOperator:
       image:
         registry: registry.k8s.io
         repository: ingress-nginx/kube-webhook-certgen
-        tag: v1.5.4  # latest tag: https://github.com/kubernetes/ingress-nginx/blob/main/images/kube-webhook-certgen/TAG
+        tag: v1.6.0  # latest tag: https://github.com/kubernetes/ingress-nginx/blob/main/images/kube-webhook-certgen/TAG
         sha: ""
         pullPolicy: IfNotPresent
       resources: {}
@@ -3341,7 +3341,7 @@ prometheusOperator:
   thanosImage:
     registry: quay.io
     repository: thanos/thanos
-    tag: v0.38.0
+    tag: v0.39.2
     sha: ""
 
   ## Set a Label Selector to filter watched prometheus and prometheusAgent
@@ -3491,9 +3491,6 @@ prometheus:
     ## relabel configs to apply to samples before ingestion.
     relabelings: []
 
-    ## Set default scrapeProtocols for Prometheus instances
-    ## https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/api-reference/api.md#scrapeprotocolstring-alias
-    scrapeProtocols: []
   # Service for external access to sidecar
   # Enabling this creates a service to expose thanos-sidecar outside the cluster.
   thanosServiceExternal:
@@ -3950,6 +3947,9 @@ prometheus:
     ##
     listenLocal: false
 
+    ## enableOTLPReceiver enables the OTLP receiver for Prometheus.
+    enableOTLPReceiver: false
+
     ## EnableAdminAPI enables Prometheus the administrative HTTP API which includes functionality such as deleting time series.
     ## This is disabled by default.
     ## ref: https://prometheus.io/docs/prometheus/latest/querying/api/#tsdb-admin-apis
@@ -3977,6 +3977,14 @@ prometheus:
     enableFeatures: []
     # - exemplar-storage
 
+    ## https://prometheus.io/docs/guides/opentelemetry
+    ##
+    otlp: {}
+      # promoteResourceAttributes: []
+      # keepIdentifyingResourceAttributes: false
+      # translationStrategy: NoUTF8EscapingWithSuffixes
+      # convertHistogramsToNHCB: false
+
     ##
     serviceName:
 
@@ -3985,7 +3993,7 @@ prometheus:
     image:
       registry: quay.io
       repository: prometheus/prometheus
-      tag: v3.4.1
+      tag: v3.5.0
       sha: ""
       pullPolicy: IfNotPresent
 
@@ -4493,7 +4501,7 @@ prometheus:
     containers: []
     # containers:
     # - name: oauth-proxy
-    #   image: quay.io/oauth2-proxy/oauth2-proxy:v7.9.0
+    #   image: quay.io/oauth2-proxy/oauth2-proxy:v7.10.0
     #   args:
     #   - --upstream=http://127.0.0.1:9090
     #   - --http-address=0.0.0.0:8081
@@ -4639,6 +4647,10 @@ prometheus:
     ## greater than 60 (seconds). Otherwise it will be equal to 900 seconds (15
     ## minutes).
     maximumStartupDurationSeconds: 0
+
+    ## Set default scrapeProtocols for Prometheus instances
+    ## https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/api-reference/api.md#scrapeprotocolstring-alias
+    scrapeProtocols: []
 
   additionalRulesForClusterRole: []
   #  - apiGroups: [ "" ]
@@ -5064,7 +5076,7 @@ thanosRuler:
     image:
       registry: quay.io
       repository: thanos/thanos
-      tag: v0.38.0
+      tag: v0.39.2
       sha: ""
 
     ## Namespaces to be selected for PrometheusRules discovery.
