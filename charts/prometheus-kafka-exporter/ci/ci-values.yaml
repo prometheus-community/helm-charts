@@ -1,10 +1,94 @@
-kafkaServer:
-  - ci-kafka:9092
-
-kafka:
+# common test case
+strimziOperator:
   enabled: true
-  fullnameOverride: ci-kafka
 
-  zookeeper:
-    enabled: true
-    fullnameOverride: ci-zookeeper
+kafkaServer:
+  - "kafka-ci-controller-broker-0.kafka-ci-kafka-brokers:9092"
+kafkaBrokerVersion: "4.0.0"
+
+liveness:
+  enabled: true
+  probe:
+    initialDelaySeconds: 55
+readiness:
+  enabled: true
+  probe:
+    initialDelaySeconds: 50
+
+kafkaLabels:
+  cluster: kafka-ci
+
+sarama:
+  logEnabled: true
+
+extraArgs:
+  - "--log.level=debug"
+
+containerSecurityContext:
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop: ["ALL"]
+  readOnlyRootFilesystem: true
+  runAsGroup: 10000
+  runAsNonRoot: true
+  runAsUser: 10000
+  seccompProfile:
+    type: RuntimeDefault
+
+resources:
+  limits:
+    cpu: 100m
+    memory: 64Mi
+  requests:
+    cpu: 100m
+    memory: 64Mi
+
+extraManifests:
+  - |
+    apiVersion: kafka.strimzi.io/v1beta2
+    kind: KafkaNodePool
+    metadata:
+      name: controller-broker
+      labels:
+        strimzi.io/cluster: kafka-ci
+    spec:
+      replicas: 1
+      roles:
+        - controller
+        - broker
+      storage:
+        type: jbod
+        volumes:
+          - id: 0
+            type: ephemeral
+            kraftMetadata: shared
+  - |
+    apiVersion: kafka.strimzi.io/v1beta2
+    kind: Kafka
+    metadata:
+      name: kafka-ci
+      annotations:
+        strimzi.io/node-pools: enabled
+        strimzi.io/kraft: enabled
+    spec:
+      kafka:
+        version: {{ .Values.kafkaBrokerVersion }}
+        metadataVersion: 4.0-IV3
+        listeners:
+          - name: plain
+            port: 9092
+            type: internal
+            tls: false
+          - name: tls
+            port: 9093
+            type: internal
+            tls: true
+        config:
+          offsets.topic.replication.factor: 1
+          transaction.state.log.replication.factor: 1
+          transaction.state.log.min.isr: 1
+          default.replication.factor: 1
+          min.insync.replicas: 1
+      entityOperator:
+        topicOperator: {}
+        userOperator: {}
