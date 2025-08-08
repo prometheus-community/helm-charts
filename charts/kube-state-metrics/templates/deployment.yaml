@@ -168,7 +168,6 @@ spec:
           name: "metrics"
         {{- end }}
         {{- end }}
-        {{- if not .Values.kubeRBACProxy.enabled }}
         {{- if .Values.startupProbe.enabled }}
         startupProbe:
           failureThreshold: {{ .Values.startupProbe.failureThreshold }}
@@ -240,7 +239,6 @@ spec:
           periodSeconds: {{ .Values.readinessProbe.periodSeconds }}
           successThreshold: {{ .Values.readinessProbe.successThreshold }}
           timeoutSeconds: {{ .Values.readinessProbe.timeoutSeconds }}
-        {{- end }}
         resources:
 {{ toYaml .Values.resources | indent 10 }}
 {{- if .Values.containerSecurityContext }}
@@ -253,6 +251,9 @@ spec:
         {{-  if .Values.kubeRBACProxy.extraArgs  }}
         {{- .Values.kubeRBACProxy.extraArgs | toYaml | nindent 8 }}
         {{-  end  }}
+        {{- if .Values.kubeRBACProxy.ignoreProbePaths }}
+        - --ignore-paths=/livez,/readyz
+        {{- end }}
         - --secure-listen-address=:{{ .Values.service.port | default 8080}}
         - --upstream=http://127.0.0.1:{{ $servicePort }}/
         - --proxy-endpoints-port={{ .Values.kubeRBACProxy.proxyEndpointsPort | default 8888 }}
@@ -291,6 +292,9 @@ spec:
         {{-  if .Values.kubeRBACProxy.extraArgs  }}
         {{- .Values.kubeRBACProxy.extraArgs | toYaml | nindent 8 }}
         {{-  end  }}
+        {{- if .Values.kubeRBACProxy.ignoreProbePaths }}
+        - --ignore-paths=/livez,/readyz
+        {{- end }}
         - --secure-listen-address=:{{ .Values.selfMonitor.telemetryPort | default 8081 }}
         - --upstream=http://127.0.0.1:{{ $telemetryPort }}/
         - --proxy-endpoints-port=8889
