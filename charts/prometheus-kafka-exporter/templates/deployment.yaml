@@ -33,6 +33,10 @@ spec:
       {{- toYaml .Values.securityContext | nindent 8 }}
       {{- end }}
       serviceAccountName: {{ template "prometheus-kafka-exporter.serviceAccountName" . }}
+      {{- with .Values.hostAliases }}
+      hostAliases:
+          {{- toYaml . | nindent 8 }}
+      {{- end }}
       containers:
         - args:
             - '--verbosity={{ .Values.verbosity }}'
@@ -44,6 +48,9 @@ spec:
           {{- end }}
           {{- if .Values.kafkaBrokerVersion }}
             - '--kafka.version={{ .Values.kafkaBrokerVersion }}'
+          {{- end }}
+          {{- if .Values.kafkaLabels }}
+            - '--kafka.labels={{ include "prometheus-kafka-exporter.kafkaLabels" . }}'
           {{- end }}
           {{- if .Values.tls.enabled }}
             - '--tls.enabled'
@@ -62,6 +69,12 @@ spec:
             - '--sasl.enabled'
           {{- if not .Values.sasl.handshake }}
             - '--sasl.handshake=false'
+          {{- end }}
+          {{- if .Values.sasl.awsiam.enabled }}
+            - '--sasl.mechanism={{ .Values.sasl.awsiam.mechanism }}'
+            {{- if .Values.sasl.awsiam.awsRegion }}
+            - '--sasl.aws-region={{ .Values.sasl.awsiam.awsRegion }}'
+            {{- end }}
           {{- end }}
           {{- if .Values.sasl.scram.enabled }}
             - '--sasl.username=$(SCRAM_USERNAME)'

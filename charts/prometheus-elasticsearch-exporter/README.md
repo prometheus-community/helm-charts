@@ -10,19 +10,19 @@ cluster using the [Helm](https://helm.sh) package manager.
 - Helm 3.7+
 - Kubernetes 1.19+
 
-## Get Helm Repository Info
-<!-- textlint-disable terminology -->
-```console
-helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
-helm repo update
-```
+## Usage
 
-_See [helm repo](https://helm.sh/docs/helm/helm_repo/) for command documentation._
-<!-- textlint-enable -->
-## Install Helm Chart
+The chart is distributed as an [OCI Artifact](https://helm.sh/docs/topics/registries/) as well as via a traditional [Helm Repository](https://helm.sh/docs/topics/chart_repository/).
+
+- OCI Artifact: `oci://ghcr.io/prometheus-community/charts/prometheus-elasticsearch-exporter`
+- Helm Repository: `https://prometheus-community.github.io/helm-charts` with chart `prometheus-elasticsearch-exporter`
+
+The installation instructions use the OCI registry. Refer to the [`helm repo`]([`helm repo`](https://helm.sh/docs/helm/helm_repo/)) command documentation for information on installing charts via the traditional repository.
+
+### Install Helm Chart
 
 ```console
-helm install [RELEASE_NAME] prometheus-community/prometheus-elasticsearch-exporter
+helm install [RELEASE_NAME] oci://ghcr.io/prometheus-community/charts/prometheus-elasticsearch-exporter
 ```
 
 The command deploys Elasticsearch Exporter on the Kubernetes cluster using the default configuration.
@@ -31,7 +31,7 @@ _See [configuration](#configuration) below._
 
 _See [helm install](https://helm.sh/docs/helm/helm_install/) for command documentation._
 
-## Uninstall Helm Chart
+### Uninstall Helm Chart
 
 ```console
 helm uninstall [RELEASE_NAME]
@@ -41,15 +41,19 @@ This removes all the Kubernetes components associated with the chart and deletes
 
 _See [helm uninstall](https://helm.sh/docs/helm/helm_uninstall/) for command documentation._
 
-## Upgrading Helm Chart
+### Upgrading Helm Chart
 
 ```console
-helm upgrade [RELEASE_NAME] prometheus-community/prometheus-elasticsearch-exporter --install
+helm upgrade [RELEASE_NAME] oci://ghcr.io/prometheus-community/charts/prometheus-elasticsearch-exporter --install
 ```
 
 _See [helm upgrade](https://helm.sh/docs/helm/helm_upgrade/) for command documentation._
 
-## To 6.0.0
+### To 7.0.0
+
+In Release 7.0.0, the chart has dropped support for PodSecurityPolicy, which was remvoed in k8s 1.25.
+
+#### To 6.0.0
 
 In release 6.0, the chart API version has been increased to v2. From now on, the chart supports Helm 3 only.
 
@@ -77,7 +81,7 @@ Once the resources have been deleted, you can upgrade the release:
 helm upgrade -i RELEASE_NAME prometheus-community/prometheus-elasticsearch-exporter
 ```
 
-### To 5.0.0
+#### To 5.0.0
 
 `securityContext` has been renamed to `podSecurityContext` and `securityContext.enabled` has no effect anymore. To mirror the behaviour of `securityContext.enabled=false` of 4.x unset `podSecurityContext`.
 
@@ -89,7 +93,7 @@ In 5.0.0 `securityContext` refers to the container's securityContext instead whi
 
 Default values for `podSecurityContext` and `securityContext` have been updated to be compatible with the Pod Security Standard level "restricted". Most notably `seccompProfile.type` is set to `RuntimeDefault`.
 
-### To 4.0.0
+#### To 4.0.0
 
 While migrating the chart from `stable/elasticsearch-exporter` it was renamed to `prometheus-elasticsearch-exporter`.
 If you want to upgrade from a previous version and you need to keep the old resource names (`Service`, `Deployment`, etc) you can set `fullnameOverride` and `nameOverride` to do so.
@@ -101,14 +105,14 @@ helm install my-exporter stable/elasticsearch-exporter
 helm upgrade my-exporter . --set fullnameOverride=my-exporter-elasticsearch-exporter --set nameOverride=elasticsearch-exporter
 ```
 
-### To 3.0.0
+#### To 3.0.0
 
 `prometheusRule.rules` are now processed as Helm template, allowing to set variables in them.
 This means that if a rule contains a {{ $value }}, Helm will try replacing it and probably fail.
 
 You now need to escape the rules (see `values.yaml`) for examples.
 
-### To 2.0.0
+#### To 2.0.0
 
 Some Kubernetes APIs used from 1.x have been deprecated. You need to update your cluster to Kubernetes 1.10+ to support new definitions used in 2.x.
 
@@ -118,7 +122,7 @@ See [Customizing the Chart Before Installing](https://helm.sh/docs/intro/using_h
 To see all configurable options with detailed comments, visit the chart's [values.yaml](./values.yaml), or run these configuration commands:
 
 ```console
-helm show values prometheus-community/prometheus-elasticsearch-exporter
+helm show values oci://ghcr.io/prometheus-community/charts/prometheus-elasticsearch-exporter
 ```
 
 > **Tip**: You can use the default [values.yaml](values.yaml)
