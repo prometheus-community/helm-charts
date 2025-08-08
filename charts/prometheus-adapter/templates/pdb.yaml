@@ -11,12 +11,17 @@ metadata:
   labels:
     {{- include "k8s-prometheus-adapter.labels" . | indent 4 }}
 spec:
-  {{- if .Values.podDisruptionBudget.minAvailable }}
-  minAvailable: {{ .Values.podDisruptionBudget.minAvailable }}
-  {{- end  }}
-  {{- if .Values.podDisruptionBudget.maxUnavailable }}
-  maxUnavailable: {{ .Values.podDisruptionBudget.maxUnavailable }}
-  {{- end  }}
+  {{- with .Values.podDisruptionBudget }}
+  {{- if .minAvailable }}
+  minAvailable: {{ .minAvailable }}
+  {{- end }}
+  {{- if .maxUnavailable }}
+  maxUnavailable: {{ .maxUnavailable }}
+  {{- end }}
+  {{- if .unhealthyPodEvictionPolicy }}
+  unhealthyPodEvictionPolicy: {{ .unhealthyPodEvictionPolicy }}
+  {{- end }}
+  {{- end }}
   selector:
     matchLabels:
       {{- include "k8s-prometheus-adapter.selectorLabels" . | indent 6 }}
