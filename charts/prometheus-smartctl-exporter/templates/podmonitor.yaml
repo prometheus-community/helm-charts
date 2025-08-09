@@ -1,0 +1,33 @@
+{{- if .Values.podMonitor.enabled }}
+apiVersion: monitoring.coreos.com/v1
+kind: PodMonitor
+metadata:
+  name: {{ template "prometheus-smartctl-exporter.fullname" . }}
+  labels:
+    {{- include "prometheus-smartctl-exporter.labels" . | nindent 4 }}
+    {{- with .Values.podMonitor.extraLabels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+{{- if hasKey .Values.podMonitor "namespace" }}
+  namespace: {{ .Values.podMonitor.namespace }}
+{{- end }}
+spec:
+  podMetricsEndpoints:
+    - interval: {{ .Values.podMonitor.interval }}
+      path: /metrics
+      port: http
+      scheme: http
+      scrapeTimeout: {{ .Values.podMonitor.scrapeTimeout }}
+{{- with .Values.podMonitor.relabelings }}
+      relabelings: {{ toYaml . | nindent 8 }}
+{{- end }}
+{{- with .Values.podMonitor.metricRelabelings }}
+      metricRelabelings: {{ toYaml . | nindent 8 }}
+{{- end }}
+  namespaceSelector:
+    matchNames:
+      - {{ .Release.Namespace }}
+  selector:
+    matchLabels:
+      {{- include "prometheus-smartctl-exporter.selectorLabels" . | nindent 6 }}
+{{- end }}
