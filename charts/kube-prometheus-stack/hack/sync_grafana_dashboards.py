@@ -29,11 +29,11 @@ def change_style(style, representer):
 
 refs = {
     # renovate: git-refs=https://github.com/prometheus-operator/kube-prometheus branch=main
-    'ref.kube-prometheus': '3c832a104d6e71b268a3023373eebebf01a5f52e',
+    'ref.kube-prometheus': '11ab5119863d3a0da0541193729b584a9fd99939',
     # renovate: git-refs=https://github.com/kubernetes-monitoring/kubernetes-mixin branch=master
     'ref.kubernetes-mixin': '7218cf5c216d806ef27ad2d6418ece021fbe80cf',
     # renovate: git-refs=https://github.com/etcd-io/etcd branch=main
-    'ref.etcd': '929e947cad4f1f9b7bb781fa75a1066ef4c0846f',
+    'ref.etcd': 'aa9e9df804213b294adc416e27e506006ff6b534',
 }
 
 # Source files list
