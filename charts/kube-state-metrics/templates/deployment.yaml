@@ -168,7 +168,6 @@ spec:
           name: "metrics"
         {{- end }}
         {{- end }}
-        {{- if not .Values.kubeRBACProxy.enabled }}
         {{- if .Values.startupProbe.enabled }}
         startupProbe:
           failureThreshold: {{ .Values.startupProbe.failureThreshold }}
@@ -240,7 +239,6 @@ spec:
           periodSeconds: {{ .Values.readinessProbe.periodSeconds }}
           successThreshold: {{ .Values.readinessProbe.successThreshold }}
           timeoutSeconds: {{ .Values.readinessProbe.timeoutSeconds }}
-        {{- end }}
         resources:
 {{ toYaml .Values.resources | indent 10 }}
 {{- if .Values.containerSecurityContext }}
@@ -253,9 +251,12 @@ spec:
         {{-  if .Values.kubeRBACProxy.extraArgs  }}
         {{- .Values.kubeRBACProxy.extraArgs | toYaml | nindent 8 }}
         {{-  end  }}
+        {{- if .Values.kubeRBACProxy.ignoreProbePaths }}
+        - --ignore-paths=/livez,/readyz
+        {{- end }}
         - --secure-listen-address=:{{ .Values.service.port | default 8080}}
         - --upstream=http://127.0.0.1:{{ $servicePort }}/
-        - --proxy-endpoints-port=8888
+        - --proxy-endpoints-port={{ .Values.kubeRBACProxy.proxyEndpointsPort | default 8888 }}
         - --config-file=/etc/kube-rbac-proxy-config/config-file.yaml
         volumeMounts:
           - name: kube-rbac-proxy-config
@@ -268,13 +269,13 @@ spec:
         ports:
           - containerPort: {{ .Values.service.port | default 8080}}
             name: "http"
-          - containerPort: 8888
+          - containerPort: {{ .Values.kubeRBACProxy.proxyEndpointsPort | default 8888 }}
             name: "http-healthz"
         readinessProbe:
           httpGet:
             scheme: HTTPS
-            port: 8888
-            path: healthz
+            port: {{ .Values.kubeRBACProxy.proxyEndpointsPort | default 8888 }}
+            path: /healthz
           initialDelaySeconds: 5
           timeoutSeconds: 5
         {{- if .Values.kubeRBACProxy.resources }}
@@ -291,6 +292,9 @@ spec:
         {{-  if .Values.kubeRBACProxy.extraArgs  }}
         {{- .Values.kubeRBACProxy.extraArgs | toYaml | nindent 8 }}
         {{-  end  }}
+        {{- if .Values.kubeRBACProxy.ignoreProbePaths }}
+        - --ignore-paths=/livez,/readyz
+        {{- end }}
         - --secure-listen-address=:{{ .Values.selfMonitor.telemetryPort | default 8081 }}
         - --upstream=http://127.0.0.1:{{ $telemetryPort }}/
         - --proxy-endpoints-port=8889

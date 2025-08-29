@@ -1,5 +1,5 @@
 {{- if .Values.scrapeconfigs.enabled -}}
-# https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/v0.84.0/example/prometheus-operator-crd/monitoring.coreos.com_scrapeconfigs.yaml
+# https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/v0.85.0/example/prometheus-operator-crd/monitoring.coreos.com_scrapeconfigs.yaml
 ---
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
@@ -9,7 +9,7 @@ metadata:
 {{- toYaml . | nindent 4 }}
 {{- end }}
     controller-gen.kubebuilder.io/version: v0.18.0
-    operator.prometheus.io/version: 0.84.0
+    operator.prometheus.io/version: 0.85.0
   name: scrapeconfigs.monitoring.coreos.com
 spec:
   group: monitoring.coreos.com
@@ -2453,6 +2453,7 @@ spec:
                     hostNetworkingHost:
                       description: The host to use if the container is in host networking
                         mode.
+                      minLength: 1
                       type: string
                     matchFirstNetwork:
                       description: |-
@@ -2798,6 +2799,9 @@ spec:
                       type: object
                     port:
                       description: The port to scrape metrics from.
+                      format: int32
+                      maximum: 65535
+                      minimum: 0
                       type: integer
                     proxyConnectHeader:
                       additionalProperties:
@@ -12304,6 +12308,8 @@ spec:
                 description: |-
                   Whether to scrape a classic histogram that is also exposed as a native histogram.
                   It requires Prometheus >= v2.45.0.
+
+                  Notice: `scrapeClassicHistograms` corresponds to the `always_scrape_classic_histograms` field in the Prometheus configuration.
                 type: boolean
               scrapeInterval:
                 description: ScrapeInterval is the interval between consecutive scrapes.
