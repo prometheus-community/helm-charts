@@ -224,7 +224,7 @@ spec:
           {{- end }}
         {{- end }}
           ports:
-            - containerPort: 9090
+            - containerPort: {{ include "prometheus.port" . }}
           {{- if .Values.server.portName }}
               name: {{ .Values.server.portName }}
           {{- end }}
@@ -235,7 +235,11 @@ spec:
             {{- if not .Values.server.tcpSocketProbeEnabled }}
             httpGet:
               path: {{ .Values.server.prefixURL }}/-/ready
-              port: 9090
+              {{- if .Values.server.portName }}
+              port: {{ .Values.server.portName }}
+              {{- else }}
+              port: {{ include "prometheus.port" . }}
+              {{- end }}
               scheme: {{ .Values.server.probeScheme }}
               {{- with .Values.server.probeHeaders }}
               httpHeaders:
@@ -243,7 +247,11 @@ spec:
               {{- end }}
             {{- else }}
             tcpSocket:
-              port: 9090
+              {{- if .Values.server.portName }}
+              port: {{ .Values.server.portName }}
+              {{- else }}
+              port: {{ include "prometheus.port" . }}
+              {{- end }}
             {{- end }}
             initialDelaySeconds: {{ .Values.server.readinessProbeInitialDelay }}
             periodSeconds: {{ .Values.server.readinessProbePeriodSeconds }}
@@ -254,7 +262,11 @@ spec:
             {{- if not .Values.server.tcpSocketProbeEnabled }}
             httpGet:
               path: {{ .Values.server.prefixURL }}/-/healthy
-              port: 9090
+              {{- if .Values.server.portName }}
+              port: {{ .Values.server.portName }}
+              {{- else }}
+              port: {{ include "prometheus.port" . }}
+              {{- end }}
               scheme: {{ .Values.server.probeScheme }}
               {{- with .Values.server.probeHeaders }}
               httpHeaders:
@@ -262,7 +274,11 @@ spec:
               {{- end }}
             {{- else }}
             tcpSocket:
-              port: 9090
+              {{- if .Values.server.portName }}
+              port: {{ .Values.server.portName }}
+              {{- else }}
+              port: {{ include "prometheus.port" . }}
+              {{- end }}
             {{- end }}
             initialDelaySeconds: {{ .Values.server.livenessProbeInitialDelay }}
             periodSeconds: {{ .Values.server.livenessProbePeriodSeconds }}
@@ -274,7 +290,11 @@ spec:
             {{- if not .Values.server.tcpSocketProbeEnabled }}
             httpGet:
               path: {{ .Values.server.prefixURL }}/-/healthy
-              port: 9090
+              {{- if .Values.server.portName }}
+              port: {{ .Values.server.portName }}
+              {{- else }}
+              port: {{ include "prometheus.port" . }}
+              {{- end }}
               scheme: {{ .Values.server.probeScheme }}
               {{- if .Values.server.probeHeaders }}
               httpHeaders:
@@ -285,7 +305,11 @@ spec:
               {{- end }}
             {{- else }}
             tcpSocket:
-              port: 9090
+              {{- if .Values.server.portName }}
+              port: {{ .Values.server.portName }}
+              {{- else }}
+              port: {{ include "prometheus.port" . }}
+              {{- end }}
             {{- end }}
             failureThreshold: {{ .Values.server.startupProbe.failureThreshold }}
             periodSeconds: {{ .Values.server.startupProbe.periodSeconds }}
