@@ -18,7 +18,7 @@ Either way, every time the configuration is getting updated, the modbus_exporter
 This setup has been tested with both real unit (Janitza Power Analizer UMG series) as well as using an simulator <https://www.modbustools.com/download.html>.  
 Other simulators (fully free) exist as well:
 
-1. the one included as part of the test (fake server) in the <https://github.com/RichiH/modbus_exporter/blob/main/tests/fake_server/main.go>, which uses <https://github.com/tbrandon/mbserver> (golang).  
+1. the one included as part of the test (fake server) in the <https://github.com/RichiH/modbus_exporter/blob/main/tests/fake_server/main.go>, which uses <https://github.com/tbrandon/mbserver> (Go).  
 2. Many others, like pymodslave, based on py module: <https://github.com/ljean/modbus-tk>, which has its own demo simulator as well.  
 
 ## Notes
@@ -34,26 +34,26 @@ More on Modbus function codes: <https://ozeki.hu/p_5873-modbus-function-codes.ht
 - Kubernetes 1.10+ with Beta APIs enabled
 - Helm 3+
 
-## Get Repository Info
+## Usage
+
+The chart is distributed as an [OCI Artifact](https://helm.sh/docs/topics/registries/) as well as via a traditional [Helm Repository](https://helm.sh/docs/topics/chart_repository/).
+
+- OCI Artifact: `oci://ghcr.io/prometheus-community/charts/prometheus-modbus-exporter`
+- Helm Repository: `https://prometheus-community.github.io/helm-charts` with chart `prometheus-modbus-exporter`
+
+The installation instructions use the OCI registry. Refer to the [`helm repo`]([`helm repo`](https://helm.sh/docs/helm/helm_repo/)) command documentation for information on installing charts via the traditional repository.
+
+### Install Chart
 
 ```console
-helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
-helm repo update
-```
-
-_See [helm repository](https://helm.sh/docs/helm/helm_repo/) for command documentation._
-
-## Install Chart
-
-```console
-helm install [RELEASE_NAME] prometheus-community/prometheus-modbus-exporter
+helm install [RELEASE_NAME] oci://ghcr.io/prometheus-community/charts/prometheus-modbus-exporter
 ```
 
 _See [configuration](## Configuring) below._
 
 _See [helm install](https://helm.sh/docs/helm/helm_install/) for command documentation._
 
-## Uninstall Chart
+### Uninstall Chart
 
 ```console
 helm uninstall [RELEASE_NAME]
@@ -63,7 +63,7 @@ This removes all the Kubernetes components associated with the chart and deletes
 
 _See [helm uninstall](https://helm.sh/docs/helm/helm_uninstall/) for command documentation._
 
-## Upgrading Chart
+### Upgrading Chart
 
 ```console
 helm upgrade [RELEASE_NAME] [CHART] --install
@@ -74,7 +74,7 @@ helm upgrade [RELEASE_NAME] [CHART] --install
 See [Customizing the Chart Before Installing](https://helm.sh/docs/intro/using_helm/#customizing-the-chart-before-installing). To see all configurable options with detailed comments, visit the chart's [values.yaml](./values.yaml), or run these configuration commands:
 
 ```console
-helm show values prometheus-community/prometheus-modbus-exporter
+helm show values oci://ghcr.io/prometheus-community/charts/prometheus-modbus-exporter
 ```
 
 For more information please refer to the [modbus_exporter](https://github.com/RichiH/modbus_exporter) documentation.
