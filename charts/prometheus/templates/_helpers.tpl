@@ -6,6 +6,9 @@ Expand the name of the chart.
 {{- default .Chart.Name .Values.nameOverride | trunc 63 | trimSuffix "-" -}}
 {{- end -}}
 
+{{/*
+Return the port for prometheus.
+*/}}
 {{- define "prometheus.port" -}}
 9090
 {{- end -}}
