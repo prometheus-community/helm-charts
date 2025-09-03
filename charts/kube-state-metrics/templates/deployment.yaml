@@ -162,10 +162,10 @@ spec:
         {{- if eq .Values.kubeRBACProxy.enabled false }}
         ports:
         - containerPort: {{ .Values.service.port | default 8080}}
-          name: "http"
+          name: http
         {{- if .Values.selfMonitor.enabled }}
         - containerPort: {{ $telemetryPort }}
-          name: "metrics"
+          name: metrics
         {{- end }}
         {{- end }}
         {{- if .Values.startupProbe.enabled }}
@@ -182,7 +182,7 @@ spec:
             {{- end }}
             path: /healthz
             {{- if .Values.kubeRBACProxy.enabled }}
-            port: {{ .Values.service.port | default 8080 }}
+            port: http
             scheme: HTTPS
             {{- else }}
             port: {{ $servicePort }}
@@ -206,7 +206,7 @@ spec:
             {{- end }}
             path: /livez
             {{- if .Values.kubeRBACProxy.enabled }}
-            port: {{ .Values.service.port | default 8080 }}
+            port: http
             scheme: HTTPS
             {{- else }}
             port: {{ $servicePort }}
@@ -229,7 +229,7 @@ spec:
             {{- end }}
             path: /readyz
             {{- if .Values.kubeRBACProxy.enabled }}
-            port: {{ .Values.selfMonitor.telemetryPort | default 8081 }}
+            port: metrics
             scheme: HTTPS
             {{- else }}
             port: {{ $telemetryPort }}
@@ -268,13 +268,13 @@ spec:
         image: {{ include "kubeRBACProxy.image" . }}
         ports:
           - containerPort: {{ .Values.service.port | default 8080}}
-            name: "http"
+            name: http
           - containerPort: {{ .Values.kubeRBACProxy.proxyEndpointsPort | default 8888 }}
-            name: "http-healthz"
+            name: http-healthz
         readinessProbe:
           httpGet:
             scheme: HTTPS
-            port: {{ .Values.kubeRBACProxy.proxyEndpointsPort | default 8888 }}
+            port: http-healthz
             path: /healthz
           initialDelaySeconds: 5
           timeoutSeconds: 5
@@ -309,9 +309,9 @@ spec:
         image: {{ include "kubeRBACProxy.image" . }}
         ports:
           - containerPort: {{ .Values.selfMonitor.telemetryPort | default 8081 }}
-            name: "metrics"
+            name: metrics
           - containerPort: 8889
-            name: "metrics-healthz"
+            name: metrics-healthz
         readinessProbe:
           httpGet:
             scheme: HTTPS
