@@ -132,7 +132,7 @@ metadata:
 {{ toYaml .Values.grafana.sidecar.dashboards.annotations | indent 4 }}
   labels:
     {{- if $.Values.grafana.sidecar.dashboards.label }}
-    {{ tpl $.Values.grafana.sidecar.dashboards.label $ }}: {{ ((tpl $.Values.grafana.sidecar.dashboards.labelValue $) | quote) | default "1" }}
+    {{ tpl $.Values.grafana.sidecar.dashboards.label $ }}: {{ ((tpl $.Values.grafana.sidecar.dashboards.labelValue $) | default 1) | quote }}
     {{- end }}
     app: {{ template "kube-prometheus-stack.name" $ }}-grafana
 {{ include "kube-prometheus-stack.labels" $ | indent 4 }}
