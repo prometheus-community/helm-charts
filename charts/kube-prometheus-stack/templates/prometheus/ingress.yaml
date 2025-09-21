@@ -4,6 +4,7 @@
   {{- $servicePort := .Values.prometheus.ingress.servicePort | default .Values.prometheus.service.port -}}
   {{- $routePrefix := list .Values.prometheus.prometheusSpec.routePrefix -}}
   {{- $paths := .Values.prometheus.ingress.paths | default $routePrefix -}}
+  {{- $extraPaths := .Values.prometheus.ingress.extraPaths | default list -}}
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
@@ -30,6 +31,9 @@ spec:
       http:
         paths:
   {{- range $p := $paths }}
+          {{- with $extraPaths }}
+          {{- toYaml . | nindent 10 }}
+          {{- end }}
           - path: {{ tpl $p $ }}
             pathType: {{ $pathType }}
             backend:
@@ -43,6 +47,9 @@ spec:
     - http:
         paths:
   {{- range $p := $paths }}
+          {{- with $extraPaths }}
+          {{- toYaml . | nindent 10 }}
+          {{- end }}
           - path: {{ tpl $p $ }}
             pathType: {{ $pathType }}
             backend:
