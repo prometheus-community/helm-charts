@@ -6,7 +6,7 @@ This chart bootstraps a [Kafka Exporter](https://github.com/danielqsj/kafka_expo
 
 ## Prerequisites
 
-- Kubernetes 1.19+
+- Kubernetes 1.25+
 - Helm 3
 
 Helm v2 is no longer supported from chart version 2.0.0.
@@ -62,4 +62,4 @@ A major chart version change (like v1.2.3 -> v2.0.0) indicates that there is an 
 
 #### 2.x to 3.x
 
-The Helm parameter `rbac.pspEnabled` was removed (was set to to false before)
+From version 3.0.0, support for pod security policies was removed, this means this chart doesn't support kubernetes version earlier then 1.25.
