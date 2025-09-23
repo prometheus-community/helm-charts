@@ -55,3 +55,11 @@ See [Customizing the Chart Before Installing](https://helm.sh/docs/intro/using_h
 ```console
 helm show values oci://ghcr.io/prometheus-community/charts/prometheus-kafka-exporter
 ```
+
+### Upgrading an existing Release to a new major version
+
+A major chart version change (like v1.2.3 -> v2.0.0) indicates that there is an incompatible breaking change needing manual actions.
+
+#### 2.x to 3.x
+
+The Helm parameter `rbac.pspEnabled` was removed (was set to to false before)
