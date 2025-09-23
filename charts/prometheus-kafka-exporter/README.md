@@ -62,4 +62,6 @@ A major chart version change (like v1.2.3 -> v2.0.0) indicates that there is an 
 
 #### 2.x to 3.x
 
-From version 3.0.0, support for pod security policies was removed, this means this chart doesn't support kubernetes version earlier then 1.25.
+From version 3.0.0, support for pod security policies was removed.
+
+The minimum Kubernetes version required by the helm chart is 1.25.
