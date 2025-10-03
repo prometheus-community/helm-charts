@@ -67,9 +67,3 @@ Return the appropriate apiVersion for rbac.
 {{- print "rbac.authorization.k8s.io/v1beta1" -}}
 {{- end -}}
 {{- end -}}
-
-{{- define "prometheus-cloudwatch-exporter.commonLabels" -}}
-{{- if .Values.commonLabels }}
-{{- toYaml .Values.commonLabels | nindent 0 -}}
-{{- end }}
-{{- end -}}
