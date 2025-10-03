@@ -221,6 +221,9 @@ replacement_map = {
     '$.Values.defaultRules.node.fsSelector': {
         'replacement': '{{ $.Values.defaultRules.node.fsSelector }}',
         'init': ''},
+    '601200': {
+        'replacement': '{{ .Values.defaultRules.kubeClientCertificateExpiration | default "601200" }}',
+        'init': ''},
 }
 
 # standard header
