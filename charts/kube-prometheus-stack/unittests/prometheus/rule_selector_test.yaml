@@ -1,0 +1,50 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/helm-unittest/helm-unittest/main/schema/helm-testsuite.json
+suite: test ruleSelector
+templates:
+  - prometheus/prometheus.yaml
+tests:
+  - it: should match the release name by default
+    asserts:
+      - equal:
+          path: spec.ruleSelector.matchLabels.release
+          value: RELEASE-NAME
+  - it: should be empty if ruleSelectorNilUsesHelmValues is false
+    set:
+      prometheus:
+        prometheusSpec:
+          ruleSelectorNilUsesHelmValues: false
+    asserts:
+      - equal:
+          path: spec.ruleSelector
+          value: {}
+  - it: should be set to a specific label
+    set:
+      prometheus:
+        prometheusSpec:
+          ruleSelector:
+            matchLabels:
+              abc: def
+    asserts:
+      - equal:
+          path: spec.ruleSelector.matchLabels.abc
+          value: def
+  - it: should be null if set to null and ruleSelectorNilUsesHelmValues is false
+    set:
+      prometheus:
+        prometheusSpec:
+          ruleSelector: null
+          ruleSelectorNilUsesHelmValues: false
+    asserts:
+      - equal:
+          path: spec.ruleSelector
+          value: null
+  - it: should match the release name if set to null and ruleSelectorNilUsesHelmValues is true
+    set:
+      prometheus:
+        prometheusSpec:
+          ruleSelector: null
+          ruleSelectorNilUsesHelmValues: true
+    asserts:
+      - equal:
+          path: spec.ruleSelector.matchLabels.release
+          value: RELEASE-NAME
