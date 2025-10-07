@@ -221,6 +221,7 @@ replacement_map = {
     '$.Values.defaultRules.node.fsSelector': {
         'replacement': '{{ $.Values.defaultRules.node.fsSelector }}',
         'init': ''},
+    # 601200 seconds = 6 days 22 hour. Used as the default threshold for kubeClientCertificateExpira
     '601200': {
         'replacement': '{{ .Values.defaultRules.kubeClientCertificateExpiration | default "601200" }}',
         'init': ''},
