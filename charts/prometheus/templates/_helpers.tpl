@@ -7,6 +7,13 @@ Expand the name of the chart.
 {{- end -}}
 
 {{/*
+Return the port for prometheus.
+*/}}
+{{- define "prometheus.port" -}}
+9090
+{{- end -}}
+
+{{/*
 Create chart name and version as used by the chart label.
 */}}
 {{- define "prometheus.chart" -}}

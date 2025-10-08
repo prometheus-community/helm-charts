@@ -29,11 +29,11 @@ def change_style(style, representer):
 
 refs = {
     # renovate: git-refs=https://github.com/prometheus-operator/kube-prometheus branch=main
-    'ref.kube-prometheus': 'c79b82818a207c85de6c7efb7eabb8529f23fc25',
+    'ref.kube-prometheus': '79c461255e5f44315a3cce70012aa7614b42b915',
     # renovate: git-refs=https://github.com/kubernetes-monitoring/kubernetes-mixin branch=master
-    'ref.kubernetes-mixin': '77180e5901fd4c4a822a84722ba5253cb95a6c66',
+    'ref.kubernetes-mixin': 'd6556e52d2762de47dc28ac0f9f2ffe93a50e785',
     # renovate: git-refs=https://github.com/etcd-io/etcd branch=main
-    'ref.etcd': '0de79070a3e94623e35a73c1d5bfc5992a30d097',
+    'ref.etcd': '841b593a3a76edc5b75d26a63dd3c2f2b9ee94c7',
 }
 
 # Source files list
@@ -132,7 +132,7 @@ metadata:
 {{ toYaml .Values.grafana.sidecar.dashboards.annotations | indent 4 }}
   labels:
     {{- if $.Values.grafana.sidecar.dashboards.label }}
-    {{ $.Values.grafana.sidecar.dashboards.label }}: {{ ternary $.Values.grafana.sidecar.dashboards.labelValue "1" (not (empty $.Values.grafana.sidecar.dashboards.labelValue)) | quote }}
+    {{ tpl $.Values.grafana.sidecar.dashboards.label $ }}: {{ ((tpl $.Values.grafana.sidecar.dashboards.labelValue $) | default 1) | quote }}
     {{- end }}
     app: {{ template "kube-prometheus-stack.name" $ }}-grafana
 {{ include "kube-prometheus-stack.labels" $ | indent 4 }}
