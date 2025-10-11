@@ -6,6 +6,7 @@ https://github.com/prometheus-community/helm-charts/tree/main/charts/kube-promet
 {{- $kubeTargetVersion := default .Capabilities.KubeVersion.GitVersion .Values.kubeTargetVersionOverride }}
 {{- if and (semverCompare ">=1.14.0-0" $kubeTargetVersion) (semverCompare "<9.9.9-9" $kubeTargetVersion) .Values.defaultRules.create .Values.defaultRules.rules.kubernetesResources }}
 {{- $kubeStateMetricsJob := include "kube-prometheus-stack-kube-state-metrics.name" . }}
+{{- $kubeletJob := include "kube-prometheus-stack-kubelet.name" . }}
 apiVersion: monitoring.coreos.com/v1
 kind: PrometheusRule
 metadata:
@@ -308,9 +309,9 @@ spec:
         runbook_url: {{ .Values.defaultRules.runbookUrl }}/kubernetes/cputhrottlinghigh
         summary: Processes experience elevated CPU throttling.
       expr: |-
-        sum(increase(container_cpu_cfs_throttled_periods_total{container!="", job="kubelet", metrics_path="/metrics/cadvisor", }[5m])) without (id, metrics_path, name, image, endpoint, job, node)
+        sum(increase(container_cpu_cfs_throttled_periods_total{container!="", job="{{ $kubeletJob }}", metrics_path="/metrics/cadvisor", }[5m])) without (id, metrics_path, name, image, endpoint, job, node)
           / on ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster, namespace, pod, container, instance) group_left
-        sum(increase(container_cpu_cfs_periods_total{job="kubelet", metrics_path="/metrics/cadvisor", }[5m])) without (id, metrics_path, name, image, endpoint, job, node)
+        sum(increase(container_cpu_cfs_periods_total{job="{{ $kubeletJob }}", metrics_path="/metrics/cadvisor", }[5m])) without (id, metrics_path, name, image, endpoint, job, node)
           > ( 25 / 100 )
       for: {{ dig "CPUThrottlingHigh" "for" "15m" .Values.customRules }}
       {{- with .Values.defaultRules.keepFiringFor }}
