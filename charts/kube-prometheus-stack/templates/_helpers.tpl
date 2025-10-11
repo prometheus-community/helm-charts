@@ -166,6 +166,53 @@ Use the Alertmanager namespace override for multi-namespace deployments in combi
 {{- end -}}
 
 {{/*
+Allow kubelet job name to be overridden
+*/}}
+{{- define "kube-prometheus-stack-kubelet.name" -}}
+  {{- if index .Values "kubelet" "jobNameOverride" -}}
+    {{- index .Values "kubelet" "jobNameOverride" -}}
+  {{- else -}}
+    {{- print "kubelet" -}}
+  {{- end -}}
+{{- end -}}
+
+
+{{/*
+Allow kube-controller-manager job name to be overridden
+*/}}
+{{- define "kube-prometheus-stack-kube-controller-manager.name" -}}
+  {{- if index .Values "kubeControllerManager" "jobNameOverride" -}}
+    {{- index .Values "kubeControllerManager" "jobNameOverride" -}}
+  {{- else -}}
+    {{- print "kube-controller-manager" -}}
+  {{- end -}}
+{{- end -}}
+
+
+{{/*
+Allow kube-scheduler job name to be overridden
+*/}}
+{{- define "kube-prometheus-stack-kube-scheduler.name" -}}
+  {{- if index .Values "kubeScheduler" "jobNameOverride" -}}
+    {{- index .Values "kubeScheduler" "jobNameOverride" -}}
+  {{- else -}}
+    {{- print "kube-scheduler" -}}
+  {{- end -}}
+{{- end -}}
+
+
+{{/*
+Allow kube-proxy job name to be overridden
+*/}}
+{{- define "kube-prometheus-stack-kube-proxy.name" -}}
+  {{- if index .Values "kubeProxy" "jobNameOverride" -}}
+    {{- index .Values "kubeProxy" "jobNameOverride" -}}
+  {{- else -}}
+    {{- print "kube-proxy" -}}
+  {{- end -}}
+{{- end -}}
+
+{{/*
 Allow kube-state-metrics job name to be overridden
 */}}
 {{- define "kube-prometheus-stack-kube-state-metrics.name" -}}
