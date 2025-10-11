@@ -45,6 +45,7 @@ spec:
         imagePullPolicy: {{ $global.Values.image.pullPolicy }}
         args:
         - '--smartctl.path={{ $config.smartctl_location }}'
+        - '--smartctl.powermode-check={{ $config.smartctl_powermode_check }}'
         - '--smartctl.interval={{ $config.collect_not_more_than_period }}'
 {{- if $config.device_exclude }}
         - '--smartctl.device-exclude={{ $config.device_exclude }}'
@@ -73,6 +74,11 @@ spec:
         volumeMounts:
         - mountPath: /hostdev
           name: dev
+{{- if ne $global.Values.drivedb "" }}
+        - name: config-volume
+          mountPath: /etc/smart_drivedb.h
+          subPath: smart_drivedb.h
+{{- end }}
       dnsPolicy: ClusterFirst
       hostNetwork: {{ $item.hostNetwork }}
       {{- if $item.priorityClassName }}
@@ -84,6 +90,11 @@ spec:
       - hostPath:
           path: /dev
         name: dev
+{{- if ne $global.Values.drivedb "" }}
+      - name: config-volume
+        configMap:
+          name: {{ template "prometheus-smartctl-exporter.fullname" $global }}-drivedb
+{{- end }}
     {{- with $item.nodeSelector }}
       nodeSelector:
 {{ toYaml . | indent 8 }}
