@@ -24,18 +24,23 @@ podDisruptionBudget: {}
 automountServiceAccountToken: false
 
 ## Additional blackbox-exporter container environment variables
-## For instance to add a http_proxy
-##
-## extraEnv:
-##   HTTP_PROXY: "http://superproxy.com:3128"
-##   NO_PROXY: "localhost,127.0.0.1"
-extraEnv: {}
+extraEnv: []
+  # - name: GOMAXPROCS
+  #   valueFrom:
+  #     resourceFieldRef:
+  #       resource: limits.cpu
+  #       divisor: "1"
+  # - name: HTTP_PROXY
+  #   value: "http://superproxy.com:3128"
 
-## Additional blackbox-exporter container environment variables for secret
-## extraEnvFromSecret:
-##   - secretOne
-##   - secretTwo
-extraEnvFromSecret: ""
+## Additional blackbox-exporter container environment variables for secret or configMap
+extraEnvFrom: []
+  # - configMapRef:
+  #     name: configMapOne
+  # - secretRef:
+  #     name: secretOne
+  # - secretRef:
+  #     name: secretTwo
 
 extraVolumes: []
   # - name: secret-blackbox-oauth-htpasswd
@@ -235,7 +240,6 @@ ingress:
   className: ""
   labels: {}
   annotations: {}
-    # kubernetes.io/ingress.class: nginx
     # kubernetes.io/tls-acme: "true"
   hosts:
     ## The host property on hosts and tls is passed through helm tpl function.
@@ -380,9 +384,11 @@ networkPolicy:
   # Enable network policy and allow access from anywhere
   enabled: false
   # Limit access only from monitoring namespace
-  # Before setting this value to true, you must add the name=monitoring label to the monitoring namespace
+  # Before setting this value to true, you must add the name=monitoring label to the monitoring namespace.  Name can be rewritten by monitoringNamespaceName
   # Network Policy uses label filtering
   allowMonitoringNamespace: false
+  # Rewrite monitoring namespace in network policy (default value monitoring)
+  monitoringNamespaceName: "monitoring"
 
 ## dnsPolicy and dnsConfig for Deployments and Daemonsets if you want non-default settings.
 ## These will be passed directly to the PodSpec of same.
@@ -443,7 +449,7 @@ configReloader:
   image:
     registry: quay.io
     repository: prometheus-operator/prometheus-config-reloader
-    tag: "v0.82.2"
+    tag: "v0.86.0"
     pullPolicy: IfNotPresent
     digest: ""
   securityContext:

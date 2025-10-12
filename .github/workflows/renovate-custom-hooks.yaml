@@ -9,11 +9,11 @@ on:
 
 jobs:
   renovate-post-run:
-    name: Renovate Bump Chart Version
+    name: Renovate Post Run
     runs-on: ubuntu-latest
-    if: github.actor == 'renovate[bot]'
+    if: github.actor == 'renovate[bot]' || github.actor == 'mend[bot]'
     steps:
-      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
         with:
           fetch-depth: 0
 
@@ -21,13 +21,13 @@ jobs:
       # Used App:
       # https://github.com/organizations/prometheus-community/settings/apps/helm-charts-renovate-helper.
       # Ref: https://github.com/prometheus-community/helm-charts/issues/5213.
-      - uses: actions/create-github-app-token@df432ceedc7162793a195dd1713ff69aefc7379e # v2.0.6
+      - uses: actions/create-github-app-token@67018539274d69449ef7c02e8e71183d1719ab42 # v2.1.4
         id: app-token
         with:
           app-id: 1179738
           private-key: ${{ secrets.APP_RENOVATE_HELPER_PRIVATE_KEY }}
 
-      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
+      - uses: actions/setup-python@e797f83bcb11b83ae66e0230d6156d7c80228e7c # v6.0.0
         with:
           python-version: '3.13'
 
@@ -43,24 +43,6 @@ jobs:
             echo "changed=true" >> "$GITHUB_OUTPUT"
             echo "changed_list=${changed//$'\n'/ }" >> "$GITHUB_OUTPUT"
           fi
-
-      - name: Bump chart version
-        if: steps.list-changed.outputs.changed == 'true'
-        env:
-          CHART: ${{ steps.list-changed.outputs.changed_list }}
-        #language=bash
-        run: |
-          if [[ ! -d "${CHART}" ]]; then
-            echo "${CHART} directory not found"
-            exit 0
-          fi
-
-          CHART_VERSION=$(grep -e "^version:" "$CHART/Chart.yaml" | cut -d ":" -f 2 | tr -d '[:space:]' | tr -d '"')
-          CHART_MAJOR_VERSION=$(printf '%s' "$CHART_VERSION" | cut -d "." -f 1)
-          CHART_MINOR_VERSION=$(printf '%s' "$CHART_VERSION" | cut -d "." -f 2)
-          CHART_MINOR_VERSION=$((CHART_MINOR_VERSION+1))
-          CHART_NEW_VERSION="${CHART_MAJOR_VERSION}.${CHART_MINOR_VERSION}.0"
-          sed -i "s/^version:.*/version: ${CHART_NEW_VERSION}/" "$CHART/Chart.yaml"
 
       - name: run renovate-post-upgrade-hook
         if: steps.list-changed.outputs.changed == 'true'
@@ -81,6 +63,8 @@ jobs:
           GITHUB_HEAD_REF: ${{ github.head_ref }}
         #language=bash
         run: |
+          set -x
+          
           # Define the target directory
           TARGET_DIR="$CHART"
           
@@ -89,6 +73,12 @@ jobs:
           
           # Fetch added/modified files in the target directory
           MODIFIED_FILES=$(git diff --diff-filter=ACM --name-only HEAD -- "$TARGET_DIR")
+          
+          # Exit early if no changes detected
+          if [ -z "$DELETED_FILES" ] && [ -z "$MODIFIED_FILES" ]; then
+            echo "No files added, modified, or deleted. Skipping."
+            exit 0
+          fi
           
           # Create a temporary file for JSON output
           FILE_CHANGES_JSON_FILE=$(mktemp)
@@ -104,10 +94,14 @@ jobs:
           
           # Add additions (new or modified files)
           for file in $MODIFIED_FILES; do
-            BASE64_CONTENT=$(base64 -w 0 <"$file")  # Encode file content
-            jq --arg path "$file" --arg content "$BASE64_CONTENT" \
-              '.additions += [{"path": $path, "contents": $content}]' "$FILE_CHANGES_JSON_FILE" > "$FILE_CHANGES_JSON_FILE.tmp"
+            TMP_CONTENT_FILE=$(mktemp)
+            base64 -w 0 <"$file" > "$TMP_CONTENT_FILE"
+          
+            jq --arg path "$file" --rawfile content "$TMP_CONTENT_FILE" \
+            '.additions += [{"path": $path, "contents": $content }]' "$FILE_CHANGES_JSON_FILE" > "$FILE_CHANGES_JSON_FILE.tmp"
+          
             mv "$FILE_CHANGES_JSON_FILE.tmp" "$FILE_CHANGES_JSON_FILE"
+            rm "$TMP_CONTENT_FILE"
           done
           
           # Create a temporary file for the final JSON payload

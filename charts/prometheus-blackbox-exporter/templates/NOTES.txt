@@ -8,12 +8,6 @@ See https://github.com/prometheus/blackbox_exporter/ for how to configure Promet
   {{- end }}
 {{- end }}
 
-{{- $kubeVersion := include "prometheus-blackbox-exporter.kubeVersion" . -}}
-{{ if and .Values.ingress.className (semverCompare "<=1.18-0" $kubeVersion) }}
-You've set ".Values.ingressClassName" but it's not supported by your Kubernetes version!
-Therefore the option was not added and the old ingress annotation was set.
-{{ end }}
-
 {{- else if contains "NodePort" .Values.service.type }}
   export NODE_PORT=$(kubectl get --namespace {{ template "prometheus-blackbox-exporter.namespace" . }} -o jsonpath="{.spec.ports[0].nodePort}" services {{ include "prometheus-blackbox-exporter.fullname" . }})
   export NODE_IP=$(kubectl get nodes --namespace {{ template "prometheus-blackbox-exporter.namespace" . }} -o jsonpath="{.items[0].status.addresses[0].address}")

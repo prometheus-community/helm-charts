@@ -9,28 +9,28 @@ This chart bootstraps a [Prometheus](https://prometheus.io/) deployment on a [Ku
 - Kubernetes 1.19+
 - Helm 3.7+
 
-## Get Repository Info
+## Usage
 
-```console
-helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
-helm repo update
-```
+The chart is distributed as an [OCI Artifact](https://helm.sh/docs/topics/registries/) as well as via a traditional [Helm Repository](https://helm.sh/docs/topics/chart_repository/).
 
-_See [helm repository](https://helm.sh/docs/helm/helm_repo/) for command documentation._
+- OCI Artifact: `oci://ghcr.io/prometheus-community/charts/prometheus`
+- Helm Repository: `https://prometheus-community.github.io/helm-charts` with chart `prometheus`
 
-## Install Chart
+The installation instructions use the OCI registry. Refer to the [`helm repo`]([`helm repo`](https://helm.sh/docs/helm/helm_repo/)) command documentation for information on installing charts via the traditional repository.
+
+### Install Chart
 
 Starting with version 16.0, the Prometheus chart requires Helm 3.7+ in order to install successfully. Please check your `helm` release before installation.
 
 ```console
-helm install [RELEASE_NAME] prometheus-community/prometheus
+helm install [RELEASE_NAME] oci://ghcr.io/prometheus-community/charts/prometheus
 ```
 
 _See [configuration](#configuration) below._
 
 _See [helm install](https://helm.sh/docs/helm/helm_install/) for command documentation._
 
-## Dependencies
+### Dependencies
 
 By default this chart installs additional, dependent charts:
 
@@ -43,7 +43,7 @@ To disable the dependency during installation, set `alertmanager.enabled`, `kube
 
 _See [helm dependency](https://helm.sh/docs/helm/helm_dependency/) for command documentation._
 
-## Uninstall Chart
+### Uninstall Chart
 
 ```console
 helm uninstall [RELEASE_NAME]
@@ -53,42 +53,42 @@ This removes all the Kubernetes components associated with the chart and deletes
 
 _See [helm uninstall](https://helm.sh/docs/helm/helm_uninstall/) for command documentation._
 
-## Updating values.schema.json
+### Updating values.schema.json
 
 A [`values.schema.json`](https://helm.sh/docs/topics/charts/#schema-files) file has been added to validate chart values. When `values.yaml` file has a structure change (i.e. add a new field, change value type, etc.), modify `values.schema.json` file manually or run `helm schema-gen values.yaml > values.schema.json` to ensure the schema is aligned with the latest values. Refer to [helm plugin `helm-schema-gen`](https://github.com/karuppiah7890/helm-schema-gen) for plugin installation instructions.
 
-## Upgrading Chart
+### Upgrading Chart
 
 ```console
-helm upgrade [RELEASE_NAME] prometheus-community/prometheus --install
+helm upgrade [RELEASE_NAME] oci://ghcr.io/prometheus-community/charts/prometheus --install
 ```
 
 _See [helm upgrade](https://helm.sh/docs/helm/helm_upgrade/) for command documentation._
 
-### To 27.0
+#### To 27.0
 
 Prometheus' configuration parameter `insecure_skip_verify` in scrape configs `serverFiles."prometheus.yml".scrape_configs` has been commented out keeping thus the default Prometheus' value.
 If certificate verification must be skipped, please, uncomment the line before upgrading.
 
-### To 26.0
+#### To 26.0
 
 This release changes default version of promethues to v3.0.0, See official [migration guide](https://prometheus.io/docs/prometheus/latest/migration/#prometheus-3-0-migration-guide
 ) and [release notes](https://github.com/prometheus/prometheus/releases/tag/v3.0.0) for more details.
 
-### To 25.0
+#### To 25.0
 
 The `server.remoteRead[].url` and `server.remoteWrite[].url` fields now support templating. Allowing for `url` values such as `https://{{ .Release.Name }}.example.com`.
 
 Any entries in these which previously included `{{` or `}}` must be escaped with `{{ "{{" }}` and `{{ "}}" }}` respectively. Entries which did not previously include the template-like syntax will not be affected.
 
-### To 24.0
+#### To 24.0
 
 Require Kubernetes 1.19+
 
 Release 1.0.0 of the _alertmanager_ replaced [configmap-reload](https://github.com/jimmidyson/configmap-reload) with [prometheus-config-reloader](https://github.com/prometheus-operator/prometheus-operator/tree/main/cmd/prometheus-config-reloader).
 Extra command-line arguments specified via `configmapReload.prometheus.extraArgs` are not compatible and will break with the new prometheus-config-reloader. Please, refer to the [sources](https://github.com/prometheus-operator/prometheus-operator/blob/main/cmd/prometheus-config-reloader/main.go) in order to make the appropriate adjustment to the extra command-line arguments.
 
-### To 23.0
+#### To 23.0
 
 Release 5.0.0 of the _kube-state-metrics_ chart introduced a separation of the `image.repository` value in two distinct values:
 
@@ -108,7 +108,7 @@ kubectl delete sts -l app.kubernetes.io/name=prometheus-pushgateway -n monitorin
 
 Users are advised to review changes in the corresponding chart releases before upgrading.
 
-### To 22.0
+#### To 22.0
 
 The `app.kubernetes.io/version` label has been removed from the pod selector.
 
@@ -118,7 +118,7 @@ Therefore, you must delete the previous StatefulSet or Deployment before upgradi
 kubectl delete deploy,sts -l app.kubernetes.io/name=prometheus
 ```
 
-### To 21.0
+#### To 21.0
 
 The Kubernetes labels have been updated to follow [Helm 3 label and annotation best practices](https://helm.sh/docs/chart_best_practices/labels/).
 Specifically, labels mapping is listed below:
@@ -151,12 +151,12 @@ After that do the actual upgrade:
 helm upgrade -i prometheus prometheus-community/prometheus
 ```
 
-### To 20.0
+#### To 20.0
 
 The [configmap-reload](https://github.com/jimmidyson/configmap-reload) container was replaced by the [prometheus-config-reloader](https://github.com/prometheus-operator/prometheus-operator/tree/main/cmd/prometheus-config-reloader).
 Extra command-line arguments specified via configmapReload.prometheus.extraArgs are not compatible and will break with the new prometheus-config-reloader, refer to the [sources](https://github.com/prometheus-operator/prometheus-operator/blob/main/cmd/prometheus-config-reloader/main.go) in order to make the appropriate adjustment to the extra command-line arguments.
 
-### To 19.0
+#### To 19.0
 
 Prometheus has been updated to version v2.40.5.
 
@@ -181,7 +181,7 @@ All files in `templates/server` directory has been moved to `templates` director
 helm upgrade [RELEASE_NAME] prometheus-community/prometheus --version 19.0.0
 ```
 
-### To 18.0
+#### To 18.0
 
 Version 18.0.0 uses alertmanager service from the [alertmanager chart](https://github.com/prometheus-community/helm-charts/tree/main/charts/alertmanager). If you've made some config changes, please check the old `alertmanager` and the new `alertmanager` configuration section in values.yaml for differences.
 
@@ -196,7 +196,7 @@ kubectl scale deploy prometheus-server --replicas=0
 helm upgrade [RELEASE_NAME] prometheus-community/prometheus --version 18.0.0
 ```
 
-### To 17.0
+#### To 17.0
 
 Version 17.0.0 uses pushgateway service from the [prometheus-pushgateway chart](https://github.com/prometheus-community/helm-charts/tree/main/charts/prometheus-pushgateway). If you've made some config changes, please check the old `pushgateway` and the new `prometheus-pushgateway` configuration section in values.yaml for differences.
 
@@ -209,7 +209,7 @@ kubectl scale deploy prometheus-server --replicas=0
 helm upgrade [RELEASE_NAME] prometheus-community/prometheus --version 17.0.0
 ```
 
-### To 16.0
+#### To 16.0
 
 Starting from version 16.0 embedded services (like alertmanager, node-exporter etc.) are moved out of Prometheus chart and the respecting charts from this repository are used as dependencies. Version 16.0.0 moves node-exporter service to [prometheus-node-exporter chart](https://github.com/prometheus-community/helm-charts/tree/main/charts/prometheus-node-exporter). If you've made some config changes, please check the old `nodeExporter` and the new `prometheus-node-exporter` configuration section in values.yaml for differences.
 
@@ -222,7 +222,7 @@ kubectl scale deploy prometheus-server --replicas=0
 helm upgrade [RELEASE_NAME] prometheus-community/prometheus --version 16.0.0
 ```
 
-### To 15.0
+#### To 15.0
 
 Version 15.0.0 changes the relabeling config, aligning it with the [Prometheus community conventions](https://github.com/prometheus/prometheus/pull/9832). If you've made manual changes to the relabeling config, you have to adapt your changes.
 
@@ -232,19 +232,19 @@ Before you update please execute the following command, to be able to update kub
 kubectl delete deployments.apps -l app.kubernetes.io/instance=prometheus,app.kubernetes.io/name=kube-state-metrics --cascade=orphan
 ```
 
-### To 9.0
+#### To 9.0
 
 Version 9.0 adds a new option to enable or disable the Prometheus Server. This supports the use case of running a Prometheus server in one k8s cluster and scraping exporters in another cluster while using the same chart for each deployment. To install the server `server.enabled` must be set to `true`.
 
-### To 5.0
+#### To 5.0
 
 As of version 5.0, this chart uses Prometheus 2.x. This version of prometheus introduces a new data format and is not compatible with prometheus 1.x. It is recommended to install this as a new release, as updating existing releases will not work. See the [prometheus docs](https://prometheus.io/docs/prometheus/latest/migration/#storage) for instructions on retaining your old data.
 
-Prometheus version 2.x has made changes to alertmanager, storage and recording rules. Check out the migration guide [here](https://prometheus.io/docs/prometheus/2.0/migration/).
+Prometheus version 2.x has made changes to alertmanager, storage and recording rules. Check out [the 2.x migration guide](https://prometheus.io/docs/prometheus/2.55/migration/).
 
 Users of this chart will need to update their alerting rules to the new format before they can upgrade.
 
-### Example Migration
+#### Example Migration
 
 Assuming you have an existing release of the prometheus chart, named `prometheus-old`. In order to update to prometheus 2.x while keeping your old data do the following:
 
@@ -287,7 +287,7 @@ Assuming you have an existing release of the prometheus chart, named `prometheus
 See [Customizing the Chart Before Installing](https://helm.sh/docs/intro/using_helm/#customizing-the-chart-before-installing). To see all configurable options with detailed comments, visit the chart's [values.yaml](./values.yaml), or run these configuration commands:
 
 ```console
-helm show values prometheus-community/prometheus
+helm show values oci://ghcr.io/prometheus-community/charts/prometheus
 ```
 
 You may similarly use the above configuration commands on each chart [dependency](#dependencies) to see its configurations.
@@ -332,7 +332,7 @@ serverFiles:
 ```
 
 ```console
-helm install [RELEASE_NAME] prometheus-community/prometheus -f values.yaml -f service1-alert.yaml -f service2-alert.yaml
+helm install [RELEASE_NAME] oci://ghcr.io/prometheus-community/charts/prom-label-proxy -f values.yaml -f service1-alert.yaml -f service2-alert.yaml
 ```
 
 ### RBAC Configuration

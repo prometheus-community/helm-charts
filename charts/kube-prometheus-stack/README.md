@@ -11,26 +11,26 @@ _Note: This chart was formerly named `prometheus-operator` chart, now renamed to
 - Kubernetes 1.19+
 - Helm 3+
 
-## Get Helm Repository Info
+## Usage
+
+The chart is distributed as an [OCI Artifact](https://helm.sh/docs/topics/registries/) as well as via a traditional [Helm Repository](https://helm.sh/docs/topics/chart_repository/).
+
+- OCI Artifact: `oci://ghcr.io/prometheus-community/charts/kube-prometheus-stack`
+- Helm Repository: `https://prometheus-community.github.io/helm-charts` with chart `kube-prometheus-stack`
+
+The installation instructions use the OCI registry. Refer to the [`helm repo`]([`helm repo`](https://helm.sh/docs/helm/helm_repo/)) command documentation for information on installing charts via the traditional repository.
+
+### Install Helm Chart
 
 ```console
-helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
-helm repo update
-```
-
-_See [`helm repo`](https://helm.sh/docs/helm/helm_repo/) for command documentation._
-
-## Install Helm Chart
-
-```console
-helm install [RELEASE_NAME] prometheus-community/kube-prometheus-stack
+helm install [RELEASE_NAME] oci://ghcr.io/prometheus-community/charts/kube-prometheus-stack
 ```
 
 _See [configuration](#configuration) below._
 
 _See [helm install](https://helm.sh/docs/helm/helm_install/) for command documentation._
 
-## Dependencies
+### Dependencies
 
 By default this chart installs additional, dependent charts:
 
@@ -42,7 +42,17 @@ To disable dependencies during installation, see [multiple releases](#multiple-r
 
 _See [helm dependency](https://helm.sh/docs/helm/helm_dependency/) for command documentation._
 
-## Uninstall Helm Chart
+#### Grafana Dashboards
+
+This chart provisions a collection of curated Grafana dashboards that are automatically loaded into Grafana via ConfigMaps. These dashboards are rendered into the Helm chart under [`templates/grafana/`](https://github.com/prometheus-community/helm-charts/tree/main/charts/kube-prometheus-stack/templates/grafana/), but **this is not their source of truth**.
+
+The dashboards originate from various upstream projects and are gathered and processed using scripts in the [`hack/`](https://github.com/prometheus-community/helm-charts/tree/main/charts/kube-prometheus-stack/hack) directory. For details on how these dashboards are sourced and kept up to date, refer to the [hack/README.md](https://github.com/prometheus-community/helm-charts/blob/main/charts/kube-prometheus-stack/hack/README.md).
+
+> **Note:** The dashboards referenced in the `hack` scripts are usually **not the original source** either. Most originate from separate **Prometheus mixin repositories** (e.g., [kubernetes-mixin](https://github.com/kubernetes-monitoring/kubernetes-mixin)) and are processed through `jsonnet` tooling before being included here. To find the original source in case you want to modify it you may have to search even further upstream.
+
+If you wish to contribute or modify dashboards, please follow the guidance in the `hack/README.md` to ensure consistency and reproducibility.
+
+### Uninstall Helm Chart
 
 ```console
 helm uninstall [RELEASE_NAME]
@@ -67,10 +77,10 @@ kubectl delete crd servicemonitors.monitoring.coreos.com
 kubectl delete crd thanosrulers.monitoring.coreos.com
 ```
 
-## Upgrading Chart
+### Upgrading Chart
 
 ```console
-helm upgrade [RELEASE_NAME] prometheus-community/kube-prometheus-stack
+helm upgrade [RELEASE_NAME] [CHART]
 ```
 
 With Helm v3, CRDs created by this chart are not updated by default and should be manually updated.
@@ -81,7 +91,7 @@ The Chart's [appVersion](https://github.com/prometheus-community/helm-charts/blo
 
 _See [helm upgrade](https://helm.sh/docs/helm/helm_upgrade/) for command documentation._
 
-### Upgrading an existing Release to a new major version
+#### Upgrading an existing Release to a new major version
 
 A major chart version change (like v1.2.3 -> v2.0.0) indicates that there is an incompatible breaking change needing manual actions.
 
@@ -93,7 +103,7 @@ for breaking changes between versions.
 See [Customizing the Chart Before Installing](https://helm.sh/docs/intro/using_helm/#customizing-the-chart-before-installing). To see all configurable options with detailed comments:
 
 ```console
-helm show values prometheus-community/kube-prometheus-stack
+helm show values oci://ghcr.io/prometheus-community/charts/kube-prometheus-stack
 ```
 
 You may also `helm show values` on this chart's [dependencies](#dependencies) for additional options.
@@ -252,7 +262,7 @@ There is no simple and direct migration path between the charts as the changes a
 
 The capabilities of the old chart are all available in the new chart, including the ability to run multiple prometheus instances on a single cluster - you will need to disable the parts of the chart you do not wish to deploy.
 
-You can check out the tickets for this change [here](https://github.com/prometheus-operator/prometheus-operator/issues/592) and [here](https://github.com/helm/charts/pull/6765).
+You can check out the tickets for this change at [prometheus-operator/prometheus-operator #592](https://github.com/prometheus-operator/prometheus-operator/issues/592) and [helm/charts #6765](https://github.com/helm/charts/pull/6765).
 
 ### High-level overview of Changes
 

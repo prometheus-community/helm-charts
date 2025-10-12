@@ -49,7 +49,7 @@ revisionHistoryLimit: 10
 
 # List of additional cli arguments to configure kube-state-metrics
 # for example: --enable-gzip-encoding, --log-file, etc.
-# all the possible args can be found here: https://github.com/kubernetes/kube-state-metrics/blob/master/docs/cli-arguments.md
+# all the possible args can be found here: https://github.com/kubernetes/kube-state-metrics/blob/main/docs/developer/cli-arguments.md
 extraArgs: []
 
 # If false then the user will opt out of automounting API credentials.
@@ -106,9 +106,13 @@ kubeRBACProxy:
   image:
     registry: quay.io
     repository: brancz/kube-rbac-proxy
-    tag: v0.19.1
+    tag: v0.20.0
     sha: ""
     pullPolicy: IfNotPresent
+
+  # This set --ignore-paths=/livez,/readyz to kubeRBACProxy container args
+  # to allow the pod probes working properly with kubeRBACProxy enabled.
+  ignoreProbePaths: true
 
   # List of additional cli arguments to configure kube-rbac-prxy
   # for example: --tls-cipher-suites, --log-file, etc.
@@ -124,6 +128,10 @@ kubeRBACProxy:
     capabilities:
       drop:
       - ALL
+
+  # Configure specific proxy endpoints port
+  # This port is for healthz on readinessProbe
+  proxyEndpointsPort: 8888
 
   resources: {}
     # We usually recommend not to specify default resources and to leave this as a conscious
@@ -280,23 +288,6 @@ prometheus:
     scheme: ""
     tlsConfig: {}
 
-## Specify if a Pod Security Policy for kube-state-metrics must be created
-## Ref: https://kubernetes.io/docs/concepts/policy/pod-security-policy/
-##
-podSecurityPolicy:
-  enabled: false
-  annotations: {}
-    ## Specify pod annotations
-    ## Ref: https://kubernetes.io/docs/concepts/policy/pod-security-policy/#apparmor
-    ## Ref: https://kubernetes.io/docs/concepts/policy/pod-security-policy/#seccomp
-    ## Ref: https://kubernetes.io/docs/concepts/policy/pod-security-policy/#sysctl
-    ##
-    # seccomp.security.alpha.kubernetes.io/allowedProfileNames: '*'
-    # seccomp.security.alpha.kubernetes.io/defaultProfileName: 'docker/default'
-    # apparmor.security.beta.kubernetes.io/defaultProfileName: 'runtime/default'
-
-  additionalVolumes: []
-
 ## Configure network policy for kube-state-metrics
 networkPolicy:
   enabled: false
@@ -365,6 +356,9 @@ topologySpreadConstraints: []
 
 # Annotations to be added to the deployment/statefulset
 annotations: {}
+
+# Labels to be added to the deployment/statefulset
+labels: {}
 
 # Annotations to be added to the pod
 podAnnotations: {}
@@ -450,8 +444,19 @@ kubeconfig:
 
 # Enabling support for customResourceState, will create a configMap including your config that will be read from kube-state-metrics
 customResourceState:
+  # Whether to enable support for CustomResourceStateMetrics.
   enabled: false
-  # Add (Cluster)Role permissions to list/watch the customResources defined in the config to rbac.extraRules
+
+  # Whether to create the ConfigMap that holds the config.
+  create: true
+
+  # Name of the ConfigMap that holds the config. If empty, name will be generated based on the release name.
+  name: ""
+
+  # ConfigMap key that holds the config.
+  key: config.yaml
+
+  # Definition of the CustomResourceStateMetrics. Add (Cluster)Role permissions to list/watch the resources defined in the config to rbac.extraRules.
   config: {}
 
 # Enable only the release namespace for collecting resources. By default all namespaces are collected.
@@ -480,11 +485,6 @@ resources: {}
   # requests:
   #  cpu: 10m
   #  memory: 32Mi
-
-## Provide a k8s version to define apiGroups for podSecurityPolicy Cluster Role.
-## For example: kubeTargetVersionOverride: 1.14.9
-##
-kubeTargetVersionOverride: ""
 
 # Enable self metrics configuration for service and Service Monitor
 # Default values for telemetry configuration can be overridden

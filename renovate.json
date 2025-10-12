@@ -5,11 +5,12 @@
     "helpers:pinGitHubActionDigestsToSemver"
   ],
   "schedule": [
-    "* 16 * * 5"
+    "* * * * 5"
   ],
   "suppressNotifications": ["prEditedNotification"],
   "dependencyDashboardApproval": false,
-  "bumpVersion": "patch",
+  "labels": ["dependencies"],
+  "rebaseWhen": "behind-base-branch",
   "customManagers": [
     {
       "customType": "regex",
@@ -63,7 +64,9 @@
       "groupName": "github-workflow dependency updates",
       "matchPackageNames": [
         "*"
-      ]
+      ],
+      "schedule": null,
+      "labels": ["dependencies", "dependencies/auto-merge"]
     },
     {
       "enabled": true,
@@ -76,12 +79,70 @@
       "postUpdateOptions": [
         "helmUpdateSubChartArchives"
       ],
+      "schedule": null,
+      "labels": ["dependencies", "dependencies/auto-merge"],
       "major": {
+        "description": "Exclude major version bumps from auto merge.",
+        "labels": ["dependencies"],
         "groupName": "{{ lookup (split packageFileDir '/') 1 }} dependency major updates"
       },
       "matchPackageNames": [
         "*"
+      ],
+      "bumpVersions": [
+        {
+          "name": "Updating Chart version",
+          "filePatterns": ["/^({{#each (distinct (lookupArray upgrades \"packageFileDir\"))}}{{{lookup (split . \"/\") 0}}}/{{{lookup (split . \"/\") 1}}}{{#unless @last}}|{{/unless}}{{/each}})/Chart\\.ya?ml$/"],
+          "matchStrings": ["(?:^|\\n)version:\\s\"?(?<version>\\d+\\.\\d+\\.\\d+)\"?(?:$|\\n)"],
+          "bumpType": "{{#if (or isPinDigest isPatch)}}patch{{else}}minor{{/if}}"
+        }
       ]
+    },
+    {
+      "matchDatasources": [
+        "git-refs"
+      ],
+      "schedule": [
+        "* 14-17 * * 2,5"
+      ]
+    },
+    {
+      "description": "Prometheus Operator minor updates should result in a major bump of the chart version.",
+      "enabled": true,
+      "matchFileNames": [
+        "charts/prometheus-operator-crds/**"
+      ],
+      "matchPackageNames": [
+        "prometheus-operator/prometheus-operator"
+      ],
+      "bumpVersions": [
+        {
+          "name": "Updating Chart version",
+          "filePatterns": ["/^({{#each (distinct (lookupArray upgrades \"packageFileDir\"))}}{{{lookup (split . \"/\") 0}}}/{{{lookup (split . \"/\") 1}}}{{#unless @last}}|{{/unless}}{{/each}})/Chart\\.ya?ml$/"],
+          "matchStrings": ["(?:^|\\n)version:\\s\"?(?<version>\\d+\\.\\d+\\.\\d+)\"?(?:$|\\n)"],
+          "bumpType": "{{#if (or isPinDigest isPatch)}}patch{{else}}major{{/if}}"
+        }
+      ]
+    },
+    {
+      "description": "disable prometheus-operator major and minor updates for charts/kube-prometheus-stack",
+      "enabled": false,
+      "matchFileNames": [
+        "charts/kube-prometheus-stack/**"
+      ],
+      "matchPackageNames": [
+        "prometheus-operator/prometheus-operator"
+      ],
+      "matchUpdateTypes": [
+        "major", "minor"
+      ]
+    },
+    {
+      "matchPackageNames": ["actions/python-versions", "python"],
+      "matchDepTypes": [
+        "uses-with"
+      ],
+      "allowedVersions": "<=3.13"
     }
   ]
 }

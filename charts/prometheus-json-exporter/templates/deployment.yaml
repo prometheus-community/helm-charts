@@ -4,6 +4,9 @@ metadata:
   name: {{ include "prometheus-json-exporter.fullname" . }}
   namespace: {{ include "prometheus-json-exporter.namespace" . }}
   labels:
+    {{- with .Values.deploymentLabels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
     {{- include "prometheus-json-exporter.labels" . | nindent 4 }}
   {{- with .Values.deploymentAnnotations }}
   annotations:
@@ -29,6 +32,9 @@ spec:
         {{- if .Values.podLabels }}
           {{ toYaml .Values.podLabels | nindent 8 }}
         {{- end }}
+        {{- if .Values.commonLabels }}
+          {{ toYaml .Values.commonLabels | nindent 8 }}
+        {{- end }}
     spec:
       {{- with .Values.imagePullSecrets }}
       imagePullSecrets:
@@ -42,41 +48,44 @@ spec:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       containers:
-        - name: {{ .Chart.Name }}
-          {{- with .Values.extraArgs }}
-          args:
-          {{- range . }}
-          - {{ .name | quote }}
-          - {{ .value | quote }}
-          {{- end }}
-          {{- end }}
-          {{- with .Values.environmentVariables }}
-          env:
-            {{- toYaml . | nindent 12}}
-          {{- end }}
-          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
-          imagePullPolicy: {{ .Values.image.pullPolicy }}
-          ports:
-            - name: http
-              containerPort: 7979
-              protocol: TCP
-          {{- with .Values.livenessProbe }}
-          livenessProbe: {{- toYaml . | nindent 12 }}
-          {{- end }}
-          {{- with .Values.readinessProbe }}
-          readinessProbe: {{- toYaml . | nindent 12 }}
-          {{- end }}
-          resources:
-            {{- toYaml .Values.resources | nindent 12 }}
-          volumeMounts:
-            - name: config-configmap-volume
-              mountPath: /config.yml
-              subPath: config.yml
-          {{- with .Values.additionalVolumeMounts }}
-            {{- toYaml . | nindent 12 }}
-          {{- end  }}
-          securityContext:
-            {{- toYaml .Values.securityContext | nindent 12 }}
+      - name: {{ .Chart.Name }}
+        {{- with .Values.extraArgs }}
+        args:
+        {{- range . }}
+        - {{ .name | quote }}
+        - {{ .value | quote }}
+        {{- end }}
+        {{- end }}
+        {{- with .Values.environmentVariables }}
+        env:
+          {{- toYaml . | nindent 10}}
+        {{- end }}
+        image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        ports:
+          - name: http
+            containerPort: 7979
+            protocol: TCP
+        {{- with .Values.livenessProbe }}
+        livenessProbe: {{- toYaml . | nindent 10 }}
+        {{- end }}
+        {{- with .Values.readinessProbe }}
+        readinessProbe: {{- toYaml . | nindent 10 }}
+        {{- end }}
+        resources:
+          {{- toYaml .Values.resources | nindent 10 }}
+        volumeMounts:
+          - name: config-configmap-volume
+            mountPath: /config.yml
+            subPath: config.yml
+        {{- with .Values.additionalVolumeMounts }}
+          {{- toYaml . | nindent 10 }}
+        {{- end  }}
+        securityContext:
+          {{- toYaml .Values.securityContext | nindent 10 }}
+      {{- with .Values.extraContainers }}
+      {{- toYaml . | nindent 6 }}
+      {{- end }}
       volumes:
       - name: config-configmap-volume
         configMap:

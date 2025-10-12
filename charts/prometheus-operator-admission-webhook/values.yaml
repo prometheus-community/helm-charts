@@ -33,6 +33,8 @@ webhooks:
   ## Additional labels and annotations for webhook configurations
   labels: {}
   annotations: {}
+    # "helm.sh/hook": pre-install,pre-upgrade
+    # "helm.sh/hook-weight": "1"
 
 ## jobs enables creation of a TLS keypair and a patch of webhook configurations.
 ## Jobs and related resources are hooks. Their output is a TLS key pair
@@ -41,6 +43,19 @@ webhooks:
 ## whilst cert-manager or tlsSecret is enabled.
 jobs:
   enabled: true
+
+  ## Settings unique to the `createSecret` Job
+  createSecret:
+    annotations: {}
+      # "helm.sh/hook-weight": "0"
+    labels: {}
+
+  ## Settings unique to the `patchWebhook` Job
+  patchWebhook:
+    annotations: {}
+      # "helm.sh/hook": pre-install,pre-upgrade
+      # "helm.sh/hook-weight": "2"
+    labels: {}
 
   ## Additional labels and annotations
   annotations: {}
@@ -65,7 +80,7 @@ jobs:
   image:
     registry: registry.k8s.io
     repository: ingress-nginx/kube-webhook-certgen
-    tag: "v1.5.3"
+    tag: "v1.6.3"
     ## sha256 digest overrides tag
     # digest: 4d99688e557396f5baa150e019ff7d5b7334f9b9f9a8dab64038c5c2a006f6b5
     digest: ""
@@ -285,6 +300,9 @@ resources: {}
   # requests:
   #   cpu: 100m
   #   memory: 200Mi
+
+## labels to attach to all resources
+commonLabels: {}
 
 ## deployment allows setting additional labels and annotations for deployment
 deployment:

@@ -11,11 +11,14 @@ metadata:
   namespace: {{ template "kube-prometheus-stack.namespace" . }}
   labels:
     app: {{ template "kube-prometheus-stack.name" . }}-prometheus
-{{ include "kube-prometheus-stack.labels" . | indent 4 }}
-{{- if .Values.prometheus.annotations }}
+    {{- include "kube-prometheus-stack.labels" . | nindent 4 }}
+    {{- with .Values.prometheus.additionalLabels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+  {{- with .Values.prometheus.annotations }}
   annotations:
-{{ toYaml .Values.prometheus.annotations | indent 4 }}
-{{- end }}
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
 spec:
 {{- if not (kindIs "invalid" .Values.prometheus.prometheusSpec.automountServiceAccountToken) }}
   automountServiceAccountToken: {{ .Values.prometheus.prometheusSpec.automountServiceAccountToken }}
@@ -57,6 +60,7 @@ spec:
   {{- else }}
   image: "{{ $registry }}/{{ .Values.prometheus.prometheusSpec.image.repository }}"
   {{- end }}
+  imagePullPolicy: "{{ .Values.prometheus.prometheusSpec.image.pullPolicy }}"
   version: {{ default .Values.prometheus.prometheusSpec.image.tag .Values.prometheus.prometheusSpec.version }}
 {{- end }}
 {{- if .Values.prometheus.prometheusSpec.additionalArgs }}
@@ -97,6 +101,7 @@ spec:
   logLevel:  {{ .Values.prometheus.prometheusSpec.logLevel }}
   logFormat:  {{ .Values.prometheus.prometheusSpec.logFormat }}
   listenLocal: {{ .Values.prometheus.prometheusSpec.listenLocal }}
+  enableOTLPReceiver: {{ .Values.prometheus.prometheusSpec.enableOTLPReceiver }}
 {{- if not .Values.prometheus.agentMode }}
   enableAdminAPI: {{ .Values.prometheus.prometheusSpec.enableAdminAPI }}
 {{- end }}
@@ -114,8 +119,16 @@ spec:
   - {{ tpl $enableFeatures $ }}
 {{- end }}
 {{- end }}
+{{- if .Values.prometheus.prometheusSpec.otlp }}
+  otlp:
+{{ toYaml .Values.prometheus.prometheusSpec.otlp | indent 4 }}
+{{- end }}
 {{- with .Values.prometheus.prometheusSpec.scrapeClasses }}
   scrapeClasses:
+    {{- tpl (toYaml . | nindent 4) $ }}
+{{- end }}
+{{- with .Values.prometheus.prometheusSpec.podTargetLabels }}
+  podTargetLabels:
     {{- tpl (toYaml . | nindent 4) $ }}
 {{- end }}
 {{- if .Values.prometheus.prometheusSpec.scrapeFailureLogFile }}
@@ -124,8 +137,9 @@ spec:
 {{- if .Values.prometheus.prometheusSpec.scrapeInterval }}
   scrapeInterval: {{ .Values.prometheus.prometheusSpec.scrapeInterval }}
 {{- end }}
-{{- if .Values.prometheus.prometheusSpec.scrapeProtocols }}
-  scrapeProtocols: {{ .Values.prometheus.prometheusSpec.scrapeProtocols }}
+{{- with .Values.prometheus.prometheusSpec.scrapeProtocols }}
+  scrapeProtocols:
+    {{- toYaml . | nindent 4 }}
 {{- end }}
 {{- if .Values.prometheus.prometheusSpec.scrapeTimeout }}
   scrapeTimeout: {{ .Values.prometheus.prometheusSpec.scrapeTimeout }}
@@ -239,6 +253,13 @@ spec:
   securityContext:
 {{ toYaml .Values.prometheus.prometheusSpec.securityContext | indent 4 }}
 {{- end }}
+{{- if .Values.prometheus.prometheusSpec.dnsConfig }}
+  dnsConfig:
+{{ toYaml .Values.prometheus.prometheusSpec.dnsConfig | indent 4 }}
+{{- end }}
+{{- if .Values.prometheus.prometheusSpec.dnsPolicy }}
+  dnsPolicy: {{ .Values.prometheus.prometheusSpec.dnsPolicy }}
+{{- end }}
 {{- if not .Values.prometheus.agentMode }}
 {{- if .Values.prometheus.prometheusSpec.ruleNamespaceSelector }}
   ruleNamespaceSelector:
@@ -253,7 +274,7 @@ spec:
   ruleSelector:
     matchLabels:
       release: {{ $.Release.Name | quote }}
-{{ else }}
+{{ else if not (kindIs "invalid" .Values.prometheus.prometheusSpec.ruleSelector) }}
   ruleSelector: {}
 {{- end }}
 {{- end }}

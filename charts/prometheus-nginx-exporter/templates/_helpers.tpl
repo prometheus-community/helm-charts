@@ -77,6 +77,18 @@ app.kubernetes.io/instance: {{ .Release.Name }}
 {{- end }}
 
 {{/*
+Deployment annotations
+*/}}
+{{- define "prometheus-nginx-exporter.deploymentAnnotations" }}
+{{- if .Values.additionalAnnotations }}
+{{ toYaml .Values.additionalAnnotations }}
+{{- end }}
+{{- if .Values.deployment.annotations }}
+{{ toYaml .Values.deployment.annotations }}
+{{- end }}
+{{- end }}
+
+{{/*
 Pod annotations
 */}}
 {{- define "prometheus-nginx-exporter.podAnnotations" }}

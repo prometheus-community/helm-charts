@@ -6,11 +6,14 @@ metadata:
   namespace: {{ template "kube-prometheus-stack-alertmanager.namespace" . }}
   labels:
     app: {{ template "kube-prometheus-stack.name" . }}-alertmanager
-{{ include "kube-prometheus-stack.labels" . | indent 4 }}
-{{- if .Values.alertmanager.annotations }}
+    {{- include "kube-prometheus-stack.labels" . | nindent 4 }}
+    {{- with .Values.alertmanager.additionalLabels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+  {{- with .Values.alertmanager.annotations }}
   annotations:
-{{ toYaml .Values.alertmanager.annotations | indent 4 }}
-{{- end }}
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
 spec:
 {{- if .Values.alertmanager.alertmanagerSpec.image }}
   {{- $registry := .Values.global.imageRegistry | default .Values.alertmanager.alertmanagerSpec.image.registry -}}
@@ -23,6 +26,7 @@ spec:
   {{- else }}
   image: "{{ $registry }}/{{ .Values.alertmanager.alertmanagerSpec.image.repository }}"
   {{- end }}
+  imagePullPolicy: "{{ .Values.alertmanager.alertmanagerSpec.image.pullPolicy }}"
   version: {{ default .Values.alertmanager.alertmanagerSpec.image.tag .Values.alertmanager.alertmanagerSpec.version }}
   {{- if .Values.alertmanager.alertmanagerSpec.image.sha }}
   sha: {{ .Values.alertmanager.alertmanagerSpec.image.sha }}
@@ -71,12 +75,8 @@ spec:
 {{ else }}
   alertmanagerConfigSelector: {}
 {{- end }}
-{{- if .Values.alertmanager.alertmanagerSpec.alertmanagerConfigNamespaceSelector }}
   alertmanagerConfigNamespaceSelector:
-{{ tpl (toYaml .Values.alertmanager.alertmanagerSpec.alertmanagerConfigNamespaceSelector | indent 4) . }}
-{{ else }}
-  alertmanagerConfigNamespaceSelector: {}
-{{- end }}
+{{ tpl (toYaml .Values.alertmanager.alertmanagerSpec.alertmanagerConfigNamespaceSelector | indent 4 | default "null") .  }}
 {{- if .Values.alertmanager.alertmanagerSpec.web }}
   web:
 {{ toYaml .Values.alertmanager.alertmanagerSpec.web | indent 4 }}
@@ -99,6 +99,13 @@ spec:
 {{- if .Values.alertmanager.alertmanagerSpec.securityContext }}
   securityContext:
 {{ toYaml .Values.alertmanager.alertmanagerSpec.securityContext | indent 4 }}
+{{- end }}
+{{- if .Values.alertmanager.alertmanagerSpec.dnsConfig }}
+  dnsConfig:
+{{ toYaml .Values.alertmanager.alertmanagerSpec.dnsConfig | indent 4 }}
+{{- end }}
+{{- if .Values.alertmanager.alertmanagerSpec.dnsPolicy }}
+  dnsPolicy: {{ .Values.alertmanager.alertmanagerSpec.dnsPolicy }}
 {{- end }}
 {{- if .Values.alertmanager.alertmanagerSpec.storage }}
   storage:
@@ -199,5 +206,9 @@ spec:
 {{- end }}
 {{- with .Values.alertmanager.alertmanagerSpec.additionalConfigString }}
   {{- tpl . $ | nindent 2 }}
+{{- end }}
+{{- if .Values.alertmanager.alertmanagerSpec.additionalArgs }}
+  additionalArgs:
+{{ toYaml .Values.alertmanager.alertmanagerSpec.additionalArgs | indent 4 }}
 {{- end }}
 {{- end }}

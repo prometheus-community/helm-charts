@@ -9,9 +9,12 @@ metadata:
   namespace: {{ template "kube-state-metrics.namespace" . }}
   labels:
     {{- include "kube-state-metrics.labels" . | indent 4 }}
-  {{- if .Values.annotations }}
+    {{- with .Values.labels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+  {{- with .Values.annotations }}
   annotations:
-{{ toYaml .Values.annotations | indent 4 }}
+    {{- toYaml . | nindent 4 }}
   {{- end }}
 spec:
   selector:
@@ -136,7 +139,7 @@ spec:
         {{- end }}
         {{- end }}
         {{- if .Values.customResourceState.enabled }}
-        - --custom-resource-state-config-file=/etc/customresourcestate/config.yaml
+        - --custom-resource-state-config-file=/etc/customresourcestate/{{ .Values.customResourceState.key }}
         {{- end }}
         {{- if or (.Values.kubeconfig.enabled) (.Values.customResourceState.enabled) (.Values.volumeMounts) }}
         volumeMounts:
@@ -159,10 +162,10 @@ spec:
         {{- if eq .Values.kubeRBACProxy.enabled false }}
         ports:
         - containerPort: {{ .Values.service.port | default 8080}}
-          name: "http"
+          name: http
         {{- if .Values.selfMonitor.enabled }}
         - containerPort: {{ $telemetryPort }}
-          name: "metrics"
+          name: metrics
         {{- end }}
         {{- end }}
         {{- if .Values.startupProbe.enabled }}
@@ -179,7 +182,7 @@ spec:
             {{- end }}
             path: /healthz
             {{- if .Values.kubeRBACProxy.enabled }}
-            port: {{ .Values.service.port | default 8080 }}
+            port: http
             scheme: HTTPS
             {{- else }}
             port: {{ $servicePort }}
@@ -203,7 +206,7 @@ spec:
             {{- end }}
             path: /livez
             {{- if .Values.kubeRBACProxy.enabled }}
-            port: {{ .Values.service.port | default 8080 }}
+            port: http
             scheme: HTTPS
             {{- else }}
             port: {{ $servicePort }}
@@ -226,7 +229,7 @@ spec:
             {{- end }}
             path: /readyz
             {{- if .Values.kubeRBACProxy.enabled }}
-            port: {{ .Values.selfMonitor.telemetryPort | default 8081 }}
+            port: metrics
             scheme: HTTPS
             {{- else }}
             port: {{ $telemetryPort }}
@@ -248,9 +251,12 @@ spec:
         {{-  if .Values.kubeRBACProxy.extraArgs  }}
         {{- .Values.kubeRBACProxy.extraArgs | toYaml | nindent 8 }}
         {{-  end  }}
+        {{- if .Values.kubeRBACProxy.ignoreProbePaths }}
+        - --ignore-paths=/livez,/readyz
+        {{- end }}
         - --secure-listen-address=:{{ .Values.service.port | default 8080}}
         - --upstream=http://127.0.0.1:{{ $servicePort }}/
-        - --proxy-endpoints-port=8888
+        - --proxy-endpoints-port={{ .Values.kubeRBACProxy.proxyEndpointsPort | default 8888 }}
         - --config-file=/etc/kube-rbac-proxy-config/config-file.yaml
         volumeMounts:
           - name: kube-rbac-proxy-config
@@ -262,14 +268,14 @@ spec:
         image: {{ include "kubeRBACProxy.image" . }}
         ports:
           - containerPort: {{ .Values.service.port | default 8080}}
-            name: "http"
-          - containerPort: 8888
-            name: "http-healthz"
+            name: http
+          - containerPort: {{ .Values.kubeRBACProxy.proxyEndpointsPort | default 8888 }}
+            name: http-healthz
         readinessProbe:
           httpGet:
             scheme: HTTPS
-            port: 8888
-            path: healthz
+            port: http-healthz
+            path: /healthz
           initialDelaySeconds: 5
           timeoutSeconds: 5
         {{- if .Values.kubeRBACProxy.resources }}
@@ -286,6 +292,9 @@ spec:
         {{-  if .Values.kubeRBACProxy.extraArgs  }}
         {{- .Values.kubeRBACProxy.extraArgs | toYaml | nindent 8 }}
         {{-  end  }}
+        {{- if .Values.kubeRBACProxy.ignoreProbePaths }}
+        - --ignore-paths=/livez,/readyz
+        {{- end }}
         - --secure-listen-address=:{{ .Values.selfMonitor.telemetryPort | default 8081 }}
         - --upstream=http://127.0.0.1:{{ $telemetryPort }}/
         - --proxy-endpoints-port=8889
@@ -300,9 +309,9 @@ spec:
         image: {{ include "kubeRBACProxy.image" . }}
         ports:
           - containerPort: {{ .Values.selfMonitor.telemetryPort | default 8081 }}
-            name: "metrics"
+            name: metrics
           - containerPort: 8889
-            name: "metrics-healthz"
+            name: metrics-healthz
         readinessProbe:
           httpGet:
             scheme: HTTPS
@@ -362,7 +371,7 @@ spec:
       {{- if .Values.customResourceState.enabled}}
         - name: customresourcestate-config
           configMap:
-            name: {{ template "kube-state-metrics.fullname" . }}-customresourcestate-config
+            name: {{ template "kube-state-metrics.crsConfigMapName" . }}
       {{- end }}
       {{- if .Values.volumes }}
 {{ toYaml .Values.volumes | indent 8 }}

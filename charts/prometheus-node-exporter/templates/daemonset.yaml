@@ -48,6 +48,7 @@ spec:
       {{- end }}
       containers:
         {{- $servicePort := ternary .Values.kubeRBACProxy.port .Values.service.port .Values.kubeRBACProxy.enabled }}
+        {{- $servicePortReference := ternary .Values.kubeRBACProxy.port .Values.service.portName .Values.kubeRBACProxy.enabled }}
         - name: node-exporter
           image: {{ include "prometheus-node-exporter.image" . }}
           imagePullPolicy: {{ .Values.image.pullPolicy }}
@@ -102,7 +103,7 @@ spec:
                 value: {{ $header.value }}
               {{- end }}
               path: /
-              port: {{ $servicePort }}
+              port: {{ $servicePortReference }}
               scheme: {{ upper .Values.livenessProbe.httpGet.scheme }}
             initialDelaySeconds: {{ .Values.livenessProbe.initialDelaySeconds }}
             periodSeconds: {{ .Values.livenessProbe.periodSeconds }}
@@ -120,7 +121,7 @@ spec:
                 value: {{ $header.value }}
               {{- end }}
               path: /
-              port: {{ $servicePort }}
+              port: {{ $servicePortReference }}
               scheme: {{ upper .Values.readinessProbe.httpGet.scheme }}
             initialDelaySeconds: {{ .Values.readinessProbe.initialDelaySeconds }}
             periodSeconds: {{ .Values.readinessProbe.periodSeconds }}
