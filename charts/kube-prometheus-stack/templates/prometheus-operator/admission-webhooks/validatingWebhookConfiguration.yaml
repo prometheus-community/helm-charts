@@ -116,33 +116,33 @@ webhooks:
     {{- if or .Values.prometheusOperator.denyNamespaces .Values.prometheusOperator.namespaces .Values.prometheusOperator.admissionWebhooks.namespaceSelector }}
     namespaceSelector:
       {{- with (omit .Values.prometheusOperator.admissionWebhooks.namespaceSelector "matchExpressions") }}
-        {{- toYaml . | nindent 6 }}
+      {{- toYaml . | nindent 6 }}
+      {{- end }}
+      {{- if or .Values.prometheusOperator.denyNamespaces .Values.prometheusOperator.namespaces .Values.prometheusOperator.admissionWebhooks.namespaceSelector.matchExpressions }}
+      matchExpressions:
+        {{- with (.Values.prometheusOperator.admissionWebhooks.namespaceSelector.matchExpressions) }}
+        {{- toYaml . | nindent 8 }}
         {{- end }}
-        {{- if or .Values.prometheusOperator.denyNamespaces .Values.prometheusOperator.namespaces .Values.prometheusOperator.admissionWebhooks.namespaceSelector.matchExpressions }}
-        matchExpressions:
-          {{- with (.Values.prometheusOperator.admissionWebhooks.namespaceSelector.matchExpressions) }}
-            {{- toYaml . | nindent 8 }}
-            {{- end }}
-            {{- if .Values.prometheusOperator.denyNamespaces }}
-            - key: kubernetes.io/metadata.name
-              operator: NotIn
-              values:
-            {{- range $namespace := mustUniq .Values.prometheusOperator.denyNamespaces }}
+        {{- if .Values.prometheusOperator.denyNamespaces }}
+        - key: kubernetes.io/metadata.name
+          operator: NotIn
+          values:
+        {{- range $namespace := mustUniq .Values.prometheusOperator.denyNamespaces }}
             - {{ $namespace }}
-            {{- end }}
-            {{- else if and .Values.prometheusOperator.namespaces .Values.prometheusOperator.namespaces.additional }}
-            - key: kubernetes.io/metadata.name
-              operator: In
-              values:
-            {{- if and .Values.prometheusOperator.namespaces.releaseNamespace (default .Values.prometheusOperator.namespaces.releaseNamespace true) }}
-            {{- $namespace := printf "%s" (include "kube-prometheus-stack.namespace" .) }}
-            - {{ $namespace }}
-            {{- end }}
-            {{- range $namespace := mustUniq .Values.prometheusOperator.namespaces.additional }}
-            - {{ $namespace }}
-            {{- end }}
-            {{- end }}
         {{- end }}
+        {{- else if and .Values.prometheusOperator.namespaces .Values.prometheusOperator.namespaces.additional }}
+        - key: kubernetes.io/metadata.name
+          operator: In
+          values:
+        {{- if and .Values.prometheusOperator.namespaces.releaseNamespace (default .Values.prometheusOperator.namespaces.releaseNamespace true) }}
+        {{- $namespace := printf "%s" (include "kube-prometheus-stack.namespace" .) }}
+            - {{ $namespace }}
+        {{- end }}
+        {{- range $namespace := mustUniq .Values.prometheusOperator.namespaces.additional }}
+            - {{ $namespace }}
+        {{- end }}
+        {{- end }}
+      {{- end }}
     {{- end }}
     {{- with .Values.prometheusOperator.admissionWebhooks.objectSelector }}
     objectSelector:
