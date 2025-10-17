@@ -19,8 +19,13 @@ spec:
     metadata:
       labels:
         {{- include "prometheus-ipmi-exporter.selectorLabels" . | nindent 8 }}
-      {{- with .Values.additionalAnnotations }}
+      {{- if or (not .Values.configSecret.enabled) .Values.additionalAnnotations }}
       annotations:
+      {{- end }}
+      {{- if not .Values.configSecret.enabled }}
+        checksum/config: {{ toYaml .Values.modules | sha256sum }}
+      {{- end }}
+      {{- with .Values.additionalAnnotations }}
         {{- toYaml . | nindent 8 }}
       {{- end }}
     spec:

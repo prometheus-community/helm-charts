@@ -17,6 +17,8 @@ helm repo add prometheus-community https://prometheus-community.github.io/helm-c
 
 You can then run `helm search repo prometheus-community` to see the charts.
 
+OCI artifacts of all Prometheus Helm charts are available in [ghcr.io](https://github.com/orgs/prometheus-community/packages?repo_name=helm-charts).
+
 ## Contributing
 
 The source code of all [Prometheus](https://prometheus.io) community [Helm](https://helm.sh) charts can be found on GitHub: <https://github.com/prometheus-community/helm-charts/>

@@ -144,10 +144,6 @@
 - zanhsieh (<zanhsieh@gmail.com> / @zanhsieh)
 - zeritti (<rootsandtrees@posteo.de> / @zeritti)
 
-### prometheus-opencost-exporter
-
-- mattray (<mattray@kubecost.com> / @mattray)
-
 ### prometheus-operator-admission-webhook
 
 - zeritti (<rootsandtrees@posteo.de> / @zeritti)

@@ -1,29 +1,29 @@
-# Prometheus Mysql Exporter
+# Prometheus MySQL Exporter
 
 A Prometheus exporter for [MySQL](https://www.mysql.com/) metrics.
 
 This chart bootstraps a Prometheus [MySQL Exporter](https://github.com/prometheus/mysqld_exporter) deployment on a [Kubernetes](http://kubernetes.io) cluster using the [Helm](https://helm.sh) package manager.
 
-## Get Helm Repository Info
+## Usage
+
+The chart is distributed as an [OCI Artifact](https://helm.sh/docs/topics/registries/) as well as via a traditional [Helm Repository](https://helm.sh/docs/topics/chart_repository/).
+
+- OCI Artifact: `oci://ghcr.io/prometheus-community/charts/prometheus-mysql-exporter`
+- Helm Repository: `https://prometheus-community.github.io/helm-charts` with chart `prometheus-mysql-exporter`
+
+The installation instructions use the OCI registry. Refer to the [`helm repo`]([`helm repo`](https://helm.sh/docs/helm/helm_repo/)) command documentation for information on installing charts via the traditional repository.
+
+### Install Chart
 
 ```console
-helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
-helm repo update
-```
-
-_See [`helm repo`](https://helm.sh/docs/helm/helm_repo/) for command documentation._
-
-## Install Chart
-
-```console
-helm install [RELEASE_NAME] prometheus-community/prometheus-mysql-exporter
+helm install [RELEASE_NAME] oci://ghcr.io/prometheus-community/charts/prometheus-mysql-exporter
 ```
 
 _See [configuration](#configuration) below._
 
 _See [helm install](https://helm.sh/docs/helm/helm_install/) for command documentation._
 
-## Uninstall Chart
+### Uninstall Chart
 
 ```console
 helm uninstall [RELEASE_NAME]
@@ -35,13 +35,13 @@ _See [helm uninstall](https://helm.sh/docs/helm/helm_uninstall/) for command doc
 
 _See [helm upgrade](https://helm.sh/docs/helm/helm_upgrade/) for command documentation._
 
-## Upgrading Chart
+### Upgrading Chart
 
 ```console
 helm upgrade [RELEASE_NAME] [CHART] --install
 ```
 
-### Multiple-target probes
+#### Multiple-target probes
 
 mysql_exporter now support multi-target probes using the `/probe` route. To enable this feature, set `serviceMonitor.multipleTarget.enabled` to `true` and define your targets in `serviceMonitor.multipleTarget.targets`.
 Credentials for each target should be referenced either in targets section or in the associated config file.
@@ -84,7 +84,7 @@ The configuration file can be:
 - created automatically in case user and password are specified for the target.
 If all your target use the same credentials, you can set `serviceMonitor.sharedSecret.enabled` to `true` and define the key name in `serviceMonitor.sharedSecret.name`.
 
-### From 1.x to 2.x
+#### From 1.x to 2.x
 
 mysqld_exporter has been updated to [v0.15.0](https://github.com/prometheus/mysqld_exporter/releases/tag/v0.15.0), removing support for `DATA_SOURCE_NAME`. Configuration for exporter use `--config.my-cnf` with a custom cnf file (secret).
 
@@ -136,7 +136,7 @@ cloudsqlproxy:
   privateIp: true
 ```
 
-### To =< 1.0.0
+#### To =< 1.0.0
 
 Version 1.0.0 is a major update.
 
@@ -154,12 +154,12 @@ helm upgrade prometheus-mysql-exporter prometheus-community/prometheus-mysql-exp
 See [Customizing the Chart Before Installing](https://helm.sh/docs/intro/using_helm/#customizing-the-chart-before-installing). To see all configurable options with detailed comments, visit the chart's [values.yaml](https://github.com/prometheus-community/helm-charts/blob/main/charts/prometheus-mysql-exporter/values.yaml), or run these configuration commands:
 
 ```console
-helm show values prometheus-community/prometheus-mysql-exporter
+helm show values oci://ghcr.io/prometheus-community/charts/prometheus-mysql-exporter
 ```
 
 ### MySQL Connection
 
-The exporter can connect to mysql directly or using the [Cloud SQL Proxy](https://cloud.google.com/sql/docs/mysql/sql-proxy).
+The exporter can connect to MySQL directly or using the [Cloud SQL Proxy](https://cloud.google.com/sql/docs/mysql/sql-proxy).
 
 - To configure direct MySQL connection by value, set `mysql.user`, `mysql.pass`, `mysql.host` and `mysql.port` (see additional options in the `mysql` configuration block)
 - To configure direct MySQL connection by secret, you must store a connection string in a secret, and set `mysql.existingSecret` to `[SECRET_NAME]`
@@ -167,7 +167,7 @@ The exporter can connect to mysql directly or using the [Cloud SQL Proxy](https:
 ### Exporter Documentation and Params
 
 Documentation for the MySQL Exporter can be found here: (<https://github.com/prometheus/mysqld_exporter>)
-A mysql params overview can be found here: (<https://github.com/go-sql-driver/mysql#dsn-data-source-name>)
+A MySQL params overview can be found here: (<https://github.com/go-sql-driver/mysql#dsn-data-source-name>)
 
 ### Collector Flags
 

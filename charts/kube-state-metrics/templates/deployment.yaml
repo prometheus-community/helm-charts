@@ -162,13 +162,12 @@ spec:
         {{- if eq .Values.kubeRBACProxy.enabled false }}
         ports:
         - containerPort: {{ .Values.service.port | default 8080}}
-          name: "http"
+          name: http
         {{- if .Values.selfMonitor.enabled }}
         - containerPort: {{ $telemetryPort }}
-          name: "metrics"
+          name: metrics
         {{- end }}
         {{- end }}
-        {{- if not .Values.kubeRBACProxy.enabled }}
         {{- if .Values.startupProbe.enabled }}
         startupProbe:
           failureThreshold: {{ .Values.startupProbe.failureThreshold }}
@@ -183,7 +182,7 @@ spec:
             {{- end }}
             path: /healthz
             {{- if .Values.kubeRBACProxy.enabled }}
-            port: {{ .Values.service.port | default 8080 }}
+            port: http
             scheme: HTTPS
             {{- else }}
             port: {{ $servicePort }}
@@ -207,7 +206,7 @@ spec:
             {{- end }}
             path: /livez
             {{- if .Values.kubeRBACProxy.enabled }}
-            port: {{ .Values.service.port | default 8080 }}
+            port: http
             scheme: HTTPS
             {{- else }}
             port: {{ $servicePort }}
@@ -230,7 +229,7 @@ spec:
             {{- end }}
             path: /readyz
             {{- if .Values.kubeRBACProxy.enabled }}
-            port: {{ .Values.selfMonitor.telemetryPort | default 8081 }}
+            port: metrics
             scheme: HTTPS
             {{- else }}
             port: {{ $telemetryPort }}
@@ -240,7 +239,6 @@ spec:
           periodSeconds: {{ .Values.readinessProbe.periodSeconds }}
           successThreshold: {{ .Values.readinessProbe.successThreshold }}
           timeoutSeconds: {{ .Values.readinessProbe.timeoutSeconds }}
-        {{- end }}
         resources:
 {{ toYaml .Values.resources | indent 10 }}
 {{- if .Values.containerSecurityContext }}
@@ -253,9 +251,12 @@ spec:
         {{-  if .Values.kubeRBACProxy.extraArgs  }}
         {{- .Values.kubeRBACProxy.extraArgs | toYaml | nindent 8 }}
         {{-  end  }}
+        {{- if .Values.kubeRBACProxy.ignoreProbePaths }}
+        - --ignore-paths=/livez,/readyz
+        {{- end }}
         - --secure-listen-address=:{{ .Values.service.port | default 8080}}
         - --upstream=http://127.0.0.1:{{ $servicePort }}/
-        - --proxy-endpoints-port=8888
+        - --proxy-endpoints-port={{ .Values.kubeRBACProxy.proxyEndpointsPort | default 8888 }}
         - --config-file=/etc/kube-rbac-proxy-config/config-file.yaml
         volumeMounts:
           - name: kube-rbac-proxy-config
@@ -267,14 +268,14 @@ spec:
         image: {{ include "kubeRBACProxy.image" . }}
         ports:
           - containerPort: {{ .Values.service.port | default 8080}}
-            name: "http"
-          - containerPort: 8888
-            name: "http-healthz"
+            name: http
+          - containerPort: {{ .Values.kubeRBACProxy.proxyEndpointsPort | default 8888 }}
+            name: http-healthz
         readinessProbe:
           httpGet:
             scheme: HTTPS
-            port: 8888
-            path: healthz
+            port: http-healthz
+            path: /healthz
           initialDelaySeconds: 5
           timeoutSeconds: 5
         {{- if .Values.kubeRBACProxy.resources }}
@@ -291,6 +292,9 @@ spec:
         {{-  if .Values.kubeRBACProxy.extraArgs  }}
         {{- .Values.kubeRBACProxy.extraArgs | toYaml | nindent 8 }}
         {{-  end  }}
+        {{- if .Values.kubeRBACProxy.ignoreProbePaths }}
+        - --ignore-paths=/livez,/readyz
+        {{- end }}
         - --secure-listen-address=:{{ .Values.selfMonitor.telemetryPort | default 8081 }}
         - --upstream=http://127.0.0.1:{{ $telemetryPort }}/
         - --proxy-endpoints-port=8889
@@ -305,9 +309,9 @@ spec:
         image: {{ include "kubeRBACProxy.image" . }}
         ports:
           - containerPort: {{ .Values.selfMonitor.telemetryPort | default 8081 }}
-            name: "metrics"
+            name: metrics
           - containerPort: 8889
-            name: "metrics-healthz"
+            name: metrics-healthz
         readinessProbe:
           httpGet:
             scheme: HTTPS

@@ -34,7 +34,7 @@ crds:
   enabled: true
   ## The CRD upgrade job mitigates the limitation of helm not being able to upgrade CRDs.
   ## The job will apply the CRDs to the cluster before the operator is deployed, using helm hooks.
-  ## It deploy a corresponding clusterrole, clusterrolebinding and serviceaccount to apply the CRDs.
+  ## It deploys a corresponding clusterrole, clusterrolebinding and serviceaccount to apply the CRDs.
   ## This feature is in preview, off by default and may change in the future.
   upgradeJob:
     enabled: false
@@ -154,7 +154,7 @@ crds:
       seccompProfile:
         type: RuntimeDefault
 
-## custom Rules to override "for" and "severity" in defaultRules
+## Custom rules to override "for" and "severity" in defaultRules
 ##
 customRules: {}
   # AlertmanagerFailedReload:
@@ -260,7 +260,7 @@ defaultRules:
     prometheus: {}
     prometheusOperator: {}
 
-  ## Additional annotations for specific PrometheusRule alerts groups
+  ## Additional annotations for specific PrometheusRule alert groups
   additionalRuleGroupAnnotations:
     alertmanager: {}
     etcd: {}
@@ -338,7 +338,7 @@ global:
     ## Ref: https://kubernetes.io/docs/reference/access-authn-authz/rbac/#aggregated-clusterroles
     createAggregateClusterRoles: false
 
-  ## Global image registry to use if it needs to be overridden for some specific use cases (e.g local registries, custom images, ...)
+  ## Global image registry to use if it needs to be overridden for some specific use cases (e.g. local registries, custom images, ...)
   ##
   imageRegistry: ""
 
@@ -398,7 +398,7 @@ alertmanager:
   ##
   additionalLabels: {}
 
-  ## Api that prometheus will use to communicate with alertmanager. Possible values are v1, v2
+  ## API that Prometheus will use to communicate with alertmanager. Possible values are v1, v2
   ##
   apiVersion: v2
 
@@ -547,7 +547,7 @@ alertmanager:
     - '/etc/alertmanager/config/*.tmpl'
 
   ## Alertmanager configuration directives (as string type, preferred over the config hash map)
-  ## stringConfig will be used only, if tplConfig is true
+  ## stringConfig will be used only if tplConfig is true
   ## ref: https://prometheus.io/docs/alerting/configuration/#configuration-file
   ##      https://prometheus.io/webtools/alerting/routing-tree-editor/
   ##
@@ -1119,6 +1119,14 @@ alertmanager:
       seccompProfile:
         type: RuntimeDefault
 
+    ## DNS configuration for Alertmanager.
+    ## ref: https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/api-reference/api.md#monitoring.coreos.com/v1.PodDNSConfig
+    dnsConfig: {}
+
+    ## DNS policy for Alertmanager.
+    ## ref: https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/api-reference/api.md#dnspolicystring-alias
+    dnsPolicy: ""
+
     ## ListenLocal makes the Alertmanager server listen on loopback, so that it does not bind against the Pod IP.
     ## Note this is only for the Alertmanager UI, not the gossip communication.
     ##
@@ -1129,7 +1137,7 @@ alertmanager:
     containers: []
     # containers:
     # - name: oauth-proxy
-    #   image: quay.io/oauth2-proxy/oauth2-proxy:v7.9.0
+    #   image: quay.io/oauth2-proxy/oauth2-proxy:v7.12.0
     #   args:
     #   - --upstream=http://127.0.0.1:9093
     #   - --http-address=0.0.0.0:8081
@@ -1380,12 +1388,20 @@ grafana:
       name: Prometheus
       uid: prometheus
 
+      ## Extra jsonData properties to add to the datasource
+      # extraJsonData:
+      #  prometheusType: Prometheus
+
       ## URL of prometheus datasource
       ##
       # url: http://prometheus-stack-prometheus:9090/
 
       ## Prometheus request timeout in seconds
       # timeout: 30
+
+      ## Query parameters to add, as a URL-encoded string,
+      ## to query Prometheus
+      # customQueryParameters: ""
 
       # If not defined, will use prometheus.prometheusSpec.scrapeInterval or its default
       # defaultDatasourceScrapeInterval: 15s
@@ -1400,7 +1416,7 @@ grafana:
       ## Create datasource for each Pod of Prometheus StatefulSet;
       ## this uses by default the headless service `prometheus-operated` which is
       ## created by Prometheus Operator. In case you deployed your own Service for your
-      ## Prometheus instance, you can specifiy it with the field `prometheusServiceName`
+      ## Prometheus instance, you can specify it with the field `prometheusServiceName`
       ## ref: https://github.com/prometheus-operator/prometheus-operator/blob/0fee93e12dc7c2ea1218f19ae25ec6b893460590/pkg/prometheus/statefulset.go#L255-L286
       createPrometheusReplicasDatasources: false
       prometheusServiceName: prometheus-operated
@@ -2516,7 +2532,7 @@ nodeExporter:
 prometheus-node-exporter:
   namespaceOverride: ""
   podLabels:
-    ## Add the 'node-exporter' label to be used by serviceMonitor to match standard common usage in rules and grafana dashboards
+    ## Add the 'node-exporter' label to be used by serviceMonitor and podMonitor to match standard common usage in rules and grafana dashboards
     ##
     jobLabel: node-exporter
   releaseLabel: true
@@ -2595,6 +2611,11 @@ prometheus-node-exporter:
       ##
       # attachMetadata:
       #   node: false
+
+    podMonitor:
+      enabled: false
+
+      jobLabel: jobLabel
 
   rbac:
     ## If true, create PSPs for node-exporter
@@ -2903,7 +2924,7 @@ prometheusOperator:
       image:
         registry: registry.k8s.io
         repository: ingress-nginx/kube-webhook-certgen
-        tag: v1.6.0  # latest tag: https://github.com/kubernetes/ingress-nginx/blob/main/images/kube-webhook-certgen/TAG
+        tag: v1.6.3  # latest tag: https://github.com/kubernetes/ingress-nginx/blob/main/images/kube-webhook-certgen/TAG
         sha: ""
         pullPolicy: IfNotPresent
       resources: {}
@@ -3341,7 +3362,7 @@ prometheusOperator:
   thanosImage:
     registry: quay.io
     repository: thanos/thanos
-    tag: v0.39.1
+    tag: v0.39.2
     sha: ""
 
   ## Set a Label Selector to filter watched prometheus and prometheusAgent
@@ -3993,7 +4014,7 @@ prometheus:
     image:
       registry: quay.io
       repository: prometheus/prometheus
-      tag: v3.4.2
+      tag: v3.6.0
       sha: ""
       pullPolicy: IfNotPresent
 
@@ -4212,7 +4233,7 @@ prometheus:
     retention: 10d
 
     ## Maximum size of metrics
-    ##
+    ## Unit format should be in the form of "50GiB"
     retentionSize: ""
 
     ## Allow out-of-order/out-of-bounds samples ingested into Prometheus for a specified duration
@@ -4363,7 +4384,7 @@ prometheus:
     #     regex: __meta_kubernetes_node_label_(.+)
     #   - source_labels: [__address__]
     #     action: replace
-    #     targetLabel: __address__
+    #     target_label: __address__
     #     regex: ([^:;]+):(\d+)
     #     replacement: ${1}:2379
     #   - source_labels: [__meta_kubernetes_node_name]
@@ -4371,7 +4392,7 @@ prometheus:
     #     regex: .*mst.*
     #   - source_labels: [__meta_kubernetes_node_name]
     #     action: replace
-    #     targetLabel: node
+    #     target_label: node
     #     regex: (.*)
     #     replacement: ${1}
     #   metric_relabel_configs:
@@ -4462,6 +4483,14 @@ prometheus:
       seccompProfile:
         type: RuntimeDefault
 
+    ## DNS configuration for Prometheus.
+    ## ref: https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/api-reference/api.md#monitoring.coreos.com/v1.PodDNSConfig
+    dnsConfig: {}
+
+    ## DNS policy for Prometheus.
+    ## ref: https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/api-reference/api.md#dnspolicystring-alias
+    dnsPolicy: ""
+
     ## Priority class assigned to the Pods
     ##
     priorityClassName: ""
@@ -4501,7 +4530,7 @@ prometheus:
     containers: []
     # containers:
     # - name: oauth-proxy
-    #   image: quay.io/oauth2-proxy/oauth2-proxy:v7.9.0
+    #   image: quay.io/oauth2-proxy/oauth2-proxy:v7.12.0
     #   args:
     #   - --upstream=http://127.0.0.1:9090
     #   - --http-address=0.0.0.0:8081
@@ -4783,6 +4812,12 @@ prometheus:
     ##
     # fallbackScrapeProtocol: ""
 
+    ## Attaches node metadata to the discovered targets
+    ## ref: https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/api-reference/api.md#monitoring.coreos.com/v1.AttachMetadata
+    ##
+    # attachMetadata:
+    #   node: true
+
   additionalPodMonitors: []
   ## Name of the PodMonitor to create
   ##
@@ -4842,6 +4877,12 @@ prometheus:
     ## ref: https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/api-reference/api.md#monitoring.coreos.com/v1.ScrapeProtocol
     ##
     # fallbackScrapeProtocol: ""
+
+    ## Attaches node metadata to the discovered targets
+    ## ref: https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/api-reference/api.md#monitoring.coreos.com/v1.AttachMetadata
+    ##
+    # attachMetadata:
+    #   node: true
 
 ## Configuration for thanosRuler
 ## ref: https://thanos.io/tip/components/rule.md/
@@ -5076,7 +5117,7 @@ thanosRuler:
     image:
       registry: quay.io
       repository: thanos/thanos
-      tag: v0.39.1
+      tag: v0.39.2
       sha: ""
 
     ## Namespaces to be selected for PrometheusRules discovery.

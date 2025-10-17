@@ -14,21 +14,25 @@ jobs:
       contents: read
     steps:
       - name: Checkout Code
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
         with:
           fetch-depth: 0
 
       - name: Set up Helm
-        uses: azure/setup-helm@b9e51907a09c216f16ebe8536097933489208112 # v4.3.0
+        uses: azure/setup-helm@1a275c3b69536ee54be43f2070a358922e12c8d4 # v4.3.1
         with:
-          version: v3.12.0
+          # renovate: github=helm/helm
+          version: v3.19.0
 
-      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
+      - uses: actions/setup-python@e797f83bcb11b83ae66e0230d6156d7c80228e7c # v6.0.0
         with:
           python-version: '3.13'
 
       - name: Set up chart-testing
         uses: helm/chart-testing-action@0d28d3144d3a25ea2cc349d6e59901c4ff469b3b # v2.7.0
+        with:
+          # renovate: github=helm/chart-testing
+          version: v3.14.0
 
       - name: Run chart-testing (list-changed)
         id: list-changed
@@ -77,7 +81,7 @@ jobs:
       contents: read
     steps:
       - name: Checkout Code
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
 
       - name: generate CODEOWNERS
         run: |
@@ -102,12 +106,12 @@ jobs:
       contents: read
     steps:
       - name: Checkout Code
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
         with:
           fetch-depth: 0
 
       - name: Lint Code Base
-        uses: super-linter/super-linter/slim@12150456a73e248bdc94d0794898f94e23127c88 # v7.4.0
+        uses: super-linter/super-linter/slim@2bdd90ed3262e023ac84bf8fe35dc480721fc1f2 # v8.2.1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           LINTER_RULES_PATH: .github/linters
@@ -138,13 +142,13 @@ jobs:
     if: >-
       github.event.pull_request.head.repo.full_name == github.repository 
       && contains(github.event.pull_request.labels.*.name, 'dependencies/auto-merge') 
-      && (github.actor == 'renovate[bot]' || github.actor == 'helm-charts-renovate-helper[bot]')
+      && (github.actor == 'renovate[bot]' || github.actor == 'mend[bot]' || github.actor == 'helm-charts-renovate-helper[bot]')
     steps:
       # Using a GitHub App token, because GitHub Actions doesn't run on commits from github-actions bot
       # Used App:
       # https://github.com/organizations/prometheus-community/settings/apps/helm-charts-renovate-helper.
       # Ref: https://github.com/prometheus-community/helm-charts/issues/5213.
-      - uses: actions/create-github-app-token@df432ceedc7162793a195dd1713ff69aefc7379e # v2.0.6
+      - uses: actions/create-github-app-token@67018539274d69449ef7c02e8e71183d1719ab42 # v2.1.4
         id: app-token
         with:
           app-id: 1179738

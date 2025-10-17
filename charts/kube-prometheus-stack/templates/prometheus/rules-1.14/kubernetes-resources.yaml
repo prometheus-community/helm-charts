@@ -38,9 +38,30 @@ spec:
         runbook_url: {{ .Values.defaultRules.runbookUrl }}/kubernetes/kubecpuovercommit
         summary: Cluster has overcommitted CPU resource requests.
       expr: |-
-        sum(namespace_cpu:kube_pod_container_resource_requests:sum{}) by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster) - (sum(kube_node_status_allocatable{job="{{ $kubeStateMetricsJob }}",resource="cpu"}) by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster) - max(kube_node_status_allocatable{job="{{ $kubeStateMetricsJob }}",resource="cpu"}) by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster)) > 0
-        and
-        (sum(kube_node_status_allocatable{job="{{ $kubeStateMetricsJob }}",resource="cpu"}) by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster) - max(kube_node_status_allocatable{job="{{ $kubeStateMetricsJob }}",resource="cpu"}) by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster)) > 0
+        # Non-HA clusters.
+        (
+          (
+            sum by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster) (namespace_cpu:kube_pod_container_resource_requests:sum{})
+            -
+            sum by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster) (kube_node_status_allocatable{job="{{ $kubeStateMetricsJob }}",resource="cpu"}) > 0
+          )
+          and
+          count by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster) (max by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster, node) (kube_node_role{job="{{ $kubeStateMetricsJob }}", role="control-plane"})) < 3
+        )
+        or
+        # HA clusters.
+        (
+          sum by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster) (namespace_cpu:kube_pod_container_resource_requests:sum{})
+          -
+          (
+            # Skip clusters with only one allocatable node.
+            (
+              sum by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster) (kube_node_status_allocatable{job="{{ $kubeStateMetricsJob }}",resource="cpu"})
+              -
+              max by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster) (kube_node_status_allocatable{job="{{ $kubeStateMetricsJob }}",resource="cpu"})
+            ) > 0
+          ) > 0
+        )
       for: {{ dig "KubeCPUOvercommit" "for" "10m" .Values.customRules }}
       {{- with .Values.defaultRules.keepFiringFor }}
       keep_firing_for: "{{ . }}"
@@ -69,9 +90,30 @@ spec:
         runbook_url: {{ .Values.defaultRules.runbookUrl }}/kubernetes/kubememoryovercommit
         summary: Cluster has overcommitted memory resource requests.
       expr: |-
-        sum(namespace_memory:kube_pod_container_resource_requests:sum{}) by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster) - (sum(kube_node_status_allocatable{resource="memory", job="{{ $kubeStateMetricsJob }}"}) by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster) - max(kube_node_status_allocatable{resource="memory", job="{{ $kubeStateMetricsJob }}"}) by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster)) > 0
-        and
-        (sum(kube_node_status_allocatable{resource="memory", job="{{ $kubeStateMetricsJob }}"}) by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster) - max(kube_node_status_allocatable{resource="memory", job="{{ $kubeStateMetricsJob }}"}) by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster)) > 0
+        # Non-HA clusters.
+        (
+          (
+            sum by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster) (namespace_memory:kube_pod_container_resource_requests:sum{})
+            -
+            sum by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster) (kube_node_status_allocatable{job="{{ $kubeStateMetricsJob }}",resource="memory"}) > 0
+          )
+          and
+          count by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster) (max by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster, node) (kube_node_role{job="{{ $kubeStateMetricsJob }}", role="control-plane"})) < 3
+        )
+        or
+        # HA clusters.
+        (
+          sum by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster) (namespace_memory:kube_pod_container_resource_requests:sum{})
+          -
+          (
+            # Skip clusters with only one allocatable node.
+            (
+              sum by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster) (kube_node_status_allocatable{job="{{ $kubeStateMetricsJob }}",resource="memory"})
+              -
+              max by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster) (kube_node_status_allocatable{job="{{ $kubeStateMetricsJob }}",resource="memory"})
+            ) > 0
+          ) > 0
+        )
       for: {{ dig "KubeMemoryOvercommit" "for" "10m" .Values.customRules }}
       {{- with .Values.defaultRules.keepFiringFor }}
       keep_firing_for: "{{ . }}"
@@ -96,14 +138,17 @@ spec:
 {{- if .Values.defaultRules.additionalRuleGroupAnnotations.kubernetesResources }}
 {{ toYaml .Values.defaultRules.additionalRuleGroupAnnotations.kubernetesResources | indent 8 }}
 {{- end }}
-        description: Cluster {{`{{`}} $labels.cluster {{`}}`}}  has overcommitted CPU resource requests for Namespaces.
+        description: Cluster {{`{{`}} $labels.cluster {{`}}`}} has overcommitted CPU resource requests for Namespaces.
         runbook_url: {{ .Values.defaultRules.runbookUrl }}/kubernetes/kubecpuquotaovercommit
         summary: Cluster has overcommitted CPU resource requests.
       expr: |-
-        sum(min without(resource) (kube_resourcequota{job="{{ $kubeStateMetricsJob }}", type="hard", resource=~"(cpu|requests.cpu)"})) by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster)
-          /
-        sum(kube_node_status_allocatable{resource="cpu", job="{{ $kubeStateMetricsJob }}"}) by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster)
-          > 1.5
+        sum by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster) (
+          min without(resource) (kube_resourcequota{job="{{ $kubeStateMetricsJob }}", type="hard", resource=~"(cpu|requests.cpu)"})
+        )
+        /
+        sum by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster) (
+          kube_node_status_allocatable{resource="cpu", job="{{ $kubeStateMetricsJob }}"}
+        ) > 1.5
       for: {{ dig "KubeCPUQuotaOvercommit" "for" "5m" .Values.customRules }}
       {{- with .Values.defaultRules.keepFiringFor }}
       keep_firing_for: "{{ . }}"
@@ -132,10 +177,13 @@ spec:
         runbook_url: {{ .Values.defaultRules.runbookUrl }}/kubernetes/kubememoryquotaovercommit
         summary: Cluster has overcommitted memory resource requests.
       expr: |-
-        sum(min without(resource) (kube_resourcequota{job="{{ $kubeStateMetricsJob }}", type="hard", resource=~"(memory|requests.memory)"})) by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster)
-          /
-        sum(kube_node_status_allocatable{resource="memory", job="{{ $kubeStateMetricsJob }}"}) by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster)
-          > 1.5
+        sum by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster) (
+          min without(resource) (kube_resourcequota{job="{{ $kubeStateMetricsJob }}", type="hard", resource=~"(memory|requests.memory)"})
+        )
+        /
+        sum by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster) (
+          kube_node_status_allocatable{resource="memory", job="{{ $kubeStateMetricsJob }}"}
+        ) > 1.5
       for: {{ dig "KubeMemoryQuotaOvercommit" "for" "5m" .Values.customRules }}
       {{- with .Values.defaultRules.keepFiringFor }}
       keep_firing_for: "{{ . }}"

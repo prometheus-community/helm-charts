@@ -1,6 +1,6 @@
 ---
 {{- if .Values.serviceMonitor.enabled }}
-apiVersion: monitoring.coreos.com/v1
+apiVersion: {{ .Values.serviceMonitor.apiVersion }}
 kind: ServiceMonitor
 metadata:
   name: {{ template "prometheus-nginx-exporter.fullname" .  }}
@@ -22,6 +22,10 @@ spec:
       path: {{ .Values.serviceMonitor.path }}
       {{- if .Values.serviceMonitor.honorLabels }}
       honorLabels: true
+      {{- end }}
+      {{- if .Values.serviceMonitor.targetLabels }}
+      targetLabels:
+      {{ toYaml .Values.serviceMonitor.targetLabels | indent 4 }}
       {{- end }}
       {{- if .Values.serviceMonitor.metricRelabelings }}
       metricRelabelings:
