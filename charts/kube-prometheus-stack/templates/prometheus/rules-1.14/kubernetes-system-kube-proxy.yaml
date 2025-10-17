@@ -5,6 +5,7 @@ https://github.com/prometheus-community/helm-charts/tree/main/charts/kube-promet
 */ -}}
 {{- $kubeTargetVersion := default .Capabilities.KubeVersion.GitVersion .Values.kubeTargetVersionOverride }}
 {{- if and (semverCompare ">=1.14.0-0" $kubeTargetVersion) (semverCompare "<9.9.9-9" $kubeTargetVersion) .Values.defaultRules.create .Values.kubeProxy.enabled .Values.defaultRules.rules.kubeProxy }}
+{{- $kubeProxyJob := include "kube-prometheus-stack-kube-proxy.name" . }}
 apiVersion: monitoring.coreos.com/v1
 kind: PrometheusRule
 metadata:
@@ -36,7 +37,7 @@ spec:
         description: KubeProxy has disappeared from Prometheus target discovery.
         runbook_url: {{ .Values.defaultRules.runbookUrl }}/kubernetes/kubeproxydown
         summary: Target disappeared from Prometheus target discovery.
-      expr: absent(up{job="kube-proxy"} == 1)
+      expr: absent(up{job="{{ $kubeProxyJob }}"} == 1)
       for: {{ dig "KubeProxyDown" "for" "15m" .Values.customRules }}
       {{- with .Values.defaultRules.keepFiringFor }}
       keep_firing_for: "{{ . }}"
