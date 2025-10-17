@@ -6,7 +6,7 @@ This chart bootstraps a [Statsd Exporter](https://github.com/prometheus/statsd_e
 
 ## Prerequisites
 
-- Kubernetes 1.16+ with Beta APIs enabled
+- Kubernetes 1.19+ with Beta APIs enabled
 - Helm 3+
 
 ## Usage
@@ -55,3 +55,11 @@ helm show values oci://ghcr.io/prometheus-community/charts/prometheus-statsd-exp
 ### Statsd Exporter Server
 
 - Use early created ConfigMap with file `statsd.mappingConf` contained in data or specify mapping values in `statsd.mappingConfig`
+
+#### Upgrading an existing Release to a new major version
+
+A major chart version change (like v1.2.3 -> v2.0.0) indicates that there is an incompatible breaking change needing manual actions.
+
+##### 0.x to 1.x
+
+Support for Kubernetes versions older then 1.19 has been removed.

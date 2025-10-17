@@ -41,7 +41,7 @@ spec:
       expr: |-
         # Without max_over_time, failed scrapes could create false negatives, see
         # https://www.robustperception.io/alerting-on-gauges-in-prometheus-2-0 for details.
-        max_over_time(alertmanager_config_last_reload_successful{job="{{ $alertmanagerJob }}",namespace="{{ $namespace }}"}[5m]) == 0
+        max_over_time(alertmanager_config_last_reload_successful{job="{{ $alertmanagerJob }}",container="alertmanager",namespace="{{ $namespace }}"}[5m]) == 0
       for: {{ dig "AlertmanagerFailedReload" "for" "10m" .Values.customRules }}
       {{- with .Values.defaultRules.keepFiringFor }}
       keep_firing_for: "{{ . }}"
@@ -72,9 +72,9 @@ spec:
       expr: |-
         # Without max_over_time, failed scrapes could create false negatives, see
         # https://www.robustperception.io/alerting-on-gauges-in-prometheus-2-0 for details.
-          max_over_time(alertmanager_cluster_members{job="{{ $alertmanagerJob }}",namespace="{{ $namespace }}"}[5m])
+          max_over_time(alertmanager_cluster_members{job="{{ $alertmanagerJob }}",container="alertmanager",namespace="{{ $namespace }}"}[5m])
         < on ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}namespace,service,cluster) group_left
-          count by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}namespace,service,cluster) (max_over_time(alertmanager_cluster_members{job="{{ $alertmanagerJob }}",namespace="{{ $namespace }}"}[5m]))
+          count by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}namespace,service,cluster) (max_over_time(alertmanager_cluster_members{job="{{ $alertmanagerJob }}",container="alertmanager",namespace="{{ $namespace }}"}[5m]))
       for: {{ dig "AlertmanagerMembersInconsistent" "for" "15m" .Values.customRules }}
       {{- with .Values.defaultRules.keepFiringFor }}
       keep_firing_for: "{{ . }}"
@@ -104,9 +104,9 @@ spec:
         summary: An Alertmanager instance failed to send notifications.
       expr: |-
         (
-          rate(alertmanager_notifications_failed_total{job="{{ $alertmanagerJob }}",namespace="{{ $namespace }}"}[15m])
+          rate(alertmanager_notifications_failed_total{job="{{ $alertmanagerJob }}",container="alertmanager",namespace="{{ $namespace }}"}[15m])
         /
-          ignoring (reason) group_left rate(alertmanager_notifications_total{job="{{ $alertmanagerJob }}",namespace="{{ $namespace }}"}[15m])
+          ignoring (reason) group_left rate(alertmanager_notifications_total{job="{{ $alertmanagerJob }}",container="alertmanager",namespace="{{ $namespace }}"}[15m])
         )
         > 0.01
       for: {{ dig "AlertmanagerFailedToSendAlerts" "for" "5m" .Values.customRules }}
@@ -138,9 +138,9 @@ spec:
         summary: All Alertmanager instances in a cluster failed to send notifications to a critical integration.
       expr: |-
         min by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}namespace,service, integration) (
-          rate(alertmanager_notifications_failed_total{job="{{ $alertmanagerJob }}",namespace="{{ $namespace }}", integration=~`.*`}[15m])
+          rate(alertmanager_notifications_failed_total{job="{{ $alertmanagerJob }}",container="alertmanager",namespace="{{ $namespace }}", integration=~`.*`}[15m])
         /
-          ignoring (reason) group_left rate(alertmanager_notifications_total{job="{{ $alertmanagerJob }}",namespace="{{ $namespace }}", integration=~`.*`}[15m])
+          ignoring (reason) group_left rate(alertmanager_notifications_total{job="{{ $alertmanagerJob }}",container="alertmanager",namespace="{{ $namespace }}", integration=~`.*`}[15m])
         )
         > 0.01
       for: {{ dig "AlertmanagerClusterFailedToSendAlerts" "for" "5m" .Values.customRules }}
@@ -172,9 +172,9 @@ spec:
         summary: All Alertmanager instances in a cluster failed to send notifications to a non-critical integration.
       expr: |-
         min by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}namespace,service, integration) (
-          rate(alertmanager_notifications_failed_total{job="{{ $alertmanagerJob }}",namespace="{{ $namespace }}", integration!~`.*`}[15m])
+          rate(alertmanager_notifications_failed_total{job="{{ $alertmanagerJob }}",container="alertmanager",namespace="{{ $namespace }}", integration!~`.*`}[15m])
         /
-          ignoring (reason) group_left rate(alertmanager_notifications_total{job="{{ $alertmanagerJob }}",namespace="{{ $namespace }}", integration!~`.*`}[15m])
+          ignoring (reason) group_left rate(alertmanager_notifications_total{job="{{ $alertmanagerJob }}",container="alertmanager",namespace="{{ $namespace }}", integration!~`.*`}[15m])
         )
         > 0.01
       for: {{ dig "AlertmanagerClusterFailedToSendAlerts" "for" "5m" .Values.customRules }}
@@ -206,7 +206,7 @@ spec:
         summary: Alertmanager instances within the same cluster have different configurations.
       expr: |-
         count by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}namespace,service,cluster) (
-          count_values by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}namespace,service,cluster) ("config_hash", alertmanager_config_hash{job="{{ $alertmanagerJob }}",namespace="{{ $namespace }}"})
+          count_values by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}namespace,service,cluster) ("config_hash", alertmanager_config_hash{job="{{ $alertmanagerJob }}",container="alertmanager",namespace="{{ $namespace }}"})
         )
         != 1
       for: {{ dig "AlertmanagerConfigInconsistent" "for" "20m" .Values.customRules }}
@@ -239,11 +239,11 @@ spec:
       expr: |-
         (
           count by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}namespace,service,cluster) (
-            avg_over_time(up{job="{{ $alertmanagerJob }}",namespace="{{ $namespace }}"}[5m]) < 0.5
+            avg_over_time(up{job="{{ $alertmanagerJob }}",container="alertmanager",namespace="{{ $namespace }}"}[5m]) < 0.5
           )
         /
           count by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}namespace,service,cluster) (
-            up{job="{{ $alertmanagerJob }}",namespace="{{ $namespace }}"}
+            up{job="{{ $alertmanagerJob }}",container="alertmanager",namespace="{{ $namespace }}"}
           )
         )
         >= 0.5
@@ -277,11 +277,11 @@ spec:
       expr: |-
         (
           count by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}namespace,service,cluster) (
-            changes(process_start_time_seconds{job="{{ $alertmanagerJob }}",namespace="{{ $namespace }}"}[10m]) > 4
+            changes(process_start_time_seconds{job="{{ $alertmanagerJob }}",container="alertmanager",namespace="{{ $namespace }}"}[10m]) > 4
           )
         /
           count by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}namespace,service,cluster) (
-            up{job="{{ $alertmanagerJob }}",namespace="{{ $namespace }}"}
+            up{job="{{ $alertmanagerJob }}",container="alertmanager",namespace="{{ $namespace }}"}
           )
         )
         >= 0.5
