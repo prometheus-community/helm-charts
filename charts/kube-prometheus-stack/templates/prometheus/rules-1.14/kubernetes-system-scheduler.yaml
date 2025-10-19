@@ -5,6 +5,7 @@ https://github.com/prometheus-community/helm-charts/tree/main/charts/kube-promet
 */ -}}
 {{- $kubeTargetVersion := default .Capabilities.KubeVersion.GitVersion .Values.kubeTargetVersionOverride }}
 {{- if and (semverCompare ">=1.14.0-0" $kubeTargetVersion) (semverCompare "<9.9.9-9" $kubeTargetVersion) .Values.defaultRules.create .Values.kubeScheduler.enabled .Values.defaultRules.rules.kubeSchedulerAlerting }}
+{{- $kubeSchedulerJob := include "kube-prometheus-stack-kube-scheduler.name" . }}
 apiVersion: monitoring.coreos.com/v1
 kind: PrometheusRule
 metadata:
@@ -37,7 +38,7 @@ spec:
         description: KubeScheduler has disappeared from Prometheus target discovery.
         runbook_url: {{ .Values.defaultRules.runbookUrl }}/kubernetes/kubeschedulerdown
         summary: Target disappeared from Prometheus target discovery.
-      expr: absent(up{job="kube-scheduler"} == 1)
+      expr: absent(up{job="{{ $kubeSchedulerJob }}"} == 1)
       for: {{ dig "KubeSchedulerDown" "for" "15m" .Values.customRules }}
       {{- with .Values.defaultRules.keepFiringFor }}
       keep_firing_for: "{{ . }}"
