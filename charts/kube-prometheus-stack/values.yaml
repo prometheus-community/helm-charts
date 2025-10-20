@@ -34,7 +34,7 @@ crds:
   enabled: true
   ## The CRD upgrade job mitigates the limitation of helm not being able to upgrade CRDs.
   ## The job will apply the CRDs to the cluster before the operator is deployed, using helm hooks.
-  ## It deploy a corresponding clusterrole, clusterrolebinding and serviceaccount to apply the CRDs.
+  ## It deploys a corresponding clusterrole, clusterrolebinding and serviceaccount to apply the CRDs.
   ## This feature is in preview, off by default and may change in the future.
   upgradeJob:
     enabled: false
@@ -154,7 +154,7 @@ crds:
       seccompProfile:
         type: RuntimeDefault
 
-## custom Rules to override "for" and "severity" in defaultRules
+## Custom rules to override "for" and "severity" in defaultRules
 ##
 customRules: {}
   # AlertmanagerFailedReload:
@@ -260,7 +260,7 @@ defaultRules:
     prometheus: {}
     prometheusOperator: {}
 
-  ## Additional annotations for specific PrometheusRule alerts groups
+  ## Additional annotations for specific PrometheusRule alert groups
   additionalRuleGroupAnnotations:
     alertmanager: {}
     etcd: {}
@@ -338,7 +338,7 @@ global:
     ## Ref: https://kubernetes.io/docs/reference/access-authn-authz/rbac/#aggregated-clusterroles
     createAggregateClusterRoles: false
 
-  ## Global image registry to use if it needs to be overridden for some specific use cases (e.g local registries, custom images, ...)
+  ## Global image registry to use if it needs to be overridden for some specific use cases (e.g. local registries, custom images, ...)
   ##
   imageRegistry: ""
 
@@ -398,7 +398,7 @@ alertmanager:
   ##
   additionalLabels: {}
 
-  ## Api that prometheus will use to communicate with alertmanager. Possible values are v1, v2
+  ## API that Prometheus will use to communicate with alertmanager. Possible values are v1, v2
   ##
   apiVersion: v2
 
@@ -547,7 +547,7 @@ alertmanager:
     - '/etc/alertmanager/config/*.tmpl'
 
   ## Alertmanager configuration directives (as string type, preferred over the config hash map)
-  ## stringConfig will be used only, if tplConfig is true
+  ## stringConfig will be used only if tplConfig is true
   ## ref: https://prometheus.io/docs/alerting/configuration/#configuration-file
   ##      https://prometheus.io/webtools/alerting/routing-tree-editor/
   ##
@@ -1388,6 +1388,10 @@ grafana:
       name: Prometheus
       uid: prometheus
 
+      ## Extra jsonData properties to add to the datasource
+      # extraJsonData:
+      #  prometheusType: Prometheus
+
       ## URL of prometheus datasource
       ##
       # url: http://prometheus-stack-prometheus:9090/
@@ -1593,6 +1597,10 @@ kubeApiServer:
 kubelet:
   enabled: true
   namespace: kube-system
+
+  # Overrides the job selector in Grafana dashboards and Prometheus rules
+  # For k3s clusters, change to k3s-server
+  jobNameOverride: ""
 
   serviceMonitor:
     enabled: true
@@ -1833,6 +1841,10 @@ kubelet:
 ##
 kubeControllerManager:
   enabled: true
+
+  # Overrides the job selector in Grafana dashboards and Prometheus rules
+  # For k3s clusters, change to k3s-server
+  jobNameOverride: ""
 
   ## If your kube controller manager is not deployed as a pod, specify IPs it can be found on
   ##
@@ -2230,6 +2242,10 @@ kubeEtcd:
 kubeScheduler:
   enabled: true
 
+  # Overrides the job selector in Grafana dashboards and Prometheus rules
+  # For k3s clusters, change to k3s-server
+  jobNameOverride: ""
+
   ## If your kube scheduler is not deployed as a pod, specify IPs it can be found on
   ##
   endpoints: []
@@ -2335,6 +2351,10 @@ kubeScheduler:
 ##
 kubeProxy:
   enabled: true
+
+  # Overrides the job selector in Grafana dashboards and Prometheus rules
+  # For k3s clusters, change to k3s-server
+  jobNameOverride: ""
 
   ## If your kube proxy is not deployed as a pod, specify IPs it can be found on
   ##
@@ -2920,7 +2940,7 @@ prometheusOperator:
       image:
         registry: registry.k8s.io
         repository: ingress-nginx/kube-webhook-certgen
-        tag: v1.6.2  # latest tag: https://github.com/kubernetes/ingress-nginx/blob/main/images/kube-webhook-certgen/TAG
+        tag: v1.6.3  # latest tag: https://github.com/kubernetes/ingress-nginx/blob/main/images/kube-webhook-certgen/TAG
         sha: ""
         pullPolicy: IfNotPresent
       resources: {}
@@ -4010,7 +4030,7 @@ prometheus:
     image:
       registry: quay.io
       repository: prometheus/prometheus
-      tag: v3.5.0
+      tag: v3.7.1
       sha: ""
       pullPolicy: IfNotPresent
 

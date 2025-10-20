@@ -217,7 +217,6 @@
 
 ### prometheus-systemd-exporter
 
-- capuche2412 (<aleroux@wiremind.io> / @capuche2412)
 - maxime1907 (<19607336+maxime1907@users.noreply.github.com> / @maxime1907)
 
 ### prometheus-to-sd

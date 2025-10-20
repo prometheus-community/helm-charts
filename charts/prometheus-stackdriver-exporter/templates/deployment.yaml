@@ -107,7 +107,8 @@ spec:
             - --stackdriver.max-retries={{ .Values.stackdriver.maxRetries }}
             - --stackdriver.retry-statuses={{ .Values.stackdriver.retryStatuses }}
             - --web.listen-address={{ .Values.web.listenAddress }}
-            - --web.telemetry-path={{ .Values.web.path }}
+            - --web.telemetry-path={{ .Values.web.telemetryPath }}
+            - --web.stackdriver-telemetry-path={{ .Values.web.stackdriverTelemetryPath }}
           {{- if .Values.stackdriver.dropDelegatedProjects }}
             - --monitoring.drop-delegated-projects
           {{- end }}
@@ -148,6 +149,9 @@ spec:
           securityContext:
             {{- toYaml .Values.containerSecurityContext | nindent 12 }}
           {{- end }}
+      {{- with .Values.extraContainers }}
+      {{- toYaml . | nindent 6 }}
+      {{- end }}
       {{- if .Values.nodeSelector }}
       nodeSelector:
         {{- toYaml .Values.nodeSelector | nindent 8 }}
