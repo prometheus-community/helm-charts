@@ -71,19 +71,8 @@ serviceMonitor:
       #   metricRelabelings: [] (MetricRelabelConfigs to apply to samples from the target before ingestion)
 
 podMonitoring:
-  ## If true, a PodMonitoring CR is created for google managed prometheus
+  ## If true, a PodMonitoring CR is created via extraManifests for google managed prometheus
   ## https://cloud.google.com/stackdriver/docs/managed-prometheus/setup-managed#gmp-pod-monitoring for postgres-exporter itself
-  ##
-  selfMonitor:
-    enabled: false
-    additionalMetricsRelabels: {}
-    labels: {}
-    path: /metrics
-    interval: 30s
-    scrapeTimeout: 30s
-
-  ## If true, a PodMonitoring CR is created for a google managed prometheus
-  ## https://cloud.google.com/stackdriver/docs/managed-prometheus/setup-managed#gmp-pod-monitoring for each target
   ##
   enabled: false
 
@@ -95,14 +84,6 @@ podMonitoring:
     interval: 30s
     scrapeTimeout: 30s
     module: http_2xx
-  ## scheme: Protocol scheme to use to scrape.
-  scheme: http
-  ## path: HTTP path. Needs to be adjusted, if web.route-prefix is set
-  path: "/probe"
-  ## tlsConfig: TLS configuration to use when scraping the endpoint. For example if using istio mTLS.
-  ## Of type: https://github.com/coreos/prometheus-operator/blob/master/Documentation/api.md#tlsconfig
-  tlsConfig: {}
-
 
 prometheusRule:
   enabled: false
@@ -325,14 +306,18 @@ extraVolumeMounts: []
 #    subPath: ca-certificates.crt
 
 ## Extra manifests to deploy as an array
-extraManifests: []
-  # - apiVersion: v1
-  #   kind: ConfigMap
-  #   metadata:
-  #   labels:
-  #     name: postgres-exporter-extra
-  #   data:
-  #     extra-data: "value"
+extraManifests:
+  - apiVersion: monitoring.googleapis.com/v1
+    kind: PodMonitoring
+    spec:
+      endpoints:
+      - port: http
+        scheme: http
+        path: /probe
+        interval: 30s
+        timeout: 30s
+      selector:
+        matchLabels: prometheus-postgres-exporter
 
 podDisruptionBudget:
   enabled: false
