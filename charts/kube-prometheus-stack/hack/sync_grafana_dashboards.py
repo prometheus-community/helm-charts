@@ -29,11 +29,11 @@ def change_style(style, representer):
 
 refs = {
     # renovate: git-refs=https://github.com/prometheus-operator/kube-prometheus branch=main
-    'ref.kube-prometheus': '6828741a34a392e58d28e484364234fe191da65c',
+    'ref.kube-prometheus': '3ceecb148a2e0704f5ca3e17a7185cd4d6afccbf',
     # renovate: git-refs=https://github.com/kubernetes-monitoring/kubernetes-mixin branch=master
-    'ref.kubernetes-mixin': '40ad8e9a35e08e4e49a587036e8f747230f876ca',
+    'ref.kubernetes-mixin': 'bc73a096d8a6c05bb7384df94f9eb2863934e076',
     # renovate: git-refs=https://github.com/etcd-io/etcd branch=main
-    'ref.etcd': 'ef0606044a042e8c82d306ad4215bf42e7dcded8',
+    'ref.etcd': 'be633fb850ca2f47bc0f62ef0057cd4b5dc66ac0',
 }
 
 # Source files list
@@ -113,6 +113,18 @@ replacement_map = {
     'job=\\"prometheus-k8s\\",namespace=\\"monitoring\\"': {
         'replacement': '',
     },
+    'job=\\"kubelet\\"': {
+        'replacement': 'job=\\"`}}{{ $kubeletJob }}{{`\\"',
+        'init': '{{- $kubeletJob := include "kube-prometheus-stack-kubelet.name" . }}'},
+    'job=\\"kube-controller-manager\\"': {
+        'replacement': 'job=\\"`}}{{ $kubeControllerManagerJob }}{{`\\"',
+        'init': '{{- $kubeControllerManagerJob := include "kube-prometheus-stack-kube-controller-manager.name" . }}'},
+    'job=\\"kube-scheduler\\"': {
+        'replacement': 'job=\\"`}}{{ $kubeSchedulerJob }}{{`\\"',
+        'init': '{{- $kubeSchedulerJob := include "kube-prometheus-stack-kube-scheduler.name" . }}'},
+    'job=\\"kube-proxy\\"': {
+        'replacement': 'job=\\"`}}{{ $kubeProxyJob }}{{`\\"',
+        'init': '{{- $kubeProxyJob := include "kube-prometheus-stack-kube-proxy.name" . }}'},
 }
 
 # standard header
@@ -122,7 +134,7 @@ Do not change in-place! In order to change this file first read following link:
 https://github.com/prometheus-community/helm-charts/tree/main/charts/kube-prometheus-stack/hack
 */ -}}
 {{- $kubeTargetVersion := default .Capabilities.KubeVersion.GitVersion .Values.kubeTargetVersionOverride }}
-{{- if and (or .Values.grafana.enabled .Values.grafana.forceDeployDashboards) (semverCompare ">=%(min_kubernetes)s" $kubeTargetVersion) (semverCompare "<%(max_kubernetes)s" $kubeTargetVersion) .Values.grafana.defaultDashboardsEnabled%(condition)s }}
+{{- if and (or .Values.grafana.enabled .Values.grafana.forceDeployDashboards) (semverCompare ">=%(min_kubernetes)s" $kubeTargetVersion) (semverCompare "<%(max_kubernetes)s" $kubeTargetVersion) .Values.grafana.defaultDashboardsEnabled%(condition)s }}%(init_line)s
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -218,13 +230,16 @@ def patch_dashboards_json(content, multicluster_key):
 
         content = json.dumps(content_struct, separators=(',', ':'))
         content = content.replace('":multicluster:"', '`}}{{ if %s }}0{{ else }}2{{ end }}{{`' % multicluster_key,)
+        init_line = ''
 
         for line in replacement_map:
+            if line in content and replacement_map[line].get('init'):
+                init_line += '\n' + replacement_map[line]['init']
             content = content.replace(line, replacement_map[line]['replacement'])
     except (ValueError, KeyError):
         pass
 
-    return "{{`" + content + "`}}"
+    return init_line, "{{`" + content + "`}}"
 
 
 def patch_json_set_timezone_as_variable(content):
@@ -261,16 +276,18 @@ def jsonnet_import_callback(base, rel):
 
 
 def write_group_to_file(resource_name, content, url, destination, min_kubernetes, max_kubernetes, multicluster_key):
+    init_line, content = patch_dashboards_json(content, multicluster_key)
+
     # initialize header
     lines = header % {
         'name': resource_name,
         'url': url,
         'condition': condition_map.get(resource_name, ''),
         'min_kubernetes': min_kubernetes,
-        'max_kubernetes': max_kubernetes
+        'max_kubernetes': max_kubernetes,
+        'init_line': init_line,
     }
 
-    content = patch_dashboards_json(content, multicluster_key)
     content = patch_json_set_timezone_as_variable(content)
     content = patch_json_set_editable_as_variable(content)
     content = patch_json_set_interval_as_variable(content)
