@@ -1,4 +1,14 @@
+{{- if .Values.podMonitoring.enabled }}
 {{ range .Values.extraManifests }}
 ---
+metadata:
+  name: {{ template "prometheus-postgres-exporter.fullname" $ }}
+  namespace: {{ template "prometheus-postgres-exporter.namespace" $ }}
+  labels:
+    {{- include "prometheus-postgres-exporter.labels" $ | nindent 4 }}
+    {{- if or $.Values.podMonitoring.defaults.labels .labels }}
+      {{- toYaml (.labels | default $.Values.podMonitoring.defaults.labels) | nindent 4 }}
+    {{- end }}
 {{ tpl (toYaml .) $ }}
 {{ end }}
+{{- end }}
