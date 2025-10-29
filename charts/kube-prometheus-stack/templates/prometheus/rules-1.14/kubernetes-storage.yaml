@@ -6,7 +6,9 @@ https://github.com/prometheus-community/helm-charts/tree/main/charts/kube-promet
 {{- $kubeTargetVersion := default .Capabilities.KubeVersion.GitVersion .Values.kubeTargetVersionOverride }}
 {{- if and (semverCompare ">=1.14.0-0" $kubeTargetVersion) (semverCompare "<9.9.9-9" $kubeTargetVersion) .Values.defaultRules.create .Values.defaultRules.rules.kubernetesStorage }}
 {{- $kubeStateMetricsJob := include "kube-prometheus-stack-kube-state-metrics.name" . }}
-{{- $targetNamespace := .Values.defaultRules.appNamespacesTarget }}{{- $namespaceOperator := .Values.defaultRules.appNamespacesOperator | default "=~" }}
+{{- $kubeletJob := include "kube-prometheus-stack-kubelet.name" . }}
+{{- $targetNamespace := .Values.defaultRules.appNamespacesTarget }}
+{{- $namespaceOperator := .Values.defaultRules.appNamespacesOperator | default "=~" }}
 apiVersion: monitoring.coreos.com/v1
 kind: PrometheusRule
 metadata:
@@ -40,12 +42,12 @@ spec:
         summary: PersistentVolume is filling up.
       expr: |-
         (
-          kubelet_volume_stats_available_bytes{job="kubelet", namespace{{ $namespaceOperator }}"{{ $targetNamespace }}", metrics_path="/metrics"}
+          kubelet_volume_stats_available_bytes{job="{{ $kubeletJob }}", namespace{{ $namespaceOperator }}"{{ $targetNamespace }}", metrics_path="/metrics"}
             /
-          kubelet_volume_stats_capacity_bytes{job="kubelet", namespace{{ $namespaceOperator }}"{{ $targetNamespace }}", metrics_path="/metrics"}
+          kubelet_volume_stats_capacity_bytes{job="{{ $kubeletJob }}", namespace{{ $namespaceOperator }}"{{ $targetNamespace }}", metrics_path="/metrics"}
         ) < 0.03
         and
-        kubelet_volume_stats_used_bytes{job="kubelet", namespace{{ $namespaceOperator }}"{{ $targetNamespace }}", metrics_path="/metrics"} > 0
+        kubelet_volume_stats_used_bytes{job="{{ $kubeletJob }}", namespace{{ $namespaceOperator }}"{{ $targetNamespace }}", metrics_path="/metrics"} > 0
         unless on ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster, namespace, persistentvolumeclaim)
         kube_persistentvolumeclaim_access_mode{ access_mode="ReadOnlyMany"} == 1
         unless on ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster, namespace, persistentvolumeclaim)
@@ -79,14 +81,14 @@ spec:
         summary: PersistentVolume is filling up.
       expr: |-
         (
-          kubelet_volume_stats_available_bytes{job="kubelet", namespace{{ $namespaceOperator }}"{{ $targetNamespace }}", metrics_path="/metrics"}
+          kubelet_volume_stats_available_bytes{job="{{ $kubeletJob }}", namespace{{ $namespaceOperator }}"{{ $targetNamespace }}", metrics_path="/metrics"}
             /
-          kubelet_volume_stats_capacity_bytes{job="kubelet", namespace{{ $namespaceOperator }}"{{ $targetNamespace }}", metrics_path="/metrics"}
+          kubelet_volume_stats_capacity_bytes{job="{{ $kubeletJob }}", namespace{{ $namespaceOperator }}"{{ $targetNamespace }}", metrics_path="/metrics"}
         ) < 0.15
         and
-        kubelet_volume_stats_used_bytes{job="kubelet", namespace{{ $namespaceOperator }}"{{ $targetNamespace }}", metrics_path="/metrics"} > 0
+        kubelet_volume_stats_used_bytes{job="{{ $kubeletJob }}", namespace{{ $namespaceOperator }}"{{ $targetNamespace }}", metrics_path="/metrics"} > 0
         and
-        predict_linear(kubelet_volume_stats_available_bytes{job="kubelet", namespace{{ $namespaceOperator }}"{{ $targetNamespace }}", metrics_path="/metrics"}[6h], 4 * 24 * 3600) < 0
+        predict_linear(kubelet_volume_stats_available_bytes{job="{{ $kubeletJob }}", namespace{{ $namespaceOperator }}"{{ $targetNamespace }}", metrics_path="/metrics"}[6h], 4 * 24 * 3600) < 0
         unless on ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster, namespace, persistentvolumeclaim)
         kube_persistentvolumeclaim_access_mode{ access_mode="ReadOnlyMany"} == 1
         unless on ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster, namespace, persistentvolumeclaim)
@@ -120,12 +122,12 @@ spec:
         summary: PersistentVolumeInodes are filling up.
       expr: |-
         (
-          kubelet_volume_stats_inodes_free{job="kubelet", namespace{{ $namespaceOperator }}"{{ $targetNamespace }}", metrics_path="/metrics"}
+          kubelet_volume_stats_inodes_free{job="{{ $kubeletJob }}", namespace{{ $namespaceOperator }}"{{ $targetNamespace }}", metrics_path="/metrics"}
             /
-          kubelet_volume_stats_inodes{job="kubelet", namespace{{ $namespaceOperator }}"{{ $targetNamespace }}", metrics_path="/metrics"}
+          kubelet_volume_stats_inodes{job="{{ $kubeletJob }}", namespace{{ $namespaceOperator }}"{{ $targetNamespace }}", metrics_path="/metrics"}
         ) < 0.03
         and
-        kubelet_volume_stats_inodes_used{job="kubelet", namespace{{ $namespaceOperator }}"{{ $targetNamespace }}", metrics_path="/metrics"} > 0
+        kubelet_volume_stats_inodes_used{job="{{ $kubeletJob }}", namespace{{ $namespaceOperator }}"{{ $targetNamespace }}", metrics_path="/metrics"} > 0
         unless on ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster, namespace, persistentvolumeclaim)
         kube_persistentvolumeclaim_access_mode{ access_mode="ReadOnlyMany"} == 1
         unless on ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster, namespace, persistentvolumeclaim)
@@ -159,14 +161,14 @@ spec:
         summary: PersistentVolumeInodes are filling up.
       expr: |-
         (
-          kubelet_volume_stats_inodes_free{job="kubelet", namespace{{ $namespaceOperator }}"{{ $targetNamespace }}", metrics_path="/metrics"}
+          kubelet_volume_stats_inodes_free{job="{{ $kubeletJob }}", namespace{{ $namespaceOperator }}"{{ $targetNamespace }}", metrics_path="/metrics"}
             /
-          kubelet_volume_stats_inodes{job="kubelet", namespace{{ $namespaceOperator }}"{{ $targetNamespace }}", metrics_path="/metrics"}
+          kubelet_volume_stats_inodes{job="{{ $kubeletJob }}", namespace{{ $namespaceOperator }}"{{ $targetNamespace }}", metrics_path="/metrics"}
         ) < 0.15
         and
-        kubelet_volume_stats_inodes_used{job="kubelet", namespace{{ $namespaceOperator }}"{{ $targetNamespace }}", metrics_path="/metrics"} > 0
+        kubelet_volume_stats_inodes_used{job="{{ $kubeletJob }}", namespace{{ $namespaceOperator }}"{{ $targetNamespace }}", metrics_path="/metrics"} > 0
         and
-        predict_linear(kubelet_volume_stats_inodes_free{job="kubelet", namespace{{ $namespaceOperator }}"{{ $targetNamespace }}", metrics_path="/metrics"}[6h], 4 * 24 * 3600) < 0
+        predict_linear(kubelet_volume_stats_inodes_free{job="{{ $kubeletJob }}", namespace{{ $namespaceOperator }}"{{ $targetNamespace }}", metrics_path="/metrics"}[6h], 4 * 24 * 3600) < 0
         unless on ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster, namespace, persistentvolumeclaim)
         kube_persistentvolumeclaim_access_mode{ access_mode="ReadOnlyMany"} == 1
         unless on ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster, namespace, persistentvolumeclaim)
