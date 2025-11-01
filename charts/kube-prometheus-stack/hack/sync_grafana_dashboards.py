@@ -31,9 +31,9 @@ refs = {
     # renovate: git-refs=https://github.com/prometheus-operator/kube-prometheus branch=main
     'ref.kube-prometheus': 'e5eec3068651b6b5b3a05821b7aa03a0811ef31f',
     # renovate: git-refs=https://github.com/kubernetes-monitoring/kubernetes-mixin branch=master
-    'ref.kubernetes-mixin': 'dc04755b1f9205ea6ebc2e0e60563fa5b63dd6fe',
+    'ref.kubernetes-mixin': '4a030d9faa1ceea49afa837902cb16aa9bdf1c85',
     # renovate: git-refs=https://github.com/etcd-io/etcd branch=main
-    'ref.etcd': 'd661826c08c64a33a7412a5dfa4bb8ebfd2cc6ee',
+    'ref.etcd': '8a4955b2effc7893772fa83e8cecb71efa8dc2eb',
 }
 
 # Source files list
