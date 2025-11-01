@@ -2477,10 +2477,6 @@ kube-state-metrics:
       ##
       enabled: true
 
-      ## Scrape interval. If not set, the Prometheus default scrape interval is used.
-      ##
-      interval: ""
-
       ## SampleLimit defines per-scrape limit on number of scraped samples that will be accepted.
       ##
       sampleLimit: 0
@@ -2501,36 +2497,92 @@ kube-state-metrics:
       ##
       labelValueLengthLimit: 0
 
-      ## Scrape Timeout. If not set, the Prometheus default scrape timeout is used.
-      ##
-      scrapeTimeout: ""
+      ## kube-state-metrics endpoint
+      http:
+        ## Scrape interval. If not set, the Prometheus default scrape interval is used.
+        interval: ""
+        ## Scrape Timeout. If not set, the Prometheus default scrape timeout is used.
+        scrapeTimeout: ""
+        ## proxyUrl: URL of a proxy that should be used for scraping.
+        proxyUrl: ""
+        ## Whether to enable HTTP2 for servicemonitor
+        enableHttp2: false
+        ## Keep labels from scraped data, overriding server-side labels
+        honorLabels: true
+     
+        ## MetricRelabelConfigs to apply to samples after scraping, but before ingestion.
+        ## ref: https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/api-reference/api.md#relabelconfig
+        ##
+        metricRelabelings: []
+        # - action: keep
+        #   regex: 'kube_(daemonset|deployment|pod|namespace|node|statefulset).+'
+        #   sourceLabels: [__name__]
 
-      ## proxyUrl: URL of a proxy that should be used for scraping.
-      ##
-      proxyUrl: ""
+        ## RelabelConfigs to apply to samples before scraping
+        ## ref: https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/api-reference/api.md#relabelconfig
+        ##
+        relabelings: []
+        # - sourceLabels: [__meta_kubernetes_pod_node_name]
+        #   separator: ;
+        #   regex: ^(.*)$
+        #   targetLabel: nodename
+        #   replacement: $1
+        #   action: replace
 
-      # Keep labels from scraped data, overriding server-side labels
-      ##
-      honorLabels: true
+        scheme: ""
+        
+        ## File to read bearer token for scraping targets
+        bearerTokenFile: ""
+        ## Secret to mount to read bearer token for scraping targets. The secret needs
+        ## to be in the same namespace as the service monitor and accessible by the
+        ## Prometheus Operator
+        bearerTokenSecret: {}
+          # name: secret-name
+          # key:  key-name
+        tlsConfig: {}
 
-      ## MetricRelabelConfigs to apply to samples after scraping, but before ingestion.
-      ## ref: https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/api-reference/api.md#relabelconfig
-      ##
-      metricRelabelings: []
-      # - action: keep
-      #   regex: 'kube_(daemonset|deployment|pod|namespace|node|statefulset).+'
-      #   sourceLabels: [__name__]
+      ## selfMonitor endpoint
+      metrics:
+        ## Scrape interval. If not set, the Prometheus default scrape interval is used.
+        interval: ""
+        ## Scrape Timeout. If not set, the Prometheus default scrape timeout is used.
+        scrapeTimeout: ""
+        proxyUrl: ""
+        ## Whether to enable HTTP2 for servicemonitor
+        enableHttp2: false
+        ## Keep labels from scraped data, overriding server-side labels
+        honorLabels: true
 
-      ## RelabelConfigs to apply to samples before scraping
-      ## ref: https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/api-reference/api.md#relabelconfig
-      ##
-      relabelings: []
-      # - sourceLabels: [__meta_kubernetes_pod_node_name]
-      #   separator: ;
-      #   regex: ^(.*)$
-      #   targetLabel: nodename
-      #   replacement: $1
-      #   action: replace
+        ## MetricRelabelConfigs to apply to samples after scraping, but before ingestion.
+        ## ref: https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/api-reference/api.md#relabelconfig
+        ##        
+        metricRelabelings: []
+        # - action: keep
+        #   regex: 'kube_(daemonset|deployment|pod|namespace|node|statefulset).+'
+        #   sourceLabels: [__name__]
+
+        ## RelabelConfigs to apply to samples before scraping
+        ## ref: https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/api-reference/api.md#relabelconfig
+        ##        
+        relabelings: []
+        # - sourceLabels: [__meta_kubernetes_pod_node_name]
+        #   separator: ;
+        #   regex: ^(.*)$
+        #   targetLabel: nodename
+        #   replacement: $1
+        #   action: replace
+
+        scheme: ""
+        
+        ## File to read bearer token for scraping targets
+        bearerTokenFile: ""
+        ## Secret to mount to read bearer token for scraping targets. The secret needs
+        ## to be in the same namespace as the service monitor and accessible by the
+        ## Prometheus Operator
+        bearerTokenSecret: {}
+          # name: secret-name
+          # key:  key-name
+        tlsConfig: {}
 
   selfMonitor:
     enabled: false
