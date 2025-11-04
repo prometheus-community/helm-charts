@@ -219,3 +219,30 @@ tests:
       - equal:
           path: spec.relabelings[0].targetLabel
           value: custom_label
+
+  - it: should use default cluster.local domain in remote mode
+    set:
+      scrapeConfig:
+        enabled: true
+        mode: remote
+        staticConfigs:
+          - targets:
+              - 192.168.1.10
+    asserts:
+      - matchRegex:
+          path: spec.relabelings[2].replacement
+          pattern: "^RELEASE-NAME-prometheus-ipmi-exporter\\.NAMESPACE\\.svc\\.cluster\\.local:\\d+$"
+
+  - it: should use custom clusterDomain in remote mode
+    set:
+      clusterDomain: custom.local
+      scrapeConfig:
+        enabled: true
+        mode: remote
+        staticConfigs:
+          - targets:
+              - 192.168.1.10
+    asserts:
+      - matchRegex:
+          path: spec.relabelings[2].replacement
+          pattern: "^RELEASE-NAME-prometheus-ipmi-exporter\\.NAMESPACE\\.svc\\.custom\\.local:\\d+$"
