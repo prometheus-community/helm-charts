@@ -1,0 +1,107 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/helm-unittest/helm-unittest/main/schema/helm-testsuite.json
+suite: test configmap
+templates:
+  - configmap.yaml
+tests:
+  - it: should render configmap when configSecret is disabled
+    asserts:
+      - isKind:
+          of: ConfigMap
+      - equal:
+          path: apiVersion
+          value: v1
+
+  - it: should not render configmap when configSecret is enabled
+    set:
+      configSecret:
+        enabled: true
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: should have config.yml data key
+    asserts:
+      - isNotEmpty:
+          path: data["config.yml"]
+
+  - it: should have helm chart labels
+    asserts:
+      - equal:
+          path: metadata.labels["app.kubernetes.io/name"]
+          value: prometheus-ipmi-exporter
+      - equal:
+          path: metadata.labels["app.kubernetes.io/instance"]
+          value: RELEASE-NAME
+      - isNotEmpty:
+          path: metadata.labels["helm.sh/chart"]
+      - equal:
+          path: metadata.labels["app.kubernetes.io/managed-by"]
+          value: Helm
+
+  - it: should use correct configmap name
+    asserts:
+      - equal:
+          path: metadata.name
+          value: RELEASE-NAME-prometheus-ipmi-exporter
+
+  - it: should contain default module configuration
+    asserts:
+      - matchRegex:
+          path: data["config.yml"]
+          pattern: "modules:"
+      - matchRegex:
+          path: data["config.yml"]
+          pattern: "default:"
+
+  - it: should contain all default modules
+    asserts:
+      - matchRegex:
+          path: data["config.yml"]
+          pattern: "default:"
+      - matchRegex:
+          path: data["config.yml"]
+          pattern: "dcmi:"
+      - matchRegex:
+          path: data["config.yml"]
+          pattern: "thatspecialhost:"
+      - matchRegex:
+          path: data["config.yml"]
+          pattern: "advanced:"
+
+  - it: should contain IPMI configuration keys
+    asserts:
+      - matchRegex:
+          path: data["config.yml"]
+          pattern: "user:"
+      - matchRegex:
+          path: data["config.yml"]
+          pattern: "pass:"
+      - matchRegex:
+          path: data["config.yml"]
+          pattern: "driver:"
+      - matchRegex:
+          path: data["config.yml"]
+          pattern: "privilege:"
+      - matchRegex:
+          path: data["config.yml"]
+          pattern: "collectors:"
+
+  - it: should use custom modules configuration
+    set:
+      modules:
+        custom:
+          user: custom_user
+          pass: custom_pass
+          driver: LAN
+          collectors:
+            - ipmi
+    asserts:
+      - matchRegex:
+          path: data["config.yml"]
+          pattern: "custom:"
+      - matchRegex:
+          path: data["config.yml"]
+          pattern: "user: custom_user"
+      - matchRegex:
+          path: data["config.yml"]
+          pattern: "pass: custom_pass"
