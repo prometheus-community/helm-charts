@@ -61,7 +61,7 @@ spec:
       dnsPolicy: {{ .Values.dnsPolicy }}
       containers:
       {{- $servicePort := ternary .Values.kubeRBACProxy.port (.Values.service.port | default 8080) .Values.kubeRBACProxy.enabled}}
-      {{- $telemetryPort := ternary (default 9091 .Values.selfMonitor.telemetryPort) (default 8081 .Values.selfMonitor.telemetryPort) .Values.kubeRBACProxy.enabled}}
+      {{- $telemetryPort := ternary .Values.kubeRBACProxy.telemetryPort (.Values.selfMonitor.telemetryPort | default 8081) .Values.kubeRBACProxy.enabled}}
       - name: {{ template "kube-state-metrics.name" . }}
         {{- if  .Values.autosharding.enabled }}
         env:
@@ -205,13 +205,8 @@ spec:
               value: {{ $header.value }}
             {{- end }}
             path: /livez
-            {{- if .Values.kubeRBACProxy.enabled }}
-            port: http
-            scheme: HTTPS
-            {{- else }}
             port: {{ $servicePort }}
             scheme: {{ upper .Values.livenessProbe.httpGet.scheme }}
-            {{- end }}
           initialDelaySeconds: {{ .Values.livenessProbe.initialDelaySeconds }}
           periodSeconds: {{ .Values.livenessProbe.periodSeconds }}
           successThreshold: {{ .Values.livenessProbe.successThreshold }}
@@ -228,13 +223,8 @@ spec:
               value: {{ $header.value }}
             {{- end }}
             path: /readyz
-            {{- if .Values.kubeRBACProxy.enabled }}
-            port: metrics
-            scheme: HTTPS
-            {{- else }}
             port: {{ $telemetryPort }}
             scheme: {{ upper .Values.readinessProbe.httpGet.scheme }}
-            {{- end }}
           initialDelaySeconds: {{ .Values.readinessProbe.initialDelaySeconds }}
           periodSeconds: {{ .Values.readinessProbe.periodSeconds }}
           successThreshold: {{ .Values.readinessProbe.successThreshold }}
