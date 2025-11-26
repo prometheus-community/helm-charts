@@ -213,10 +213,16 @@ spec:
         runbook_url: {{ .Values.defaultRules.runbookUrl }}/kubernetes/kubequotaalmostfull
         summary: Namespace quota is going to be full.
       expr: |-
-        kube_resourcequota{job="{{ $kubeStateMetricsJob }}", type="used"}
-          / ignoring(instance, job, type)
-        (kube_resourcequota{job="{{ $kubeStateMetricsJob }}", type="hard"} > 0)
-          > 0.9 < 1
+        max without (instance, job, type) (
+          kube_resourcequota{job="{{ $kubeStateMetricsJob }}", type="used"}
+        )
+        / on ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster, namespace, resource, resourcequota) group_left()
+        (
+          max without (instance, job, type) (
+            kube_resourcequota{job="{{ $kubeStateMetricsJob }}", type="hard"}
+          ) > 0
+        )
+        > 0.9 < 1
       for: {{ dig "KubeQuotaAlmostFull" "for" "15m" .Values.customRules }}
       {{- with .Values.defaultRules.keepFiringFor }}
       keep_firing_for: "{{ . }}"
@@ -245,10 +251,16 @@ spec:
         runbook_url: {{ .Values.defaultRules.runbookUrl }}/kubernetes/kubequotafullyused
         summary: Namespace quota is fully used.
       expr: |-
-        kube_resourcequota{job="{{ $kubeStateMetricsJob }}", type="used"}
-          / ignoring(instance, job, type)
-        (kube_resourcequota{job="{{ $kubeStateMetricsJob }}", type="hard"} > 0)
-          == 1
+        max without (instance, job, type) (
+          kube_resourcequota{job="{{ $kubeStateMetricsJob }}", type="used"}
+        )
+        / on ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster, namespace, resource, resourcequota) group_left()
+        (
+          max without (instance, job, type) (
+            kube_resourcequota{job="{{ $kubeStateMetricsJob }}", type="hard"}
+          ) > 0
+        )
+        == 1
       for: {{ dig "KubeQuotaFullyUsed" "for" "15m" .Values.customRules }}
       {{- with .Values.defaultRules.keepFiringFor }}
       keep_firing_for: "{{ . }}"
@@ -277,10 +289,15 @@ spec:
         runbook_url: {{ .Values.defaultRules.runbookUrl }}/kubernetes/kubequotaexceeded
         summary: Namespace quota has exceeded the limits.
       expr: |-
-        kube_resourcequota{job="{{ $kubeStateMetricsJob }}", type="used"}
-          / ignoring(instance, job, type)
-        (kube_resourcequota{job="{{ $kubeStateMetricsJob }}", type="hard"} > 0)
-          > 1
+        max without (instance, job, type) (
+          kube_resourcequota{job="{{ $kubeStateMetricsJob }}", type="used"}
+        )
+        / on ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster, namespace, resource, resourcequota) group_left()
+        (
+          max without (instance, job, type) (
+            kube_resourcequota{job="{{ $kubeStateMetricsJob }}", type="hard"}
+          ) > 0
+        ) > 1
       for: {{ dig "KubeQuotaExceeded" "for" "15m" .Values.customRules }}
       {{- with .Values.defaultRules.keepFiringFor }}
       keep_firing_for: "{{ . }}"
@@ -309,10 +326,22 @@ spec:
         runbook_url: {{ .Values.defaultRules.runbookUrl }}/kubernetes/cputhrottlinghigh
         summary: Processes experience elevated CPU throttling.
       expr: |-
-        sum(increase(container_cpu_cfs_throttled_periods_total{container!="", job="{{ $kubeletJob }}", metrics_path="/metrics/cadvisor", }[5m])) without (id, metrics_path, name, image, endpoint, job, node)
-          / on ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster, namespace, pod, container, instance) group_left
-        sum(increase(container_cpu_cfs_periods_total{job="{{ $kubeletJob }}", metrics_path="/metrics/cadvisor", }[5m])) without (id, metrics_path, name, image, endpoint, job, node)
-          > ( 25 / 100 )
+        sum without (id, metrics_path, name, image, endpoint, job, node) (
+          topk by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster, namespace, pod, container, instance) (1,
+            increase(
+              container_cpu_cfs_throttled_periods_total{container!="", job="{{ $kubeletJob }}", metrics_path="/metrics/cadvisor", }
+            [5m])
+          )
+        )
+        / on ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster, namespace, pod, container, instance) group_left
+        sum without (id, metrics_path, name, image, endpoint, job, node) (
+          topk by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster, namespace, pod, container, instance) (1,
+            increase(
+              container_cpu_cfs_periods_total{job="{{ $kubeletJob }}", metrics_path="/metrics/cadvisor", }
+            [5m])
+          )
+        )
+        > ( 25 / 100 )
       for: {{ dig "CPUThrottlingHigh" "for" "15m" .Values.customRules }}
       {{- with .Values.defaultRules.keepFiringFor }}
       keep_firing_for: "{{ . }}"
