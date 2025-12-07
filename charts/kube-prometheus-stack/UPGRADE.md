@@ -900,7 +900,7 @@ Port names have been renamed for Istio's
 [explicit protocol selection](https://istio.io/latest/docs/ops/configuration/traffic-management/protocol-selection/#explicit-protocol-selection).
 
 | | old value | new value |
-|-|-----------|-----------|
+| - | --------- | --------- |
 | `alertmanager.alertmanagerSpec.portName` | `web` | `http-web` |
 | `grafana.service.portName` | `service` | `http-web` |
 | `prometheus-node-exporter.service.portName` | `metrics` (hardcoded) | `http-metrics` |
