@@ -173,6 +173,7 @@ containers:
       httpGet:
         path: {{ .httpGet.path }}
         port: {{ .httpGet.port }}
+        scheme: {{ .httpGet.scheme }}
         {{- if or .httpGet.httpHeaders $.Values.webConfiguration.basicAuthUsers }}
         httpHeaders:
         {{- if $.Values.webConfiguration.basicAuthUsers }}
@@ -193,6 +194,7 @@ containers:
       httpGet:
         path: {{ .httpGet.path }}
         port: {{ .httpGet.port }}
+        scheme: {{ .httpGet.scheme }}
         {{- if or .httpGet.httpHeaders $.Values.webConfiguration.basicAuthUsers }}
         httpHeaders:
         {{- if $.Values.webConfiguration.basicAuthUsers }}
