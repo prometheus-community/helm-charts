@@ -142,6 +142,10 @@ spec:
           ports:
             - containerPort: {{ .Values.service.httpPort }}
               name: {{ .Values.service.metricsPort.name }}
+          {{- if .Values.livenessProbe }}
+          livenessProbe:
+            {{- toYaml .Values.livenessProbe | nindent 12 }}
+          {{- else }}
           livenessProbe:
             httpGet:
               path: /healthz
@@ -149,6 +153,11 @@ spec:
             initialDelaySeconds: 5
             timeoutSeconds: 5
             periodSeconds: 5
+          {{- end }}
+          {{- if .Values.readinessProbe }}
+          readinessProbe:
+            {{- toYaml .Values.readinessProbe | nindent 12 }}
+          {{- else }}
           readinessProbe:
             httpGet:
               path: /healthz
@@ -156,6 +165,7 @@ spec:
             initialDelaySeconds: 1
             timeoutSeconds: 5
             periodSeconds: 5
+          {{- end }}
           lifecycle:
             preStop:
               exec:
