@@ -142,20 +142,14 @@ spec:
           ports:
             - containerPort: {{ .Values.service.httpPort }}
               name: {{ .Values.service.metricsPort.name }}
+          {{- if .Values.livenessProbe }}
           livenessProbe:
-            httpGet:
-              path: /healthz
-              port: {{ .Values.service.metricsPort.name }}
-            initialDelaySeconds: 5
-            timeoutSeconds: 5
-            periodSeconds: 5
+            {{- toYaml .Values.livenessProbe | nindent 12 }}
+          {{- end }}
+          {{- if .Values.readinessProbe }}
           readinessProbe:
-            httpGet:
-              path: /healthz
-              port: {{ .Values.service.metricsPort.name }}
-            initialDelaySeconds: 1
-            timeoutSeconds: 5
-            periodSeconds: 5
+            {{- toYaml .Values.readinessProbe | nindent 12 }}
+          {{- end }}
           lifecycle:
             preStop:
               exec:
