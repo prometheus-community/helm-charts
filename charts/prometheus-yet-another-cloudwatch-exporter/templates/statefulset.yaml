@@ -98,9 +98,42 @@ spec:
               protocol: TCP
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
+        {{- if .Values.sidecar.enabled }}
+        - name: {{ .Values.sidecar.name }}
+          image: "{{ .Values.sidecar.image.repository }}:{{ .Values.sidecar.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          volumeMounts:
+            - name: config-volume
+              mountPath: /config
+          env:
+            {{- if .Values.sidecar.extraEnv }}
+              {{- toYaml .Values.sidecar.extraEnv | nindent 12 }}
+            {{- end }}
+            - name: METHOD
+              value: "{{ .Values.sidecar.method }}"
+            - name: LABEL
+              value: "{{ .Values.sidecar.label }}"
+            - name: LABEL_VALUE
+              value: "{{ .Chart.Name }}"
+            - name: REQ_URL
+              value: "http://localhost:{{ .Values.containerPort }}/reload"
+            - name: FOLDER
+              value: "{{ .Values.sidecar.folder }}"
+            - name: RESOURCE
+              value: "{{ .Values.sidecar.resource }}"
+            - name: NAMESPACE
+              value: "{{ .Release.Namespace }}"
+          resources:
+            {{- toYaml .Values.sidecar.resources | nindent 12 }}
+          {{- end }}
       volumes:
+      {{- if .Values.sidecar.enabled }}
+        - name: config-volume
+          emptyDir: {}
+      {{- else }}
         - name: config-volume
           configMap:
             defaultMode: 420
             name: {{ default (include "yet-another-cloudwatch-exporter.fullname" .) .Values.configMapName }}
+      {{- end }}
 {{- end }}
