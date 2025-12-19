@@ -232,4 +232,3 @@ extraManifests:
 ```
 
 Both formats can be mixed in the same `extraManifests` array if needed.
-
