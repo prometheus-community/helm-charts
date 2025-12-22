@@ -130,6 +130,7 @@ liveness:
     httpGet:
       path: /-/healthy
       port: 9091
+      scheme: HTTP
     initialDelaySeconds: 10
     timeoutSeconds: 10
 
@@ -139,6 +140,7 @@ readiness:
     httpGet:
       path: /-/ready
       port: 9091
+      scheme: HTTP
     initialDelaySeconds: 10
     timeoutSeconds: 10
 
@@ -188,6 +190,55 @@ ingress:
   #   - secretName: pushgateway-tls
   #     hosts:
   #       - pushgateway.domain.com
+
+## route (map) allows configuration of HTTPRoute resources
+## Requires Gateway API resources and suitable controller installed within the cluster
+## Ref. https://gateway-api.sigs.k8s.io/guides/http-routing/
+route:
+  main:
+    ## Enable this route
+    enabled: false
+
+    ## ApiVersion set by default to "gateway.networking.k8s.io/v1"
+    apiVersion: ""
+    ## kind set by default to HTTPRoute
+    kind: ""
+
+    ## Annotations to attach to the HTTPRoute resource
+    annotations: {}
+    ## Labels to attach to the HTTPRoute resource
+    labels: {}
+
+    ## ParentRefs refers to resources this HTTPRoute is to be attached to (Gateways)
+    parentRefs: []
+      # - name: contour
+      #   sectionName: http
+
+    ## Hostnames (templated) defines a set of hostnames that should match against the HTTP Host
+    ## header to select a HTTPRoute used to process the request
+    hostnames: []
+      # - my.example.com
+
+    ## additionalRules (templated) allows adding custom rules to the route
+    additionalRules: []
+
+    ## Filters define the filters that are applied to requests that match
+    ## this rule
+    filters: []
+
+    ## Matches define conditions used for matching the rule against incoming
+    ## HTTP requests
+    matches:
+      - path:
+          type: PathPrefix
+          value: /
+
+    ## httpsRedirect adds a filter for redirecting to https (HTTP 301 Moved Permanently).
+    ## To redirect HTTP traffic to HTTPS, you need to have a Gateway with both HTTP and HTTPS listeners.
+    ## Matches and filters do not take effect if enabled.
+    ## Ref. https://gateway-api.sigs.k8s.io/guides/http-redirect-rewrite/
+    httpsRedirect: false
+
 
 tolerations: []
   # - effect: NoSchedule
