@@ -366,7 +366,7 @@ bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
 {{- end }}
 {{- end }}
 
-{{/* To help configure anti-affinity rules for Prometheus pods */}}
+{{/* To help configure Grafana operator folder settings (folder, folderUID, or folderRef) */}}
 {{- define "kube-prometheus-stack.grafana.operator.folder" }}
 {{- $folder := .Values.grafana.operator.folder }}
 {{- $folderUID := .Values.grafana.operator.folderUID }}
