@@ -365,3 +365,24 @@ bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
 - {key: app.kubernetes.io/instance, operator: In, values: [{{ template "kube-prometheus-stack.prometheus.crname" . }}]}
 {{- end }}
 {{- end }}
+
+{{/* To help configure Grafana operator folder settings (folder, folderUID, or folderRef) */}}
+{{- define "kube-prometheus-stack.grafana.operator.folder" }}
+{{- $folder := .Values.grafana.operator.folder }}
+{{- $folderUID := .Values.grafana.operator.folderUID }}
+{{- $folderRef := .Values.grafana.operator.folderRef }}
+{{- if not (or
+  (and $folder (not $folderUID) (not $folderRef))
+  (and (not $folder) $folderUID (not $folderRef))
+  (and (not $folder) (not $folderUID) $folderRef)
+)}}
+{{- fail "grafana.operator: only one of folder, folderUID, or folderRef must be set" }}
+{{- end }}
+{{- if $folder }}
+folder: {{ $folder | quote }}
+{{- else if $folderUID }}
+folderUID: {{ $folderUID | quote }}
+{{- else if $folderRef }}
+folderRef: {{ $folderRef | quote }}
+{{- end }}
+{{- end }}
