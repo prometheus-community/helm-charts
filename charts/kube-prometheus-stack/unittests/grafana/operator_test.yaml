@@ -1,0 +1,127 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/helm-unittest/helm-unittest/main/schema/helm-testsuite.json
+suite: test grafana operator
+templates:
+  - grafana/dashboards-1.14/alertmanager-overview.yaml
+tests:
+  - it: grafana dashboard operator - folder is not set, so default behaviour
+    set:
+      grafana.operator.dashboardsConfigMapRefEnabled: true
+      grafana.operator.forceDeployDashboards: true
+      grafana.operator.matchLabels:
+        dashboards: "external-grafana"
+    documentIndex: 1
+    asserts:
+      - hasDocuments:
+          count: 2
+      - isKind:
+          of: GrafanaDashboard
+      - isAPIVersion:
+          of: grafana.integreatly.org/v1beta1
+      - equal:
+          path: spec.folder
+          value: General
+      - notExists:
+          path: spec.folderUID
+      - notExists:
+          path: spec.folderRef
+
+
+  - it: grafana dashboard operator - if folder is set, then others are empty
+    set:
+      grafana.operator.dashboardsConfigMapRefEnabled: true
+      grafana.operator.forceDeployDashboards: true
+      grafana.operator.folder: "General"
+      grafana.operator.matchLabels:
+        dashboards: "external-grafana"
+    documentIndex: 1
+    asserts:
+      - hasDocuments:
+          count: 2
+      - isKind:
+          of: GrafanaDashboard
+      - isAPIVersion:
+          of: grafana.integreatly.org/v1beta1
+      - equal:
+          path: spec.folder
+          value: General
+      - notExists:
+          path: spec.folderUID
+      - notExists:
+          path: spec.folderRef
+
+  - it: grafana dashboard operator - if folderUID is set, then others must be empty
+    set:
+      grafana.operator.dashboardsConfigMapRefEnabled: true
+      grafana.operator.forceDeployDashboards: true
+      grafana.operator.folder: null
+      grafana.operator.folderUID: "ac3cb7ad-bfa3-4fd5-af57-a85953ea8331"
+      grafana.operator.folderRef: null
+      grafana.operator.matchLabels:
+        dashboards: "external-grafana"
+    documentIndex: 1
+    asserts:
+      - hasDocuments:
+          count: 2
+      - isKind:
+          of: GrafanaDashboard
+      - isAPIVersion:
+          of: grafana.integreatly.org/v1beta1
+      - notExists:
+          path: spec.folder
+      - notExists:
+          path: spec.folderRef
+      - equal:
+          path: spec.folderUID
+          value: "ac3cb7ad-bfa3-4fd5-af57-a85953ea8331"
+
+  - it: grafana dashboard operator - if folderRef is set, then others are empty
+    set:
+      grafana.operator.dashboardsConfigMapRefEnabled: true
+      grafana.operator.forceDeployDashboards: true
+      grafana.operator.folder: null
+      grafana.operator.folderRef: "grafana-dashboard-ref"
+      grafana.operator.matchLabels:
+        dashboards: "external-grafana"
+    documentIndex: 1
+    asserts:
+      - hasDocuments:
+          count: 2
+      - isKind:
+          of: GrafanaDashboard
+      - isAPIVersion:
+          of: grafana.integreatly.org/v1beta1
+      - notExists:
+          path: spec.folder
+      - notExists:
+          path: spec.folderUID
+      - equal:
+          path: spec.folderRef
+          value: "grafana-dashboard-ref"
+
+  - it: grafana dashboard operator - folderUID and folderRef are set, then fail automatically
+    set:
+      grafana.operator.dashboardsConfigMapRefEnabled: true
+      grafana.operator.forceDeployDashboards: true
+      grafana.operator.folder: null
+      grafana.operator.folderRef: "grafana-dashboard-ref"
+      grafana.operator.folderUID: "ac3cb7ad-bfa3-4fd5-af57-a85953ea8331"
+      grafana.operator.matchLabels:
+        dashboards: "external-grafana"
+    documentIndex: 0
+    asserts:
+      - failedTemplate:
+          errorMessage: "grafana.operator: only one of folder, folderUID, or folderRef must be set"
+
+  - it: grafana dashboard operator - folder and folderRef are set, then fail automatically
+    set:
+      grafana.operator.dashboardsConfigMapRefEnabled: true
+      grafana.operator.forceDeployDashboards: true
+      grafana.operator.folderRef: "grafana-dashboard-ref"
+      grafana.operator.folderUID: null
+      grafana.operator.matchLabels:
+        dashboards: "external-grafana"
+    documentIndex: 0
+    asserts:
+      - failedTemplate:
+          errorMessage: "grafana.operator: only one of folder, folderUID, or folderRef must be set"
+
