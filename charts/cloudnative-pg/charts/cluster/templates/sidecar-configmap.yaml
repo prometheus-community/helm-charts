@@ -1,0 +1,21 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Values.grafanaDashboard.configMapName }}
+  namespace: {{ default .Release.Namespace .Values.grafanaDashboard.namespace }}
+  {{- if (or .Values.grafanaDashboard.labels .Values.grafanaDashboard.sidecarLabel) }}
+  labels:
+    {{- if .Values.grafanaDashboard.sidecarLabel }}
+    {{ .Values.grafanaDashboard.sidecarLabel }}: {{ .Values.grafanaDashboard.sidecarLabelValue | quote }}
+    {{- end }}
+    {{- with .Values.grafanaDashboard.labels }}
+      {{- toYaml . | nindent 4 }}
+    {{- end }}
+  {{- end }}
+  {{- with .Values.grafanaDashboard.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+data:
+    cnp.json: |-
+{{ .Files.Get "grafana-dashboard.json" | indent 6 }}

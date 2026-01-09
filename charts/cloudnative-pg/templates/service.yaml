@@ -1,0 +1,44 @@
+#
+# Copyright © contributors to CloudNativePG, established as
+# CloudNativePG a Series of LF Projects, LLC.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.service.name }}
+  namespace: {{ include "cloudnative-pg.namespace" . }}
+  labels:
+    {{- include "cloudnative-pg.labels" . | nindent 4 }}
+  {{- with .Values.commonAnnotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  type: {{ .Values.service.type }}
+  {{- if .Values.service.ipFamilyPolicy }}
+  ipFamilyPolicy: {{ .Values.service.ipFamilyPolicy }}
+  {{- end }}
+  {{- if .Values.service.ipFamilies }}
+  ipFamilies: {{ .Values.service.ipFamilies | toYaml | nindent 2 }}
+  {{- end }}
+  ports:
+  - port: {{ .Values.service.port }}
+    targetPort: webhook-server
+    name: webhook-server
+  selector:
+    {{- include "cloudnative-pg.selectorLabels" . | nindent 4 }}
