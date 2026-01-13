@@ -86,9 +86,6 @@ spec:
         {{-  if .Values.extraArgs  }}
         {{- .Values.extraArgs | toYaml | nindent 8 }}
         {{-  end  }}
-        {{- if .Values.kubeRBACProxy.enabled }}
-        - --host=127.0.0.1
-        {{- end }}
         - --port={{ $servicePort }}
         {{-  if .Values.collectors  }}
         - --resources={{ .Values.collectors | join "," }}
@@ -128,7 +125,6 @@ spec:
         - --kubeconfig=/opt/k8s/.kube/config
         {{- end }}
         {{- if .Values.kubeRBACProxy.enabled }}
-        - --telemetry-host=127.0.0.1
         - --telemetry-port={{ $telemetryPort }}
         {{- else }}
         {{- if .Values.selfMonitor.telemetryHost }}
@@ -182,8 +178,8 @@ spec:
             {{- end }}
             path: /healthz
             {{- if .Values.kubeRBACProxy.enabled }}
-            port: http
-            scheme: HTTPS
+            port: {{ $servicePort }}
+            scheme: HTTP
             {{- else }}
             port: {{ $servicePort }}
             scheme: {{ upper .Values.startupProbe.httpGet.scheme }}
@@ -206,8 +202,8 @@ spec:
             {{- end }}
             path: /livez
             {{- if .Values.kubeRBACProxy.enabled }}
-            port: http
-            scheme: HTTPS
+            port: {{ $servicePort }}
+            scheme: HTTP
             {{- else }}
             port: {{ $servicePort }}
             scheme: {{ upper .Values.livenessProbe.httpGet.scheme }}
@@ -229,8 +225,8 @@ spec:
             {{- end }}
             path: /readyz
             {{- if .Values.kubeRBACProxy.enabled }}
-            port: metrics
-            scheme: HTTPS
+            port: {{ $telemetryPort }}
+            scheme: HTTP
             {{- else }}
             port: {{ $telemetryPort }}
             scheme: {{ upper .Values.readinessProbe.httpGet.scheme }}
@@ -315,7 +311,7 @@ spec:
         readinessProbe:
           httpGet:
             scheme: HTTPS
-            port: 8889
+            port: metrics-healthz
             path: healthz
           initialDelaySeconds: 5
           timeoutSeconds: 5
