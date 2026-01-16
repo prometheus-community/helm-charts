@@ -15,6 +15,10 @@ metadata:
   namespace: {{ . }}
 {{- end }}
 {{- $activeCollectors := include "kube-state-metrics.collectors" $ | fromYamlArray }}
+{{- if and $.Values.rbac.useClusterRole $.Values.rbac.clusterRoleSelectors }}
+aggregationRule:
+  clusterRoleSelectors: {{- toYaml $.Values.rbac.clusterRoleSelectors | nindent 4 }}
+{{- else }}
 rules:
 {{ if has "certificatesigningrequests" $activeCollectors }}
 - apiGroups: ["certificates.k8s.io"]
@@ -245,5 +249,6 @@ rules:
 {{ if $.Values.rbac.extraRules }}
 {{ toYaml $.Values.rbac.extraRules }}
 {{ end }}
+{{- end }}
 {{- end -}}
 {{- end -}}
