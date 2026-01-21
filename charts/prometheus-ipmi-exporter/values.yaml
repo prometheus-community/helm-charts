@@ -10,6 +10,16 @@ image:
   tag: ""
   pullPolicy: IfNotPresent
 
+# Extra arguments to pass to the ipmi-exporter container
+# Example: ["--log.level=debug", "--web.listen-address=:9291"]
+extraArgs: []
+
+# Enable native IPMI support
+# When enabled, adds the --native-ipmi flag to the exporter
+# See: https://github.com/prometheus-community/ipmi_exporter/blob/master/docs/native.md
+nativeIPMI:
+  enabled: false
+
 # Name of an externally managed secret (in the same namespace) containing the ipmi credentials as keys `ipmi-user` and `ipmi-password`.
 nodeSelector: {}
 
@@ -18,6 +28,9 @@ tolerations: []
 
 # Name of an externally managed secret (in the same namespace) containing the ipmi credentials as keys `ipmi-user` and `ipmi-password`.
 affinity: {}
+
+# Kubernetes cluster domain
+clusterDomain: cluster.local
 
 # Name of an externally managed secret (in the same namespace) containing the ipmi credentials as keys `ipmi-user` and `ipmi-password`.
 service:
@@ -59,6 +72,44 @@ serviceMonitor:
   # timeout: 10s
   # Set of labels to transfer on the Kubernetes Service onto the target.
   # targetLabels: []
+  # metricRelabelings: []
+
+scrapeConfig:
+  # When set true then use a ScrapeConfig to configure scraping
+  enabled: false
+  # Set the namespace the ScrapeConfig should be deployed
+  # namespace: monitoring
+  # Set labels for the ScrapeConfig
+  # labels:
+  # Scraping mode: "local" for direct exporter metrics, "remote" for IPMI target scraping
+  mode: remote
+  # Job name for the scrape config
+  # jobName: ipmi-exporter
+  # Modules list
+  # modules:
+  #   - default
+  #   - dcmi
+  # Set how frequently Prometheus should scrape
+  # scrapeInterval: 1m
+  # Set timeout for scrape
+  # scrapeTimeout: 30s
+  # Metrics path (defaults: /metrics for local mode, /ipmi for remote mode)
+  # metricsPath: /ipmi
+  # Scheme (HTTP or HTTPS)
+  # scheme: HTTP
+  # File service discovery configs
+  # fileSDConfigs:
+  #   - files:
+  #       - /etc/prometheus/secrets/ipmi-exporter/targets.yml
+  #     refreshInterval: 5m
+  # Static configs
+  # staticConfigs:
+  #   - targets:
+  #       - 192.168.1.10
+  #       - 192.168.1.11
+  # Relabelings
+  # relabelings: []
+  # Metric relabelings
   # metricRelabelings: []
 
   # Configuration file for ipmi_exporter

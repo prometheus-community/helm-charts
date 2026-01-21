@@ -19,8 +19,13 @@ spec:
     metadata:
       labels:
         {{- include "prometheus-ipmi-exporter.selectorLabels" . | nindent 8 }}
-      {{- with .Values.additionalAnnotations }}
+      {{- if or (not .Values.configSecret.enabled) .Values.additionalAnnotations }}
       annotations:
+      {{- end }}
+      {{- if not .Values.configSecret.enabled }}
+        checksum/config: {{ toYaml .Values.modules | sha256sum }}
+      {{- end }}
+      {{- with .Values.additionalAnnotations }}
         {{- toYaml . | nindent 8 }}
       {{- end }}
     spec:
@@ -31,6 +36,12 @@ spec:
           args:
             - "--config.file"
             - "/config.yml"
+          {{- if .Values.nativeIPMI.enabled }}
+            - "--native-ipmi"
+          {{- end }}
+          {{- range .Values.extraArgs }}
+            - {{ . | quote }}
+          {{- end }}
           {{- with.Values.containerSecurityContext }}
           securityContext:
             {{- toYaml . | nindent 12 }}

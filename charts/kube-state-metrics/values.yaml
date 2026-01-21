@@ -49,7 +49,7 @@ revisionHistoryLimit: 10
 
 # List of additional cli arguments to configure kube-state-metrics
 # for example: --enable-gzip-encoding, --log-file, etc.
-# all the possible args can be found here: https://github.com/kubernetes/kube-state-metrics/blob/master/docs/cli-arguments.md
+# all the possible args can be found here: https://github.com/kubernetes/kube-state-metrics/blob/main/docs/developer/cli-arguments.md
 extraArgs: []
 
 # If false then the user will opt out of automounting API credentials.
@@ -106,9 +106,13 @@ kubeRBACProxy:
   image:
     registry: quay.io
     repository: brancz/kube-rbac-proxy
-    tag: v0.19.1
+    tag: v0.20.2
     sha: ""
     pullPolicy: IfNotPresent
+
+  # This set --ignore-paths=/livez,/readyz to kubeRBACProxy container args
+  # to allow the pod probes working properly with kubeRBACProxy enabled.
+  ignoreProbePaths: true
 
   # List of additional cli arguments to configure kube-rbac-prxy
   # for example: --tls-cipher-suites, --log-file, etc.
@@ -124,6 +128,12 @@ kubeRBACProxy:
     capabilities:
       drop:
       - ALL
+
+  # Configure specific upstream port for kube-state-metrics container
+  port: 9090
+  # Configure specific proxy endpoints port
+  # This port is for healthz on readinessProbe kube-rbac-proxy-http container
+  proxyEndpointsPort: 8888
 
   resources: {}
     # We usually recommend not to specify default resources and to leave this as a conscious
@@ -400,7 +410,7 @@ collectors:
   - cronjobs
   - daemonsets
   - deployments
-  - endpoints
+  - endpointslices
   - horizontalpodautoscalers
   - ingresses
   - jobs

@@ -4,7 +4,7 @@ Installs the [Prometheus Adapter](https://github.com/kubernetes-sigs/prometheus-
 
 ## Prerequisites
 
-Kubernetes 1.14+
+Kubernetes 1.21+
 
 ## Usage
 
@@ -42,6 +42,10 @@ helm upgrade [RELEASE_NAME] [CHART] --install
 ```
 
 _See [helm upgrade](https://helm.sh/docs/helm/helm_upgrade/) for command documentation._
+
+### To 5.0.0
+
+This version removes support for the deprecated Kubernetes API `policy/v1beta1` for PodDisruptionBudgets. It also removes the deprecated `PodSecurityPolicy` resource. Minimum Kubernetes version >= 1.21 is now required.
 
 #### To 4.2.0
 

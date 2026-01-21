@@ -33,6 +33,9 @@ spec:
         {{- toYaml . | nindent 8 }}
         {{- end }}
     spec:
+      {{- if .Values.hostUsers }}
+      hostUsers: true
+      {{- end }}
       automountServiceAccountToken: {{ .Values.automountServiceAccountToken }}
       {{- with .Values.imagePullSecrets }}
       imagePullSecrets:
@@ -245,6 +248,14 @@ spec:
   volumeClaimTemplates:
     - metadata:
         name: storage
+        {{- with .Values.persistence.annotations }}
+        annotations:
+          {{ toYaml . | nindent 14 }}
+        {{- end }}
+        {{- with .Values.persistence.labels }}
+        labels:
+          {{ toYaml . | nindent 14 }}
+        {{- end }}
       spec:
         accessModes:
           {{- toYaml .Values.persistence.accessModes | nindent 10 }}
