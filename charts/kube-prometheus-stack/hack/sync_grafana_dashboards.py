@@ -29,11 +29,11 @@ def change_style(style, representer):
 
 refs = {
     # renovate: git-refs=https://github.com/prometheus-operator/kube-prometheus branch=main
-    'ref.kube-prometheus': 'e5eec3068651b6b5b3a05821b7aa03a0811ef31f',
+    'ref.kube-prometheus': 'be3a410867333faf4de99cb9b2196c0e1a21b9cb',
     # renovate: git-refs=https://github.com/kubernetes-monitoring/kubernetes-mixin branch=master
-    'ref.kubernetes-mixin': '4a030d9faa1ceea49afa837902cb16aa9bdf1c85',
+    'ref.kubernetes-mixin': '130b2ed81ee54c55b35b506e150c6ffbd9df7991',
     # renovate: git-refs=https://github.com/etcd-io/etcd branch=main
-    'ref.etcd': '8a4955b2effc7893772fa83e8cecb71efa8dc2eb',
+    'ref.etcd': '7e3f41f3af932d736012bb7ace3964445d716d0a',
 }
 
 # Source files list
@@ -169,7 +169,7 @@ metadata:
 spec:
   allowCrossNamespaceImport: true
   resyncPeriod: {{ .Values.grafana.operator.resyncPeriod | quote | default "10m" }}
-  folder: {{ .Values.grafana.operator.folder | quote }}
+  {{- include "kube-prometheus-stack.grafana.operator.folder" . | nindent 2 }}
   instanceSelector:
     matchLabels:
     {{- if .Values.grafana.operator.matchLabels }}
