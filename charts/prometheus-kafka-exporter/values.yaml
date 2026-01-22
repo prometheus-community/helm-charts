@@ -9,6 +9,10 @@ command: []
 
 imagePullSecrets: []
 
+hostAliases: []
+  # - ip: "10.10.10.10"
+  #   hostnames: ["kafka.server"]
+
 # Additional labels for deployment
 deploymentLabels: {}
 
@@ -32,20 +36,24 @@ kafkaServer:
   - kafka-server:9092
 
 # Specifies broker version to use, leave empty for default
-kafkaBrokerVersion:
+kafkaBrokerVersion: ""
+
+# Specifies custom labels visible in Prometheus for the Kafka Server/Cluster
+kafkaLabels: {}
+  # cluster: "prod-cluster"
+  # env: "prod"
+  # tier: "backend"
 
 # Specifies log verbosity
 verbosity: 0
 
-# Sarama logging
+# Sarama logging, useful for awsiam debugging
 sarama:
   logEnabled: false
 
 rbac:
   # Specifies whether RBAC resources should be created
   create: true
-  # Specifies whether a PodSecurityPolicy should be created
-  pspEnabled: false
 
 serviceAccount:
   # Specifies whether a ServiceAccount should be created
@@ -53,6 +61,12 @@ serviceAccount:
   # The name of the ServiceAccount to use.
   # If not set and create is true, a name is generated using the fullname template
   name:
+  # This part is usefull when trying to use an SASL AWS IAM role when connecting to MSK
+  annotations: {}
+    # eks.amazonaws.com/role-arn: arn:aws:iam::1234567890:role-irsa
+    # eks.amazonaws.com/sts-regional-endpoints: "true"
+    # eks.amazonaws.com/audience: sts.amazonaws.com
+    # eks.amazonaws.com/token-expiration: "3600"
 
 # Specifies environment variables to be added to the kafka-exporter container.
 # Environment variables can be defined as a list of either key-value pairs or
@@ -82,6 +96,13 @@ service:
   # Specifies a reserved static IP. Used with service.type=LoadBalancer.
   # The field is deprecated, implementation-specific annotations should be set instead.
   loadBalancerIP: null
+
+startup:
+  enabled: false
+  probe:
+    httpGet:
+      path: /
+      port: exporter-port
 
 liveness:
   enabled: false
@@ -155,10 +176,6 @@ tolerations: []
 affinity: {}
 
 # this allows the usage of tls connection to your kafka cluster based on a secret in tls format
-# mandatory keys:
-# ca.crt
-# tls.crt
-# tls.key
 tls:
   enabled: false
   insecureSkipVerify: false
@@ -166,6 +183,9 @@ tls:
   serverName: ""
   # mountPath: /secret/certs
   # secretName: <name of an existing secret>
+  caFile: ca.crt
+  certFile: tls.crt
+  keyFile: tls.key
 
 sasl:
   enabled: false
@@ -181,6 +201,15 @@ sasl:
     # or use an existing secret
     # secretName: <name of an existing secret>
 
+  # If enabled, the exporter will use AWS IAM authentication for SASL.
+  # Be aware that this requires the eks.amazonaws.com/role-arn annotation to be set on the ServiceAccount
+  # and most probably the tls.enabled to be set to true.
+  awsiam:
+    enabled: false
+    awsRegion: ""
+    # The mechanism to use for SASL authentication.
+    mechanism: "awsiam"
+
   kerberos:
     enabled: false
     # serviceName:
@@ -194,8 +223,11 @@ server:
   tls:
     enabled: false
     mutualAuthEnabled: false
-  # mountPath: /secret/certs
-  # secretName: <name of an existing secret>
+    # mountPath: /secret/certs
+    # secretName: <name of an existing secret>
+    caFile: ca.crt
+    certFile: tls.crt
+    keyFile: tls.key
 
 # If enabled Kafka dependency chart will be used.
 # This is only needed for the CI job so it should always be disabled.

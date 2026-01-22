@@ -36,7 +36,6 @@
 - gianrubio (<gianrubio@gmail.com> / @gianrubio)
 - gkarthiks (<github.gkarthiks@gmail.com> / @gkarthiks)
 - jkroepke (<github@jkroepke.de> / @jkroepke)
-- scottrigby (<scott@r6by.com> / @scottrigby)
 
 ### kube-state-metrics
 
@@ -144,10 +143,6 @@
 - zanhsieh (<zanhsieh@gmail.com> / @zanhsieh)
 - zeritti (<rootsandtrees@posteo.de> / @zeritti)
 
-### prometheus-opencost-exporter
-
-- mattray (<mattray@kubecost.com> / @mattray)
-
 ### prometheus-operator-admission-webhook
 
 - zeritti (<rootsandtrees@posteo.de> / @zeritti)
@@ -221,7 +216,6 @@
 
 ### prometheus-systemd-exporter
 
-- capuche2412 (<aleroux@wiremind.io> / @capuche2412)
 - maxime1907 (<19607336+maxime1907@users.noreply.github.com> / @maxime1907)
 
 ### prometheus-to-sd

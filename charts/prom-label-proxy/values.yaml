@@ -128,7 +128,10 @@ config:
   upstream: "http://prometheus:9090"
   # -- The label to enforce in all proxies PromQL queries.
   label: "namespace"
-  # -- Additional arguments for prom-label-proxy
+  # -- Additional arguments for prom-label-proxy as list or YAML multiline string
+  # extraArgs: |-
+  #   - "--enable-label-apis=true"
+  #   - "--error-on-replace=true"
   extraArgs:
     - "--enable-label-apis=true"
     - "--error-on-replace=true"
@@ -224,7 +227,7 @@ kubeRBACProxy:
 
   image:
     repository: quay.io/brancz/kube-rbac-proxy
-    tag: v0.19.1
+    tag: v0.20.2
     pullPolicy: IfNotPresent
 
   # List of additional cli arguments to configure kube-rbac-prxy
@@ -263,3 +266,30 @@ kubeRBACProxy:
     # - mountPath: /etc/tls
     #   name: kube-rbac-proxy-tls
     #   readOnly: true
+
+## Extra manifests to deploy.  Can be of type dict or list.
+## If dict, keys are ignored and only values are used.
+## Items contained within extraObjects can be defined as dict or string and are passed through tpl.
+extraManifests: null
+  # - apiVersion: v1
+  #   kind: ConfigMap
+  #   metadata:
+  #   labels:
+  #     name: prometheus-extra
+  #   data:
+  #     extra-data: "value"
+  #
+  # can also be defined as a string, useful for templating field names
+  # - |
+  #   apiVersion: v1
+  #   kind: Secret
+  #   type: Opaque
+  #   metadata:
+  #     name: super-secret
+  #     labels:
+  #       {{- range $key, $value := .Values.commonLabels }}
+  #       {{ $key }}: {{ $value }}
+  #       {{- end }}
+  #   data:
+  #     plaintext: Zm9vYmFy
+  #     templated: '{{ print "foobar" | upper | b64enc }}'

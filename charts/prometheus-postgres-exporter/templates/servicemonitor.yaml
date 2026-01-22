@@ -1,5 +1,5 @@
 {{- if .Values.serviceMonitor.enabled }}
-apiVersion: monitoring.coreos.com/v1
+apiVersion: {{ .Values.serviceMonitor.apiVersion | default "monitoring.coreos.com/v1" }}
 kind: ServiceMonitor
 metadata:
 {{- if .Values.serviceMonitor.labels }}
@@ -39,6 +39,9 @@ spec:
           targetLabel: target
       {{- if $.Values.serviceMonitor.metricRelabelings -}}
         {{ toYaml $.Values.serviceMonitor.metricRelabelings | nindent 8 }}
+      {{- end }}
+      {{- if .metricRelabelings -}}
+        {{ toYaml .metricRelabelings | nindent 8 }}
       {{- end }}
   {{- if $.Values.serviceMonitor.relabelings }}
       relabelings: {{ toYaml $.Values.serviceMonitor.relabelings | nindent 8 }}

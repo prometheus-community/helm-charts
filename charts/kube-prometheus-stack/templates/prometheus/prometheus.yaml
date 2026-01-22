@@ -98,7 +98,7 @@ spec:
   paused: {{ .Values.prometheus.prometheusSpec.paused }}
   replicas: {{ .Values.prometheus.prometheusSpec.replicas }}
   shards: {{ .Values.prometheus.prometheusSpec.shards }}
-  logLevel:  {{ .Values.prometheus.prometheusSpec.logLevel }}
+  logLevel:  {{ .Values.prometheus.prometheusSpec.logLevel | quote }}
   logFormat:  {{ .Values.prometheus.prometheusSpec.logFormat }}
   listenLocal: {{ .Values.prometheus.prometheusSpec.listenLocal }}
   enableOTLPReceiver: {{ .Values.prometheus.prometheusSpec.enableOTLPReceiver }}
@@ -143,6 +143,15 @@ spec:
 {{- end }}
 {{- if .Values.prometheus.prometheusSpec.scrapeTimeout }}
   scrapeTimeout: {{ .Values.prometheus.prometheusSpec.scrapeTimeout }}
+{{- end }}
+{{- if .Values.prometheus.prometheusSpec.convertClassicHistogramsToNHCB }}
+  convertClassicHistogramsToNHCB: {{ .Values.prometheus.prometheusSpec.convertClassicHistogramsToNHCB }}
+{{- end }}
+{{- if .Values.prometheus.prometheusSpec.scrapeClassicHistograms }}
+  scrapeClassicHistograms: {{ .Values.prometheus.prometheusSpec.scrapeClassicHistograms }}
+{{- end }}
+{{- if .Values.prometheus.prometheusSpec.scrapeNativeHistograms }}
+  scrapeNativeHistograms: {{ .Values.prometheus.prometheusSpec.scrapeNativeHistograms }}
 {{- end }}
 {{- if and (not .Values.prometheus.agentMode) .Values.prometheus.prometheusSpec.evaluationInterval }}
   evaluationInterval: {{ .Values.prometheus.prometheusSpec.evaluationInterval }}
@@ -253,6 +262,13 @@ spec:
   securityContext:
 {{ toYaml .Values.prometheus.prometheusSpec.securityContext | indent 4 }}
 {{- end }}
+{{- if .Values.prometheus.prometheusSpec.dnsConfig }}
+  dnsConfig:
+{{ toYaml .Values.prometheus.prometheusSpec.dnsConfig | indent 4 }}
+{{- end }}
+{{- if .Values.prometheus.prometheusSpec.dnsPolicy }}
+  dnsPolicy: {{ .Values.prometheus.prometheusSpec.dnsPolicy }}
+{{- end }}
 {{- if not .Values.prometheus.agentMode }}
 {{- if .Values.prometheus.prometheusSpec.ruleNamespaceSelector }}
   ruleNamespaceSelector:
@@ -267,7 +283,7 @@ spec:
   ruleSelector:
     matchLabels:
       release: {{ $.Release.Name | quote }}
-{{ else }}
+{{ else if not (kindIs "invalid" .Values.prometheus.prometheusSpec.ruleSelector) }}
   ruleSelector: {}
 {{- end }}
 {{- end }}

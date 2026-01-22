@@ -6,6 +6,7 @@ https://github.com/prometheus-community/helm-charts/tree/main/charts/kube-promet
 {{- $kubeTargetVersion := default .Capabilities.KubeVersion.GitVersion .Values.kubeTargetVersionOverride }}
 {{- if and (semverCompare ">=1.14.0-0" $kubeTargetVersion) (semverCompare "<9.9.9-9" $kubeTargetVersion) .Values.defaultRules.create .Values.defaultRules.rules.kubernetesSystem }}
 {{- $kubeStateMetricsJob := include "kube-prometheus-stack-kube-state-metrics.name" . }}
+{{- $kubeletJob := include "kube-prometheus-stack-kubelet.name" . }}
 apiVersion: monitoring.coreos.com/v1
 kind: PrometheusRule
 metadata:
@@ -130,11 +131,11 @@ spec:
       expr: |-
         (
           max by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster, instance) (
-            kubelet_running_pods{job="kubelet", metrics_path="/metrics"} > 1
+            kubelet_running_pods{job="{{ $kubeletJob }}", metrics_path="/metrics"} > 1
           )
           * on ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster, instance) group_left(node)
           max by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster, instance, node) (
-            kubelet_node_name{job="kubelet", metrics_path="/metrics"}
+            kubelet_node_name{job="{{ $kubeletJob }}", metrics_path="/metrics"}
           )
         )
         / on ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster, node) group_left()
@@ -200,10 +201,10 @@ spec:
         runbook_url: {{ .Values.defaultRules.runbookUrl }}/kubernetes/kubenodeeviction
         summary: Node is evicting pods.
       expr: |-
-        sum(rate(kubelet_evictions{job="kubelet", metrics_path="/metrics"}[15m])) by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster, eviction_signal, instance)
+        sum(rate(kubelet_evictions{job="{{ $kubeletJob }}", metrics_path="/metrics"}[15m])) by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster, eviction_signal, instance)
         * on ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster, instance) group_left(node)
         max by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster, instance, node) (
-          kubelet_node_name{job="kubelet", metrics_path="/metrics"}
+          kubelet_node_name{job="{{ $kubeletJob }}", metrics_path="/metrics"}
         )
         > 0
       for: {{ dig "KubeNodeEviction" "for" "0s" .Values.customRules }}
@@ -261,7 +262,19 @@ spec:
         description: Kubelet Pod startup 99th percentile latency is {{`{{`}} $value {{`}}`}} seconds on node {{`{{`}} $labels.node {{`}}`}} on cluster {{`{{`}} $labels.cluster {{`}}`}}.
         runbook_url: {{ .Values.defaultRules.runbookUrl }}/kubernetes/kubeletpodstartuplatencyhigh
         summary: Kubelet Pod startup latency is too high.
-      expr: histogram_quantile(0.99, sum(rate(kubelet_pod_worker_duration_seconds_bucket{job="kubelet", metrics_path="/metrics"}[5m])) by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster, instance, le)) * on ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster, instance) group_left(node) kubelet_node_name{job="kubelet", metrics_path="/metrics"} > 60
+      expr: |-
+        histogram_quantile(0.99,
+          sum by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster, instance, le) (
+            topk by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster, instance, le, operation_type) (1,
+              rate(kubelet_pod_worker_duration_seconds_bucket{job="{{ $kubeletJob }}", metrics_path="/metrics"}[5m])
+            )
+          )
+        )
+        * on ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster, instance) group_left(node)
+        topk by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster, instance, node) (1,
+          kubelet_node_name{job="{{ $kubeletJob }}", metrics_path="/metrics"}
+        )
+        > 60
       for: {{ dig "KubeletPodStartUpLatencyHigh" "for" "15m" .Values.customRules }}
       {{- with .Values.defaultRules.keepFiringFor }}
       keep_firing_for: "{{ . }}"
@@ -442,7 +455,7 @@ spec:
         description: Kubelet has disappeared from Prometheus target discovery.
         runbook_url: {{ .Values.defaultRules.runbookUrl }}/kubernetes/kubeletdown
         summary: Target disappeared from Prometheus target discovery.
-      expr: absent(up{job="kubelet", metrics_path="/metrics"} == 1)
+      expr: absent(up{job="{{ $kubeletJob }}", metrics_path="/metrics"})
       for: {{ dig "KubeletDown" "for" "15m" .Values.customRules }}
       {{- with .Values.defaultRules.keepFiringFor }}
       keep_firing_for: "{{ . }}"

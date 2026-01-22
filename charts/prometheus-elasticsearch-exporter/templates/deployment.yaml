@@ -110,10 +110,10 @@ spec:
                     "--collector.slm",
                     {{- end }}
                     {{- if .Values.es.data_stream }}
-                    "--es.data_stream",
+                    "--collector.data-stream",
                     {{- end }}
                     {{- if .Values.es.ilm }}
-                    "--es.ilm",
+                    "--collector.ilm",
                     {{- end }}
                     "--es.timeout={{ .Values.es.timeout }}",
                     {{- if .Values.es.sslSkipVerify }}
@@ -142,20 +142,14 @@ spec:
           ports:
             - containerPort: {{ .Values.service.httpPort }}
               name: {{ .Values.service.metricsPort.name }}
+          {{- if .Values.livenessProbe }}
           livenessProbe:
-            httpGet:
-              path: /healthz
-              port: {{ .Values.service.metricsPort.name }}
-            initialDelaySeconds: 5
-            timeoutSeconds: 5
-            periodSeconds: 5
+            {{- toYaml .Values.livenessProbe | nindent 12 }}
+          {{- end }}
+          {{- if .Values.readinessProbe }}
           readinessProbe:
-            httpGet:
-              path: /healthz
-              port: {{ .Values.service.metricsPort.name }}
-            initialDelaySeconds: 1
-            timeoutSeconds: 5
-            periodSeconds: 5
+            {{- toYaml .Values.readinessProbe | nindent 12 }}
+          {{- end }}
           lifecycle:
             preStop:
               exec:

@@ -1,5 +1,5 @@
 {{- /*
-Generated from 'apiserver' from https://raw.githubusercontent.com/prometheus-operator/kube-prometheus/4f12dbe97c416a6da51559036e1c8d1d909a89c6/manifests/grafana-dashboardDefinitions.yaml
+Generated from 'apiserver' from https://raw.githubusercontent.com/prometheus-operator/kube-prometheus/be3a410867333faf4de99cb9b2196c0e1a21b9cb/manifests/grafana-dashboardDefinitions.yaml
 Do not change in-place! In order to change this file first read following link:
 https://github.com/prometheus-community/helm-charts/tree/main/charts/kube-prometheus-stack/hack
 */ -}}
@@ -14,7 +14,7 @@ metadata:
 {{ toYaml .Values.grafana.sidecar.dashboards.annotations | indent 4 }}
   labels:
     {{- if $.Values.grafana.sidecar.dashboards.label }}
-    {{ $.Values.grafana.sidecar.dashboards.label }}: {{ ternary $.Values.grafana.sidecar.dashboards.labelValue "1" (not (empty $.Values.grafana.sidecar.dashboards.labelValue)) | quote }}
+    {{ tpl $.Values.grafana.sidecar.dashboards.label $ }}: {{ ((tpl $.Values.grafana.sidecar.dashboards.labelValue $) | default 1) | quote }}
     {{- end }}
     app: {{ template "kube-prometheus-stack.name" $ }}-grafana
 {{ include "kube-prometheus-stack.labels" $ | indent 4 }}
@@ -38,7 +38,7 @@ metadata:
 spec:
   allowCrossNamespaceImport: true
   resyncPeriod: {{ .Values.grafana.operator.resyncPeriod | quote | default "10m" }}
-  folder: {{ .Values.grafana.operator.folder | quote }}
+  {{- include "kube-prometheus-stack.grafana.operator.folder" . | nindent 2 }}
   instanceSelector:
     matchLabels:
     {{- if .Values.grafana.operator.matchLabels }}
