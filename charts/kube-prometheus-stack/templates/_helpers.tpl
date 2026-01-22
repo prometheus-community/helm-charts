@@ -166,6 +166,53 @@ Use the Alertmanager namespace override for multi-namespace deployments in combi
 {{- end -}}
 
 {{/*
+Allow kubelet job name to be overridden
+*/}}
+{{- define "kube-prometheus-stack-kubelet.name" -}}
+  {{- if index .Values "kubelet" "jobNameOverride" -}}
+    {{- index .Values "kubelet" "jobNameOverride" -}}
+  {{- else -}}
+    {{- print "kubelet" -}}
+  {{- end -}}
+{{- end -}}
+
+
+{{/*
+Allow kube-controller-manager job name to be overridden
+*/}}
+{{- define "kube-prometheus-stack-kube-controller-manager.name" -}}
+  {{- if index .Values "kubeControllerManager" "jobNameOverride" -}}
+    {{- index .Values "kubeControllerManager" "jobNameOverride" -}}
+  {{- else -}}
+    {{- print "kube-controller-manager" -}}
+  {{- end -}}
+{{- end -}}
+
+
+{{/*
+Allow kube-scheduler job name to be overridden
+*/}}
+{{- define "kube-prometheus-stack-kube-scheduler.name" -}}
+  {{- if index .Values "kubeScheduler" "jobNameOverride" -}}
+    {{- index .Values "kubeScheduler" "jobNameOverride" -}}
+  {{- else -}}
+    {{- print "kube-scheduler" -}}
+  {{- end -}}
+{{- end -}}
+
+
+{{/*
+Allow kube-proxy job name to be overridden
+*/}}
+{{- define "kube-prometheus-stack-kube-proxy.name" -}}
+  {{- if index .Values "kubeProxy" "jobNameOverride" -}}
+    {{- index .Values "kubeProxy" "jobNameOverride" -}}
+  {{- else -}}
+    {{- print "kube-proxy" -}}
+  {{- end -}}
+{{- end -}}
+
+{{/*
 Allow kube-state-metrics job name to be overridden
 */}}
 {{- define "kube-prometheus-stack-kube-state-metrics.name" -}}
@@ -316,5 +363,26 @@ bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
 {{- else }}
 - {key: app.kubernetes.io/name, operator: In, values: [prometheus]}
 - {key: app.kubernetes.io/instance, operator: In, values: [{{ template "kube-prometheus-stack.prometheus.crname" . }}]}
+{{- end }}
+{{- end }}
+
+{{/* To help configure Grafana operator folder settings (folder, folderUID, or folderRef) */}}
+{{- define "kube-prometheus-stack.grafana.operator.folder" }}
+{{- $folder := .Values.grafana.operator.folder }}
+{{- $folderUID := .Values.grafana.operator.folderUID }}
+{{- $folderRef := .Values.grafana.operator.folderRef }}
+{{- if not (or
+  (and $folder (not $folderUID) (not $folderRef))
+  (and (not $folder) $folderUID (not $folderRef))
+  (and (not $folder) (not $folderUID) $folderRef)
+)}}
+{{- fail "grafana.operator: only one of folder, folderUID, or folderRef must be set" }}
+{{- end }}
+{{- if $folder }}
+folder: {{ $folder | quote }}
+{{- else if $folderUID }}
+folderUID: {{ $folderUID | quote }}
+{{- else if $folderRef }}
+folderRef: {{ $folderRef | quote }}
 {{- end }}
 {{- end }}

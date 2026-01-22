@@ -62,6 +62,9 @@ spec:
           secret:
             secretName: {{ template "stackdriver-exporter.fullname" . }}
       {{- end}}
+      {{- if .Values.extraVolumes }}
+        {{- toYaml .Values.extraVolumes | nindent 8 }}
+      {{- end }}
       containers:
         - name: {{ .Chart.Name }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
@@ -72,6 +75,9 @@ spec:
             - name: stackdriver-service-account
               mountPath: /etc/secrets/service-account/
           {{- end}}
+          {{- if .Values.extraVolumeMounts }}
+            {{- toYaml .Values.extraVolumeMounts | nindent 12 }}
+          {{- end }}
           args:
             {{- if .Values.stackdriver.projectIds }}
             {{- range .Values.stackdriver.projectIds }}
@@ -79,6 +85,9 @@ spec:
             {{- end }}
             {{- else }}
             - --google.project-id={{ .Values.stackdriver.projectId }}
+            {{- end }}
+            {{- if .Values.stackdriver.projectFilters }}
+            - --google.projects.filter='{{ .Values.stackdriver.projectFilters }}'
             {{- end }}
             - --monitoring.metrics-interval={{ .Values.stackdriver.metrics.interval }}
             - --monitoring.metrics-offset={{ .Values.stackdriver.metrics.offset }}
@@ -98,7 +107,8 @@ spec:
             - --stackdriver.max-retries={{ .Values.stackdriver.maxRetries }}
             - --stackdriver.retry-statuses={{ .Values.stackdriver.retryStatuses }}
             - --web.listen-address={{ .Values.web.listenAddress }}
-            - --web.telemetry-path={{ .Values.web.path }}
+            - --web.telemetry-path={{ .Values.web.telemetryPath }}
+            - --web.stackdriver-telemetry-path={{ .Values.web.stackdriverTelemetryPath }}
           {{- if .Values.stackdriver.dropDelegatedProjects }}
             - --monitoring.drop-delegated-projects
           {{- end }}
@@ -132,21 +142,16 @@ spec:
             - containerPort: {{ .Values.service.httpPort }}
               name: http
           livenessProbe:
-            httpGet:
-              path: /
-              port: http
-            initialDelaySeconds: 30
-            timeoutSeconds: 10
+            {{- toYaml .Values.livenessProbe | nindent 12 }}
           readinessProbe:
-            httpGet:
-              path: /
-              port: http
-            initialDelaySeconds: 10
-            timeoutSeconds: 10
+            {{- toYaml .Values.readinessProbe | nindent 12 }}
           {{- if .Values.containerSecurityContext }}
           securityContext:
             {{- toYaml .Values.containerSecurityContext | nindent 12 }}
           {{- end }}
+      {{- with .Values.extraContainers }}
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
       {{- if .Values.nodeSelector }}
       nodeSelector:
         {{- toYaml .Values.nodeSelector | nindent 8 }}

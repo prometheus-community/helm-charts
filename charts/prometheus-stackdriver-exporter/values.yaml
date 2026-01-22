@@ -35,6 +35,26 @@ securityContext: {}
 
 containerSecurityContext: {}
 
+## Liveness probe
+##
+livenessProbe:
+  httpGet:
+    path: /
+    port: http
+    scheme: HTTP
+  initialDelaySeconds: 30
+  timeoutSeconds: 10
+
+## Readiness probe
+##
+readinessProbe:
+  httpGet:
+    path: /
+    port: http
+    scheme: HTTP
+  initialDelaySeconds: 10
+  timeoutSeconds: 10
+
 service:
   type: ClusterIP
   httpPort: 9255
@@ -52,6 +72,8 @@ stackdriver:
   projectId: "FALSE"
   # The Google Project IDs to gather metrics for (requires 0.17.0+)
   projectIds: []
+  # filter for selecting google projects
+  projectFilters: ""
     # - "google-project-id"
   # An existing secret which contains credentials.json
   serviceAccountSecret: ""
@@ -96,8 +118,10 @@ stackdriver:
 web:
   # Port to listen on
   listenAddress: ':9255'
-  # Path under which to expose metrics.
-  path: /metrics
+  # Path under which to expose Stackdriver metrics.
+  stackdriverTelemetryPath: /metrics
+  # Path under which to expose Prometheus metrics
+  telemetryPath: /metrics
 
 ## Pod affinity
 ##
@@ -114,6 +138,23 @@ extraArgs: {}
 extraEnv: []
   # - name: GOMAXPROCS
   #   value: "2"
+
+# Additional containers to add to the pod
+extraContainers: []
+
+## Additional volumes to mount
+##
+extraVolumes: []
+  # - name: custom-ca
+  #   secret:
+  #     secretName: custom-ca
+
+## Additional volume mounts for the container
+##
+extraVolumeMounts: []
+  # - name: custom-ca
+  #   mountPath: /etc/ssl/certs/ca-certificates.crt
+  #   subPath: ca.crt
 
 ## Node labels for stackdriver-exporter pod assignment
 ## Ref: https://kubernetes.io/docs/user-guide/node-selection/
@@ -142,12 +183,15 @@ serviceAccount:
   # If not set and create is false, 'default' is used
   # If not set and create is true, a name is generated using the fullname template
   name:
+  # Annotations to add to the service account. Keys and values can be templated, as an example: "{{ .Values.foo }}: {{ .Values.bar }}"
   annotations: {}
 
 # Enable this if you're using https://github.com/coreos/prometheus-operator
 serviceMonitor:
   enabled: false
   namespace: monitoring
+  # scrapeClass
+  scrapeClass:
   # additionalLabels is the set of additional labels to add to the ServiceMonitor
   additionalLabels: {}
   # How long until a scrape request times out.

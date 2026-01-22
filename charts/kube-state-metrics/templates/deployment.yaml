@@ -60,7 +60,7 @@ spec:
       {{- end }}
       dnsPolicy: {{ .Values.dnsPolicy }}
       containers:
-      {{- $servicePort := ternary 9090 (.Values.service.port | default 8080) .Values.kubeRBACProxy.enabled}}
+      {{- $servicePort := ternary .Values.kubeRBACProxy.port (.Values.service.port | default 8080) .Values.kubeRBACProxy.enabled}}
       {{- $telemetryPort := ternary 9091 (.Values.selfMonitor.telemetryPort | default 8081) .Values.kubeRBACProxy.enabled}}
       - name: {{ template "kube-state-metrics.name" . }}
         {{- if  .Values.autosharding.enabled }}
@@ -162,11 +162,9 @@ spec:
         {{- if eq .Values.kubeRBACProxy.enabled false }}
         ports:
         - containerPort: {{ .Values.service.port | default 8080}}
-          name: "http"
-        {{- if .Values.selfMonitor.enabled }}
+          name: http
         - containerPort: {{ $telemetryPort }}
-          name: "metrics"
-        {{- end }}
+          name: metrics
         {{- end }}
         {{- if .Values.startupProbe.enabled }}
         startupProbe:
@@ -181,11 +179,10 @@ spec:
               value: {{ $header.value }}
             {{- end }}
             path: /healthz
+            port: http
             {{- if .Values.kubeRBACProxy.enabled }}
-            port: {{ .Values.service.port | default 8080 }}
             scheme: HTTPS
             {{- else }}
-            port: {{ $servicePort }}
             scheme: {{ upper .Values.startupProbe.httpGet.scheme }}
             {{- end }}
           initialDelaySeconds: {{ .Values.startupProbe.initialDelaySeconds }}
@@ -205,11 +202,10 @@ spec:
               value: {{ $header.value }}
             {{- end }}
             path: /livez
+            port: http
             {{- if .Values.kubeRBACProxy.enabled }}
-            port: {{ .Values.service.port | default 8080 }}
             scheme: HTTPS
             {{- else }}
-            port: {{ $servicePort }}
             scheme: {{ upper .Values.livenessProbe.httpGet.scheme }}
             {{- end }}
           initialDelaySeconds: {{ .Values.livenessProbe.initialDelaySeconds }}
@@ -228,11 +224,10 @@ spec:
               value: {{ $header.value }}
             {{- end }}
             path: /readyz
+            port: metrics
             {{- if .Values.kubeRBACProxy.enabled }}
-            port: {{ .Values.selfMonitor.telemetryPort | default 8081 }}
             scheme: HTTPS
             {{- else }}
-            port: {{ $telemetryPort }}
             scheme: {{ upper .Values.readinessProbe.httpGet.scheme }}
             {{- end }}
           initialDelaySeconds: {{ .Values.readinessProbe.initialDelaySeconds }}
@@ -268,14 +263,14 @@ spec:
         image: {{ include "kubeRBACProxy.image" . }}
         ports:
           - containerPort: {{ .Values.service.port | default 8080}}
-            name: "http"
+            name: http
           - containerPort: {{ .Values.kubeRBACProxy.proxyEndpointsPort | default 8888 }}
-            name: "http-healthz"
+            name: http-healthz
         readinessProbe:
           httpGet:
             scheme: HTTPS
-            port: {{ .Values.kubeRBACProxy.proxyEndpointsPort | default 8888 }}
-            path: healthz
+            port: http-healthz
+            path: /healthz
           initialDelaySeconds: 5
           timeoutSeconds: 5
         {{- if .Values.kubeRBACProxy.resources }}
@@ -309,13 +304,13 @@ spec:
         image: {{ include "kubeRBACProxy.image" . }}
         ports:
           - containerPort: {{ .Values.selfMonitor.telemetryPort | default 8081 }}
-            name: "metrics"
+            name: metrics
           - containerPort: 8889
-            name: "metrics-healthz"
+            name: metrics-healthz
         readinessProbe:
           httpGet:
             scheme: HTTPS
-            port: 8889
+            port: metrics-healthz
             path: healthz
           initialDelaySeconds: 5
           timeoutSeconds: 5
