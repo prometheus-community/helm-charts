@@ -8,6 +8,7 @@ on:
 
 jobs:
   release:
+    environment: release
     permissions:
       contents: write # to push chart release and create a release (helm/chart-releaser-action)
       packages: write # needed for ghcr access
@@ -35,13 +36,27 @@ jobs:
         run: |
           helm repo add bitnami https://charts.bitnami.com/bitnami
           helm repo add grafana https://grafana.github.io/helm-charts
+          helm repo add grafana-community https://grafana-community.github.io/helm-charts
           helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+      
+      - name: Import GPG key
+        uses: crazy-max/ghaction-import-gpg@v6
+        with:
+          gpg_private_key: ${{ secrets.GPG_PRIVATE_KEY }}
+          passphrase: ${{ secrets.PASSPHRASE }}
+
+      - name: Export modern GPG keyring to legacy format
+        run: |
+          gpg --export >~/.gnupg/pubring.gpg
+          gpg --export-secret-keys >~/.gnupg/secring.gpg
 
       - name: Run chart-releaser
         uses: helm/chart-releaser-action@cae68fefc6b5f367a0275617c9f83181ba54714f # v1.7.0
         with:
           skip_existing: true
         env:
+          CR_SIGN: true
+          CR_KEY: "${{ vars.GPG_KEY_ID }}"
           CR_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
           CR_GENERATE_RELEASE_NOTES: true
 
