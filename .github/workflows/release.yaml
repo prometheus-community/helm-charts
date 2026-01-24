@@ -38,17 +38,22 @@ jobs:
           helm repo add grafana https://grafana.github.io/helm-charts
           helm repo add grafana-community https://grafana-community.github.io/helm-charts
           helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+      
       - name: Import GPG key
         uses: crazy-max/ghaction-import-gpg@e89d40939c28e39f97cf32126055eeae86ba74ec # v6.3.0
         with:
           gpg_private_key: ${{ secrets.GPG_PRIVATE_KEY }}
-          passphrase: ${{ secrets.PASSPHRASE }}
+          passphrase: ${{ secrets.GPG_PASSPHRASE }}
 
       - name: Export modern GPG keyring to legacy format
         run: |
-          gpg --export >~/.gnupg/pubring.gpg
-          gpg --export-secret-keys >~/.gnupg/secring.gpg
+          gpg --batch --yes --export $GPG_KEY_ID >~/.gnupg/pubring.gpg
+          echo "$GPG_PASSPHRASE" | gpg --batch --yes --passphrase-fd 0 --export-secret-keys $GPG_KEY_ID >~/.gnupg/secring.gpg
+
           chmod 600 ~/.gnupg/secring.gpg
+        env:
+          GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
+          GPG_KEY_ID: ${{ vars.GPG_KEY_ID }}
 
       - name: Run chart-releaser
         uses: helm/chart-releaser-action@cae68fefc6b5f367a0275617c9f83181ba54714f # v1.7.0
