@@ -108,6 +108,8 @@ helm show values oci://ghcr.io/prometheus-community/charts/kube-prometheus-stack
 
 You may also `helm show values` on this chart's [dependencies](#dependencies) for additional options.
 
+When exposing Prometheus via a NodePort service, you can pin the reloader web port by setting `prometheus.service.reloaderWebNodePort`.
+
 ### Multiple releases
 
 The same chart can be used to run multiple Prometheus instances in the same cluster if required. To achieve this, it is necessary to run only one instance of prometheus-operator and a pair of alertmanager pods for an HA configuration, while all other components need to be disabled. To disable a dependency during installation, set `kubeStateMetrics.enabled`, `nodeExporter.enabled` and `grafana.enabled` to `false`.
