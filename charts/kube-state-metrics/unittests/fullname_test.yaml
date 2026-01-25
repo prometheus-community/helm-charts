@@ -1,0 +1,27 @@
+suite: fullname
+templates:
+  - templates/serviceaccount.yaml
+tests:
+  - it: does not duplicate release name when nameOverride already includes it
+    release:
+      name: ksm-non-pods
+    set:
+      nameOverride: ksm-non-pods-foo
+    asserts:
+      - equal:
+          path: metadata.name
+          value: ksm-non-pods-foo
+  - it: uses release name when it already contains chart name
+    release:
+      name: test-kube-state-metrics
+    asserts:
+      - equal:
+          path: metadata.name
+          value: test-kube-state-metrics
+  - it: defaults to release-plus-chart-name
+    release:
+      name: test
+    asserts:
+      - equal:
+          path: metadata.name
+          value: test-kube-state-metrics
