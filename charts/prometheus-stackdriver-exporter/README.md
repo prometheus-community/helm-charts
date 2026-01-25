@@ -39,6 +39,8 @@ $ helm install [RELEASE_NAME] oci://ghcr.io/prometheus-community/charts/promethe
 $ helm install --name [RELEASE_NAME] oci://ghcr.io/prometheus-community/charts/prometheus-stackdriver-exporter --set stackdriver.projectId=google-project-name
 ```
 
+To install the chart resources into a namespace other than the Helm release namespace, set `namespaceOverride`.
+
 The command deploys Stackdriver-Exporter on the Kubernetes cluster using the default configuration.
 
 _See [configuration](#configuration) below._
