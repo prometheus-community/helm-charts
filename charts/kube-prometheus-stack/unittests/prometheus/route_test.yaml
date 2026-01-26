@@ -1,0 +1,49 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/helm-unittest/helm-unittest/main/schema/helm-testsuite.json
+suite: prometheus route backendRefs
+templates:
+  - prometheus/route.yaml
+tests:
+  - it: sets backend group/kind/weight defaults
+    set:
+      prometheus:
+        route:
+          main:
+            enabled: true
+            parentRefs:
+              - name: example-gateway
+    asserts:
+      - equal:
+          path: spec.rules[0].backendRefs[0].group
+          value: ""
+      - equal:
+          path: spec.rules[0].backendRefs[0].kind
+          value: Service
+      - equal:
+          path: spec.rules[0].backendRefs[0].weight
+          value: 1
+      - matchRegex:
+          path: spec.rules[0].backendRefs[0].name
+          pattern: "^RELEASE-NAME-kube-promethe.*-prometheus$"
+
+  - it: allows overriding backend fields
+    set:
+      prometheus:
+        route:
+          main:
+            enabled: true
+            backend:
+              group: gateway.networking.k8s.io
+              kind: GRPCRoute
+              weight: 10
+            parentRefs:
+              - name: gw
+    asserts:
+      - equal:
+          path: spec.rules[0].backendRefs[0].group
+          value: gateway.networking.k8s.io
+      - equal:
+          path: spec.rules[0].backendRefs[0].kind
+          value: GRPCRoute
+      - equal:
+          path: spec.rules[0].backendRefs[0].weight
+          value: 10

@@ -114,6 +114,7 @@ Highlights of recently added options/fixes:
 
 - `prometheus.service.reloaderWebPort` can be set to `0`/`null` to omit the reloader port, and `prometheus.service.reloaderWebNodePort` lets you pin the NodePort when needed.
 - `kubeScheduler.serviceMonitor.additionalPath` adds extra scrape paths such as `/metrics/resources` alongside the default.
+- Grafana sidecars now bind to separate HTTP ports by default (`dashboards` on 8080, `datasources` on 8081) to avoid conflicts.
 - The “Kubernetes / Compute Resources / Pod” dashboard now graphs CPU/memory requests and limits per container instead of aggregating them.
 
 ### Multiple releases

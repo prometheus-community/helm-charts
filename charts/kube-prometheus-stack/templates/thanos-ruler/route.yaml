@@ -39,9 +39,13 @@ spec:
             scheme: https
             statusCode: 301
     {{- else }}
+    {{- $backend := default (dict) $route.backend }}
     - backendRefs:
-        - name: {{ $serviceName }}
+        - group: {{ default "" $backend.group | quote }}
+          kind: {{ default "Service" $backend.kind | quote }}
+          name: {{ $serviceName }}
           port: {{ $servicePort }}
+          weight: {{ default 1 $backend.weight }}
       {{- with $route.filters }}
       filters:
         {{- toYaml . | nindent 8 }}
