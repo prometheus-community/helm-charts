@@ -114,7 +114,6 @@ Highlights of recently added options/fixes:
 
 - `prometheus.service.reloaderWebPort` can be set to `0`/`null` to omit the reloader port, and `prometheus.service.reloaderWebNodePort` lets you pin the NodePort when needed.
 - `kubeScheduler.serviceMonitor.additionalPath` adds extra scrape paths such as `/metrics/resources` alongside the default.
-- AlertmanagerConfig Slack action URLs now allow Go templating (the CRD regular expression no longer blocks `{{ ... }}` links).
 - The “Kubernetes / Compute Resources / Pod” dashboard now graphs CPU/memory requests and limits per container instead of aggregating them.
 
 ### Multiple releases
