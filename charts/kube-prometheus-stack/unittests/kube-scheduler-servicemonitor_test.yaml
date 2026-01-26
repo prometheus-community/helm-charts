@@ -1,0 +1,23 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/helm-unittest/helm-unittest/main/schema/helm-testsuite.json
+suite: kube-scheduler servicemonitor
+templates:
+  - exporters/kube-scheduler/servicemonitor.yaml
+tests:
+  - it: renders default endpoint without custom path
+    asserts:
+      - notExists:
+          path: spec.endpoints[0].path
+
+  - it: appends additional scrape paths
+    set:
+      kubeScheduler:
+        serviceMonitor:
+          additionalPath:
+            - /metrics/resources
+    asserts:
+      - equal:
+          path: spec.endpoints[1].path
+          value: /metrics/resources
+      - equal:
+          path: spec.endpoints[1].port
+          value: http-metrics
