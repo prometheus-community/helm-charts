@@ -47,12 +47,16 @@ spec:
     {{- end }}
     port: {{ .Values.prometheus.service.port }}
     targetPort: {{ .Values.prometheus.service.targetPort }}
-  {{- if .Values.prometheus.service.reloaderWebPort }}
+  {{- $reloaderWebPort := .Values.prometheus.service.reloaderWebPort }}
+  {{- if $reloaderWebPort }}
   - name: reloader-web
     {{- if semverCompare "> 1.20.0-0" $kubeTargetVersion }}
     appProtocol: http
     {{- end }}
-    port: {{ .Values.prometheus.service.reloaderWebPort }}
+    {{- if and (eq .Values.prometheus.service.type "NodePort") .Values.prometheus.service.reloaderWebNodePort }}
+    nodePort: {{ .Values.prometheus.service.reloaderWebNodePort }}
+    {{- end }}
+    port: {{ $reloaderWebPort }}
     targetPort: reloader-web
   {{- end }}
   {{- if .Values.prometheus.thanosIngress.enabled }}

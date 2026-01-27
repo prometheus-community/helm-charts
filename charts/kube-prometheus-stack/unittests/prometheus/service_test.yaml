@@ -1,0 +1,33 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/helm-unittest/helm-unittest/main/schema/helm-testsuite.json
+suite: prometheus service
+templates:
+  - prometheus/service.yaml
+tests:
+  - it: renders reloader service port by default
+    asserts:
+      - equal:
+          path: spec.ports[1].name
+          value: reloader-web
+      - equal:
+          path: spec.ports[1].port
+          value: 8080
+
+  - it: can disable reloader service port when set to 0
+    set:
+      prometheus:
+        service:
+          reloaderWebPort: 0
+    asserts:
+      - notExists:
+          path: spec.ports[1]
+
+  - it: can specify nodePort for reloader when service type is NodePort
+    set:
+      prometheus:
+        service:
+          type: NodePort
+          reloaderWebNodePort: 32080
+    asserts:
+      - equal:
+          path: spec.ports[1].nodePort
+          value: 32080
