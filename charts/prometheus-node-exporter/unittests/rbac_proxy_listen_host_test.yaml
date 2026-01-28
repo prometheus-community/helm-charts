@@ -1,0 +1,14 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/helm-unittest/helm-unittest/main/schema/helm-testsuite.json
+suite: kube-rbac-proxy listen host
+templates:
+  - templates/daemonset.yaml
+tests:
+  - it: uses configured listenHost for rbac-proxy
+    set:
+      kubeRBACProxy:
+        enabled: true
+        listenHost: "127.0.0.1:"
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[1].args
+          content: --secure-listen-address=127.0.0.1:9100
