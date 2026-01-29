@@ -677,22 +677,6 @@ alertmanager:
         # -- Backend weight for the route
         weight: 1
 
-      backend:
-        # -- Backend group for the route (empty string defaults to core API group)
-        group: ""
-        # -- Backend kind for the route
-        kind: Service
-        # -- Backend weight for the route
-        weight: 1
-
-      backend:
-        # -- Backend group for the route (empty string defaults to core API group)
-        group: ""
-        # -- Backend kind for the route
-        kind: Service
-        # -- Backend weight for the route
-        weight: 1
-
   ## Configuration for Alertmanager secret
   ##
   secret:
@@ -1436,6 +1420,9 @@ grafana:
       env:
         ## Avoid port collision with the dashboards sidecar (also runs kiwigrid/k8s-sidecar).
         HTTP_SERVER_PORT: 8081
+      ## Work around initial provisioning race (k8s-sidecar#499 / chart#6419) by polling instead of WATCH.
+      ## WATCH sets REQ_SKIP_INIT=true which skips the first sync; SLEEP does an immediate list.
+      watchMethod: SLEEP
 
       name: Prometheus
       uid: prometheus
