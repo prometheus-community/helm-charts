@@ -1,0 +1,24 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/helm-unittest/helm-unittest/main/schema/helm-testsuite.json
+suite: fullname rendering
+templates:
+  - service.yaml
+tests:
+  - it: nameOverride that already includes release name is not duplicated
+    set:
+      nameOverride: ksm-non-pods-foo
+    release:
+      name: ksm-non-pods
+    asserts:
+      - equal:
+          path: metadata.name
+          value: ksm-non-pods-foo
+
+  - it: nameOverride combines with release name when not overlapping
+    set:
+      nameOverride: custom
+    release:
+      name: myrel
+    asserts:
+      - equal:
+          path: metadata.name
+          value: myrel-custom
