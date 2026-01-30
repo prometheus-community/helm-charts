@@ -1,4 +1,12 @@
 {{- if and .Values.prometheusOperator.enabled .Values.prometheusOperator.admissionWebhooks.enabled .Values.prometheusOperator.admissionWebhooks.patch.enabled (not .Values.prometheusOperator.admissionWebhooks.certManager.enabled) }}
+{{- $failurePolicy := .Values.prometheusOperator.admissionWebhooks.failurePolicy | default "Fail" }}
+{{- if eq $failurePolicy "IgnoreOnInstallOnly" }}
+  {{- if .Release.IsInstall }}
+    {{- $failurePolicy = "Ignore" }}
+  {{- else }}
+    {{- $failurePolicy = "Fail" }}
+  {{- end }}
+{{- end }}
 apiVersion: batch/v1
 kind: Job
 metadata:
@@ -47,7 +55,7 @@ spec:
             - --webhook-name={{ template "kube-prometheus-stack.fullname" . }}-admission
             - --namespace={{ template "kube-prometheus-stack.namespace" . }}
             - --secret-name={{ template "kube-prometheus-stack.fullname" . }}-admission
-            - --patch-failure-policy={{ .Values.prometheusOperator.admissionWebhooks.failurePolicy }}
+            - --patch-failure-policy={{ $failurePolicy }}
           {{- with .Values.prometheusOperator.admissionWebhooks.patchWebhookJob }}
           securityContext:
           {{ toYaml .securityContext | nindent 12 }}
