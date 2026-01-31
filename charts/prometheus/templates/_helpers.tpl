@@ -91,6 +91,18 @@ Create a fully qualified alertmanager name for communicating and check to ensure
 {{- end -}}
 
 {{/*
+Create a fully qualified pushgateway name that works even when the dependency
+charts are not downloaded locally.
+*/}}
+{{- define "prometheus.pushgateway.fullname" -}}
+{{- if (index .Subcharts "prometheus-pushgateway") -}}
+{{- include "prometheus-pushgateway.fullname" (index .Subcharts "prometheus-pushgateway") -}}
+{{- else -}}
+{{- printf "%s-%s" .Release.Name "prometheus-pushgateway" | trunc 63 | trimSuffix "-" -}}
+{{- end -}}
+{{- end -}}
+
+{{/*
 Create a fully qualified Prometheus server name.
 We truncate at 63 chars because some Kubernetes name fields are limited to this (by the DNS naming spec).
 */}}
