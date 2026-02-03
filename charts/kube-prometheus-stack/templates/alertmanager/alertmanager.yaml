@@ -1,15 +1,19 @@
 {{- if .Values.alertmanager.enabled }}
+{{- $amLabels := include "kube-prometheus-stack.labels" . | fromYaml }}
+{{- if not $amLabels }}{{- $amLabels = dict }}{{- end }}
+{{- $_ := set $amLabels "app" (printf "%s-alertmanager" (include "kube-prometheus-stack.name" .)) }}
+{{- $_ := set $amLabels "app.kubernetes.io/name" "alertmanager" }}
+{{- $_ := set $amLabels "app.kubernetes.io/managed-by" "prometheus-operator" }}
+{{- if .Values.alertmanager.additionalLabels }}
+{{- $amLabels = merge $amLabels .Values.alertmanager.additionalLabels }}
+{{- end }}
 apiVersion: monitoring.coreos.com/v1
 kind: Alertmanager
 metadata:
   name: {{ template "kube-prometheus-stack.alertmanager.crname" . }}
   namespace: {{ template "kube-prometheus-stack-alertmanager.namespace" . }}
   labels:
-    app: {{ template "kube-prometheus-stack.name" . }}-alertmanager
-    {{- include "kube-prometheus-stack.labels" . | nindent 4 }}
-    {{- with .Values.alertmanager.additionalLabels }}
-    {{- toYaml . | nindent 4 }}
-    {{- end }}
+{{ toYaml $amLabels | indent 4 }}
   {{- with .Values.alertmanager.annotations }}
   annotations:
     {{- toYaml . | nindent 4 }}
