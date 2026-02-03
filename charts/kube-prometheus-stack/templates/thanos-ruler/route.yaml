@@ -1,8 +1,14 @@
 {{- if .Values.thanosRuler.enabled -}}
   {{- $serviceName := include "kube-prometheus-stack.thanosRuler.name" . }}
   {{- $servicePort := .Values.thanosRuler.service.port -}}
+  {{- $serviceGroup := "Service" -}}
+  {{- $serviceKind := "Service" -}}
+  {{- $serviceWeight := 1 -}}
   {{- range $name, $route := .Values.thanosRuler.route }}
   {{- if $route.enabled }}
+  {{- $serviceGroup = $route.serviceGroup | default "" -}}
+  {{- $serviceKind = $route.serviceKind | default "Service" -}}
+  {{- $serviceWeight = $route.serviceWeight | default 1 -}}
 ---
 apiVersion: {{ $route.apiVersion | default "gateway.networking.k8s.io/v1" }}
 kind: {{ $route.kind | default "HTTPRoute" }}
@@ -40,8 +46,11 @@ spec:
             statusCode: 301
     {{- else }}
     - backendRefs:
-        - name: {{ $serviceName }}
+        - group: {{ $serviceGroup | quote }}
+          kind: {{ $serviceKind }}
+          name: {{ $serviceName }}
           port: {{ $servicePort }}
+          weight: {{ $serviceWeight }}
       {{- with $route.filters }}
       filters:
         {{- toYaml . | nindent 8 }}
