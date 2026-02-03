@@ -108,7 +108,7 @@ helm show values oci://ghcr.io/prometheus-community/charts/kube-prometheus-stack
 
 You may also `helm show values` on this chart's [dependencies](#dependencies) for additional options.
 
-For templated Grafana datasource definitions (e.g. when using Helm flow control), use `grafana.additionalDataSourcesString`, which is rendered via `tpl`.
+For templated Grafana datasource definitions (e.g. when using Helm flow control), use `grafana.additionalDataSourcesString`, which is rendered via `tpl`. When exposing Prometheus via a NodePort service, you can pin the reloader web port by setting `prometheus.service.reloaderWebNodePort`.
 
 ### Multiple releases
 
