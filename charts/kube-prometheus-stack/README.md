@@ -131,6 +131,7 @@ Important notes:
 4. Querying replicas through a Kubernetes Service provides availability, but not sample deduplication across replicas by itself. For global/deduplicated querying, use a Thanos Query layer (or another backend that performs deduplication).
 
 See also Prometheus Operator HA guidance:
+
 - [Prometheus Operator HA docs](https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/platform/high-availability.md#prometheus)
 
 ### Multiple releases
