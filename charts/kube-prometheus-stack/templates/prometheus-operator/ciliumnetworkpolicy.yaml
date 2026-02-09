@@ -1,4 +1,6 @@
 {{- if and .Values.prometheusOperator.networkPolicy.enabled (eq .Values.prometheusOperator.networkPolicy.flavor "cilium") }}
+{{- $operatorTlsSecretConfigured := ne (default "" .Values.prometheusOperator.tls.secretName) "" }}
+{{- $operatorTlsEnabled := and .Values.prometheusOperator.tls.enabled (or $operatorTlsSecretConfigured .Values.prometheusOperator.admissionWebhooks.enabled .Values.prometheusOperator.admissionWebhooks.certManager.enabled) }}
 apiVersion: cilium.io/v2
 kind: CiliumNetworkPolicy
 metadata:
@@ -25,13 +27,13 @@ spec:
   ingress:
   - toPorts:
     - ports:
-      {{- if .Values.prometheusOperator.tls.enabled }}
+      {{- if $operatorTlsEnabled }}
       - port: {{ .Values.prometheusOperator.tls.internalPort | quote }}
       {{- else }}
       - port: "8080"
       {{- end }}
         protocol: "TCP"
-      {{- if not .Values.prometheusOperator.tls.enabled }}
+      {{- if not $operatorTlsEnabled }}
       rules:
         http:
         - method: "GET"

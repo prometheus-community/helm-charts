@@ -1,0 +1,30 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/helm-unittest/helm-unittest/main/schema/helm-testsuite.json
+suite: prometheus operator servicemonitor tls fallback
+templates:
+  - prometheus-operator/servicemonitor.yaml
+tests:
+  - it: scrapes over http when admission webhooks are disabled and no tls secret is provided
+    set:
+      prometheusOperator.admissionWebhooks.enabled: false
+      prometheusOperator.tls.enabled: true
+      prometheusOperator.serviceMonitor.selfMonitor: true
+    asserts:
+      - equal:
+          path: spec.endpoints[0].port
+          value: http
+      - notExists:
+          path: spec.endpoints[0].tlsConfig
+
+  - it: scrapes over https when a custom operator tls secret is configured
+    set:
+      prometheusOperator.admissionWebhooks.enabled: false
+      prometheusOperator.tls.enabled: true
+      prometheusOperator.tls.secretName: custom-operator-tls
+      prometheusOperator.serviceMonitor.selfMonitor: true
+    asserts:
+      - equal:
+          path: spec.endpoints[0].port
+          value: https
+      - equal:
+          path: spec.endpoints[0].tlsConfig.ca.secret.name
+          value: custom-operator-tls

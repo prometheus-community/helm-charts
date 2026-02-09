@@ -1,0 +1,35 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/helm-unittest/helm-unittest/main/schema/helm-testsuite.json
+suite: prometheus operator service tls fallback
+templates:
+  - prometheus-operator/service.yaml
+tests:
+  - it: exposes http port when admission webhooks are disabled and no tls secret is provided
+    set:
+      prometheusOperator.admissionWebhooks.enabled: false
+      prometheusOperator.tls.enabled: true
+    asserts:
+      - equal:
+          path: spec.ports[0].name
+          value: http
+      - equal:
+          path: spec.ports[0].port
+          value: 8080
+      - equal:
+          path: spec.ports[0].targetPort
+          value: http
+
+  - it: exposes https port when a custom operator tls secret is configured
+    set:
+      prometheusOperator.admissionWebhooks.enabled: false
+      prometheusOperator.tls.enabled: true
+      prometheusOperator.tls.secretName: custom-operator-tls
+    asserts:
+      - equal:
+          path: spec.ports[0].name
+          value: https
+      - equal:
+          path: spec.ports[0].port
+          value: 443
+      - equal:
+          path: spec.ports[0].targetPort
+          value: https

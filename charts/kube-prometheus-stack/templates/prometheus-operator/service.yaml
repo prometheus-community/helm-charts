@@ -1,4 +1,6 @@
 {{- if .Values.prometheusOperator.enabled }}
+{{- $operatorTlsSecretConfigured := ne (default "" .Values.prometheusOperator.tls.secretName) "" }}
+{{- $operatorTlsEnabled := and .Values.prometheusOperator.tls.enabled (or $operatorTlsSecretConfigured .Values.prometheusOperator.admissionWebhooks.enabled .Values.prometheusOperator.admissionWebhooks.certManager.enabled) }}
 apiVersion: v1
 kind: Service
 metadata:
@@ -38,7 +40,7 @@ spec:
   externalTrafficPolicy: {{ .Values.prometheusOperator.service.externalTrafficPolicy }}
 {{- end }}
   ports:
-  {{- if not .Values.prometheusOperator.tls.enabled }}
+  {{- if not $operatorTlsEnabled }}
   - name: http
     {{- if eq .Values.prometheusOperator.service.type "NodePort" }}
     nodePort: {{ .Values.prometheusOperator.service.nodePort }}
@@ -46,7 +48,7 @@ spec:
     port: 8080
     targetPort: http
   {{- end }}
-  {{- if .Values.prometheusOperator.tls.enabled }}
+  {{- if $operatorTlsEnabled }}
   - name: https
     {{- if eq .Values.prometheusOperator.service.type "NodePort"}}
     nodePort: {{ .Values.prometheusOperator.service.nodePortTls }}
