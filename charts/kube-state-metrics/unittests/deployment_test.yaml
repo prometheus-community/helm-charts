@@ -1,0 +1,44 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/helm-unittest/helm-unittest/main/schema/helm-testsuite.json
+suite: test deployment probes
+templates:
+  - deployment.yaml
+tests:
+  - it: should use named probe ports by default
+    set:
+      startupProbe.enabled: true
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].startupProbe.httpGet.port
+          value: http
+      - equal:
+          path: spec.template.spec.containers[0].livenessProbe.httpGet.port
+          value: http
+      - equal:
+          path: spec.template.spec.containers[0].readinessProbe.httpGet.port
+          value: metrics
+
+  - it: should use the service port for probes when kube-rbac-proxy is enabled
+    set:
+      startupProbe.enabled: true
+      service.port: 9443
+      kubeRBACProxy.enabled: true
+      kubeRBACProxy.port: 9191
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].startupProbe.httpGet.port
+          value: 9443
+      - equal:
+          path: spec.template.spec.containers[0].startupProbe.httpGet.scheme
+          value: HTTPS
+      - equal:
+          path: spec.template.spec.containers[0].livenessProbe.httpGet.port
+          value: 9443
+      - equal:
+          path: spec.template.spec.containers[0].livenessProbe.httpGet.scheme
+          value: HTTPS
+      - equal:
+          path: spec.template.spec.containers[0].readinessProbe.httpGet.port
+          value: 9443
+      - equal:
+          path: spec.template.spec.containers[0].readinessProbe.httpGet.scheme
+          value: HTTPS
