@@ -78,8 +78,13 @@ webhooks:
     objectSelector:
       {{- toYaml . | nindent 6 }}
     {{- end }}
-    {{- with .Values.prometheusOperator.admissionWebhooks.matchConditions }}
+    {{- $matchConditions := .Values.prometheusOperator.admissionWebhooks.matchConditions }}
+    {{- if $matchConditions }}
     matchConditions:
-      {{- toYaml . | nindent 6 }}
+      {{- if kindIs "slice" $matchConditions }}
+      {{- toYaml $matchConditions | nindent 6 }}
+      {{- else }}
+      {{- toYaml (list $matchConditions) | nindent 6 }}
+      {{- end }}
     {{- end }}
 {{- end }}
