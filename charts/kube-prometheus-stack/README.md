@@ -123,6 +123,8 @@ When Google configure the control plane for private clusters, they automatically
 You can read more information on how to add firewall rules for the GKE control plane nodes in the [GKE docs](https://cloud.google.com/kubernetes-engine/docs/how-to/private-clusters#add_firewall_rules)
 
 Alternatively, you can disable the hooks by setting `prometheusOperator.admissionWebhooks.enabled=false`.
+When hooks are disabled and no TLS secret is configured, the operator endpoint automatically falls back to HTTP.
+To keep TLS enabled without admission webhooks, set `prometheusOperator.tls.secretName` to an existing secret with the expected key names.
 
 ## PrometheusRules Admission Webhooks
 

@@ -1,5 +1,8 @@
 {{- $namespace := printf "%s" (include "kube-prometheus-stack.namespace" .) }}
 {{- $defaultKubeletSvcName := printf "%s-kubelet" (include "kube-prometheus-stack.fullname" .) }}
+{{- $operatorTlsSecretConfigured := ne (default "" .Values.prometheusOperator.tls.secretName) "" }}
+{{- $operatorTlsEnabled := and .Values.prometheusOperator.tls.enabled (or $operatorTlsSecretConfigured .Values.prometheusOperator.admissionWebhooks.enabled .Values.prometheusOperator.admissionWebhooks.certManager.enabled) }}
+{{- $operatorTlsSecretName := default (printf "%s-admission" (include "kube-prometheus-stack.fullname" .)) .Values.prometheusOperator.tls.secretName }}
 {{- if .Values.prometheusOperator.enabled }}
 apiVersion: apps/v1
 kind: Deployment
@@ -137,7 +140,7 @@ spec:
             {{- if .Values.prometheusOperator.clusterDomain }}
             - --cluster-domain={{ .Values.prometheusOperator.clusterDomain }}
             {{- end }}
-            {{- if .Values.prometheusOperator.tls.enabled }}
+            {{- if $operatorTlsEnabled }}
             - --web.enable-tls=true
             - --web.cert-file=/cert/{{ if .Values.prometheusOperator.admissionWebhooks.certManager.enabled }}tls.crt{{ else }}cert{{ end }}
             - --web.key-file=/cert/{{ if .Values.prometheusOperator.admissionWebhooks.certManager.enabled }}tls.key{{ else }}key{{ end }}
@@ -153,7 +156,7 @@ spec:
           {{- with .Values.prometheusOperator.lifecycle }}
           lifecycle: {{ toYaml . | nindent 12 }}
           {{- end }}
-          {{- if .Values.prometheusOperator.tls.enabled }}
+          {{- if $operatorTlsEnabled }}
           ports:
             - containerPort: {{ .Values.prometheusOperator.tls.internalPort }}
               name: https
@@ -172,7 +175,7 @@ spec:
           securityContext:
 {{ toYaml .Values.prometheusOperator.containerSecurityContext | indent 12 }}
           volumeMounts:
-          {{- if .Values.prometheusOperator.tls.enabled }}
+          {{- if $operatorTlsEnabled }}
             - name: tls-secret
               mountPath: /cert
               readOnly: true
@@ -184,8 +187,8 @@ spec:
           readinessProbe:
             httpGet:
               path: /healthz
-              port: {{ .Values.prometheusOperator.tls.enabled | ternary "https" "http" }}
-              scheme: {{ .Values.prometheusOperator.tls.enabled | ternary "HTTPS" "HTTP" }}
+              port: {{ $operatorTlsEnabled | ternary "https" "http" }}
+              scheme: {{ $operatorTlsEnabled | ternary "HTTPS" "HTTP" }}
             initialDelaySeconds: {{ .Values.prometheusOperator.readinessProbe.initialDelaySeconds }}
             periodSeconds: {{ .Values.prometheusOperator.readinessProbe.periodSeconds }}
             timeoutSeconds: {{ .Values.prometheusOperator.readinessProbe.timeoutSeconds }}
@@ -196,8 +199,8 @@ spec:
           livenessProbe:
             httpGet:
               path: /healthz
-              port: {{ .Values.prometheusOperator.tls.enabled | ternary "https" "http" }}
-              scheme: {{ .Values.prometheusOperator.tls.enabled | ternary "HTTPS" "HTTP" }}
+              port: {{ $operatorTlsEnabled | ternary "https" "http" }}
+              scheme: {{ $operatorTlsEnabled | ternary "HTTPS" "HTTP" }}
             initialDelaySeconds: {{ .Values.prometheusOperator.livenessProbe.initialDelaySeconds }}
             periodSeconds: {{ .Values.prometheusOperator.livenessProbe.periodSeconds }}
             timeoutSeconds: {{ .Values.prometheusOperator.livenessProbe.timeoutSeconds }}
@@ -205,11 +208,11 @@ spec:
             failureThreshold: {{ .Values.prometheusOperator.livenessProbe.failureThreshold }}
           {{- end }}
       volumes:
-        {{- if .Values.prometheusOperator.tls.enabled }}
+        {{- if $operatorTlsEnabled }}
         - name: tls-secret
           secret:
             defaultMode: 420
-            secretName: {{ template "kube-prometheus-stack.fullname" . }}-admission
+            secretName: {{ $operatorTlsSecretName }}
         {{- end }}
         {{- with .Values.prometheusOperator.extraVolumes }}
         {{- toYaml . | nindent 8 }}

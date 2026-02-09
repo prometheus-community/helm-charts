@@ -1,0 +1,32 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/helm-unittest/helm-unittest/main/schema/helm-testsuite.json
+suite: prometheus operator deployment tls fallback
+templates:
+  - prometheus-operator/deployment.yaml
+tests:
+  - it: falls back to http when admission webhooks are disabled and no tls secret is provided
+    set:
+      prometheusOperator.admissionWebhooks.enabled: false
+      prometheusOperator.tls.enabled: true
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].ports[0].name
+          value: http
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: --web.enable-tls=false
+
+  - it: keeps tls enabled when a custom operator tls secret is configured
+    set:
+      prometheusOperator.admissionWebhooks.enabled: false
+      prometheusOperator.tls.enabled: true
+      prometheusOperator.tls.secretName: custom-operator-tls
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].ports[0].name
+          value: https
+      - equal:
+          path: spec.template.spec.volumes[0].secret.secretName
+          value: custom-operator-tls
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: --web.enable-tls=true

@@ -1,4 +1,6 @@
 {{- if and .Values.prometheusOperator.networkPolicy.enabled (eq .Values.prometheusOperator.networkPolicy.flavor "kubernetes") }}
+{{- $operatorTlsSecretConfigured := ne (default "" .Values.prometheusOperator.tls.secretName) "" }}
+{{- $operatorTlsEnabled := and .Values.prometheusOperator.tls.enabled (or $operatorTlsSecretConfigured .Values.prometheusOperator.admissionWebhooks.enabled .Values.prometheusOperator.admissionWebhooks.certManager.enabled) }}
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
@@ -11,7 +13,7 @@ spec:
     - {}
   ingress:
     - ports:
-      {{- if .Values.prometheusOperator.tls.enabled }}
+      {{- if $operatorTlsEnabled }}
       - port: {{ .Values.prometheusOperator.tls.internalPort }}
       {{- else }}
       - port: 8080
