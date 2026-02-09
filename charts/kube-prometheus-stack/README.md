@@ -42,6 +42,23 @@ To disable dependencies during installation, see [multiple releases](#multiple-r
 
 _See [helm dependency](https://helm.sh/docs/helm/helm_dependency/) for command documentation._
 
+#### Using as a dependency (umbrella charts)
+
+When `kube-prometheus-stack` is installed as a subchart, first-install runs can fail with errors like:
+
+`no matches for kind "ServiceMonitor" in version "monitoring.coreos.com/v1"`
+
+This happens because CRDs and CRs are created in the same Helm transaction.
+
+Recommended approaches:
+
+1. Manage CRDs separately (recommended):
+   - Install/upgrade `prometheus-operator-crds` first.
+   - Disable CRD management in this chart (`kube-prometheus-stack.crds.enabled=false`).
+2. If you keep CRDs in this chart, run install/upgrade twice:
+   - First run installs CRDs.
+   - Second run creates resources that depend on those CRDs.
+
 #### Grafana Dashboards
 
 This chart provisions a collection of curated Grafana dashboards that are automatically loaded into Grafana via ConfigMaps. These dashboards are rendered into the Helm chart under [`templates/grafana/`](https://github.com/prometheus-community/helm-charts/tree/main/charts/kube-prometheus-stack/templates/grafana/), but **this is not their source of truth**.
