@@ -913,7 +913,7 @@ alertmanager:
     image:
       registry: quay.io
       repository: prometheus/alertmanager
-      tag: v0.30.1
+      tag: v0.31.0
       sha: ""
       pullPolicy: IfNotPresent
 
@@ -1137,7 +1137,7 @@ alertmanager:
     containers: []
     # containers:
     # - name: oauth-proxy
-    #   image: quay.io/oauth2-proxy/oauth2-proxy:v7.13.0
+    #   image: quay.io/oauth2-proxy/oauth2-proxy:v7.14.2
     #   args:
     #   - --upstream=http://127.0.0.1:9093
     #   - --http-address=0.0.0.0:8081
@@ -1484,6 +1484,10 @@ grafana:
   #   type: prometheus
   #   url: https://{{ printf "%s-prometheus.svc" .Release.Name }}:9090
   #   version: 1
+
+  ## Configure additional grafana datasources as a templated string (passed through tpl)
+  ## Useful when you need Helm flow control or templating inside the datasource definition
+  additionalDataSourcesString: ""
 
   # Flag to mark provisioned data sources for deletion if they are no longer configured.
   # It takes no effect if data sources are already listed in the deleteDatasources section.
@@ -2052,6 +2056,11 @@ coreDns:
     ## https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/api-reference/api.md#servicemonitor
     targetLabels: []
 
+    ## File containing bearer token to be used when scraping targets
+    ## Empty value do not send any bearer token.
+    ##
+    bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
+
 ## Component scraping kubeDns. Use either this or coreDns
 ##
 kubeDns:
@@ -2149,6 +2158,11 @@ kubeDns:
     ## defines the labels which are transferred from the associated Kubernetes Service object onto the ingested metrics.
     ## https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/api-reference/api.md#servicemonitor
     targetLabels: []
+
+    ## File containing bearer token to be used when scraping targets
+    ## Empty value do not send any bearer token.
+    ##
+    bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
 
 ## Component scraping etcd
 ##
@@ -2258,6 +2272,11 @@ kubeEtcd:
     ## defines the labels which are transferred from the associated Kubernetes Service object onto the ingested metrics.
     ## https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/api-reference/api.md#servicemonitor
     targetLabels: []
+
+    ## File containing bearer token to be used when scraping targets
+    ## Empty value do not send any bearer token.
+    ##
+    bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
 
 ## Component scraping kube scheduler
 ##
@@ -2464,6 +2483,11 @@ kubeProxy:
     ## defines the labels which are transferred from the associated Kubernetes Service object onto the ingested metrics.
     ## https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/api-reference/api.md#servicemonitor
     targetLabels: []
+
+    ## File containing bearer token to be used when scraping targets
+    ## Empty value do not send any bearer token.
+    ##
+    bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
 
 ## Component scraping kube state metrics
 ##
@@ -2910,7 +2934,7 @@ prometheusOperator:
       image:
         registry: ghcr.io
         repository: jkroepke/kube-webhook-certgen
-        tag: 1.7.4
+        tag: 1.7.6
         sha: ""
         pullPolicy: IfNotPresent
       resources: {}
@@ -3920,6 +3944,21 @@ prometheus:
     ## ref: https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/api-reference/api.md#monitoring.coreos.com/v1.Prometheus
     additionalArgs: []
 
+    ## Convert all classic histograms to native histograms with custom buckets.
+    ## This corresponds to the 'convert_classic_histograms_to_nhcb' field in Prometheus configuration.
+    ##
+    convertClassicHistogramsToNHCB: false
+
+    ## Enable scraping of classic histograms that are also exposed as native histograms.
+    ## This corresponds to the 'always_scrape_classic_histograms' field in Prometheus configuration.
+    ##
+    scrapeClassicHistograms: false
+
+    ## Enable scraping of native histograms.
+    ## This corresponds to the 'scrape_native_histograms' field in Prometheus configuration.
+    ##
+    scrapeNativeHistograms: false
+
     ## File to which scrape failures are logged.
     ## Reloading the configuration will reopen the file.
     ## Defaults to empty (disabled)
@@ -4029,6 +4068,10 @@ prometheus:
     #   labelSelector:
     #     matchLabels:
     #       app: prometheus
+
+    ## Disable alerting
+    ##
+    disableAlerting: false
 
     ## Alertmanagers to which alerts will be sent
     ## ref: https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/api-reference/api.md#alertmanagerendpoints
@@ -4522,7 +4565,7 @@ prometheus:
     containers: []
     # containers:
     # - name: oauth-proxy
-    #   image: quay.io/oauth2-proxy/oauth2-proxy:v7.13.0
+    #   image: quay.io/oauth2-proxy/oauth2-proxy:v7.14.2
     #   args:
     #   - --upstream=http://127.0.0.1:9090
     #   - --http-address=0.0.0.0:8081

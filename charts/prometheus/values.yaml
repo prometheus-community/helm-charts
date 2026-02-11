@@ -57,7 +57,7 @@ configmapReload:
     ##
     image:
       repository: quay.io/prometheus-operator/prometheus-config-reloader
-      tag: v0.88.0
+      tag: v0.89.0
       # When digest is set to a non-empty value, images will be pulled by digest (regardless of tag value).
       digest: ""
       pullPolicy: IfNotPresent
@@ -165,7 +165,7 @@ server:
   # OR for adding OAuth authentication to Prometheus
   #   sidecarContainers:
   #     oauth-proxy:
-  #       image: quay.io/oauth2-proxy/oauth2-proxy:v7.13.0
+  #       image: quay.io/oauth2-proxy/oauth2-proxy:v7.14.2
   #       args:
   #       - --upstream=http://127.0.0.1:9090
   #       - --http-address=0.0.0.0:8081
@@ -836,36 +836,29 @@ scrapeConfigs:
     scheme: https
     tls_config:
       ca_file: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+      insecure_skip_verify: true
     bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
     kubernetes_sd_configs:
       - role: node
     relabel_configs:
       - action: labelmap
         regex: __meta_kubernetes_node_label_(.+)
-      - target_label: __address__
-        replacement: kubernetes.default.svc:443
-      - source_labels: [__meta_kubernetes_node_name]
-        regex: (.+)
-        target_label: __metrics_path__
-        replacement: /api/v1/nodes/$1/proxy/metrics
   kubernetes-nodes-cadvisor:
     enabled: true
     job_name: ""
     scheme: https
     tls_config:
       ca_file: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+      insecure_skip_verify: true
     bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
+    metrics_path: /metrics/cadvisor
     kubernetes_sd_configs:
       - role: node
     relabel_configs:
       - action: labelmap
         regex: __meta_kubernetes_node_label_(.+)
-      - target_label: __address__
-        replacement: kubernetes.default.svc:443
-      - source_labels: [__meta_kubernetes_node_name]
-        regex: (.+)
-        target_label: __metrics_path__
-        replacement: /api/v1/nodes/$1/proxy/metrics/cadvisor
+      - source_labels: [__metrics_path__]
+        target_label: metrics_path
   kubernetes-service-endpoints:
     enabled: true
     job_name: ""
