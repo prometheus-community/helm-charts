@@ -80,13 +80,14 @@ We truncate at 63 chars because some Kubernetes name fields are limited to this 
 {{- end -}}
 
 {{/*
-Create a fully qualified alertmanager name for communicating and check to ensure that `alertmanager` exists before trying to use it with the user via NOTES.txt
+Create a fully qualified alertmanager name to use even when the subchart is not available
+from the charts directory
 */}}
 {{- define "prometheus.alertmanager.fullname" -}}
-{{- if .Subcharts.alertmanager -}}
-{{- template "alertmanager.fullname" .Subcharts.alertmanager -}}
+{{- if (index .Subcharts "alertmanager") -}}
+{{- include "alertmanager.fullname" (index .Subcharts "alertmanager") -}}
 {{- else -}}
-{{- "alertmanager not found" -}}
+{{- printf "%s-%s" .Release.Name "alertmanager" | trunc 63 | trimSuffix "-" -}}
 {{- end -}}
 {{- end -}}
 
