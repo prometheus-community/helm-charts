@@ -28,7 +28,6 @@ Get the Prometheus server URL by running these commands in the same shell:
   kubectl --namespace {{ .Release.Namespace }} port-forward $POD_NAME {{ include "prometheus.port" . }}
 {{- end }}
 
-
 {{- if .Values.server.persistentVolume.enabled }}
 {{- else }}
 #################################################################################
@@ -38,12 +37,12 @@ Get the Prometheus server URL by running these commands in the same shell:
 {{- end }}
 {{- end }}
 
-{{ if .Values.alertmanager.enabled }}
+{{ if (index .Values "alertmanager" "enabled") }}
 {{- $am := .Values.alertmanager | default dict -}}
 {{- $amSvc := default dict $am.service -}}
 {{- $amSvcType := default "" $amSvc.type -}}
 {{- $amIngress := default dict $am.ingress -}}
-The Prometheus alertmanager can be accessed via port {{ default 9093 $amSvc.port }} on the following DNS name from within your cluster:
+Prometheus alertmanager can be accessed via port {{ default 9093 $amSvc.port }} on the following DNS name from within your cluster:
 {{ template "prometheus.alertmanager.fullname" . }}.{{ .Release.Namespace }}.svc.cluster.local
 
 {{ if $amIngress.enabled -}}
@@ -73,20 +72,9 @@ Get the Alertmanager URL by running these commands in the same shell:
 {{- else }}
 #################################################################################
 ######   WARNING: Persistence is disabled!!! You will lose your data when   #####
-######            the AlertManager pod is terminated.                       #####
+######            the Alertmanager pod is terminated.                       #####
 #################################################################################
 {{- end }}
-{{- end }}
-
-{{- if (index .Values "prometheus-node-exporter" "enabled") }}
-#################################################################################
-######   WARNING: Pod Security Policy has been disabled by default since    #####
-######            it deprecated after k8s 1.25+. use                        #####
-######            (index .Values "prometheus-node-exporter" "rbac"          #####
-###### .          "pspEnabled") with (index .Values                         #####
-######            "prometheus-node-exporter" "rbac" "pspAnnotations")       #####
-######            in case you still need it.                                #####
-#################################################################################
 {{- end }}
 
 {{ if (index .Values "prometheus-pushgateway" "enabled") }}
@@ -95,7 +83,7 @@ Get the Alertmanager URL by running these commands in the same shell:
 {{- $pgSvcType := default "" $pgSvc.type -}}
 {{- $pgIngress := default dict $pg.ingress -}}
 {{- $pgFullname := include "prometheus.pushgateway.fullname" . -}}
-The Prometheus PushGateway can be accessed via port {{ default 9091 $pgSvc.port }} on the following DNS name from within your cluster:
+Prometheus Pushgateway can be accessed via port {{ default 9091 $pgSvc.port }} on the following DNS name from within your cluster:
 {{ $pgFullname }}.{{ .Release.Namespace }}.svc.cluster.local
 
 {{ if $pgIngress.enabled -}}
@@ -104,7 +92,7 @@ From outside the cluster, the pushgateway URL(s) are:
 http://{{ . }}
 {{- end }}
 {{- else }}
-Get the PushGateway URL by running these commands in the same shell:
+Get the Pushgateway URL by running these commands in the same shell:
 {{- if contains "NodePort" $pgSvcType }}
   export NODE_PORT=$(kubectl get --namespace {{ .Release.Namespace }} -o jsonpath="{.spec.ports[0].nodePort}" services {{ $pgFullname }})
   export NODE_IP=$(kubectl get nodes --namespace {{ .Release.Namespace }} -o jsonpath="{.items[0].status.addresses[0].address}")
@@ -116,7 +104,8 @@ Get the PushGateway URL by running these commands in the same shell:
   export SERVICE_IP=$(kubectl get svc --namespace {{ .Release.Namespace }} {{ $pgFullname }} -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
   echo http://$SERVICE_IP:{{ default 9091 $pgSvc.port }}
 {{- else if contains "ClusterIP" $pgSvcType }}
-  export POD_NAME=$(kubectl get pods --namespace {{ .Release.Namespace }} -l "app={{ include "prometheus.name" (index .Subcharts "prometheus-pushgateway") }},component=pushgateway" -o jsonpath="{.items[0].metadata.name}")
+  export POD_NAME=$(kubectl get pods --namespace {{ .Release.Namespace }} -l "app.kubernetes.io/name={{ include
+  "prometheus-pushgateway.name" (index .Subcharts "prometheus-pushgateway") }},app.kubernetes.io/instance={{ .Release.Name }}" -o jsonpath="{.items[0].metadata.name}")
   kubectl --namespace {{ .Release.Namespace }} port-forward $POD_NAME 9091
 {{- end }}
 {{- end }}
