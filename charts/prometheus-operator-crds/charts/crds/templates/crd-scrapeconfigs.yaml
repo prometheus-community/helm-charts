@@ -1,5 +1,5 @@
 {{- if .Values.scrapeconfigs.enabled -}}
-# https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/v0.86.1/example/prometheus-operator-crd/monitoring.coreos.com_scrapeconfigs.yaml
+# https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/v0.89.0/example/prometheus-operator-crd/monitoring.coreos.com_scrapeconfigs.yaml
 ---
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
@@ -9,7 +9,7 @@ metadata:
 {{- toYaml . | nindent 4 }}
 {{- end }}
     controller-gen.kubebuilder.io/version: v0.19.0
-    operator.prometheus.io/version: 0.86.1
+    operator.prometheus.io/version: 0.89.0
   name: scrapeconfigs.monitoring.coreos.com
 spec:
   group: monitoring.coreos.com
@@ -887,6 +887,15 @@ spec:
                     type: object
                     x-kubernetes-map-type: atomic
                 type: object
+              bodySizeLimit:
+                description: |-
+                  bodySizeLimit defines a per-scrape limit on the size of the uncompressed
+                  response body that will be accepted by Prometheus. Targets responding with
+                  a body larger than this many bytes will cause the scrape to fail.
+
+                  It requires Prometheus >= v2.28.0.
+                pattern: (^0|([0-9]*[.])?[0-9]+((K|M|G|T|E|P)i?)?B)$
+                type: string
               consulSDConfigs:
                 description: consulSDConfigs defines a list of Consul service discovery
                   configurations.
@@ -1433,8 +1442,10 @@ spec:
                       pattern: ^(0|(([0-9]+)y)?(([0-9]+)w)?(([0-9]+)d)?(([0-9]+)h)?(([0-9]+)m)?(([0-9]+)s)?(([0-9]+)ms)?)$
                       type: string
                     scheme:
-                      description: scheme defines the HTTP Scheme default "http"
+                      description: scheme defines the HTTP Scheme.
                       enum:
+                      - http
+                      - https
                       - HTTP
                       - HTTPS
                       type: string
@@ -12517,10 +12528,10 @@ spec:
                   type: object
                 type: array
               scheme:
-                description: |-
-                  scheme defines the protocol scheme used for requests.
-                  If empty, Prometheus uses HTTP by default.
+                description: scheme defines the protocol scheme used for requests.
                 enum:
+                - http
+                - https
                 - HTTP
                 - HTTPS
                 type: string
@@ -12540,6 +12551,11 @@ spec:
                   scrapes.
                 pattern: ^(0|(([0-9]+)y)?(([0-9]+)w)?(([0-9]+)d)?(([0-9]+)h)?(([0-9]+)m)?(([0-9]+)s)?(([0-9]+)ms)?)$
                 type: string
+              scrapeNativeHistograms:
+                description: |-
+                  scrapeNativeHistograms defines whether to enable scraping of native histograms.
+                  It requires Prometheus >= v3.8.0.
+                type: boolean
               scrapeProtocols:
                 description: |-
                   scrapeProtocols defines the protocols to negotiate during a scrape. It tells clients the

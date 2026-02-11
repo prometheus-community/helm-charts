@@ -23,7 +23,7 @@ spec:
 {{- if not (kindIs "invalid" .Values.prometheus.prometheusSpec.automountServiceAccountToken) }}
   automountServiceAccountToken: {{ .Values.prometheus.prometheusSpec.automountServiceAccountToken }}
 {{- end }}
-{{- if and (not .Values.prometheus.agentMode) (or .Values.prometheus.prometheusSpec.alertingEndpoints .Values.alertmanager.enabled) }}
+{{- if and (not .Values.prometheus.agentMode) (not .Values.prometheus.prometheusSpec.disableAlerting) (or .Values.prometheus.prometheusSpec.alertingEndpoints .Values.alertmanager.enabled) }}
   alerting:
     alertmanagers:
 {{- if .Values.prometheus.prometheusSpec.alertingEndpoints }}
@@ -143,6 +143,15 @@ spec:
 {{- end }}
 {{- if .Values.prometheus.prometheusSpec.scrapeTimeout }}
   scrapeTimeout: {{ .Values.prometheus.prometheusSpec.scrapeTimeout }}
+{{- end }}
+{{- if .Values.prometheus.prometheusSpec.convertClassicHistogramsToNHCB }}
+  convertClassicHistogramsToNHCB: {{ .Values.prometheus.prometheusSpec.convertClassicHistogramsToNHCB }}
+{{- end }}
+{{- if .Values.prometheus.prometheusSpec.scrapeClassicHistograms }}
+  scrapeClassicHistograms: {{ .Values.prometheus.prometheusSpec.scrapeClassicHistograms }}
+{{- end }}
+{{- if .Values.prometheus.prometheusSpec.scrapeNativeHistograms }}
+  scrapeNativeHistograms: {{ .Values.prometheus.prometheusSpec.scrapeNativeHistograms }}
 {{- end }}
 {{- if and (not .Values.prometheus.agentMode) .Values.prometheus.prometheusSpec.evaluationInterval }}
   evaluationInterval: {{ .Values.prometheus.prometheusSpec.evaluationInterval }}

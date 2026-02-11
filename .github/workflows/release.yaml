@@ -8,6 +8,7 @@ on:
 
 jobs:
   release:
+    environment: release
     permissions:
       contents: write # to push chart release and create a release (helm/chart-releaser-action)
       packages: write # needed for ghcr access
@@ -16,7 +17,7 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - name: Checkout Code
-        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
       - name: Fetch history
         run: git fetch --prune --unshallow
@@ -29,13 +30,39 @@ jobs:
       - name: Set up Helm
         uses: azure/setup-helm@1a275c3b69536ee54be43f2070a358922e12c8d4 # v4.3.1
         with:
-          version: v3.12.0
+          # renovate: github=helm/helm
+          version: v4.1.1
 
       - name: Add dependency chart repos
         run: |
           helm repo add bitnami https://charts.bitnami.com/bitnami
-          helm repo add grafana https://grafana.github.io/helm-charts
+          helm repo add grafana-community https://grafana-community.github.io/helm-charts
           helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+      
+      - name: GPG configuration
+        run: |-
+          echo "$GPG_KEY" > "$GPG_KEY_PATH"
+          mkdir -p "$HOME/.gnupg"
+          chmod 0700 "$HOME/.gnupg"
+          echo "use-agent" > "$HOME/.gnupg/gpg.conf"
+          echo "pinentry-mode loopback" >> "$HOME/.gnupg/gpg.conf"
+          echo "allow-loopback-pinentry" > "$HOME/.gnupg/gpg-agent.conf"
+          echo "max-cache-ttl 86400" >> "$HOME/.gnupg/gpg-agent.conf"
+          echo "default-cache-ttl 86400" >> "$HOME/.gnupg/gpg-agent.conf"
+          gpgconf --kill gpg-agent
+          gpgconf --launch gpg-agent
+          gpg --batch --yes --passphrase-fd 0 --import "$GPG_KEY_PATH" <<< "$GPG_PASSPHRASE"
+
+          mkdir "${{ runner.temp }}/.gnupg/"
+          gpg --batch --yes --export "$GPG_KEY_ID" >~/.gnupg/pubring.gpg
+          gpg --batch --yes --passphrase-fd 0 --export-secret-keys "$GPG_KEY_ID" >~/.gnupg/secring.gpg <<< "$GPG_PASSPHRASE"
+          cat > "$GPG_PASSPHRASE_FILE" <<< "$GPG_PASSPHRASE"
+        env:
+          GPG_KEY_ID: "${{ vars.GPG_KEY_ID }}"
+          GPG_KEY: "${{ secrets.GPG_PRIVATE_KEY }}"
+          GPG_PASSPHRASE: "${{ secrets.GPG_PASSPHRASE }}"
+          GPG_PASSPHRASE_FILE: "${{ runner.temp }}/gpg-passphrase"
+          GPG_KEY_PATH: "${{ runner.temp }}/private.key"
 
       - name: Run chart-releaser
         uses: helm/chart-releaser-action@cae68fefc6b5f367a0275617c9f83181ba54714f # v1.7.0
@@ -44,10 +71,14 @@ jobs:
         env:
           CR_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
           CR_GENERATE_RELEASE_NOTES: true
+          CR_SIGN: true
+          CR_KEY: "${{ vars.GPG_KEY_NAME }}"
+          CR_KEYRING: "~/.gnupg/secring.gpg"
+          CR_PASSPHRASE_FILE: "${{ runner.temp }}/gpg-passphrase"
 
       # see https://github.com/helm/chart-releaser/issues/183
       - name: Login to GitHub Container Registry
-        uses: docker/login-action@5e57cd118135c172c3672efd75eb46360885c0ef # v3.6.0
+        uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3.7.0
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
@@ -56,7 +87,7 @@ jobs:
       - name: Push charts to GHCR
         run: |
           shopt -s nullglob
-          for pkg in .cr-release-packages/*; do
+          for pkg in .cr-release-packages/*.tgz; do
             if [ -z "${pkg:-}" ]; then
               break
             fi

@@ -913,7 +913,7 @@ alertmanager:
     image:
       registry: quay.io
       repository: prometheus/alertmanager
-      tag: v0.28.1
+      tag: v0.31.0
       sha: ""
       pullPolicy: IfNotPresent
 
@@ -1137,7 +1137,7 @@ alertmanager:
     containers: []
     # containers:
     # - name: oauth-proxy
-    #   image: quay.io/oauth2-proxy/oauth2-proxy:v7.12.0
+    #   image: quay.io/oauth2-proxy/oauth2-proxy:v7.14.2
     #   args:
     #   - --upstream=http://127.0.0.1:9093
     #   - --http-address=0.0.0.0:8081
@@ -1280,9 +1280,23 @@ grafana:
     ##
     resyncPeriod: 10m
 
-    ## Which folder all ddashboard in Grafana General means on Root level
+    ## Which folder contains all dashboards in Grafana
+    ## This folder will be created on the Root level
+    ## Only one of 'folder', 'folderUID' or 'folderRef' can be set
     ##
     folder: General
+
+    ## Which UID of the target folder contains all dashboards in Grafana
+    ## This allows you to use subfolder hierarchy
+    ## Only one of 'folder', 'folderUID' or 'folderRef' can be set
+    ##
+    folderUID: null
+
+    ## Which GrafanaFolder reference contains all dashboards in Grafana
+    ## This allows you to use subfolder hierarchy.
+    ## Only one of 'folder', 'folderUID' or 'folderRef' can be set
+    ##
+    folderRef: null
 
   ## Timezone for the default dashboards
   ## Other options are: browser or a specific timezone, i.e. Europe/Luxembourg
@@ -1297,8 +1311,16 @@ grafana:
   ##
   defaultDashboardsInterval: 1m
 
+  # Administrator credentials when not using an existing secret (see below)
   adminUser: admin
-  adminPassword: prom-operator
+  # adminPassword: strongpassword
+
+  # Use an existing secret for the admin user.
+  admin:
+    ## Name of the secret. Can be templated.
+    existingSecret: ""
+    userKey: admin-user
+    passwordKey: admin-password
 
   rbac:
     ## If true, Grafana PSPs will be created
@@ -1462,6 +1484,10 @@ grafana:
   #   type: prometheus
   #   url: https://{{ printf "%s-prometheus.svc" .Release.Name }}:9090
   #   version: 1
+
+  ## Configure additional grafana datasources as a templated string (passed through tpl)
+  ## Useful when you need Helm flow control or templating inside the datasource definition
+  additionalDataSourcesString: ""
 
   # Flag to mark provisioned data sources for deletion if they are no longer configured.
   # It takes no effect if data sources are already listed in the deleteDatasources section.
@@ -2030,6 +2056,11 @@ coreDns:
     ## https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/api-reference/api.md#servicemonitor
     targetLabels: []
 
+    ## File containing bearer token to be used when scraping targets
+    ## Empty value do not send any bearer token.
+    ##
+    bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
+
 ## Component scraping kubeDns. Use either this or coreDns
 ##
 kubeDns:
@@ -2127,6 +2158,11 @@ kubeDns:
     ## defines the labels which are transferred from the associated Kubernetes Service object onto the ingested metrics.
     ## https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/api-reference/api.md#servicemonitor
     targetLabels: []
+
+    ## File containing bearer token to be used when scraping targets
+    ## Empty value do not send any bearer token.
+    ##
+    bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
 
 ## Component scraping etcd
 ##
@@ -2236,6 +2272,11 @@ kubeEtcd:
     ## defines the labels which are transferred from the associated Kubernetes Service object onto the ingested metrics.
     ## https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/api-reference/api.md#servicemonitor
     targetLabels: []
+
+    ## File containing bearer token to be used when scraping targets
+    ## Empty value do not send any bearer token.
+    ##
+    bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
 
 ## Component scraping kube scheduler
 ##
@@ -2443,6 +2484,11 @@ kubeProxy:
     ## https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/api-reference/api.md#servicemonitor
     targetLabels: []
 
+    ## File containing bearer token to be used when scraping targets
+    ## Empty value do not send any bearer token.
+    ##
+    bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
+
 ## Component scraping kube state metrics
 ##
 kubeStateMetrics:
@@ -2451,9 +2497,7 @@ kubeStateMetrics:
 ## Configuration for kube-state-metrics subchart
 ##
 kube-state-metrics:
-  namespaceOverride: ""
-  rbac:
-    create: true
+  ## set to true to add the release label so scraping of the servicemonitor with kube-prometheus-stack works out of the box
   releaseLabel: true
 
   ## Enable scraping via kubernetes-service-endpoints
@@ -2463,69 +2507,19 @@ kube-state-metrics:
 
   prometheus:
     monitor:
-
       ## Enable scraping via service monitor
       ## Disable to prevent duplication if you enable prometheusScrape above
-      ##
       enabled: true
 
-      ## Scrape interval. If not set, the Prometheus default scrape interval is used.
-      ##
-      interval: ""
+      ## kube-state-metrics endpoint
+      http:
+        ## Keep labels from scraped data, overriding server-side labels
+        honorLabels: true
 
-      ## SampleLimit defines per-scrape limit on number of scraped samples that will be accepted.
-      ##
-      sampleLimit: 0
-
-      ## TargetLimit defines a limit on the number of scraped targets that will be accepted.
-      ##
-      targetLimit: 0
-
-      ## Per-scrape limit on number of labels that will be accepted for a sample. Only valid in Prometheus versions 2.27.0 and newer.
-      ##
-      labelLimit: 0
-
-      ## Per-scrape limit on length of labels name that will be accepted for a sample. Only valid in Prometheus versions 2.27.0 and newer.
-      ##
-      labelNameLengthLimit: 0
-
-      ## Per-scrape limit on length of labels value that will be accepted for a sample. Only valid in Prometheus versions 2.27.0 and newer.
-      ##
-      labelValueLengthLimit: 0
-
-      ## Scrape Timeout. If not set, the Prometheus default scrape timeout is used.
-      ##
-      scrapeTimeout: ""
-
-      ## proxyUrl: URL of a proxy that should be used for scraping.
-      ##
-      proxyUrl: ""
-
-      # Keep labels from scraped data, overriding server-side labels
-      ##
-      honorLabels: true
-
-      ## MetricRelabelConfigs to apply to samples after scraping, but before ingestion.
-      ## ref: https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/api-reference/api.md#relabelconfig
-      ##
-      metricRelabelings: []
-      # - action: keep
-      #   regex: 'kube_(daemonset|deployment|pod|namespace|node|statefulset).+'
-      #   sourceLabels: [__name__]
-
-      ## RelabelConfigs to apply to samples before scraping
-      ## ref: https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/api-reference/api.md#relabelconfig
-      ##
-      relabelings: []
-      # - sourceLabels: [__meta_kubernetes_pod_node_name]
-      #   separator: ;
-      #   regex: ^(.*)$
-      #   targetLabel: nodename
-      #   replacement: $1
-      #   action: replace
-
-  selfMonitor:
-    enabled: false
+      ## selfMonitor endpoint
+      metrics:
+        ## Keep labels from scraped data, overriding server-side labels
+        honorLabels: true
 
 ## Deploy node exporter as a daemonset to all nodes
 ##
@@ -2553,7 +2547,7 @@ prometheus-node-exporter:
     jobLabel: node-exporter
   releaseLabel: true
   extraArgs:
-    - --collector.filesystem.mount-points-exclude=^/(dev|proc|sys|var/lib/docker/.+|var/lib/kubelet/.+)($|/)
+    - --collector.filesystem.mount-points-exclude=^/(dev|proc|sys|run/containerd/.+|var/lib/docker/.+|var/lib/kubelet/.+)($|/)
     - --collector.filesystem.fs-types-exclude=^(autofs|binfmt_misc|bpf|cgroup2?|configfs|debugfs|devpts|devtmpfs|fusectl|hugetlbfs|iso9660|mqueue|nsfs|overlay|proc|procfs|pstore|rpc_pipefs|securityfs|selinuxfs|squashfs|sysfs|tracefs|erofs)$
   service:
     portName: http-metrics
@@ -2938,9 +2932,9 @@ prometheusOperator:
     patch:
       enabled: true
       image:
-        registry: registry.k8s.io
-        repository: ingress-nginx/kube-webhook-certgen
-        tag: v1.6.3  # latest tag: https://github.com/kubernetes/ingress-nginx/blob/main/images/kube-webhook-certgen/TAG
+        registry: ghcr.io
+        repository: jkroepke/kube-webhook-certgen
+        tag: 1.7.6
         sha: ""
         pullPolicy: IfNotPresent
       resources: {}
@@ -3284,6 +3278,10 @@ prometheusOperator:
     seccompProfile:
       type: RuntimeDefault
 
+  ## Setup hostUsers for prometheus-operator
+  ## ref: https://kubernetes.io/docs/concepts/workloads/pods/user-namespaces/
+  hostUsers: ~
+
   ## Container-specific security context configuration
   ## ref: https://kubernetes.io/docs/tasks/configure-pod-container/security-context/
   ##
@@ -3378,7 +3376,7 @@ prometheusOperator:
   thanosImage:
     registry: quay.io
     repository: thanos/thanos
-    tag: v0.39.2
+    tag: v0.40.1
     sha: ""
 
   ## Set a Label Selector to filter watched prometheus and prometheusAgent
@@ -3436,6 +3434,8 @@ prometheus:
     #  * kubernetes for networking.k8s.io/v1/NetworkPolicy
     #  * cilium     for cilium.io/v2/CiliumNetworkPolicy
     flavor: kubernetes
+
+    namespace:
 
     # cilium:
     #   endpointSelector:
@@ -3944,6 +3944,21 @@ prometheus:
     ## ref: https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/api-reference/api.md#monitoring.coreos.com/v1.Prometheus
     additionalArgs: []
 
+    ## Convert all classic histograms to native histograms with custom buckets.
+    ## This corresponds to the 'convert_classic_histograms_to_nhcb' field in Prometheus configuration.
+    ##
+    convertClassicHistogramsToNHCB: false
+
+    ## Enable scraping of classic histograms that are also exposed as native histograms.
+    ## This corresponds to the 'always_scrape_classic_histograms' field in Prometheus configuration.
+    ##
+    scrapeClassicHistograms: false
+
+    ## Enable scraping of native histograms.
+    ## This corresponds to the 'scrape_native_histograms' field in Prometheus configuration.
+    ##
+    scrapeNativeHistograms: false
+
     ## File to which scrape failures are logged.
     ## Reloading the configuration will reopen the file.
     ## Defaults to empty (disabled)
@@ -4030,7 +4045,7 @@ prometheus:
     image:
       registry: quay.io
       repository: prometheus/prometheus
-      tag: v3.7.1
+      tag: v3.9.1
       sha: ""
       pullPolicy: IfNotPresent
 
@@ -4053,6 +4068,10 @@ prometheus:
     #   labelSelector:
     #     matchLabels:
     #       app: prometheus
+
+    ## Disable alerting
+    ##
+    disableAlerting: false
 
     ## Alertmanagers to which alerts will be sent
     ## ref: https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/api-reference/api.md#alertmanagerendpoints
@@ -4546,7 +4565,7 @@ prometheus:
     containers: []
     # containers:
     # - name: oauth-proxy
-    #   image: quay.io/oauth2-proxy/oauth2-proxy:v7.12.0
+    #   image: quay.io/oauth2-proxy/oauth2-proxy:v7.14.2
     #   args:
     #   - --upstream=http://127.0.0.1:9090
     #   - --http-address=0.0.0.0:8081
@@ -5133,7 +5152,7 @@ thanosRuler:
     image:
       registry: quay.io
       repository: thanos/thanos
-      tag: v0.39.2
+      tag: v0.40.1
       sha: ""
 
     ## Namespaces to be selected for PrometheusRules discovery.
