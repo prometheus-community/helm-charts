@@ -38,10 +38,26 @@ spec:
       {{- with .Values.priorityClassName }}
       priorityClassName: {{ . }}
       {{- end }}
-      {{- with .Values.extraInitContainers }}
       initContainers:
-        {{- toYaml . | nindent 8 }}
+      {{- if .Values.extraInitContainers }}
+      {{- toYaml .Values.extraInitContainers | nindent 8 }}
       {{- end }}
+        - name: chown-powercap
+          image: busybox:latest
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              if [ -d /host/sys/devices/virtual/powercap ]; then
+                find /host/sys/devices/virtual/powercap -name energy_uj -exec chown root:{{ .Values.securityContext.runAsGroup }} {} + -exec chmod g+r -R {} +;
+              fi
+          securityContext:
+            runAsUser: 0
+            runAsNonRoot: false
+            privileged: true
+          volumeMounts:
+            - name: sys
+              mountPath: /host/sys
+              readOnly: false
       serviceAccountName: {{ include "prometheus-node-exporter.serviceAccountName" . }}
       {{- with .Values.terminationGracePeriodSeconds }}
       terminationGracePeriodSeconds: {{ . }}
