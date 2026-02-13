@@ -33,7 +33,7 @@ refs = {
     # renovate: git-refs=https://github.com/kubernetes-monitoring/kubernetes-mixin branch=master
     'ref.kubernetes-mixin': 'b3d555f3cd938b1e15fefb91d3841a12fc096ed4',
     # renovate: git-refs=https://github.com/etcd-io/etcd branch=main
-    'ref.etcd': '405a607c23cdc54e712a34af0551c2b568c6a2a0',
+    'ref.etcd': '8dd53672d7306ce031199bc4dd7b8b9c1db09fd5',
 }
 
 # Source files list
