@@ -90,9 +90,22 @@ spec:
         - --host=127.0.0.1
         {{- end }}
         - --port={{ $servicePort }}
-        {{-  if .Values.collectors  }}
-        - --resources={{ .Values.collectors | join "," }}
-        {{-  end  }}
+        {{- if or (.Values.collectors) (.Values.collectorExtra) }}
+        {{- $exclude := .Values.collectorExclude | default list }}
+        {{- $extra := .Values.collectorExtra | default list }}
+        {{- $final := list }}
+        {{- range .Values.collectors }}
+        {{- if not (has . $exclude ) }}
+        {{- $final = append $final . }}
+        {{- end }}
+        {{- end }}
+        {{- range $extra }}
+        {{- if not (has . $final) }}
+        {{- $final = append $final . }}
+        {{- end }}
+        {{- end }}
+        - --resources={{ join "," $final }}
+        {{- end }}
         {{- if .Values.metricLabelsAllowlist }}
         - --metric-labels-allowlist={{ .Values.metricLabelsAllowlist | join "," }}
         {{- end }}
