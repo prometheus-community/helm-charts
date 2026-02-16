@@ -27,6 +27,18 @@ spec:
   {{- end }}
   rules:
     {{- range .Values.ingress.hosts }}
+    {{- if kindIs "string" . }}
+    - host: {{ . | quote }}
+      http:
+        paths:
+          - path: {{ $.Values.ingress.path | default "/" }}
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: {{ $fullName }}
+                port:
+                  number: {{ $svcPort }}
+    {{- else }}
     - host: {{ .host | quote }}
       http:
         paths:
@@ -39,5 +51,6 @@ spec:
                 port:
                   number: {{ $svcPort }}
           {{- end }}
+    {{- end }}
     {{- end }}
 {{- end }}
