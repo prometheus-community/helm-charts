@@ -32,7 +32,13 @@ spec:
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           args:
             {{- range $key, $value := .Values.options }}
+            {{- if kindIs "slice" $value }}
+            {{- range $v := $value }}
+            - "-{{ $key }}={{ $v }}"
+            {{- end }}
+            {{- else }}
             - "-{{ $key }}{{ if $value }}={{ $value }}{{ end }}"
+            {{- end }}
             {{- end }}
           env:
             - name: FASTLY_API_TOKEN
