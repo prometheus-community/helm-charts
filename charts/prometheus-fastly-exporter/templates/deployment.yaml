@@ -19,6 +19,10 @@ spec:
       {{- end }}
     spec:
       serviceAccountName: {{ template "prometheus-fastly-exporter.serviceAccountName" . }}
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
       {{- with .Values.initContainers }}
       initContainers: {{ toYaml . | nindent 8 }}
       {{- end }}
@@ -46,6 +50,9 @@ spec:
                 secretKeyRef:
                   name: {{ include "prometheus-fastly-exporter.secretName" . }}
                   key: {{ .Values.existingSecret.key }}
+            {{- with .Values.extraEnv }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
           ports:
             - name: http
               containerPort: {{ .Values.service.port }}
@@ -71,9 +78,6 @@ spec:
           {{- end }}
           {{- with .Values.extraVolumeMounts }}
           volumeMounts: {{ toYaml . | nindent 12 }}
-          {{- end }}
-          {{- with .Values.extraEnv }}
-          env: {{ toYaml . | nindent 12 }}
           {{- end }}
         {{- with .Values.extraContainers }}
         {{- toYaml . | nindent 8 }}

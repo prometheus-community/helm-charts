@@ -11,6 +11,8 @@ serviceAccount:
   # If not set and create is true, a name is generated using the fullname template
   name:
 
+imagePullSecrets: []
+
 image:
   repository: ghcr.io/fastly/fastly-exporter
   # if not set appVersion field from Chart.yaml is used
@@ -47,13 +49,19 @@ service:
 
 ingress:
   enabled: false
-  annotations:
-    {}
-    # kubernetes.io/ingress.class: nginx
+  # className: nginx
+  annotations: {}
     # kubernetes.io/tls-acme: "true"
-  path: /
+  # Legacy format (still supported):
+  #   path: /
+  #   hosts:
+  #     - chart-example.local
+  # Modern format (recommended):
   hosts:
-    - chart-example.local
+    - host: chart-example.local
+      paths:
+        - path: /
+          pathType: ImplementationSpecific
   tls: []
   #  - secretName: chart-example-tls
   #    hosts:
@@ -88,6 +96,10 @@ serviceMonitor:
   # Set of labels to transfer on the Kubernetes Service onto the target.
   # targetLabels: []
   # metricRelabelings: []
+
+podSecurityContext: {}
+
+securityContext: {}
 
 nodeSelector: {}
 
