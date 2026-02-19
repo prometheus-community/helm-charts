@@ -38,9 +38,56 @@ spec:
       {{- with .Values.priorityClassName }}
       priorityClassName: {{ . }}
       {{- end }}
-      {{- with .Values.extraInitContainers }}
+      {{- $fixes := .Values.permissionInitContainer.fixes -}}
+      {{- $fixesEnabled := or $fixes.rapl $fixes.slabinfo (not (empty .Values.permissionInitContainer.extraCommands)) -}}
+      {{- if or .Values.extraInitContainer $fixesEnabled }}
       initContainers:
-        {{- toYaml . | nindent 8 }}
+        {{- if .Values.extraInitContainer }}
+        {{- toYaml .Values.extraInitContainer | nindent 8 }}
+        {{- end }}
+        {{- if $fixesEnabled }}
+        - name: permission-fix
+          {{- with .Values.permissionInitContainer.image }}
+          {{- if .sha }}
+          image: "{{ $.Values.global.imageRegistry | default .registry}}/{{ .repository }}:{{ .tag }}@sha256:{{ .sha }}"
+          {{- else }}
+          image: "{{ $.Values.global.imageRegistry | default .registry}}/{{ .repository }}:{{ .tag }}"
+          {{- end }}
+          {{- end }}
+          imagePullPolicy: {{ .Values.permissionInitContainer.image.pullPolicy }}
+          securityContext:
+            {{- toYaml .Values.permissionInitContainer.securityContext | nindent 12 }}
+          command:
+            - /bin/sh
+            - -c
+            - |
+              {{- if $fixes.rapl }}
+              powercap_path="/host/sys/devices/virtual/powercap"
+              if [ -d "$powercap_path" ]; then
+                find "$powercap_path" -name energy_uj -exec chown root:{{ .Values.securityContext.runAsGroup }} {} + -exec chmod g+r -R {} +
+              fi
+              {{- end }}
+              {{- if $fixes.slabinfo }}
+              slabinfo_path="/host/proc/slabinfo"
+              if [ -f "$slabinfo_path" ]; then
+                chown root:{{ .Values.securityContext.runAsGroup }} "$slabinfo_path" && chmod g+r "$slabinfo_path"
+              fi
+              {{- end }}
+              {{- range .Values.permissionInitContainer.extraCommands }}
+              {{ . }}
+              {{- end }}
+          volumeMounts:
+            {{- if $fixes.rapl }}
+            - name: sys
+              mountPath: /host/sys
+              readOnly: false
+            {{- end }}
+            {{- if $fixes.slabinfo }}
+            - name: proc
+              mountPath: /host/proc
+              readOnly: false
+            {{- end }}
+        {{- end }}
       {{- end }}
       serviceAccountName: {{ include "prometheus-node-exporter.serviceAccountName" . }}
       {{- with .Values.terminationGracePeriodSeconds }}
