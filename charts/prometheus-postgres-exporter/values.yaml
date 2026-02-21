@@ -70,6 +70,21 @@ serviceMonitor:
       #   databaseName: default '' (Set the database name to connect to)
       #   metricRelabelings: [] (MetricRelabelConfigs to apply to samples from the target before ingestion)
 
+podMonitoring:
+  ## If true, a PodMonitoring CR is created via extraManifests for google managed prometheus
+  ## https://cloud.google.com/stackdriver/docs/managed-prometheus/setup-managed#gmp-pod-monitoring for postgres-exporter itself
+  ##
+  enabled: false
+
+  ## Default values that will be used for all PodMonitoring created by `targets`
+  ## Following PodMonitoring API specs https://github.com/GoogleCloudPlatform/prometheus-engine/blob/main/doc/api.md#scrapeendpoint
+  defaults:
+    additionalMetricsRelabels: {}
+    labels: {}
+    interval: 30s
+    scrapeTimeout: 30s
+    module: http_2xx
+
 prometheusRule:
   enabled: false
   additionalLabels: {}
@@ -291,14 +306,18 @@ extraVolumeMounts: []
 #    subPath: ca-certificates.crt
 
 ## Extra manifests to deploy as an array
-extraManifests: []
-  # - apiVersion: v1
-  #   kind: ConfigMap
-  #   metadata:
-  #   labels:
-  #     name: postgres-exporter-extra
-  #   data:
-  #     extra-data: "value"
+extraManifests:
+  - apiVersion: monitoring.googleapis.com/v1
+    kind: PodMonitoring
+    spec:
+      endpoints:
+      - port: http
+        scheme: http
+        path: /probe
+        interval: 30s
+        timeout: 30s
+      selector:
+        matchLabels: prometheus-postgres-exporter
 
 podDisruptionBudget:
   enabled: false
