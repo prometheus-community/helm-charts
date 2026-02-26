@@ -61,7 +61,7 @@ spec:
       dnsPolicy: {{ .Values.dnsPolicy }}
       containers:
       {{- $servicePort := ternary .Values.kubeRBACProxy.port (.Values.service.port | default 8080) .Values.kubeRBACProxy.enabled}}
-      {{- $telemetryPort := ternary 9091 (.Values.selfMonitor.telemetryPort | default 8081) .Values.kubeRBACProxy.enabled}}
+      {{- $telemetryPort := ternary .Values.kubeRBACProxy.telemetryPort (.Values.selfMonitor.telemetryPort | default 8081) .Values.kubeRBACProxy.enabled}}
       - name: {{ template "kube-state-metrics.name" . }}
         {{- if  .Values.autosharding.enabled }}
         env:
@@ -86,7 +86,7 @@ spec:
         {{-  if .Values.extraArgs  }}
         {{- .Values.extraArgs | toYaml | nindent 8 }}
         {{-  end  }}
-        {{- if .Values.kubeRBACProxy.enabled }}
+        {{- if and .Values.kubeRBACProxy.enabled .Values.hostNetwork }}
         - --host=127.0.0.1
         {{- end }}
         - --port={{ $servicePort }}
@@ -127,7 +127,7 @@ spec:
         {{- if .Values.kubeconfig.enabled }}
         - --kubeconfig=/opt/k8s/.kube/config
         {{- end }}
-        {{- if .Values.kubeRBACProxy.enabled }}
+        {{- if and .Values.kubeRBACProxy.enabled .Values.hostNetwork }}
         - --telemetry-host=127.0.0.1
         - --telemetry-port={{ $telemetryPort }}
         {{- else }}
@@ -202,12 +202,8 @@ spec:
               value: {{ $header.value }}
             {{- end }}
             path: /livez
-            port: http
-            {{- if .Values.kubeRBACProxy.enabled }}
-            scheme: HTTPS
-            {{- else }}
+            port: {{ $servicePort }}
             scheme: {{ upper .Values.livenessProbe.httpGet.scheme }}
-            {{- end }}
           initialDelaySeconds: {{ .Values.livenessProbe.initialDelaySeconds }}
           periodSeconds: {{ .Values.livenessProbe.periodSeconds }}
           successThreshold: {{ .Values.livenessProbe.successThreshold }}
@@ -224,12 +220,8 @@ spec:
               value: {{ $header.value }}
             {{- end }}
             path: /readyz
-            port: metrics
-            {{- if .Values.kubeRBACProxy.enabled }}
-            scheme: HTTPS
-            {{- else }}
+            port: {{ $telemetryPort }}
             scheme: {{ upper .Values.readinessProbe.httpGet.scheme }}
-            {{- end }}
           initialDelaySeconds: {{ .Values.readinessProbe.initialDelaySeconds }}
           periodSeconds: {{ .Values.readinessProbe.periodSeconds }}
           successThreshold: {{ .Values.readinessProbe.successThreshold }}
