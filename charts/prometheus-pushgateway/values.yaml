@@ -191,6 +191,150 @@ ingress:
   #     hosts:
   #       - pushgateway.domain.com
 
+## Configure Istio Gateway/VirtualService resource that allow you to access the
+## pushgateway installation. Set up the URL
+## ref: https://istio.io/latest/docs/reference/config/networking/virtual-service/
+##
+istioGateway:
+  ## Enable Istio Gateway/VirtualService.
+  ##
+  enabled: false
+
+  ## Istio Gateway reference (namespace/gateway-name or just gateway-name for same namespace).
+  ## Can be a string or a list for multiple gateways.
+  ##
+  # gateway: istio-system/my-gateway
+  ## Or for multiple gateways:
+  # gateway:
+  #   - istio-system/external-gateway
+  #   - istio-system/internal-gateway
+
+  ## Hostnames for the VirtualService.
+  ## Must be provided if istioGateway is enabled.
+  ##
+  # hosts:
+  #   - pushgateway.domain.com
+
+  ## HTTP match conditions (must be a list).
+  ## ref: https://istio.io/latest/docs/reference/config/networking/virtual-service/#HTTPMatchRequest
+  ##
+  match:
+    - uri:
+        prefix: /
+  ## Example with multiple match conditions:
+  # match:
+  #   - uri:
+  #       prefix: /metrics
+  #   - uri:
+  #       prefix: /api
+
+  ## Rewrite the URI before forwarding to the destination.
+  ## Useful when migrating from Ingress with rewrite-target annotation.
+  ##
+  # rewrite:
+  #   uri: /
+
+  ## HTTP redirect configuration.
+  ## Note: redirect and route are mutually exclusive.
+  ##
+  # redirect:
+  #   uri: /new-path
+  #   authority: new-host.example.com
+  #   redirectCode: 301
+
+  ## HTTP route destination port (defaults to service.port).
+  ##
+  # port: 9091
+
+  ## Destination subset (for use with DestinationRule).
+  ##
+  # subset: v1
+
+  ## Custom route configuration for advanced use cases (canary, traffic splitting).
+  ## If specified, overrides the default route to the service.
+  ##
+  # route:
+  #   - destination:
+  #       host: pushgateway-canary
+  #       port:
+  #         number: 9091
+  #       subset: canary
+  #     weight: 10
+  #   - destination:
+  #       host: pushgateway
+  #       port:
+  #         number: 9091
+  #       subset: stable
+  #     weight: 90
+
+  ## Request timeout.
+  ##
+  # timeout: 30s
+
+  ## Retry policy.
+  ##
+  # retries:
+  #   attempts: 3
+  #   perTryTimeout: 10s
+
+  ## Fault injection for testing resilience (chaos engineering).
+  ## ref: https://istio.io/latest/docs/reference/config/networking/virtual-service/#HTTPFaultInjection
+  ##
+  # fault:
+  #   delay:
+  #     percentage:
+  #       value: 10
+  #     fixedDelay: 5s
+  #   abort:
+  #     percentage:
+  #       value: 5
+  #     httpStatus: 503
+
+  ## Traffic mirroring configuration.
+  ## ref: https://istio.io/latest/docs/tasks/traffic-management/mirroring/
+  ##
+  # mirror:
+  #   host: pushgateway-shadow
+  #   port:
+  #     number: 9091
+  # mirrorPercentage:
+  #   value: 100
+
+  ## Header manipulation rules.
+  ## ref: https://istio.io/latest/docs/reference/config/networking/virtual-service/#Headers
+  ##
+  # headers:
+  #   request:
+  #     set:
+  #       x-custom-header: "value"
+  #     add:
+  #       x-request-id: "123"
+  #     remove:
+  #       - x-unwanted-header
+  #   response:
+  #     set:
+  #       x-response-header: "value"
+
+  ## CORS policy configuration.
+  ##
+  # corsPolicy:
+  #   allowOrigins:
+  #     - exact: https://example.com
+  #   allowMethods:
+  #     - GET
+  #     - POST
+  #   allowHeaders:
+  #     - content-type
+  #   maxAge: 24h
+
+  ## Annotations for VirtualService.
+  ##
+  annotations: {}
+
+  ## Labels for VirtualService.
+  ##
+  labels: {}
+
 ## route (map) allows configuration of HTTPRoute resources
 ## Requires Gateway API resources and suitable controller installed within the cluster
 ## Ref. https://gateway-api.sigs.k8s.io/guides/http-routing/
