@@ -1,0 +1,32 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/helm-unittest/helm-unittest/main/schema/helm-testsuite.json
+suite: test fullname helper behavior
+templates:
+  - serviceaccount.yaml
+tests:
+  - it: should use release name when release already contains chart name
+    release:
+      name: ksm-kube-state-metrics
+    asserts:
+      - equal:
+          path: metadata.name
+          value: ksm-kube-state-metrics
+
+  - it: should use nameOverride directly when it already contains release name
+    release:
+      name: ksm-non-pods
+    set:
+      nameOverride: ksm-non-pods-foo
+    asserts:
+      - equal:
+          path: metadata.name
+          value: ksm-non-pods-foo
+
+  - it: should combine release and nameOverride when names are unrelated
+    release:
+      name: ksm
+    set:
+      nameOverride: metrics
+    asserts:
+      - equal:
+          path: metadata.name
+          value: ksm-metrics
