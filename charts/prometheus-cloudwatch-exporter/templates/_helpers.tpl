@@ -36,6 +36,19 @@ Create chart name and version as used by the chart label.
 {{- end -}}
 
 {{/*
+Common labels
+*/}}
+{{- define "prometheus-cloudwatch-exporter.labels" -}}
+app: {{ template "prometheus-cloudwatch-exporter.name" . }}
+chart: {{ template "prometheus-cloudwatch-exporter.chart" . }}
+release: {{ .Release.Name }}
+heritage: {{ .Release.Service }}
+{{- with .Values.commonLabels }}
+{{ toYaml . }}
+{{- end }}
+{{- end -}}
+
+{{/*
 Create serviceAccountName for deployment.
 */}}
 {{- define "prometheus-cloudwatch-exporter.serviceAccountName" -}}
