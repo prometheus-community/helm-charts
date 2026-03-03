@@ -1,0 +1,41 @@
+{{- if and .Values.alertmanager.enabled (.Capabilities.APIVersions.Has "autoscaling.k8s.io/v1") .Values.alertmanager.verticalPodAutoscaler.enabled }}
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: {{ template "kube-prometheus-stack.fullname" . }}-alertmanager
+  namespace: {{ template "kube-prometheus-stack-alertmanager.namespace" . }}
+  labels:
+    app: {{ template "kube-prometheus-stack.name" . }}-alertmanager
+    {{- include "kube-prometheus-stack.labels" . | nindent 4 }}
+spec:
+  {{- with .Values.alertmanager.verticalPodAutoscaler.recommenders }}
+  recommenders:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  resourcePolicy:
+    containerPolicies:
+    - containerName: alertmanager
+      {{- with .Values.alertmanager.verticalPodAutoscaler.controlledResources }}
+      controlledResources:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- if .Values.alertmanager.verticalPodAutoscaler.controlledValues }}
+      controlledValues: {{ .Values.alertmanager.verticalPodAutoscaler.controlledValues }}
+      {{- end }}
+      {{- if .Values.alertmanager.verticalPodAutoscaler.maxAllowed }}
+      maxAllowed:
+        {{- toYaml .Values.alertmanager.verticalPodAutoscaler.maxAllowed | nindent 8 }}
+      {{- end }}
+      {{- if .Values.alertmanager.verticalPodAutoscaler.minAllowed }}
+      minAllowed:
+        {{- toYaml .Values.alertmanager.verticalPodAutoscaler.minAllowed | nindent 8 }}
+      {{- end }}
+  targetRef:
+    apiVersion: apps/v1
+    kind: StatefulSet
+    name: alertmanager-{{ template "kube-prometheus-stack.alertmanager.crname" . }}
+  {{- with .Values.alertmanager.verticalPodAutoscaler.updatePolicy }}
+  updatePolicy:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+{{- end }}
