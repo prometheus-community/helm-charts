@@ -1,0 +1,41 @@
+{{- if and .Values.prometheus.enabled (.Capabilities.APIVersions.Has "autoscaling.k8s.io/v1") .Values.prometheus.verticalPodAutoscaler.enabled }}
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: {{ template "kube-prometheus-stack.fullname" . }}-prometheus
+  namespace: {{ template "kube-prometheus-stack.namespace" . }}
+  labels:
+    app: {{ template "kube-prometheus-stack.name" . }}-prometheus
+    {{- include "kube-prometheus-stack.labels" . | nindent 4 }}
+spec:
+  {{- with .Values.prometheus.verticalPodAutoscaler.recommenders }}
+  recommenders:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  resourcePolicy:
+    containerPolicies:
+    - containerName: prometheus
+      {{- with .Values.prometheus.verticalPodAutoscaler.controlledResources }}
+      controlledResources:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- if .Values.prometheus.verticalPodAutoscaler.controlledValues }}
+      controlledValues: {{ .Values.prometheus.verticalPodAutoscaler.controlledValues }}
+      {{- end }}
+      {{- if .Values.prometheus.verticalPodAutoscaler.maxAllowed }}
+      maxAllowed:
+        {{- toYaml .Values.prometheus.verticalPodAutoscaler.maxAllowed | nindent 8 }}
+      {{- end }}
+      {{- if .Values.prometheus.verticalPodAutoscaler.minAllowed }}
+      minAllowed:
+        {{- toYaml .Values.prometheus.verticalPodAutoscaler.minAllowed | nindent 8 }}
+      {{- end }}
+  targetRef:
+    apiVersion: apps/v1
+    kind: StatefulSet
+    name: prometheus-{{ template "kube-prometheus-stack.prometheus.crname" . }}
+  {{- with .Values.prometheus.verticalPodAutoscaler.updatePolicy }}
+  updatePolicy:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+{{- end }}
