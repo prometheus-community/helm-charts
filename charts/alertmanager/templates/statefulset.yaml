@@ -238,6 +238,15 @@ spec:
             optional: {{ . }}
             {{- end }}
         {{- end }}
+        {{- if not .Values.persistence.enabled }}
+        - name: storage
+          {{- with .Values.persistence.emptyDir }}
+          emptyDir:
+            {{- toYaml . | nindent 12 }}
+          {{- else }}
+          emptyDir: {}
+          {{- end }}
+        {{- end }}
         {{- if .Values.extraVolumes }}
         {{- toYaml .Values.extraVolumes | nindent 8 }}
         {{- end }}
@@ -269,12 +278,4 @@ spec:
         storageClassName: {{ .Values.persistence.storageClass }}
       {{- end }}
       {{- end }}
-  {{- else }}
-        - name: storage
-            {{- with .Values.persistence.emptyDir }}
-          emptyDir:
-            {{- toYaml . | nindent 12 }}
-            {{- else }}
-          emptyDir: {}
-            {{- end -}}
   {{- end }}
