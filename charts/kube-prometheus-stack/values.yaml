@@ -501,6 +501,37 @@ alertmanager:
     # maxUnavailable: ""
     unhealthyPodEvictionPolicy: AlwaysAllow
 
+  ## Enable vertical pod autoscaler support for Alertmanager
+  ## ref: https://github.com/kubernetes/autoscaler/tree/master/vertical-pod-autoscaler
+  ##
+  verticalPodAutoscaler:
+    enabled: false
+
+    # Recommender responsible for generating recommendation for the object.
+    # List should be empty (then the default recommender will generate the recommendation)
+    # or contain exactly one recommender.
+    # recommenders:
+    # - name: custom-recommender-performance
+
+    # List of resources that the vertical pod autoscaler can control. Defaults to cpu and memory
+    controlledResources: []
+    # Specifies which resource values should be controlled: RequestsOnly or RequestsAndLimits.
+    # controlledValues: RequestsAndLimits
+
+    # Define the max allowed resources for the pod
+    maxAllowed: {}
+    # cpu: 200m
+    # memory: 100Mi
+    # Define the min allowed resources for the pod
+    minAllowed: {}
+    # cpu: 200m
+    # memory: 100Mi
+
+    updatePolicy:
+      # Specifies whether recommended updates are applied when a Pod is started and whether recommended updates
+      # are applied during the life of a Pod. Possible values are "Off", "Initial", "Recreate", and "InPlaceOrRecreate".
+      updateMode: Recreate
+
   ## Alertmanager configuration directives
   ## ref: https://prometheus.io/docs/alerting/configuration/#configuration-file
   ##      https://prometheus.io/webtools/alerting/routing-tree-editor/
@@ -1137,7 +1168,7 @@ alertmanager:
     containers: []
     # containers:
     # - name: oauth-proxy
-    #   image: quay.io/oauth2-proxy/oauth2-proxy:v7.14.2
+    #   image: quay.io/oauth2-proxy/oauth2-proxy:v7.14.3
     #   args:
     #   - --upstream=http://127.0.0.1:9093
     #   - --http-address=0.0.0.0:8081
@@ -2934,7 +2965,7 @@ prometheusOperator:
       image:
         registry: ghcr.io
         repository: jkroepke/kube-webhook-certgen
-        tag: 1.7.7
+        tag: 1.7.8
         sha: ""
         pullPolicy: IfNotPresent
       resources: {}
@@ -3320,8 +3351,8 @@ prometheusOperator:
       # Specifies minimal number of replicas which need to be alive for VPA Updater to attempt pod eviction
       # minReplicas: 1
       # Specifies whether recommended updates are applied when a Pod is started and whether recommended updates
-      # are applied during the life of a Pod. Possible values are "Off", "Initial", "Recreate", and "Auto".
-      updateMode: Auto
+      # are applied during the life of a Pod. Possible values are "Off", "Initial", "Recreate", and "InPlaceOrRecreate".
+      updateMode: Recreate
 
   ## Prometheus-operator image
   ##
@@ -3583,6 +3614,11 @@ prometheus:
     ##
     reloaderWebPort: 8080
 
+    ## Port to expose for Prometheus Reloader
+    ## Only used if service.type is 'NodePort'
+    ##
+    reloaderWebNodePort: null
+
     ## List of IP addresses at which the Prometheus server service is available
     ## Ref: https://kubernetes.io/docs/concepts/services-networking/service/#external-ips
     ##
@@ -3678,6 +3714,37 @@ prometheus:
     minAvailable: 1
     # maxUnavailable: ""
     unhealthyPodEvictionPolicy: AlwaysAllow
+
+  ## Enable vertical pod autoscaler support for Prometheus
+  ## ref: https://github.com/kubernetes/autoscaler/tree/master/vertical-pod-autoscaler
+  ##
+  verticalPodAutoscaler:
+    enabled: false
+
+    # Recommender responsible for generating recommendation for the object.
+    # List should be empty (then the default recommender will generate the recommendation)
+    # or contain exactly one recommender.
+    # recommenders:
+    # - name: custom-recommender-performance
+
+    # List of resources that the vertical pod autoscaler can control. Defaults to cpu and memory
+    controlledResources: []
+    # Specifies which resource values should be controlled: RequestsOnly or RequestsAndLimits.
+    # controlledValues: RequestsAndLimits
+
+    # Define the max allowed resources for the pod
+    maxAllowed: {}
+    # cpu: 200m
+    # memory: 100Mi
+    # Define the min allowed resources for the pod
+    minAllowed: {}
+    # cpu: 200m
+    # memory: 100Mi
+
+    updatePolicy:
+      # Specifies whether recommended updates are applied when a Pod is started and whether recommended updates
+      # are applied during the life of a Pod. Possible values are "Off", "Initial", "Recreate", and "InPlaceOrRecreate".
+      updateMode: Recreate
 
   # Ingress exposes thanos sidecar outside the cluster
   thanosIngress:
@@ -4045,7 +4112,7 @@ prometheus:
     image:
       registry: quay.io
       repository: prometheus/prometheus
-      tag: v3.9.1
+      tag: v3.10.0
       sha: ""
       pullPolicy: IfNotPresent
 
@@ -4565,7 +4632,7 @@ prometheus:
     containers: []
     # containers:
     # - name: oauth-proxy
-    #   image: quay.io/oauth2-proxy/oauth2-proxy:v7.14.2
+    #   image: quay.io/oauth2-proxy/oauth2-proxy:v7.14.3
     #   args:
     #   - --upstream=http://127.0.0.1:9090
     #   - --http-address=0.0.0.0:8081
