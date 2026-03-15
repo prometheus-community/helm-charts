@@ -75,7 +75,7 @@ spec:
       containers:
         - name: kubectl
           {{- $kubectlRegistry := .Values.global.imageRegistry | default .Values.upgradeJob.image.kubectl.registry -}}
-          {{- $defaultKubernetesVersion := regexFind "v\\d+\\.\\d+\\.\\d+" .Capabilities.KubeVersion.Version }}
+          {{- $defaultKubernetesVersion := (ternary (printf "%s.0" .Capabilities.KubeVersion.Version) (regexFind "v\\d+\\.\\d+\\.\\d+" .Capabilities.KubeVersion.Version) (regexMatch "^v\\d+\\.\\d+$" .Capabilities.KubeVersion.Version)) -}}
           {{- if .Values.upgradeJob.image.kubectl.sha }}
           image: "{{ $kubectlRegistry }}/{{ .Values.upgradeJob.image.kubectl.repository }}:{{ .Values.upgradeJob.image.kubectl.tag | default $defaultKubernetesVersion }}@sha256:{{ .Values.upgradeJob.image.kubectl.sha }}"
           {{- else }}
