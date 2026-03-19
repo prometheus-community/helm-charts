@@ -464,7 +464,11 @@ spec:
       name: "{{ printf "%s-%s" (include "kube-prometheus-stack.fullname" $) . | trunc 63 | trimSuffix "-" }}"
 {{- end }}
 {{- if .Values.prometheus.prometheusSpec.excludedFromEnforcement }}
+  {{- if kindIs "string" .Values.prometheus.prometheusSpec.excludedFromEnforcement }}
+{{ tpl .Values.prometheus.prometheusSpec.excludedFromEnforcement . | indent 4 }}
+  {{- else }}
 {{ tpl (toYaml .Values.prometheus.prometheusSpec.excludedFromEnforcement | indent 4) . }}
+  {{- end }}
 {{- end }}
 {{- end }}
 {{- if and (not .Values.prometheus.agentMode) .Values.prometheus.prometheusSpec.queryLogFile }}
