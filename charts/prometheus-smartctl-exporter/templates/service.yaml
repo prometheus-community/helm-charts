@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "prometheus-smartctl-exporter.fullname" . }}
+  labels:
+    {{- include "prometheus-smartctl-exporter.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.service.type }}
+  {{- if .Values.service.ipDualStack.enabled }}
+  ipFamilies: {{ toYaml .Values.service.ipDualStack.ipFamilies | nindent 4 }}
+  ipFamilyPolicy: {{ .Values.service.ipDualStack.ipFamilyPolicy }}
+  {{- end }}
+  ports:
+    - port: {{ .Values.service.port }}
+      targetPort: http
+      protocol: TCP
+      name: http
+  selector:
+    {{- include "prometheus-smartctl-exporter.selectorLabels" . | nindent 4 }}

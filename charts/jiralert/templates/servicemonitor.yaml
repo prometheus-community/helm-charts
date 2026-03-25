@@ -1,0 +1,48 @@
+{{- if .Values.serviceMonitor.enabled }}
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: {{ template "jiralert.fullname" .  }}
+  {{- with .Values.serviceMonitor.namespace }}
+  namespace: {{ . }}
+  {{- end }}
+  labels:
+    {{- include "jiralert.labels" . | nindent 4 }}
+    {{- with .Values.serviceMonitor.additionalLabels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+spec:
+  endpoints:
+  - port: http
+    {{- if .Values.serviceMonitor.interval }}
+    interval: {{ .Values.serviceMonitor.interval }}
+    {{- end }}
+    {{- if .Values.serviceMonitor.scheme }}
+    scheme: {{ .Values.serviceMonitor.scheme }}
+    {{- end }}
+    {{- if .Values.serviceMonitor.bearerTokenFile }}
+    bearerTokenFile: {{ .Values.serviceMonitor.bearerTokenFile }}
+    {{- end }}
+    {{- if .Values.serviceMonitor.tlsConfig }}
+    tlsConfig: {{ toYaml .Values.serviceMonitor.tlsConfig | nindent 6 }}
+    {{- end }}
+    {{- if .Values.serviceMonitor.scrapeTimeout }}
+    scrapeTimeout: {{ .Values.serviceMonitor.scrapeTimeout }}
+    {{- end }}
+    path: /metrics
+    honorLabels: {{ .Values.serviceMonitor.honorLabels }}
+    {{- if .Values.serviceMonitor.metricRelabelings }}
+    metricRelabelings:
+    {{- tpl (toYaml .Values.serviceMonitor.metricRelabelings | nindent 4) . }}
+    {{- end }}
+    {{- if .Values.serviceMonitor.relabelings }}
+    relabelings:
+    {{ toYaml .Values.serviceMonitor.relabelings | nindent 4 }}
+    {{- end }}
+  namespaceSelector:
+    matchNames:
+      - {{ template "jiralert.namespace" . }}
+  selector:
+    matchLabels:
+      {{- include "jiralert.selectorLabels" . | nindent 6 }}
+{{- end -}}

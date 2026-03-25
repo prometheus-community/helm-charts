@@ -1,0 +1,31 @@
+{{- if (eq .Values.kind "DaemonSet") }}
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: {{ template "prometheus-blackbox-exporter.fullname" . }}
+  namespace: {{ template "prometheus-blackbox-exporter.namespace" . }}
+  labels:
+    {{- include "prometheus-blackbox-exporter.labels" . | nindent 4 }}
+spec:
+  selector:
+    matchLabels:
+      {{- include "prometheus-blackbox-exporter.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "prometheus-blackbox-exporter.selectorLabels" . | nindent 8 }}
+        {{- if .Values.pod.labels }}
+{{ toYaml .Values.pod.labels | indent 8 }}
+        {{- end }}
+      {{- if or (not .Values.configReloader.enabled) .Values.podAnnotations }}
+      annotations:
+        {{- if not .Values.configReloader.enabled }}
+        checksum/config: {{ toYaml .Values.config | sha256sum }}
+        {{- end }}
+        {{- if .Values.podAnnotations }}
+{{ toYaml .Values.podAnnotations | indent 8 }}
+        {{- end }}
+      {{- end }}
+    spec:
+    {{- include "prometheus-blackbox-exporter.podSpec" . | nindent 6 }}
+{{- end }}

@@ -1,0 +1,32 @@
+{{- if .Values.podMonitoring.selfMonitor.enabled }}
+---
+apiVersion: monitoring.googleapis.com/v1
+kind: PodMonitoring
+metadata:
+  name: {{ template "prometheus-blackbox-exporter.fullname" $ }}
+  namespace: {{ template "prometheus-blackbox-exporter.namespace" $ }}
+  labels:
+    {{- include "prometheus-blackbox-exporter.labels" $ | nindent 4 }}
+    {{- if .Values.podMonitoring.selfMonitor.labels  }}
+    {{- toYaml (.Values.podMonitoring.selfMonitor.labels) | nindent 4 }}
+    {{- end }}
+spec:
+  endpoints:
+  - port: http
+    scheme: {{ $.Values.podMonitoring.scheme }}
+    path: {{ .Values.podMonitoring.selfMonitor.path }}
+    interval: {{ .Values.podMonitoring.selfMonitor.interval }}
+    timeout: {{ .Values.podMonitoring.selfMonitor.scrapeTimeout }}
+
+{{- if .Values.podMonitoring.selfMonitor.additionalMetricsRelabels }}
+    metricRelabeling:
+      {{- range $targetLabel, $replacement := .Values.podMonitoring.selfMonitor.additionalMetricsRelabels | default $.Values.podMonitoring.defaults.additionalMetricsRelabels }}
+      - action: replace
+        targetLabel: {{ $targetLabel | quote }}
+        replacement: {{ $replacement | quote }}
+      {{- end }}
+{{- end }}
+  selector:
+    matchLabels:
+      {{- include "prometheus-blackbox-exporter.selectorLabels" $ | nindent 6 }}
+{{- end }}

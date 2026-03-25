@@ -1,0 +1,28 @@
+{{- if .Values.networkPolicy.enabled }}
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ template "prometheus-pingmesh-exporter.fullname" . }}
+  namespace: {{ template "prometheus-pingmesh-exporter.namespace" . }}
+  labels:
+    {{- include "prometheus-pingmesh-exporter.labels" . | nindent 4 }}  
+spec:
+  podSelector:
+    matchLabels:
+      {{- include "prometheus-pingmesh-exporter.selectorLabels" . | nindent 6 }}
+  ingress:
+{{- if .Values.networkPolicy.allowMonitoringNamespace }}
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          name: monitoring
+    ports:
+    - port: {{ .Values.service.port }}
+      protocol: TCP
+{{- else }}
+  - {}
+{{- end }}
+  policyTypes:
+  - Ingress
+{{- end }}
+

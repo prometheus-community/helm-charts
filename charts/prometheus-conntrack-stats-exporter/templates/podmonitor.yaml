@@ -1,0 +1,42 @@
+{{- if .Values.podMonitor.enabled }}
+apiVersion: monitoring.coreos.com/v1
+kind: PodMonitor
+metadata:
+  name: {{ template "prometheus-conntrack-stats-exporter.fullname" . }}
+  labels:
+    {{- include "prometheus-conntrack-stats-exporter.labels" . | nindent 4 }}
+    {{- if .Values.podMonitor.labels }}
+    {{- toYaml .Values.podMonitor.labels | nindent 4 }}
+    {{- end }}
+spec:
+  namespaceSelector:
+    matchNames:
+      - {{ .Release.Namespace }}
+  podMetricsEndpoints:
+  - path: /metrics
+    port: metrics
+  {{- if .Values.podMonitor.interval }}
+    interval: {{ .Values.podMonitor.interval }}
+  {{- end }}
+  {{- if .Values.podMonitor.scrapeTimeout }}
+    scrapeTimeout: {{ .Values.podMonitor.scrapeTimeout }}
+  {{- end }}
+  {{- if .Values.podMonitor.honorLabels }}
+    honorLabels: true
+  {{- end }}
+  {{- if .Values.podMonitor.metricRelabelings }}
+    metricRelabelings:
+      {{- toYaml .Values.podMonitor.metricRelabelings | nindent 8 }}
+  {{- end }}
+  {{- if .Values.podMonitor.relabelings }}
+    relabelings:
+      {{- toYaml .Values.podMonitor.relabelings | nindent 8 }}
+  {{- end }}
+  selector:
+    matchLabels:
+    {{- if .Values.podMonitor.selectorOverride -}}
+      {{ toYaml .Values.podMonitor.selectorOverride | nindent 6 }}
+    {{ else }}
+      {{- include "prometheus-conntrack-stats-exporter.selectorLabels" . | nindent 6 }}
+    {{- end }}
+{{- end }}

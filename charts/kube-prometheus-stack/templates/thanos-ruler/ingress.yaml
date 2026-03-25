@@ -1,0 +1,59 @@
+{{- if and .Values.thanosRuler.enabled .Values.thanosRuler.ingress.enabled }}
+{{- $pathType := .Values.thanosRuler.ingress.pathType | default "ImplementationSpecific" }}
+{{- $serviceName := include "kube-prometheus-stack.thanosRuler.name" . }}
+{{- $servicePort := .Values.thanosRuler.service.port -}}
+{{- $routePrefix := list .Values.thanosRuler.thanosRulerSpec.routePrefix }}
+{{- $paths := .Values.thanosRuler.ingress.paths | default $routePrefix -}}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ $serviceName }}
+  namespace: {{ template "kube-prometheus-stack.namespace" . }}
+{{- if .Values.thanosRuler.ingress.annotations }}
+  annotations:
+    {{- tpl (toYaml .Values.thanosRuler.ingress.annotations) . | nindent 4 }}
+{{- end }}
+  labels:
+    app: {{ template "kube-prometheus-stack.thanosRuler.name" . }}
+{{- if .Values.thanosRuler.ingress.labels }}
+{{ toYaml .Values.thanosRuler.ingress.labels | indent 4 }}
+{{- end }}
+{{ include "kube-prometheus-stack.labels" . | indent 4 }}
+spec:
+  {{- if .Values.thanosRuler.ingress.ingressClassName }}
+  ingressClassName: {{ .Values.thanosRuler.ingress.ingressClassName }}
+  {{- end }}
+  rules:
+  {{- if .Values.thanosRuler.ingress.hosts }}
+  {{- range $host := .Values.thanosRuler.ingress.hosts }}
+    - host: {{ tpl $host $ | quote }}
+      http:
+        paths:
+  {{- range $p := $paths }}
+          - path: {{ tpl $p $ }}
+            pathType: {{ $pathType }}
+            backend:
+              service:
+                name: {{ $serviceName }}
+                port:
+                  number: {{ $servicePort }}
+    {{- end -}}
+  {{- end -}}
+  {{- else }}
+    - http:
+        paths:
+  {{- range $p := $paths }}
+          - path: {{ tpl $p $ }}
+            pathType: {{ $pathType }}
+            backend:
+              service:
+                name: {{ $serviceName }}
+                port:
+                  number: {{ $servicePort }}
+  {{- end -}}
+  {{- end -}}
+  {{- if .Values.thanosRuler.ingress.tls }}
+  tls:
+{{ tpl (toYaml .Values.thanosRuler.ingress.tls | indent 4) . }}
+  {{- end -}}
+{{- end -}}

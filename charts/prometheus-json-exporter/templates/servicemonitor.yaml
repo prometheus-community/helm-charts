@@ -1,0 +1,54 @@
+{{- if .Values.serviceMonitor.enabled }}
+{{- range .Values.serviceMonitor.targets }}
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: {{ template "prometheus-json-exporter.fullname" $ }}-{{ .name }}
+  namespace: {{ default (include "prometheus-json-exporter.namespace" $) $.Values.serviceMonitor.namespace }}
+  labels:
+    {{- include "prometheus-json-exporter.labels" $ | nindent 4 }}
+    {{- if or $.Values.serviceMonitor.defaults.labels .labels }}
+    {{- toYaml (.labels | default $.Values.serviceMonitor.defaults.labels) | nindent 4 }}
+    {{- end }}
+spec:
+  endpoints:
+  - port: http
+    scheme: {{ $.Values.serviceMonitor.scheme }}
+    path: "/probe"
+    interval: {{ .interval | default $.Values.serviceMonitor.defaults.interval }}
+    scrapeTimeout: {{ .scrapeTimeout | default $.Values.serviceMonitor.defaults.scrapeTimeout }}
+    params:
+      target:
+      - {{ .url }}
+      {{- if .module }}
+      module:
+      - {{ .module }}
+      {{- end }}
+    metricRelabelings:
+      - sourceLabels: [instance]
+        targetLabel: instance
+        replacement: {{ .url }}
+        action: replace
+      - sourceLabels: [target]
+        targetLabel: target
+        replacement: {{ .name }}
+        action: replace
+        {{- range $targetLabel, $replacement := .additionalMetricsRelabels | default $.Values.serviceMonitor.defaults.additionalMetricsRelabels }}
+      - targetLabel: {{ $targetLabel }}
+        replacement: {{ $replacement }}
+        action: replace
+        {{- end }}
+    {{- with .additionalRelabels | default $.Values.serviceMonitor.defaults.additionalRelabels }}
+    relabelings:
+    {{- toYaml . | nindent 6 }}
+    {{- end }}
+  jobLabel: "{{ $.Release.Name }}"
+  selector:
+    matchLabels:
+      {{- include "prometheus-json-exporter.selectorLabels" $ | nindent 6 }}
+  namespaceSelector:
+    matchNames:
+      - {{ include "prometheus-json-exporter.namespace" $ }}
+{{- end }}
+{{- end }}

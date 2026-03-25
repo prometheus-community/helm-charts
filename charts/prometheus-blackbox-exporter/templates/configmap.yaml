@@ -1,0 +1,16 @@
+{{- if and .Values.config (eq .Values.configExistingSecretName "") }}
+apiVersion: v1
+kind: {{ if .Values.secretConfig -}} Secret {{- else -}} ConfigMap {{- end }}
+metadata:
+  name: {{ template "prometheus-blackbox-exporter.fullname" . }}
+  namespace: {{ template "prometheus-blackbox-exporter.namespace" . }}
+  labels:
+    {{- include "prometheus-blackbox-exporter.labels" . | nindent 4 }}
+  {{- if and .Values.secretConfig .Values.secretAnnotations }}
+  annotations:
+    {{- toYaml .Values.secretAnnotations | nindent 4 }}
+  {{- end }}
+{{ if .Values.secretConfig -}} stringData: {{- else -}} data: {{- end }}
+  blackbox.yaml: |
+{{ toYaml .Values.config | indent 4 }}
+{{- end }}

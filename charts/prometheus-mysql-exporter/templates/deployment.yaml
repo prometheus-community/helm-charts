@@ -1,0 +1,204 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ template "prometheus-mysql-exporter.fullname" . }}
+  namespace: {{ include "prometheus-mysql-exporter.namespace" . }}
+  labels:
+    {{- include "prometheus-mysql-exporter.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "prometheus-mysql-exporter.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "prometheus-mysql-exporter.selectorLabels" . | nindent 8 }}
+{{- if .Values.podLabels }}
+{{ toYaml .Values.podLabels | trim | indent 8 }}
+{{- end }}
+      annotations:
+        checksum/credentials: {{ include (print .Template.BasePath "/secret-config.yaml") . | sha256sum }}
+      {{- if .Values.cloudsqlproxy.enabled }}
+        checksum/config: {{ include (print .Template.BasePath "/secret.yaml") . | sha256sum }}
+        {{- if .Values.annotations }}
+{{ toYaml .Values.annotations | indent 8 }}
+        {{- end }}
+      {{- else }}
+{{ toYaml .Values.annotations | indent 8 }}
+      {{- end }}
+    spec:
+      serviceAccountName: {{ template "prometheus-mysql-exporter.serviceAccountName" . }}
+      {{- with .Values.priorityClassName }}
+      priorityClassName: {{ . }}
+      {{- end }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      {{- if and .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml .Values.imagePullSecrets | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: {{ .Chart.Name }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.image.registry }}/{{ .Values.image.repository }}:{{ default .Chart.AppVersion .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          args:
+            - "--config.my-cnf=/etc/cnf/{{ template "prometheus-mysql-exporter.secretKey" . }}"
+          {{- if or .Values.config .Values.collectors }}
+          {{- if .Values.config.logLevel }}
+            - "--log.level={{ .Values.config.logLevel }}"
+          {{- end}}
+          {{- if .Values.config.logFormat }}
+            - "--log.format={{ .Values.config.logFormat }}"
+          {{- end}}
+          {{-  if .Values.config.extraArgs  }}
+          {{- .Values.config.extraArgs | toYaml | nindent 12 }}
+          {{-  end  }}
+          {{- with .Values.collectors }}
+          {{- range $index, $element := . }}
+          {{- if and (typeIs "bool" $element) $element }}
+            - "--collect.{{ $index }}"
+          {{- else if and (typeIs "bool" $element) (not $element) }}
+            - "--no-collect.{{ $index }}"
+          {{- else }}
+            - "--collect.{{ $index }}"
+            - {{ $element | quote }}
+          {{- end }}
+          {{- end }}
+          {{- end }}
+          {{- end }}
+          env:
+          {{- if (.Values.resources.limits).cpu }}
+            - name: GOMAXPROCS
+              valueFrom:
+                resourceFieldRef:
+                  resource: limits.cpu
+          {{- end }}
+          {{- if (.Values.resources.limits).memory }}
+            - name: GOMEMLIMIT
+              valueFrom:
+                resourceFieldRef:
+                  resource: limits.memory
+          {{- end }}
+          {{- if and (not .Values.mysql.existingConfigSecret.name) (.Values.mysql.existingPasswordSecret.name) }}
+            - name: MYSQLD_EXPORTER_PASSWORD
+              valueFrom:
+                secretKeyRef:
+          {{- if and .Values.mysql.existingPasswordSecret.name .Values.mysql.existingPasswordSecret.key }}
+                  name: {{ .Values.mysql.existingPasswordSecret.name }}
+                  key: {{ .Values.mysql.existingPasswordSecret.key }}
+          {{- end }}
+          {{- end }}
+          {{- with .Values.extraEnvs }}
+          {{- if kindIs "map" . }}
+          {{- range $name, $value := . }}
+            - name: {{ $name }}
+              value: {{ tpl $value $ | quote }}
+          {{- end }}
+          {{- end }}
+          {{- if kindIs "slice" . -}}
+            {{ toYaml . | nindent 12 }}
+          {{- end }}
+          {{- end }}
+          ports:
+            - containerPort: {{ .Values.service.internalPort }}
+          livenessProbe:
+            httpGet:
+              path: /
+              port: {{ .Values.service.internalPort }}
+          readinessProbe:
+            httpGet:
+              path: /
+              port: {{ .Values.service.internalPort }}
+          volumeMounts:
+            - name: secret-config
+              mountPath: /etc/cnf/
+              readOnly: true
+          {{- with .Values.extraVolumeMounts }}
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+        {{- if .Values.cloudsqlproxy.enabled }}
+        - name: cloudsql-proxy
+          image: "{{ .Values.cloudsqlproxy.image.repo }}:{{ .Values.cloudsqlproxy.image.tag }}"
+          imagePullPolicy: "{{ .Values.cloudsqlproxy.image.PullPolicy  }}"
+          args: ["{{ .Values.cloudsqlproxy.instanceConnectionName }}?port:{{ .Values.cloudsqlproxy.port }}"
+                  ,"--health-check"
+                  ,"--http-address=0.0.0.0"
+                  ,"--run-connection-test"
+                  {{- if .Values.cloudsqlproxy.privateIp }}
+                  ,"--private-ip"
+                  {{- end }}
+                  {{- if not .Values.cloudsqlproxy.workloadIdentity.enabled }}
+                  ,"--credentials-file=/secrets/cloudsql/credentials.json"
+                  {{- end }}
+                  {{- if .Values.cloudsqlproxy.extraArgs }}
+                  ,"{{ .Values.cloudsqlproxy.extraArgs }}"
+                  {{- end }}
+                  ]
+          livenessProbe:
+            httpGet:
+              path: /liveness
+              port: 9090
+            initialDelaySeconds: 0
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 1
+          readinessProbe:
+            httpGet:
+              path: /readiness
+              port: 9090
+            initialDelaySeconds: 0
+            periodSeconds: 10
+            timeoutSeconds: 5
+            successThreshold: 1
+            failureThreshold: 1
+          startupProbe:
+            httpGet:
+              path: /startup
+              port: 9090
+            periodSeconds: 1
+            timeoutSeconds: 5
+            failureThreshold: 20
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            readOnlyRootFilesystem: true
+            runAsUser: 10000
+            runAsNonRoot: true
+          {{- if not .Values.cloudsqlproxy.workloadIdentity.enabled }}
+          volumeMounts:
+            - name: cloudsql-proxy-sa-credentials
+              mountPath: /secrets/cloudsql
+              readOnly: true
+          {{- end }}
+        {{- end }}
+          resources:
+{{ toYaml .Values.resources | indent 12 }}
+    {{- with .Values.nodeSelector }}
+      nodeSelector:
+{{ toYaml . | indent 8 }}
+    {{- end }}
+    {{- with .Values.affinity }}
+      affinity:
+{{ toYaml . | indent 8 }}
+    {{- end }}
+    {{- with .Values.tolerations }}
+      tolerations:
+{{ toYaml . | indent 8 }}
+    {{- end }}
+      volumes:
+        - name: secret-config
+          secret:
+            secretName: {{ template "prometheus-mysql-exporter.secretName" . }}
+    {{- if and (.Values.cloudsqlproxy.enabled) (not .Values.cloudsqlproxy.workloadIdentity.enabled) }}
+        - name: cloudsql-proxy-sa-credentials
+          secret:
+            secretName: {{ if .Values.cloudsqlproxy.credentialsSecret }}{{ .Values.cloudsqlproxy.credentialsSecret }}{{ else }}{{ template "prometheus-mysql-exporter.cloudsqlsecret" . }}{{ end }}
+    {{- end }}
+    {{- with .Values.extraVolumes }}
+        {{- toYaml . | nindent 8 }}
+    {{- end }}

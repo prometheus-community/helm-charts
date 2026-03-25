@@ -1,0 +1,14 @@
+{{- if or .Values.statsd.mappingConfig }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "prometheus-statsd-exporter.fullname" . }}
+  labels:
+    {{- include "prometheus-statsd-exporter.labels" . | nindent 4 }}
+data:
+  {{- $configKey := (.Values.statsd.mappingConfigMapKey | default "statsd.mappingConf") }}
+  {{- with .Values.statsd.mappingConfig }}
+  {{ $configKey }}: |-
+    {{ . | nindent 4 }}
+  {{- end }}
+{{- end }}

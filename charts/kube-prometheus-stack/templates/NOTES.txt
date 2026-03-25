@@ -1,0 +1,18 @@
+{{ $.Chart.Name }} has been installed. Check its status by running:
+  kubectl --namespace {{ template "kube-prometheus-stack.namespace" . }} get pods -l "release={{ $.Release.Name }}"
+
+Get Grafana '{{ .Values.grafana.adminUser }}' user password by running:
+
+  kubectl --namespace {{ template "kube-prometheus-stack.namespace" . }} get secrets {{ $.Release.Name }}-grafana -o jsonpath="{.data.admin-password}" | base64 -d ; echo
+
+Access Grafana local instance:
+
+  export POD_NAME=$(kubectl --namespace {{ template "kube-prometheus-stack.namespace" . }} get pod -l "app.kubernetes.io/name={{ default "grafana" .Values.grafana.name }},app.kubernetes.io/instance={{ $.Release.Name }}" -oname)
+  kubectl --namespace {{ template "kube-prometheus-stack.namespace" . }} port-forward $POD_NAME 3000
+
+Get your grafana admin user password by running:
+
+  kubectl get secret --namespace {{ .Values.grafana.namespaceOverride | default (include "kube-prometheus-stack.namespace" .) }} -l app.kubernetes.io/component=admin-secret -o jsonpath="{.items[0].data.{{ .Values.grafana.admin.passwordKey | default "admin-password" }}}" | base64 --decode ; echo
+
+
+Visit https://github.com/prometheus-operator/kube-prometheus for instructions on how to create & configure Alertmanager and Prometheus instances using the Operator.

@@ -1,0 +1,44 @@
+{{- if and (.Capabilities.APIVersions.Has "autoscaling.k8s.io/v1") (.Values.verticalPodAutoscaler.enabled) }}
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: {{ include "prometheus-blackbox-exporter.fullname" . }}
+  namespace: {{ template "prometheus-blackbox-exporter.namespace" . }}
+  labels:
+    {{- include "prometheus-blackbox-exporter.labels" . | nindent 4 }}
+spec:
+  {{- with .Values.verticalPodAutoscaler.recommenders }}
+  recommenders:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  resourcePolicy:
+    containerPolicies:
+    - containerName: blackbox-exporter
+      {{- with .Values.verticalPodAutoscaler.controlledResources }}
+      controlledResources:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- if .Values.verticalPodAutoscaler.controlledValues }}
+      controlledValues: {{ .Values.verticalPodAutoscaler.controlledValues }}
+      {{- end }}
+      {{- if .Values.verticalPodAutoscaler.maxAllowed }}
+      maxAllowed:
+        {{ toYaml .Values.verticalPodAutoscaler.maxAllowed | nindent 8 }}
+      {{- end }}
+      {{- if .Values.verticalPodAutoscaler.minAllowed }}
+      minAllowed:
+        {{ toYaml .Values.verticalPodAutoscaler.minAllowed | nindent 8 }}
+      {{- end }}
+  targetRef:
+    apiVersion: apps/v1
+    {{- if (eq .Values.kind "DaemonSet") }}
+    kind: DaemonSet
+    {{- else }}
+    kind: Deployment
+    {{- end }}
+    name:  {{ template "prometheus-blackbox-exporter.fullname" . }}
+  {{- with .Values.verticalPodAutoscaler.updatePolicy }}
+  updatePolicy:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+{{- end }}

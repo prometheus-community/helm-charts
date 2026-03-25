@@ -1,0 +1,94 @@
+---
+## Test case: Prometheus with namespaced SD
+## Prometheus runs service discovery (SD) in its own namespace only.
+## A custom cluster role is set up and bound to SA through a role binding
+## in the given namespace. Prometheus *must* be told that its SD
+## is namespaced by means of 'scrape_configs.kubernetes_sd_configs.namespaces'.
+server:
+  automountServiceAccountToken: true
+  namespaces: []
+  releaseNamespace: true
+  useExistingClusterRoleName: "prometheus-cluster-role"
+
+  persistentVolume:
+    enabled: false
+
+alertmanager:
+  enabled: false
+
+kube-state-metrics:
+  enabled: true
+
+prometheus-node-exporter:
+  enabled: false
+
+prometheus-pushgateway:
+  enabled: false
+
+scrapeConfigs:
+  kubernetes-api-servers:
+    enabled: false
+  kubernetes-nodes:
+    enabled: false
+  kubernetes-nodes-cadvisor:
+    enabled: false
+  kubernetes-service-endpoints:
+    enabled: true
+    kubernetes_sd_configs:
+      - role: endpoints
+        namespaces:
+          own_namespace: true
+  kubernetes-service-endpoints-slow:
+    enabled: false
+  prometheus-pushgateway:
+    enabled: false
+  kubernetes-services:
+    enabled: false
+  kubernetes-pods:
+    enabled: false
+  kubernetes-pods-slow:
+    enabled: false
+
+extraManifests:
+  - |
+    apiVersion: rbac.authorization.k8s.io/v1
+    kind: ClusterRole
+    metadata:
+      labels:
+        {{- include "prometheus.server.labels" . | nindent 4 }}
+      name: prometheus-cluster-role
+    rules:
+      - apiGroups:
+        - ""
+        resources:
+        - services
+        - endpoints
+        - pods
+        - ingresses
+        - configmaps
+        verbs:
+        - get
+        - list
+        - watch
+      - apiGroups:
+        - "extensions"
+        - "networking.k8s.io"
+        resources:
+        - ingresses/status
+        - ingresses
+        verbs:
+        - get
+        - list
+        - watch
+      - apiGroups:
+        - "discovery.k8s.io"
+        resources:
+        - endpointslices
+        verbs:
+        - get
+        - list
+        - watch
+      - nonResourceURLs:
+        - "/metrics"
+        verbs:
+        - get

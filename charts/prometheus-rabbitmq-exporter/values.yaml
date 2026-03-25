@@ -1,0 +1,158 @@
+# Default values for prometheus-rabbitmq-exporter.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+replicaCount: 1
+image:
+  repository: kbudde/rabbitmq-exporter
+  tag: ""
+  pullPolicy: IfNotPresent
+  pullSecrets: []
+
+service:
+  type: ClusterIP
+  externalPort: 9419
+  internalPort: 9419
+  labels: {}
+
+resources: {}
+  # We usually recommend not to specify default resources and to leave this as a conscious
+  # choice for the user. This also increases chances charts run on environments with little
+  # resources, such as Minikube. If you do want to specify resources, uncomment the following
+  # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+  # limits:
+  #  cpu: 100m
+  #  memory: 128Mi
+  # requests:
+  #  cpu: 100m
+  #  memory: 128Mi
+
+priorityClassName: ""
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
+
+loglevel: info
+rabbitmq:
+  url: http://myrabbit:15672
+  user: guest
+  password: guest
+  # If existingUserSecret is set then user is ignored
+  existingUserSecret: ~
+  existingUserSecretKey: username
+  # If existingPasswordSecret is set then password is ignored
+  existingPasswordSecret: ~
+  existingPasswordSecretKey: password
+  capabilities: bert,no_sort
+  include_queues: ".*"
+  include_vhost: ".*"
+  skip_queues: "^$"
+  skip_verify: "false"
+  skip_vhost: "^$"
+  exporters: "exchange,node,overview,queue"
+  output_format: "TTY"
+  timeout: 30
+  max_queues: 0
+  excludeMetrics: ""
+  connection: "direct"
+  # Enables overriding env vars using an external ConfigMap.
+  configMapOverrideReference: ""
+
+## Additional labels to set in the Deployment object. Together with standard labels from
+## the chart
+additionalAnnotations: {}
+additionalLabels: {}
+
+podLabels: {}
+
+annotations: {}
+#  prometheus.io/scrape: "true"
+#  prometheus.io/path: "/metrics"
+#  prometheus.io/port: 9419
+
+# Additional Environment variables
+env: []
+  # - name: GOMAXPROCS
+  #   valueFrom:
+  #     resourceFieldRef:
+  #       resource: limits.cpu
+
+prometheus:
+  monitor:
+    enabled: false
+    additionalLabels: {}
+    interval: 15s
+    namespace: []
+    metricRelabelings: []
+    relabelings: []
+    targetLabels: []
+
+  rules:
+    enabled: false
+    additionalLabels: {}
+    namespace: ""
+    additionalRules:
+      ## These are just examples rules, please adapt them to your needs.
+      ## Make sure to constraint the rules to the current service.
+      - alert: RabbitmqNodeDown
+        expr: rabbitmq_running{service="{{ template "prometheus-rabbitmq-exporter.fullname" . }}"} == 0
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: A Rabbitmq node is down
+          description: |
+            The Rabbitmq node {{ "{{ $labels.node }}" }} of
+              the cluster tracked by {{ "{{ $labels.service }}" }} was not running during the last 5m.
+      - alert: RabbitmqClusterDown
+        expr: |
+          rabbitmq_up{service="{{ template "prometheus-rabbitmq-exporter.fullname" . }}"} == 0
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: The Rabbitmq cluster {{ "{{ $labels.service }}" }} is maybe down.
+          description: |
+              The Rabbitmq exporter couldn't scrape any Rabbitmq node of the
+              cluster tracked by {{ "{{ $labels.service }}" }} during the last 5m, the cluster is maybe down.
+      - alert: RabbitMQClusterPartition
+        expr: rabbitmq_partitions{service="{{ template "prometheus-rabbitmq-exporter.fullname" . }}"} > 0
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: A cluster partition was detected
+          description: |
+              Cluster partition in Rabbitmq cluster tracked by {{ "{{ $labels.service }}" }} was detected
+              by the node {{ "{{ $labels.node }}" }}
+      - alert: RabbitmqOutOfMemory
+        expr: |
+          rabbitmq_node_mem_used{service="{{ template "prometheus-rabbitmq-exporter.fullname" . }}"}
+          / rabbitmq_node_mem_limit{service="{{ template "prometheus-rabbitmq-exporter.fullname" . }}"}
+          * 100 > 90
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: The Rabbitmq node {{ "{{ $labels.node }}" }} is Out of memory
+          description: |
+              Memory available for Rabbmitmq node {{ "{{ $labels.node }}" }} is lower than 10%
+      - alert: RabbitmqTooManyConnections
+        expr: rabbitmq_connectionsTotal{service="{{ template "prometheus-rabbitmq-exporter.fullname" . }}"} > 1000
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: Too many connections to the Rabbitmq cluster
+          description: |
+              The Rabbitmq cluster tracked by {{ "{{ $labels.service }}" }} has too many connections {{ "{{ $value }}" }} (> 1000)
+
+serviceAccount:
+  # Specifies whether a ServiceAccount should be created
+  create: true
+  # The name of the ServiceAccount to use.
+  # If not set and create is true, a name is generated using the fullname template
+  name:
+  annotations: {}

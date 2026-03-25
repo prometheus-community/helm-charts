@@ -1,0 +1,16 @@
+See https://prometheus-operator.dev/docs/user-guides/webhook/ for more information on the admission webhook.
+
+1. Get the webhook's URL by running these commands:
+
+  export POD_NAME="$(kubectl get pods --namespace {{ template "prometheus-operator-admission-webhook.namespace" . }} -l "app.kubernetes.io/name={{ include "prometheus-operator-admission-webhook.name" . }},app.kubernetes.io/instance={{ .Release.Name }}" -o jsonpath="{.items[0].metadata.name}")"
+  export CONTAINER_PORT="$(kubectl get pod --namespace {{ template "prometheus-operator-admission-webhook.namespace" . }} $POD_NAME -o jsonpath="{.spec.containers[0].ports[0].containerPort}")"
+
+2. Set port forwarding:
+
+   kubectl --namespace {{ template "prometheus-operator-admission-webhook.namespace" . }} port-forward $POD_NAME 8080:$CONTAINER_PORT
+
+3. Verify the admission-webhook's deployment by checking its health endpoint by command
+
+   curl -k https://127.0.0.1:8080/healthz
+
+   JSON-formatted "status: up" is expected at that point.

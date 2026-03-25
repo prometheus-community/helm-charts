@@ -1,0 +1,225 @@
+# Default values for prometheus-systemd-exporter.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+image:
+  registry: quay.io
+  repository: prometheuscommunity/systemd-exporter
+  # Overrides the image tag whose default is {{ printf "v%s" .Chart.AppVersion }}
+  tag: ""
+  pullPolicy: IfNotPresent
+  digest: ""
+
+imagePullSecrets: []
+# - name: "image-pull-secret"
+nameOverride: ""
+fullnameOverride: ""
+
+# Number of old history to retain to allow rollback
+# Default Kubernetes value is set to 10
+revisionHistoryLimit: 10
+
+global:
+  # To help compatibility with other charts which use global.imagePullSecrets.
+  # Allow either an array of {name: pullSecret} maps (k8s-style), or an array of strings (more common helm-style).
+  # global:
+  #   imagePullSecrets:
+  #   - name: pullSecret1
+  #   - name: pullSecret2
+  # or
+  # global:
+  #   imagePullSecrets:
+  #   - pullSecret1
+  #   - pullSecret2
+  imagePullSecrets: []
+  #
+  # Allow parent charts to override registry hostname
+  imageRegistry: ""
+
+service:
+  enabled: true
+  type: ClusterIP
+  port: 9558
+  targetPort: 9558
+  nodePort:
+  portName: metrics
+  annotations:
+    prometheus.io/scrape: "true"
+
+# Additional environment variables that will be passed to the daemonset
+env: {}
+##  env:
+##    VARIABLE: value
+
+config:
+  log:
+    # Log level
+    level: info
+  systemd:
+    collector:
+      # Systemd units to include (regexp allowed)
+      unitInclude:
+        - kubelet.service
+        - docker.service
+
+# extraArgs allows to pass command line arguments, as described on https://github.com/prometheus-community/systemd_exporter?tab=readme-ov-file#configuration
+extraArgs: []
+# - --systemd.collector.enable-resolved
+
+prometheus:
+  monitor:
+    enabled: false
+    additionalLabels: {}
+    relabelings: []
+    metricRelabelings: []
+    interval: ""
+    scrapeTimeout: 10s
+  rules:
+    enabled: false
+    additionalLabels: {}
+    namespace: ""
+    rules:
+      ## These are just examples rules, please adapt them to your needs.
+      ## Make sure to constraint the rules to the current service.
+      - alert: SystemdServiceFailed
+        expr: |
+          systemd_unit_state{state="failed", service="{{ template "prometheus-systemd-exporter.fullname" . }}"} == 1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          description: |
+            Systemd service {{ "{{ $labels.name }}" }} has entered failed state at {{ "{{ $labels.instance }}" }}
+          # We can re-use node_exporter systemd runbooks
+          runbook_url: |
+            https://runbooks.prometheus-operator.dev/runbooks/node/nodesystemdservicefailed
+          summary: Systemd service has entered failed state.
+
+## Customize the updateStrategy if set
+updateStrategy:
+  type: RollingUpdate
+  rollingUpdate:
+    maxUnavailable: 1
+
+resources: {}
+  # We usually recommend not to specify default resources and to leave this as a conscious
+  # choice for the user. This also increases chances charts run on environments with little
+  # resources, such as Minikube. If you do want to specify resources, uncomment the following
+  # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+  # limits:
+  #   cpu: 200m
+  #   memory: 50Mi
+  # requests:
+  #   cpu: 100m
+  #   memory: 30Mi
+
+serviceAccount:
+  # Specifies whether a ServiceAccount should be created
+  create: false
+  # The name of the ServiceAccount to use.
+  # If not set and create is true, a name is generated using the fullname template
+  name: ""
+  annotations: {}
+  imagePullSecrets: []
+  automountServiceAccountToken: false
+
+securityContext:
+  fsGroup: 65534
+  runAsGroup: 65534
+  runAsNonRoot: true
+  runAsUser: 65534
+
+containerSecurityContext:
+  readOnlyRootFilesystem: true
+  # capabilities:
+  #   add:
+  #   - SYS_TIME
+
+# Expose the service to the host network
+hostNetwork: true
+
+# Share the host process ID namespace
+hostPID: true
+
+## Assign a group of affinity scheduling rules
+##
+affinity: {}
+#   nodeAffinity:
+#     requiredDuringSchedulingIgnoredDuringExecution:
+#       nodeSelectorTerms:
+#         - matchFields:
+#             - key: metadata.name
+#               operator: In
+#               values:
+#                 - target-host-name
+
+# Annotations to be added to systemd exporter pods
+podAnnotations:
+  # Fix for very slow GKE cluster upgrades
+  cluster-autoscaler.kubernetes.io/safe-to-evict: "true"
+
+# Extra labels to be added to systemd exporter pods
+podLabels: {}
+
+# Annotations to be added to systemd exporter daemonset
+daemonsetAnnotations: {}
+
+## set to true to add the release label so scraping of the servicemonitor with kube-prometheus-stack works out of the box
+releaseLabel: false
+
+## Assign a nodeSelector if operating a hybrid cluster
+##
+nodeSelector:
+  kubernetes.io/os: linux
+  #  kubernetes.io/arch: amd64
+
+tolerations:
+  - effect: NoSchedule
+    operator: Exists
+
+## Assign a PriorityClassName to pods if set
+# priorityClassName: ""
+
+## Override the deployment namespace
+##
+namespaceOverride: ""
+
+## Additional InitContainers to initialize the pod
+##
+extraInitContainers: []
+
+## Liveness probe
+##
+livenessProbe:
+  failureThreshold: 10
+  httpGet:
+    httpHeaders: []
+    scheme: "HTTP"
+    port: 9558
+    path: /
+  initialDelaySeconds: 0
+  periodSeconds: 10
+  successThreshold: 1
+  timeoutSeconds: 1
+
+## Readiness probe
+##
+readinessProbe:
+  failureThreshold: 3
+  httpGet:
+    httpHeaders: []
+    scheme: "HTTP"
+    port: 9558
+    path: /
+  initialDelaySeconds: 0
+  periodSeconds: 10
+  successThreshold: 1
+  timeoutSeconds: 1
+
+extraVolumes: []
+  # - name: systemd-example
+  #   hostPath:
+  #     path: /var/run/example
+extraVolumeMounts: []
+  # - mountPath: /var/run/example
+  #   name: systemd-example
+  #   readOnly: true

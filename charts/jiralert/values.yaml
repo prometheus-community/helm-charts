@@ -1,0 +1,240 @@
+global:
+  imagePullSecrets: []
+
+# -- String to partially override jiralert.fullname template (will maintain the release name)
+nameOverride: ""
+
+# -- Override the namespace
+namespaceOverride: ""
+
+# -- String to fully override amazon-eks-pod-identity.fullname template
+fullnameOverride: ""
+
+image:
+  pullPolicy: IfNotPresent
+  # -- jiralert image registry
+  repository: quay.io/jiralert/jiralert-linux-amd64
+  # -- jiralert image tag (immutable tags are recommended).
+  # @default -- `.Chart.AppVersion`
+  tag: ""
+
+extraArgs:
+  - -log.level=debug
+
+strategy: {}
+
+# -- Additional Volume mounts
+extraVolumeMounts: []
+
+# -- Additional Volumes
+extraVolumes: []
+
+# -- Additional env for jiralert pods
+env: {}
+
+# -- Additional envFrom for jiralert pods
+envFrom: {}
+
+# Number of pod replicas
+replicaCount: 1
+
+# Container resources
+resources:
+  # -- The resources limits for the jiralert container
+  ## Example:
+  ## limits:
+  ##    cpu: 100m
+  ##    memory: 128Mi
+  limits:
+    cpu: 200m
+    memory: 128Mi
+  # -- The requested resources for the jiralert container
+  ## Examples:
+  ## requests:
+  ##    cpu: 100m
+  ##    memory: 128Mi
+  requests:
+    cpu: 100m
+    memory: 64Mi
+
+# -- Annotations for jiralert deployment
+annotations: {}
+
+# -- Annotations for jiralert pods
+podAnnotations: {}
+
+# -- jiralert pods' Security Context.
+podSecurityContext:
+  seccompProfile:
+    type: RuntimeDefault
+
+# Ref: https://kubernetes.io/docs/tasks/run-application/configure-pdb/
+podDisruptionBudget: {}
+  # maxUnavailable: 1
+  # minAvailable: 1
+
+## Topology spread constraints rely on node labels to identify the topology domain(s) that each Node is in.
+## Ref: https://kubernetes.io/docs/concepts/workloads/pods/pod-topology-spread-constraints/
+topologySpreadConstraints: []
+  # - maxSkew: 1
+  #   topologyKey: failure-domain.beta.kubernetes.io/zone
+  #   whenUnsatisfiable: DoNotSchedule
+  #   labelSelector:
+  #     matchLabels:
+  #       app.kubernetes.io/instance: jiralert
+
+# Container security context
+securityContext:
+  runAsUser: 1001
+  runAsGroup: 1001
+  runAsNonRoot: true
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  capabilities:
+    drop: ["ALL"]
+
+livenessProbe:
+  httpGet:
+    path: /healthz
+    port: http
+readinessProbe:
+  httpGet:
+    path: /healthz
+    port: http
+
+serviceAccount:
+  # -- Enable creation of ServiceAccount for nginx pod
+  create: true
+  # -- The name of the ServiceAccount to use.
+  # @default -- A name is generated using the `jiralert.fullname` template
+  name: ''
+  # -- Annotations for service account. Evaluated as a template.
+  annotations: {}
+  # -- Labels for service account. Evaluated as a template.
+  labels: {}
+  automountServiceAccountToken: false
+
+existingConfigSecret: ~
+
+## Pass the jiralert configuration directives through Helm's templating
+## engine. If the jiralert configuration contains Alertmanager templates,
+## they'll need to be properly escaped so that they are not interpreted by
+## Helm
+## ref: https://helm.sh/docs/developing_charts/#using-the-tpl-function
+tplConfig: false
+
+config:
+  # File containing template definitions. Required.
+  template: jiralert.tmpl
+
+  # Example: https://github.com/prometheus-community/jiralert/blob/master/examples/jiralert.yml
+  defaults:
+    # API access fields.
+    api_url: "https://example.atlassian.net"
+    # user: {{ .config.jiraUser }}
+    # password: '{{ .config.jiraToken }}'
+    summary: '{{ template "jira.summary" . }}'
+    description: '{{ template "jira.description" . }}'
+    issue_type: Bug
+    reopen_state: "To Do"
+    reopen_duration: 0h
+
+  # Receiver definitions. At least one must be defined.
+  receivers: []
+  #  - name: 'default'
+  #    # JIRA project to create the issue in. Required.
+  #    project:
+  #    # Copy all Prometheus labels into separate JIRA labels. Optional (default: false).
+  #    add_group_labels: false
+  #    fields:
+  #      # Set the Environment field
+  #      "customfield_10078": { "value": { { .config.receiver.environment | quote } } }
+  #      # Set the Organization field
+  #      "customfield_10002": [ { { .config.receiver.organizationID } } ]
+
+# Alternative to config. Must be used with tplConfig=true. Could be used for complex configurations.
+configString: ""
+
+# -- Affinity for pod assignment
+affinity: {}
+
+# -- Node labels for pod assignment. Evaluated as a template.
+nodeSelector: {}
+
+# -- Tolerations for pod assignment. Evaluated as a template.
+tolerations: []
+
+priorityClassName: ""
+
+ingress:
+  enabled: false
+  className: ""
+  labels: {}
+  annotations: {}
+    # kubernetes.io/ingress.class: nginx
+  # kubernetes.io/tls-acme: "true"
+  hosts:
+    - host: chart-example.local
+      paths:
+        - path: /
+          pathType: ImplementationSpecific
+  tls: []
+  #  - secretName: chart-example-tls
+  #    hosts:
+  #      - chart-example.local
+
+issueTemplate: |
+  {{`{{ define "jira.summary" }}[{{ .Status | toUpper }}{{ if eq .Status "firing" }}:{{ .Alerts.Firing | len }}{{ end }}] {{ .GroupLabels.SortedPairs.Values | join " " }} {{ if gt (len .CommonLabels) (len .GroupLabels) }}({{ with .CommonLabels.Remove .GroupLabels.Names }}{{ .Values | join " " }}{{ end }}){{ end }}{{ end }}
+
+  {{ define "jira.description" }}{{ range .Alerts.Firing }}Labels:
+  {{ range .Labels.SortedPairs }} - {{ .Name }} = {{ .Value }}
+  {{ end }}
+  Annotations:
+  {{ range .Annotations.SortedPairs }} - {{ .Name }} = {{ .Value }}
+  {{ end }}
+  Source: {{ .GeneratorURL }}
+  {{ end }}{{ end }}`}}
+
+# Enable this if you're using https://github.com/coreos/prometheus-operator
+serviceMonitor:
+  enabled: false
+  # namespace: monitoring
+
+  # Fallback to the prometheus default unless specified
+  # interval: 10s
+
+  ## scheme: HTTP scheme to use for scraping. Can be used with `tlsConfig` for example if using istio mTLS.
+  # scheme: ""
+
+  ## tlsConfig: TLS configuration to use when scraping the endpoint. For example if using istio mTLS.
+  ## Of type: https://github.com/coreos/prometheus-operator/blob/master/Documentation/api.md#tlsconfig
+  # tlsConfig: {}
+
+  # bearerTokenFile:
+  # Fallback to the prometheus default unless specified
+  # scrapeTimeout: 30s
+
+  ## Used to pass Labels that are used by the Prometheus installed in your cluster to select Service Monitors to work with
+  ## ref: https://github.com/coreos/prometheus-operator/blob/master/Documentation/api.md#prometheusspec
+  additionalLabels: {}
+
+  # Retain the job and instance labels of the metrics pushed to the Pushgateway
+  # [Scraping Pushgateway](https://github.com/prometheus/pushgateway#configure-the-pushgateway-as-a-target-to-scrape)
+  honorLabels: true
+
+  ## Metric relabel configs to apply to samples before ingestion.
+  ## [Metric Relabeling](https://prometheus.io/docs/prometheus/latest/configuration/configuration/#metric_relabel_configs)
+  metricRelabelings: []
+  # - action: keep
+  #   regex: 'kube_(daemonset|deployment|pod|namespace|node|statefulset).+'
+  #   sourceLabels: [__name__]
+
+  ## Relabel configs to apply to samples before ingestion.
+  ## [Relabeling](https://prometheus.io/docs/prometheus/latest/configuration/configuration/#relabel_config)
+  relabelings: []
+  # - sourceLabels: [__meta_kubernetes_pod_node_name]
+  #   separator: ;
+  #   regex: ^(.*)$
+  #   targetLabel: nodename
+  #   replacement: $1
+  #   action: replace

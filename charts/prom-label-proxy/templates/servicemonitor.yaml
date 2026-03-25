@@ -1,0 +1,79 @@
+{{- if and .Values.metrics.enabled .Values.metrics.serviceMonitor.enabled }}
+{{- with .Values.metrics.serviceMonitor }}
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: {{ template "prom-label-proxy.fullname" $ }}
+  namespace: {{ template "prom-label-proxy.namespace" $ }}
+  labels:
+    {{- include "prom-label-proxy.labels" $ | nindent 4 }}
+    {{- with .additionalLabels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+spec:
+  selector:
+    matchLabels:
+      {{- include "prom-label-proxy.selectorLabels" $ | nindent 6 }}
+  namespaceSelector:
+    matchNames:
+      - {{ template "prom-label-proxy.namespace" $ }}
+  {{- with .jobLabel }}
+  jobLabel: {{ quote . }}
+  {{- end }}
+  {{- with .targetLabels }}
+  targetLabels:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  {{- with .podTargetLabels }}
+  podTargetLabels:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  {{- with .sampleLimit }}
+  sampleLimit: {{ . }}
+  {{- end }}
+  {{- with .targetLimit }}
+  targetLimit: {{ . }}
+  {{- end }}
+  {{- with .labelLimit }}
+  labelLimit: {{ . }}
+  {{- end }}
+  {{- with .labelNameLengthLimit }}
+  labelNameLengthLimit: {{ . }}
+  {{- end }}
+  {{- with .labelValueLengthLimit }}
+  labelValueLengthLimit: {{ . }}
+  {{- end }}
+  {{- with .attachMetadata }}
+  attachMetadata:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  {{- with .additionalConfigs }}
+  {{- toYaml . | nindent 2 }}
+  {{- end }}
+  endpoints:
+    - port: http-metrics
+      {{- with .honorLabels }}
+      honorLabels: {{ . }}
+      {{- end }}
+      {{- if ne .honorTimestamps nil }}
+      honorTimestamps: {{ .honorTimestamps }}
+      {{- end }}
+      {{- with .interval }}
+      interval: {{ quote . }}
+      {{- end }}
+      {{- with .scrapeTimeout }}
+      scrapeTimeout: {{ quote . }}
+      {{- end }}
+      {{- with .relabelings }}
+      relabelings:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .metricRelabelings }}
+      metricRelabelings:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .additionalEndpointConfigs }}
+      {{- toYaml . | nindent 6 }}
+      {{- end }}
+{{- end }}
+{{- end }}

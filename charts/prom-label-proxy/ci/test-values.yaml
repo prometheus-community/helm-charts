@@ -1,0 +1,21 @@
+config:
+  upstream: http://prometheus:9090
+  extraArgs:
+  - --enable-label-apis=true
+  - --header-name=X-Namespace
+
+kubeRBACProxy:
+  enabled: true
+  config:
+    authorization:
+      rewrites:
+        byHttpHeader:
+          name: X-Namespace
+      resourceAttributes:
+        apiVersion: v1
+        resource: namespaces
+        subresource: metrics
+        namespace: "{{ .Value }}"
+
+autoscaling:
+  enabled: true

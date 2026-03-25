@@ -1,0 +1,91 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "prometheus-ipmi-exporter.fullname" . }}
+  labels:
+    {{- include "prometheus-ipmi-exporter.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "prometheus-ipmi-exporter.selectorLabels" . | nindent 6 }}
+  strategy:
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        {{- include "prometheus-ipmi-exporter.selectorLabels" . | nindent 8 }}
+      {{- if or (not .Values.configSecret.enabled) .Values.additionalAnnotations }}
+      annotations:
+      {{- end }}
+      {{- if not .Values.configSecret.enabled }}
+        checksum/config: {{ toYaml .Values.modules | sha256sum }}
+      {{- end }}
+      {{- with .Values.additionalAnnotations }}
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+    spec:
+      containers:
+        - name: ipmi-exporter
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          args:
+            - "--config.file"
+            - "/config.yml"
+          {{- if .Values.nativeIPMI.enabled }}
+            - "--native-ipmi"
+          {{- end }}
+          {{- range .Values.extraArgs }}
+            - {{ . | quote }}
+          {{- end }}
+          {{- with.Values.containerSecurityContext }}
+          securityContext:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          volumeMounts:
+            - name: config-volume
+              mountPath: /config.yml
+              subPath: config.yml
+              readOnly: true
+            {{- with .Values.extraVolumeMounts }}
+              {{- toYaml . | nindent 12 }}
+            {{- end }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.service.port }}
+              protocol: TCP
+          resources:
+            limits:
+              cpu: {{ .Values.resources.limits.cpu }}
+              memory: {{ .Values.resources.limits.memory }}
+            requests:
+              cpu: {{ .Values.resources.requests.cpu }}
+              memory: {{ .Values.resources.requests.memory }}
+      volumes:
+        - name: config-volume
+        {{- if .Values.configSecret.enabled }}
+          secret:
+            secretName: {{ .Values.configSecret.name }}
+            items:
+            - key: {{ .Values.configSecret.key }}
+              path: config.yml
+        {{- else }}
+          configMap:
+            name: {{ template "prometheus-ipmi-exporter.fullname" . }}
+        {{- end }}
+        {{- with .Values.extraVolumes }}
+            {{- toYaml . | nindent 8 }}
+        {{- end }}
+    {{- with .Values.nodeSelector }}
+      nodeSelector: {{ toYaml . | nindent 8 }}
+    {{- end }}
+    {{- with .Values.affinity }}
+      affinity: {{ toYaml . | nindent 8 }}
+    {{- end }}
+    {{- with .Values.tolerations }}
+      tolerations: {{ toYaml . | nindent 8 }}
+    {{- end }}

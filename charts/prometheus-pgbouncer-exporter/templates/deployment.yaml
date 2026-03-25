@@ -1,0 +1,149 @@
+{{- if and .Values.config.datasource.passwordSecret .Values.config.datasource.password -}}
+{{ fail (printf "ERROR: only one of .Values.config.datasource.passwordSecret and .Values.config.datasource.password must be defined") }}
+{{- end -}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ template "prometheus-pgbouncer-exporter.fullname" . }}
+  labels:
+    app: {{ template "prometheus-pgbouncer-exporter.name" . }}
+    chart: {{ template "prometheus-pgbouncer-exporter.chart" . }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app: {{ template "prometheus-pgbouncer-exporter.name" . }}
+      release: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        app: {{ template "prometheus-pgbouncer-exporter.name" . }}
+        release: {{ .Release.Name }}
+{{- if .Values.podLabels }}
+{{ toYaml .Values.podLabels | trim | indent 8 }}
+{{- end }}
+      annotations:
+        kubectl.kubernetes.io/default-container: {{ .Chart.Name }}
+{{- if .Values.annotations }}
+{{ toYaml .Values.annotations | indent 8 }}
+{{- end }}
+    spec:
+      serviceAccountName: {{ template "prometheus-pgbouncer-exporter.serviceAccountName" . }}
+      {{- with .Values.podSecurityContext }}
+      securityContext:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+{{- if .Values.initContainers }}
+      initContainers:
+{{ toYaml .Values.initContainers | indent 8 }}
+{{- end }}
+      {{- if .Values.image.pullSecrets }}
+      imagePullSecrets:
+      {{- range .Values.image.pullSecrets }}
+        - name: {{ . }}
+      {{- end }}
+      {{- end }}
+      containers:
+        - name: {{ .Chart.Name }}
+          command: 
+          args:
+          - "--web.listen-address=:{{ .Values.service.targetPort }}"
+          {{- if .Values.config.logLevel }}
+          - "--log.level={{ .Values.config.logLevel }}"
+          {{- end }}
+          {{- if .Values.config.logFormat }}
+          - "--log.format={{ .Values.config.logFormat }}"
+          {{- end }}
+          - "--pgBouncer.connectionString=user={{ .Values.config.datasource.user }} password='$(DATA_SOURCE_PASS)' host={{ .Values.config.datasource.host }} port={{ .Values.config.datasource.port }} dbname={{ .Values.config.datasource.database }} sslmode='{{ .Values.config.datasource.sslmode }}'"
+          env:
+          {{- if .Values.config.datasourceSecret }}
+          - name: DATA_SOURCE_NAME
+            valueFrom:
+              secretKeyRef:
+                name: {{ .Values.config.datasourceSecret.name }}
+                key: {{ .Values.config.datasourceSecret.key }}
+          {{- else }}
+          - name: DATA_SOURCE_URI
+            value: {{ template "prometheus-pgbouncer-exporter.data_source_uri" . }}
+          - name: DATA_SOURCE_USER
+            value: {{ .Values.config.datasource.user }}
+          {{- if .Values.config.datasource.passwordFile }}
+          - name: DATA_SOURCE_PASS_FILE
+            value: {{ .Values.config.datasource.passwordFile }}
+          {{- else }}
+          - name: DATA_SOURCE_PASS
+            valueFrom:
+              secretKeyRef:
+          {{- if .Values.config.datasource.passwordSecret }}
+                name: {{ .Values.config.datasource.passwordSecret.name }}
+                key: {{ .Values.config.datasource.passwordSecret.key }}
+          {{- else }}
+                name: {{ template "prometheus-pgbouncer-exporter.fullname" . }}
+                key: data_source_password
+          {{- end }}
+          {{- end }}
+          {{- end }}
+          {{- with .Values.extraEnvs }}
+          {{- if kindIs "map" . }}
+          {{- range $name, $value := . }}
+          - name: {{ $name }}
+            value: {{ tpl $value $ | quote }}
+          {{- end }}
+          {{- end }}
+          {{- if kindIs "slice" . -}}
+          {{ toYaml . | nindent 10 }}
+          {{- end }}
+          {{- end }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.service.targetPort }}
+              protocol: TCP
+          livenessProbe:
+            initialDelaySeconds: {{ .Values.livenessProbe.initialDelaySeconds }}
+            timeoutSeconds: {{ .Values.livenessProbe.timeoutSeconds }}
+            httpGet:
+              path: /
+              port: http
+          readinessProbe:
+            initialDelaySeconds: {{ .Values.readinessProbe.initialDelaySeconds }}
+            timeoutSeconds: {{ .Values.readinessProbe.timeoutSeconds }}
+            httpGet:
+              path: /
+              port: http
+          resources:
+{{ toYaml .Values.resources | indent 12 }}
+          {{- with .Values.securityContext }}
+          securityContext:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          volumeMounts:
+{{- with .Values.extraVolumeMounts }}
+{{ toYaml . | indent 12 }}
+{{- end }}
+{{- with .Values.extraContainers }}
+{{ toYaml . | indent 8 }}
+{{- end }}
+{{- if .Values.hostAliases }}
+      hostAliases:
+{{ toYaml .Values.hostAliases | indent 8 }}
+{{- end }}
+     {{- with .Values.nodeSelector }}
+      nodeSelector:
+{{ toYaml . | indent 8 }}
+    {{- end }}
+    {{- with .Values.affinity }}
+      affinity:
+{{ toYaml . | indent 8 }}
+    {{- end }}
+    {{- with .Values.tolerations }}
+      tolerations:
+{{ toYaml . | indent 8 }}
+    {{- end }}
+      volumes:
+{{- with .Values.extraVolumes }}
+{{ toYaml . | indent 6 }}
+{{- end }}

@@ -1,0 +1,21 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app.kubernetes.io/name: {{ include "prometheus-druid-exporter.fullname" . }}
+    helm.sh/chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/version: {{ .Chart.AppVersion }}
+  name: {{ include "prometheus-druid-exporter.fullname" . }}
+spec:
+  ports:
+  - name: metrics
+    port: {{ .Values.exporterPort }}
+    protocol: TCP
+    targetPort: {{ .Values.exporterPort }}
+  selector:
+    app.kubernetes.io/name: {{ include "prometheus-druid-exporter.fullname" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+  type: {{ .Values.serviceType }}

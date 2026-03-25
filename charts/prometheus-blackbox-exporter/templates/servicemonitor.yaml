@@ -1,0 +1,65 @@
+{{- if .Values.serviceMonitor.enabled }}
+{{- range .Values.serviceMonitor.targets }}
+{{- with (tpl (toYaml .) $ | fromYaml ) }}
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: {{ template "prometheus-blackbox-exporter.fullname" $ }}-{{ .name }}
+  namespace: {{ template "prometheus-blackbox-exporter.namespace" $ }}
+  labels:
+    {{- include "prometheus-blackbox-exporter.labels" $ | nindent 4 }}
+    {{- if or $.Values.serviceMonitor.defaults.labels .labels }}
+    {{- toYaml (.labels | default $.Values.serviceMonitor.defaults.labels) | nindent 4 }}
+    {{- end }}
+spec:
+  endpoints:
+  - port: http
+    scheme: {{ $.Values.serviceMonitor.scheme }}
+    {{- if $.Values.serviceMonitor.bearerTokenFile }}
+    bearerTokenFile: {{ $.Values.serviceMonitor.bearerTokenFile }}
+    {{- end }}
+    {{- if $.Values.serviceMonitor.tlsConfig }}
+    tlsConfig: {{ toYaml $.Values.serviceMonitor.tlsConfig | nindent 6 }}
+    {{- end }}
+    path: {{ $.Values.serviceMonitor.path }}
+    interval: {{ .interval | default $.Values.serviceMonitor.defaults.interval }}
+    scrapeTimeout: {{ .scrapeTimeout | default $.Values.serviceMonitor.defaults.scrapeTimeout }}
+    honorTimestamps: {{ .honorTimestamps | default $.Values.serviceMonitor.defaults.honorTimestamps }}
+    params:
+      module:
+      - {{ .module | default $.Values.serviceMonitor.defaults.module }}
+      target:
+      - {{ .url }}
+      {{- if .hostname }}
+      hostname:
+      - {{ .hostname }}
+      {{- end }}
+    metricRelabelings:
+      - sourceLabels: [instance]
+        targetLabel: instance
+        replacement: {{ .url }}
+        action: replace
+      - sourceLabels: [target]
+        targetLabel: target
+        replacement: {{ .name }}
+        action: replace
+        {{- range $targetLabel, $replacement := .additionalMetricsRelabels | default $.Values.serviceMonitor.defaults.additionalMetricsRelabels }}
+      - targetLabel: {{ $targetLabel | quote }}
+        replacement: {{ $replacement | quote }}
+        action: replace
+        {{- end }}
+{{- if concat (.additionalRelabeling | default list) $.Values.serviceMonitor.defaults.additionalRelabeling }}
+    relabelings:
+{{ toYaml (concat (.additionalRelabeling | default list) $.Values.serviceMonitor.defaults.additionalRelabeling) | indent 6 }}
+{{- end }}
+  jobLabel: "{{ $.Release.Name }}"
+  selector:
+    matchLabels:
+      {{- include "prometheus-blackbox-exporter.selectorLabels" $ | nindent 6 }}
+  namespaceSelector:
+    matchNames:
+      - {{ template "prometheus-blackbox-exporter.namespace" $ }}
+{{- end }}
+{{- end }}
+{{- end }}

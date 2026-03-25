@@ -1,0 +1,20 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: "{{ include "prometheus-druid-exporter.fullname" . }}-test-connection"
+  labels:
+    app.kubernetes.io/name: {{ include "prometheus-druid-exporter.fullname" . }}
+    helm.sh/chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/version: {{ .Chart.AppVersion }}
+  annotations:
+    "helm.sh/hook": test-success
+spec:
+  containers:
+  - name: wget
+    image: busybox
+    command: ['wget']
+    args:  ['-qO-', '{{ include "prometheus-druid-exporter.fullname" . }}.{{ .Release.Namespace }}.svc:{{ .Values.exporterPort }}/metrics']
+
+  restartPolicy: Never

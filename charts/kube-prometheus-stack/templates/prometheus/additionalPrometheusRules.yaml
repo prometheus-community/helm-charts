@@ -1,0 +1,37 @@
+{{- if .Values.additionalPrometheusRulesMap }}
+{{- range $prometheusRuleName, $prometheusRule := .Values.additionalPrometheusRulesMap }}
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: {{ printf "%s-%s" (include "kube-prometheus-stack.fullname" $) $prometheusRuleName | trunc 63 | trimSuffix "-" }}
+  namespace: {{ template "kube-prometheus-stack.namespace" $ }}
+  labels:
+    app: {{ template "kube-prometheus-stack.name" $ }}
+    {{- include "kube-prometheus-stack.labels" $ | nindent 4 }}
+    {{- if $prometheusRule.additionalLabels }}
+    {{- toYaml $prometheusRule.additionalLabels | nindent 4 }}
+    {{- end }}
+spec:
+  groups:
+    {{- toYaml $prometheusRule.groups | nindent 4 }}
+{{- end }}
+{{- else if .Values.additionalPrometheusRules }}
+{{- range .Values.additionalPrometheusRules }}
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: {{ printf "%s-%s" (include "kube-prometheus-stack.fullname" $) .name | trunc 63 | trimSuffix "-" }}
+  namespace: {{ template "kube-prometheus-stack.namespace" $ }}
+  labels:
+    app: {{ template "kube-prometheus-stack.name" $ }}
+    {{- include "kube-prometheus-stack.labels" $ | nindent 4 }}
+    {{- if .additionalLabels }}
+    {{- toYaml .additionalLabels | nindent 4 }}
+    {{- end }}
+spec:
+  groups:
+    {{- toYaml .groups | nindent 4 }}
+{{- end }}
+{{- end }}

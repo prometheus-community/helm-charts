@@ -1,0 +1,99 @@
+{{- $global := . }}
+{{- $base := dict "annotations" .Values.annotations "resources" .Values.resources "nodeSelector" .Values.nodeSelector "affinity" .Values.affinity "tolerations" .Values.tolerations "config" .Values.config  "hostNetwork" .Values.hostNetwork "priorityClassName" .Values.priorityClassName "extraArgs" .Values.extraArgs }}
+{{- $items := prepend .Values.extraInstances $base }}
+{{- range $idx, $item := $items }}
+{{- $config := mergeOverwrite $item.config $global.Values.common.config }}
+{{- $res := set $item "config" $config }}
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: {{ template "prometheus-smartctl-exporter.fullname" $global }}-{{ $idx }}
+  {{- with $item.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  labels:
+    {{- include "prometheus-smartctl-exporter.labels" $global | nindent 4 }}
+    idx: i{{ $idx }}
+spec:
+  {{- with $global.Values.updateStrategy }}
+  updateStrategy: {{ toYaml . | nindent 4 }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "prometheus-smartctl-exporter.selectorLabels" $global | nindent 6 }}
+      idx: i{{ $idx }}
+  template:
+    metadata:
+      {{- with $global.Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "prometheus-smartctl-exporter.selectorLabels" $global | nindent 8 }}
+        idx: i{{ $idx }}
+    spec:
+      {{- if $global.Values.image.pullSecrets }}
+      imagePullSecrets:
+        {{- range $secret := $global.Values.image.pullSecrets }}
+        - name: {{ $secret }}
+        {{- end }}
+      {{- end }}
+      containers:
+      - image: "{{ $global.Values.image.repository }}:{{ $global.Values.image.tag | default $global.Chart.AppVersion }}"
+        imagePullPolicy: {{ $global.Values.image.pullPolicy }}
+        args:
+        - '--smartctl.path={{ $config.smartctl_location }}'
+        - '--smartctl.interval={{ $config.collect_not_more_than_period }}'
+{{- if $config.device_exclude }}
+        - '--smartctl.device-exclude={{ $config.device_exclude }}'
+{{- end }}
+{{- if $config.device_include }}
+        - '--smartctl.device-include={{ $config.device_include }}'
+{{- end }}
+{{ range $config.devices }}
+        - '--smartctl.device={{ . }}'
+{{ end }}
+        - '--web.listen-address={{ $config.bind_to }}'
+        - '--web.telemetry-path={{ $config.url_path }}'
+        {{- range $key, $value := $item.extraArgs }}
+        - '--{{ $key }}={{ $value }}'
+        {{- end }}
+        name: main
+        securityContext:
+          privileged: true
+          runAsUser: 0
+        ports:
+        - name: http
+          containerPort: 9633
+          protocol: TCP
+        resources:
+{{ toYaml $item.resources | indent 10 }}
+        volumeMounts:
+        - mountPath: /hostdev
+          name: dev
+      dnsPolicy: ClusterFirst
+      hostNetwork: {{ $item.hostNetwork }}
+      {{- if $item.priorityClassName }}
+      priorityClassName: {{ $item.priorityClassName }}
+      {{- end }}
+      restartPolicy: Always
+      serviceAccountName: {{ template "prometheus-smartctl-exporter.fullname" $global }}
+      volumes:
+      - hostPath:
+          path: /dev
+        name: dev
+    {{- with $item.nodeSelector }}
+      nodeSelector:
+{{ toYaml . | indent 8 }}
+    {{- end }}
+    {{- with $item.affinity }}
+      affinity:
+{{ toYaml . | indent 8 }}
+    {{- end }}
+    {{- with $item.tolerations }}
+      tolerations:
+{{ toYaml . | indent 8 }}
+    {{- end }}
+{{- end }}

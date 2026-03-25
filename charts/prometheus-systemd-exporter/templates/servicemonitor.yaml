@@ -1,0 +1,33 @@
+{{- if .Values.prometheus.monitor.enabled }}
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: {{ include "prometheus-systemd-exporter.fullname" . }}
+  namespace: {{ include "prometheus-systemd-exporter.monitor-namespace" . }}
+  labels:
+    {{- include "prometheus-systemd-exporter.labels" . | nindent 4 }}
+    {{- with .Values.prometheus.monitor.additionalLabels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+spec:
+  jobLabel: "app.kubernetes.io/name"
+  selector:
+    matchLabels:
+      {{- include "prometheus-systemd-exporter.selectorLabels" . | nindent 6 }}
+  endpoints:
+    - port: {{ .Values.service.portName }}
+      {{- with .Values.prometheus.monitor.interval }}
+      interval: {{ . }}
+      {{- end }}
+      {{- with .Values.prometheus.monitor.scrapeTimeout }}
+      scrapeTimeout: {{ . }}
+      {{- end }}
+      {{- with .Values.prometheus.monitor.relabelings }}
+      relabelings:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.prometheus.monitor.metricRelabelings }}
+      metricRelabelings:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+{{- end }}

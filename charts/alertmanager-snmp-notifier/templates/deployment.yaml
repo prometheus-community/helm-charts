@@ -1,0 +1,166 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "alertmanager-snmp-notifier.fullname" . }}
+  labels:
+    {{- include "alertmanager-snmp-notifier.labels" . | nindent 4 }}
+spec:
+  {{- if not .Values.autoscaling.enabled }}
+  replicas: {{ .Values.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "alertmanager-snmp-notifier.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "alertmanager-snmp-notifier.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "alertmanager-snmp-notifier.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: {{ .Chart.Name }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          args:
+        {{- if .Values.snmpNotifier.snmpDestinations }}
+        {{- range $destination := .Values.snmpNotifier.snmpDestinations }}
+            - --snmp.destination={{ $destination }}
+        {{- end }}
+        {{- end }}
+        {{ if .Values.snmpNotifier.extraArgs }}
+        {{- range $extraArg := .Values.snmpNotifier.extraArgs }}
+            - {{ $extraArg }}
+        {{- end }}
+        {{- end }}
+        {{- if (and .Values.snmpNotifier.trapTemplates .Values.snmpNotifier.trapTemplates.description) }}
+            - --trap.description-template=/templates/description-template.tpl
+        {{- else }}
+            - --trap.description-template=/etc/snmp_notifier/description-template.tpl
+        {{- end }}
+        {{- if (and .Values.snmpNotifier.trapTemplates .Values.snmpNotifier.trapTemplates.userObjects) }}
+        {{- range $element := .Values.snmpNotifier.trapTemplates.userObjects }}
+            - --trap.user-object={{ $element.subOid }}=/templates/user-object-{{ $element.subOid }}-template.tpl
+        {{- end }}
+        {{ end }}
+          env:
+          {{- if (or .Values.snmpNotifier.snmpCommunity .Values.snmpNotifier.snmpCommunitySecret) }}
+          - name: SNMP_NOTIFIER_COMMUNITY
+            valueFrom:
+              secretKeyRef:
+          {{- if .Values.snmpNotifier.snmpCommunitySecret }}
+                name: {{ .Values.snmpNotifier.snmpCommunitySecret.name }}
+                key: {{ .Values.snmpNotifier.snmpCommunitySecret.key }}
+          {{- else }}
+                name: {{ template "alertmanager-snmp-notifier.fullname" . }}
+                key: community
+          {{- end }}
+          {{- end }}
+          {{- if (or .Values.snmpNotifier.snmpAuthenticationUsername .Values.snmpNotifier.snmpAuthenticationUsernameSecret) }}
+          - name: SNMP_NOTIFIER_AUTH_USERNAME
+            valueFrom:
+              secretKeyRef:
+          {{- if .Values.snmpNotifier.snmpAuthenticationUsernameSecret }}
+                name: {{ .Values.snmpNotifier.snmpAuthenticationUsernameSecret.name }}
+                key: {{ .Values.snmpNotifier.snmpAuthenticationUsernameSecret.key }}
+          {{- else }}
+                name: {{ template "alertmanager-snmp-notifier.fullname" . }}
+                key: authenticationUsername
+          {{- end }}
+          {{- end }}
+          {{- if (or .Values.snmpNotifier.snmpAuthenticationPassword .Values.snmpNotifier.snmpAuthenticationPasswordSecret) }}
+          - name: SNMP_NOTIFIER_AUTH_PASSWORD
+            valueFrom:
+              secretKeyRef:
+          {{- if .Values.snmpNotifier.snmpAuthenticationPasswordSecret }}
+                name: {{ .Values.snmpNotifier.snmpAuthenticationPasswordSecret.name }}
+                key: {{ .Values.snmpNotifier.snmpAuthenticationPasswordSecret.key }}
+          {{- else }}
+                name: {{ template "alertmanager-snmp-notifier.fullname" . }}
+                key: authenticationPassword
+          {{- end }}
+          {{- end }}
+          {{- if (or .Values.snmpNotifier.snmpPrivatePassword .Values.snmpNotifier.snmpPrivatePasswordSecret) }}
+          - name: SNMP_NOTIFIER_PRIV_PASSWORD
+            valueFrom:
+              secretKeyRef:
+          {{- if .Values.snmpNotifier.snmpPrivatePasswordSecret }}
+                name: {{ .Values.snmpNotifier.snmpPrivatePasswordSecret.name }}
+                key: {{ .Values.snmpNotifier.snmpPrivatePasswordSecret.key }}
+          {{- else }}
+                name: {{ template "alertmanager-snmp-notifier.fullname" . }}
+                key: privatePassword
+          {{- end }}
+          {{- end }}
+          volumeMounts:
+          {{- if .Values.snmpNotifier.trapTemplates }}
+            - mountPath: /templates
+              name: templates
+          {{- end }}
+          {{- range .Values.extraConfigmapMounts }}
+            - name: {{ .name }}
+              mountPath: {{ .mountPath }}
+              subPath: {{ .subPath | default "" }}
+              readOnly: {{ .readOnly }}
+          {{- end }}
+          {{- range .Values.extraSecretMounts }}
+            - name: {{ .name }}
+              mountPath: {{ .mountPath }}
+              subPath: {{ .subPath }}
+              readOnly: {{ .readOnly }}
+          {{- end }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.service.port }}
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: /
+              port: http
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      volumes:
+      {{- if .Values.snmpNotifier.trapTemplates }}
+        - name: templates
+          configMap:
+            name: {{ template "alertmanager-snmp-notifier.fullname" . }}
+      {{- end }}
+      {{- range .Values.extraConfigmapMounts }}
+        - name: {{ .name }}
+          configMap:
+            name: {{ .configMap }}
+            defaultMode: {{ .defaultMode }}
+      {{- end }}
+      {{- range .Values.extraSecretMounts }}
+        - name: {{ .name }}
+          secret:
+            secretName: {{ .secretName }}
+            defaultMode: {{ .defaultMode }}
+      {{- end }}

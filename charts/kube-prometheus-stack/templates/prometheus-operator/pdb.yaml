@@ -1,0 +1,15 @@
+{{- if .Values.prometheusOperator.podDisruptionBudget.enabled -}}
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ template "kube-prometheus-stack.operator.fullname" . }}
+  namespace: {{ template "kube-prometheus-stack.namespace" . }}
+  labels:
+    {{- include "kube-prometheus-stack.prometheus-operator.labels" . | nindent 4 }}
+spec:
+  selector:
+    matchLabels:
+      app: {{ template "kube-prometheus-stack.name" . }}-operator
+      release: {{ $.Release.Name | quote }}
+{{- toYaml (omit .Values.prometheusOperator.podDisruptionBudget "enabled") | nindent 2 }}
+{{- end }}

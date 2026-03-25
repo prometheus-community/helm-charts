@@ -1,0 +1,20 @@
+{{- if and .Values.prometheus.enabled .Values.prometheus.podDisruptionBudget.enabled }}
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ template "kube-prometheus-stack.fullname" . }}-prometheus
+  namespace: {{ template "kube-prometheus-stack.namespace" . }}
+  labels:
+    app: {{ template "kube-prometheus-stack.name" . }}-prometheus
+{{ include "kube-prometheus-stack.labels" . | indent 4 }}
+spec:
+{{- toYaml (omit .Values.prometheus.podDisruptionBudget "enabled") | nindent 2 }}
+  selector:
+    matchLabels:
+      {{- if .Values.prometheus.agentMode }}
+      app.kubernetes.io/name: prometheus-agent
+      {{- else }}
+      app.kubernetes.io/name: prometheus
+      {{- end }}
+      operator.prometheus.io/name: {{ template "kube-prometheus-stack.prometheus.crname" . }}
+{{- end }}

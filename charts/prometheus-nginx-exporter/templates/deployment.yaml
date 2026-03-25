@@ -1,0 +1,89 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "prometheus-nginx-exporter.fullname" . }}
+  namespace: {{ template "prometheus-nginx-exporter.namespace" . }}
+  annotations:
+    {{- include "prometheus-nginx-exporter.deploymentAnnotations" . | indent 4 }}
+  labels:
+    {{- include "prometheus-nginx-exporter.labels" . | indent 4 }}
+    {{- if .Values.deployment.labels }}
+    {{- toYaml .Values.deployment.labels | trim | nindent 4 }}
+    {{- end }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "prometheus-nginx-exporter.selectorLabels" . | indent 6 }}
+  {{- with .Values.updateStrategy }}
+  strategy: {{ toYaml . | nindent 4 }}
+  {{- end }}
+  template:
+    metadata:
+      labels:
+        {{- include "prometheus-nginx-exporter.labels" . | indent 8 }}
+      {{- if or .Values.additionalAnnotations .Values.podAnnotations }}
+      annotations:
+        {{- include "prometheus-nginx-exporter.podAnnotations" . | indent 8 }}
+      {{- end }}
+    spec:
+      serviceAccountName: {{ template "prometheus-nginx-exporter.serviceAccountName" . }}
+      {{- with .Values.priorityClassName }}
+      priorityClassName: {{ . }}
+      {{- end }}
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.initContainers }}
+      initContainers: {{ toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: {{ .Chart.Name }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          args:
+            {{- if semverCompare ">=1.0.0-0" (coalesce .Values.image.tag .Chart.AppVersion) }}
+            - "--nginx.scrape-uri={{ tpl .Values.nginxServer . }}"
+            {{- range $key, $value := .Values.options }}
+            - "--{{ $key }}{{ if $value }}={{ $value }}{{ end }}"
+            {{- end }}
+            {{- else }}
+            - "-nginx.scrape-uri={{ tpl .Values.nginxServer . }}"
+            {{- range $key, $value := .Values.options }}
+            - "-{{ $key }}{{ if $value }}={{ $value }}{{ end }}"
+            {{- end}}
+            {{- end}}
+          ports:
+            - name: http
+              containerPort: {{ .Values.service.port }}
+              protocol: TCP
+          livenessProbe:
+            {{- toYaml .Values.livenessProbe | trim | nindent 12 }}
+          readinessProbe:
+            {{- toYaml .Values.readinessProbe | trim | nindent 12 }}
+          {{- with .Values.resources }}
+          resources: {{ toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.extraVolumeMounts }}
+          volumeMounts: {{ toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.extraEnv }}
+          env: {{ toYaml . | nindent 12 }}
+          {{- end }}
+        {{- with .Values.extraContainers }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    {{- with .Values.nodeSelector }}
+      nodeSelector: {{ toYaml . | nindent 8 }}
+    {{- end }}
+    {{- with .Values.affinity }}
+      affinity: {{ toYaml . | nindent 8 }}
+    {{- end }}
+    {{- with .Values.tolerations }}
+      tolerations: {{ toYaml . | nindent 8 }}
+    {{- end }}
+    {{- with .Values.extraVolumes }}
+      volumes: {{ toYaml . | nindent 8 }}
+    {{- end }}

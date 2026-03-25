@@ -1,0 +1,58 @@
+{{- if .Values.serviceMonitor.enabled }}
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  labels:
+    {{- include "prometheus-pushgateway.defaultLabels" . | nindent 4 }}
+    {{- if .Values.serviceMonitor.additionalLabels }}
+    {{- toYaml .Values.serviceMonitor.additionalLabels | nindent 4 }}
+    {{- end }}
+  name: {{ include "prometheus-pushgateway.fullname" .  }}
+  namespace: {{ default (include "prometheus-pushgateway.namespace" .) .Values.serviceMonitor.namespace }}
+spec:
+  endpoints:
+  - port: {{ .Values.service.portName }}
+    {{- with .Values.serviceMonitor.interval }}
+    interval: {{ . }}
+    {{- end }}
+    {{- with .Values.serviceMonitor.scheme }}
+    scheme: {{ . }}
+    {{- end }}
+    {{- if and .Values.webConfiguration (empty .Values.serviceMonitor.basicAuth) }}
+    basicAuth:
+      password:
+        name: {{ include "prometheus-pushgateway.fullname" . }}-basic-auth
+        key: password
+      username:
+        name: {{ include "prometheus-pushgateway.fullname" . }}-basic-auth
+        key: user
+    {{- else if not (empty .Values.serviceMonitor.basicAuth) }}
+    basicAuth: {{ toYaml .Values.serviceMonitor.basicAuth | nindent 6 }}
+    {{- end }}
+    {{- with .Values.serviceMonitor.bearerTokenFile }}
+    bearerTokenFile: {{ . }}
+    {{- end }}
+    {{- with .Values.serviceMonitor.tlsConfig }}
+    tlsConfig:
+      {{- toYaml .| nindent 6 }}
+    {{- end }}
+    {{- with .Values.serviceMonitor.scrapeTimeout }}
+    scrapeTimeout: {{ . }}
+    {{- end }}
+    path: {{ .Values.serviceMonitor.telemetryPath }}
+    honorLabels: {{ .Values.serviceMonitor.honorLabels }}
+    {{- with .Values.serviceMonitor.metricRelabelings }}
+    metricRelabelings:
+      {{- tpl (toYaml . | nindent 6) $ }}
+    {{- end }}
+    {{- with .Values.serviceMonitor.relabelings }}
+    relabelings:
+      {{- toYaml . | nindent 6 }}
+    {{- end }}
+  namespaceSelector:
+    matchNames:
+      - {{ template "prometheus-pushgateway.namespace" . }}
+  selector:
+    matchLabels:
+      {{- include "prometheus-pushgateway.selectorLabels" . | nindent 6 }}
+{{- end -}}

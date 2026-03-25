@@ -1,0 +1,165 @@
+# Default values for prometheus-modbus-exporter.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+## if one needs to define the below modbus.yml in a separate configMap
+## that configMap name can be mentioned here:
+# configMapFile: "my-existing-modbus-config"
+
+## when the above configMapFile parameter is not defined, it will be created
+## using below parameters (usually send to the chart as custom values)
+modules:
+# Module name, needs to be passed as parameter by Prometheus.
+# the name must be matched with the name of serviceMonitor.endpointsConfig[x].params.module
+- name: "fake"
+  protocol: 'tcp/ip'
+  metrics:
+  # Name of the metric.
+  - name: "power_consumption_total"
+    # Help text of the metric.
+    help: "represents the overall power consumption by phase"
+    # Labels to be added to the time series.
+    labels:
+      phase: "1"
+    # Register address.
+    # The first digit of the address is the function code
+    # Supported codes are: 1, 2, 3, 4
+    address: 300022
+    # Datatypes allowed: bool, int16, int32, int64, uint16, uint32, uint64,
+    #   float16, float32, float64
+    # One register holds 16 bits.
+    dataType: int16
+    # Endianness allowed: big, little, mixed, yolo
+    # Optional. If not defined: big.
+    endianness: big
+    # Prometheus metric type: https://prometheus.io/docs/concepts/metric_types/.
+    metricType: counter
+    # Factor can be specified to represent metric value.
+    # Examples: 1, 2, 1.543, 0.01 etc
+    # Factor is multiplied with the scraped value to produce the metric value
+    # Optional.
+    factor: 3.1415926535
+
+  - name: "some_gauge"
+    help: "some help for some gauge"
+    address: 30023
+    dataType: int16
+    metricType: gauge
+    factor: 2
+
+  - name: "coil"
+    help: "some help for some coil"
+    address: 124
+    dataType: bool
+    bitOffset: 0
+    metricType: gauge
+
+## The prometheus operator serviceMonitor for modbus
+serviceMonitor:
+  ## even if enabled is true, if serviceMonitor crd is not installed, this will be skipped.
+  enabled: true
+  endpointsConfig:
+  - params:
+      target:
+      - "10.1.2.3:502"
+      module:
+      ## module listed must be matched with the module[x].name specified in section above
+      - "fake"
+      sub_target:
+      - "1"
+  ## configurations common for all above endpoints:
+  endpointsCommonConfig:
+    ## https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/api-reference/api.md#endpoint
+    scheme: http
+    interval: 10s
+    scrapeTimeout: 1s
+    metricRelabelings: []
+    relabelings: []
+    followRedirects: true
+    # enableHttp2: false
+  annotations: {}
+  labels:
+    release: prometheus
+
+log:
+  ## choose one: debug,info,warn,error
+  level: "info"
+  ## logfmt,json
+  format: "logfmt"
+
+## The prometheus operator serviceMonitor for exporter itself
+serviceMonitorExporterItself:
+  enabled: true
+  annotations: {}
+  labels:
+    release: prometheus
+
+image:
+  registry: docker.io
+  # repository: richih/modbus_exporter
+  repository: openenergyprojects/modbus_exporter
+  pullPolicy: IfNotPresent
+  # Overrides the image tag whose default is the chart appVersion.
+  tag: "20230617_a144551"
+
+configReloaderSidecar:
+  enabled: true
+  image:
+    registry: docker.io
+    repository: openenergyprojects/config-reloader-sidecar
+    pullPolicy: IfNotPresent
+    # Overrides the image tag whose default is the chart appVersion.
+    tag: "20230519_90573b0"
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  # Specifies whether a service account should be created
+  create: true
+  # Annotations to add to the service account
+  annotations: {}
+  # The name of the service account to use.
+  # If not set and create is true, a name is generated using the fullname template
+  name: ""
+
+podAnnotations: {}
+
+podSecurityContext:
+#   runAsGroup: 65534
+#   runAsUser: 65534
+#   fsGroup: 65534
+  runAsNonRoot: true
+  seccompProfile:
+    type: RuntimeDefault
+
+securityContext:
+  capabilities:
+    drop:
+    - ALL
+  readOnlyRootFilesystem: true
+  runAsNonRoot: true
+# runAsUser: 1000
+
+service:
+  type: ClusterIP
+  port: 9602
+
+resources: {}
+# We usually recommend not to specify default resources and to leave this as a conscious
+# choice for the user. This also increases chances charts run on environments with little
+# resources, such as Minikube. If you do want to specify resources, uncomment the following
+# lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+# limits:
+#   cpu: 100m
+#   memory: 128Mi
+# requests:
+#   cpu: 100m
+#   memory: 128Mi
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}

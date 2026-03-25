@@ -1,0 +1,16 @@
+{{- if and .Values.thanosRuler.enabled .Values.thanosRuler.podDisruptionBudget.enabled }}
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ template "kube-prometheus-stack.thanosRuler.name" . }}
+  namespace: {{ template "kube-prometheus-stack.namespace" . }}
+  labels:
+    app: {{ template "kube-prometheus-stack.thanosRuler.name" . }}
+{{ include "kube-prometheus-stack.labels" . | indent 4 }}
+spec:
+{{- toYaml (omit .Values.thanosRuler.podDisruptionBudget "enabled") | nindent 2 }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: thanos-ruler
+      thanos-ruler: {{ template "kube-prometheus-stack.thanosRuler.crname" . }}
+{{- end }}

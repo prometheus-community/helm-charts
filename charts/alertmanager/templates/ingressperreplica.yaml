@@ -1,0 +1,56 @@
+{{- if and .Values.servicePerReplica.enabled .Values.ingressPerReplica.enabled }}
+{{- $pathType := .Values.ingressPerReplica.pathType  }}
+{{- $count := .Values.replicaCount | int -}}
+{{- $servicePort := .Values.service.port -}}
+{{- $ingressValues := .Values.ingressPerReplica -}}
+{{- $fullName := include "alertmanager.fullname" . }}
+apiVersion: v1
+kind: List
+metadata:
+  name: {{ $fullName }}-ingressperreplica
+  namespace: {{ include "alertmanager.namespace" . }}
+items:
+{{- range $i, $e := until $count }}
+  - kind: Ingress
+    apiVersion: {{ include "alertmanager.ingress.apiVersion" $ }}
+    metadata:
+      name: {{ $fullName }}-{{ $i }}
+      namespace: {{ include "alertmanager.namespace" $ }}
+      labels:
+      {{- include "alertmanager.labels" $ | nindent 8 }}
+      {{- if $ingressValues.labels }}
+{{ toYaml $ingressValues.labels | indent 8 }}
+      {{- end }}
+      {{- if $ingressValues.annotations }}
+      annotations:
+{{ toYaml $ingressValues.annotations | indent 8 }}
+      {{- end }}
+    spec:
+      {{- if $ingressValues.className }}
+      ingressClassName: {{ $ingressValues.className }}
+      {{- end }}
+      rules:
+        - host: {{ $ingressValues.hostPrefix }}-{{ $i }}.{{ $ingressValues.hostDomain }}
+          http:
+            paths:
+      {{- range $p := $ingressValues.paths }}
+              - path: {{ tpl $p $ }}
+                pathType: {{ $pathType }}
+                backend:
+                  service:
+                    name: {{ $fullName }}-{{ $i }}
+                    port:
+                      name: http
+      {{- end -}}
+      {{- if or $ingressValues.tlsSecretName $ingressValues.tlsSecretPerReplica.enabled }}
+      tls:
+        - hosts:
+            - {{ $ingressValues.hostPrefix }}-{{ $i }}.{{ $ingressValues.hostDomain }}
+          {{- if $ingressValues.tlsSecretPerReplica.enabled }}
+          secretName: {{ $ingressValues.tlsSecretPerReplica.prefix }}-{{ $i }}
+          {{- else }}
+          secretName: {{ $ingressValues.tlsSecretName }}
+          {{- end }}
+      {{- end }}
+{{- end -}}
+{{- end -}}

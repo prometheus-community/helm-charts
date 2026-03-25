@@ -1,0 +1,33 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "prom-label-proxy.fullname" . }}
+  namespace: {{ template "prom-label-proxy.namespace" . }}
+  labels:
+    {{- include "prom-label-proxy.labels" . | nindent 4 }}
+  {{- with .Values.service.annotations }}
+  annotations:
+    {{- tpl (toYaml .) $ | nindent 4 }}
+  {{- end }}
+spec:
+  type: {{ .Values.service.type }}
+  ports:
+    - port: {{ .Values.service.port }}
+      {{-  if .Values.kubeRBACProxy.enabled  }}
+      targetPort: krp
+      {{- else }}
+      targetPort: http
+      {{- end }}
+      protocol: TCP
+      name: http
+      {{- if (and (eq .Values.service.type "NodePort") (not (empty .Values.service.nodePort))) }}
+      nodePort: {{ .Values.service.nodePort }}
+      {{- end }}
+    {{- if and .Values.metrics.enabled .Values.metrics.serviceMonitor.enabled }}
+    - port: {{ .Values.metrics.serviceMonitor.port }}
+      targetPort: http-metrics
+      protocol: TCP
+      name: http-metrics
+    {{- end }}
+  selector:
+    {{- include "prom-label-proxy.selectorLabels" . | nindent 4 }}

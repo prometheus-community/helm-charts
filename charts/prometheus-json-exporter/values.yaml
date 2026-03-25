@@ -1,0 +1,245 @@
+---
+# Default values for prometheus-json-exporter.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+replicaCount: 1
+
+image:
+  repository: quay.io/prometheuscommunity/json-exporter
+  pullPolicy: IfNotPresent
+  # Overrides the image tag whose default is the chart appVersion.
+  tag: ""
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  # Specifies whether a service account should be created
+  create: true
+  # Annotations to add to the service account
+  annotations: {}
+  # The name of the service account to use.
+  # If not set and create is true, a name is generated using the fullname template
+  name: ""
+
+# Common labels to apply to all resources
+commonLabels: {}
+
+# Annotations for the Deployment
+deploymentAnnotations: {}
+
+# Custom Labels for Deployment
+deploymentLabels: {}
+
+podAnnotations: {}
+
+podSecurityContext: {}
+# fsGroup: 2000
+
+podLabels: {}
+
+securityContext: {}
+# capabilities:
+#   drop:
+#   - ALL
+# readOnlyRootFilesystem: true
+# runAsNonRoot: true
+# runAsUser: 1000
+
+livenessProbe:
+  httpGet:
+    path: /metrics
+    port: http
+readinessProbe:
+  httpGet:
+    path: /metrics
+    port: http
+
+service:
+  type: ClusterIP
+  port: 7979
+  targetPort: http
+  name: http
+  labels: {}
+  annotations: {}
+
+serviceMonitor:
+  ## If true, a ServiceMonitor CRD is created for a prometheus operator
+  ## https://github.com/coreos/prometheus-operator
+  ##
+  enabled: false
+
+  namespace: ""
+  scheme: http
+
+  # Default values that will be used for all ServiceMonitors created by `targets`
+  defaults:
+    additionalMetricsRelabels: {}
+    additionalRelabels: []
+    interval: 10s
+    labels: {}
+    scrapeTimeout: 8s
+
+  targets:
+#    - name: example                    # Human readable URL that will appear in Prometheus / AlertManager
+#      url: http://example.com/healthz  # The URL that json-exporter will scrape
+#      labels: {}                       # Map of labels for ServiceMonitor. Overrides value set in `defaults`
+#      interval: 60s                    # Scraping interval. Overrides value set in `defaults`
+#      scrapeTimeout: 60s               # Scrape timeout. Overrides value set in `defaults`
+#      additionalMetricsRelabels: {}    # Map of metric labels and values to add
+#      additionalRelabels: []           # relabelings of metrics
+#      module: example_module           # Name of the module to pick up from `config.yaml` for scraping this target. Optional. Default is `default` provided by the exporter itself.
+
+ingress:
+  enabled: false
+  className: ""
+  labels: {}
+  annotations: {}
+  # kubernetes.io/ingress.class: nginx
+  # kubernetes.io/tls-acme: "true"
+  hosts:
+    - host: chart-example.local
+      paths:
+        - path: /
+          pathType: ImplementationSpecific
+  tls: []
+  #  - secretName: chart-example-tls
+  #    hosts:
+  #      - chart-example.local
+
+resources: {}
+# We usually recommend not to specify default resources and to leave this as a conscious
+# choice for the user. This also increases chances charts run on environments with little
+# resources, such as Minikube. If you do want to specify resources, uncomment the following
+# lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+# limits:
+#   cpu: 100m
+#   memory: 128Mi
+# requests:
+#   cpu: 100m
+#   memory: 128Mi
+
+## Number of replicasets to retain ##
+## default value is 10, 0 will not retain any replicasets and make rollbacks impossible ##
+revisionHistoryLimit: 10
+
+environmentVariables: []
+  # - name: some-secret-variable
+  #   valueFrom:
+  #     secretKeyRef:
+  #       key: some-key
+  #       name: some-secret-name
+  # - name: some-other-variable
+  #   value: some-value
+
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 100
+  targetCPUUtilizationPercentage: 80
+  # targetMemoryUtilizationPercentage: 80
+
+nodeSelector: []
+
+tolerations: []
+
+affinity: []
+configuration:
+  config: |
+    ---
+    modules:
+      default:
+        metrics:
+          - name: example_global_value
+            path: "{ .counter }"
+            help: Example of a top-level global value scrape in the json
+            labels:
+              environment: beta # static label
+              location: "planet-{.location}"          # dynamic label
+
+          - name: example_value
+            type: object
+            help: Example of sub-level value scrapes from a json
+            path: '{.values[?(@.state == "ACTIVE")]}'
+            labels:
+              environment: beta # static label
+              id: '{.id}'          # dynamic label
+            values:
+              active: 1      # static value
+              count: '{.count}' # dynamic value
+              boolean: '{.some_boolean}'
+
+        headers:
+          X-Dummy: my-test-header
+
+        # If 'body' is set, it will be sent by the exporter as the body content in the scrape request. The HTTP method will also be set as 'POST' in this case.
+        # body:
+        #   content: |
+        #     {"time_diff": "1m25s", "anotherVar": "some value"}
+
+        # The body content can also be a Go Template (https://golang.org/pkg/text/template), with all the functions from the Sprig library (https://masterminds.github.io/sprig/) available. All the query parameters sent by prometheus in the scrape query to the exporter, are available in the template.
+        # body:
+        #   content: |
+        #     {"time_diff": "{{ duration `95` }}","anotherVar": "{{ .myVal | first }}"}
+        #   templatize: true
+
+        # For full http client config parameters, ref: https://pkg.go.dev/github.com/prometheus/common/config?tab=doc#HTTPClientConfig
+        #
+        # http_client_config:
+        #   tls_config:
+        #     insecure_skip_verify: true
+        #   basic_auth:
+        #     username: myuser
+        #     #password: veryverysecret
+        #     password_file: /tmp/mysecret.txt
+
+  # -- Structured configuration, takes precedence over `configuration.config`.
+  # Useful to be able to override specific configuration items, which is not possible with `configuration.config`.
+  # For instance: `--set configuration.structuredConfig.modules.test_module.http_client_config.basic_auth.username=foo`
+  structuredConfig: {}
+
+## Custom PrometheusRules to be defined
+## ref: https://github.com/coreos/prometheus-operator#customresourcedefinitions
+prometheusRule:
+  enabled: false
+  additionalLabels: {}
+  namespace: ""
+  rules: []
+
+additionalVolumes: []
+  # - name: password-file
+  #   secret:
+  #     secretName: secret-name
+
+additionalVolumeMounts: []
+  # - name: password-file
+  #   mountPath: "/tmp/mysecret.txt"
+  #   subPath: mysecret.txt
+
+## Additional init containers
+# These will be added to the prometheus-json-exporter pod.
+extraInitContainers: []
+  # - name: init-myservice
+  #   image: busybox:1.28
+  #   command: [ 'sh', '-c', "sleep 10; done" ]
+
+## Additional container arguments
+extraArgs: []
+#  - name: --config.file
+#    value: /app/config/myconfig.yml
+
+# Additional containers to add to the pod
+extraContainers: []
+
+# Extra manifests to deploy as an array
+extraManifests: []
+  # - |
+  #   apiVersion: v1
+  #   kind: ConfigMap
+  #   metadata:
+  #   labels:
+  #     name: prometheus-json-exporter-extra
+  #   data:
+  #     extra-data: "value"

@@ -1,0 +1,32 @@
+{{- if .Values.server.statefulSet.enabled -}}
+apiVersion: v1
+kind: Service
+metadata:
+{{- if .Values.server.statefulSet.headless.annotations }}
+  annotations:
+{{ toYaml .Values.server.statefulSet.headless.annotations | indent 4 }}
+{{- end }}
+  labels:
+    {{- include "prometheus.server.labels" . | nindent 4 }}
+{{- if .Values.server.statefulSet.headless.labels }}
+{{ toYaml .Values.server.statefulSet.headless.labels | indent 4 }}
+{{- end }}
+  name: {{ template "prometheus.server.fullname" . }}-headless
+  namespace: {{ include "prometheus.namespace" . }}
+spec:
+  clusterIP: None
+  ports:
+    - name: http
+      port: {{ .Values.server.statefulSet.headless.servicePort }}
+      protocol: TCP
+      targetPort: {{ default (include "prometheus.port" .) .Values.server.portName }}
+    {{- if .Values.server.statefulSet.headless.gRPC.enabled }}
+    - name: grpc
+      port: {{ .Values.server.statefulSet.headless.gRPC.servicePort }}
+      protocol: TCP
+      targetPort: 10901
+    {{- end }}
+
+  selector:
+    {{- include "prometheus.server.matchLabels" . | nindent 4 }}
+{{- end -}}

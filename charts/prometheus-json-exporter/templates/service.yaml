@@ -1,0 +1,23 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "prometheus-json-exporter.fullname" . }}
+  namespace: {{ include "prometheus-json-exporter.namespace" . }}
+  labels:
+    {{- include "prometheus-json-exporter.labels" . | nindent 4 }}
+    {{- with .Values.service.labels }}
+      {{- toYaml . | nindent 4 }}
+    {{- end }}
+  {{- with .Values.service.annotations }}
+  annotations:
+      {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  type: {{ .Values.service.type }}
+  ports:
+    - port: {{ .Values.service.port }}
+      targetPort: {{ .Values.service.targetPort }}
+      protocol: TCP
+      name: {{ .Values.service.name }}
+  selector:
+    {{- include "prometheus-json-exporter.selectorLabels" . | nindent 4 }}

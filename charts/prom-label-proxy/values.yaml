@@ -1,0 +1,295 @@
+# -- Number of prom-label-proxy replicas to deploy
+replicaCount: 1
+
+image:
+  pullPolicy: IfNotPresent
+  # -- prom-label-proxy image registry
+  repository: quay.io/prometheuscommunity/prom-label-proxy
+  # -- prom-label-proxy image tag (immutable tags are recommended).
+  # @default -- `.Chart.AppVersion`
+  tag: ""
+
+# -- registry secret names as an array
+imagePullSecrets: []
+
+# -- String to partially override prom-label-proxy.fullname template (will maintain the release name)
+nameOverride: ""
+
+# -- Override the namespace
+namespaceOverride: ""
+
+# -- String to fully override amazon-eks-pod-identity.fullname template
+fullnameOverride: ""
+
+serviceAccount:
+  # -- Enable creation of ServiceAccount for nginx pod
+  create: true
+  # -- The name of the ServiceAccount to use.
+  # @default -- A name is generated using the `prom-label-proxy.fullname` template
+  name: ''
+  # -- Annotations for service account. Evaluated as a template.
+  annotations: {}
+
+# -- Annotations for prom-label-proxy pods
+podAnnotations: {}
+
+# -- Labels for prom-label-proxy pods
+podLabels: {}
+
+# -- prom-label-proxy pods' Security Context.
+podSecurityContext: {}
+  # fsGroup: 2000
+
+securityContext:
+  runAsUser: 65534
+  runAsGroup: 65534
+  runAsNonRoot: true
+  readOnlyRootFilesystem: true
+
+service:
+  port: 8080
+  # -- Service type
+  type: ClusterIP
+  # -- Service annotations are passed through helm tpl function.
+  ## ref: https://helm.sh/docs/developing_charts/#using-the-tpl-function
+  annotations: {}
+
+livenessProbe:
+  httpGet:
+    # -- This is the liveness check endpoint
+    path: /healthz
+    port: http
+
+readinessProbe:
+  httpGet:
+    # -- This is the readiness check endpoint
+    path: /healthz
+    port: http
+
+resources:
+  # -- The resources limits for the prom-label-proxy container
+  ## Example:
+  ## limits:
+  ##    cpu: 100m
+  ##    memory: 128Mi
+  limits:
+    cpu: 200m
+    memory: 128Mi
+  # -- The requested resources for the prom-label-proxy container
+  ## Examples:
+  ## requests:
+  ##    cpu: 100m
+  ##    memory: 128Mi
+  requests:
+    cpu: 100m
+    memory: 64Mi
+
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 2
+  targetCPUUtilizationPercentage: 80
+  # targetMemoryUtilizationPercentage: 80
+
+# -- Affinity for pod assignment
+affinity: {}
+
+# -- Node labels for pod assignment. Evaluated as a template.
+nodeSelector: {}
+
+# -- Tolerations for pod assignment. Evaluated as a template.
+tolerations: []
+
+# -- Ingress hosts, paths and annotations fields are passed through helm tpl function.
+## ref: https://helm.sh/docs/developing_charts/#using-the-tpl-function
+ingress:
+  enabled: false
+  className: ""
+  labels: {}
+  annotations: {}
+    # kubernetes.io/ingress.class: nginx
+    # kubernetes.io/tls-acme: "true"
+  hosts:
+    - host: chart-example.local
+      paths:
+        - path: /
+          pathType: ImplementationSpecific
+  tls: []
+  #  - secretName: chart-example-tls
+  #    hosts:
+  #      - chart-example.local
+
+# -- Config options are passed through helm tpl function.
+## ref: https://helm.sh/docs/developing_charts/#using-the-tpl-function
+config:
+  # -- listen address
+  listenAddress: 0.0.0.0:8080
+  # -- The upstream URL to proxy to
+  upstream: "http://prometheus:9090"
+  # -- The label to enforce in all proxies PromQL queries.
+  label: "namespace"
+  # -- Additional arguments for prom-label-proxy as list or YAML multiline string
+  # extraArgs: |-
+  #   - "--enable-label-apis=true"
+  #   - "--error-on-replace=true"
+  extraArgs:
+    - "--enable-label-apis=true"
+    - "--error-on-replace=true"
+
+# Metrics settings.
+metrics:
+  # If enabled, supply metrics.
+  enabled: false
+
+  # Listen address for metrics.
+  listenAddress: 0.0.0.0:9090
+
+  # ServiceMonitor settings.
+  serviceMonitor:
+
+    # If enabled, create ServiceMonitor.
+    enabled: false
+
+    # Service port for metrics.
+    port: 9090
+
+    # Additional labels for ServiceMonitor.
+    additionalLabels: {}
+
+    # JobLabel selects the label from the associated Kubernetes service which will be used as the job label for all metrics.
+    jobLabel: ""
+
+    # TargetLabels transfers labels from the Kubernetes Service onto the created metrics.
+    targetLabels: []
+
+    # PodTargetLabels transfers labels on the Kubernetes Pod onto the created metrics.
+    podTargetLabels: []
+
+    # SampleLimit defines per-scrape limit on number of scraped samples that will be accepted.
+    sampleLimit: 0
+
+    # TargetLimit defines a limit on the number of scraped targets that will be accepted.
+    targetLimit: 0
+
+    # Per-scrape limit on number of labels that will be accepted for a sample. Only valid in Prometheus versions 2.27.0 and newer.
+    labelLimit: 0
+
+    # Per-scrape limit on length of labels name that will be accepted for a sample. Only valid in Prometheus versions 2.27.0 and newer.
+    labelNameLengthLimit: 0
+
+    # Per-scrape limit on length of labels value that will be accepted for a sample. Only valid in Prometheus versions 2.27.0 and newer.
+    labelValueLengthLimit: 0
+
+    # Attaches node metadata to discovered targets. Requires Prometheus v2.37.0 and above.
+    attachMetadata: {}
+
+    # Additional settings for ServiceMonitor.
+    additionalConfigs: {}
+
+    # HonorLabels chooses the metric's labels on collisions with target labels.
+    honorLabels: false
+
+    # HonorTimestamps controls whether Prometheus respects the timestamps present in scraped data.
+    honorTimestamps: null
+
+    # Interval at which metrics should be scraped.
+    interval: ""
+
+    # Timeout after which the scrape is ended.
+    scrapeTimeout: ""
+
+    # RelabelConfigs to apply to samples before scraping
+    # ref: https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/api-reference/api.md#relabelconfig
+    relabelings: []
+
+    # MetricRelabelConfigs to apply to samples after scraping, but before ingestion.
+    # ref: https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/api-reference/api.md#relabelconfig
+    metricRelabelings: []
+
+    # Additional settings for Endpoint.
+    additionalEndpointConfigs: {}
+
+# Configure kube-rbac-proxy. When enabled, creates one kube-rbac-proxy container.
+# The requests are served through the same service but requests are then HTTPS.
+kubeRBACProxy:
+  enabled: false
+
+  # Configuration see [here](https://github.com/brancz/kube-rbac-proxy?tab=readme-ov-file#usage)
+  config: {}
+  #  authorization:
+  #    rewrites:
+  #      byHttpHeader:
+  #        name: X-Namespace
+  #    resourceAttributes:
+  #      resource: pods
+  #      subresource: metrics
+  #      namespace: "{{ .Value }}"
+
+  image:
+    repository: quay.io/brancz/kube-rbac-proxy
+    tag: v0.21.2
+    pullPolicy: IfNotPresent
+
+  # List of additional cli arguments to configure kube-rbac-prxy
+  # for example: --tls-cipher-suites, --log-file, etc.
+  # all the possible args can be found here: https://github.com/brancz/kube-rbac-proxy#usage
+  extraArgs: []
+
+  # targetPort of service
+  port: 8100
+
+  ## Specify security settings for a Container
+  ## Allows overrides and additional options compared to (Pod) securityContext
+  ## Ref: https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-the-security-context-for-a-container
+  containerSecurityContext:
+    readOnlyRootFilesystem: true
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+      - ALL
+
+  resources: {}
+    # We usually recommend not to specify default resources and to leave this as a conscious
+    # choice for the user. This also increases chances charts run on environments with little
+    # resources, such as Minikube. If you do want to specify resources, uncomment the following
+    # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+    # limits:
+    #  cpu: 100m
+    #  memory: 64Mi
+    # requests:
+    #  cpu: 10m
+    #  memory: 32Mi
+
+  ## volumeMounts enables mounting custom volumes in rbac-proxy containers
+  ## Useful for TLS certificates and keys
+  volumeMounts: []
+    # - mountPath: /etc/tls
+    #   name: kube-rbac-proxy-tls
+    #   readOnly: true
+
+## Extra manifests to deploy.  Can be of type dict or list.
+## If dict, keys are ignored and only values are used.
+## Items contained within extraObjects can be defined as dict or string and are passed through tpl.
+extraManifests: null
+  # - apiVersion: v1
+  #   kind: ConfigMap
+  #   metadata:
+  #   labels:
+  #     name: prometheus-extra
+  #   data:
+  #     extra-data: "value"
+  #
+  # can also be defined as a string, useful for templating field names
+  # - |
+  #   apiVersion: v1
+  #   kind: Secret
+  #   type: Opaque
+  #   metadata:
+  #     name: super-secret
+  #     labels:
+  #       {{- range $key, $value := .Values.commonLabels }}
+  #       {{ $key }}: {{ $value }}
+  #       {{- end }}
+  #   data:
+  #     plaintext: Zm9vYmFy
+  #     templated: '{{ print "foobar" | upper | b64enc }}'

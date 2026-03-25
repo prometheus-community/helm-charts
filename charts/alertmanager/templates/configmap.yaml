@@ -1,0 +1,21 @@
+{{- if .Values.config.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "alertmanager.fullname" . }}
+  labels:
+    {{- include "alertmanager.labels" . | nindent 4 }}
+  {{- with .Values.configAnnotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  namespace: {{ include "alertmanager.namespace" . }}
+data:
+  alertmanager.yml: |
+  {{- $config := omit .Values.config "enabled" }}
+  {{- toYaml $config | default "{}" | nindent 4  }}
+  {{- range $key, $value := .Values.templates }}
+  {{ $key }}: |-
+    {{- $value | nindent 4 }}
+  {{- end }}
+{{- end }}

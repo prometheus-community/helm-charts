@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "prometheus-json-exporter.fullname" . }}
+  namespace: {{ include "prometheus-json-exporter.namespace" . }}
+  labels:
+    {{- include "prometheus-json-exporter.labels" . | nindent 4 }}
+data:
+  allow-snippet-annotations: "false"
+  config.yml: |
+{{- if .Values.configuration.structuredConfig -}}
+  {{ toYaml .Values.configuration.structuredConfig | nindent 4 }}
+  {{- else -}}
+  {{ .Values.configuration.config | nindent 4 }}
+{{- end -}}

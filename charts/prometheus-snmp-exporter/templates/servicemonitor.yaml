@@ -1,0 +1,54 @@
+{{- if .Values.serviceMonitor.enabled }}
+{{- range .Values.serviceMonitor.params }}
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: {{ template "prometheus-snmp-exporter.fullname" $  }}-{{ .name }}
+  namespace: {{ $.Values.serviceMonitor.namespace | default $.Release.Namespace }}
+  labels:
+    {{- include "prometheus-snmp-exporter.labels" $ | indent 4 }}
+    {{- range $key, $value := .labels | default $.Values.serviceMonitor.selector }}
+    {{ $key }}: {{ $value | quote }}
+    {{- end }}
+spec:
+  endpoints:
+  - port: http
+    honorLabels: {{ $.Values.serviceMonitor.honorLabels }}
+    path: {{ $.Values.serviceMonitor.path }}
+    {{- if or .interval $.Values.serviceMonitor.interval }}
+    interval: {{ .interval | default $.Values.serviceMonitor.interval }}
+    {{- end }}
+    scrapeTimeout: {{ .scrapeTimeout | default $.Values.serviceMonitor.scrapeTimeout }}
+    params:
+      module: {{- toYaml (default $.Values.serviceMonitor.module .module) | nindent 6 }}
+      auth: {{ .auth | default $.Values.serviceMonitor.auth }}
+      target:
+      - {{ .target }}
+    metricRelabelings:
+      - sourceLabels: [instance]
+        targetLabel: instance
+        replacement: {{ .target }}
+        action: replace
+      - sourceLabels: [target]
+        targetLabel: target
+        replacement: {{ .name }}
+        action: replace
+        {{- range $targetLabel, $replacement := .additionalMetricsRelabels | default $.Values.serviceMonitor.additionalMetricsRelabels }}
+      - targetLabel: {{ $targetLabel }}
+        replacement: {{ $replacement | quote }}
+        action: replace
+        {{- end }}
+      {{- if (or .additionalMetricsRelabelConfigs $.Values.serviceMonitor.additionalMetricsRelabelConfigs) }}
+      {{- toYaml (default $.Values.serviceMonitor.additionalMetricsRelabelConfigs .additionalMetricsRelabelConfigs) | nindent 6 }}
+      {{- end }}
+    {{- if (or .relabelings $.Values.serviceMonitor.relabelings) }}
+    relabelings:
+      {{- toYaml (default $.Values.serviceMonitor.relabelings .relabelings) | nindent 6 }}
+    {{- end }}
+  jobLabel: "{{ $.Release.Name }}"
+  selector:
+    matchLabels:
+      {{- include "prometheus-snmp-exporter.selectorLabels" $ | indent 6 }}
+{{- end }}
+{{- end -}}

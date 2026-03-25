@@ -1,0 +1,24 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "prometheus-nginx-exporter.fullname" . }}
+  namespace: {{ template "prometheus-nginx-exporter.namespace" . }}
+  {{- if or .Values.additionalAnnotations .Values.service.annotations }}
+  annotations:
+    {{- include "prometheus-nginx-exporter.serviceAnnotations" . | indent 4 }}
+  {{- end }}
+  labels:
+    {{- include "prometheus-nginx-exporter.labels" . | indent 4 }}
+spec:
+  type: {{ .Values.service.type }}
+  {{- if .Values.service.externalTrafficPolicy }}
+  externalTrafficPolicy: {{ .Values.service.externalTrafficPolicy }}
+  {{- end }}
+  ports:
+    - port: {{ .Values.service.port }}
+      targetPort: http
+      protocol: TCP
+      name: http
+  selector:
+    {{- include "prometheus-nginx-exporter.selectorLabels" . | indent 4 }}

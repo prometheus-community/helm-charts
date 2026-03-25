@@ -1,0 +1,37 @@
+apiVersion: v1
+kind: Service
+metadata:
+{{- if .Values.service.annotations }}
+  annotations:
+    {{- toYaml .Values.service.annotations | nindent 4 }}
+{{- end }}
+  name: {{ include "prometheus-blackbox-exporter.fullname" . }}
+  namespace: {{ template "prometheus-blackbox-exporter.namespace" . }}
+  labels:
+    {{- include "prometheus-blackbox-exporter.labels" . | nindent 4 }}
+{{- if .Values.service.labels }}
+{{ toYaml .Values.service.labels | indent 4 }}
+{{- end }}
+spec:
+{{- if .Values.service.ipDualStack.enabled }}
+  ipFamilies: {{ toYaml .Values.service.ipDualStack.ipFamilies | nindent 4 }}
+  ipFamilyPolicy: {{ .Values.service.ipDualStack.ipFamilyPolicy }}
+{{- end }}
+  type: {{ .Values.service.type }}
+  ports:
+    - port: {{ .Values.service.port }}
+      targetPort: http
+      protocol: TCP
+      name: http
+    {{ if .Values.configReloader.enabled }}
+    - port: {{ .Values.configReloader.service.port }}
+      targetPort: reloader-web
+      protocol: TCP
+      name: reloader-web
+    {{- end }}
+{{- if .Values.service.externalIPs }}
+  externalIPs:
+{{ toYaml .Values.service.externalIPs | indent 4 }}
+{{- end }}
+  selector:
+    {{- include "prometheus-blackbox-exporter.selectorLabels" . | nindent 4 }}

@@ -1,0 +1,14 @@
+{{- if and .Values.config (eq .Values.configExistingSecretName "") }}
+apiVersion: v1
+kind: {{ if .Values.secretConfig -}} Secret {{- else -}} ConfigMap {{- end }}
+metadata:
+  name: {{ template "prometheus-pingmesh-exporter.fullname" . }}
+  namespace: {{ template "prometheus-pingmesh-exporter.namespace" . }}
+  labels:
+    {{- include "prometheus-pingmesh-exporter.labels" . | nindent 4 }}
+{{ if .Values.secretConfig -}} stringData: {{- else -}} data: {{- end }}
+  pingmesh.yaml: |
+{{ toYaml .Values.config | indent 4 }}
+  pinglist.yaml: |
+{{ toYaml .Values.pinglistConfig | indent 4 }}
+{{- end }}

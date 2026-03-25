@@ -1,0 +1,972 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema",
+    "title": "alertmanager",
+    "description": "The Alertmanager handles alerts sent by client applications such as the Prometheus server.",
+    "type": "object",
+    "required": [
+        "replicaCount",
+        "image",
+        "serviceAccount",
+        "service",
+        "persistence",
+        "config"
+    ],
+    "definitions": {
+        "image": {
+            "description": "Container image parameters.",
+            "type": "object",
+            "required": ["repository"],
+            "additionalProperties": false,
+            "properties": {
+                "repository": {
+                    "description": "Image repository. Path to the image with registry(quay.io) or without(prometheus/alertmanager) for docker.io.",
+                    "type": "string"
+                },
+                "pullPolicy": {
+                    "description": "Image pull policy. Defaults to Always if :latest tag is specified, or IfNotPresent otherwise. Cannot be updated.",
+                    "type": "string",
+                    "enum": [
+                        "Never",
+                        "IfNotPresent",
+                        "Always"
+                    ],
+                    "default": "IfNotPresent"
+                },
+                "tag": {
+                    "description": "Use chart appVersion by default.",
+                    "type": "string",
+                    "default": ""
+                }
+            }
+        },
+        "resources": {
+            "description": "Resource limits and requests for the Container.",
+            "type": "object",
+            "properties": {
+                "limits": {
+                    "description": "Resource limits for the Container.",
+                    "type": "object",
+                    "properties": {
+                        "cpu": {
+                            "description": "CPU request for the Container.",
+                            "type": "string"
+                        },
+                        "memory": {
+                            "description": "Memory request for the Container.",
+                            "type": "string"
+                        }
+                    }
+                },
+                "requests": {
+                    "description": "Resource requests for the Container.",
+                    "type": "object",
+                    "properties": {
+                        "cpu": {
+                            "description": "CPU request for the Container.",
+                            "type": "string"
+                        },
+                        "memory": {
+                            "description": "Memory request for the Container.",
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "securityContext": {
+            "description": "Security context for the container.",
+            "type": "object",
+            "properties": {
+                "capabilities": {
+                    "description": "Specifies the capabilities to be dropped by the container.",
+                    "type": "object",
+                    "properties": {
+                        "drop": {
+                            "description": "List of capabilities to be dropped.",
+                            "type": "array",
+                            "items": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                },
+                "readOnlyRootFilesystem": {
+                    "description": "Specifies whether the root file system should be mounted as read-only.",
+                    "type": "boolean"
+                },
+                "runAsUser": {
+                    "description": "Specifies the UID (User ID) to run the container as.",
+                    "type": "integer"
+                },
+                "runAsNonRoot": {
+                    "description": "Specifies whether to run the container as a non-root user.",
+                    "type": "boolean"
+                },
+                "runAsGroup": {
+                    "description": "Specifies the GID (Group ID) to run the container as.",
+                    "type": "integer"
+                }
+            }
+        },
+        "volumeMounts": {
+            "description": "List of volume mounts for the Container.",
+            "type": "array",
+            "items": {
+                "description": "Volume mounts for the Container.",
+                "type": "object",
+                "required": ["name", "mountPath"],
+                "properties": {
+                    "name": {
+                        "description": "The name of the volume to mount.",
+                        "type": "string"
+                    },
+                    "mountPath": {
+                        "description": "The mount path for the volume.",
+                        "type": "string"
+                    },
+                    "readOnly": {
+                        "description": "Specifies if the volume should be mounted in read-only mode.",
+                        "type": "boolean"
+                    }
+                }
+            }
+        },
+        "env": {
+            "description": "List of environment variables for the Container.",
+            "type": "array",
+            "items": {
+                "description": "Environment variables for the Container.",
+                "type": "object",
+                "required": ["name"],
+                "properties": {
+                    "name": {
+                        "description": "The name of the environment variable.",
+                        "type": "string"
+                    },
+                    "value": {
+                        "description": "The value of the environment variable.",
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "config": {
+            "description": "https://prometheus.io/docs/alerting/latest/configuration/",
+            "duration": {
+                "type": "string",
+                "pattern": "^((([0-9]+)y)?(([0-9]+)w)?(([0-9]+)d)?(([0-9]+)h)?(([0-9]+)m)?(([0-9]+)s)?(([0-9]+)ms)?|0)$"
+            },
+            "labelname": {
+                "type": "string",
+                "pattern": "^[a-zA-Z_][a-zA-Z0-9_]*$|^...$"
+            },
+            "route": {
+                "description": "Alert routing configuration.",
+                "type": "object",
+                "properties": {
+                    "receiver": {
+                        "description": "The default receiver to send alerts to.",
+                        "type": "string"
+                    },
+                    "group_by": {
+                        "description": "The labels by which incoming alerts are grouped together.",
+                        "type": "array",
+                        "items": {
+                            "type": "string",
+                            "$ref": "#/definitions/config/labelname"
+                        }
+                    },
+                    "continue": {
+                        "description": "Whether an alert should continue matching subsequent sibling nodes.",
+                        "type": "boolean",
+                        "default": false
+                    },
+                    "matchers": {
+                        "description": "A list of matchers that an alert has to fulfill to match the node.",
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "group_wait": {
+                        "description": "How long to initially wait to send a notification for a group of alerts.",
+                        "$ref": "#/definitions/config/duration"
+                    },
+                    "group_interval": {
+                        "description": "How long to wait before sending a notification about new alerts that are added to a group of alerts for which an initial notification has already been sent.",
+                        "$ref": "#/definitions/config/duration"
+                    },
+                    "repeat_interval": {
+                        "description": "How long to wait before sending a notification again if it has already been sent successfully for an alert.",
+                        "$ref": "#/definitions/config/duration"
+                    },
+                    "mute_time_intervals": {
+                        "description": "Times when the route should be muted.",
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "active_time_intervals": {
+                        "description": "Times when the route should be active.",
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "routes": {
+                        "description": "Zero or more child routes.",
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "$ref": "#/definitions/config/route"
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "properties": {
+        "replicaCount": {
+            "description": "Number of desired pods.",
+            "type": "integer",
+            "default": 1,
+            "minimum": 0
+        },
+        "image": {
+            "description": "Container image parameters.",
+            "$ref": "#/definitions/image"
+        },
+        "baseURL": {
+            "description": "External URL where alertmanager is reachable.",
+            "type": "string",
+            "default": "",
+            "examples": [
+                "https://alertmanager.example.com"
+            ]
+        },
+        "extraArgs": {
+            "description": "Additional alertmanager container arguments. Use args without '--', only 'key: value' syntax.",
+            "type": "object",
+            "default": {}
+        },
+        "extraSecretMounts": {
+            "description": "Additional Alertmanager Secret mounts.",
+            "type": "array",
+            "default": [],
+            "items": {
+                "type": "object",
+                "required": ["name", "mountPath", "secretName"],
+                "properties": {
+                    "name": {
+                        "type": "string"
+                    },
+                    "mountPath": {
+                        "type": "string"
+                    },
+                    "subPath": {
+                        "type": "string",
+                        "default": ""
+                    },
+                    "secretName": {
+                        "type": "string"
+                    },
+                    "readOnly": {
+                        "type": "boolean",
+                        "default": false
+                    }
+                }
+            }
+        },
+        "imagePullSecrets": {
+            "description": "The property allows you to configure multiple image pull secrets.",
+            "type": "array",
+            "default": [],
+            "items": {
+                "type": "object",
+                "required": ["name"],
+                "properties": {
+                    "name": {
+                        "description": "Specifies the Secret name of the image pull secret.",
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "nameOverride": {
+            "description": "Override value for the name of the Helm chart.",
+            "type": "string",
+            "default": ""
+        },
+        "fullnameOverride": {
+            "description": "Override value for the fully qualified app name.",
+            "type": "string",
+            "default": ""
+        },
+        "namespaceOverride": {
+            "description": "Override deployment namespace.",
+            "type": "string",
+            "default": ""
+        },
+        "automountServiceAccountToken": {
+            "description": "Specifies whether to automatically mount the ServiceAccount token into the Pod's filesystem.",
+            "type": "boolean",
+            "default": true
+        },
+        "hostUsers": {
+            "description": "Running within a user namespace, where the user IDs inside the container are mapped to different, usually unprivileged, user IDs on the host system.",
+            "type": "boolean",
+            "default": false
+        },
+        "serviceAccount": {
+            "description": "Contains properties related to the service account configuration.",
+            "type": "object",
+            "required": ["create"],
+            "properties": {
+                "create": {
+                    "description": "Specifies whether a service account should be created.",
+                    "type": "boolean",
+                    "default": true
+                },
+                "annotations": {
+                    "description": "Annotations to add to the service account.",
+                    "type": "object",
+                    "default": {}
+                },
+                "name": {
+                    "description": "The name of the service account to use. If not set and create is true, a name is generated using the fullname template.",
+                    "type": "string",
+                    "default": ""
+                }
+            }
+        },
+        "schedulerName": {
+            "description": "Sets the schedulerName in the alertmanager pod.",
+            "type": "string",
+            "default": ""
+        },
+        "priorityClassName": {
+            "description": "Sets the priorityClassName in the alertmanager pod.",
+            "type": "string",
+            "default": ""
+        },
+        "podSecurityContext": {
+            "description": "Pod security context configuration.",
+            "type": "object",
+            "properties": {
+                "fsGroup": {
+                    "description": "The fsGroup value for the pod's security context.",
+                    "type": "integer",
+                    "default": 65534
+                },
+                "runAsUser": {
+                    "description": "The UID to run the pod's containers as.",
+                    "type": "integer"
+                },
+                "runAsGroup": {
+                    "description": "The GID to run the pod's containers as.",
+                    "type": "integer"
+                }
+            }
+        },
+        "dnsConfig": {
+            "description": "DNS configuration for the pod.",
+            "type": "object",
+            "properties": {
+                "nameservers": {
+                    "description": "List of DNS server IP addresses.",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "searches": {
+                    "description": "List of DNS search domains.",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "options": {
+                    "description": "List of DNS options.",
+                    "type": "array",
+                    "items": {
+                        "description": "DNS options.",
+                        "type": "object",
+                        "required": ["name"],
+                        "properties": {
+                            "name": {
+                                "description": "The name of the DNS option.",
+                                "type": "string"
+                            },
+                            "value": {
+                                "description": "The value of the DNS option.",
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "hostAliases": {
+            "description": "List of host aliases.",
+            "type": "array",
+            "items": {
+                "description": "Host aliases configuration.",
+                "type": "object",
+                "required": ["ip", "hostnames"],
+                "properties": {
+                    "ip": {
+                        "description": "IP address associated with the host alias.",
+                        "type": "string"
+                    },
+                    "hostnames": {
+                        "description": "List of hostnames associated with the IP address.",
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "securityContext": {
+            "description": "Security context for the container.",
+            "$ref": "#/definitions/securityContext"
+        },
+        "additionalPeers": {
+            "description": "Additional peers for a alertmanager.",
+            "type": "array",
+            "items": {
+                "type": "string"
+            }
+        },
+        "extraInitContainers": {
+            "description": "Additional InitContainers to initialize the pod.",
+            "type": "array",
+            "default": [],
+            "items": {
+                "required": ["name", "image"],
+                "properties": {
+                    "name": {
+                        "description": "The name of the InitContainer.",
+                        "type": "string"
+                    },
+                    "image": {
+                        "description": "The container image to use for the InitContainer.",
+                        "type": "string"
+                    },
+                    "pullPolicy": {
+                        "description": "Image pull policy. Defaults to Always if :latest tag is specified, or IfNotPresent otherwise. Cannot be updated.",
+                        "type": "string",
+                        "enum": [
+                            "Never",
+                            "IfNotPresent",
+                            "Always"
+                        ],
+                        "default": "IfNotPresent"
+                    },
+                    "command": {
+                        "description": "The command to run in the InitContainer.",
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "args": {
+                        "description": "Additional command arguments for the InitContainer.",
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "ports": {
+                        "description": "List of ports to expose from the container.",
+                        "type": "array",
+                        "items": {
+                            "type": "object"
+                        }
+                    },
+                    "env": {
+                        "description": "List of environment variables for the InitContainer.",
+                        "$ref": "#/definitions/env"
+                    },
+                    "envFrom": {
+                        "description": "List of sources to populate environment variables in the container.",
+                        "type": "array",
+                        "items": {
+                            "type": "object"
+                        }
+                    },
+                    "volumeMounts": {
+                        "description": "List of volume mounts for the InitContainer.",
+                        "$ref": "#/definitions/volumeMounts"
+                    },
+                    "resources": {
+                        "description": "Resource requirements for the InitContainer.",
+                        "$ref": "#/definitions/resources"
+                    },
+                    "securityContext": {
+                        "$ref": "#/definitions/securityContext",
+                        "description": "The security context for the InitContainer."
+                    }
+                }
+            }
+        },
+        "extraContainers": {
+            "description": "Additional containers to add to the stateful set.",
+            "type": "array",
+            "default": [],
+            "items": {
+                "required": ["name", "image"],
+                "properties": {
+                    "name": {
+                        "description": "The name of the InitContainer.",
+                        "type": "string"
+                    },
+                    "image": {
+                        "description": "The container image to use for the InitContainer.",
+                        "type": "string"
+                    },
+                    "pullPolicy": {
+                        "description": "Image pull policy. Defaults to Always if :latest tag is specified, or IfNotPresent otherwise. Cannot be updated.",
+                        "type": "string",
+                        "enum": [
+                            "Never",
+                            "IfNotPresent",
+                            "Always"
+                        ],
+                        "default": "IfNotPresent"
+                    },
+                    "command": {
+                        "description": "The command to run in the InitContainer.",
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "args": {
+                        "description": "Additional command arguments for the InitContainer.",
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "ports": {
+                        "description": "List of ports to expose from the container.",
+                        "type": "array",
+                        "items": {
+                            "type": "object"
+                        }
+                    },
+                    "env": {
+                        "description": "List of environment variables for the InitContainer.",
+                        "$ref": "#/definitions/env"
+                    },
+                    "envFrom": {
+                        "description": "List of sources to populate environment variables in the container.",
+                        "type": "array",
+                        "items": {
+                            "type": "object"
+                        }
+                    },
+                    "volumeMounts": {
+                        "description": "List of volume mounts for the InitContainer.",
+                        "$ref": "#/definitions/volumeMounts"
+                    },
+                    "resources": {
+                        "description": "Resource requirements for the InitContainer.",
+                        "$ref": "#/definitions/resources"
+                    },
+                    "securityContext": {
+                        "$ref": "#/definitions/securityContext",
+                        "description": "The security context for the InitContainer."
+                    }
+                }
+            }
+        },
+        "resources": {
+            "description": "Resource limits and requests for the pod.",
+            "$ref": "#/definitions/resources"
+        },
+        "containerPortName": {
+            "description": "Name of the port for the main container.",
+            "type": "string",
+            "default": "http"
+        },
+        "livenessProbe": {
+            "description": "Liveness probe configuration.",
+            "type": "object"
+        },
+        "readinessProbe": {
+            "description": "Readiness probe configuration.",
+            "type": "object"
+        },
+        "service": {
+            "description": "Service configuration.",
+            "type": "object",
+            "required": ["type", "port"],
+            "properties": {
+                "annotations": {
+                    "description": "Annotations to add to the service.",
+                    "type": "object"
+                },
+                "type": {
+                    "description": "Service type.",
+                    "type": "string"
+                },
+                "port": {
+                    "description": "Port number for the service.",
+                    "type": "integer"
+                },
+                "clusterPort": {
+                    "description": "Port number for the cluster.",
+                    "type": "integer"
+                },
+                "loadBalancerIP": {
+                    "description": "External IP to assign when the service type is LoadBalancer.",
+                    "type": "string"
+                },
+                "loadBalancerSourceRanges": {
+                    "description": "IP ranges to allow access to the loadBalancerIP.",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "nodePort": {
+                    "description": "Specific nodePort to force when service type is NodePort.",
+                    "type": "integer"
+                }
+            }
+        },
+        "ingress": {
+            "description": "Ingress configuration.",
+            "type": "object",
+            "properties": {
+                "enabled": {
+                    "description": "Indicates if Ingress is enabled.",
+                    "type": "boolean"
+                },
+                "className": {
+                    "description": "Ingress class name.",
+                    "type": "string"
+                },
+                "annotations": {
+                    "description": "Annotations to add to the Ingress.",
+                    "type": "object"
+                },
+                "hosts": {
+                    "description": "Host and path configuration for the Ingress.",
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "host": {
+                                "description": "Host name for the Ingress.",
+                                "type": "string"
+                            },
+                            "paths": {
+                                "description": "Path configuration for the Ingress.",
+                                "type": "array",
+                                "items": {
+                                    "type": "object",
+                                    "properties": {
+                                        "path": {
+                                            "description": "Path for the Ingress.",
+                                            "type": "string"
+                                        },
+                                        "pathType": {
+                                            "description": "Path type for the Ingress.",
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "tls": {
+                    "description": "TLS configuration for the Ingress.",
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "secretName": {
+                                "description": "Name of the secret for TLS.",
+                                "type": "string"
+                            },
+                            "hosts": {
+                                "description": "Host names for the TLS configuration.",
+                                "type": "array",
+                                "items": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "nodeSelector": {
+            "description": "Node selector for pod assignment.",
+            "type": "object"
+        },
+        "tolerations": {
+            "description": "Tolerations for pod assignment.",
+            "type": "array"
+        },
+        "affinity": {
+            "description": "Affinity rules for pod assignment.",
+            "type": "object"
+        },
+        "podAntiAffinity": {
+            "description": "Pod anti-affinity configuration.",
+            "type": "string",
+            "enum": ["", "soft", "hard"],
+            "default": ""
+        },
+        "podAntiAffinityTopologyKey": {
+            "description": "Topology key to use for pod anti-affinity.",
+            "type": "string"
+        },
+        "topologySpreadConstraints": {
+            "description": "Topology spread constraints for pod assignment.",
+            "type": "array",
+            "items": {
+                "type": "object",
+                "required": ["maxSkew", "topologyKey", "whenUnsatisfiable", "labelSelector"],
+                "properties": {
+                    "maxSkew": {
+                        "type": "integer"
+                    },
+                    "topologyKey": {
+                        "type": "string"
+                    },
+                    "whenUnsatisfiable": {
+                        "type": "string",
+                        "enum": ["DoNotSchedule", "ScheduleAnyway"]
+                    },
+                    "labelSelector": {
+                        "type": "object",
+                        "required": ["matchLabels"],
+                        "properties": {
+                            "matchLabels": {
+                                "type": "object"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "statefulSet": {
+            "description": "StatefulSet configuration for managing pods.",
+            "type": "object",
+            "properties": {
+                "annotations": {
+                    "type": "object"
+                }
+            }
+        },
+        "podAnnotations": {
+            "description": "Annotations to add to the pods.",
+            "type": "object"
+        },
+        "podLabels": {
+            "description": "Labels to add to the pods.",
+            "type": "object"
+        },
+        "podDisruptionBudget": {
+            "description": "Pod disruption budget configuration.",
+            "type": "object",
+            "properties": {
+                "maxUnavailable": {
+                    "type": "integer"
+                },
+                "minAvailable": {
+                    "type": "integer"
+                }
+            }
+        },
+        "command": {
+            "description": "The command to be executed in the container.",
+            "type": "array",
+            "items": {
+                "type": "string"
+            }
+        },
+        "persistence": {
+            "description": "Persistence configuration for storing data.",
+            "type": "object",
+            "required": ["enabled", "size"],
+            "properties": {
+                "enabled": {
+                    "type": "boolean"
+                },
+                "storageClass": {
+                    "type": "string"
+                },
+                "accessModes": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "size": {
+                    "type": "string"
+                },
+                "annotations": {
+                  "type": "object",
+                  "description": "Custom annotations to apply to the PersistentVolumeClaim created by the Alertmanager StatefulSet.",
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "default": {}
+                },
+                "labels": {
+                  "type": "object",
+                  "description": "Custom labels to apply to the PersistentVolumeClaim created by the Alertmanager StatefulSet.",
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "default": {}
+                }
+            }
+        },
+        "configAnnotations": {
+            "description": "Annotations to be added to the Alertmanager configuration.",
+            "type": "object"
+        },
+        "config": {
+            "description": "Alertmanager configuration.",
+            "type": "object",
+            "properties": {
+                "enabled": {
+                    "description": "Whether to create alermanager configmap or not.",
+                    "type": "boolean"
+                },
+                "global": {
+                    "description": "Global configuration options.",
+                    "type": "object"
+                },
+                "templates": {
+                    "description": "Alertmanager template files.",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "receivers": {
+                    "description": "Alert receivers configuration.",
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "required": ["name"],
+                        "properties": {
+                            "name": {
+                                "description": "The unique name of the receiver.",
+                                "type": "string"
+                            }
+                        }
+                    }
+                },
+                "route": {
+                    "description": "Alert routing configuration.",
+                    "type": "object",
+                    "$ref": "#/definitions/config/route"
+                }
+            }
+        },
+        "configmapReload": {
+            "description": "Monitors ConfigMap changes and POSTs to a URL.",
+            "type": "object",
+            "properties": {
+                "enabled": {
+                    "description": "Specifies whether the configmap-reload container should be deployed.",
+                    "type": "boolean",
+                    "default": false
+                },
+                "name": {
+                    "description": "The name of the configmap-reload container.",
+                    "type": "string"
+                },
+                "image": {
+                    "description": "The container image for the configmap-reload container.",
+                    "$ref": "#/definitions/image"
+                },
+                "containerPort": {
+                    "description": "Port number for the configmap-reload container.",
+                    "type": "integer"
+                },
+                "resources": {
+                    "description": "Resource requests and limits for the configmap-reload container.",
+                    "$ref": "#/definitions/resources"
+                }
+            }
+        },
+        "templates": {
+            "description": "Custom templates used by Alertmanager.",
+            "type": "object"
+        },
+        "extraVolumeMounts": {
+            "description": "List of volume mounts for the Container.",
+            "$ref": "#/definitions/volumeMounts"
+        },
+        "extraVolumes": {
+            "description": "Additional volumes to be mounted in the Alertmanager pod.",
+            "type": "array",
+            "default": [],
+            "items": {
+                "type": "object",
+                "required": ["name"],
+                "properties": {
+                    "name": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "extraEnv": {
+            "description": "List of environment variables for the Container.",
+            "$ref": "#/definitions/env"
+        },
+        "testFramework": {
+            "description": "Configuration for the test Pod.",
+            "type": "object",
+            "properties": {
+                "enabled": {
+                    "description": "Specifies whether the test Pod is enabled.",
+                    "type": "boolean",
+                    "default": false
+                },
+                "annotations": {
+                    "description": "Annotations to be added to the test Pod.",
+                    "type": "object"
+                }
+            }
+        },
+        "verticalPodAutoscaler": {
+            "description": "Vertical Pod Autoscaling configuration.",
+            "type": "object",
+            "properties": {
+                "enabled": {
+                    "type": "boolean",
+                    "default": false
+                },
+                "recommenders": {
+                    "type": "array"
+                },
+                "updatePolicy": {
+                    "type": "object"
+                },
+                "resourcePolicy": {
+                    "type": "object"
+                }
+            }
+        },
+        "extraPodConfigs": {
+            "description": "Object to allow users to add additional Pod configuration like dnsPolicy or hostNetwork",
+            "type": "object"
+        }
+    }
+}

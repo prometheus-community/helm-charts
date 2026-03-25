@@ -1,0 +1,405 @@
+restartPolicy: Always
+
+kind: DaemonSet
+
+## Override the namespace
+##
+namespaceOverride: "default"
+
+podDisruptionBudget: {}
+  # maxUnavailable: 0
+
+## Allow automount the serviceaccount token for sidecar container (eg: oauthproxy)
+automountServiceAccountToken: false
+
+## Additional pingmesh-exporter container environment variables
+## For instance to add a http_proxy
+##
+## extraEnv:
+##   HTTP_PROXY: "http://superproxy.com:3128"
+##   NO_PROXY: "localhost,127.0.0.1"
+extraEnv: {}
+
+extraVolumes: []
+  # - name: secret-pingmesh-oauth-htpasswd
+  #   secret:
+  #     defaultMode: 420
+  #     secretName: pingmesh-oauth-htpasswd
+  # - name: storage-volume
+  #   persistentVolumeClaim:
+  #     claimName: example
+
+## Additional volumes that will be attached to the pingmesh-exporter container
+extraVolumeMounts:
+  # - name: ca-certs
+  #   mountPath: /etc/ssl/certs/ca-certificates.crt
+
+## Additional InitContainers to initialize the pod
+##
+extraInitContainers: []
+
+extraContainers: []
+  # - name: oAuth2-proxy
+  #   args:
+  #     - -https-address=:9116
+  #     - -upstream=http://localhost:9115
+  #     - -skip-auth-regex=^/metrics
+  #     - -openshift-delegate-urls={"/":{"group":"monitoring.coreos.com","resource":"prometheuses","verb":"get"}}
+  #   image: openshift/oauth-proxy:v1.1.0
+  #   ports:
+  #       - containerPort: 9116
+  #         name: proxy
+  #   resources:
+  #       limits:
+  #         memory: 16Mi
+  #       requests:
+  #         memory: 4Mi
+  #         cpu: 20m
+  #   volumeMounts:
+  #     - mountPath: /etc/prometheus/secrets/pingmesh-tls
+  #       name: secret-pingmesh-tls
+
+hostNetwork: false
+
+strategy:
+  rollingUpdate:
+    maxSurge: 1
+    maxUnavailable: 0
+  type: RollingUpdate
+
+image:
+  repository: dongjiang1989/pingmesh-agent
+  # if not set appVersion field from Chart.yaml is used
+  tag: ""
+  pullPolicy: Always
+
+  ## Optionally specify an array of imagePullSecrets.
+  ## Secrets must be manually created in the namespace.
+  ## ref: https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/
+  ##
+  # pullSecrets:
+  #   - myRegistrKeySecretName
+
+podSecurityContext: {}
+  # runAsUser: 1001
+  # runAsGroup: 1001
+  # runAsNonRoot: true
+  # seccompProfile:
+  #   type: RuntimeDefault
+
+## User and Group to run pingmesh-exporter container as Daemonset
+securityContext:
+  runAsUser: 1000
+  runAsGroup: 1000
+  readOnlyRootFilesystem: true
+  runAsNonRoot: true
+  allowPrivilegeEscalation: true
+  capabilities:
+    drop: ["ALL"]
+  privileged: true
+  seccompProfile:
+    type: RuntimeDefault
+# Add NET_RAW to enable ICMP
+#    add: ["NET_RAW"]
+
+livenessProbe:
+  httpGet:
+    path: /health
+    port: http
+
+readinessProbe:
+  httpGet:
+    path: /ready
+    port: http
+
+nodeSelector: {}
+tolerations:
+  - operator: Exists
+    effect: NoSchedule
+  - key: CriticalAddonsOnly
+    operator: Exists
+  - operator: Exists
+    effect: NoExecute
+  - key: node.kubernetes.io/not-ready
+    operator: Exists
+    effect: NoExecute
+  - key: node.kubernetes.io/unreachable
+    operator: Exists
+    effect: NoExecute
+  - key: node.kubernetes.io/disk-pressure
+    operator: Exists
+    effect: NoSchedule
+  - key: node.kubernetes.io/memory-pressure
+    operator: Exists
+    effect: NoSchedule
+  - key: node.kubernetes.io/pid-pressure
+    operator: Exists
+    effect: NoSchedule
+  - key: node.kubernetes.io/unschedulable
+    operator: Exists
+    effect: NoSchedule
+
+affinity: {}
+
+# if the configuration is managed as secret outside the chart, using SealedSecret for example,
+# provide the name of the secret here. If secretConfig is set to true, configExistingSecretName will be ignored
+# in favor of the config value.
+configExistingSecretName: ""
+# Store the configuration as a `Secret` instead of a `ConfigMap`, useful in case it contains sensitive data
+secretConfig: false
+config:
+  modules:
+    http_2xx:
+      prober: http
+      timeout: 10s
+      http:
+        valid_http_versions: ["HTTP/1.1", "HTTP/2"]
+        valid_status_codes: [200, 201, 204, 304, 312]
+        method: GET
+        preferred_ip_protocol: "ip4"
+    http_2xx_ipv6:
+      prober: http
+      timeout: 10s
+      http:
+        valid_http_versions: ["HTTP/1.1", "HTTP/2"]
+        valid_status_codes: [200, 201, 204, 304, 312]
+        method: GET
+        preferred_ip_protocol: "ip6"
+    http_post_2xx:
+      prober: http
+      timeout: 10s
+      http:
+        valid_http_versions: ["HTTP/1.1", "HTTP/2"]
+        valid_status_codes: [200, 201, 204, 304, 312]
+        method: POST
+        preferred_ip_protocol: "ip4"
+    http_post_2xx_ipv6:
+      prober: http
+      timeout: 10s
+      http:
+        valid_http_versions: ["HTTP/1.1", "HTTP/2"]
+        valid_status_codes: [200, 201, 204, 304, 312]
+        method: POST
+        preferred_ip_protocol: "ip6"
+    tcp_connect:
+      prober: tcp
+      timeout: 2s
+    ping:
+      prober: icmp
+      timeout: 5s
+      icmp:
+        preferred_ip_protocol: "ip4"
+    ping_ipv6:
+      prober: icmp
+      timeout: 5s
+      icmp:
+        preferred_ip_protocol: "ip6"
+    dns:
+      prober: dns
+      dns:
+        transport_protocol: "tcp"
+        preferred_ip_protocol: "ip4"
+        query_name: "kubernetes.defalut.svc.cluster.local"
+    dns_ipv6:
+      prober: dns
+      dns:
+        transport_protocol: "tcp"
+        preferred_ip_protocol: "ip6"
+        query_name: "kubernetes.defalut.svc.cluster.local"
+
+pinglistConfig:
+  setting:
+    concurrent_limit: 20
+    interval: 60.0
+    delay: 200
+    timeout: 2.0
+    source_ip_addr: 0.0.0.0
+    ip_protocol: ip6
+  mesh:
+    add-ping-public:
+      name: ping-public-demo
+      type: OtherIP
+      ips:
+        - "127.0.0.1"                                  # local ip
+        - "8.8.8.8"                                    # google public dns
+        - "kubernetes.default.svc.cluster.local"       # kubernetes coredns
+
+# Set custom config path, other than default /config/pingmesh.yaml. If let empty, path will be "/config/pingmesh.yaml"
+# configPath: "/foo/bar"
+
+extraConfigmapMounts: []
+  # - name: certs-configmap
+  #   mountPath: /etc/secrets/ssl/
+  #   subPath: certificates.crt # (optional)
+  #   configMap: certs-configmap
+  #   readOnly: true
+  #   defaultMode: 420
+
+## Additional secret mounts
+# Defines additional mounts with secrets. Secrets must be manually created in the namespace.
+extraSecretMounts: []
+  # - name: secret-files
+  #   mountPath: /etc/secrets
+  #   secretName: pingmesh-secret-files
+  #   readOnly: true
+  #   defaultMode: 420
+
+resources: {}
+  # limits:
+  #  cpu: 200m
+  #  memory: 256Mi
+  # requests:
+  #  cpu: 200m
+  #  memory: 256Mi
+
+priorityClassName: ""
+
+service:
+  annotations: {}
+  labels: {}
+  type: ClusterIP
+  port: 9115
+  ipFamilies:
+  - IPv4
+  ipFamilyPolicy: SingleStack
+  # External traffic policy setting `Local` or `Cluster`, when service.type is `LoadBalancer` or `NodePort`
+  externalTrafficPolicy: ""
+
+# Only changes container port. Application port can be changed with extraArgs (--web.listen-address=:9115)
+# https://github.com/prometheus/pingmesh_exporter/blob/998037b5b40c1de5fee348ffdea8820509d85171/main.go#L55
+containerPort: 9115
+
+serviceAccount:
+  # Specifies whether a ServiceAccount should be created
+  create: true
+  # The name of the ServiceAccount to use.
+  # If not set and create is true, a name is generated using the fullname template
+  name:
+  annotations: {}
+
+## An Ingress resource can provide name-based virtual hosting and TLS
+## termination among other things for CouchDB deployments which are accessed
+## from outside the Kubernetes cluster.
+## ref: https://kubernetes.io/docs/concepts/services-networking/ingress/
+ingress:
+  enabled: false
+  className: ""
+  labels: {}
+  annotations: {}
+    # kubernetes.io/ingress.class: nginx
+    # kubernetes.io/tls-acme: "true"
+  hosts:
+    - host: chart-example.local
+      paths:
+        - path: /
+          pathType: ImplementationSpecific
+  tls: []
+  #  - secretName: chart-example-tls
+  #    hosts:
+  #      - chart-example.local
+
+podAnnotations: {}
+
+# Hostaliases allow to add additional DNS entries to be injected directly into pods.
+# This will take precedence over your implemented DNS solution
+hostAliases: []
+#  - ip: 192.168.1.1
+#    hostNames:
+#      - test.example.com
+#      - another.example.net
+
+pod:
+  labels: {}
+
+extraArgs: []
+  # - --history.limit=1000
+
+replicas: 1
+
+serviceMonitor:
+  ## If true, a ServiceMonitor CRD is created for a prometheus operator
+  ## https://github.com/coreos/prometheus-operator for pingmesh-exporter itself
+  ##
+  selfMonitor:
+    enabled: false
+    additionalMetricsRelabels: {}
+    additionalRelabeling: []
+    labels: {}
+    interval: 30s
+    scrapeTimeout: 30s
+
+  ## If true, a ServiceMonitor CRD is created for a prometheus operator
+  ## https://github.com/coreos/prometheus-operator for each target
+  ##
+  enabled: false
+
+  # Default values that will be used for all ServiceMonitors created by `targets`
+  defaults:
+    additionalMetricsRelabels: {}
+    additionalRelabeling: []
+    labels: {}
+    interval: 30s
+    scrapeTimeout: 30s
+    module: dns
+  ## scheme: HTTP scheme to use for scraping. Can be used with `tlsConfig` for example if using istio mTLS.
+  scheme: http
+  ## tlsConfig: TLS configuration to use when scraping the endpoint. For example if using istio mTLS.
+  ## Of type: https://github.com/coreos/prometheus-operator/blob/master/Documentation/api.md#tlsconfig
+  tlsConfig: {}
+  bearerTokenFile:
+
+  targets:
+    - name: google.com                 # Human readable URL that will appear in Prometheus / AlertManager
+      url: https://www.google.com      # The URL that pingmesh will scrape
+      labels: {}                       # Map of labels for ServiceMonitor. Overrides value set in `defaults`
+      interval: 60s                    # Scraping interval. Overrides value set in `defaults`
+      scrapeTimeout: 60s               # Scrape timeout. Overrides value set in `defaults`
+      module: http_2xx                 # Module used for scraping. Overrides value set in `defaults`
+      additionalMetricsRelabels: {}    # Map of metric labels and values to add
+      additionalRelabeling: []         # List of metric relabeling actions to run
+    - name: docker.io                  # Human readable URL that will appear in Prometheus / AlertManager
+      url: https://docker.io           # The URL that pingmesh will scrape
+      labels: {}                       # Map of labels for ServiceMonitor. Overrides value set in `defaults`
+      interval: 60s                    # Scraping interval. Overrides value set in `defaults`
+      scrapeTimeout: 60s               # Scrape timeout. Overrides value set in `defaults`
+      module: http_2xx                 # Module used for scraping. Overrides value set in `defaults`
+      additionalMetricsRelabels: {}    # Map of metric labels and values to add
+      additionalRelabeling: []         # List of metric relabeling actions to run
+
+## Custom PrometheusRules to be defined
+## ref: https://github.com/coreos/prometheus-operator#customresourcedefinitions
+prometheusRule:
+  enabled: false
+  additionalLabels: {}
+  namespace: ""
+  rules:
+  - alert: web site usability
+    expr: probe_success == 0
+    for: 1m
+    labels:
+      alertype: domain
+      severity: critical
+    annotations:
+      description: "web site usability： {{ $labels.instance }}"
+
+## Network policy for chart
+networkPolicy:
+  # Enable network policy and allow access from anywhere
+  enabled: false
+  # Limit access only from monitoring namespace
+  # Before setting this value to true, you must add the name=monitoring label to the monitoring namespace
+  # Network Policy uses label filtering
+  allowMonitoringNamespace: false
+
+## dnsPolicy and dnsConfig for Deployments and Daemonsets if you want non-default settings.
+## These will be passed directly to the PodSpec of same.
+dnsPolicy: ClusterFirst
+dnsConfig:
+  options:
+    - name: single-request-reopen
+    - name: timeout
+      value: '1'
+    - name: attempts
+      value: '3'
+    - name: ndots
+      value: '3'

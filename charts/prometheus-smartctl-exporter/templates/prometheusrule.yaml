@@ -1,0 +1,38 @@
+{{- if .Values.prometheusRules.enabled }}
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: {{ template "prometheus-smartctl-exporter.fullname" . }}.rules
+  labels:
+    {{- include "prometheus-smartctl-exporter.labels" . | nindent 4 }}
+{{- if ne (len .Values.prometheusRules.extraLabels) 0 }}
+{{ toYaml .Values.prometheusRules.extraLabels | indent 4 }}
+{{- end }}
+{{- if hasKey .Values.prometheusRules "namespace" }}
+  namespace: {{ .Values.prometheusRules.namespace }}
+{{- end }}
+spec:
+  groups:
+    - name: {{ template "prometheus-smartctl-exporter.name" $ }}
+      rules:
+      {{- range .Values.prometheusRules.rules }}
+        {{- if .enabled }}
+        - alert: {{ .alert | required "A rule requires a valid `alert` clause" }}
+          expr: {{ .expr | required "A rule requires a valid `expr` clause" }}
+          {{- with .for }}
+          for: {{ . }}
+          {{- end }}
+          {{- with .keep_firing_for }}
+          keep_firing_for: {{ . }}
+          {{- end }}
+          {{- with .annotations }}
+          annotations:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .labels }}
+          labels:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+        {{- end }}
+      {{- end }}
+{{- end }}

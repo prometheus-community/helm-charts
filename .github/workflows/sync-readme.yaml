@@ -1,0 +1,29 @@
+permissions: {}
+
+on:
+  push:
+    branches:
+      - 'main'
+    paths:
+      - 'README.md'
+
+jobs:
+  build:
+    permissions:
+      contents: write # for git push
+
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - run: |
+          cp -f README.md ${{ runner.temp }}/README.md
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          ref: gh-pages
+      - run: |
+          cp -f ${{ runner.temp }}/README.md .
+          git config user.name "$GITHUB_ACTOR"
+          git config user.email "$GITHUB_ACTOR@users.noreply.github.com"
+          git add README.md
+          git commit --signoff -m "Sync README from main"
+          git push

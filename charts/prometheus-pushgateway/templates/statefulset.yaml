@@ -1,0 +1,51 @@
+{{- if .Values.runAsStatefulSet }}
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  labels:
+    {{- include "prometheus-pushgateway.defaultLabels" . | nindent 4 }}
+  name: {{ include "prometheus-pushgateway.fullname" . }}
+  namespace: {{ template "prometheus-pushgateway.namespace" . }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  serviceName: {{ include "prometheus-pushgateway.fullname" . }}
+  selector:
+    matchLabels:
+      {{- include "prometheus-pushgateway.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "prometheus-pushgateway.defaultLabels" . | nindent 8 }}
+    spec:
+      {{- include "prometheus-pushgateway.podSpec" . | nindent 6 }}
+  {{- if .Values.persistentVolume.enabled }}
+  volumeClaimTemplates:
+    - metadata:
+        {{- with .Values.persistentVolume.annotations }}
+        annotations:
+          {{- toYaml . | nindent 10 }}
+        {{- end }}
+        {{- with .Values.persistentVolumeLabels }}
+        labels:
+          {{- toYaml . | nindent 10 }}
+        {{- end }}
+        name: storage-volume
+      spec:
+        accessModes:
+          {{ toYaml .Values.persistentVolume.accessModes }}
+      {{- if .Values.persistentVolume.storageClass }}
+      {{- if (eq "-" .Values.persistentVolume.storageClass) }}
+        storageClassName: ""
+      {{- else }}
+        storageClassName: "{{ .Values.persistentVolume.storageClass }}"
+      {{- end }}
+      {{- end }}
+        resources:
+          requests:
+            storage: "{{ .Values.persistentVolume.size }}"
+  {{- end }}
+{{- end }}

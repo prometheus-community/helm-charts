@@ -1,0 +1,21 @@
+{{- if .Values.prometheusRule.enabled }}
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: {{ template "elasticsearch-exporter.fullname" . }}
+{{- if .Values.prometheusRule.namespace }}
+  namespace: {{ .Values.prometheusRule.namespace }}
+{{- end }}
+  labels:
+    {{- include "elasticsearch-exporter.labels" . | nindent 4 }}
+{{- if .Values.prometheusRule.labels }}
+{{- toYaml .Values.prometheusRule.labels | nindent 4 }}
+{{- end }}
+spec:
+{{- with .Values.prometheusRule.rules }}
+  groups:
+    - name: {{ template "elasticsearch-exporter.name" $ }}
+      rules: {{ tpl (toYaml .) $ | nindent 8 }}
+{{- end }}
+{{- end }}

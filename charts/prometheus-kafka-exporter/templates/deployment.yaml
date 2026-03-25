@@ -1,0 +1,200 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ template "prometheus-kafka-exporter.fullname" . }}
+  labels:
+    app: {{ template "prometheus-kafka-exporter.name" . }}
+    chart: {{ template "prometheus-kafka-exporter.chart" . }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+    {{- with .Values.deploymentLabels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app: {{ template "prometheus-kafka-exporter.name" . }}
+      release: {{ .Release.Name }}
+  template:
+    metadata:
+      {{- with .Values.annotations }}
+      annotations: {{ toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        app: {{ template "prometheus-kafka-exporter.name" . }}
+        release: {{ .Release.Name }}
+        {{- with .Values.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      {{- if .Values.securityContext }}
+      securityContext:
+      {{- toYaml .Values.securityContext | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ template "prometheus-kafka-exporter.serviceAccountName" . }}
+      {{- with .Values.hostAliases }}
+      hostAliases:
+          {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - args:
+            - '--verbosity={{ .Values.verbosity }}'
+          {{- if .Values.sarama.logEnabled }}
+            - '--log.enable-sarama'
+          {{- end }}
+          {{- range $server := .Values.kafkaServer }}
+            - '--kafka.server={{ $server }}'
+          {{- end }}
+          {{- if .Values.kafkaBrokerVersion }}
+            - '--kafka.version={{ .Values.kafkaBrokerVersion }}'
+          {{- end }}
+          {{- if .Values.kafkaLabels }}
+            - '--kafka.labels={{ include "prometheus-kafka-exporter.kafkaLabels" . }}'
+          {{- end }}
+          {{- if .Values.tls.enabled }}
+            - '--tls.enabled'
+          {{- if .Values.tls.mountPath }}
+            - '--tls.ca-file={{ .Values.tls.mountPath }}/{{ .Values.tls.caFile }}'
+            - '--tls.cert-file={{ .Values.tls.mountPath }}/{{ .Values.tls.certFile }}'
+            - '--tls.key-file={{ .Values.tls.mountPath }}/{{ .Values.tls.keyFile }}'
+          {{- end }}
+          {{- if .Values.tls.insecureSkipVerify }}
+            - '--tls.insecure-skip-tls-verify'
+          {{- else if .Values.tls.serverName }}
+            - '--tls.server-name={{ .Values.tls.serverName }}'
+          {{- end }}
+          {{- end }}
+          {{- if .Values.sasl.enabled }}
+            - '--sasl.enabled'
+          {{- if not .Values.sasl.handshake }}
+            - '--sasl.handshake=false'
+          {{- end }}
+          {{- if .Values.sasl.awsiam.enabled }}
+            - '--sasl.mechanism={{ .Values.sasl.awsiam.mechanism }}'
+            {{- if .Values.sasl.awsiam.awsRegion }}
+            - '--sasl.aws-region={{ .Values.sasl.awsiam.awsRegion }}'
+            {{- end }}
+          {{- end }}
+          {{- if .Values.sasl.scram.enabled }}
+            - '--sasl.username=$(SCRAM_USERNAME)'
+            - '--sasl.password=$(SCRAM_PASSWORD)'
+            - '--sasl.mechanism={{ .Values.sasl.scram.mechanism }}'
+          {{- end }}
+          {{- if .Values.sasl.kerberos.enabled }}
+            - '--sasl.service-name={{ .Values.sasl.kerberos.serviceName }}'
+            - '--sasl.kerberos-config-path={{ .Values.sasl.kerberos.mountPath }}/kerberos.conf'
+            - '--sasl.realm={{ .Values.sasl.kerberos.realm }}'
+            - '--sasl.keytab-path={{ .Values.sasl.kerberos.mountPath }}/kerberos.keytab'
+            - '--sasl.kerberos-auth-type={{ .Values.sasl.kerberos.kerberosAuthType }}'
+          {{- end }}
+          {{- end }}
+          {{- if .Values.server.tls.enabled }}
+            - '--server.tls.ca-file={{ .Values.server.tls.mountPath }}/{{ .Values.server.tls.caFile }}'
+            - '--server.tls.cert-file={{ .Values.server.tls.mountPath }}/{{ .Values.server.tls.certFile }}'
+            - '--server.tls.key-file={{ .Values.server.tls.mountPath }}/{{ .Values.server.tls.keyFile }}'
+            - '--server.tls.mutual-auth-enabled={{ .Values.server.tls.mutualAuthEnabled }}'
+          {{- end }}
+          {{- if .Values.extraArgs }}
+          {{- range .Values.extraArgs  }}
+            - {{ . }}
+          {{- end }}
+          {{- end }}
+          env:
+          {{- with .Values.env }}
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- if .Values.sasl.scram.enabled }}
+            - name: SCRAM_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: {{ template "prometheus-kafka-exporter.saslScramSecretName" . }}
+                  key: username
+            - name: SCRAM_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ template "prometheus-kafka-exporter.saslScramSecretName" . }}
+                  key: password
+          {{- end }}
+          name: {{ .Chart.Name }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          {{- with .Values.command }}
+          command:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          ports:
+            - name: exporter-port
+              containerPort: 9308
+              protocol: TCP
+{{- if .Values.startup.enabled }}
+          startupProbe:
+{{- toYaml .Values.startup.probe | trim | nindent 12 }}
+{{- end }}
+{{- if .Values.liveness.enabled }}
+          livenessProbe:
+{{- toYaml .Values.liveness.probe | trim | nindent 12 }}
+{{- end }}
+{{- if .Values.readiness.enabled }}
+          readinessProbe:
+{{- toYaml .Values.readiness.probe | trim | nindent 12 }}
+{{- end }}
+          {{- with .Values.resources }}
+          resources: {{ toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.containerSecurityContext }}
+          securityContext:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- if or (.Values.tls.mountPath) (.Values.sasl.kerberos.mountPath) (.Values.server.tls.mountPath) }}
+          volumeMounts:
+            {{- if .Values.tls.mountPath }}
+            - mountPath: {{ .Values.tls.mountPath }}
+              name: kafka-certs
+              readOnly: true
+            {{- end }}
+            {{- if .Values.sasl.kerberos.mountPath }}
+            - mountPath: {{ .Values.sasl.kerberos.mountPath }}
+              name: kerberos
+              readOnly: true
+            {{- end }}
+            {{- if .Values.server.tls.mountPath }}
+            - mountPath: {{ .Values.server.tls.mountPath }}
+              name: server-certs
+              readOnly: true
+            {{- end }}
+          {{- end }}
+    {{- with .Values.nodeSelector }}
+      nodeSelector:
+{{ toYaml . | indent 8 }}
+    {{- end }}
+    {{- with .Values.affinity }}
+      affinity:
+{{ toYaml . | indent 8 }}
+    {{- end }}
+    {{- with .Values.tolerations }}
+      tolerations:
+{{ toYaml . | indent 8 }}
+    {{- end }}
+      {{- if or (.Values.tls.mountPath) (.Values.sasl.kerberos.mountPath) (.Values.server.tls.mountPath) }}
+      volumes:
+        {{- if .Values.tls.mountPath }}
+        - name: kafka-certs
+          secret:
+            secretName: {{ .Values.tls.secretName }}
+        {{- end }}
+        {{- if .Values.sasl.kerberos.mountPath }}
+        - name: kerberos
+          secret:
+            secretName: {{ .Values.sasl.kerberos.secretName }}
+        {{- end }}
+        {{- if .Values.server.tls.mountPath }}
+        - name: server-certs
+          secret:
+            secretName: {{ .Values.server.tls.secretName }}
+        {{- end }}
+      {{- end }}
+      {{- if or .Values.imagePullSecrets .Values.global.imagePullSecrets }}
+      imagePullSecrets:
+      {{- include "prometheus-kafka-exporter.imagePullSecrets" (dict "Values" .Values "imagePullSecrets" .Values.imagePullSecrets) | indent 8 }}
+      {{- end }}

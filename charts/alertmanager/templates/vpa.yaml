@@ -1,0 +1,26 @@
+{{- if .Values.verticalPodAutoscaler.enabled }}
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: {{ include "alertmanager.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+spec:
+  {{- if .Values.verticalPodAutoscaler.recommenders }}
+  recommenders:
+    {{- range .Values.verticalPodAutoscaler.recommenders }}
+    - name: {{ .name }}
+    {{- end }}
+  {{- end }}
+  targetRef:
+    apiVersion: apps/v1
+    kind: StatefulSet
+    name: {{ include "alertmanager.fullname" . }}
+  {{- if .Values.verticalPodAutoscaler.updatePolicy }}
+  updatePolicy:
+    {{- toYaml .Values.verticalPodAutoscaler.updatePolicy | nindent 4 }}
+  {{- end }}
+  {{- if .Values.verticalPodAutoscaler.resourcePolicy }}
+  resourcePolicy:
+    {{- toYaml .Values.verticalPodAutoscaler.resourcePolicy | nindent 4 }}
+  {{- end }}
+{{- end }}

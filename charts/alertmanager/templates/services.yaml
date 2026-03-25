@@ -1,0 +1,75 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "alertmanager.fullname" . }}
+  labels:
+    {{- include "alertmanager.labels" . | nindent 4 }}
+    {{- with .Values.service.labels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+  {{- with .Values.service.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  namespace: {{ include "alertmanager.namespace" . }}
+spec:
+  {{- if .Values.service.ipDualStack.enabled }}
+  ipFamilies: {{ toYaml .Values.service.ipDualStack.ipFamilies | nindent 4 }}
+  ipFamilyPolicy: {{ .Values.service.ipDualStack.ipFamilyPolicy }}
+  {{- end }}
+  type: {{ .Values.service.type }}
+  {{- with .Values.service.loadBalancerIP }}
+  loadBalancerIP: {{ . }}
+  {{- end }}
+  {{- with .Values.service.loadBalancerSourceRanges }}
+  loadBalancerSourceRanges:
+  {{- range $cidr := . }}
+    - {{ $cidr }}
+  {{- end }}
+  {{- end }}
+  ports:
+    - port: {{ .Values.service.port }}
+      targetPort: {{ .Values.containerPortName }}
+      protocol: TCP
+      name: http
+      {{- if (and (eq .Values.service.type "NodePort") .Values.service.nodePort) }}
+      nodePort: {{ .Values.service.nodePort }}
+      {{- end }}
+    {{- with .Values.service.extraPorts }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+  selector:
+    {{- include "alertmanager.selectorLabels" . | nindent 4 }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "alertmanager.fullname" . }}-headless
+  labels:
+    {{- include "alertmanager.labels" . | nindent 4 }}
+    {{- with .Values.service.labels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+  namespace: {{ include "alertmanager.namespace" . }}
+spec:
+  clusterIP: None
+  ports:
+    - port: {{ .Values.service.port }}
+      targetPort: {{ .Values.containerPortName }}
+      protocol: TCP
+      name: http
+    {{- if or (gt (int .Values.replicaCount) 1) (.Values.additionalPeers) }}
+    - port: {{ .Values.service.clusterPort }}
+      targetPort: clusterpeer-tcp
+      protocol: TCP
+      name: cluster-tcp
+    - port: {{ .Values.service.clusterPort }}
+      targetPort: clusterpeer-udp
+      protocol: UDP
+      name: cluster-udp
+    {{- end }}
+    {{- with .Values.service.extraPorts }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+  selector:
+    {{- include "alertmanager.selectorLabels" . | nindent 4 }}

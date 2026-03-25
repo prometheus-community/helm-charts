@@ -1,0 +1,17 @@
+{{- if .Values.testConnection -}}
+apiVersion: v1
+kind: Pod
+metadata:
+  name: "{{ include "yet-another-cloudwatch-exporter.fullname" . }}-test-connection"
+  labels:
+    {{- include "yet-another-cloudwatch-exporter.labels" . | nindent 4 }}
+  annotations:
+    "helm.sh/hook": test
+spec:
+  containers:
+    - name: wget
+      image: busybox
+      command: ['wget']
+      args: ['{{ include "yet-another-cloudwatch-exporter.fullname" . }}:{{ .Values.service.port }}']
+  restartPolicy: Never
+{{- end }}

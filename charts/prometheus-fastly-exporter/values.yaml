@@ -1,0 +1,131 @@
+# Default values for fastly-exporter.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+replicaCount: 1
+
+serviceAccount:
+  # Specifies whether a ServiceAccount should be created
+  create: true
+  # The name of the ServiceAccount to use.
+  # If not set and create is true, a name is generated using the fullname template
+  name:
+
+imagePullSecrets: []
+
+image:
+  repository: ghcr.io/fastly/fastly-exporter
+  # if not set appVersion field from Chart.yaml is used
+  tag: ""
+  pullPolicy: IfNotPresent
+
+# API token Fastly - https://docs.fastly.com/en/guides/using-api-tokens#creating-api-tokens
+fastly:
+  token: "token"
+
+# Name of an externally managed secret (in the same namespace) containing the fastly token as key `fastly-api-token`.
+# If this is provided, the value token is ignored.
+existingSecret:
+  name: ""
+  key: "fastly-api-token"
+
+nameOverride: ""
+fullnameOverride: ""
+
+# Flags - for a list visit https://github.com/fastly/fastly-exporter#filtering-services
+# Repeatable flags accept a list to generate multiple args with the same key.
+options:
+  {}
+  # metric-allowlist='bytes_total$'
+  # metric-blocklist=imgopto
+  # service:
+  #   - example-service-id-1
+  #   - example-service-id-2
+
+service:
+  type: ClusterIP
+  port: 8080
+  annotations: {}
+
+ingress:
+  enabled: false
+  # className: nginx
+  annotations: {}
+    # kubernetes.io/tls-acme: "true"
+  # Legacy format (still supported):
+  #   path: /
+  #   hosts:
+  #     - chart-example.local
+  # Modern format (recommended):
+  hosts:
+    - host: chart-example.local
+      paths:
+        - path: /
+          pathType: ImplementationSpecific
+  tls: []
+  #  - secretName: chart-example-tls
+  #    hosts:
+  #      - chart-example.local
+
+resources:
+  {}
+  # We usually recommend not to specify default resources and to leave this as a conscious
+  # choice for the user. This also increases chances charts run on environments with little
+  # resources, such as Minikube. If you do want to specify resources, uncomment the following
+  # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+  # limits:
+  #  cpu: 100m
+  #  memory: 128Mi
+  # requests:
+  #  cpu: 100m
+  #  memory: 128Mi
+
+serviceMonitor:
+  # When set true then use a ServiceMonitor to configure scraping
+  enabled: false
+  # Set the namespace the ServiceMonitor should be deployed
+  # namespace: monitoring
+  # Set how frequently Prometheus should scrape
+  # interval: 30s
+  # Set path to fastly-exporter telemtery-path
+  # telemetryPath: /metrics
+  # Set labels for the ServiceMonitor, use this to define your scrape label for Prometheus Operator
+  # labels:
+  # Set timeout for scrape
+  # timeout: 10s
+  # Set of labels to transfer on the Kubernetes Service onto the target.
+  # targetLabels: []
+  # metricRelabelings: []
+
+podSecurityContext: {}
+
+securityContext: {}
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
+
+# Extra environment variables
+extraEnv: []
+
+# Annotations for the pods
+podAnnotations: {}
+
+# Init Containers for Exporter Pod
+initContainers: []
+
+# Extra containers for the exporter pod
+extraContainers: []
+
+# Extra Volumes for the pod
+extraVolumes: []
+# - name: example
+#   configMap:
+#     name: example
+
+# Extra Volume Mounts for the exporter container
+extraVolumeMounts: []
+# - name: example
+#   mountPath: /example

@@ -1,0 +1,54 @@
+suite: test ingress
+templates:
+  - ingress.yaml
+tests:
+  - it: should be empty if ingress is not enabled
+    asserts:
+      - hasDocuments:
+          count: 0
+  - it: should have apiVersion networking.k8s.io/v1 for k8s >= 1.19
+    set:
+      ingress.enabled: true
+    capabilities:
+      majorVersion: 1
+      minorVersion: 19
+    asserts:
+      - hasDocuments:
+          count: 1
+      - isKind:
+          of: Ingress
+      - isAPIVersion:
+          of: networking.k8s.io/v1
+  - it: should have an ingressClassName for k8s >= 1.19
+    set:
+      ingress.enabled: true
+      ingress.className: nginx-test
+    capabilities:
+      majorVersion: 1
+      minorVersion: 19
+    asserts:
+      - hasDocuments:
+          count: 1
+      - equal:
+          path: spec.ingressClassName
+          value: nginx-test
+  - it: should render valid rules
+    set:
+      ingress.enabled: true
+      ingress.className: nginx-test
+    asserts:
+      - equal:
+          path: spec.rules[0].host
+          value: alertmanager.domain.com
+      - equal:
+          path: spec.rules[0].http.paths[0].path
+          value: /
+      - equal:
+          path: spec.rules[0].http.paths[0].pathType
+          value: ImplementationSpecific
+      - equal:
+          path: spec.rules[0].http.paths[0].backend.service.name
+          value: RELEASE-NAME-alertmanager
+      - equal:
+          path: spec.rules[0].http.paths[0].backend.service.port.number
+          value: 9093

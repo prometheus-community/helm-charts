@@ -1,0 +1,94 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "prometheus-pingdom-exporter.fullname" . }}
+  labels:
+    {{- include "prometheus-pingdom-exporter.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "prometheus-pingdom-exporter.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- if .Values.pod.annotations }}
+      annotations:
+        {{- toYaml .Values.pod.annotations | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "prometheus-pingdom-exporter.selectorLabels" . | nindent 8 }}
+    spec:
+      serviceAccountName: {{ template "prometheus-pingdom-exporter.serviceAccountName" . }}
+      containers:
+        - name: {{ .Chart.Name }}
+          args:
+            {{ with .Values.config }}
+            - "-default-uptime-slo"
+            - {{ .defaultUptimeSLO | quote }}
+            - "-metrics-path"
+            - "/metrics"
+            - "-outage-check-period"
+            - {{ .outageCheckPeriodInDays | quote }}
+            - "-port"
+            - {{ $.Values.service.port | quote }}
+            {{- if gt (len .tags ) 0 }}
+            - "-tags"
+            - {{ join "," .tags | quote }}
+            {{- end }}
+            {{- if kindIs "bool" .parserTags }}
+            {{- if .parserTags }}
+            - "-parser-tags"
+            - "true"
+            {{- if .tagFormat }}
+            - "-tag-format"
+            - {{ .tagFormat | quote }}
+            {{- end }}
+            {{- if gt (len .tagExtraLabels ) 0 }}
+            - "-tag-extra-labels"
+            - {{ join "," .tagExtraLabels | quote }}
+            {{- end }}
+            {{- end }}
+            {{- end }}
+            {{- end }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          env:
+            - name: PINGDOM_API_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "prometheus-pingdom-exporter.secretName" . }}
+                  key: apiToken
+          ports:
+            - name: http
+              containerPort: {{ .Values.service.port }}
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: /
+              port: http
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+          {{- if .Values.extraVolumeMounts }}
+          volumeMounts:
+{{ toYaml .Values.extraVolumeMounts | indent 10 }}
+          {{- end }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+    {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}
+    {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}
+    {{- if .Values.extraVolumes }}
+      volumes:
+{{ toYaml .Values.extraVolumes | indent 8 }}
+    {{- end }}

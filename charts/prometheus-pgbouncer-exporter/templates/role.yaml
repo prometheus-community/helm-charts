@@ -1,0 +1,18 @@
+{{- if .Values.rbac.create }}
+apiVersion: {{ template "rbac.apiVersion" . }}
+kind: Role
+metadata:
+  name: {{ template "prometheus-pgbouncer-exporter.fullname" . }}
+  labels:
+    app: {{ template "prometheus-pgbouncer-exporter.name" . }}
+    chart: {{ template "prometheus-pgbouncer-exporter.chart" . }}
+    heritage: {{ .Release.Service }}
+    release: {{ .Release.Name }}
+{{- if .Values.rbac.pspEnabled }}
+rules:
+- apiGroups:      ['extensions']
+  resources:      ['podsecuritypolicies']
+  verbs:          ['use']
+  resourceNames:  [{{ template "prometheus-pgbouncer-exporter.fullname" . }}]
+{{- end }}
+{{- end }}

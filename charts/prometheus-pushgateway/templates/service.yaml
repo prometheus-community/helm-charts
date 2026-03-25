@@ -1,0 +1,45 @@
+{{- $stsNoHeadlessSvcTypes := list "LoadBalancer" "NodePort" -}}
+apiVersion: v1
+kind: Service
+metadata:
+  {{- with .Values.serviceAnnotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  labels:
+    {{- include "prometheus-pushgateway.defaultLabels" . | nindent 4 }}
+    {{- with .Values.serviceLabels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+  name: {{ include "prometheus-pushgateway.fullname" . }}
+  namespace: {{ template "prometheus-pushgateway.namespace" . }}
+spec:
+  {{- if .Values.service.clusterIP }}
+  clusterIP: {{ .Values.service.clusterIP }}
+  {{ else if and .Values.runAsStatefulSet (not (has .Values.service.type $stsNoHeadlessSvcTypes)) }}
+  clusterIP: None # Headless service
+  {{- end }}
+  {{- if .Values.service.ipDualStack.enabled }}
+  ipFamilies: {{ toYaml .Values.service.ipDualStack.ipFamilies | nindent 4 }}
+  ipFamilyPolicy: {{ .Values.service.ipDualStack.ipFamilyPolicy }}
+  {{- end }}
+  type: {{ .Values.service.type }}
+  {{- with .Values.service.loadBalancerIP }}
+  loadBalancerIP: {{ . }}
+  {{- end }}
+  {{- if .Values.service.loadBalancerSourceRanges }}
+  loadBalancerSourceRanges:
+  {{- range $cidr := .Values.service.loadBalancerSourceRanges }}
+    - {{ $cidr }}
+  {{- end }}
+  {{- end }}
+  ports:
+    - port: {{ .Values.service.port }}
+      targetPort: {{ .Values.service.targetPort }}
+      {{- if and (eq .Values.service.type "NodePort") .Values.service.nodePort }}
+      nodePort: {{ .Values.service.nodePort }}
+      {{- end }}
+      protocol: TCP
+      name: {{ .Values.service.portName }}
+  selector:
+    {{- include "prometheus-pushgateway.selectorLabels" . | nindent 4 }}

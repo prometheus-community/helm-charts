@@ -1,0 +1,39 @@
+{{- if .Values.serviceMonitor.enabled }}
+apiVersion: {{ .Values.serviceMonitor.apiVersion | default "monitoring.coreos.com/v1" }}
+kind: {{ .Values.serviceMonitor.kind | default "ServiceMonitor" }}
+metadata:
+  name: {{ template "prometheus-statsd-exporter.fullname" . }}-metrics
+  {{- if .Values.serviceMonitor.namespace }}
+  namespace: {{ .Values.serviceMonitor.namespace }}
+  {{- end }}
+  labels: {{- include "prometheus-statsd-exporter.labels" . | nindent 4 }}
+    app.kubernetes.io/component: metrics
+    {{- range $key, $value := .Values.serviceMonitor.additionalLabels }}
+    {{ $key }}: {{ $value | quote }}
+  {{- end }}
+spec:
+  selector:
+    matchLabels:
+      {{- include "prometheus-statsd-exporter.selectorLabels" . | nindent 6 }}
+  endpoints:
+    - port: http
+      path: {{ .Values.serviceMonitor.endpoint }}
+      {{- if .Values.serviceMonitor.interval }}
+      interval: {{ .Values.serviceMonitor.interval }}
+      {{- end }}
+      {{- if .Values.serviceMonitor.scrapeTimeout }}
+      scrapeTimeout: {{ .Values.serviceMonitor.scrapeTimeout }}
+      {{- end }}
+      {{- with .Values.serviceMonitor.honorLabels }}
+      honorLabels: {{ . }}
+      {{- end }}
+      {{- with .Values.serviceMonitor.metricRelabelings }}
+      metricRelabelings: {{ toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.serviceMonitor.relabelings }}
+      relabelings: {{ toYaml . | nindent 8 }}
+      {{- end }}
+  namespaceSelector:
+    matchNames:
+      - {{ .Release.Namespace }}
+{{- end }}

@@ -1,0 +1,95 @@
+# this file tests some non default values to increase the test coverage
+
+defaultRules:
+  additionalRuleLabels:
+    key: value
+  additionalRuleGroupLabels:
+    kubernetesSystem:
+      key2: value2
+
+prometheusOperator:
+  denyNamespaces:
+    - kube-system
+  admissionWebhooks:
+    namespaceSelector:
+      matchLabels:
+        key: value
+      matchExpressions:
+      - key: control-plane
+        operator: NotIn
+        values:
+        - "true"
+  extraArgs:
+    - --labels="cluster=talos-cluster"
+
+alertmanager:
+  alertmanagerSpec:
+    additionalConfig:
+      logFormat: json
+    additionalConfigString: |-
+      logLevel: {{ print "debug" | quote }}
+
+prometheus:
+  prometheusSpec:
+    additionalConfig:
+      logFormat: json
+    additionalConfigString: |-
+      logLevel: {{ print "debug" | quote }}
+
+customRules:
+  AlertmanagerFailedReload:
+    for: 3m
+  AlertmanagerMembersInconsistent:
+    for: 5m
+    severity: "warning"
+
+kubeControllerManager:
+  service:
+    enabled: false
+  serviceMonitor:
+    selector:
+      matchLabels:
+        component: kube-controller-manager
+coreDns:
+  service:
+    enabled: false
+  serviceMonitor:
+    port: metrics
+    selector:
+      matchLabels:
+        k8s-app: '{{ $.Release.Name }}'
+kubeEtcd:
+  service:
+    enabled: false
+  serviceMonitor:
+    selector:
+      matchLabels:
+        component: etcd
+kubeScheduler:
+  service:
+    enabled: false
+  serviceMonitor:
+    selector:
+      matchLabels:
+        component: kube-scheduler
+kubeProxy:
+  service:
+    enabled: false
+  serviceMonitor:
+    selector:
+      matchLabels:
+        k8s-app: kube-proxy
+
+grafana:
+  sidecar:
+    datasources:
+      alertmanager:
+        name: 0
+
+nodeExporter:
+  enabled: true
+  forceDeployDashboards: true
+
+prometheus-node-exporter:
+  kubeRBACProxy:
+    enabled: true

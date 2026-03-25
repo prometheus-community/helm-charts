@@ -1,0 +1,41 @@
+{{- if .Values.ingress.enabled }}
+{{- $serviceName := include "prometheus-pushgateway.fullname" . }}
+{{- $servicePort := .Values.service.port }}
+{{- $ingressPath := .Values.ingress.path }}
+{{- $ingressClassName := .Values.ingress.className }}
+{{- $ingressPathType := .Values.ingress.pathType }}
+{{- $extraPaths := .Values.ingress.extraPaths }}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  {{- with .Values.ingress.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  labels:
+    {{- include "prometheus-pushgateway.defaultLabels" . | nindent 4 }}
+  name: {{ include "prometheus-pushgateway.fullname" . }}
+  namespace: {{ template "prometheus-pushgateway.namespace" . }}
+spec:
+  ingressClassName: {{ $ingressClassName }}
+  rules:
+    {{- range $host := .Values.ingress.hosts }}
+    - host: {{ $host }}
+      http:
+        paths:
+          {{- with $extraPaths }}
+          {{- toYaml . | nindent 10 }}
+          {{- end }}
+          - path: {{ $ingressPath }}
+            pathType: {{ $ingressPathType }}
+            backend:
+              service:
+                name: {{ $serviceName }}
+                port:
+                  number: {{ $servicePort }}
+    {{- end -}}
+  {{- with .Values.ingress.tls }}
+  tls:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+{{- end }}

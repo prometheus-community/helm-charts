@@ -1,0 +1,255 @@
+image:
+  repository: danielqsj/kafka-exporter
+  # Overrides the image tag whose default is the chart appVersion.
+  tag: ""
+  pullPolicy: IfNotPresent
+
+# Allow to change deployment command
+command: []
+
+imagePullSecrets: []
+
+hostAliases: []
+  # - ip: "10.10.10.10"
+  #   hostnames: ["kafka.server"]
+
+# Additional labels for deployment
+deploymentLabels: {}
+
+global:
+  # To help compatibility with other charts which use global.imagePullSecrets.
+  # Allow either an array of {name: pullSecret} maps (k8s-style), or an array of strings (more common helm-style).
+  # global:
+  #   imagePullSecrets:
+  #   - name: pullSecret1
+  #   - name: pullSecret2
+  # or
+  # global:
+  #   imagePullSecrets:
+  #   - pullSecret1
+  #   - pullSecret2
+  imagePullSecrets: []
+
+replicaCount: 1
+
+kafkaServer:
+  - kafka-server:9092
+
+# Specifies broker version to use, leave empty for default
+kafkaBrokerVersion: ""
+
+# Specifies custom labels visible in Prometheus for the Kafka Server/Cluster
+kafkaLabels: {}
+  # cluster: "prod-cluster"
+  # env: "prod"
+  # tier: "backend"
+
+# Specifies log verbosity
+verbosity: 0
+
+# Sarama logging, useful for awsiam debugging
+sarama:
+  logEnabled: false
+
+rbac:
+  # Specifies whether RBAC resources should be created
+  create: true
+
+serviceAccount:
+  # Specifies whether a ServiceAccount should be created
+  create: true
+  # The name of the ServiceAccount to use.
+  # If not set and create is true, a name is generated using the fullname template
+  name:
+  # This part is usefull when trying to use an SASL AWS IAM role when connecting to MSK
+  annotations: {}
+    # eks.amazonaws.com/role-arn: arn:aws:iam::1234567890:role-irsa
+    # eks.amazonaws.com/sts-regional-endpoints: "true"
+    # eks.amazonaws.com/audience: sts.amazonaws.com
+    # eks.amazonaws.com/token-expiration: "3600"
+
+# Specifies environment variables to be added to the kafka-exporter container.
+# Environment variables can be defined as a list of either key-value pairs or
+# using valueFrom to reference a secret or config map.
+env: []
+  # - name: <ENV_VAR_NAME>
+  #   value: <value>
+  # - name: PASSWORD
+  #   valueFrom:
+  #     secretKeyRef:
+  #       name: mysecret
+  #       key: password
+  #       optional: false
+
+# List of additional cli arguments to configure kafka-exporter
+# for example: --log.enable-sarama, --log.level=debug, etc.
+# all the possible args can be found here: https://github.com/danielqsj/kafka_exporter#flags
+extraArgs: []
+
+service:
+  type: ClusterIP
+  port: 9308
+  labels: {}
+  annotations: {}
+  # Specifies a custom nodePort for external use. Used with service.type=NodePort.
+  nodePort: null
+  # Specifies a reserved static IP. Used with service.type=LoadBalancer.
+  # The field is deprecated, implementation-specific annotations should be set instead.
+  loadBalancerIP: null
+
+startup:
+  enabled: false
+  probe:
+    httpGet:
+      path: /
+      port: exporter-port
+
+liveness:
+  enabled: false
+  probe:
+    httpGet:
+      path: /
+      port: exporter-port
+
+readiness:
+  enabled: false
+  probe:
+    httpGet:
+      path: /
+      port: exporter-port
+
+prometheus:
+  serviceMonitor:
+    enabled: false
+    namespace: monitoring
+    apiVersion: "monitoring.coreos.com/v1"
+    interval: "30s"
+    # If serviceMonitor is enabled and you want prometheus to automatically register
+    # target using serviceMonitor, add additionalLabels with prometheus release name
+    # e.g. If you have deployed kube-prometheus-stack with release name kube-prometheus
+    # then additionalLabels will be
+    # additionalLabels:
+    #   release: kube-prometheus
+    additionalLabels: {}
+    targetLabels: []
+    # Relabel configs to apply to target's labelset before the target gets scraped.
+    # https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/api-reference/api.md#relabelconfig
+    relabelings: null
+    # - sourceLabels: [__meta_kubernetes_pod_node_name]
+    #   separator: ;
+    #   regex: ^(.*)$
+    #   targetLabel: nodename
+    #   replacement: $1
+    #   action: replace
+    # Metric relabeling is applied to samples as the last step before ingestion
+    # https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/api-reference/api.md#relabelconfig
+    metricRelabelings: null
+    # - sourceLabels: [__meta_kubernetes_pod_node_name]
+    #   separator: ;
+    #   regex: ^(.*)$
+    #   targetLabel: nodename
+    #   replacement: $1
+    #   action: replace
+
+# Additional labels for pod
+podLabels: {}
+
+resources: {}
+  # We usually recommend not to specify default resources and to leave this as a conscious
+  # choice for the user. This also increases chances charts run on environments with little
+  # resources, such as Minikube. If you do want to specify resources, uncomment the following
+  # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+  # limits:
+  #  cpu: 100m
+  #  memory: 128Mi
+  # requests:
+  #  cpu: 100m
+  #  memory: 128Mi
+
+nodeSelector: {}
+
+# Annotations to attach to pod
+annotations: {}
+
+tolerations: []
+
+affinity: {}
+
+# this allows the usage of tls connection to your kafka cluster based on a secret in tls format
+tls:
+  enabled: false
+  insecureSkipVerify: false
+  # The kafka server's name. Used to verify the hostname on the returned certificates unless tls.insecureSkipVerify is set to true.
+  serverName: ""
+  # mountPath: /secret/certs
+  # secretName: <name of an existing secret>
+  caFile: ca.crt
+  certFile: tls.crt
+  keyFile: tls.key
+
+sasl:
+  enabled: false
+  handshake: true
+  scram:
+    enabled: false
+    # mechanism: <plain|scram-sha512|scram-sha256>
+
+    # add username and password
+    # username:
+    # password:
+
+    # or use an existing secret
+    # secretName: <name of an existing secret>
+
+  # If enabled, the exporter will use AWS IAM authentication for SASL.
+  # Be aware that this requires the eks.amazonaws.com/role-arn annotation to be set on the ServiceAccount
+  # and most probably the tls.enabled to be set to true.
+  awsiam:
+    enabled: false
+    awsRegion: ""
+    # The mechanism to use for SASL authentication.
+    mechanism: "awsiam"
+
+  kerberos:
+    enabled: false
+    # serviceName:
+    # realm:
+    # kerberosAuthType: <keytabAuth|userAuth>
+    # mountPath: /secret/kerberos
+    # secretName: <name of an existing secret>
+
+# This enables TLS for web server
+server:
+  tls:
+    enabled: false
+    mutualAuthEnabled: false
+    # mountPath: /secret/certs
+    # secretName: <name of an existing secret>
+    caFile: ca.crt
+    certFile: tls.crt
+    keyFile: tls.key
+
+# If enabled Kafka dependency chart will be used.
+# This is only needed for the CI job so it should always be disabled.
+kafka:
+  enabled: false
+
+# Set security context for the kafka-exporter pod. Useful when you need to adapt to an existing PSP
+securityContext: {}
+  # fsGroup: 2000
+  # runAsGroup: 10002
+  # runAsUser: 10001
+  # seccompProfile:
+  #   type: RuntimeDefault
+
+# Set securityContext for the kafka-exporter container
+containerSecurityContext: {}
+  # allowPrivilegeEscalation: false
+  # capabilities:
+  #   drop: ["all"]
+  # readOnlyRootFilesystem: true
+  # runAsGroup: 10002
+  # runAsNonRoot: true
+  # runAsUser: 10001
+  # seccompProfile:
+  #   type: RuntimeDefault

@@ -1,0 +1,123 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ template "prometheus-rabbitmq-exporter.fullname" . }}
+  annotations:
+  {{- with .Values.additionalAnnotations }}
+    {{- toYaml .| nindent 4 }}
+  {{- end }}
+  labels:
+    app: {{ template "prometheus-rabbitmq-exporter.name" . }}
+    chart: {{ template "prometheus-rabbitmq-exporter.chart" . }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+  {{- if .Values.additionalLabels }}
+{{ toYaml .Values.additionalLabels | indent 4 }}
+  {{- end }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app: {{ template "prometheus-rabbitmq-exporter.name" . }}
+      release: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        app: {{ template "prometheus-rabbitmq-exporter.name" . }}
+        release: {{ .Release.Name }}
+        {{- if .Values.podLabels }}
+{{ toYaml .Values.podLabels | indent 8 }}
+        {{- end }}
+      annotations:
+        checksum/exporter-config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+        {{- with .Values.annotations }}
+          {{- toYaml .| nindent 8 }}
+        {{- end }}
+    spec:
+    {{- if .Values.image.pullSecrets }}
+      imagePullSecrets:
+      {{- range .Values.image.pullSecrets }}
+        - name: {{ . }}
+      {{- end }}
+    {{- end }}
+      serviceAccountName: {{ template "prometheus-rabbitmq-exporter.serviceAccountName" . }}
+      containers:
+        - name: {{ .Chart.Name }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          envFrom:
+            - configMapRef:
+                name: {{ template "prometheus-rabbitmq-exporter.configMapName" . }}
+          {{- if .Values.rabbitmq.configMapOverrideReference }}
+            - configMapRef:
+               name: {{ .Values.rabbitmq.configMapOverrideReference }}
+          {{- end }}
+          env:
+            {{- if .Values.rabbitmq.existingPasswordSecret }}
+            - name: RABBIT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Values.rabbitmq.existingPasswordSecret }}"
+                  key: "{{ .Values.rabbitmq.existingPasswordSecretKey }}"
+            {{- else if .Values.rabbitmq.password  }}
+            - name: RABBIT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ template "prometheus-rabbitmq-exporter.fullname" . }}
+                  key: RABBIT_PASSWORD
+            {{- end }}
+            {{- if .Values.rabbitmq.existingUserSecret }}
+            - name: RABBIT_USER
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Values.rabbitmq.existingUserSecret }}"
+                  key: "{{ .Values.rabbitmq.existingUserSecretKey }}"
+            {{- else if .Values.rabbitmq.user }}
+            - name: RABBIT_USER
+              valueFrom:
+                secretKeyRef:
+                  name: {{ template "prometheus-rabbitmq-exporter.fullname" . }}
+                  key: RABBIT_USER
+            {{- end }}
+            {{- if .Values.rabbitmq.url }}
+            - name: RABBIT_URL
+              value: {{ .Values.rabbitmq.url }}
+            {{- end }}
+            {{- if .Values.env }}
+            {{- toYaml .Values.env | nindent 12 }}
+            {{- end }}
+          ports:
+            - containerPort: {{ .Values.service.internalPort }}
+              name: publish
+          livenessProbe:
+            httpGet:
+              path: /
+              port: publish
+          readinessProbe:
+            httpGet:
+              path: /
+              port: publish
+          resources:
+{{ toYaml .Values.resources | indent 12 }}
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["all"]
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+            runAsUser: 10002
+    {{- if .Values.priorityClassName }}
+      priorityClassName: "{{ .Values.priorityClassName }}"
+    {{- end }}
+    {{- with .Values.nodeSelector }}
+      nodeSelector:
+{{ toYaml . | indent 8 }}
+    {{- end }}
+    {{- with .Values.affinity }}
+      affinity:
+{{ toYaml . | indent 8 }}
+    {{- end }}
+    {{- with .Values.tolerations }}
+      tolerations:
+{{ toYaml . | indent 8 }}
+    {{- end }}

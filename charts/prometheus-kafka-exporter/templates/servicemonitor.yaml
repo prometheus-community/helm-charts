@@ -1,0 +1,46 @@
+{{- if .Values.prometheus.serviceMonitor.enabled }}
+apiVersion: {{ .Values.prometheus.serviceMonitor.apiVersion }}
+kind: ServiceMonitor
+metadata:
+  name: {{ include "prometheus-kafka-exporter.fullname" . }}
+  {{- if .Values.prometheus.serviceMonitor.namespace }}
+  namespace: {{ .Values.prometheus.serviceMonitor.namespace }}
+  {{- end }}
+  labels:
+    app.kubernetes.io/name: {{ include "prometheus-kafka-exporter.name" . }}
+    helm.sh/chart: {{ include "prometheus-kafka-exporter.chart" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    {{- if .Values.prometheus.serviceMonitor.additionalLabels }}
+{{ toYaml .Values.prometheus.serviceMonitor.additionalLabels | indent 4 -}}
+    {{- end }}
+spec:
+  jobLabel: jobLabel
+{{- if .Values.prometheus.serviceMonitor.targetLabels }}
+  targetLabels:
+{{- range .Values.prometheus.serviceMonitor.targetLabels }}
+    - {{ . }}
+{{- end }}
+{{- end }}
+  selector:
+    matchLabels:
+      app: {{ template "prometheus-kafka-exporter.name" . }}
+      release: {{ .Release.Name }}
+  namespaceSelector:
+    matchNames:
+    - {{ .Release.Namespace }}
+  endpoints:
+  - port: exporter-port
+    interval: {{ .Values.prometheus.serviceMonitor.interval }}
+    {{- if .Values.prometheus.serviceMonitor.scrapeTimeout }}
+    scrapeTimeout: {{ .Values.prometheus.serviceMonitor.scrapeTimeout }}
+    {{- end }}
+    {{- with .Values.prometheus.serviceMonitor.relabelings }}
+    relabelings:
+    {{- toYaml . | nindent 6 }}
+    {{- end }}
+    {{- with .Values.prometheus.serviceMonitor.metricRelabelings }}
+    metricRelabelings:
+    {{- toYaml . | nindent 6 }}
+    {{- end }}
+{{- end }}

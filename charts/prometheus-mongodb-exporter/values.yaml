@@ -1,0 +1,147 @@
+affinity: {}
+
+annotations: {}
+
+## Additional labels to add to all resources
+customLabels: {}
+
+dnsConfig: {}
+hostAliases: []
+
+# Extra environment variables that will be passed into the exporter pod
+env: {}
+
+extraArgs:
+  - --collect-all
+
+fullnameOverride: ""
+
+image:
+  pullPolicy: IfNotPresent
+  repository: percona/mongodb_exporter
+  tag: ""
+
+imagePullSecrets: []
+
+livenessProbe:
+  httpGet:
+    path: /
+    port: metrics
+  initialDelaySeconds: 10
+
+# If the multi-target mode is enabled, this value will be ignored.
+# [mongodb[+srv]://][user:pass@]host1[:port1][,host2[:port2],...][/database][?options]
+mongodb:
+  uri: "mongodb://mongodb:27017"
+
+# Name of an externally managed secret (in the same namespace) containing the connection uri as key `mongodb-uri`.
+# If this is provided, the value mongodb.uri is ignored.
+# If the multi-target mode is enabled, this value will be ignored.
+existingSecret:
+  name: ""
+  key: "mongodb-uri"
+
+nameOverride: ""
+
+nodeSelector: {}
+
+podAnnotations: {}
+#  prometheus.io/scrape: "true"
+#  prometheus.io/port: "9216"
+#  prometheus.io/path: /metrics
+
+podLabels: {}
+
+port: "9216"
+
+priorityClassName: ""
+
+readinessProbe:
+  httpGet:
+    path: /
+    port: metrics
+  initialDelaySeconds: 10
+
+replicas: 1
+
+resources: {}
+  # limits:
+  #   cpu: 250m
+  #   memory: 192Mi
+  # requests:
+  #   cpu: 100m
+  #   memory: 128Mi
+
+# Customize securityContext of the pod.
+# See https://kubernetes.io/docs/concepts/policy/security-context/ for more.
+podSecurityContext: {}
+  # seccompProfile:
+  #  type: RuntimeDefault
+
+securityContext:
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+      - ALL
+  readOnlyRootFilesystem: true
+  runAsGroup: 10000
+  runAsNonRoot: true
+  runAsUser: 10000
+
+service:
+  labels: {}
+  annotations: {}
+  port: 9216
+  type: ClusterIP
+  portName: metrics
+
+
+serviceAccount:
+  create: true
+  # If create is true and name is not set, then a name is generated using the
+  # fullname template.
+  name:
+
+serviceMonitor:
+  enabled: false
+  apiVersion: "monitoring.coreos.com/v1"
+  multiTarget:
+    enabled: false
+    # The username and password must be the same for every target configured below
+    # The password is only added if the username is also set.
+    username: ""
+    password:
+      existingSecret:
+        name: ""
+        key: password
+      value: ""
+    targets: []
+    # Every target must have uri and name set
+    # - uri: "mongodb://mongodb-0.staging.internal:27017/admin"
+    #   name: "mongodb-0"
+    # - uri: "mongodb://mongodb-1.staging.internaltld:27017/admin"
+    #   name: "mongodb-1"
+    #   scrapeTimeout: 30s
+    #   interval: 60s
+    #   metricRelabelings:
+    #     - targetLabel: environment
+    #       replacement: staging
+    #       action: replace
+
+  interval: 30s
+  scrapeTimeout: 10s
+  namespace:
+  additionalLabels: {}
+  targetLabels: []
+  metricRelabelings: []
+  scheme: ""
+  tlsConfig: {}
+  telemetryPath: /metrics
+
+tolerations: []
+
+# Volumes that will be attached to the exporter deployment
+volumes: []
+
+# Volumes that will be mounted into the exporter pod
+volumeMounts: []

@@ -1,0 +1,40 @@
+{{- if not .Values.server.statefulSet.enabled -}}
+{{- if .Values.server.persistentVolume.enabled -}}
+{{- if not .Values.server.persistentVolume.existingClaim -}}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  {{- if .Values.server.persistentVolume.annotations }}
+  annotations:
+{{ toYaml .Values.server.persistentVolume.annotations | indent 4 }}
+  {{- end }}
+  labels:
+    {{- include "prometheus.server.labels" . | nindent 4 }}
+    {{- with .Values.server.persistentVolume.labels }}
+       {{- toYaml . | nindent 4 }}
+    {{- end }}
+  name: {{ template "prometheus.server.fullname" . }}
+  namespace: {{ include "prometheus.namespace" . }}
+spec:
+  accessModes:
+{{ toYaml .Values.server.persistentVolume.accessModes | indent 4 }}
+{{- if .Values.server.persistentVolume.storageClass }}
+{{- if (eq "-" .Values.server.persistentVolume.storageClass) }}
+  storageClassName: ""
+{{- else }}
+  storageClassName: "{{ .Values.server.persistentVolume.storageClass }}"
+{{- end }}
+{{- end }}
+  resources:
+    requests:
+      storage: "{{ .Values.server.persistentVolume.size }}"
+{{- if .Values.server.persistentVolume.selector }}
+  selector:
+  {{- toYaml .Values.server.persistentVolume.selector | nindent 4 }}
+{{- end -}}
+{{- if .Values.server.persistentVolume.volumeName }}
+  volumeName: "{{ .Values.server.persistentVolume.volumeName }}"
+{{- end -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}

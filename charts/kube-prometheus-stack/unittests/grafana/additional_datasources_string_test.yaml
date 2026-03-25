@@ -1,0 +1,22 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/helm-unittest/helm-unittest/main/schema/helm-testsuite.json
+suite: test grafana additionalDataSourcesString
+templates:
+  - grafana/configmaps-datasources.yaml
+tests:
+  - it: renders templated datasources from string input
+    release:
+      name: kps
+    set:
+      grafana:
+        forceDeployDatasources: true
+        additionalDataSourcesString: |
+          - name: extra-ds
+            type: prometheus
+            url: http://{{ .Release.Name }}-prom
+    asserts:
+      - matchRegex:
+          path: data['datasource.yaml']
+          pattern: "name: extra-ds"
+      - matchRegex:
+          path: data['datasource.yaml']
+          pattern: "url: http://kps-prom"

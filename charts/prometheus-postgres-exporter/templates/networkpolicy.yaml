@@ -1,0 +1,21 @@
+{{- if .Values.networkPolicy.enabled }}
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ template "prometheus-postgres-exporter.fullname" . }}
+  namespace: {{ include "prometheus-postgres-exporter.namespace" . }}
+  labels:
+    {{- include "prometheus-postgres-exporter.labels" . | nindent 4 }}
+    {{- if .Values.networkPolicy.labels }}
+      {{ toYaml .Values.networkPolicy.labels | indent 4 }}
+    {{- end }}
+spec:
+  podSelector:
+    matchLabels:
+      {{- include "prometheus-postgres-exporter.selectorLabels" . | nindent 6 }}
+  policyTypes:
+    - Ingress
+  ingress:
+    - ports:
+      - port: {{ .Values.service.targetPort }}
+{{- end }}

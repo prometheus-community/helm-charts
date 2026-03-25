@@ -1,0 +1,28 @@
+{{- if .Values.networkPolicy.enabled }}
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ template "prometheus-blackbox-exporter.fullname" . }}
+  namespace: {{ template "prometheus-blackbox-exporter.namespace" . }}
+  labels:
+    {{- include "prometheus-blackbox-exporter.labels" . | nindent 4 }}  
+spec:
+  podSelector:
+    matchLabels:
+      {{- include "prometheus-blackbox-exporter.selectorLabels" . | nindent 6 }}
+  ingress:
+{{- if .Values.networkPolicy.allowMonitoringNamespace }}
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          name: {{ .Values.networkPolicy.monitoringNamespaceName }}
+    ports:
+    - port: {{ .Values.service.port }}
+      protocol: TCP
+{{- else }}
+  - {}
+{{- end }}
+  policyTypes:
+  - Ingress
+{{- end }}
+

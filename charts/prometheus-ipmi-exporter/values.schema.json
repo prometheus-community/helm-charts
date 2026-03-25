@@ -1,0 +1,325 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema",
+  "title": "prometheus-ipmi-exporter",
+  "description": "This is an IPMI exporter for Prometheus.",
+  "type": "object",
+  "required": [
+    "replicaCount",
+    "image",
+    "service",
+    "resources"
+  ],
+  "properties": {
+    "replicaCount": {
+      "description": "Number of replicas for the deployment.",
+      "type": "integer",
+      "minimum": 0,
+      "default": 1
+    },
+    "image": {
+      "description": "Container image parameters.",
+      "type": "object",
+      "required": ["repository", "pullPolicy"],
+      "properties": {
+        "repository": {
+          "description": "Image repository.",
+          "type": "string",
+          "default": "registry.hub.docker.com/prometheuscommunity/ipmi-exporter"
+        },
+        "tag": {
+          "description": "Image tag. Defaults to chart appVersion if not set.",
+          "type": "string",
+          "default": ""
+        },
+        "pullPolicy": {
+          "description": "Image pull policy.",
+          "type": "string",
+          "enum": ["Never", "IfNotPresent", "Always"],
+          "default": "IfNotPresent"
+        }
+      }
+    },
+    "extraArgs": {
+      "description": "Extra arguments to pass to the ipmi-exporter container.",
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "default": []
+    },
+    "nativeIPMI": {
+      "description": "Native IPMI support configuration.",
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "description": "Enable native IPMI mode (adds --native-ipmi flag).",
+          "type": "boolean",
+          "default": false
+        }
+      }
+    },
+    "nodeSelector": {
+      "description": "Node selector for pod assignment.",
+      "type": "object",
+      "default": {}
+    },
+    "tolerations": {
+      "description": "Tolerations for pod assignment.",
+      "type": "array",
+      "items": {
+        "type": "object"
+      },
+      "default": []
+    },
+    "affinity": {
+      "description": "Affinity rules for pod assignment.",
+      "type": "object",
+      "default": {}
+    },
+    "clusterDomain": {
+      "description": "Kubernetes cluster domain.",
+      "type": "string",
+      "default": "cluster.local"
+    },
+    "service": {
+      "description": "Service configuration.",
+      "type": "object",
+      "required": ["type", "port"],
+      "properties": {
+        "type": {
+          "description": "Service type.",
+          "type": "string",
+          "enum": ["ClusterIP", "NodePort", "LoadBalancer", "ExternalName"],
+          "default": "ClusterIP"
+        },
+        "port": {
+          "description": "Service port.",
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 65535,
+          "default": 9290
+        },
+        "annotations": {
+          "description": "Service annotations.",
+          "type": "object",
+          "default": {}
+        }
+      }
+    },
+    "resources": {
+      "description": "Resource limits and requests.",
+      "type": "object",
+      "properties": {
+        "limits": {
+          "description": "Resource limits.",
+          "type": "object",
+          "properties": {
+            "cpu": {
+              "description": "CPU limit.",
+              "type": "string",
+              "default": "100m"
+            },
+            "memory": {
+              "description": "Memory limit.",
+              "type": "string",
+              "default": "128Mi"
+            }
+          }
+        },
+        "requests": {
+          "description": "Resource requests.",
+          "type": "object",
+          "properties": {
+            "cpu": {
+              "description": "CPU request.",
+              "type": "string",
+              "default": "100m"
+            },
+            "memory": {
+              "description": "Memory request.",
+              "type": "string",
+              "default": "128Mi"
+            }
+          }
+        }
+      }
+    },
+    "additionalAnnotations": {
+      "description": "Additional annotations for pods.",
+      "type": "object",
+      "default": {}
+    },
+    "containerSecurityContext": {
+      "description": "Container-level security context.",
+      "type": "object",
+      "default": {}
+    },
+    "extraVolumeMounts": {
+      "description": "List of extra volume mounts.",
+      "type": "array",
+      "items": {
+        "type": "object"
+      },
+      "default": []
+    },
+    "extraVolumes": {
+      "description": "List of extra volumes.",
+      "type": "array",
+      "items": {
+        "type": "object"
+      },
+      "default": []
+    },
+    "serviceMonitor": {
+      "description": "ServiceMonitor configuration for Prometheus Operator.",
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "description": "Enable ServiceMonitor creation.",
+          "type": "boolean",
+          "default": false
+        },
+        "namespace": {
+          "description": "Namespace for the ServiceMonitor.",
+          "type": "string"
+        },
+        "interval": {
+          "description": "Scrape interval.",
+          "type": "string"
+        },
+        "telemetryPath": {
+          "description": "Telemetry path.",
+          "type": "string"
+        },
+        "timeout": {
+          "description": "Scrape timeout.",
+          "type": "string"
+        },
+        "labels": {
+          "description": "Labels for the ServiceMonitor.",
+          "type": "object"
+        },
+        "targetLabels": {
+          "description": "Target labels to transfer.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "metricRelabelings": {
+          "description": "Metric relabelings.",
+          "type": "array",
+          "items": {
+            "type": "object"
+          }
+        }
+      }
+    },
+    "scrapeConfig": {
+      "description": "ScrapeConfig configuration for Prometheus Operator.",
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "description": "Enable ScrapeConfig creation.",
+          "type": "boolean",
+          "default": false
+        },
+        "namespace": {
+          "description": "Namespace for the ScrapeConfig.",
+          "type": "string"
+        },
+        "labels": {
+          "description": "Labels for the ScrapeConfig.",
+          "type": "object"
+        },
+        "mode": {
+          "description": "Scraping mode: local for direct exporter metrics, remote for IPMI target scraping.",
+          "type": "string",
+          "enum": ["local", "remote"],
+          "default": "remote"
+        },
+        "jobName": {
+          "description": "Job name for the scrape config.",
+          "type": "string"
+        },
+        "modules": {
+          "description": "IPMI modules list.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "scrapeInterval": {
+          "description": "Scrape interval.",
+          "type": "string"
+        },
+        "scrapeTimeout": {
+          "description": "Scrape timeout.",
+          "type": "string"
+        },
+        "metricsPath": {
+          "description": "Metrics path.",
+          "type": "string"
+        },
+        "scheme": {
+          "description": "Scheme (HTTP or HTTPS).",
+          "type": "string",
+          "enum": ["HTTP", "HTTPS"]
+        },
+        "fileSDConfigs": {
+          "description": "File service discovery configs.",
+          "type": "array",
+          "items": {
+            "type": "object"
+          }
+        },
+        "staticConfigs": {
+          "description": "Static configs.",
+          "type": "array",
+          "items": {
+            "type": "object"
+          }
+        },
+        "relabelings": {
+          "description": "Relabelings.",
+          "type": "array",
+          "items": {
+            "type": "object"
+          }
+        },
+        "metricRelabelings": {
+          "description": "Metric relabelings.",
+          "type": "array",
+          "items": {
+            "type": "object"
+          }
+        }
+      }
+    },
+    "configSecret": {
+      "description": "External secret configuration.",
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "description": "Use external secret for config.",
+          "type": "boolean",
+          "default": false
+        },
+        "name": {
+          "description": "Secret name.",
+          "type": "string",
+          "default": "ipmi-secret"
+        },
+        "key": {
+          "description": "Secret key containing config.",
+          "type": "string",
+          "default": "config.yml"
+        }
+      }
+    },
+    "modules": {
+      "description": "IPMI exporter modules configuration.",
+      "type": "object"
+    }
+  }
+}

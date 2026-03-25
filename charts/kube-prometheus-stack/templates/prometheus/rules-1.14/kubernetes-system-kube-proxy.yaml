@@ -1,0 +1,56 @@
+{{- /*
+Generated from 'kubernetes-system-kube-proxy' group from https://github.com/prometheus-operator/kube-prometheus.git
+Do not change in-place! In order to change this file first read following link:
+https://github.com/prometheus-community/helm-charts/tree/main/charts/kube-prometheus-stack/hack
+*/ -}}
+{{- $kubeTargetVersion := default .Capabilities.KubeVersion.GitVersion .Values.kubeTargetVersionOverride }}
+{{- if and (semverCompare ">=1.14.0-0" $kubeTargetVersion) (semverCompare "<9.9.9-9" $kubeTargetVersion) .Values.defaultRules.create .Values.kubeProxy.enabled .Values.defaultRules.rules.kubeProxy }}
+{{- $kubeProxyJob := include "kube-prometheus-stack-kube-proxy.name" . }}
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: {{ printf "%s-%s" (include "kube-prometheus-stack.fullname" .) "kubernetes-system-kube-proxy" | trunc 63 | trimSuffix "-" }}
+  namespace: {{ template "kube-prometheus-stack.namespace" . }}
+  labels:
+    app: {{ template "kube-prometheus-stack.name" . }}
+{{ include "kube-prometheus-stack.labels" . | indent 4 }}
+{{- if .Values.defaultRules.labels }}
+{{ toYaml .Values.defaultRules.labels | indent 4 }}
+{{- end }}
+{{- if .Values.defaultRules.annotations }}
+  annotations:
+{{ toYaml .Values.defaultRules.annotations | indent 4 }}
+{{- end }}
+spec:
+  groups:
+  - name: kubernetes-system-kube-proxy
+    rules:
+{{- if not (.Values.defaultRules.disabled.KubeProxyDown | default false) }}
+    - alert: KubeProxyDown
+      annotations:
+{{- if .Values.defaultRules.additionalRuleAnnotations }}
+{{ toYaml .Values.defaultRules.additionalRuleAnnotations | indent 8 }}
+{{- end }}
+{{- if .Values.defaultRules.additionalRuleGroupAnnotations.kubeProxy }}
+{{ toYaml .Values.defaultRules.additionalRuleGroupAnnotations.kubeProxy | indent 8 }}
+{{- end }}
+        description: KubeProxy has disappeared from Prometheus target discovery.
+        runbook_url: {{ .Values.defaultRules.runbookUrl }}/kubernetes/kubeproxydown
+        summary: Target disappeared from Prometheus target discovery.
+      expr: absent(up{job="{{ $kubeProxyJob }}"})
+      for: {{ dig "KubeProxyDown" "for" "15m" .Values.customRules }}
+      {{- with .Values.defaultRules.keepFiringFor }}
+      keep_firing_for: "{{ . }}"
+      {{- end }}
+      labels:
+        severity: {{ dig "KubeProxyDown" "severity" "critical" .Values.customRules }}
+      {{- if or .Values.defaultRules.additionalRuleLabels .Values.defaultRules.additionalRuleGroupLabels.kubeProxy }}
+        {{- with .Values.defaultRules.additionalRuleLabels }}
+          {{- toYaml . | nindent 8 }}
+        {{- end }}
+        {{- with .Values.defaultRules.additionalRuleGroupLabels.kubeProxy }}
+          {{- toYaml . | nindent 8 }}
+        {{- end }}
+      {{- end }}
+{{- end }}
+{{- end }}

@@ -1,0 +1,400 @@
+## Global settings for all charts in a tree of dependent charts
+## This allows to set the same values for the imagePullSecrets, obviating the need
+## to set the same values for each chart (and image) separately
+global:
+  ## Allow either an array of {name: pullSecret} maps (k8s-style), or an array of strings (more common helm-style).
+  ##  imagePullSecrets:
+  ##  - name: pullSecret1
+  ##  - name: pullSecret2
+  ##
+  ## or
+  ##
+  ##  imagePullSecrets:
+  ##  - pullSecret1
+  ##  - pullSecret2
+  ##
+  ## or a templated value
+  ##
+  ##    imagePullSecrets:
+  ##    - "{{ .Values.templateValue }}"
+  ##  templateValue: test
+
+  imagePullSecrets: []
+  imageRegistry: ""
+
+## number of exporter instances
+##
+replicaCount: 1
+
+## Number of old replicasets to retain ##
+## The default value is 10, 0 will garbage-collect old replicasets ##
+revisionHistoryLimit: 10
+
+## restart policy for all containers
+##
+restartPolicy: Always
+
+image:
+  registry: ""
+  repository: quay.io/prometheuscommunity/elasticsearch-exporter
+  # if not set appVersion field from Chart.yaml is used
+  tag: ""
+  pullPolicy: IfNotPresent
+  pullSecret: ""
+
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 1000
+  seccompProfile:
+    type: "RuntimeDefault"
+
+securityContext:
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+      - ALL
+  readOnlyRootFilesystem: true
+
+# Custom DNS configuration to be added to prometheus-elasticsearch-exporter pods
+dnsConfig: {}
+# nameservers:
+#   - 1.2.3.4
+# searches:
+#   - ns1.svc.cluster-domain.example
+#   - my.dns.search.suffix
+# options:
+#   - name: ndots
+#     value: "2"
+#   - name: edns0
+
+log:
+  format: logfmt
+  level: info
+
+resources: {}
+  # requests:
+  #   cpu: 100m
+  #   memory: 128Mi
+  # limits:
+  #   cpu: 100m
+  #   memory: 128Mi
+
+livenessProbe:
+  httpGet:
+    path: /healthz
+    port: http
+  initialDelaySeconds: 5
+  timeoutSeconds: 5
+  periodSeconds: 5
+
+readinessProbe:
+  httpGet:
+    path: /healthz
+    port: http
+  initialDelaySeconds: 1
+  timeoutSeconds: 5
+  periodSeconds: 5
+
+# Example of a more complex liveness probe:
+# livenessProbe:
+#   exec:
+#     command:
+#       - /bin/sh
+#       - -c
+#       - |
+#         #!/bin/sh
+#         # 1. Check if the exporter itself is alive
+#         if ! wget -qO- http://localhost:9108/healthz > /dev/null; then
+#           exit 1
+#         fi
+#
+#         # 2. Check if the credentials are still valid by hitting ES directly
+#         AUTH=$(printf "%s:%s" "$ES_USERNAME" "$ES_PASSWORD" | base64 | tr -d '\n')
+#         ES_URI="http://elasticsearch-es-http.elastic-stack.svc:9200"
+#         if ! wget --spider --quiet --header "Authorization: Basic $AUTH" "$ES_URI"; then
+#            exit 1
+#         fi
+#   initialDelaySeconds: 60
+#   periodSeconds: 60
+#   timeoutSeconds: 10
+#   failureThreshold: 3
+
+priorityClassName: ""
+
+nodeSelector: {}
+
+tolerations: []
+
+podAnnotations: {}
+
+podLabels: {}
+
+## Labels to attach to all resources
+commonLabels: {}
+
+affinity: {}
+
+## Topology spread constraints rely on node labels to identify the topology domain(s) that each Node is in.
+## Ref: https://kubernetes.io/docs/concepts/workloads/pods/pod-topology-spread-constraints/
+topologySpreadConstraints: []
+  # - maxSkew: 1
+  #   topologyKey: failure-domain.beta.kubernetes.io/zone
+  #   whenUnsatisfiable: DoNotSchedule
+  #   labelSelector:
+  #     matchLabels:
+  #       app.kubernetes.io/instance: prometheus-elasticsearch-exporter
+
+initContainers: []
+
+service:
+  enabled: true
+  type: ClusterIP
+  httpPort: 9108
+  metricsPort:
+    name: http
+  annotations: {}
+  labels: {}
+
+deployment:
+  annotations: {}
+  labels: {}
+  metricsPort:
+    name: http
+
+## Extra environment variables that will be passed into the exporter pod
+## example:
+## env:
+##   KEY_1: value1
+##   KEY_2: value2
+env: {}
+
+## Extra arguments to pass to the container's executable
+## example:
+# extraArgs:
+#   - --es.indices_mappings
+extraArgs: []
+
+# Extra manifests to deploy as an array
+extraManifests: []
+  # - |
+  #   apiVersion: v1
+  #   kind: ConfigMap
+  #   metadata:
+  #     name: prometheus-elasticsearch-exporter-extra
+  #   data:
+  #     extra-data: "value"
+
+## The name of a secret in the same kubernetes namespace which contain values to be added to the environment
+## This can be useful for auth tokens, etc
+envFromSecret: ""
+
+## A list of environment variables from secret refs that will be passed into the exporter pod
+## example:
+## This will set ${ES_PASSWORD} to the 'password' key from the 'my-secret' secret
+## extraEnvSecrets:
+##   ES_PASSWORD:
+##     secret: my-secret
+##     key: password
+extraEnvSecrets: {}
+
+# A list of secrets and their paths to mount inside the pod
+# This is useful for mounting certificates for security
+secretMounts: []
+#  - name: elastic-certs
+#    secretName: elastic-certs
+#    path: /ssl
+
+# A list of additional Volume to add to the deployment
+# this is useful if the volume you need is not a secret (csi volume etc.)
+extraVolumes: []
+#  - name: csi-volume
+#    csi:
+#      driver: secrets-store.csi.k8s.io
+#      readOnly: true
+#      volumeAttributes:
+#        secretProviderClass: my-spc
+
+#  A list of additional VolumeMounts to add to the deployment
+#  this is useful for mounting any other needed resource into
+#  the elasticsearch-exporter pod
+extraVolumeMounts: []
+#  - name: csi-volume
+#    mountPath: /csi/volume
+#    readOnly: true
+
+es:
+  ## Address (host and port) of the Elasticsearch node we should connect to.
+  ## This could be a local node (localhost:9200, for instance), or the address
+  ## of a remote Elasticsearch server. When basic auth is needed,
+  ## specify as: <proto>://<user>:<password>@<host>:<port>. e.g., http://admin:pass@localhost:9200.
+  ##
+  uri: http://localhost:9200
+
+  ## If true, query stats for all nodes in the cluster, rather than just the
+  ## node we connect to.
+  ##
+  all: true
+
+  ## If true, query stats for all indices in the cluster.
+  ##
+  indices: true
+
+  ## If true, query settings stats for all indices in the cluster.
+  ##
+  indices_settings: true
+
+  ## If true, query mapping stats for all indices in the cluster.
+  ##
+  indices_mappings: true
+
+  ## If true, query stats for aliases.
+  ##
+  aliases: false
+
+  ## If true, query stats for shards in the cluster.
+  ##
+  shards: true
+
+  ## If true, query stats for snapshots in the cluster.
+  ##
+  snapshots: true
+
+  ## If true, query stats for cluster settings.
+  ##
+  cluster_settings: false
+
+  ## If true, query stats for SLM snapshots.
+  ##
+  slm: false
+
+  ## If true, query stats for data streams.
+  ##
+  data_stream: false
+
+  ## If true, query stats for Index Lifecycle Management.
+  ##
+  ilm: false
+
+  ## Timeout for trying to get stats from Elasticsearch. (ex: 20s)
+  ##
+  timeout: 30s
+
+  ## Skip SSL verification when connecting to Elasticsearch
+  ## (only available if image.tag >= 1.0.4rc1)
+  ##
+  sslSkipVerify: false
+
+  ssl:
+    ## If true, a secure connection to ES cluster is used
+    ##
+    enabled: false
+
+    ## If true, certs from secretMounts will be need to be referenced instead of certs below
+    ##
+    useExistingSecrets: false
+
+    ca:
+      ## PEM that contains trusted CAs used for setting up secure Elasticsearch connection
+      ##
+      # pem:
+
+      # Path of ca pem file which should match a secretMount path
+      path: /ssl/ca.pem
+    client:
+      ## if true, client SSL certificate is used for authentication
+      ##
+      enabled: true
+
+      ## PEM that contains the client cert to connect to Elasticsearch.
+      ##
+      # pem:
+
+      # Path of client pem file which should match a secretMount path
+      pemPath: /ssl/client.pem
+
+      ## Private key for client auth when connecting to Elasticsearch
+      ##
+      # key:
+
+      # Path of client key file which should match a secretMount path
+      keyPath: /ssl/client.key
+web:
+  ## Path under which to expose metrics.
+  ##
+  path: /metrics
+
+serviceMonitor:
+  ## If true, a ServiceMonitor CRD is created for a prometheus operator
+  ## https://github.com/coreos/prometheus-operator
+  ##
+  enabled: false
+  apiVersion: "monitoring.coreos.com/v1"
+  namespace: ""
+  labels: {}
+    # release: kube-prometheus-stack
+  interval: 10s
+  jobLabel: ""
+  scrapeTimeout: 10s
+  scheme: http
+  relabelings: []
+  targetLabels: []
+  metricRelabelings: []
+  sampleLimit: 0
+
+podMonitor:
+  ## If true, a PodMonitor CRD is created for a Prometheus Operator
+  ## https://prometheus-operator.dev/docs/operator/api/#monitoring.coreos.com/v1.PodMonitor
+  ##
+  enabled: false
+  apiVersion: "monitoring.coreos.com/v1"
+  namespace: ""
+  labels: {}
+  interval: 60s
+  scrapeTimeout: 10s
+  honorLabels: true
+  scheme: http
+  relabelings: []
+  metricRelabelings: []
+
+prometheusRule:
+  ## If true, a PrometheusRule CRD is created for a prometheus operator
+  ## https://github.com/coreos/prometheus-operator
+  ##
+  ## The rules will be processed as Helm template, allowing to set variables in them.
+  enabled: false
+  namespace: ""
+  labels: {}
+  rules: []
+    # - record: elasticsearch_filesystem_data_used_percent
+    #   expr: |
+    #     100 * (elasticsearch_filesystem_data_size_bytes{service="{{ template "elasticsearch-exporter.fullname" . }}"} - elasticsearch_filesystem_data_free_bytes{service="{{ template "elasticsearch-exporter.fullname" . }}"})
+    #     / elasticsearch_filesystem_data_size_bytes{service="{{ template "elasticsearch-exporter.fullname" . }}"}
+    # - record: elasticsearch_filesystem_data_free_percent
+    #   expr: 100 - elasticsearch_filesystem_data_used_percent{service="{{ template "elasticsearch-exporter.fullname" . }}"}
+    # - alert: ElasticsearchTooFewNodesRunning
+    #   expr: elasticsearch_cluster_health_number_of_nodes{service="{{ template "elasticsearch-exporter.fullname" . }}"} < 3
+    #   for: 5m
+    #   labels:
+    #     severity: critical
+    #   annotations:
+    #     description: There are only {{ "{{ $value }}" }} < 3 ElasticSearch nodes running
+    #     summary: ElasticSearch running on less than 3 nodes
+    # - alert: ElasticsearchHeapTooHigh
+    #   expr: |
+    #     elasticsearch_jvm_memory_used_bytes{service="{{ template "elasticsearch-exporter.fullname" . }}", area="heap"} / elasticsearch_jvm_memory_max_bytes{service="{{ template "elasticsearch-exporter.fullname" . }}", area="heap"}
+    #     > 0.9
+    #   for: 15m
+    #   labels:
+    #     severity: critical
+    #   annotations:
+    #     description: The heap usage is over 90% for 15m
+    #     summary: ElasticSearch node {{ "{{ $labels.node }}" }} heap usage is high
+
+# Create a service account
+# To use a service account not handled by the chart, set the name here
+# and set create to false
+serviceAccount:
+  create: false
+  name: default
+  automountServiceAccountToken: true
+  annotations: {}

@@ -1,0 +1,121 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "prometheus-statsd-exporter.fullname" . }}
+  labels:
+    {{- include "prometheus-statsd-exporter.labels" . | nindent 4 }}
+spec:
+  {{- if not .Values.autoscaling.enabled }}
+  replicas: {{ .Values.replicaCount }}
+  revisionHistoryLimit: {{ .Values.deploymentRevisionHistoryLimit | default 10 }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "prometheus-statsd-exporter.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+        {{- with .Values.podAnnotations }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      labels:
+        {{- include "prometheus-statsd-exporter.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "prometheus-statsd-exporter.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: {{ .Chart.Name }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          {{- with .Values.extraEnv }}
+          env:
+            {{- range $key, $value := . }}
+            - name: {{ $key }}
+              value: {{ $value | quote }}
+            {{- end }}
+          {{- end }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          args:
+            - --web.listen-address=:{{ .Values.service.port }}
+            - --web.telemetry-path={{ .Values.service.path }}
+            {{- if .Values.statsd.udpPort }}
+            - --statsd.listen-udp=:{{ .Values.statsd.udpPort }}
+            {{- else }}
+            - --statsd.listen-udp=
+            {{- end }}
+            {{- if .Values.statsd.tcpPort }}
+            - --statsd.listen-tcp=:{{ .Values.statsd.tcpPort }}
+            {{- else }}
+            - --statsd.listen-tcp=
+            {{- end }}
+            - --statsd.cache-size={{ .Values.statsd.cacheSize }}
+            - --statsd.event-queue-size={{ .Values.statsd.eventQueueSize }}
+            - --statsd.event-flush-threshold={{ .Values.statsd.eventFlushThreshold }}
+            - --statsd.event-flush-interval={{ .Values.statsd.eventFlushInterval }}
+            {{- if or .Values.statsd.mappingConfigMapName .Values.statsd.mappingConfig }}
+            - --statsd.mapping-config=/etc/prometheus-statsd-exporter/statsd-mapping.conf
+            {{- end }}
+            {{- if .Values.extraArgs }}
+              {{- toYaml .Values.extraArgs | nindent 12 }}
+            {{- end }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.service.port }}
+              protocol: TCP
+            {{- if .Values.statsd.tcpPort }}
+            - name: statsd-tcp
+              containerPort: {{ .Values.statsd.tcpPort }}
+              protocol: TCP
+            {{- end }}
+            {{- if .Values.statsd.udpPort }}
+            - name: statsd-udp
+              containerPort: {{ .Values.statsd.udpPort }}
+              protocol: UDP
+            {{- end }}
+          livenessProbe:
+            {{- toYaml .Values.livenessProbe | nindent 12 }}
+          readinessProbe:
+            {{- toYaml .Values.readinessProbe | nindent 12 }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          {{- if or .Values.statsd.mappingConfigMapName .Values.statsd.mappingConfig }}
+          volumeMounts:
+            - name: statsd-mapping-config
+              mountPath: /etc/prometheus-statsd-exporter
+          {{- end }}
+          {{- if .Values.lifecycle }}
+          lifecycle: 
+            {{- toYaml .Values.lifecycle | nindent 12 }}
+          {{- end }}
+      {{- if or .Values.statsd.mappingConfigMapName .Values.statsd.mappingConfig }}
+      volumes:
+        - name: statsd-mapping-config
+          configMap:
+            name: {{ template "prometheus-statsd-exporter.configMapName" . }}
+            items:
+              - key: {{ .Values.statsd.mappingConfigMapKey | default "statsd.mappingConf" }}
+                path: statsd-mapping.conf
+      {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.topologySpreadConstraints }}
+      topologySpreadConstraints:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

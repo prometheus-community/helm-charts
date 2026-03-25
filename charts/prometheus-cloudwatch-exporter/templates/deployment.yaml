@@ -1,0 +1,150 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ template "prometheus-cloudwatch-exporter.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: {{ template "prometheus-cloudwatch-exporter.name" . }}
+    chart: {{ template "prometheus-cloudwatch-exporter.chart" . }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+    {{- with .Values.deployment.labels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+  {{- with .Values.deployment.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app: {{ template "prometheus-cloudwatch-exporter.name" . }}
+      release: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        app: {{ template "prometheus-cloudwatch-exporter.name" . }}
+        release: {{ .Release.Name }}
+        {{- if .Values.pod.labels }}
+{{ toYaml .Values.pod.labels | indent 8 }}
+        {{- end }}
+      annotations:
+        {{ if .Values.aws.role }}iam.amazonaws.com/role: {{ .Values.aws.role }}{{ end }}
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+        checksum/secrets: {{ include (print $.Template.BasePath "/secrets.yaml") . | sha256sum }}
+        {{- if .Values.pod.annotations }}
+{{ toYaml .Values.pod.annotations | indent 8 }}
+        {{- end }}
+    spec:
+      {{- with .Values.priorityClassName }}
+      priorityClassName: "{{ . }}"
+      {{- end }}
+    {{- if .Values.image.pullSecrets }}
+      imagePullSecrets:
+        {{- toYaml .Values.image.pullSecrets | nindent 8 }}
+    {{- end }}
+      containers:
+        - name: {{ .Chart.Name }}
+          env:
+            - name: POD_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
+        {{- with .Values.extraEnv }}
+        {{- toYaml . | nindent 12 }}
+        {{- end }}
+        {{- if not .Values.aws.role }}
+        {{- if .Values.aws.secret.name }}
+            - name: AWS_ACCESS_KEY_ID
+              valueFrom:
+                secretKeyRef:
+                  key: access_key
+                  name: {{ .Values.aws.secret.name }}
+            - name: AWS_SECRET_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  key: secret_key
+                  name: {{ .Values.aws.secret.name }}
+          {{- if .Values.aws.secret.includesSessionToken }}
+            - name: AWS_SESSION_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  key: security_token
+                  name: {{ .Values.aws.secret.name }}
+          {{- end }}
+        {{- else if and .Values.aws.aws_secret_access_key .Values.aws.aws_access_key_id }}
+            - name: AWS_ACCESS_KEY_ID
+              valueFrom:
+                secretKeyRef:
+                  key: aws_access_key_id
+                  name: {{ template "prometheus-cloudwatch-exporter.fullname" . }}
+            - name: AWS_SECRET_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  key: aws_secret_access_key
+                  name: {{ template "prometheus-cloudwatch-exporter.fullname" . }}
+        {{- end }}
+        {{- else if .Values.aws.stsRegional.enabled }}
+            - name: AWS_STS_REGIONAL_ENDPOINTS
+              value: regional
+        {{- end }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default (printf "v%s" .Chart.AppVersion) }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          {{- if .Values.command }}
+          command: {{ toYaml .Values.command | nindent 12 -}}
+          {{- end }}
+          ports:
+            - name: container-port
+              containerPort: {{ .Values.containerPort }}
+              protocol: TCP
+          {{- with .Values.containerSecurityContext }}
+          securityContext:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          livenessProbe:
+            httpGet:
+              path: {{ .Values.livenessProbe.path }}
+              port: container-port
+            initialDelaySeconds: {{ .Values.livenessProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.livenessProbe.periodSeconds }}
+            timeoutSeconds: {{ .Values.livenessProbe.timeoutSeconds }}
+            successThreshold: {{ .Values.livenessProbe.successThreshold }}
+            failureThreshold: {{ .Values.livenessProbe.failureThreshold }}
+          readinessProbe:
+            httpGet:
+              path: {{ .Values.readinessProbe.path }}
+              port: container-port
+            initialDelaySeconds: {{ .Values.readinessProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.readinessProbe.periodSeconds }}
+            timeoutSeconds: {{ .Values.readinessProbe.timeoutSeconds }}
+            successThreshold: {{ .Values.readinessProbe.successThreshold }}
+            failureThreshold: {{ .Values.readinessProbe.failureThreshold }}
+          resources:
+{{ toYaml .Values.resources | indent 12 }}
+          volumeMounts:
+            - name: vol-prometheus-cloudwatch-exporter
+              mountPath: /config
+     {{- with .Values.nodeSelector }}
+      nodeSelector:
+{{ toYaml . | indent 8 }}
+    {{- end }}
+    {{- with .Values.affinity }}
+      affinity:
+{{ toYaml . | indent 8 }}
+    {{- end }}
+    {{- with .Values.tolerations }}
+      tolerations:
+{{ toYaml . | indent 8 }}
+    {{- end }}
+    {{- with .Values.securityContext }}
+      securityContext:
+{{ toYaml . | indent 8 }}
+    {{- end }}
+      serviceAccount: {{ template "prometheus-cloudwatch-exporter.serviceAccountName" . }}
+      serviceAccountName: {{ template "prometheus-cloudwatch-exporter.serviceAccountName" . }}
+      volumes:
+      - configMap:
+          defaultMode: 420
+          name: {{ template "prometheus-cloudwatch-exporter.fullname" . }}
+        name: vol-prometheus-cloudwatch-exporter

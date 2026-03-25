@@ -1,0 +1,15 @@
+{{- if .Values.rbac.create }}
+apiVersion: {{ template "rbac.apiVersion" . }}
+kind: Role
+metadata:
+  name: {{ template "prometheus-redis-exporter.fullname" . }}
+  labels:
+{{ include "prometheus-redis-exporter.labels" . | indent 4 }}
+{{- if .Values.rbac.pspEnabled }}
+rules:
+- apiGroups:      ['extensions']
+  resources:      ['podsecuritypolicies']
+  verbs:          ['use']
+  resourceNames:  [{{ template "prometheus-redis-exporter.fullname" . }}]
+{{- end }}
+{{- end }}

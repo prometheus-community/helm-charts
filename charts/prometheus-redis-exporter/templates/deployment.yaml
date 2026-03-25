@@ -1,0 +1,219 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ template "prometheus-redis-exporter.fullname" . }}
+  labels:
+{{ include "prometheus-redis-exporter.labels" . | indent 4 }}
+  annotations:
+{{ toYaml .Values.annotations | indent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "prometheus-redis-exporter.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      annotations:
+{{ toYaml .Values.annotations | indent 8 }}
+      labels:
+{{ include "prometheus-redis-exporter.labels" . | indent 8 }}
+      {{- if .Values.labels }}
+{{ toYaml .Values.labels | indent 8 }}
+      {{- end }}
+    spec:
+      serviceAccountName: {{ template "prometheus-redis-exporter.serviceAccountName" . }}
+      {{- if .Values.priorityClassName }}
+      priorityClassName: {{ .Values.priorityClassName }}
+      {{- end }}
+      {{- if .Values.image.pullSecrets }}
+      imagePullSecrets:
+      {{- range .Values.image.pullSecrets }}
+        - name: {{ . }}
+      {{- end}}
+      {{- end }}
+      {{- with .Values.podSecurityContext }}
+      securityContext:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: {{ .Chart.Name }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          {{- with .Values.command }}
+          command:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          args:
+          {{- range $key, $value := .Values.extraArgs }}
+            - --{{ $key }}={{ $value }}
+          {{- end }}
+          {{- with .Values.securityContext }}
+          securityContext:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          ports:
+            - name: exporter-port
+              containerPort: 9121
+          env:
+            - name: REDIS_ADDR
+            {{- if .Values.redisAddressConfig.enabled }}
+              valueFrom:
+              {{- if .Values.redisAddressConfig.isSecret }}
+                secretKeyRef:
+              {{- else }}
+                configMapKeyRef:
+              {{- end }}
+                  name: {{ .Values.redisAddressConfig.source.name }}
+                  key: {{ .Values.redisAddressConfig.source.key }}
+            {{- else }}
+              value: {{ .Values.redisAddress }}
+            {{- end }}
+            {{- if .Values.redisTlsConfig.enabled }}
+            {{- if .Values.redisTlsConfig.skipTlsVerification }}
+            - name: REDIS_EXPORTER_SKIP_TLS_VERIFICATION
+              value: "true"
+            {{- end }}
+            {{- if and (.Values.redisTlsConfig.caCertFile.secret.name) (.Values.redisTlsConfig.caCertFile.secret.key) }}
+            - name: REDIS_EXPORTER_TLS_CA_CERT_FILE
+              value: {{ .Values.redisTlsConfig.mountPath }}/tls-ca-cert.crt
+            {{- end }}
+            {{- if and (.Values.redisTlsConfig.clientKeyFile.secret.name) (.Values.redisTlsConfig.clientKeyFile.secret.key) }}
+            - name: REDIS_EXPORTER_TLS_CLIENT_KEY_FILE
+              value: {{ .Values.redisTlsConfig.mountPath }}/tls-client-key.key
+            {{- end }}
+            {{- if and (.Values.redisTlsConfig.clientCertFile.secret.name) (.Values.redisTlsConfig.clientCertFile.secret.key) }}
+            - name: REDIS_EXPORTER_TLS_CLIENT_CERT_FILE
+              value: {{ .Values.redisTlsConfig.mountPath }}/tls-client-cert.crt
+            {{- end }}
+            {{- if and (.Values.redisTlsConfig.serverKeyFile.secret.name) (.Values.redisTlsConfig.serverKeyFile.secret.key) }}
+            - name: REDIS_EXPORTER_TLS_SERVER_KEY_FILE
+              value: {{ .Values.redisTlsConfig.mountPath }}/tls-server-key.key
+            {{- end }}
+            {{- if and (.Values.redisTlsConfig.serverCertFile.secret.name) (.Values.redisTlsConfig.serverCertFile.secret.key) }}
+            - name: REDIS_EXPORTER_TLS_SERVER_CERT_FILE
+              value: {{ .Values.redisTlsConfig.mountPath }}/tls-server-cert.crt
+            {{- end }}
+            {{- end }}
+            {{- if .Values.auth.enabled }}
+            {{- if and (.Values.auth.redisPasswordFile.secret.name) (.Values.auth.redisPasswordFile.secret.key) }}
+            - name: REDIS_PASSWORD_FILE
+              value: {{ .Values.auth.redisPasswordFile.mountPath }}/{{ .Values.auth.redisPasswordFile.secret.key }}
+            {{- else }}
+            - name: REDIS_PASSWORD
+            {{- if .Values.auth.secret.name }}
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.auth.secret.name }}
+                  key: {{ .Values.auth.secret.key }}
+            {{- else }}
+              value: {{ .Values.auth.redisPassword }}
+            {{- end }}
+            {{- if .Values.auth.redisUser }}
+            - name: REDIS_USER
+              value: {{ .Values.auth.redisUser }}
+            {{- end }}
+            {{- end }}
+          {{- end }}
+{{- if .Values.script }}
+            - name: REDIS_EXPORTER_SCRIPT
+              value: /script/script.lua
+{{- end }}
+{{- if .Values.env }}
+{{ toYaml .Values.env | indent 12 }}
+{{- end }}
+          volumeMounts:
+            {{- if .Values.script }}
+            - mountPath: /script
+              name: script-mount
+            {{- end }}
+            {{- if and (.Values.auth.enabled) (.Values.auth.redisPasswordFile.secret.name) }}
+            - mountPath: {{ .Values.auth.redisPasswordFile.mountPath }}
+              name: redis-password-file-mount
+            {{- end }}
+            {{- if .Values.redisTlsConfig.enabled }}
+            - mountPath: {{ .Values.redisTlsConfig.mountPath }}
+              name: tls
+              readOnly: true
+            {{- end}}
+          livenessProbe:
+            httpGet:
+              path: /
+              port: exporter-port
+              {{- if and (.Values.redisTlsConfig.enabled) (.Values.redisTlsConfig.serverCertFile.secret.name) (.Values.redisTlsConfig.serverCertFile.secret.key) }}
+              scheme: HTTPS
+              {{- end }}
+          readinessProbe:
+            httpGet:
+              path: /
+              port: exporter-port
+              {{- if and (.Values.redisTlsConfig.enabled) (.Values.redisTlsConfig.serverCertFile.secret.name) (.Values.redisTlsConfig.serverCertFile.secret.key) }}
+              scheme: HTTPS
+              {{- end }}
+          resources:
+{{ toYaml .Values.resources | indent 12 }}
+      volumes:
+        {{- if .Values.script }}
+        - name: script-mount
+          configMap:
+             name: {{ .Values.script.configmap }}
+             items:
+              - key: {{ .Values.script.keyname }}
+                path: script.lua
+        {{- end }}
+        {{- if and (.Values.auth.enabled) (.Values.auth.redisPasswordFile.secret.name) }}
+        - name: redis-password-file-mount
+          secret:
+            secretName: {{ .Values.auth.redisPasswordFile.secret.name }}
+        {{- end }}
+        {{- if .Values.redisTlsConfig.enabled }}
+        - name: tls
+          projected:
+            sources:
+            {{- if and (.Values.redisTlsConfig.caCertFile.secret.name) (.Values.redisTlsConfig.caCertFile.secret.key) }}
+            - secret:
+                name: {{ .Values.redisTlsConfig.caCertFile.secret.name }}
+                items:
+                  - key: {{ .Values.redisTlsConfig.caCertFile.secret.key }}
+                    path: tls-ca-cert.crt
+            {{- end }}
+            {{- if and (.Values.redisTlsConfig.clientKeyFile.secret.name) (.Values.redisTlsConfig.clientKeyFile.secret.key) }}
+            - secret:
+                name: {{ .Values.redisTlsConfig.clientKeyFile.secret.name }}
+                items:
+                  - key: {{ .Values.redisTlsConfig.clientKeyFile.secret.key }}
+                    path: tls-client-key.key
+            {{- end }}
+            {{- if and (.Values.redisTlsConfig.clientCertFile.secret.name) (.Values.redisTlsConfig.clientCertFile.secret.key) }}
+            - secret:
+                name: {{ .Values.redisTlsConfig.clientCertFile.secret.name }}
+                items:
+                  - key: {{ .Values.redisTlsConfig.clientCertFile.secret.key }}
+                    path: tls-client-cert.crt
+            {{- end }}
+            {{- if and (.Values.redisTlsConfig.serverKeyFile.secret.name) (.Values.redisTlsConfig.serverKeyFile.secret.key) }}
+            - secret:
+                name: {{ .Values.redisTlsConfig.serverKeyFile.secret.name }}
+                items:
+                  - key: {{ .Values.redisTlsConfig.serverKeyFile.secret.key }}
+                    path: tls-server-key.key
+            {{- end }}
+            {{- if and (.Values.redisTlsConfig.serverCertFile.secret.name) (.Values.redisTlsConfig.serverCertFile.secret.key) }}
+            - secret:
+                name: {{ .Values.redisTlsConfig.serverCertFile.secret.name }}
+                items:
+                  - key: {{ .Values.redisTlsConfig.serverCertFile.secret.key }}
+                    path: tls-server-cert.crt
+            {{- end }}
+        {{- end }}
+    {{- if .Values.nodeSelector }}
+      nodeSelector:
+{{ toYaml .Values.nodeSelector | indent 8 }}
+    {{- end }}
+    {{- with .Values.affinity }}
+      affinity:
+{{ toYaml . | indent 8 }}
+    {{- end }}
+    {{- with .Values.tolerations }}
+      tolerations:
+{{ toYaml . | indent 8 }}
+    {{- end }}
