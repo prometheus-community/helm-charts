@@ -228,8 +228,10 @@
 
 ### prometheus-yet-another-cloudwatch-exporter
 
-- cristiangreco (<cristian.greco@grafana.com> / @cristiangreco)
-- thomaspeitz (<info@thomas-peitz.de> / @thomaspeitz)
+- Cristian Greco (<cristian.greco@grafana.com> / @cristiangreco)
+- Thomas Peitz (<info@thomas-peitz.de> / @thomaspeitz)
+- Andrii Kushch (<andrii.kushch@grafana.com> / @andriikushch)
+- Tristan Burgess (<tristan.burgess@grafana.com> / @tristanburgess)
 
 ### prometheus
 
