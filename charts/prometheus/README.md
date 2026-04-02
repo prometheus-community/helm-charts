@@ -65,6 +65,17 @@ helm upgrade [RELEASE_NAME] oci://ghcr.io/prometheus-community/charts/prometheus
 
 _See [helm upgrade](https://helm.sh/docs/helm/helm_upgrade/) for command documentation._
 
+#### To 29.0
+
+Starting with version 29.0, the default `kubernetes_sd_configs` roles for several scrape configurations have been migrated from `endpoints` to `endpointslice` due to the deprecation of the former in Kubernetes release 1.33.
+
+Affected scrape configurations in `scrapeConfigs`:
+- `kubernetes-api-servers`
+- `kubernetes-service-endpoints`
+- `kubernetes-service-endpoints-slow`
+
+Users who currently apply custom relabelings with the `endpoints` labels should adjust their configuration for the `endpointslice` labels before upgrading.
+
 #### To 28.0
 
 Scrape configs previously defined in field `serverFiles."prometheus.yml".scrape_configs`
