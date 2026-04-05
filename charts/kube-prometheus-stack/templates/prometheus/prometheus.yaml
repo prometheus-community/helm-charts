@@ -464,7 +464,11 @@ spec:
       name: "{{ printf "%s-%s" (include "kube-prometheus-stack.fullname" $) . | trunc 63 | trimSuffix "-" }}"
 {{- end }}
 {{- if .Values.prometheus.prometheusSpec.excludedFromEnforcement }}
+  {{- if kindIs "string" .Values.prometheus.prometheusSpec.excludedFromEnforcement }}
+{{ tpl .Values.prometheus.prometheusSpec.excludedFromEnforcement . | indent 4 }}
+  {{- else }}
 {{ tpl (toYaml .Values.prometheus.prometheusSpec.excludedFromEnforcement | indent 4) . }}
+  {{- end }}
 {{- end }}
 {{- end }}
 {{- if and (not .Values.prometheus.agentMode) .Values.prometheus.prometheusSpec.queryLogFile }}
@@ -500,10 +504,23 @@ spec:
 {{- if .Values.prometheus.prometheusSpec.minReadySeconds }}
   minReadySeconds: {{ .Values.prometheus.prometheusSpec.minReadySeconds }}
 {{- end }}
+{{- if .Values.prometheus.prometheusSpec.podManagementPolicy }}
+  podManagementPolicy: {{ .Values.prometheus.prometheusSpec.podManagementPolicy }}
+{{- end }}
+{{- if .Values.prometheus.prometheusSpec.updateStrategy }}
+  updateStrategy:
+{{ toYaml .Values.prometheus.prometheusSpec.updateStrategy | indent 4 }}
+{{- end }}
+{{- if .Values.prometheus.prometheusSpec.terminationGracePeriodSeconds }}
+  terminationGracePeriodSeconds: {{ .Values.prometheus.prometheusSpec.terminationGracePeriodSeconds }}
+{{- end }}
 {{- if .Values.prometheus.prometheusSpec.maximumStartupDurationSeconds }}
   maximumStartupDurationSeconds: {{ .Values.prometheus.prometheusSpec.maximumStartupDurationSeconds }}
 {{- end }}
   hostNetwork: {{ .Values.prometheus.prometheusSpec.hostNetwork }}
+{{- if kindIs "bool" .Values.prometheus.prometheusSpec.hostUsers }}
+  hostUsers: {{ .Values.prometheus.prometheusSpec.hostUsers }}
+{{- end }}
 {{- if .Values.prometheus.prometheusSpec.hostAliases }}
   hostAliases:
 {{ toYaml .Values.prometheus.prometheusSpec.hostAliases | indent 4 }}
