@@ -32,7 +32,7 @@ refs = {
     'ref.kube-prometheus': '3425561cdfea89a8ea65194c56dfcd81b2e84afd',
     # renovate: git-refs=https://github.com/kubernetes-monitoring/kubernetes-mixin branch=master
     'ref.kubernetes-mixin': 'bb22ff75f235469052283a112e64c00259500939',
-    'ref.etcd': 'be3acf4ed017efb7008beb08585d890e5364ce93',
+    'ref.etcd': '479c194f3f5754f039a74c396f3e70f6419edf8e',
 }
 
 # Source files list
