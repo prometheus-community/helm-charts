@@ -70,6 +70,7 @@ _See [helm upgrade](https://helm.sh/docs/helm/helm_upgrade/) for command documen
 Starting with version 29.0, the default `kubernetes_sd_configs` roles for several scrape configurations have been migrated from `endpoints` to `endpointslice` due to the deprecation of the former in Kubernetes release 1.33.
 
 Affected scrape configurations in `scrapeConfigs`:
+
 - `kubernetes-api-servers`
 - `kubernetes-service-endpoints`
 - `kubernetes-service-endpoints-slow`
