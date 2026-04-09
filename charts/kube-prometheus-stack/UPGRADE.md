@@ -1,6 +1,6 @@
 # Upgrade
 
-## From 82.x to 84.x
+## From 82.x to 83.x
 
 This version upgrades Prometheus-Operator to v0.90.1
 Since [68.4.0](https://github.com/prometheus-community/helm-charts/pull/5175) it is also possible to use `crds.upgradeJob.enabled` for upgrading the CRDs.
