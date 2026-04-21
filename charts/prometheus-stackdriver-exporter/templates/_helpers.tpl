@@ -43,6 +43,13 @@ Create the name of the service account to use
 {{- end -}}
 
 {{/*
+Create the namespace to use
+*/}}
+{{- define "stackdriver-exporter.namespace" -}}
+  {{- default .Release.Namespace .Values.namespaceOverride -}}
+{{- end -}}
+
+{{/*
 Generate basic labels
 */}}
 {{- define "stackdriver-exporter.labels" }}
