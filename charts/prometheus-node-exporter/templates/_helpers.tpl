@@ -79,15 +79,15 @@ The image to use
 {{- fail "image.sha forbidden. Use image.digest instead" }}
 {{- else if .Values.image.digest }}
 {{- if .Values.global.imageRegistry }}
-{{- printf "%s/%s:%s@%s" .Values.global.imageRegistry .Values.image.repository (default (printf "v%s" .Chart.AppVersion) .Values.image.tag) .Values.image.digest }}
+{{- printf "%s/%s:%s%s@%s" .Values.global.imageRegistry .Values.image.repository (default (printf "v%s" .Chart.AppVersion) .Values.image.tag) (printf (ternary "%s" "-%s" (empty .Values.image.variant)) .Values.image.variant) .Values.image.digest }}
 {{- else }}
-{{- printf "%s/%s:%s@%s" .Values.image.registry .Values.image.repository (default (printf "v%s" .Chart.AppVersion) .Values.image.tag) .Values.image.digest }}
+{{- printf "%s/%s:%s%s@%s" .Values.image.registry .Values.image.repository (default (printf "v%s" .Chart.AppVersion) .Values.image.tag) (printf (ternary "%s" "-%s" (empty .Values.image.variant)) .Values.image.variant) .Values.image.digest }}
 {{- end }}
 {{- else }}
 {{- if .Values.global.imageRegistry }}
-{{- printf "%s/%s:%s" .Values.global.imageRegistry .Values.image.repository (default (printf "v%s" .Chart.AppVersion) .Values.image.tag) }}
+{{- printf "%s/%s:%s%s" .Values.global.imageRegistry .Values.image.repository (default (printf "v%s" .Chart.AppVersion) .Values.image.tag) (printf (ternary "%s" "-%s" (empty .Values.image.variant)) .Values.image.variant) }}
 {{- else }}
-{{- printf "%s/%s:%s" .Values.image.registry .Values.image.repository (default (printf "v%s" .Chart.AppVersion) .Values.image.tag) }}
+{{- printf "%s/%s:%s%s" .Values.image.registry .Values.image.repository (default (printf "v%s" .Chart.AppVersion) .Values.image.tag) (printf (ternary "%s" "-%s" (empty .Values.image.variant)) .Values.image.variant) }}
 {{- end }}
 {{- end }}
 {{- end }}
@@ -202,8 +202,8 @@ labelValueLengthLimit: {{ . }}
 {{- end }}
 
 {{/*
-The default node affinity to exclude 
-- AWS Fargate 
+The default node affinity to exclude
+- AWS Fargate
 - Azure virtual nodes
 */}}
 {{- define "prometheus-node-exporter.defaultAffinity" -}}
