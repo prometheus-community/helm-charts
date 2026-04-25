@@ -124,6 +124,9 @@ replacement_map = {
     'job=\\"kube-proxy\\"': {
         'replacement': 'job=\\"`}}{{ $kubeProxyJob }}{{`\\"',
         'init': '{{- $kubeProxyJob := include "kube-prometheus-stack-kube-proxy.name" . }}'},
+    'job=\\"apiserver\\"': {
+        'replacement': 'job=\\"`}}{{ $kubeApiserverJob }}{{`\\"',
+        'init': '{{- $kubeApiserverJob := include "kube-prometheus-stack-kube-apiserver.name" . }}'},
 }
 
 # standard header

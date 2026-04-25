@@ -220,6 +220,9 @@ replacement_map = {
     'job="kube-proxy"': {
         'replacement': 'job="{{ $kubeProxyJob }}"',
         'init': '{{- $kubeProxyJob := include "kube-prometheus-stack-kube-proxy.name" . }}'},
+    'job="apiserver"': {
+        'replacement': 'job="{{ $kubeApiserverJob }}"',
+        'init': '{{- $kubeApiserverJob := include "kube-prometheus-stack-kube-apiserver.name" . }}'},
     'runbook_url: https://runbooks.prometheus-operator.dev/runbooks/': {
         'replacement': 'runbook_url: {{ .Values.defaultRules.runbookUrl }}/',
         'init': ''},
