@@ -1,5 +1,9 @@
 # Upgrade
 
+## From 83.x to 84.x
+
+This version upgrades Grafana to v13.0.0. Please check [What's new in v13.0](https://grafana.com/docs/grafana/latest/whatsnew/whats-new-in-v13-0/)
+
 ## From 82.x to 83.x
 
 This version upgrades Prometheus-Operator to v0.90.1
