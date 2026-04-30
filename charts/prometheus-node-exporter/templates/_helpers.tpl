@@ -212,11 +212,11 @@ nodeAffinity:
     nodeSelectorTerms:
     - matchExpressions:
       - key: eks.amazonaws.com/compute-type
-        operator: NotIn
+        operator: NotIn # codespell:ignore
         values:
         - fargate
       - key: type
-        operator: NotIn
+        operator: NotIn # codespell:ignore
         values:
         - virtual-kubelet
 {{- end -}}
