@@ -51,7 +51,7 @@ spec:
 {{- end }}
 {{- if .Values.prometheus.prometheusSpec.image }}
   {{- $registry := .Values.global.imageRegistry | default .Values.prometheus.prometheusSpec.image.registry -}}
-  {{- $tag := (.Values.prometheus.prometheusSpec.image.tag | empty | not) | ternary (printf ":%s" .Values.prometheus.prometheusSpec.image.tag) "" -}}
+  {{- $tag := (.Values.prometheus.prometheusSpec.image.tag | empty | not) | ternary (printf ":%s%s" .Values.prometheus.prometheusSpec.image.tag (ternary "-distroless" "" .Values.prometheus.prometheusSpec.image.distroless)) "" -}}
   {{- $sha := (.Values.prometheus.prometheusSpec.image.sha | empty | not) | ternary (printf "@sha256:%s" .Values.prometheus.prometheusSpec.image.sha) "" }}
   image: "{{ printf "%s/%s%s%s" $registry .Values.prometheus.prometheusSpec.image.repository $tag $sha }}"
   imagePullPolicy: "{{ .Values.prometheus.prometheusSpec.image.pullPolicy }}"
