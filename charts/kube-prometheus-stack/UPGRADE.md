@@ -1,5 +1,9 @@
 # Upgrade
 
+## From 84.x to 85.x
+
+This version enables the `distroless` variant of both the `prometheus` and `prometheus-node-exporter` images by default
+
 ## From 83.x to 84.x
 
 This version upgrades Grafana to v13.0.0. Please check [What's new in v13.0](https://grafana.com/docs/grafana/latest/whatsnew/whats-new-in-v13-0/)
