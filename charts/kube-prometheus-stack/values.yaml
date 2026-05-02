@@ -132,6 +132,10 @@ crds:
       labels: {}
       automountServiceAccountToken: true
 
+    ## Automounting API credentials for upgrade crd job pod.
+    ##
+    automountServiceAccountToken: true
+
     ## Container-specific security context configuration
     ## ref: https://kubernetes.io/docs/tasks/configure-pod-container/security-context/
     ##
@@ -697,6 +701,14 @@ alertmanager:
       ## Filters define the filters that are applied to requests that match this rule.
       filters: []
 
+      ## Session persistence configuration for the route rule.
+      sessionPersistence: {}
+      # sessionName: route
+      # type: Cookie
+      # absoluteTimeout: 12h
+      # cookieConfig:
+      #   lifetimeType: Permanent
+
       ## Additional custom rules that can be added to the route
       additionalRules: []
 
@@ -944,7 +956,7 @@ alertmanager:
     image:
       registry: quay.io
       repository: prometheus/alertmanager
-      tag: v0.31.1
+      tag: v0.32.1
       sha: ""
       pullPolicy: IfNotPresent
 
@@ -1150,6 +1162,10 @@ alertmanager:
       seccompProfile:
         type: RuntimeDefault
 
+    ## Use the host's user namespace for Alertmanager pods.
+    ## ref: https://kubernetes.io/docs/tasks/configure-pod-container/share-process-namespace/
+    hostUsers: ~
+
     ## DNS configuration for Alertmanager.
     ## ref: https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/api-reference/api.md#monitoring.coreos.com/v1.PodDNSConfig
     dnsConfig: {}
@@ -1157,6 +1173,9 @@ alertmanager:
     ## DNS policy for Alertmanager.
     ## ref: https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/api-reference/api.md#dnspolicystring-alias
     dnsPolicy: ""
+
+    ## Enable hostNetwork for Alertmanager.
+    hostNetwork: false
 
     ## ListenLocal makes the Alertmanager server listen on loopback, so that it does not bind against the Pod IP.
     ## Note this is only for the Alertmanager UI, not the gossip communication.
@@ -1168,7 +1187,7 @@ alertmanager:
     containers: []
     # containers:
     # - name: oauth-proxy
-    #   image: quay.io/oauth2-proxy/oauth2-proxy:v7.14.3
+    #   image: quay.io/oauth2-proxy/oauth2-proxy:v7.15.2
     #   args:
     #   - --upstream=http://127.0.0.1:9093
     #   - --http-address=0.0.0.0:8081
@@ -1232,6 +1251,21 @@ alertmanager:
     ## be considered available. Defaults to 0 (pod will be considered available as soon as it is ready).
     minReadySeconds: 0
 
+    ## Pod management policy. Kubernetes default is OrderedReady but prometheus-operator default is Parallel.
+    ## ref: https://kubernetes.io/docs/concepts/workloads/controllers/statefulset/#pod-management-policies
+    podManagementPolicy: ""
+
+    ## Update strategy for the StatefulSet.
+    ## ref: https://kubernetes.io/docs/concepts/workloads/controllers/statefulset/#update-strategies
+    updateStrategy: {}
+    # type: RollingUpdate
+    # rollingUpdate:
+    #   maxUnavailable: 1
+
+    ## Duration in seconds the pod needs to terminate gracefully.
+    ## ref: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/#pod-termination
+    terminationGracePeriodSeconds: ~
+
     ## Additional configuration which is not covered by the properties above. (passed through tpl)
     additionalConfig: {}
 
@@ -1251,7 +1285,7 @@ alertmanager:
   #     foo:$apr1$OFG3Xybp$ckL0FHDAkoXYIlH9.cysT0
   #     someoneelse:$apr1$DMZX2Z4q$6SbQIfyuLQd.xmo/P0m2c.
 
-## Using default values from https://github.com/grafana/helm-charts/blob/main/charts/grafana/values.yaml
+## Using default values from https://github.com/grafana-community/helm-charts/blob/main/charts/grafana/values.yaml
 ##
 grafana:
   enabled: true
@@ -1648,6 +1682,11 @@ kubeApiServer:
     ## defines the labels which are transferred from the associated Kubernetes Service object onto the ingested metrics.
     ## https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/api-reference/api.md#servicemonitor
     targetLabels: []
+
+  ## Override the job label used for the apiserver.
+  ## This allows users who scrape apiserver metrics under a different job name (e.g. k3s-server via PushProx)
+  ## to align the recording rules and alerts with their actual job label.
+  jobNameOverride: ""
 
 ## Component scraping the kubelet and kubelet-hosted cAdvisor
 ##
@@ -2965,7 +3004,7 @@ prometheusOperator:
       image:
         registry: ghcr.io
         repository: jkroepke/kube-webhook-certgen
-        tag: 1.7.8
+        tag: 1.8.2
         sha: ""
         pullPolicy: IfNotPresent
       resources: {}
@@ -3868,6 +3907,14 @@ prometheus:
       ## Filters define the filters that are applied to requests that match this rule.
       filters: []
 
+      ## Session persistence configuration for the route rule.
+      sessionPersistence: {}
+      # sessionName: route
+      # type: Cookie
+      # absoluteTimeout: 12h
+      # cookieConfig:
+      #   lifetimeType: Permanent
+
       ## Additional custom rules that can be added to the route
       additionalRules: []
 
@@ -4112,7 +4159,7 @@ prometheus:
     image:
       registry: quay.io
       repository: prometheus/prometheus
-      tag: v3.10.0
+      tag: v3.11.3
       sha: ""
       pullPolicy: IfNotPresent
 
@@ -4603,6 +4650,7 @@ prometheus:
     ## ref: https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/api-reference/api.md#thanosspec
     ##
     thanos: {}
+      # image: quay.io/thanos/thanos
       # secretProviderClass:
       #   provider: gcp
       #   parameters:
@@ -4632,7 +4680,7 @@ prometheus:
     containers: []
     # containers:
     # - name: oauth-proxy
-    #   image: quay.io/oauth2-proxy/oauth2-proxy:v7.14.3
+    #   image: quay.io/oauth2-proxy/oauth2-proxy:v7.15.2
     #   args:
     #   - --upstream=http://127.0.0.1:9090
     #   - --http-address=0.0.0.0:8081
@@ -4742,11 +4790,19 @@ prometheus:
     ## be considered available. Defaults to 0 (pod will be considered available as soon as it is ready).
     minReadySeconds: 0
 
+    ## Duration in seconds the pod needs to terminate gracefully.
+    ## ref: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/#pod-termination
+    terminationGracePeriodSeconds: ~
+
     # Required for use in managed kubernetes clusters (such as AWS EKS) with custom CNI (such as calico),
     # because control-plane managed by AWS cannot communicate with pods' IP CIDR and admission webhooks are not working
     # Use the host's network namespace if true. Make sure to understand the security implications if you want to enable it.
     # When hostNetwork is enabled, this will set dnsPolicy to ClusterFirstWithHostNet automatically.
     hostNetwork: false
+
+    ## Use the host's user namespace for Prometheus pods.
+    ## ref: https://kubernetes.io/docs/tasks/configure-pod-container/share-process-namespace/
+    hostUsers: ~
 
     # HostAlias holds the mapping between IP and hostnames that will be injected
     # as an entry in the pod's hosts file.
@@ -4763,6 +4819,17 @@ prometheus:
     ## Defines the service discovery role used to discover targets from ServiceMonitor objects and Alertmanager endpoints.
     ## If set, the value should be either "Endpoints" or "EndpointSlice". If unset, the operator assumes the "Endpoints" role.
     serviceDiscoveryRole: ""
+
+    ## Pod management policy. Kubernetes default is OrderedReady but prometheus-operator default is Parallel.
+    ## ref: https://kubernetes.io/docs/concepts/workloads/controllers/statefulset/#pod-management-policies
+    podManagementPolicy: ""
+
+    ## Update strategy for the StatefulSet.
+    ## ref: https://kubernetes.io/docs/concepts/workloads/controllers/statefulset/#update-strategies
+    updateStrategy: {}
+    # type: RollingUpdate
+    # rollingUpdate:
+    #   maxUnavailable: 1
 
     ## Additional configuration which is not covered by the properties above. (passed through tpl)
     additionalConfig: {}
@@ -5084,6 +5151,14 @@ thanosRuler:
 
       ## Filters define the filters that are applied to requests that match this rule.
       filters: []
+
+      ## Session persistence configuration for the route rule.
+      sessionPersistence: {}
+      # sessionName: route
+      # type: Cookie
+      # absoluteTimeout: 12h
+      # cookieConfig:
+      #   lifetimeType: Permanent
 
       ## Additional custom rules that can be added to the route
       additionalRules: []
@@ -5459,6 +5534,10 @@ thanosRuler:
       seccompProfile:
         type: RuntimeDefault
 
+    ## Use the host's user namespace for ThanosRuler pods.
+    ## ref: https://kubernetes.io/docs/tasks/configure-pod-container/share-process-namespace/
+    hostUsers: ~
+
     ## ListenLocal makes the ThanosRuler server listen on loopback, so that it does not bind against the Pod IP.
     ## Note this is only for the ThanosRuler UI, not the gossip communication.
     ##
@@ -5486,9 +5565,24 @@ thanosRuler:
     ##
     portName: "web"
 
+    ## Duration in seconds the pod needs to terminate gracefully.
+    ## ref: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/#pod-termination
+    terminationGracePeriodSeconds: ~
+
     ## WebTLSConfig defines the TLS parameters for HTTPS
     ## ref: https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/api-reference/api.md#thanosrulerwebspec
     web: {}
+
+    ## Pod management policy. Kubernetes default is OrderedReady but prometheus-operator default is Parallel.
+    ## ref: https://kubernetes.io/docs/concepts/workloads/controllers/statefulset/#pod-management-policies
+    podManagementPolicy: ""
+
+    ## Update strategy for the StatefulSet.
+    ## ref: https://kubernetes.io/docs/concepts/workloads/controllers/statefulset/#update-strategies
+    updateStrategy: {}
+    # type: RollingUpdate
+    # rollingUpdate:
+    #   maxUnavailable: 1
 
     ## Additional configuration which is not covered by the properties above. (passed through tpl)
     additionalConfig: {}
