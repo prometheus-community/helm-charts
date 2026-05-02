@@ -29,11 +29,10 @@ def change_style(style, representer):
 
 refs = {
     # renovate: git-refs=https://github.com/prometheus-operator/kube-prometheus branch=main
-    'ref.kube-prometheus': '06dd187e509fafb48d4db2745dc6daecbef95613',
+    'ref.kube-prometheus': 'ac9a50923df1dec1e4357a5d1bbeb4f83750b1ef',
     # renovate: git-refs=https://github.com/kubernetes-monitoring/kubernetes-mixin branch=master
-    'ref.kubernetes-mixin': '11766bddcd9c5dbda65cc426bd29b38d556e8fe6',
-    # renovate: git-refs=https://github.com/etcd-io/etcd branch=main
-    'ref.etcd': '0f5cee16488816ad9e9ecb7cbdfd2aa74b163aeb',
+    'ref.kubernetes-mixin': 'e4a13255e095ebd32725b7fbc7551594d72b7f6d',
+    'ref.etcd': '479c194f3f5754f039a74c396f3e70f6419edf8e',
 }
 
 # Source files list
@@ -221,6 +220,9 @@ replacement_map = {
     'job="kube-proxy"': {
         'replacement': 'job="{{ $kubeProxyJob }}"',
         'init': '{{- $kubeProxyJob := include "kube-prometheus-stack-kube-proxy.name" . }}'},
+    'job="apiserver"': {
+        'replacement': 'job="{{ $kubeApiserverJob }}"',
+        'init': '{{- $kubeApiserverJob := include "kube-prometheus-stack-kube-apiserver.name" . }}'},
     'runbook_url: https://runbooks.prometheus-operator.dev/runbooks/': {
         'replacement': 'runbook_url: {{ .Values.defaultRules.runbookUrl }}/',
         'init': ''},

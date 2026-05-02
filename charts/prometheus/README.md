@@ -65,6 +65,18 @@ helm upgrade [RELEASE_NAME] oci://ghcr.io/prometheus-community/charts/prometheus
 
 _See [helm upgrade](https://helm.sh/docs/helm/helm_upgrade/) for command documentation._
 
+#### To 29.0
+
+Starting with version 29.0, the default `kubernetes_sd_configs` roles for several scrape configurations have been migrated from `endpoints` to `endpointslice` due to the deprecation of the former in Kubernetes release 1.33.
+
+Affected scrape configurations in `scrapeConfigs`:
+
+- `kubernetes-api-servers`
+- `kubernetes-service-endpoints`
+- `kubernetes-service-endpoints-slow`
+
+Users who currently apply custom relabelings with the `endpoints` labels should adjust their configuration for the `endpointslice` labels before upgrading.
+
 #### To 28.0
 
 Scrape configs previously defined in field `serverFiles."prometheus.yml".scrape_configs`
@@ -225,7 +237,7 @@ Extra command-line arguments specified via configmapReload.prometheus.extraArgs 
 Prometheus has been updated to version v2.40.5.
 
 Prometheus-pushgateway was updated to version 2.0.0 which adapted [Helm label and annotation best practices](https://helm.sh/docs/chart_best_practices/labels/).
-See the [upgrade docs of the prometheus-pushgateway chart](https://github.com/prometheus-community/helm-charts/tree/main/charts/prometheus-pushgateway#to-200) to see whats to do, before you upgrade Prometheus!
+See the [upgrade docs of the prometheus-pushgateway chart](https://github.com/prometheus-community/helm-charts/tree/main/charts/prometheus-pushgateway#to-200) to see what's to do, before you upgrade Prometheus!
 
 The condition in Chart.yaml to disable kube-state-metrics has been changed from `kubeStateMetrics.enabled` to `kube-state-metrics.enabled`
 
