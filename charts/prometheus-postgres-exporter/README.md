@@ -46,6 +46,19 @@ helm upgrade [RELEASE_NAME] oci://ghcr.io/prometheus-community/charts/prometheus
 
 _See [helm upgrade](https://helm.sh/docs/helm/helm_upgrade/) for command documentation._
 
+#### To 8.0.0
+
+The hardcoded fallback password previously baked into the generated `Secret` when `config.datasource.password` was unset has been removed. The chart now fails at render time if no password source is configured.
+
+Before upgrading, set exactly one of the following:
+
+- `config.datasource.password` (templated with `tpl`)
+- `config.datasource.passwordFile`
+- `config.datasource.passwordSecret` (reference to an existing `Secret`)
+- `config.datasourceSecret` (reference to an existing `Secret` providing the full data source URI)
+
+Releases that previously installed without a password were producing a `Secret` containing a known plaintext value and an exporter that could not authenticate; configuring one of the options above is required to upgrade.
+
 #### To 7.0.0
 
 Labels and selectors have been replaced following [Helm 3 label and annotation best practices](https://helmsh/docs/chart_best_practices/labels/):
