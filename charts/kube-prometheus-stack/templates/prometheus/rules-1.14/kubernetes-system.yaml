@@ -5,6 +5,7 @@ https://github.com/prometheus-community/helm-charts/tree/main/charts/kube-promet
 */ -}}
 {{- $kubeTargetVersion := default .Capabilities.KubeVersion.GitVersion .Values.kubeTargetVersionOverride }}
 {{- if and (semverCompare ">=1.14.0-0" $kubeTargetVersion) (semverCompare "<9.9.9-9" $kubeTargetVersion) .Values.defaultRules.create .Values.defaultRules.rules.kubernetesSystem }}
+{{- $kubeApiserverJob := include "kube-prometheus-stack-kube-apiserver.name" . }}
 apiVersion: monitoring.coreos.com/v1
 kind: PrometheusRule
 metadata:
@@ -65,9 +66,9 @@ spec:
         runbook_url: {{ .Values.defaultRules.runbookUrl }}/kubernetes/kubeclienterrors
         summary: Kubernetes API server client is experiencing errors.
       expr: |-
-        (sum(rate(rest_client_requests_total{job="apiserver",code=~"5.."}[5m])) by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster, instance, job, namespace)
+        (sum(rate(rest_client_requests_total{job="{{ $kubeApiserverJob }}",code=~"5.."}[5m])) by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster, instance, job, namespace)
           /
-        sum(rate(rest_client_requests_total{job="apiserver"}[5m])) by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster, instance, job, namespace))
+        sum(rate(rest_client_requests_total{job="{{ $kubeApiserverJob }}"}[5m])) by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster, instance, job, namespace))
         > 0.01
       for: {{ dig "KubeClientErrors" "for" "15m" .Values.customRules }}
       {{- with .Values.defaultRules.keepFiringFor }}

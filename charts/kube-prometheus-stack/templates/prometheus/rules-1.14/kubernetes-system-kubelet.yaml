@@ -452,10 +452,13 @@ spec:
 {{- if .Values.defaultRules.additionalRuleGroupAnnotations.kubernetesSystem }}
 {{ toYaml .Values.defaultRules.additionalRuleGroupAnnotations.kubernetesSystem | indent 8 }}
 {{- end }}
-        description: Kubelet has disappeared from Prometheus target discovery.
+        description: Kubelet has disappeared from Prometheus target discovery on cluster {{`{{`}} $labels.cluster {{`}}`}}.
         runbook_url: {{ .Values.defaultRules.runbookUrl }}/kubernetes/kubeletdown
         summary: Target disappeared from Prometheus target discovery.
-      expr: absent(up{job="{{ $kubeletJob }}", metrics_path="/metrics"})
+      expr: |-
+        count by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster) (kube_node_info{job="{{ $kubeStateMetricsJob }}"})
+        unless on ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster)
+        count by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster) (up{job="{{ $kubeletJob }}", metrics_path="/metrics"} == 1)
       for: {{ dig "KubeletDown" "for" "15m" .Values.customRules }}
       {{- with .Values.defaultRules.keepFiringFor }}
       keep_firing_for: "{{ . }}"

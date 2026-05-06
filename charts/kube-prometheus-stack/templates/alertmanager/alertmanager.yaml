@@ -27,7 +27,7 @@ spec:
   image: "{{ $registry }}/{{ .Values.alertmanager.alertmanagerSpec.image.repository }}"
   {{- end }}
   imagePullPolicy: "{{ .Values.alertmanager.alertmanagerSpec.image.pullPolicy }}"
-  version: {{ default .Values.alertmanager.alertmanagerSpec.image.tag .Values.alertmanager.alertmanagerSpec.version }}
+  version: "{{ default .Values.alertmanager.alertmanagerSpec.image.tag .Values.alertmanager.alertmanagerSpec.version }}"
   {{- if .Values.alertmanager.alertmanagerSpec.image.sha }}
   sha: {{ .Values.alertmanager.alertmanagerSpec.image.sha }}
   {{- end }}
@@ -99,6 +99,9 @@ spec:
 {{- if .Values.alertmanager.alertmanagerSpec.securityContext }}
   securityContext:
 {{ toYaml .Values.alertmanager.alertmanagerSpec.securityContext | indent 4 }}
+{{- end }}
+{{- if kindIs "bool" .Values.alertmanager.alertmanagerSpec.hostUsers }}
+  hostUsers: {{ .Values.alertmanager.alertmanagerSpec.hostUsers }}
 {{- end }}
 {{- if .Values.alertmanager.alertmanagerSpec.dnsConfig }}
   dnsConfig:
@@ -200,6 +203,17 @@ spec:
 {{- end }}
 {{- if .Values.alertmanager.alertmanagerSpec.minReadySeconds }}
   minReadySeconds: {{ .Values.alertmanager.alertmanagerSpec.minReadySeconds }}
+{{- end }}
+{{- if .Values.alertmanager.alertmanagerSpec.podManagementPolicy }}
+  podManagementPolicy: {{ .Values.alertmanager.alertmanagerSpec.podManagementPolicy }}
+{{- end }}
+{{- if .Values.alertmanager.alertmanagerSpec.updateStrategy }}
+  updateStrategy:
+{{ toYaml .Values.alertmanager.alertmanagerSpec.updateStrategy | indent 4 }}
+{{- end }}
+  hostNetwork: {{ .Values.alertmanager.alertmanagerSpec.hostNetwork }}
+{{- if .Values.alertmanager.alertmanagerSpec.terminationGracePeriodSeconds }}
+  terminationGracePeriodSeconds: {{ .Values.alertmanager.alertmanagerSpec.terminationGracePeriodSeconds }}
 {{- end }}
 {{- with .Values.alertmanager.alertmanagerSpec.additionalConfig }}
   {{- tpl (toYaml .) $ | nindent 2 }}
