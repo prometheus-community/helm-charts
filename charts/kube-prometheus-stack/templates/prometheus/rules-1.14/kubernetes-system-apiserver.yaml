@@ -5,6 +5,7 @@ https://github.com/prometheus-community/helm-charts/tree/main/charts/kube-promet
 */ -}}
 {{- $kubeTargetVersion := default .Capabilities.KubeVersion.GitVersion .Values.kubeTargetVersionOverride }}
 {{- if and (semverCompare ">=1.14.0-0" $kubeTargetVersion) (semverCompare "<9.9.9-9" $kubeTargetVersion) .Values.defaultRules.create .Values.defaultRules.rules.kubernetesSystem }}
+{{- $kubeApiserverJob := include "kube-prometheus-stack-kube-apiserver.name" . }}
 apiVersion: monitoring.coreos.com/v1
 kind: PrometheusRule
 metadata:
@@ -37,9 +38,9 @@ spec:
         runbook_url: {{ .Values.defaultRules.runbookUrl }}/kubernetes/kubeclientcertificateexpiration
         summary: Client certificate is about to expire.
       expr: |-
-        histogram_quantile(0.01, sum without (namespace, service, endpoint) (rate(apiserver_client_certificate_expiration_seconds_bucket{job="apiserver"}[5m]))) < 604800
+        histogram_quantile(0.01, sum without (namespace, service, endpoint) (rate(apiserver_client_certificate_expiration_seconds_bucket{job="{{ $kubeApiserverJob }}"}[5m]))) < 604800
         and
-        on ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}job, cluster, instance) apiserver_client_certificate_expiration_seconds_count{job="apiserver"} > 0
+        on ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}job, cluster, instance) apiserver_client_certificate_expiration_seconds_count{job="{{ $kubeApiserverJob }}"} > 0
       for: {{ dig "KubeClientCertificateExpiration" "for" "5m" .Values.customRules }}
       {{- with .Values.defaultRules.keepFiringFor }}
       keep_firing_for: "{{ . }}"
@@ -68,9 +69,9 @@ spec:
         runbook_url: {{ .Values.defaultRules.runbookUrl }}/kubernetes/kubeclientcertificateexpiration
         summary: Client certificate is about to expire.
       expr: |-
-        histogram_quantile(0.01, sum without (namespace, service, endpoint) (rate(apiserver_client_certificate_expiration_seconds_bucket{job="apiserver"}[5m]))) < 86400
+        histogram_quantile(0.01, sum without (namespace, service, endpoint) (rate(apiserver_client_certificate_expiration_seconds_bucket{job="{{ $kubeApiserverJob }}"}[5m]))) < 86400
         and
-        on ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}job, cluster, instance) apiserver_client_certificate_expiration_seconds_count{job="apiserver"} > 0
+        on ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}job, cluster, instance) apiserver_client_certificate_expiration_seconds_count{job="{{ $kubeApiserverJob }}"} > 0
       for: {{ dig "KubeClientCertificateExpiration" "for" "5m" .Values.customRules }}
       {{- with .Values.defaultRules.keepFiringFor }}
       keep_firing_for: "{{ . }}"
@@ -98,7 +99,7 @@ spec:
         description: Kubernetes aggregated API {{`{{`}} $labels.instance {{`}}`}}/{{`{{`}} $labels.name {{`}}`}} has reported {{`{{`}} $labels.reason {{`}}`}} errors on cluster {{`{{`}} $labels.cluster {{`}}`}}.
         runbook_url: {{ .Values.defaultRules.runbookUrl }}/kubernetes/kubeaggregatedapierrors
         summary: Kubernetes aggregated API has reported errors.
-      expr: sum by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster, instance, name, reason)(increase(aggregator_unavailable_apiservice_total{job="apiserver"}[1m])) > 0
+      expr: sum by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster, instance, name, reason)(increase(aggregator_unavailable_apiservice_total{job="{{ $kubeApiserverJob }}"}[1m])) > 0
       for: {{ dig "KubeAggregatedAPIErrors" "for" "10m" .Values.customRules }}
       {{- with .Values.defaultRules.keepFiringFor }}
       keep_firing_for: "{{ . }}"
@@ -126,7 +127,7 @@ spec:
         description: Kubernetes aggregated API {{`{{`}} $labels.name {{`}}`}}/{{`{{`}} $labels.namespace {{`}}`}} has been only {{`{{`}} $value | humanize {{`}}`}}% available over the last 10m on cluster {{`{{`}} $labels.cluster {{`}}`}}.
         runbook_url: {{ .Values.defaultRules.runbookUrl }}/kubernetes/kubeaggregatedapidown
         summary: Kubernetes aggregated API is down.
-      expr: (1 - max by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}name, namespace, cluster)(avg_over_time(aggregator_unavailable_apiservice{job="apiserver"}[10m]))) * 100 < 85
+      expr: (1 - max by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}name, namespace, cluster)(avg_over_time(aggregator_unavailable_apiservice{job="{{ $kubeApiserverJob }}"}[10m]))) * 100 < 85
       for: {{ dig "KubeAggregatedAPIDown" "for" "5m" .Values.customRules }}
       {{- with .Values.defaultRules.keepFiringFor }}
       keep_firing_for: "{{ . }}"
@@ -155,7 +156,7 @@ spec:
         description: KubeAPI has disappeared from Prometheus target discovery.
         runbook_url: {{ .Values.defaultRules.runbookUrl }}/kubernetes/kubeapidown
         summary: Target disappeared from Prometheus target discovery.
-      expr: absent(up{job="apiserver"})
+      expr: absent(up{job="{{ $kubeApiserverJob }}"})
       for: {{ dig "KubeAPIDown" "for" "15m" .Values.customRules }}
       {{- with .Values.defaultRules.keepFiringFor }}
       keep_firing_for: "{{ . }}"
@@ -184,7 +185,7 @@ spec:
         description: The kubernetes apiserver has terminated {{`{{`}} $value | humanizePercentage {{`}}`}} of its incoming requests on cluster {{`{{`}} $labels.cluster {{`}}`}}.
         runbook_url: {{ .Values.defaultRules.runbookUrl }}/kubernetes/kubeapiterminatedrequests
         summary: The kubernetes apiserver has terminated {{`{{`}} $value | humanizePercentage {{`}}`}} of its incoming requests.
-      expr: sum by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster) (rate(apiserver_request_terminations_total{job="apiserver"}[10m])) / ( sum by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster) (rate(apiserver_request_total{job="apiserver"}[10m])) + sum by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster) (rate(apiserver_request_terminations_total{job="apiserver"}[10m])) ) > 0.20
+      expr: sum by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster) (rate(apiserver_request_terminations_total{job="{{ $kubeApiserverJob }}"}[10m])) / ( sum by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster) (rate(apiserver_request_total{job="{{ $kubeApiserverJob }}"}[10m])) + sum by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster) (rate(apiserver_request_terminations_total{job="{{ $kubeApiserverJob }}"}[10m])) ) > 0.20
       for: {{ dig "KubeAPITerminatedRequests" "for" "5m" .Values.customRules }}
       {{- with .Values.defaultRules.keepFiringFor }}
       keep_firing_for: "{{ . }}"

@@ -213,6 +213,17 @@ Allow kube-proxy job name to be overridden
 {{- end -}}
 
 {{/*
+Allow kube-apiserver job name to be overridden
+*/}}
+{{- define "kube-prometheus-stack-kube-apiserver.name" -}}
+  {{- if index .Values "kubeApiServer" "jobNameOverride" -}}
+    {{- index .Values "kubeApiServer" "jobNameOverride" -}}
+  {{- else -}}
+    {{- print "apiserver" -}}
+  {{- end -}}
+{{- end -}}
+
+{{/*
 Allow kube-state-metrics job name to be overridden
 */}}
 {{- define "kube-prometheus-stack-kube-state-metrics.name" -}}

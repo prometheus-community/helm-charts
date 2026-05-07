@@ -547,9 +547,16 @@ spec:
         runbook_url: {{ .Values.defaultRules.runbookUrl }}/kubernetes/kubehpamaxedout
         summary: HPA is running at max replicas
       expr: |-
-        kube_horizontalpodautoscaler_status_current_replicas{job="{{ $kubeStateMetricsJob }}", namespace{{ $namespaceOperator }}"{{ $targetNamespace }}"}
-          ==
-        kube_horizontalpodautoscaler_spec_max_replicas{job="{{ $kubeStateMetricsJob }}", namespace{{ $namespaceOperator }}"{{ $targetNamespace }}"}
+        (
+          kube_horizontalpodautoscaler_status_current_replicas{job="{{ $kubeStateMetricsJob }}", namespace{{ $namespaceOperator }}"{{ $targetNamespace }}"}
+            ==
+          kube_horizontalpodautoscaler_spec_max_replicas{job="{{ $kubeStateMetricsJob }}", namespace{{ $namespaceOperator }}"{{ $targetNamespace }}"}
+        )
+        and on ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}namespace, horizontalpodautoscaler) (
+          kube_horizontalpodautoscaler_spec_max_replicas{job="{{ $kubeStateMetricsJob }}", namespace{{ $namespaceOperator }}"{{ $targetNamespace }}"}
+            !=
+          kube_horizontalpodautoscaler_spec_min_replicas{job="{{ $kubeStateMetricsJob }}", namespace{{ $namespaceOperator }}"{{ $targetNamespace }}"}
+        )
       for: {{ dig "KubeHpaMaxedOut" "for" "15m" .Values.customRules }}
       {{- with .Values.defaultRules.keepFiringFor }}
       keep_firing_for: "{{ . }}"
