@@ -2,7 +2,9 @@
 
 ## From 84.x to 85.x
 
-This version enables the `distroless` variant of both the `prometheus` and `prometheus-node-exporter` images by default
+This version enables the `distroless` variant of both the `prometheus` and `prometheus-node-exporter` images by default.
+
+If you sync images to your private registry, ensure that you also sync image tags with the distroless suffix.
 
 ## From 83.x to 84.x
 
