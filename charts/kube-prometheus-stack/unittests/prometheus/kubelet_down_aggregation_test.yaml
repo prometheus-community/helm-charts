@@ -7,12 +7,12 @@ tests:
     set:
       defaultRules.additionalAggregationLabels[0]: namespace
     asserts:
-      - equal:
-          path: spec.groups[0].rules[14].alert
-          value: KubeletDown
-      - equal:
-          path: spec.groups[0].rules[14].expr
-          value: |-
-            count by (cluster) (kube_node_info{job="kube-state-metrics"})
-            unless on (cluster)
-            count by (cluster) (up{job="kubelet", metrics_path="/metrics"} == 1)
+      - contains:
+          path: spec.groups[0].rules
+          content:
+            alert: KubeletDown
+            expr: |-
+              count by (cluster) (kube_node_info{job="kube-state-metrics"})
+              unless on (cluster)
+              count by (cluster) (up{job="kubelet", metrics_path="/metrics"} == 1)
+          any: true
