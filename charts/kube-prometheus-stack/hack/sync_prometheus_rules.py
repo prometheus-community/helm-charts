@@ -181,6 +181,13 @@ alert_condition_map = {
     'PrometheusOperatorDown': '.Values.prometheusOperator.enabled',
 }
 
+alerts_without_additional_aggregation_labels = {
+    # KubeletDown joins kube_node_info and kubelet up{} series. Labels such as
+    # namespace can legitimately differ between those sources, which would make
+    # the absence check fire even when kubelets are healthy.
+    'KubeletDown',
+}
+
 replacement_map = {
     'job="prometheus-operator"': {
         'replacement': 'job="{{ $operatorJob }}"',
@@ -349,6 +356,22 @@ def add_rules_conditions(rules, rules_map, indent=4):
 def add_rules_conditions_from_condition_map(rules, indent=4):
     """Add if wrapper for rules, listed in alert_condition_map"""
     rules = add_rules_conditions(rules, alert_condition_map, indent)
+    return rules
+
+
+def remove_additional_aggregation_labels_for_alerts(rules, alert_names, indent=4):
+    """Remove additionalAggregationLabels from selected alert blocks."""
+    label_range = '{{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}'
+    alert_prefix = ' ' * indent + '- alert: '
+
+    for alert_name in alert_names:
+        alert_block_pattern = (
+            r'(?ms)^' + re.escape(alert_prefix + alert_name) +
+            r'\n.*?(?=^' + re.escape(alert_prefix) + r'|\Z)'
+        )
+        alert_block = re.compile(alert_block_pattern)
+        rules = alert_block.sub(lambda match: match.group(0).replace(label_range, ''), rules)
+
     return rules
 
 
@@ -560,6 +583,7 @@ def write_group_to_file(group, url, destination, min_kubernetes, max_kubernetes)
         rules,
         flags=re.IGNORECASE
     )
+    lines = remove_additional_aggregation_labels_for_alerts(lines, alerts_without_additional_aggregation_labels)
 
     # footer
     lines += '{{- end }}'
