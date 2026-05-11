@@ -1,0 +1,43 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/helm-unittest/helm-unittest/main/schema/helm-testsuite.json
+suite: namespace override
+templates:
+  - templates/deployment.yaml
+  - templates/service.yaml
+  - templates/serviceaccount.yaml
+  - templates/servicemonitor.yaml
+  - templates/prometheusrule.yaml
+tests:
+  - it: applies namespaceOverride to all resources
+    set:
+      namespaceOverride: custom-ns
+      serviceMonitor:
+        enabled: true
+        namespace: ""
+      prometheusRule:
+        enabled: true
+        rules:
+          - alert: TestAlert
+            expr: vector(1)
+      serviceAccount:
+        create: true
+    asserts:
+      - equal:
+          path: metadata.namespace
+          value: custom-ns
+        template: templates/deployment.yaml
+      - equal:
+          path: metadata.namespace
+          value: custom-ns
+        template: templates/service.yaml
+      - equal:
+          path: metadata.namespace
+          value: custom-ns
+        template: templates/serviceaccount.yaml
+      - equal:
+          path: metadata.namespace
+          value: custom-ns
+        template: templates/servicemonitor.yaml
+      - equal:
+          path: metadata.namespace
+          value: custom-ns
+        template: templates/prometheusrule.yaml
