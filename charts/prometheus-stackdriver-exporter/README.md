@@ -143,6 +143,10 @@ $ helm show values oci://ghcr.io/prometheus-community/charts/prometheus-stackdri
 
 > **Tip**: You can use the default [values.yaml](values.yaml), as long as you provide a value for stackdriver.projectId
 
+### Namespace Override
+
+Set `namespaceOverride` to deploy chart resources into a namespace different from the Helm release namespace.
+
 ## Google Storage Metrics
 
 In order to get metrics for GCS you need to ensure the metrics interval is >
