@@ -442,6 +442,34 @@ spec:
         {{- end }}
       {{- end }}
 {{- end }}
+{{- if not (.Values.defaultRules.disabled.KubeletInstanceUnreachable | default false) }}
+    - alert: KubeletInstanceUnreachable
+      annotations:
+{{- if .Values.defaultRules.additionalRuleAnnotations }}
+{{ toYaml .Values.defaultRules.additionalRuleAnnotations | indent 8 }}
+{{- end }}
+{{- if .Values.defaultRules.additionalRuleGroupAnnotations.kubernetesSystem }}
+{{ toYaml .Values.defaultRules.additionalRuleGroupAnnotations.kubernetesSystem | indent 8 }}
+{{- end }}
+        description: A Kubelet instance has been unreachable for more than 15 minutes.
+        runbook_url: {{ .Values.defaultRules.runbookUrl }}/kubernetes/kubeletinstanceunreachable
+        summary: Kubelet instance is unreachable.
+      expr: up{job="{{ $kubeletJob }}", metrics_path="/metrics"} == 0
+      for: {{ dig "KubeletInstanceUnreachable" "for" "15m" .Values.customRules }}
+      {{- with .Values.defaultRules.keepFiringFor }}
+      keep_firing_for: "{{ . }}"
+      {{- end }}
+      labels:
+        severity: {{ dig "KubeletInstanceUnreachable" "severity" "warning" .Values.customRules }}
+      {{- if or .Values.defaultRules.additionalRuleLabels .Values.defaultRules.additionalRuleGroupLabels.kubernetesSystem }}
+        {{- with .Values.defaultRules.additionalRuleLabels }}
+          {{- toYaml . | nindent 8 }}
+        {{- end }}
+        {{- with .Values.defaultRules.additionalRuleGroupLabels.kubernetesSystem }}
+          {{- toYaml . | nindent 8 }}
+        {{- end }}
+      {{- end }}
+{{- end }}
 {{- if .Values.prometheusOperator.kubeletService.enabled }}
 {{- if not (.Values.defaultRules.disabled.KubeletDown | default false) }}
     - alert: KubeletDown
