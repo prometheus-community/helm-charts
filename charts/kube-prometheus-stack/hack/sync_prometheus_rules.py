@@ -235,6 +235,18 @@ replacement_map = {
     '$.Values.defaultRules.node.fsSelector': {
         'replacement': '{{ $.Values.defaultRules.node.fsSelector }}',
         'init': ''},
+    'kubelet_certificate_manager_client_ttl_seconds < 604800': {
+        'replacement': 'kubelet_certificate_manager_client_ttl_seconds < {{ .Values.defaultRules.kubeletClientCertificateExpiration.warning }}',
+        'init': ''},
+    'kubelet_certificate_manager_client_ttl_seconds < 86400': {
+        'replacement': 'kubelet_certificate_manager_client_ttl_seconds < {{ .Values.defaultRules.kubeletClientCertificateExpiration.critical }}',
+        'init': ''},
+    'kubelet_certificate_manager_server_ttl_seconds < 604800': {
+        'replacement': 'kubelet_certificate_manager_server_ttl_seconds < {{ .Values.defaultRules.kubeletServerCertificateExpiration.warning }}',
+        'init': ''},
+    'kubelet_certificate_manager_server_ttl_seconds < 86400': {
+        'replacement': 'kubelet_certificate_manager_server_ttl_seconds < {{ .Values.defaultRules.kubeletServerCertificateExpiration.critical }}',
+        'init': ''},
 }
 
 # standard header
