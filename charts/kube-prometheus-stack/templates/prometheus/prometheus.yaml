@@ -51,17 +51,11 @@ spec:
 {{- end }}
 {{- if .Values.prometheus.prometheusSpec.image }}
   {{- $registry := .Values.global.imageRegistry | default .Values.prometheus.prometheusSpec.image.registry -}}
-  {{- if and .Values.prometheus.prometheusSpec.image.tag .Values.prometheus.prometheusSpec.image.sha }}
-  image: "{{ $registry }}/{{ .Values.prometheus.prometheusSpec.image.repository }}:{{ .Values.prometheus.prometheusSpec.image.tag }}@sha256:{{ .Values.prometheus.prometheusSpec.image.sha }}"
-  {{- else if .Values.prometheus.prometheusSpec.image.sha }}
-  image: "{{ $registry }}/{{ .Values.prometheus.prometheusSpec.image.repository }}@sha256:{{ .Values.prometheus.prometheusSpec.image.sha }}"
-  {{- else if .Values.prometheus.prometheusSpec.image.tag }}
-  image: "{{ $registry }}/{{ .Values.prometheus.prometheusSpec.image.repository }}:{{ .Values.prometheus.prometheusSpec.image.tag }}"
-  {{- else }}
-  image: "{{ $registry }}/{{ .Values.prometheus.prometheusSpec.image.repository }}"
-  {{- end }}
+  {{- $tag := (.Values.prometheus.prometheusSpec.image.tag | empty | not) | ternary (printf ":%s" .Values.prometheus.prometheusSpec.image.tag) "" -}}
+  {{- $sha := (.Values.prometheus.prometheusSpec.image.sha | empty | not) | ternary (printf "@sha256:%s" .Values.prometheus.prometheusSpec.image.sha) "" }}
+  image: "{{ printf "%s/%s%s%s" $registry .Values.prometheus.prometheusSpec.image.repository $tag $sha }}"
   imagePullPolicy: "{{ .Values.prometheus.prometheusSpec.image.pullPolicy }}"
-  version: {{ default .Values.prometheus.prometheusSpec.image.tag .Values.prometheus.prometheusSpec.version }}
+  version: "{{ default .Values.prometheus.prometheusSpec.image.tag .Values.prometheus.prometheusSpec.version }}"
 {{- end }}
 {{- if .Values.prometheus.prometheusSpec.additionalArgs }}
   additionalArgs:
@@ -404,7 +398,10 @@ spec:
 {{- if not .Values.prometheus.agentMode }}
 {{- if .Values.prometheus.prometheusSpec.thanos }}
   thanos:
-{{- with (omit .Values.prometheus.prometheusSpec.thanos "objectStorageConfig" "secretProviderClass") }}
+{{- with .Values.prometheus.prometheusSpec.thanos.image }}
+    image: {{ . }} 
+{{- end }}
+{{- with (omit .Values.prometheus.prometheusSpec.thanos "image" "objectStorageConfig" "secretProviderClass") }}
 {{ toYaml . | indent 4 }}
 {{- end }}
 {{- if ((.Values.prometheus.prometheusSpec.thanos.objectStorageConfig).existingSecret) }}
@@ -464,7 +461,11 @@ spec:
       name: "{{ printf "%s-%s" (include "kube-prometheus-stack.fullname" $) . | trunc 63 | trimSuffix "-" }}"
 {{- end }}
 {{- if .Values.prometheus.prometheusSpec.excludedFromEnforcement }}
+  {{- if kindIs "string" .Values.prometheus.prometheusSpec.excludedFromEnforcement }}
+{{ tpl .Values.prometheus.prometheusSpec.excludedFromEnforcement . | indent 4 }}
+  {{- else }}
 {{ tpl (toYaml .Values.prometheus.prometheusSpec.excludedFromEnforcement | indent 4) . }}
+  {{- end }}
 {{- end }}
 {{- end }}
 {{- if and (not .Values.prometheus.agentMode) .Values.prometheus.prometheusSpec.queryLogFile }}
@@ -500,10 +501,23 @@ spec:
 {{- if .Values.prometheus.prometheusSpec.minReadySeconds }}
   minReadySeconds: {{ .Values.prometheus.prometheusSpec.minReadySeconds }}
 {{- end }}
+{{- if .Values.prometheus.prometheusSpec.podManagementPolicy }}
+  podManagementPolicy: {{ .Values.prometheus.prometheusSpec.podManagementPolicy }}
+{{- end }}
+{{- if .Values.prometheus.prometheusSpec.updateStrategy }}
+  updateStrategy:
+{{ toYaml .Values.prometheus.prometheusSpec.updateStrategy | indent 4 }}
+{{- end }}
+{{- if .Values.prometheus.prometheusSpec.terminationGracePeriodSeconds }}
+  terminationGracePeriodSeconds: {{ .Values.prometheus.prometheusSpec.terminationGracePeriodSeconds }}
+{{- end }}
 {{- if .Values.prometheus.prometheusSpec.maximumStartupDurationSeconds }}
   maximumStartupDurationSeconds: {{ .Values.prometheus.prometheusSpec.maximumStartupDurationSeconds }}
 {{- end }}
   hostNetwork: {{ .Values.prometheus.prometheusSpec.hostNetwork }}
+{{- if kindIs "bool" .Values.prometheus.prometheusSpec.hostUsers }}
+  hostUsers: {{ .Values.prometheus.prometheusSpec.hostUsers }}
+{{- end }}
 {{- if .Values.prometheus.prometheusSpec.hostAliases }}
   hostAliases:
 {{ toYaml .Values.prometheus.prometheusSpec.hostAliases | indent 4 }}

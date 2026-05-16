@@ -302,7 +302,7 @@ spec:
         description: Client certificate for Kubelet on node {{`{{`}} $labels.node {{`}}`}} expires in {{`{{`}} $value | humanizeDuration {{`}}`}} on cluster {{`{{`}} $labels.cluster {{`}}`}}.
         runbook_url: {{ .Values.defaultRules.runbookUrl }}/kubernetes/kubeletclientcertificateexpiration
         summary: Kubelet client certificate is about to expire.
-      expr: kubelet_certificate_manager_client_ttl_seconds < 604800
+      expr: kubelet_certificate_manager_client_ttl_seconds < {{ .Values.defaultRules.kubeletClientCertificateExpiration.warning }}
       labels:
         severity: {{ dig "KubeletClientCertificateExpiration" "severity" "warning" .Values.customRules }}
       {{- if or .Values.defaultRules.additionalRuleLabels .Values.defaultRules.additionalRuleGroupLabels.kubernetesSystem }}
@@ -326,7 +326,7 @@ spec:
         description: Client certificate for Kubelet on node {{`{{`}} $labels.node {{`}}`}} expires in {{`{{`}} $value | humanizeDuration {{`}}`}} on cluster {{`{{`}} $labels.cluster {{`}}`}}.
         runbook_url: {{ .Values.defaultRules.runbookUrl }}/kubernetes/kubeletclientcertificateexpiration
         summary: Kubelet client certificate is about to expire.
-      expr: kubelet_certificate_manager_client_ttl_seconds < 86400
+      expr: kubelet_certificate_manager_client_ttl_seconds < {{ .Values.defaultRules.kubeletClientCertificateExpiration.critical }}
       labels:
         severity: {{ dig "KubeletClientCertificateExpiration" "severity" "critical" .Values.customRules }}
       {{- if or .Values.defaultRules.additionalRuleLabels .Values.defaultRules.additionalRuleGroupLabels.kubernetesSystem }}
@@ -350,7 +350,7 @@ spec:
         description: Server certificate for Kubelet on node {{`{{`}} $labels.node {{`}}`}} expires in {{`{{`}} $value | humanizeDuration {{`}}`}} on cluster {{`{{`}} $labels.cluster {{`}}`}}.
         runbook_url: {{ .Values.defaultRules.runbookUrl }}/kubernetes/kubeletservercertificateexpiration
         summary: Kubelet server certificate is about to expire.
-      expr: kubelet_certificate_manager_server_ttl_seconds < 604800
+      expr: kubelet_certificate_manager_server_ttl_seconds < {{ .Values.defaultRules.kubeletServerCertificateExpiration.warning }}
       labels:
         severity: {{ dig "KubeletServerCertificateExpiration" "severity" "warning" .Values.customRules }}
       {{- if or .Values.defaultRules.additionalRuleLabels .Values.defaultRules.additionalRuleGroupLabels.kubernetesSystem }}
@@ -374,7 +374,7 @@ spec:
         description: Server certificate for Kubelet on node {{`{{`}} $labels.node {{`}}`}} expires in {{`{{`}} $value | humanizeDuration {{`}}`}} on cluster {{`{{`}} $labels.cluster {{`}}`}}.
         runbook_url: {{ .Values.defaultRules.runbookUrl }}/kubernetes/kubeletservercertificateexpiration
         summary: Kubelet server certificate is about to expire.
-      expr: kubelet_certificate_manager_server_ttl_seconds < 86400
+      expr: kubelet_certificate_manager_server_ttl_seconds < {{ .Values.defaultRules.kubeletServerCertificateExpiration.critical }}
       labels:
         severity: {{ dig "KubeletServerCertificateExpiration" "severity" "critical" .Values.customRules }}
       {{- if or .Values.defaultRules.additionalRuleLabels .Values.defaultRules.additionalRuleGroupLabels.kubernetesSystem }}
@@ -442,6 +442,34 @@ spec:
         {{- end }}
       {{- end }}
 {{- end }}
+{{- if not (.Values.defaultRules.disabled.KubeletInstanceUnreachable | default false) }}
+    - alert: KubeletInstanceUnreachable
+      annotations:
+{{- if .Values.defaultRules.additionalRuleAnnotations }}
+{{ toYaml .Values.defaultRules.additionalRuleAnnotations | indent 8 }}
+{{- end }}
+{{- if .Values.defaultRules.additionalRuleGroupAnnotations.kubernetesSystem }}
+{{ toYaml .Values.defaultRules.additionalRuleGroupAnnotations.kubernetesSystem | indent 8 }}
+{{- end }}
+        description: A Kubelet instance has been unreachable for more than 15 minutes.
+        runbook_url: {{ .Values.defaultRules.runbookUrl }}/kubernetes/kubeletinstanceunreachable
+        summary: Kubelet instance is unreachable.
+      expr: up{job="{{ $kubeletJob }}", metrics_path="/metrics"} == 0
+      for: {{ dig "KubeletInstanceUnreachable" "for" "15m" .Values.customRules }}
+      {{- with .Values.defaultRules.keepFiringFor }}
+      keep_firing_for: "{{ . }}"
+      {{- end }}
+      labels:
+        severity: {{ dig "KubeletInstanceUnreachable" "severity" "warning" .Values.customRules }}
+      {{- if or .Values.defaultRules.additionalRuleLabels .Values.defaultRules.additionalRuleGroupLabels.kubernetesSystem }}
+        {{- with .Values.defaultRules.additionalRuleLabels }}
+          {{- toYaml . | nindent 8 }}
+        {{- end }}
+        {{- with .Values.defaultRules.additionalRuleGroupLabels.kubernetesSystem }}
+          {{- toYaml . | nindent 8 }}
+        {{- end }}
+      {{- end }}
+{{- end }}
 {{- if .Values.prometheusOperator.kubeletService.enabled }}
 {{- if not (.Values.defaultRules.disabled.KubeletDown | default false) }}
     - alert: KubeletDown
@@ -452,10 +480,13 @@ spec:
 {{- if .Values.defaultRules.additionalRuleGroupAnnotations.kubernetesSystem }}
 {{ toYaml .Values.defaultRules.additionalRuleGroupAnnotations.kubernetesSystem | indent 8 }}
 {{- end }}
-        description: Kubelet has disappeared from Prometheus target discovery.
+        description: Kubelet has disappeared from Prometheus target discovery on cluster {{`{{`}} $labels.cluster {{`}}`}}.
         runbook_url: {{ .Values.defaultRules.runbookUrl }}/kubernetes/kubeletdown
         summary: Target disappeared from Prometheus target discovery.
-      expr: absent(up{job="{{ $kubeletJob }}", metrics_path="/metrics"})
+      expr: |-
+        count by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster) (kube_node_info{job="{{ $kubeStateMetricsJob }}"})
+        unless on ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster)
+        count by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster) (up{job="{{ $kubeletJob }}", metrics_path="/metrics"} == 1)
       for: {{ dig "KubeletDown" "for" "15m" .Values.customRules }}
       {{- with .Values.defaultRules.keepFiringFor }}
       keep_firing_for: "{{ . }}"
