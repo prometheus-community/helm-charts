@@ -153,11 +153,11 @@ condition_map = {
     'kubernetes-resources': ' .Values.defaultRules.rules.kubernetesResources',
     'kubernetes-storage': ' .Values.defaultRules.rules.kubernetesStorage',
     'kubernetes-system': ' .Values.defaultRules.rules.kubernetesSystem',
-    'kubernetes-system-kube-proxy': ' .Values.kubeProxy.enabled .Values.defaultRules.rules.kubeProxy',
+    'kubernetes-system-kube-proxy': ' .Values.kubeProxy.enabled .Values.defaultRules.rules.kubeProxy (not (.Values.defaultRules.disabled.KubeProxyDown | default false))',
     'kubernetes-system-apiserver': ' .Values.defaultRules.rules.kubernetesSystem', # kubernetes-system was split into more groups in 1.14, one of them is kubernetes-system-apiserver
     'kubernetes-system-kubelet': ' .Values.defaultRules.rules.kubernetesSystem', # kubernetes-system was split into more groups in 1.14, one of them is kubernetes-system-kubelet
-    'kubernetes-system-controller-manager': ' .Values.kubeControllerManager.enabled .Values.defaultRules.rules.kubeControllerManager',
-    'kubernetes-system-scheduler': ' .Values.kubeScheduler.enabled .Values.defaultRules.rules.kubeSchedulerAlerting',
+    'kubernetes-system-controller-manager': ' .Values.kubeControllerManager.enabled .Values.defaultRules.rules.kubeControllerManager (not (.Values.defaultRules.disabled.KubeControllerManagerDown | default false))',
+    'kubernetes-system-scheduler': ' .Values.kubeScheduler.enabled .Values.defaultRules.rules.kubeSchedulerAlerting (not (.Values.defaultRules.disabled.KubeSchedulerDown | default false))',
     'node-exporter.rules': ' .Values.defaultRules.rules.nodeExporterRecording',
     'node-exporter': ' .Values.defaultRules.rules.nodeExporterAlerting',
     'node.rules': ' .Values.defaultRules.rules.node',
@@ -319,10 +319,11 @@ def get_rule_group_condition(group_name, value_key):
     if group_name == '':
         return ''
 
-    if group_name.count(".Values") > 1:
-        group_name = group_name.split(' ')[-1]
+    rule_condition = re.search(r'\.Values\.defaultRules\.rules\.[A-Za-z0-9_]+', group_name)
+    if rule_condition is None:
+        return ''
 
-    return group_name.replace('Values.defaultRules.rules', f"Values.defaultRules.{value_key}").strip()
+    return rule_condition.group(0).replace('Values.defaultRules.rules', f"Values.defaultRules.{value_key}").strip()
 
 
 def add_rules_conditions(rules, rules_map, indent=4):
