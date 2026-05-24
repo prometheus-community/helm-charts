@@ -51,15 +51,9 @@ spec:
 {{- end }}
 {{- if .Values.prometheus.prometheusSpec.image }}
   {{- $registry := .Values.global.imageRegistry | default .Values.prometheus.prometheusSpec.image.registry -}}
-  {{- if and .Values.prometheus.prometheusSpec.image.tag .Values.prometheus.prometheusSpec.image.sha }}
-  image: "{{ $registry }}/{{ .Values.prometheus.prometheusSpec.image.repository }}:{{ .Values.prometheus.prometheusSpec.image.tag }}@sha256:{{ .Values.prometheus.prometheusSpec.image.sha }}"
-  {{- else if .Values.prometheus.prometheusSpec.image.sha }}
-  image: "{{ $registry }}/{{ .Values.prometheus.prometheusSpec.image.repository }}@sha256:{{ .Values.prometheus.prometheusSpec.image.sha }}"
-  {{- else if .Values.prometheus.prometheusSpec.image.tag }}
-  image: "{{ $registry }}/{{ .Values.prometheus.prometheusSpec.image.repository }}:{{ .Values.prometheus.prometheusSpec.image.tag }}"
-  {{- else }}
-  image: "{{ $registry }}/{{ .Values.prometheus.prometheusSpec.image.repository }}"
-  {{- end }}
+  {{- $tag := (.Values.prometheus.prometheusSpec.image.tag | empty | not) | ternary (printf ":%s" .Values.prometheus.prometheusSpec.image.tag) "" -}}
+  {{- $sha := (.Values.prometheus.prometheusSpec.image.sha | empty | not) | ternary (printf "@sha256:%s" .Values.prometheus.prometheusSpec.image.sha) "" }}
+  image: "{{ printf "%s/%s%s%s" $registry .Values.prometheus.prometheusSpec.image.repository $tag $sha }}"
   imagePullPolicy: "{{ .Values.prometheus.prometheusSpec.image.pullPolicy }}"
   version: "{{ default .Values.prometheus.prometheusSpec.image.tag .Values.prometheus.prometheusSpec.version }}"
 {{- end }}
@@ -407,7 +401,7 @@ spec:
 {{- with .Values.prometheus.prometheusSpec.thanos.image }}
     image: {{ . }} 
 {{- end }}
-{{- with (omit .Values.prometheus.prometheusSpec.thanos "objectStorageConfig" "secretProviderClass") }}
+{{- with (omit .Values.prometheus.prometheusSpec.thanos "image" "objectStorageConfig" "secretProviderClass") }}
 {{ toYaml . | indent 4 }}
 {{- end }}
 {{- if ((.Values.prometheus.prometheusSpec.thanos.objectStorageConfig).existingSecret) }}

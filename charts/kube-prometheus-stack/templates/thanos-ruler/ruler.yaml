@@ -172,9 +172,22 @@ spec:
   imagePullSecrets:
 {{ toYaml .Values.global.imagePullSecrets | indent 4 }}
 {{- end }}
-{{- if .Values.thanosRuler.thanosRulerSpec.containers }}
+{{- if or .Values.thanosRuler.thanosRulerSpec.containers .Values.thanosRuler.thanosRulerSpec.extraEnv }}
   containers:
+{{- if .Values.thanosRuler.thanosRulerSpec.extraEnv }}
+{{/* The operator applies env overrides through a strategic merge patch on the generated thanos-ruler container. */}}
+{{- range .Values.thanosRuler.thanosRulerSpec.containers }}
+{{- if eq .name "thanos-ruler" }}
+{{- fail "thanosRuler.thanosRulerSpec.extraEnv cannot be used together with a thanos-ruler entry in thanosRuler.thanosRulerSpec.containers" }}
+{{- end }}
+{{- end }}
+  - name: thanos-ruler
+    env:
+{{ toYaml .Values.thanosRuler.thanosRulerSpec.extraEnv | indent 6 }}
+{{- end }}
+{{- if .Values.thanosRuler.thanosRulerSpec.containers }}
 {{ toYaml .Values.thanosRuler.thanosRulerSpec.containers | indent 4 }}
+{{- end }}
 {{- end }}
 {{- if .Values.thanosRuler.thanosRulerSpec.initContainers }}
   initContainers:

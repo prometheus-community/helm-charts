@@ -29,9 +29,9 @@ def change_style(style, representer):
 
 refs = {
     # renovate: git-refs=https://github.com/prometheus-operator/kube-prometheus branch=main
-    'ref.kube-prometheus': 'ac9a50923df1dec1e4357a5d1bbeb4f83750b1ef',
+    'ref.kube-prometheus': 'a0d4361bf7336609bf3f166db8501a6c3b37c8ce',
     # renovate: git-refs=https://github.com/kubernetes-monitoring/kubernetes-mixin branch=master
-    'ref.kubernetes-mixin': 'e4a13255e095ebd32725b7fbc7551594d72b7f6d',
+    'ref.kubernetes-mixin': '1a2f5ad4c5dc5dc7aaf08113303ab5464638179f',
     'ref.etcd': '479c194f3f5754f039a74c396f3e70f6419edf8e',
 }
 
@@ -153,11 +153,11 @@ condition_map = {
     'kubernetes-resources': ' .Values.defaultRules.rules.kubernetesResources',
     'kubernetes-storage': ' .Values.defaultRules.rules.kubernetesStorage',
     'kubernetes-system': ' .Values.defaultRules.rules.kubernetesSystem',
-    'kubernetes-system-kube-proxy': ' .Values.kubeProxy.enabled .Values.defaultRules.rules.kubeProxy',
+    'kubernetes-system-kube-proxy': ' .Values.kubeProxy.enabled .Values.defaultRules.rules.kubeProxy (not (.Values.defaultRules.disabled.KubeProxyDown | default false))',
     'kubernetes-system-apiserver': ' .Values.defaultRules.rules.kubernetesSystem', # kubernetes-system was split into more groups in 1.14, one of them is kubernetes-system-apiserver
     'kubernetes-system-kubelet': ' .Values.defaultRules.rules.kubernetesSystem', # kubernetes-system was split into more groups in 1.14, one of them is kubernetes-system-kubelet
-    'kubernetes-system-controller-manager': ' .Values.kubeControllerManager.enabled .Values.defaultRules.rules.kubeControllerManager',
-    'kubernetes-system-scheduler': ' .Values.kubeScheduler.enabled .Values.defaultRules.rules.kubeSchedulerAlerting',
+    'kubernetes-system-controller-manager': ' .Values.kubeControllerManager.enabled .Values.defaultRules.rules.kubeControllerManager (not (.Values.defaultRules.disabled.KubeControllerManagerDown | default false))',
+    'kubernetes-system-scheduler': ' .Values.kubeScheduler.enabled .Values.defaultRules.rules.kubeSchedulerAlerting (not (.Values.defaultRules.disabled.KubeSchedulerDown | default false))',
     'node-exporter.rules': ' .Values.defaultRules.rules.nodeExporterRecording',
     'node-exporter': ' .Values.defaultRules.rules.nodeExporterAlerting',
     'node.rules': ' .Values.defaultRules.rules.node',
@@ -179,6 +179,13 @@ alert_condition_map = {
     'KubeStateMetricsDown': '.Values.kubeStateMetrics.enabled',  # there are more alerts which are left enabled, because they'll never fire without metrics
     'NodeExporterDown': '.Values.nodeExporter.enabled',
     'PrometheusOperatorDown': '.Values.prometheusOperator.enabled',
+}
+
+alerts_without_additional_aggregation_labels = {
+    # KubeletDown joins kube_node_info and kubelet up{} series. Labels such as
+    # namespace can legitimately differ between those sources, which would make
+    # the absence check fire even when kubelets are healthy.
+    'KubeletDown',
 }
 
 replacement_map = {
@@ -234,6 +241,18 @@ replacement_map = {
         'init': ''},
     '$.Values.defaultRules.node.fsSelector': {
         'replacement': '{{ $.Values.defaultRules.node.fsSelector }}',
+        'init': ''},
+    'kubelet_certificate_manager_client_ttl_seconds < 604800': {
+        'replacement': 'kubelet_certificate_manager_client_ttl_seconds < {{ .Values.defaultRules.kubeletClientCertificateExpiration.warning }}',
+        'init': ''},
+    'kubelet_certificate_manager_client_ttl_seconds < 86400': {
+        'replacement': 'kubelet_certificate_manager_client_ttl_seconds < {{ .Values.defaultRules.kubeletClientCertificateExpiration.critical }}',
+        'init': ''},
+    'kubelet_certificate_manager_server_ttl_seconds < 604800': {
+        'replacement': 'kubelet_certificate_manager_server_ttl_seconds < {{ .Values.defaultRules.kubeletServerCertificateExpiration.warning }}',
+        'init': ''},
+    'kubelet_certificate_manager_server_ttl_seconds < 86400': {
+        'replacement': 'kubelet_certificate_manager_server_ttl_seconds < {{ .Values.defaultRules.kubeletServerCertificateExpiration.critical }}',
         'init': ''},
 }
 
@@ -300,10 +319,11 @@ def get_rule_group_condition(group_name, value_key):
     if group_name == '':
         return ''
 
-    if group_name.count(".Values") > 1:
-        group_name = group_name.split(' ')[-1]
+    rule_condition = re.search(r'\.Values\.defaultRules\.rules\.[A-Za-z0-9_]+', group_name)
+    if rule_condition is None:
+        return ''
 
-    return group_name.replace('Values.defaultRules.rules', f"Values.defaultRules.{value_key}").strip()
+    return rule_condition.group(0).replace('Values.defaultRules.rules', f"Values.defaultRules.{value_key}").strip()
 
 
 def add_rules_conditions(rules, rules_map, indent=4):
@@ -349,6 +369,22 @@ def add_rules_conditions(rules, rules_map, indent=4):
 def add_rules_conditions_from_condition_map(rules, indent=4):
     """Add if wrapper for rules, listed in alert_condition_map"""
     rules = add_rules_conditions(rules, alert_condition_map, indent)
+    return rules
+
+
+def remove_additional_aggregation_labels_for_alerts(rules, alert_names, indent=4):
+    """Remove additionalAggregationLabels from selected alert blocks."""
+    label_range = '{{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}'
+    alert_prefix = ' ' * indent + '- alert: '
+
+    for alert_name in alert_names:
+        alert_block_pattern = (
+            r'(?ms)^' + re.escape(alert_prefix + alert_name) +
+            r'\n.*?(?=^' + re.escape(alert_prefix) + r'|\Z)'
+        )
+        alert_block = re.compile(alert_block_pattern)
+        rules = alert_block.sub(lambda match: match.group(0).replace(label_range, ''), rules)
+
     return rules
 
 
@@ -560,6 +596,7 @@ def write_group_to_file(group, url, destination, min_kubernetes, max_kubernetes)
         rules,
         flags=re.IGNORECASE
     )
+    lines = remove_additional_aggregation_labels_for_alerts(lines, alerts_without_additional_aggregation_labels)
 
     # footer
     lines += '{{- end }}'
