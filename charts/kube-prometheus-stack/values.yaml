@@ -304,6 +304,14 @@ defaultRules:
   ## Prefix for runbook URLs. Use this to override the first part of the runbookURLs that is common to all rules.
   runbookUrl: "https://runbooks.prometheus-operator.dev/runbooks"
 
+  ## Thresholds for kubelet certificate expiration alerts (in seconds)
+  kubeletServerCertificateExpiration:
+    warning: 604800     # 7 days
+    critical: 86400     # 1 day
+  kubeletClientCertificateExpiration:
+    warning: 604800     # 7 days
+    critical: 86400     # 1 day
+
   node:
     fsSelector: 'fstype!=""'
     # fsSelector: 'fstype=~"ext[234]|btrfs|xfs|zfs"'
@@ -1574,24 +1582,23 @@ grafana:
 
     # Path to use for scraping metrics. Might be different if server.root_url is set
     # in grafana.ini
-    path: "/metrics"
+    # path: /metrics
 
     #  namespace: monitoring  (defaults to use the namespace this chart is deployed to)
 
     # labels for the ServiceMonitor
-    labels: {}
+    # labels: {}
 
-    # Scrape interval. If not set, the Prometheus default scrape interval is used.
-    #
-    interval: ""
-    scheme: http
-    tlsConfig: {}
-    scrapeTimeout: 30s
+    # Extra rape settings.
+    # interval: ""
+    # scheme: http
+    # tlsConfig: {}
+    # scrapeTimeout: 30s
 
     ## RelabelConfigs to apply to samples before scraping
     ## ref: https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/api-reference/api.md#relabelconfig
     ##
-    relabelings: []
+    # relabelings: []
     # - sourceLabels: [__meta_kubernetes_pod_node_name]
     #   separator: ;
     #   regex: ^(.*)$
@@ -2628,6 +2635,9 @@ prometheus-node-exporter:
     labels:
       jobLabel: node-exporter
 
+  image:
+    distroless: true
+
   prometheus:
     monitor:
       enabled: true
@@ -3004,7 +3014,7 @@ prometheusOperator:
       image:
         registry: ghcr.io
         repository: jkroepke/kube-webhook-certgen
-        tag: 1.8.2
+        tag: 1.8.3
         sha: ""
         pullPolicy: IfNotPresent
       resources: {}
@@ -4159,7 +4169,7 @@ prometheus:
     image:
       registry: quay.io
       repository: prometheus/prometheus
-      tag: v3.11.3
+      tag: v3.11.3-distroless
       sha: ""
       pullPolicy: IfNotPresent
 
@@ -5546,6 +5556,13 @@ thanosRuler:
     ## Containers allows injecting additional containers. This is meant to allow adding an authentication proxy to an ThanosRuler pod.
     ##
     containers: []
+
+    ## Additional environment variables to set on the ThanosRuler container.
+    ## This is rendered through the Prometheus Operator strategic merge patch.
+    ##
+    extraEnv: []
+    # - name: EXAMPLE
+    #   value: test
 
     # Additional volumes on the output StatefulSet definition.
     volumes: []
