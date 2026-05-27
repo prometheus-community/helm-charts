@@ -27,6 +27,10 @@ def change_style(style, representer):
     return new_representer
 
 
+# Sentinel value for dashboards that identify clusters by the job label rather
+# than a dedicated cluster label (e.g. etcd, which predates externalLabels support).
+CLUSTER_SELECTOR_JOB = 'job'
+
 refs = {
     # renovate: git-refs=https://github.com/prometheus-operator/kube-prometheus branch=main
     'ref.kube-prometheus': 'a0d4361bf7336609bf3f166db8501a6c3b37c8ce',
@@ -71,7 +75,10 @@ charts = [
         'min_kubernetes': '1.14.0-0',
         'type': 'jsonnet_mixin',
         'mixin_vars': {'_config+': {}},
-        'multicluster_key': '(or .Values.grafana.sidecar.dashboards.multicluster.global.enabled .Values.grafana.sidecar.dashboards.multicluster.etcd.enabled)'
+        'multicluster_key': '(or .Values.grafana.sidecar.dashboards.multicluster.global.enabled .Values.grafana.sidecar.dashboards.multicluster.etcd.enabled)',
+        # etcd metrics use the job label as the cluster identifier in single-cluster
+        # setups; when multicluster is enabled the generator switches to the cluster label.
+        'cluster_selector': CLUSTER_SELECTOR_JOB,
     },
 ]
 
@@ -217,7 +224,7 @@ def replace_nested_key(data, key, value, replace):
         return data
 
 
-def patch_dashboards_json(content, multicluster_key):
+def patch_dashboards_json(content, multicluster_key, cluster_selector='cluster'):
     try:
         content_struct = json.loads(content)
 
@@ -236,6 +243,20 @@ def patch_dashboards_json(content, multicluster_key):
 
         content = json.dumps(content_struct, separators=(',', ':'))
         content = content.replace('":multicluster:"', '`}}{{ if %s }}0{{ else }}2{{ end }}{{`' % multicluster_key,)
+
+        # For dashboards that use the job label as a cluster selector (e.g. etcd),
+        # replace job="$cluster" metric selectors and the variable query with
+        # conditionals so multi-cluster setups can filter by the cluster label instead.
+        if cluster_selector == CLUSTER_SELECTOR_JOB:
+            content = content.replace(
+                'label_values(etcd_server_has_leader{job=~\\".*etcd.*\\"}, job)',
+                '`}}{{ if %(key)s }}label_values(etcd_server_has_leader{job=~\\".*etcd.*\\"}, cluster){{ else }}label_values(etcd_server_has_leader{job=~\\".*etcd.*\\"}, job){{ end }}{{`' % {'key': multicluster_key},
+            )
+            content = content.replace(
+                'job=\\"$cluster\\"',
+                '`}}{{ if %(key)s }}cluster{{ else }}job{{ end }}{{`=\\"$cluster\\"' % {'key': multicluster_key},
+            )
+
         init_line = ''
 
         for line in replacement_map:
@@ -281,8 +302,8 @@ def jsonnet_import_callback(base, rel):
     raise RuntimeError('File not found')
 
 
-def write_group_to_file(resource_name, content, url, destination, min_kubernetes, max_kubernetes, multicluster_key):
-    init_line, content = patch_dashboards_json(content, multicluster_key)
+def write_group_to_file(resource_name, content, url, destination, min_kubernetes, max_kubernetes, multicluster_key, cluster_selector='cluster'):
+    init_line, content = patch_dashboards_json(content, multicluster_key, cluster_selector)
 
     # initialize header
     lines = header % {
@@ -394,7 +415,7 @@ def main():
             groups = yaml_text['items']
             for group in groups:
                 for resource, content in group['data'].items():
-                    write_group_to_file(resource.replace('.json', ''), content, url, chart['destination'], chart['min_kubernetes'], chart['max_kubernetes'], chart['multicluster_key'])
+                    write_group_to_file(resource.replace('.json', ''), content, url, chart['destination'], chart['min_kubernetes'], chart['max_kubernetes'], chart['multicluster_key'], chart.get('cluster_selector', 'cluster'))
         elif chart['type'] == 'jsonnet_mixin':
             json_text = json.loads(_jsonnet.evaluate_snippet(source, raw_text + '.grafanaDashboards', import_callback=jsonnet_import_callback))
 
@@ -404,14 +425,14 @@ def main():
             flat_structure = bool(json_text.get('annotations'))
             if flat_structure:
                 resource = os.path.basename(chart['source']).replace('.json', '')
-                write_group_to_file(resource, json.dumps(json_text, indent=4), url, chart['destination'], chart['min_kubernetes'], chart['max_kubernetes'], chart['multicluster_key'])
+                write_group_to_file(resource, json.dumps(json_text, indent=4), url, chart['destination'], chart['min_kubernetes'], chart['max_kubernetes'], chart['multicluster_key'], chart.get('cluster_selector', 'cluster'))
             else:
                 for resource, content in json_text.items():
-                    write_group_to_file(resource.replace('.json', ''), json.dumps(content, indent=4), url, chart['destination'], chart['min_kubernetes'], chart['max_kubernetes'], chart['multicluster_key'])
+                    write_group_to_file(resource.replace('.json', ''), json.dumps(content, indent=4), url, chart['destination'], chart['min_kubernetes'], chart['max_kubernetes'], chart['multicluster_key'], chart.get('cluster_selector', 'cluster'))
         elif chart['type'] == 'dashboard_json':
             write_group_to_file(os.path.basename(source).replace('.json', ''),
                                 raw_text, url, chart['destination'], chart['min_kubernetes'],
-                                chart['max_kubernetes'], chart['multicluster_key'])
+                                chart['max_kubernetes'], chart['multicluster_key'], chart.get('cluster_selector', 'cluster'))
 
 
 print("Finished")
