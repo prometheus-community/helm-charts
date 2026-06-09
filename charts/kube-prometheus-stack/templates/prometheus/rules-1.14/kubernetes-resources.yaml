@@ -213,11 +213,13 @@ spec:
         runbook_url: {{ .Values.defaultRules.runbookUrl }}/kubernetes/kubequotaalmostfull
         summary: Namespace quota is going to be full.
       expr: |-
-        max without (instance, job, type) (
-          kube_resourcequota{job="{{ $kubeStateMetricsJob }}", type="used"}
+        topk by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster, namespace, resource, resourcequota) (1,
+          max without (instance, job, type) (
+            kube_resourcequota{job="{{ $kubeStateMetricsJob }}", type="used"}
+          )
         )
         / on ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster, namespace, resource, resourcequota) group_left()
-        (
+        topk by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster, namespace, resource, resourcequota) (1,
           max without (instance, job, type) (
             kube_resourcequota{job="{{ $kubeStateMetricsJob }}", type="hard"}
           ) > 0
@@ -251,11 +253,13 @@ spec:
         runbook_url: {{ .Values.defaultRules.runbookUrl }}/kubernetes/kubequotafullyused
         summary: Namespace quota is fully used.
       expr: |-
-        max without (instance, job, type) (
-          kube_resourcequota{job="{{ $kubeStateMetricsJob }}", type="used"}
+        topk by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster, namespace, resource, resourcequota) (1,
+          max without (instance, job, type) (
+            kube_resourcequota{job="{{ $kubeStateMetricsJob }}", type="used"}
+          )
         )
         / on ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster, namespace, resource, resourcequota) group_left()
-        (
+        topk by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster, namespace, resource, resourcequota) (1,
           max without (instance, job, type) (
             kube_resourcequota{job="{{ $kubeStateMetricsJob }}", type="hard"}
           ) > 0
@@ -289,11 +293,13 @@ spec:
         runbook_url: {{ .Values.defaultRules.runbookUrl }}/kubernetes/kubequotaexceeded
         summary: Namespace quota has exceeded the limits.
       expr: |-
-        max without (instance, job, type) (
-          kube_resourcequota{job="{{ $kubeStateMetricsJob }}", type="used"}
+        topk by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster, namespace, resource, resourcequota) (1,
+          max without (instance, job, type) (
+            kube_resourcequota{job="{{ $kubeStateMetricsJob }}", type="used"}
+          )
         )
         / on ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster, namespace, resource, resourcequota) group_left()
-        (
+        topk by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster, namespace, resource, resourcequota) (1,
           max without (instance, job, type) (
             kube_resourcequota{job="{{ $kubeStateMetricsJob }}", type="hard"}
           ) > 0
