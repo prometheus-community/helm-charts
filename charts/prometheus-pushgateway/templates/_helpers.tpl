@@ -87,6 +87,20 @@ basic_auth_users:
 {{- end }}
 
 {{/*
+Return web configuration secret name
+*/}}
+{{- define "prometheus-pushgateway.webConfigurationSecretName" -}}
+{{- $webConfiguration := .Values.webConfiguration | default dict -}}
+{{- $existingSecret := get $webConfiguration "existingSecret" | default dict -}}
+{{- $existingSecretName := get $existingSecret "name" | default "" -}}
+{{- if $existingSecretName -}}
+{{- $existingSecretName -}}
+{{- else -}}
+{{- include "prometheus-pushgateway.fullname" . -}}
+{{- end -}}
+{{- end -}}
+
+{{/*
 Define Authorization
 */}}
 {{- define "prometheus-pushgateway.Authorization" -}}
@@ -282,7 +296,7 @@ volumes:
   {{- if .Values.webConfiguration }}
   - name: web-config
     secret:
-      secretName: {{ include "prometheus-pushgateway.fullname" . }}
+      secretName: {{ include "prometheus-pushgateway.webConfigurationSecretName" . }}
   {{- end }}
   {{- end }}
   {{- if .Values.extraVolumes }}
@@ -291,7 +305,7 @@ volumes:
   {{- if .Values.webConfiguration }}
   - name: web-config
     secret:
-      secretName: {{ include "prometheus-pushgateway.fullname" . }}
+      secretName: {{ include "prometheus-pushgateway.webConfigurationSecretName" . }}
   {{- else }}
   []
   {{- end }}
