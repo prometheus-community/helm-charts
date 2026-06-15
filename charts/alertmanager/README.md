@@ -8,7 +8,7 @@ As per [prometheus.io documentation](https://prometheus.io/docs/alerting/latest/
 
 ## Prerequisites
 
-Kubernetes 1.14+
+Kubernetes 1.25+
 
 ## Usage
 
