@@ -27,14 +27,18 @@ spec:
 {{- if not (.Values.defaultRules.disabled.etcdMembersDown | default false) }}
     - alert: etcdMembersDown
       annotations:
-{{- if .Values.defaultRules.additionalRuleAnnotations }}
-{{ toYaml .Values.defaultRules.additionalRuleAnnotations | indent 8 }}
+{{- $ruleAnnotations := dig "etcdMembersDown" (dict) .Values.defaultRules.additionalRuleAnnotations }}
+{{- $groupAnnotations := default (dict) .Values.defaultRules.additionalRuleGroupAnnotations.etcd }}
+{{- $additionalAnnotations := mergeOverwrite (dict) $groupAnnotations $ruleAnnotations }}
+{{- if $additionalAnnotations }}
+{{ toYaml $additionalAnnotations | indent 8 }}
 {{- end }}
-{{- if .Values.defaultRules.additionalRuleGroupAnnotations.etcd }}
-{{ toYaml .Values.defaultRules.additionalRuleGroupAnnotations.etcd | indent 8 }}
-{{- end }}
+        {{- if not (hasKey $additionalAnnotations "description") }}
         description: 'etcd cluster "{{`{{`}} $labels.job {{`}}`}}": members are down ({{`{{`}} $value {{`}}`}}).'
+        {{- end }}
+        {{- if not (hasKey $additionalAnnotations "summary") }}
         summary: etcd cluster members are down.
+        {{- end }}
       expr: |-
         max without (endpoint) (
           sum without (instance, pod) (up{job=~".*etcd.*"} == bool 0)
@@ -62,14 +66,18 @@ spec:
 {{- if not (.Values.defaultRules.disabled.etcdInsufficientMembers | default false) }}
     - alert: etcdInsufficientMembers
       annotations:
-{{- if .Values.defaultRules.additionalRuleAnnotations }}
-{{ toYaml .Values.defaultRules.additionalRuleAnnotations | indent 8 }}
+{{- $ruleAnnotations := dig "etcdInsufficientMembers" (dict) .Values.defaultRules.additionalRuleAnnotations }}
+{{- $groupAnnotations := default (dict) .Values.defaultRules.additionalRuleGroupAnnotations.etcd }}
+{{- $additionalAnnotations := mergeOverwrite (dict) $groupAnnotations $ruleAnnotations }}
+{{- if $additionalAnnotations }}
+{{ toYaml $additionalAnnotations | indent 8 }}
 {{- end }}
-{{- if .Values.defaultRules.additionalRuleGroupAnnotations.etcd }}
-{{ toYaml .Values.defaultRules.additionalRuleGroupAnnotations.etcd | indent 8 }}
-{{- end }}
+        {{- if not (hasKey $additionalAnnotations "description") }}
         description: 'etcd cluster "{{`{{`}} $labels.job {{`}}`}}": insufficient members ({{`{{`}} $value {{`}}`}}).'
+        {{- end }}
+        {{- if not (hasKey $additionalAnnotations "summary") }}
         summary: etcd cluster has insufficient number of members.
+        {{- end }}
       expr: sum(up{job=~".*etcd.*"} == bool 1) without (instance, pod) < ((count(up{job=~".*etcd.*"}) without (instance, pod) + 1) / 2)
       for: {{ dig "etcdInsufficientMembers" "for" "3m" .Values.customRules }}
       {{- with .Values.defaultRules.keepFiringFor }}
@@ -89,14 +97,18 @@ spec:
 {{- if not (.Values.defaultRules.disabled.etcdNoLeader | default false) }}
     - alert: etcdNoLeader
       annotations:
-{{- if .Values.defaultRules.additionalRuleAnnotations }}
-{{ toYaml .Values.defaultRules.additionalRuleAnnotations | indent 8 }}
+{{- $ruleAnnotations := dig "etcdNoLeader" (dict) .Values.defaultRules.additionalRuleAnnotations }}
+{{- $groupAnnotations := default (dict) .Values.defaultRules.additionalRuleGroupAnnotations.etcd }}
+{{- $additionalAnnotations := mergeOverwrite (dict) $groupAnnotations $ruleAnnotations }}
+{{- if $additionalAnnotations }}
+{{ toYaml $additionalAnnotations | indent 8 }}
 {{- end }}
-{{- if .Values.defaultRules.additionalRuleGroupAnnotations.etcd }}
-{{ toYaml .Values.defaultRules.additionalRuleGroupAnnotations.etcd | indent 8 }}
-{{- end }}
+        {{- if not (hasKey $additionalAnnotations "description") }}
         description: 'etcd cluster "{{`{{`}} $labels.job {{`}}`}}": member {{`{{`}} $labels.instance {{`}}`}} has no leader.'
+        {{- end }}
+        {{- if not (hasKey $additionalAnnotations "summary") }}
         summary: etcd cluster has no leader.
+        {{- end }}
       expr: etcd_server_has_leader{job=~".*etcd.*"} == 0
       for: {{ dig "etcdNoLeader" "for" "1m" .Values.customRules }}
       {{- with .Values.defaultRules.keepFiringFor }}
@@ -116,14 +128,18 @@ spec:
 {{- if not (.Values.defaultRules.disabled.etcdHighNumberOfLeaderChanges | default false) }}
     - alert: etcdHighNumberOfLeaderChanges
       annotations:
-{{- if .Values.defaultRules.additionalRuleAnnotations }}
-{{ toYaml .Values.defaultRules.additionalRuleAnnotations | indent 8 }}
+{{- $ruleAnnotations := dig "etcdHighNumberOfLeaderChanges" (dict) .Values.defaultRules.additionalRuleAnnotations }}
+{{- $groupAnnotations := default (dict) .Values.defaultRules.additionalRuleGroupAnnotations.etcd }}
+{{- $additionalAnnotations := mergeOverwrite (dict) $groupAnnotations $ruleAnnotations }}
+{{- if $additionalAnnotations }}
+{{ toYaml $additionalAnnotations | indent 8 }}
 {{- end }}
-{{- if .Values.defaultRules.additionalRuleGroupAnnotations.etcd }}
-{{ toYaml .Values.defaultRules.additionalRuleGroupAnnotations.etcd | indent 8 }}
-{{- end }}
+        {{- if not (hasKey $additionalAnnotations "description") }}
         description: 'etcd cluster "{{`{{`}} $labels.job {{`}}`}}": {{`{{`}} $value {{`}}`}} leader changes within the last 15 minutes. Frequent elections may be a sign of insufficient resources, high network latency, or disruptions by other components and should be investigated.'
+        {{- end }}
+        {{- if not (hasKey $additionalAnnotations "summary") }}
         summary: etcd cluster has high number of leader changes.
+        {{- end }}
       expr: increase((max without (instance, pod) (etcd_server_leader_changes_seen_total{job=~".*etcd.*"}) or 0*absent(etcd_server_leader_changes_seen_total{job=~".*etcd.*"}))[15m:1m]) >= 4
       for: {{ dig "etcdHighNumberOfLeaderChanges" "for" "5m" .Values.customRules }}
       {{- with .Values.defaultRules.keepFiringFor }}
@@ -143,14 +159,18 @@ spec:
 {{- if not (.Values.defaultRules.disabled.etcdHighNumberOfFailedGRPCRequests | default false) }}
     - alert: etcdHighNumberOfFailedGRPCRequests
       annotations:
-{{- if .Values.defaultRules.additionalRuleAnnotations }}
-{{ toYaml .Values.defaultRules.additionalRuleAnnotations | indent 8 }}
+{{- $ruleAnnotations := dig "etcdHighNumberOfFailedGRPCRequests" (dict) .Values.defaultRules.additionalRuleAnnotations }}
+{{- $groupAnnotations := default (dict) .Values.defaultRules.additionalRuleGroupAnnotations.etcd }}
+{{- $additionalAnnotations := mergeOverwrite (dict) $groupAnnotations $ruleAnnotations }}
+{{- if $additionalAnnotations }}
+{{ toYaml $additionalAnnotations | indent 8 }}
 {{- end }}
-{{- if .Values.defaultRules.additionalRuleGroupAnnotations.etcd }}
-{{ toYaml .Values.defaultRules.additionalRuleGroupAnnotations.etcd | indent 8 }}
-{{- end }}
+        {{- if not (hasKey $additionalAnnotations "description") }}
         description: 'etcd cluster "{{`{{`}} $labels.job {{`}}`}}": {{`{{`}} $value {{`}}`}}% of requests for {{`{{`}} $labels.grpc_method {{`}}`}} failed on etcd instance {{`{{`}} $labels.instance {{`}}`}}.'
+        {{- end }}
+        {{- if not (hasKey $additionalAnnotations "summary") }}
         summary: etcd cluster has high number of failed grpc requests.
+        {{- end }}
       expr: |-
         100 * sum(rate(grpc_server_handled_total{job=~".*etcd.*", grpc_code=~"Unknown|FailedPrecondition|ResourceExhausted|Internal|Unavailable|DataLoss|DeadlineExceeded"}[5m])) without (grpc_type, grpc_code)
           /
@@ -174,14 +194,18 @@ spec:
 {{- if not (.Values.defaultRules.disabled.etcdHighNumberOfFailedGRPCRequests | default false) }}
     - alert: etcdHighNumberOfFailedGRPCRequests
       annotations:
-{{- if .Values.defaultRules.additionalRuleAnnotations }}
-{{ toYaml .Values.defaultRules.additionalRuleAnnotations | indent 8 }}
+{{- $ruleAnnotations := dig "etcdHighNumberOfFailedGRPCRequests" (dict) .Values.defaultRules.additionalRuleAnnotations }}
+{{- $groupAnnotations := default (dict) .Values.defaultRules.additionalRuleGroupAnnotations.etcd }}
+{{- $additionalAnnotations := mergeOverwrite (dict) $groupAnnotations $ruleAnnotations }}
+{{- if $additionalAnnotations }}
+{{ toYaml $additionalAnnotations | indent 8 }}
 {{- end }}
-{{- if .Values.defaultRules.additionalRuleGroupAnnotations.etcd }}
-{{ toYaml .Values.defaultRules.additionalRuleGroupAnnotations.etcd | indent 8 }}
-{{- end }}
+        {{- if not (hasKey $additionalAnnotations "description") }}
         description: 'etcd cluster "{{`{{`}} $labels.job {{`}}`}}": {{`{{`}} $value {{`}}`}}% of requests for {{`{{`}} $labels.grpc_method {{`}}`}} failed on etcd instance {{`{{`}} $labels.instance {{`}}`}}.'
+        {{- end }}
+        {{- if not (hasKey $additionalAnnotations "summary") }}
         summary: etcd cluster has high number of failed grpc requests.
+        {{- end }}
       expr: |-
         100 * sum(rate(grpc_server_handled_total{job=~".*etcd.*", grpc_code=~"Unknown|FailedPrecondition|ResourceExhausted|Internal|Unavailable|DataLoss|DeadlineExceeded"}[5m])) without (grpc_type, grpc_code)
           /
@@ -205,14 +229,18 @@ spec:
 {{- if not (.Values.defaultRules.disabled.etcdGRPCRequestsSlow | default false) }}
     - alert: etcdGRPCRequestsSlow
       annotations:
-{{- if .Values.defaultRules.additionalRuleAnnotations }}
-{{ toYaml .Values.defaultRules.additionalRuleAnnotations | indent 8 }}
+{{- $ruleAnnotations := dig "etcdGRPCRequestsSlow" (dict) .Values.defaultRules.additionalRuleAnnotations }}
+{{- $groupAnnotations := default (dict) .Values.defaultRules.additionalRuleGroupAnnotations.etcd }}
+{{- $additionalAnnotations := mergeOverwrite (dict) $groupAnnotations $ruleAnnotations }}
+{{- if $additionalAnnotations }}
+{{ toYaml $additionalAnnotations | indent 8 }}
 {{- end }}
-{{- if .Values.defaultRules.additionalRuleGroupAnnotations.etcd }}
-{{ toYaml .Values.defaultRules.additionalRuleGroupAnnotations.etcd | indent 8 }}
-{{- end }}
+        {{- if not (hasKey $additionalAnnotations "description") }}
         description: 'etcd cluster "{{`{{`}} $labels.job {{`}}`}}": 99th percentile of gRPC requests is {{`{{`}} $value {{`}}`}}s on etcd instance {{`{{`}} $labels.instance {{`}}`}} for {{`{{`}} $labels.grpc_method {{`}}`}} method.'
+        {{- end }}
+        {{- if not (hasKey $additionalAnnotations "summary") }}
         summary: etcd grpc requests are slow
+        {{- end }}
       expr: |-
         histogram_quantile(0.99, sum(rate(grpc_server_handling_seconds_bucket{job=~".*etcd.*", grpc_method!="Defragment", grpc_type="unary"}[5m])) without(grpc_type))
         > 0.15
@@ -234,14 +262,18 @@ spec:
 {{- if not (.Values.defaultRules.disabled.etcdMemberCommunicationSlow | default false) }}
     - alert: etcdMemberCommunicationSlow
       annotations:
-{{- if .Values.defaultRules.additionalRuleAnnotations }}
-{{ toYaml .Values.defaultRules.additionalRuleAnnotations | indent 8 }}
+{{- $ruleAnnotations := dig "etcdMemberCommunicationSlow" (dict) .Values.defaultRules.additionalRuleAnnotations }}
+{{- $groupAnnotations := default (dict) .Values.defaultRules.additionalRuleGroupAnnotations.etcd }}
+{{- $additionalAnnotations := mergeOverwrite (dict) $groupAnnotations $ruleAnnotations }}
+{{- if $additionalAnnotations }}
+{{ toYaml $additionalAnnotations | indent 8 }}
 {{- end }}
-{{- if .Values.defaultRules.additionalRuleGroupAnnotations.etcd }}
-{{ toYaml .Values.defaultRules.additionalRuleGroupAnnotations.etcd | indent 8 }}
-{{- end }}
+        {{- if not (hasKey $additionalAnnotations "description") }}
         description: 'etcd cluster "{{`{{`}} $labels.job {{`}}`}}": member communication with {{`{{`}} $labels.To {{`}}`}} is taking {{`{{`}} $value {{`}}`}}s on etcd instance {{`{{`}} $labels.instance {{`}}`}}.'
+        {{- end }}
+        {{- if not (hasKey $additionalAnnotations "summary") }}
         summary: etcd cluster member communication is slow.
+        {{- end }}
       expr: |-
         histogram_quantile(0.99, rate(etcd_network_peer_round_trip_time_seconds_bucket{job=~".*etcd.*"}[5m]))
         > 0.15
@@ -263,14 +295,18 @@ spec:
 {{- if not (.Values.defaultRules.disabled.etcdHighNumberOfFailedProposals | default false) }}
     - alert: etcdHighNumberOfFailedProposals
       annotations:
-{{- if .Values.defaultRules.additionalRuleAnnotations }}
-{{ toYaml .Values.defaultRules.additionalRuleAnnotations | indent 8 }}
+{{- $ruleAnnotations := dig "etcdHighNumberOfFailedProposals" (dict) .Values.defaultRules.additionalRuleAnnotations }}
+{{- $groupAnnotations := default (dict) .Values.defaultRules.additionalRuleGroupAnnotations.etcd }}
+{{- $additionalAnnotations := mergeOverwrite (dict) $groupAnnotations $ruleAnnotations }}
+{{- if $additionalAnnotations }}
+{{ toYaml $additionalAnnotations | indent 8 }}
 {{- end }}
-{{- if .Values.defaultRules.additionalRuleGroupAnnotations.etcd }}
-{{ toYaml .Values.defaultRules.additionalRuleGroupAnnotations.etcd | indent 8 }}
-{{- end }}
+        {{- if not (hasKey $additionalAnnotations "description") }}
         description: 'etcd cluster "{{`{{`}} $labels.job {{`}}`}}": {{`{{`}} $value {{`}}`}} proposal failures within the last 30 minutes on etcd instance {{`{{`}} $labels.instance {{`}}`}}.'
+        {{- end }}
+        {{- if not (hasKey $additionalAnnotations "summary") }}
         summary: etcd cluster has high number of proposal failures.
+        {{- end }}
       expr: rate(etcd_server_proposals_failed_total{job=~".*etcd.*"}[15m]) > 5
       for: {{ dig "etcdHighNumberOfFailedProposals" "for" "15m" .Values.customRules }}
       {{- with .Values.defaultRules.keepFiringFor }}
@@ -290,14 +326,18 @@ spec:
 {{- if not (.Values.defaultRules.disabled.etcdHighFsyncDurations | default false) }}
     - alert: etcdHighFsyncDurations
       annotations:
-{{- if .Values.defaultRules.additionalRuleAnnotations }}
-{{ toYaml .Values.defaultRules.additionalRuleAnnotations | indent 8 }}
+{{- $ruleAnnotations := dig "etcdHighFsyncDurations" (dict) .Values.defaultRules.additionalRuleAnnotations }}
+{{- $groupAnnotations := default (dict) .Values.defaultRules.additionalRuleGroupAnnotations.etcd }}
+{{- $additionalAnnotations := mergeOverwrite (dict) $groupAnnotations $ruleAnnotations }}
+{{- if $additionalAnnotations }}
+{{ toYaml $additionalAnnotations | indent 8 }}
 {{- end }}
-{{- if .Values.defaultRules.additionalRuleGroupAnnotations.etcd }}
-{{ toYaml .Values.defaultRules.additionalRuleGroupAnnotations.etcd | indent 8 }}
-{{- end }}
+        {{- if not (hasKey $additionalAnnotations "description") }}
         description: 'etcd cluster "{{`{{`}} $labels.job {{`}}`}}": 99th percentile fsync durations are {{`{{`}} $value {{`}}`}}s on etcd instance {{`{{`}} $labels.instance {{`}}`}}.'
+        {{- end }}
+        {{- if not (hasKey $additionalAnnotations "summary") }}
         summary: etcd cluster 99th percentile fsync durations are too high.
+        {{- end }}
       expr: |-
         histogram_quantile(0.99, rate(etcd_disk_wal_fsync_duration_seconds_bucket{job=~".*etcd.*"}[5m]))
         > 0.5
@@ -319,14 +359,18 @@ spec:
 {{- if not (.Values.defaultRules.disabled.etcdHighFsyncDurations | default false) }}
     - alert: etcdHighFsyncDurations
       annotations:
-{{- if .Values.defaultRules.additionalRuleAnnotations }}
-{{ toYaml .Values.defaultRules.additionalRuleAnnotations | indent 8 }}
+{{- $ruleAnnotations := dig "etcdHighFsyncDurations" (dict) .Values.defaultRules.additionalRuleAnnotations }}
+{{- $groupAnnotations := default (dict) .Values.defaultRules.additionalRuleGroupAnnotations.etcd }}
+{{- $additionalAnnotations := mergeOverwrite (dict) $groupAnnotations $ruleAnnotations }}
+{{- if $additionalAnnotations }}
+{{ toYaml $additionalAnnotations | indent 8 }}
 {{- end }}
-{{- if .Values.defaultRules.additionalRuleGroupAnnotations.etcd }}
-{{ toYaml .Values.defaultRules.additionalRuleGroupAnnotations.etcd | indent 8 }}
-{{- end }}
+        {{- if not (hasKey $additionalAnnotations "description") }}
         description: 'etcd cluster "{{`{{`}} $labels.job {{`}}`}}": 99th percentile fsync durations are {{`{{`}} $value {{`}}`}}s on etcd instance {{`{{`}} $labels.instance {{`}}`}}.'
+        {{- end }}
+        {{- if not (hasKey $additionalAnnotations "summary") }}
         summary: etcd cluster 99th percentile fsync durations are too high.
+        {{- end }}
       expr: |-
         histogram_quantile(0.99, rate(etcd_disk_wal_fsync_duration_seconds_bucket{job=~".*etcd.*"}[5m]))
         > 1
@@ -348,14 +392,18 @@ spec:
 {{- if not (.Values.defaultRules.disabled.etcdHighCommitDurations | default false) }}
     - alert: etcdHighCommitDurations
       annotations:
-{{- if .Values.defaultRules.additionalRuleAnnotations }}
-{{ toYaml .Values.defaultRules.additionalRuleAnnotations | indent 8 }}
+{{- $ruleAnnotations := dig "etcdHighCommitDurations" (dict) .Values.defaultRules.additionalRuleAnnotations }}
+{{- $groupAnnotations := default (dict) .Values.defaultRules.additionalRuleGroupAnnotations.etcd }}
+{{- $additionalAnnotations := mergeOverwrite (dict) $groupAnnotations $ruleAnnotations }}
+{{- if $additionalAnnotations }}
+{{ toYaml $additionalAnnotations | indent 8 }}
 {{- end }}
-{{- if .Values.defaultRules.additionalRuleGroupAnnotations.etcd }}
-{{ toYaml .Values.defaultRules.additionalRuleGroupAnnotations.etcd | indent 8 }}
-{{- end }}
+        {{- if not (hasKey $additionalAnnotations "description") }}
         description: 'etcd cluster "{{`{{`}} $labels.job {{`}}`}}": 99th percentile commit durations {{`{{`}} $value {{`}}`}}s on etcd instance {{`{{`}} $labels.instance {{`}}`}}.'
+        {{- end }}
+        {{- if not (hasKey $additionalAnnotations "summary") }}
         summary: etcd cluster 99th percentile commit durations are too high.
+        {{- end }}
       expr: |-
         histogram_quantile(0.99, rate(etcd_disk_backend_commit_duration_seconds_bucket{job=~".*etcd.*"}[5m]))
         > 0.25
@@ -377,14 +425,18 @@ spec:
 {{- if not (.Values.defaultRules.disabled.etcdDatabaseQuotaLowSpace | default false) }}
     - alert: etcdDatabaseQuotaLowSpace
       annotations:
-{{- if .Values.defaultRules.additionalRuleAnnotations }}
-{{ toYaml .Values.defaultRules.additionalRuleAnnotations | indent 8 }}
+{{- $ruleAnnotations := dig "etcdDatabaseQuotaLowSpace" (dict) .Values.defaultRules.additionalRuleAnnotations }}
+{{- $groupAnnotations := default (dict) .Values.defaultRules.additionalRuleGroupAnnotations.etcd }}
+{{- $additionalAnnotations := mergeOverwrite (dict) $groupAnnotations $ruleAnnotations }}
+{{- if $additionalAnnotations }}
+{{ toYaml $additionalAnnotations | indent 8 }}
 {{- end }}
-{{- if .Values.defaultRules.additionalRuleGroupAnnotations.etcd }}
-{{ toYaml .Values.defaultRules.additionalRuleGroupAnnotations.etcd | indent 8 }}
-{{- end }}
+        {{- if not (hasKey $additionalAnnotations "description") }}
         description: 'etcd cluster "{{`{{`}} $labels.job {{`}}`}}": database size exceeds the defined quota on etcd instance {{`{{`}} $labels.instance {{`}}`}}, please defrag or increase the quota as the writes to etcd will be disabled when it is full.'
+        {{- end }}
+        {{- if not (hasKey $additionalAnnotations "summary") }}
         summary: etcd cluster database is running full.
+        {{- end }}
       expr: (last_over_time(etcd_mvcc_db_total_size_in_bytes{job=~".*etcd.*"}[5m]) / last_over_time(etcd_server_quota_backend_bytes{job=~".*etcd.*"}[5m]))*100 > 95
       for: {{ dig "etcdDatabaseQuotaLowSpace" "for" "10m" .Values.customRules }}
       {{- with .Values.defaultRules.keepFiringFor }}
@@ -404,14 +456,18 @@ spec:
 {{- if not (.Values.defaultRules.disabled.etcdExcessiveDatabaseGrowth | default false) }}
     - alert: etcdExcessiveDatabaseGrowth
       annotations:
-{{- if .Values.defaultRules.additionalRuleAnnotations }}
-{{ toYaml .Values.defaultRules.additionalRuleAnnotations | indent 8 }}
+{{- $ruleAnnotations := dig "etcdExcessiveDatabaseGrowth" (dict) .Values.defaultRules.additionalRuleAnnotations }}
+{{- $groupAnnotations := default (dict) .Values.defaultRules.additionalRuleGroupAnnotations.etcd }}
+{{- $additionalAnnotations := mergeOverwrite (dict) $groupAnnotations $ruleAnnotations }}
+{{- if $additionalAnnotations }}
+{{ toYaml $additionalAnnotations | indent 8 }}
 {{- end }}
-{{- if .Values.defaultRules.additionalRuleGroupAnnotations.etcd }}
-{{ toYaml .Values.defaultRules.additionalRuleGroupAnnotations.etcd | indent 8 }}
-{{- end }}
+        {{- if not (hasKey $additionalAnnotations "description") }}
         description: 'etcd cluster "{{`{{`}} $labels.job {{`}}`}}": Predicting running out of disk space in the next four hours, based on write observations within the past four hours on etcd instance {{`{{`}} $labels.instance {{`}}`}}, please check as it might be disruptive.'
+        {{- end }}
+        {{- if not (hasKey $additionalAnnotations "summary") }}
         summary: etcd cluster database growing very fast.
+        {{- end }}
       expr: predict_linear(etcd_mvcc_db_total_size_in_bytes{job=~".*etcd.*"}[4h], 4*60*60) > etcd_server_quota_backend_bytes{job=~".*etcd.*"}
       for: {{ dig "etcdExcessiveDatabaseGrowth" "for" "10m" .Values.customRules }}
       {{- with .Values.defaultRules.keepFiringFor }}
@@ -431,15 +487,21 @@ spec:
 {{- if not (.Values.defaultRules.disabled.etcdDatabaseHighFragmentationRatio | default false) }}
     - alert: etcdDatabaseHighFragmentationRatio
       annotations:
-{{- if .Values.defaultRules.additionalRuleAnnotations }}
-{{ toYaml .Values.defaultRules.additionalRuleAnnotations | indent 8 }}
+{{- $ruleAnnotations := dig "etcdDatabaseHighFragmentationRatio" (dict) .Values.defaultRules.additionalRuleAnnotations }}
+{{- $groupAnnotations := default (dict) .Values.defaultRules.additionalRuleGroupAnnotations.etcd }}
+{{- $additionalAnnotations := mergeOverwrite (dict) $groupAnnotations $ruleAnnotations }}
+{{- if $additionalAnnotations }}
+{{ toYaml $additionalAnnotations | indent 8 }}
 {{- end }}
-{{- if .Values.defaultRules.additionalRuleGroupAnnotations.etcd }}
-{{ toYaml .Values.defaultRules.additionalRuleGroupAnnotations.etcd | indent 8 }}
-{{- end }}
+        {{- if not (hasKey $additionalAnnotations "description") }}
         description: 'etcd cluster "{{`{{`}} $labels.job {{`}}`}}": database size in use on instance {{`{{`}} $labels.instance {{`}}`}} is {{`{{`}} $value | humanizePercentage {{`}}`}} of the actual allocated disk space, please run defragmentation (e.g. etcdctl defrag) to retrieve the unused fragmented disk space.'
+        {{- end }}
+        {{- if not (hasKey $additionalAnnotations "runbook_url") }}
         runbook_url: https://etcd.io/docs/v3.5/op-guide/maintenance/#defragmentation
+        {{- end }}
+        {{- if not (hasKey $additionalAnnotations "summary") }}
         summary: etcd database size in use is less than 50% of the actual allocated storage.
+        {{- end }}
       expr: (last_over_time(etcd_mvcc_db_total_size_in_use_in_bytes{job=~".*etcd.*"}[5m]) / last_over_time(etcd_mvcc_db_total_size_in_bytes{job=~".*etcd.*"}[5m])) < 0.5 and etcd_mvcc_db_total_size_in_use_in_bytes{job=~".*etcd.*"} > 104857600
       for: {{ dig "etcdDatabaseHighFragmentationRatio" "for" "10m" .Values.customRules }}
       {{- with .Values.defaultRules.keepFiringFor }}
