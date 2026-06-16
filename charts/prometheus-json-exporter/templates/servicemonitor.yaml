@@ -25,6 +25,7 @@ spec:
       module:
       - {{ .module }}
       {{- end }}
+    {{- $additionalMetricsRelabels := .additionalMetricsRelabels | default $.Values.serviceMonitor.defaults.additionalMetricsRelabels }}
     metricRelabelings:
       - sourceLabels: [instance]
         targetLabel: instance
@@ -34,11 +35,17 @@ spec:
         targetLabel: target
         replacement: {{ .name }}
         action: replace
-        {{- range $targetLabel, $replacement := .additionalMetricsRelabels | default $.Values.serviceMonitor.defaults.additionalMetricsRelabels }}
+      {{- if kindIs "slice" $additionalMetricsRelabels }}
+      {{- with $additionalMetricsRelabels }}
+      {{- toYaml . | nindent 6 }}
+      {{- end }}
+      {{- else }}
+      {{- range $targetLabel, $replacement := $additionalMetricsRelabels }}
       - targetLabel: {{ $targetLabel }}
         replacement: {{ $replacement }}
         action: replace
-        {{- end }}
+      {{- end }}
+      {{- end }}
     {{- with .additionalRelabels | default $.Values.serviceMonitor.defaults.additionalRelabels }}
     relabelings:
     {{- toYaml . | nindent 6 }}
