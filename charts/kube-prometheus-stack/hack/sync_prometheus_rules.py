@@ -459,25 +459,78 @@ def add_custom_labels(rules_str, group, indent=4, label_indent=2):
 
 def add_custom_annotations(rules, group, indent=4):
     """Add if wrapper for additional rules annotations"""
-    rule_condition = '{{- if .Values.defaultRules.additionalRuleAnnotations }}\n{{ toYaml .Values.defaultRules.additionalRuleAnnotations | indent 8 }}\n{{- end }}'
-    rule_group_labels = get_rule_group_condition(condition_map.get(group['name'], ''), 'additionalRuleGroupAnnotations')
-    rule_group_condition = '\n{{- if %s }}\n{{ toYaml %s | indent 8 }}\n{{- end }}' % (rule_group_labels, rule_group_labels)
+    rule_group_annotations = get_rule_group_condition(condition_map.get(group['name'], ''), 'additionalRuleGroupAnnotations')
     annotations = "      annotations:"
     annotations_len = len(annotations) + 1
-    rule_condition_len = len(rule_condition) + 1
-    rule_group_condition_len = len(rule_group_condition)
+    description_pattern = r'(?m)^([ \t]+)description: (.+)$'
+    runbook_pattern = r'(?m)^([ \t]+)runbook_url: (.+)$'
+    summary_pattern = r'(?m)^([ \t]+)summary: (.+)$'
 
     separator = " " * indent + "- alert:.*"
-    alerts_positions = re.finditer(separator,rules)
-    alert = 0
+    alerts_positions = list(re.finditer(separator, rules))
+    if not alerts_positions:
+        return rules
 
-    for alert_position in alerts_positions:
-        # Add rule_condition after 'annotations:' statement
-        index = alert_position.end() + annotations_len + (rule_condition_len + rule_group_condition_len) * alert
-        rules = rules[:index] + "\n" + rule_condition + rule_group_condition +  rules[index:]
-        alert += 1
+    updated_rules = []
+    last_index = 0
 
-    return rules
+    def wrap_annotation(block, pattern, alert_name, key):
+        def replace_match(match):
+            prefix = match.group(1)
+            upstream_value = match.group(2)
+            return "\n".join([
+                f'{prefix}{{{{- if not (hasKey $additionalAnnotations "{key}") }}}}',
+                f'{prefix}{key}: {upstream_value}',
+                f'{prefix}{{{{- end }}}}',
+            ])
+
+        return re.sub(pattern, replace_match, block, count=1)
+
+    def render_annotation_setup(alert_name):
+        if rule_group_annotations:
+            group_annotations_line = f'{{{{- $groupAnnotations := default (dict) {rule_group_annotations} }}}}'
+        else:
+            group_annotations_line = '{{- $groupAnnotations := dict }}'
+
+        return "\n".join([
+            f'{{{{- $ruleAnnotations := dig "{alert_name}" (dict) .Values.defaultRules.additionalRuleAnnotations }}}}',
+            group_annotations_line,
+            '{{- $additionalAnnotations := mergeOverwrite (dict) $groupAnnotations $ruleAnnotations }}',
+            '{{- if $additionalAnnotations }}',
+            '{{ toYaml $additionalAnnotations | indent 8 }}',
+            '{{- end }}',
+        ])
+
+    # handle one alert block at a time
+    for alert_index, alert_position in enumerate(alerts_positions):
+        if alert_index + 1 < len(alerts_positions):
+            next_alert_index = alerts_positions[alert_index + 1].start()
+        else:
+            next_alert_index = len(rules)
+
+        alert_block = rules[alert_position.start():next_alert_index]
+        alert_name = alert_position.group(0).split('- alert: ', 1)[1]
+
+        annotations_index = alert_block.find(annotations)
+        if annotations_index != -1:
+            annotations_index += annotations_len
+            alert_block = (
+                alert_block[:annotations_index]
+                + render_annotation_setup(alert_name)
+                + "\n"
+                + alert_block[annotations_index:]
+            )
+
+        alert_block = wrap_annotation(alert_block, description_pattern, alert_name, "description")
+        alert_block = wrap_annotation(alert_block, runbook_pattern, alert_name, "runbook_url")
+        alert_block = wrap_annotation(alert_block, summary_pattern, alert_name, "summary")
+
+        updated_rules.append(rules[last_index:alert_position.start()])
+        updated_rules.append(alert_block)
+        last_index = next_alert_index
+
+    updated_rules.append(rules[last_index:])
+    return "".join(updated_rules)
 
 
 def add_custom_keep_firing_for(rules, indent=4):

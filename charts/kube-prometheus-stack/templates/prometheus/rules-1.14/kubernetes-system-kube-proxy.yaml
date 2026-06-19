@@ -28,15 +28,21 @@ spec:
 {{- if not (.Values.defaultRules.disabled.KubeProxyDown | default false) }}
     - alert: KubeProxyDown
       annotations:
-{{- if .Values.defaultRules.additionalRuleAnnotations }}
-{{ toYaml .Values.defaultRules.additionalRuleAnnotations | indent 8 }}
+{{- $ruleAnnotations := dig "KubeProxyDown" (dict) .Values.defaultRules.additionalRuleAnnotations }}
+{{- $groupAnnotations := default (dict) .Values.defaultRules.additionalRuleGroupAnnotations.kubeProxy }}
+{{- $additionalAnnotations := mergeOverwrite (dict) $groupAnnotations $ruleAnnotations }}
+{{- if $additionalAnnotations }}
+{{ toYaml $additionalAnnotations | indent 8 }}
 {{- end }}
-{{- if .Values.defaultRules.additionalRuleGroupAnnotations.kubeProxy }}
-{{ toYaml .Values.defaultRules.additionalRuleGroupAnnotations.kubeProxy | indent 8 }}
-{{- end }}
+        {{- if not (hasKey $additionalAnnotations "description") }}
         description: KubeProxy has disappeared from Prometheus target discovery.
+        {{- end }}
+        {{- if not (hasKey $additionalAnnotations "runbook_url") }}
         runbook_url: {{ .Values.defaultRules.runbookUrl }}/kubernetes/kubeproxydown
+        {{- end }}
+        {{- if not (hasKey $additionalAnnotations "summary") }}
         summary: Target disappeared from Prometheus target discovery.
+        {{- end }}
       expr: absent(up{job="{{ $kubeProxyJob }}"})
       for: {{ dig "KubeProxyDown" "for" "15m" .Values.customRules }}
       {{- with .Values.defaultRules.keepFiringFor }}
@@ -56,15 +62,21 @@ spec:
 {{- if not (.Values.defaultRules.disabled.KubeProxyInstanceUnreachable | default false) }}
     - alert: KubeProxyInstanceUnreachable
       annotations:
-{{- if .Values.defaultRules.additionalRuleAnnotations }}
-{{ toYaml .Values.defaultRules.additionalRuleAnnotations | indent 8 }}
+{{- $ruleAnnotations := dig "KubeProxyInstanceUnreachable" (dict) .Values.defaultRules.additionalRuleAnnotations }}
+{{- $groupAnnotations := default (dict) .Values.defaultRules.additionalRuleGroupAnnotations.kubeProxy }}
+{{- $additionalAnnotations := mergeOverwrite (dict) $groupAnnotations $ruleAnnotations }}
+{{- if $additionalAnnotations }}
+{{ toYaml $additionalAnnotations | indent 8 }}
 {{- end }}
-{{- if .Values.defaultRules.additionalRuleGroupAnnotations.kubeProxy }}
-{{ toYaml .Values.defaultRules.additionalRuleGroupAnnotations.kubeProxy | indent 8 }}
-{{- end }}
+        {{- if not (hasKey $additionalAnnotations "description") }}
         description: A KubeProxy instance has been unreachable for more than 15 minutes.
+        {{- end }}
+        {{- if not (hasKey $additionalAnnotations "runbook_url") }}
         runbook_url: {{ .Values.defaultRules.runbookUrl }}/kubernetes/kubeproxyinstanceunreachable
+        {{- end }}
+        {{- if not (hasKey $additionalAnnotations "summary") }}
         summary: KubeProxy instance is unreachable.
+        {{- end }}
       expr: up{job="{{ $kubeProxyJob }}"} == 0
       for: {{ dig "KubeProxyInstanceUnreachable" "for" "15m" .Values.customRules }}
       {{- with .Values.defaultRules.keepFiringFor }}
