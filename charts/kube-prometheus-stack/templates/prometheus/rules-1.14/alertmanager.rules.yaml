@@ -348,4 +348,41 @@ spec:
         {{- end }}
       {{- end }}
 {{- end }}
+{{- if not (.Values.defaultRules.disabled.AlertmanagerClusterFailedPeers | default false) }}
+    - alert: AlertmanagerClusterFailedPeers
+      annotations:
+{{- $ruleAnnotations := dig "AlertmanagerClusterFailedPeers" (dict) .Values.defaultRules.additionalRuleAnnotations }}
+{{- $groupAnnotations := default (dict) .Values.defaultRules.additionalRuleGroupAnnotations.alertmanager }}
+{{- $additionalAnnotations := mergeOverwrite (dict) $groupAnnotations $ruleAnnotations }}
+{{- if $additionalAnnotations }}
+{{ toYaml $additionalAnnotations | indent 8 }}
+{{- end }}
+        {{- if not (hasKey $additionalAnnotations "description") }}
+        description: Alertmanager {{`{{`}} $labels.namespace {{`}}`}}/{{`{{`}} $labels.pod{{`}}`}} has {{`{{`}} $value {{`}}`}} failed peers in the {{`{{`}}$labels.job{{`}}`}} cluster.
+        {{- end }}
+        {{- if not (hasKey $additionalAnnotations "runbook_url") }}
+        runbook_url: {{ .Values.defaultRules.runbookUrl }}/alertmanager/alertmanagerclusterfailedpeers
+        {{- end }}
+        {{- if not (hasKey $additionalAnnotations "summary") }}
+        summary: An Alertmanager instance has failed peers in the cluster.
+        {{- end }}
+      expr: |-
+        # Without max_over_time, failed scrapes could create false negatives, see
+        # https://www.robustperception.io/alerting-on-gauges-in-prometheus-2-0 for details.
+        max_over_time(alertmanager_cluster_failed_peers{job="{{ $alertmanagerJob }}",container="alertmanager",namespace="{{ $namespace }}"}[5m]) > 0
+      for: {{ dig "AlertmanagerClusterFailedPeers" "for" "15m" .Values.customRules }}
+      {{- with .Values.defaultRules.keepFiringFor }}
+      keep_firing_for: "{{ . }}"
+      {{- end }}
+      labels:
+        severity: {{ dig "AlertmanagerClusterFailedPeers" "severity" "warning" .Values.customRules }}
+      {{- if or .Values.defaultRules.additionalRuleLabels .Values.defaultRules.additionalRuleGroupLabels.alertmanager }}
+        {{- with .Values.defaultRules.additionalRuleLabels }}
+          {{- toYaml . | nindent 8 }}
+        {{- end }}
+        {{- with .Values.defaultRules.additionalRuleGroupLabels.alertmanager }}
+          {{- toYaml . | nindent 8 }}
+        {{- end }}
+      {{- end }}
+{{- end }}
 {{- end }}
