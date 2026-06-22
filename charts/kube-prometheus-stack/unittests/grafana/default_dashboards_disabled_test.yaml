@@ -1,0 +1,36 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/helm-unittest/helm-unittest/main/schema/helm-testsuite.json
+suite: test disabled default dashboards
+templates:
+  - grafana/dashboards-1.14/cluster-total.yaml
+  - grafana/dashboards-1.14/apiserver.yaml
+tests:
+  - it: should render default dashboards when defaultDashboardsDisabled is empty
+    asserts:
+      - template: grafana/dashboards-1.14/cluster-total.yaml
+        hasDocuments:
+          count: 1
+      - template: grafana/dashboards-1.14/apiserver.yaml
+        hasDocuments:
+          count: 1
+
+  - it: should not render a dashboard listed in defaultDashboardsDisabled
+    set:
+      grafana.defaultDashboardsDisabled.cluster-total: true
+    asserts:
+      - template: grafana/dashboards-1.14/cluster-total.yaml
+        hasDocuments:
+          count: 0
+      - template: grafana/dashboards-1.14/apiserver.yaml
+        hasDocuments:
+          count: 1
+
+  - it: should also drop the GrafanaDashboard CR for a disabled dashboard
+    set:
+      grafana.operator.dashboardsConfigMapRefEnabled: true
+      grafana.operator.matchLabels:
+        dashboards: grafana
+      grafana.defaultDashboardsDisabled.cluster-total: true
+    asserts:
+      - template: grafana/dashboards-1.14/cluster-total.yaml
+        hasDocuments:
+          count: 0
