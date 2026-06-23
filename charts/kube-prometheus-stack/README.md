@@ -52,6 +52,15 @@ The dashboards originate from various upstream projects and are gathered and pro
 
 If you wish to contribute or modify dashboards, please follow the guidance in the `hack/README.md` to ensure consistency and reproducibility.
 
+To drop individual dashboards while keeping the rest, set `grafana.defaultDashboardsDisabled` with the dashboard name (the file name under `templates/grafana/dashboards-1.14` without the `.yaml` suffix) mapped to `true`:
+
+```yaml
+grafana:
+  defaultDashboardsDisabled:
+    nodes-darwin: true
+    k8s-resources-windows-cluster: true
+```
+
 ### Uninstall Helm Chart
 
 ```console
