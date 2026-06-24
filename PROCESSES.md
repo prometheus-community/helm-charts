@@ -2,6 +2,16 @@
 
 This document outlines processes and procedures for some common tasks in the charts repository.
 
+## TOC
+
+- [Review Process](#review-process)
+- [Adding helm-chart admins](#adding-helm-chart-admins)
+- [Adding chart maintainers](#adding-chart-maintainers)
+- [Removing chart maintainers](#removing-chart-maintainers)
+- [Adding a new chart](#adding-a-new-chart)
+- [Deprecating a chart](#deprecating-a-chart)
+- [Removing a chart](#removing-a-chart)
+
 ## Review Process
 
 One of the Chart maintainers should review the PR.
@@ -37,9 +47,12 @@ It is recommended to include at least one Prometheus Team member in the process.
 
 Chart maintainers are defined within the chart itself.
 So the procedure for adding maintainers is to add them there.
-The pull request which does that should also update [CODEOWNERS](./.github/CODEOWNERS) file to that the new maintainer is able to approve pull requests.
-One of the existing chart maintainers needs to approve the PR in addition one of the repository admins needs to approve it.
-They are then responsible for also granting the new maintainer write permissions to this repository.
+The pull request,
+which does that should also update [CODEOWNERS](./.github/CODEOWNERS) file
+to that the new maintainer is able to approve pull requests.
+One of the existing chart maintainers needs to approve the PR,
+and one of the repository admins also needs to approve it.
+They are then responsible for granting the new maintainer write permissions to this repository.
 
 Each maintainer has defined in the Chart.yaml of the chart itself unter the maintainer section,
 using the following format:
@@ -50,6 +63,30 @@ maintainers:
   email:  # A contact mail. Optional
   url:    # The URL of the GitHub profile, using the format https://github.com/<username>. Required. 
 ```
+
+Each maintainer should have a GitHub account
+and part of the `@prometheus-community/helm-charts-maintainers` GitHub group and member of `@prometheus-community` organization.
+
+## Removing Chart Maintainers
+
+If a chart maintainer is no longer active, not part of the `@prometheus-community` organization,
+or has left the project, they should be removed from the `Chart.yaml` file.
+To do this,
+update the `maintainers` section in `Chart.yaml` and remove them from the [CODEOWNERS](./.github/CODEOWNERS) file.
+
+## Adding a New Chart
+
+This process is not yet documented.
+
+## Deprecating a Chart
+
+A chart should be deprecated if it is no longer maintained, has no active maintainer, or should not be used anymore.
+To deprecate a chart, set the `deprecated` field in `Chart.yaml` to `true` and increase the chart version.
+
+## Removing a Chart
+
+The source code of a deprecated chart can be removed from the repository
+if it has been deprecated for more than six months and is no longer maintained
 
 ## GitHub Settings
 
