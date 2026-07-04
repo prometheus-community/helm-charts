@@ -1274,6 +1274,31 @@ alertmanager:
     ## ref: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/#pod-termination
     terminationGracePeriodSeconds: ~
 
+    ## EnableServiceLinks indicates whether information about services should be injected into the
+    ## pod's environment variables. Uses the operator/Kubernetes default when left unset (~).
+    enableServiceLinks: ~
+
+    ## Set the scheduler name to use for the Alertmanager pods.
+    schedulerName: ""
+
+    ## Pods' hostAliases configuration
+    ## ref: https://kubernetes.io/docs/concepts/services-networking/add-entries-to-pod-etc-hosts-with-host-aliases/
+    hostAliases: []
+    #  - ip: 10.10.0.100
+    #    hostnames:
+    #      - a1.app.local
+
+    ## Limits defines the Alertmanager limits command line flags. Requires Alertmanager >= v0.28.0.
+    ## ref: https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/api-reference/api.md#monitoring.coreos.com/v1.AlertmanagerLimitsSpec
+    limits: {}
+      # maxSilences: 1000
+      # maxPerSilenceBytes: 1MB
+
+    ## ClusterTLS defines the mutual TLS configuration for the Alertmanager cluster's gossip protocol.
+    ## Requires Alertmanager >= v0.24.0.
+    ## ref: https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/api-reference/api.md#monitoring.coreos.com/v1.ClusterTLSConfig
+    clusterTLS: {}
+
     ## Additional configuration which is not covered by the properties above. (passed through tpl)
     additionalConfig: {}
 
@@ -3481,6 +3506,14 @@ prometheusOperator:
   ##
   secretFieldSelector: "type!=kubernetes.io/dockercfg,type!=kubernetes.io/service-account-token,type!=helm.sh/release.v1"
 
+  ## Feature gates to enable/disable operator features, rendered as --feature-gates=<key>=<value>.
+  ## See https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/api-reference/feature-gates.md
+  ## Example:
+  ##   featureGates:
+  ##     PrometheusAgentDaemonSet: true
+  ##     StatusForConfigurationResources: true
+  featureGates: {}
+
   ## If false then the user will opt out of automounting API credentials.
   ##
   automountServiceAccountToken: true
@@ -4763,6 +4796,28 @@ prometheus:
     # Set to 'false' to disable global sample_limit. or set to a number to override the default value.
     sampleLimit: false
 
+    ## TargetLimit defines a global limit on the number of scraped targets. 0 means no limit.
+    targetLimit: 0
+
+    ## Per-scrape limit on number of labels that will be accepted for a sample. 0 means no limit.
+    labelLimit: 0
+
+    ## Per-scrape limit on length of labels name that will be accepted for a sample. 0 means no limit.
+    labelNameLengthLimit: 0
+
+    ## Per-scrape limit on length of labels value that will be accepted for a sample. 0 means no limit.
+    labelValueLengthLimit: 0
+
+    ## Per-scrape limit on the number of targets dropped by relabeling that will be kept in memory. 0 means no limit.
+    keepDroppedTargets: 0
+
+    ## BodySizeLimit defines a global limit on the size of uncompressed response body that will be accepted. Example: 100MB.
+    bodySizeLimit: ""
+
+    ## EnforcedBodySizeLimit defines the maximum size of uncompressed response body that will be accepted, overriding any
+    ## value set per ServiceMonitor/PodMonitor. Example: 100MB. Empty means no limit.
+    enforcedBodySizeLimit: ""
+
     # EnforcedKeepDroppedTargetsLimit defines on the number of targets dropped by relabeling that will be kept in memory.
     # The value overrides any spec.keepDroppedTargets set by ServiceMonitor, PodMonitor, Probe objects unless spec.keepDroppedTargets
     # is greater than zero and less than spec.enforcedKeepDroppedTargets. 0 means no limit.
@@ -4836,6 +4891,40 @@ prometheus:
     ## Defines the service discovery role used to discover targets from ServiceMonitor objects and Alertmanager endpoints.
     ## If set, the value should be either "Endpoints" or "EndpointSlice". If unset, the operator assumes the "Endpoints" role.
     serviceDiscoveryRole: ""
+
+    ## EnableServiceLinks indicates whether information about services should be injected into the pod's environment
+    ## variables. Uses the operator/Kubernetes default when left unset (~).
+    enableServiceLinks: ~
+
+    ## Set the scheduler name to use for the Prometheus pods.
+    schedulerName: ""
+
+    ## Specifies the character escaping scheme applied to metric and label names.
+    ## Supported values are: AllowUTF8, Underscores, Dots, Values
+    nameEscapingScheme: ""
+
+    ## Defines the strategy used to reload the Prometheus configuration.
+    ## Supported values are: HTTP, ProcessSignal
+    reloadStrategy: ""
+
+    ## Defines the offset the rule evaluation timestamp of the rule evaluation queries is shifted backwards.
+    ## ref: https://github.com/prometheus-community/helm-charts/issues/5843
+    ruleQueryOffset: ""
+
+    ## RuntimeConfig configures the values for the Prometheus process behavior.
+    runtime: {}
+      # goGC: 75
+
+    ## Defines the sharding strategy applied by the operator.
+    ## ref: https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/api-reference/api.md#monitoring.coreos.com/v1.ShardingStrategy
+    shardingStrategy: {}
+
+    ## Defines the retention policy for the resources of stale shards after a scale-down.
+    ## ref: https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/api-reference/api.md#monitoring.coreos.com/v1.ShardRetentionPolicy
+    shardRetentionPolicy: {}
+
+    ## List of the protobuf message versions to accept when receiving the remote writes. Example: [V1.0, V2.0].
+    remoteWriteReceiverMessageVersions: []
 
     ## Pod management policy. Kubernetes default is OrderedReady but prometheus-operator default is Parallel.
     ## ref: https://kubernetes.io/docs/concepts/workloads/controllers/statefulset/#pod-management-policies
@@ -5607,6 +5696,102 @@ thanosRuler:
     # type: RollingUpdate
     # rollingUpdate:
     #   maxUnavailable: 1
+
+    ## Version of Thanos Ruler to deploy. Overrides the version derived from the image tag when set.
+    version: ""
+
+    ## Image pull policy for the Thanos Ruler container.
+    imagePullPolicy: ""
+
+    ## EnableFeatures API enables access to Thanos Ruler disabled features.
+    enableFeatures: []
+
+    ## EnableServiceLinks indicates whether information about services should be injected into the
+    ## pod's environment variables. Uses the operator/Kubernetes default when left unset (~).
+    enableServiceLinks: ~
+
+    ## Minimum number of seconds for which a newly created pod should be ready without any of its
+    ## containers crashing/restarting for it to be considered available.
+    minReadySeconds: ~
+
+    ## Defines the DNS configuration for the pods.
+    dnsConfig: {}
+      # nameservers:
+      #   - 1.2.3.4
+      # searches:
+      #   - ns1.svc.cluster-domain.example
+      # options:
+      #   - name: ndots
+      #     value: "2"
+
+    ## Defines the DNS policy for the pods.
+    dnsPolicy: ""
+
+    ## Pods' hostAliases configuration
+    ## ref: https://kubernetes.io/docs/concepts/services-networking/add-entries-to-pod-etc-hosts-with-host-aliases/
+    hostAliases: []
+    #  - ip: 10.10.0.100
+    #    hostnames:
+    #      - a1.app.local
+
+    ## Defines the list of remote write configurations. When not empty, the Thanos Ruler operates in stateless mode.
+    ## ref: https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/api-reference/api.md#monitoring.coreos.com/v1.RemoteWriteSpec
+    remoteWrite: []
+
+    ## Configures tracing for Thanos Ruler. Maps to the tracing.config CLI argument.
+    tracingConfig:
+      # use existing secret, if configured, tracingConfig.secret will not be used
+      existingSecret: {}
+        # name: ""
+        # key: ""
+      # render tracingConfig secret data and configure it to be used by Thanos Ruler custom resource, ignored when tracingConfig.existingSecret is set
+      secret: {}
+
+    ## Path to a tracing configuration file on disk (e.g. mounted through a volume). Takes precedence over tracingConfig.
+    tracingConfigFile: ""
+
+    ## Configures alert relabeling for Thanos Ruler. Maps to the alert.relabel-config CLI argument.
+    alertRelabelConfigs:
+      # use existing secret, if configured, alertRelabelConfigs.secret will not be used
+      existingSecret: {}
+        # name: ""
+        # key: ""
+      # render alertRelabelConfigs secret data and configure it to be used by Thanos Ruler custom resource, ignored when alertRelabelConfigs.existingSecret is set
+      secret: {}
+
+    ## Path to an alert relabel configuration file on disk. Takes precedence over alertRelabelConfigs.
+    alertRelabelConfigFile: ""
+
+    ## Configures the gRPC server TLS for Thanos Ruler.
+    ## ref: https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/api-reference/api.md#monitoring.coreos.com/v1.TLSConfig
+    grpcServerTlsConfig: {}
+
+    ## Path to an object storage configuration file on disk. Takes precedence over objectStorageConfig.
+    objectStorageConfigFile: ""
+
+    ## Number of concurrent rule evaluations.
+    ruleConcurrentEval: ~
+
+    ## Maximum time to tolerate outage for restoring "for" state of alert.
+    ruleOutageTolerance: ""
+
+    ## Minimum duration between alert and restored "for" state. Maintained only for alerts with a configured "for"
+    ## time greater than the grace period.
+    ruleGracePeriod: ""
+
+    ## The default rule group's query offset duration to shift the evaluation time of rules backwards.
+    ## ref: https://github.com/prometheus-community/helm-charts/issues/5843
+    ruleQueryOffset: ""
+
+    ## Minimum amount of time to wait before resending an alert to Alertmanager.
+    resendDelay: ""
+
+    ## EnforcedNamespaceLabel enforces adding a namespace label of origin for each alert and metric.
+    enforcedNamespaceLabel: ""
+
+    ## List of references to PrometheusRule objects to be excluded from enforcement (requires enforcedNamespaceLabel).
+    ## Can be a list of objects, or a string that is passed through tpl.
+    excludedFromEnforcement: []
 
     ## Additional configuration which is not covered by the properties above. (passed through tpl)
     additionalConfig: {}
