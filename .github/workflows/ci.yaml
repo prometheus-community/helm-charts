@@ -154,9 +154,10 @@ jobs:
           IFS=$'\n\t'
 
           echo "Running diff for value file: $value_file"
-          # extract chart name from path like charts/<chart>/ci/<file>
-          # dirname twice: charts/<chart>/ci -> charts/<chart>, basename -> <chart>
-          chart="$(basename "$(dirname "$(dirname "$value_file")")")"
+          # extract chart name from path like charts/<chart>/values.yaml or charts/<chart>/ci/<file>
+          chart="${value_file#./}"
+          chart="${chart#charts/}"
+          chart="${chart%%/*}"
 
           helm dependency update "./target/charts/$chart"
           helm dependency update "./charts/$chart"
