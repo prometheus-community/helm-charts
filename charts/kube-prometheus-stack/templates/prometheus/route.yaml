@@ -29,35 +29,7 @@ spec:
     {{- tpl (toYaml .) $ | nindent 4 }}
   {{- end }}
   rules:
-    {{- if $route.additionalRules }}
-    {{- tpl (toYaml $route.additionalRules) $ | nindent 4 }}
-    {{- end }}
-    {{- if $route.httpsRedirect }}
-    - filters:
-        - type: RequestRedirect
-          requestRedirect:
-            scheme: https
-            statusCode: 301
-    {{- else }}
-    - backendRefs:
-        - group: ""
-          kind: Service
-          weight: 1
-          name: {{ $serviceName }}
-          port: {{ $servicePort }}
-      {{- with $route.filters }}
-      filters:
-        {{- toYaml . | nindent 8 }}
-      {{- end }}
-      {{- with $route.matches }}
-      matches:
-        {{- toYaml . | nindent 8 }}
-      {{- end }}
-      {{- with $route.sessionPersistence }}
-      sessionPersistence:
-        {{- toYaml . | nindent 8 }}
-      {{- end }}
-    {{- end }}
+    {{- include "kube-prometheus-stack.route.rules" (dict "context" $ "route" $route "serviceName" $serviceName "servicePort" $servicePort) | trim | nindent 4 }}
   {{- end }}
   {{- end }}
 {{- end }}

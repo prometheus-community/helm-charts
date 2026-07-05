@@ -397,3 +397,42 @@ folderUID: {{ $folderUID | quote }}
 folderRef: {{ $folderRef | quote }}
 {{- end }}
 {{- end }}
+
+{{/*
+Render the rules block for a Gateway API route.
+Shared by the route and routePerReplica templates.
+Expects a dict: { "context": $, "route": <route values>, "serviceName": <string>, "servicePort": <string|int> }
+*/}}
+{{- define "kube-prometheus-stack.route.rules" -}}
+{{- $context := .context -}}
+{{- $route := .route -}}
+{{- if $route.additionalRules }}
+{{- tpl (toYaml $route.additionalRules) $context }}
+{{- end }}
+{{- if $route.httpsRedirect }}
+- filters:
+    - type: RequestRedirect
+      requestRedirect:
+        scheme: https
+        statusCode: 301
+{{- else }}
+- backendRefs:
+    - group: ""
+      kind: Service
+      weight: 1
+      name: {{ .serviceName }}
+      port: {{ .servicePort }}
+  {{- with $route.filters }}
+  filters:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  {{- with $route.matches }}
+  matches:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  {{- with $route.sessionPersistence }}
+  sessionPersistence:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+{{- end }}
+{{- end }}

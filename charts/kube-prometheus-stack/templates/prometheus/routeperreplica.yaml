@@ -1,0 +1,33 @@
+{{- if and .Values.prometheus.enabled .Values.prometheus.servicePerReplica.enabled .Values.prometheus.routePerReplica.enabled }}
+{{- $count := .Values.prometheus.prometheusSpec.replicas | int -}}
+{{- $servicePort := .Values.prometheus.servicePerReplica.port -}}
+{{- $routeValues := .Values.prometheus.routePerReplica -}}
+  {{- range $i := until $count }}
+  {{- $serviceName := printf "%s-prometheus-%d" (include "kube-prometheus-stack.fullname" $) $i }}
+---
+apiVersion: {{ $routeValues.apiVersion | default "gateway.networking.k8s.io/v1" }}
+kind: {{ $routeValues.kind | default "HTTPRoute" }}
+metadata:
+  {{- with $routeValues.annotations }}
+  annotations:
+    {{- tpl (toYaml .) $ | nindent 4 }}
+  {{- end }}
+  name: {{ $serviceName }}
+  namespace: {{ template "kube-prometheus-stack.namespace" $ }}
+  labels:
+    app: {{ template "kube-prometheus-stack.name" $ }}-prometheus
+    {{- include "kube-prometheus-stack.labels" $ | nindent 4 }}
+    {{- with $routeValues.labels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+spec:
+  {{- with $routeValues.parentRefs }}
+  parentRefs:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  hostnames:
+    - {{ $routeValues.hostPrefix }}-{{ $i }}.{{ $routeValues.hostDomain }}
+  rules:
+    {{- include "kube-prometheus-stack.route.rules" (dict "context" $ "route" $routeValues "serviceName" $serviceName "servicePort" $servicePort) | trim | nindent 4 }}
+  {{- end }}
+{{- end }}
