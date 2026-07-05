@@ -25,6 +25,13 @@ If release name contains chart name it will be used as a full name.
 {{- end -}}
 
 {{/*
+Define the prometheus-elasticsearch-exporter.namespace template if set with namespaceOverride or .Release.Namespace is set
+*/}}
+{{- define "prometheus-elasticsearch-exporter.namespace" -}}
+  {{- default .Release.Namespace .Values.namespaceOverride -}}
+{{- end }}
+
+{{/*
 Create chart name and version as used by the chart label.
 */}}
 {{- define "elasticsearch-exporter.chart" -}}

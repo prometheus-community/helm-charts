@@ -33,9 +33,9 @@ CLUSTER_SELECTOR_JOB = 'job'
 
 refs = {
     # renovate: git-refs=https://github.com/prometheus-operator/kube-prometheus branch=main
-    'ref.kube-prometheus': '2b49d6f4e55bd25b346c333f26879686fae498d6',
+    'ref.kube-prometheus': '9d2e5370188e1b52815184d2d7f1fd77fb3bb004',
     # renovate: git-refs=https://github.com/kubernetes-monitoring/kubernetes-mixin branch=master
-    'ref.kubernetes-mixin': 'adbf3ac6f5d5326e55b2c89c440487692ae002e7',
+    'ref.kubernetes-mixin': '6cc79328da2bd1ea427650bcae2a613aee78fe7c',
     'ref.etcd': '479c194f3f5754f039a74c396f3e70f6419edf8e',
 }
 
