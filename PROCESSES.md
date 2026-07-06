@@ -51,6 +51,16 @@ maintainers:
   url:    # The URL of the GitHub profile, using the format https://github.com/<username>. Required. 
 ```
 
+## Maintainer liveness check
+
+A yearly maintainer liveness check ensures that inactive maintainers are retired after some time.
+
+The liveness check is tracked through a GitHub issue in the `prometheus-community/helm-charts` repository. The issue should mention the targeted maintainer and give them 60 days to respond.
+
+If the maintainer does not respond within this 60-day period, they are considered to have resigned from their maintainer role. Their maintainer status can then be removed from the chart, `CODEOWNERS`, and any related repository permissions.
+
+This process helps keep chart ownership accurate and ensures that pull requests can still be reviewed by active maintainers.
+
 ## GitHub Settings
 
 As not everyone is able to see which settings are configured for this repository these are also documented here.
