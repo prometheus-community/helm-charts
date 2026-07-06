@@ -41,7 +41,7 @@ The pull request which does that should also update [CODEOWNERS](./.github/CODEO
 One of the existing chart maintainers needs to approve the PR in addition one of the repository admins needs to approve it.
 They are then responsible for also granting the new maintainer write permissions to this repository.
 
-Each maintainer has defined in the Chart.yaml of the chart itself unter the maintainer section,
+Each maintainer has defined in the Chart.yaml of the chart itself under the maintainer section,
 using the following format:
 
 ```yaml
