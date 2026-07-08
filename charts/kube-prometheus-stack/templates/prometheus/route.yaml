@@ -4,32 +4,16 @@
   {{- range $name, $route := .Values.prometheus.route }}
   {{- if $route.enabled }}
 ---
-apiVersion: {{ $route.apiVersion | default "gateway.networking.k8s.io/v1" }}
-kind: {{ $route.kind | default "HTTPRoute" }}
-metadata:
-  {{- with $route.annotations }}
-  annotations:
-    {{- toYaml . | nindent 4 }}
-  {{- end }}
-  name: {{ $serviceName }}{{ if ne $name "main" }}-{{ $name }}{{ end }}
-  namespace: {{ template "kube-prometheus-stack.namespace" $ }}
-  labels:
-    app: {{ template "kube-prometheus-stack.name" $ }}-prometheus
-    {{- include "kube-prometheus-stack.labels" $ | nindent 4 }}
-    {{- with $route.labels }}
-    {{- toYaml . | nindent 4 }}
-    {{- end }}
-spec:
-  {{- with $route.parentRefs }}
-  parentRefs:
-    {{- toYaml . | nindent 4 }}
-  {{- end }}
-  {{- with $route.hostnames }}
-  hostnames:
-    {{- tpl (toYaml .) $ | nindent 4 }}
-  {{- end }}
-  rules:
-    {{- include "kube-prometheus-stack.route.rules" (dict "context" $ "route" $route "serviceName" $serviceName "servicePort" $servicePort) | trim | nindent 4 }}
+{{ include "kube-prometheus-stack.route" (dict
+     "context" $
+     "route" $route
+     "name" (ternary $serviceName (printf "%s-%s" $serviceName $name) (eq $name "main"))
+     "namespace" (include "kube-prometheus-stack.namespace" $)
+     "labelApp" (printf "%s-prometheus" (include "kube-prometheus-stack.name" $))
+     "hostnames" $route.hostnames
+     "serviceName" $serviceName
+     "servicePort" $servicePort
+   ) }}
   {{- end }}
   {{- end }}
 {{- end }}
