@@ -457,7 +457,7 @@ def add_custom_labels(rules_str, group, indent=4, label_indent=2):
     return head + "".join(rules) + "\n"
 
 
-def add_etcd_runbook_urls(rules, group, indent=4):
+def add_custom_annotations_etcd_runbook_urls(rules, group, indent=4):
     """Add kube-prometheus runbook_url annotations to all etcd alerts.
 
     This is done after rendering the YAML text instead of mutating the rule
@@ -670,7 +670,7 @@ def write_group_to_file(group, url, destination, min_kubernetes, max_kubernetes)
                 init_line += '\n' + replacement_map[line]['init']
     # append per-alert rules
     rules = add_custom_labels(rules, group)
-    rules = add_etcd_runbook_urls(rules, group)
+    rules = add_custom_annotations_etcd_runbook_urls(rules, group)
     rules = add_custom_annotations(rules, group)
     rules = add_custom_keep_firing_for(rules)
     rules = add_custom_for(rules)
