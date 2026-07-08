@@ -767,6 +767,58 @@ alertmanager:
       ##
       prefix: "alertmanager"
 
+  ## Configuration for creating a Gateway API route that will map to each Alertmanager replica service
+  ## alertmanager.servicePerReplica must be enabled
+  ##
+  routePerReplica:
+    main:
+      # -- Enables or disables the routePerReplica
+      enabled: false
+
+      # -- Set the route apiVersion, e.g. gateway.networking.k8s.io/v1 or gateway.networking.k8s.io/v1alpha2
+      apiVersion: gateway.networking.k8s.io/v1
+      # -- Set the route kind
+      # Valid options are GRPCRoute, HTTPRoute, TCPRoute, TLSRoute, UDPRoute
+      kind: HTTPRoute
+
+      annotations: {}
+      labels: {}
+
+      ## Final form of the hostname for each per replica route is
+      ## {{ routePerReplica.hostPrefix }}-{{ $replicaNumber }}.{{ routePerReplica.hostDomain }}
+      ##
+      ## Prefix for the per replica route that will have `-$replicaNumber` appended to the end
+      hostPrefix: ""
+      ## Domain that will be used for the per replica route
+      hostDomain: ""
+
+      parentRefs: []
+      # - name: acme-gw
+
+      # -- create http route for redirect (https://gateway-api.sigs.k8s.io/guides/http-redirect-rewrite/#http-to-https-redirects)
+      ## Take care that you only enable this on the http listener of the gateway to avoid an infinite redirect.
+      ## matches, filters and additionalRules will be ignored if this is set to true.
+      httpsRedirect: false
+
+      ## Filters define the filters that are applied to requests that match this rule.
+      filters: []
+
+      matches:
+        - path:
+            type: PathPrefix
+            value: /
+
+      ## Session persistence configuration for the route rule.
+      sessionPersistence: {}
+      # sessionName: route
+      # type: Cookie
+      # absoluteTimeout: 12h
+      # cookieConfig:
+      #   lifetimeType: Permanent
+
+      ## Additional custom rules that can be added to the route
+      additionalRules: []
+
   ## Configuration for Alertmanager service
   ##
   service:
@@ -3488,7 +3540,7 @@ prometheusOperator:
   thanosImage:
     registry: quay.io
     repository: thanos/thanos
-    tag: v0.41.0
+    tag: v0.42.0
     sha: ""
 
   ## Set a Label Selector to filter watched prometheus and prometheusAgent
@@ -4009,6 +4061,58 @@ prometheus:
       ## {{ tlsSecretPerReplica.prefix }}-{{ $replicaNumber }}
       ##
       prefix: "prometheus"
+
+  ## Configuration for creating a Gateway API route that will map to each Prometheus replica service
+  ## prometheus.servicePerReplica must be enabled
+  ##
+  routePerReplica:
+    main:
+      # -- Enables or disables the routePerReplica
+      enabled: false
+
+      # -- Set the route apiVersion, e.g. gateway.networking.k8s.io/v1 or gateway.networking.k8s.io/v1alpha2
+      apiVersion: gateway.networking.k8s.io/v1
+      # -- Set the route kind
+      # Valid options are GRPCRoute, HTTPRoute, TCPRoute, TLSRoute, UDPRoute
+      kind: HTTPRoute
+
+      annotations: {}
+      labels: {}
+
+      ## Final form of the hostname for each per replica route is
+      ## {{ routePerReplica.hostPrefix }}-{{ $replicaNumber }}.{{ routePerReplica.hostDomain }}
+      ##
+      ## Prefix for the per replica route that will have `-$replicaNumber` appended to the end
+      hostPrefix: ""
+      ## Domain that will be used for the per replica route
+      hostDomain: ""
+
+      parentRefs: []
+      # - name: acme-gw
+
+      # -- create http route for redirect (https://gateway-api.sigs.k8s.io/guides/http-redirect-rewrite/#http-to-https-redirects)
+      ## Take care that you only enable this on the http listener of the gateway to avoid an infinite redirect.
+      ## matches, filters and additionalRules will be ignored if this is set to true.
+      httpsRedirect: false
+
+      ## Filters define the filters that are applied to requests that match this rule.
+      filters: []
+
+      matches:
+        - path:
+            type: PathPrefix
+            value: /
+
+      ## Session persistence configuration for the route rule.
+      sessionPersistence: {}
+      # sessionName: route
+      # type: Cookie
+      # absoluteTimeout: 12h
+      # cookieConfig:
+      #   lifetimeType: Permanent
+
+      ## Additional custom rules that can be added to the route
+      additionalRules: []
 
   serviceMonitor:
     ## If true, create a serviceMonitor for prometheus
@@ -5400,7 +5504,7 @@ thanosRuler:
     image:
       registry: quay.io
       repository: thanos/thanos
-      tag: v0.41.0
+      tag: v0.42.0
       sha: ""
 
     ## Namespaces to be selected for PrometheusRules discovery.
