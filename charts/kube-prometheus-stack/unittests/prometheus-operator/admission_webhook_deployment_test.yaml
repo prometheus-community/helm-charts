@@ -1,0 +1,14 @@
+suite: admission webhook deployment
+templates:
+  - prometheus-operator/admission-webhooks/deployment/deployment.yaml
+tests:
+  - it: renders PromQL parser options for admission webhook validation
+    set:
+      prometheusOperator.admissionWebhooks.deployment.enabled: true
+      prometheusOperator.admissionWebhooks.deployment.promqlOptions:
+        - extended-range-selectors
+        - experimental-functions
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: --promql-options=extended-range-selectors,experimental-functions

@@ -1,0 +1,28 @@
+suite: test prometheus-operator deployment
+templates:
+  - prometheus-operator/deployment.yaml
+tests:
+  - it: should not render --feature-gates by default
+    asserts:
+      - notContains:
+          path: spec.template.spec.containers[0].args
+          content: --feature-gates
+
+  - it: should render --feature-gates as sorted comma-joined key=value pairs
+    set:
+      prometheusOperator.featureGates:
+        StatusForConfigurationResources: true
+        PrometheusAgentDaemonSet: true
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: --feature-gates=PrometheusAgentDaemonSet=true,StatusForConfigurationResources=true
+
+  - it: should render a disabled feature gate as false
+    set:
+      prometheusOperator.featureGates:
+        PrometheusAgentDaemonSet: false
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: --feature-gates=PrometheusAgentDaemonSet=false
