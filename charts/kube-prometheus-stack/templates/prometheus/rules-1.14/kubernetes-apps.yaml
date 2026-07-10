@@ -29,15 +29,21 @@ spec:
 {{- if not (.Values.defaultRules.disabled.KubePodCrashLooping | default false) }}
     - alert: KubePodCrashLooping
       annotations:
-{{- if .Values.defaultRules.additionalRuleAnnotations }}
-{{ toYaml .Values.defaultRules.additionalRuleAnnotations | indent 8 }}
+{{- $ruleAnnotations := dig "KubePodCrashLooping" (dict) .Values.defaultRules.additionalRuleAnnotations }}
+{{- $groupAnnotations := default (dict) .Values.defaultRules.additionalRuleGroupAnnotations.kubernetesApps }}
+{{- $additionalAnnotations := mergeOverwrite (dict) $groupAnnotations $ruleAnnotations }}
+{{- if $additionalAnnotations }}
+{{ toYaml $additionalAnnotations | indent 8 }}
 {{- end }}
-{{- if .Values.defaultRules.additionalRuleGroupAnnotations.kubernetesApps }}
-{{ toYaml .Values.defaultRules.additionalRuleGroupAnnotations.kubernetesApps | indent 8 }}
-{{- end }}
+        {{- if not (hasKey $additionalAnnotations "description") }}
         description: 'Pod {{`{{`}} $labels.namespace {{`}}`}}/{{`{{`}} $labels.pod {{`}}`}} ({{`{{`}} $labels.container {{`}}`}}) is in waiting state (reason: "CrashLoopBackOff") on cluster {{`{{`}} $labels.cluster {{`}}`}}.'
+        {{- end }}
+        {{- if not (hasKey $additionalAnnotations "runbook_url") }}
         runbook_url: {{ .Values.defaultRules.runbookUrl }}/kubernetes/kubepodcrashlooping
+        {{- end }}
+        {{- if not (hasKey $additionalAnnotations "summary") }}
         summary: Pod is crash looping.
+        {{- end }}
       expr: max_over_time(kube_pod_container_status_waiting_reason{reason="CrashLoopBackOff", job="{{ $kubeStateMetricsJob }}", namespace{{ $namespaceOperator }}"{{ $targetNamespace }}"}[5m]) >= 1
       for: {{ dig "KubePodCrashLooping" "for" "15m" .Values.customRules }}
       {{- with .Values.defaultRules.keepFiringFor }}
@@ -57,15 +63,21 @@ spec:
 {{- if not (.Values.defaultRules.disabled.KubePodNotReady | default false) }}
     - alert: KubePodNotReady
       annotations:
-{{- if .Values.defaultRules.additionalRuleAnnotations }}
-{{ toYaml .Values.defaultRules.additionalRuleAnnotations | indent 8 }}
+{{- $ruleAnnotations := dig "KubePodNotReady" (dict) .Values.defaultRules.additionalRuleAnnotations }}
+{{- $groupAnnotations := default (dict) .Values.defaultRules.additionalRuleGroupAnnotations.kubernetesApps }}
+{{- $additionalAnnotations := mergeOverwrite (dict) $groupAnnotations $ruleAnnotations }}
+{{- if $additionalAnnotations }}
+{{ toYaml $additionalAnnotations | indent 8 }}
 {{- end }}
-{{- if .Values.defaultRules.additionalRuleGroupAnnotations.kubernetesApps }}
-{{ toYaml .Values.defaultRules.additionalRuleGroupAnnotations.kubernetesApps | indent 8 }}
-{{- end }}
+        {{- if not (hasKey $additionalAnnotations "description") }}
         description: Pod {{`{{`}} $labels.namespace {{`}}`}}/{{`{{`}} $labels.pod {{`}}`}} has been in a non-ready state for longer than 15 minutes on cluster {{`{{`}} $labels.cluster {{`}}`}}.
+        {{- end }}
+        {{- if not (hasKey $additionalAnnotations "runbook_url") }}
         runbook_url: {{ .Values.defaultRules.runbookUrl }}/kubernetes/kubepodnotready
+        {{- end }}
+        {{- if not (hasKey $additionalAnnotations "summary") }}
         summary: Pod has been in a non-ready state for more than 15 minutes.
+        {{- end }}
       expr: |-
         sum by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}namespace, pod, job, cluster) (
           max by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}namespace, pod, job, cluster) (
@@ -98,15 +110,21 @@ spec:
 {{- if not (.Values.defaultRules.disabled.KubeDeploymentGenerationMismatch | default false) }}
     - alert: KubeDeploymentGenerationMismatch
       annotations:
-{{- if .Values.defaultRules.additionalRuleAnnotations }}
-{{ toYaml .Values.defaultRules.additionalRuleAnnotations | indent 8 }}
+{{- $ruleAnnotations := dig "KubeDeploymentGenerationMismatch" (dict) .Values.defaultRules.additionalRuleAnnotations }}
+{{- $groupAnnotations := default (dict) .Values.defaultRules.additionalRuleGroupAnnotations.kubernetesApps }}
+{{- $additionalAnnotations := mergeOverwrite (dict) $groupAnnotations $ruleAnnotations }}
+{{- if $additionalAnnotations }}
+{{ toYaml $additionalAnnotations | indent 8 }}
 {{- end }}
-{{- if .Values.defaultRules.additionalRuleGroupAnnotations.kubernetesApps }}
-{{ toYaml .Values.defaultRules.additionalRuleGroupAnnotations.kubernetesApps | indent 8 }}
-{{- end }}
+        {{- if not (hasKey $additionalAnnotations "description") }}
         description: Deployment generation for {{`{{`}} $labels.namespace {{`}}`}}/{{`{{`}} $labels.deployment {{`}}`}} does not match, this indicates that the Deployment has failed but has not been rolled back on cluster {{`{{`}} $labels.cluster {{`}}`}}.
+        {{- end }}
+        {{- if not (hasKey $additionalAnnotations "runbook_url") }}
         runbook_url: {{ .Values.defaultRules.runbookUrl }}/kubernetes/kubedeploymentgenerationmismatch
+        {{- end }}
+        {{- if not (hasKey $additionalAnnotations "summary") }}
         summary: Deployment generation mismatch due to possible roll-back
+        {{- end }}
       expr: |-
         kube_deployment_status_observed_generation{job="{{ $kubeStateMetricsJob }}", namespace{{ $namespaceOperator }}"{{ $targetNamespace }}"}
           !=
@@ -129,15 +147,21 @@ spec:
 {{- if not (.Values.defaultRules.disabled.KubeDeploymentReplicasMismatch | default false) }}
     - alert: KubeDeploymentReplicasMismatch
       annotations:
-{{- if .Values.defaultRules.additionalRuleAnnotations }}
-{{ toYaml .Values.defaultRules.additionalRuleAnnotations | indent 8 }}
+{{- $ruleAnnotations := dig "KubeDeploymentReplicasMismatch" (dict) .Values.defaultRules.additionalRuleAnnotations }}
+{{- $groupAnnotations := default (dict) .Values.defaultRules.additionalRuleGroupAnnotations.kubernetesApps }}
+{{- $additionalAnnotations := mergeOverwrite (dict) $groupAnnotations $ruleAnnotations }}
+{{- if $additionalAnnotations }}
+{{ toYaml $additionalAnnotations | indent 8 }}
 {{- end }}
-{{- if .Values.defaultRules.additionalRuleGroupAnnotations.kubernetesApps }}
-{{ toYaml .Values.defaultRules.additionalRuleGroupAnnotations.kubernetesApps | indent 8 }}
-{{- end }}
+        {{- if not (hasKey $additionalAnnotations "description") }}
         description: Deployment {{`{{`}} $labels.namespace {{`}}`}}/{{`{{`}} $labels.deployment {{`}}`}} has not matched the expected number of replicas for longer than 15 minutes on cluster {{`{{`}} $labels.cluster {{`}}`}}.
+        {{- end }}
+        {{- if not (hasKey $additionalAnnotations "runbook_url") }}
         runbook_url: {{ .Values.defaultRules.runbookUrl }}/kubernetes/kubedeploymentreplicasmismatch
+        {{- end }}
+        {{- if not (hasKey $additionalAnnotations "summary") }}
         summary: Deployment has not matched the expected number of replicas.
+        {{- end }}
       expr: |-
         (
           kube_deployment_spec_replicas{job="{{ $kubeStateMetricsJob }}", namespace{{ $namespaceOperator }}"{{ $targetNamespace }}"}
@@ -166,15 +190,21 @@ spec:
 {{- if not (.Values.defaultRules.disabled.KubeDeploymentRolloutStuck | default false) }}
     - alert: KubeDeploymentRolloutStuck
       annotations:
-{{- if .Values.defaultRules.additionalRuleAnnotations }}
-{{ toYaml .Values.defaultRules.additionalRuleAnnotations | indent 8 }}
+{{- $ruleAnnotations := dig "KubeDeploymentRolloutStuck" (dict) .Values.defaultRules.additionalRuleAnnotations }}
+{{- $groupAnnotations := default (dict) .Values.defaultRules.additionalRuleGroupAnnotations.kubernetesApps }}
+{{- $additionalAnnotations := mergeOverwrite (dict) $groupAnnotations $ruleAnnotations }}
+{{- if $additionalAnnotations }}
+{{ toYaml $additionalAnnotations | indent 8 }}
 {{- end }}
-{{- if .Values.defaultRules.additionalRuleGroupAnnotations.kubernetesApps }}
-{{ toYaml .Values.defaultRules.additionalRuleGroupAnnotations.kubernetesApps | indent 8 }}
-{{- end }}
+        {{- if not (hasKey $additionalAnnotations "description") }}
         description: Rollout of deployment {{`{{`}} $labels.namespace {{`}}`}}/{{`{{`}} $labels.deployment {{`}}`}} is not progressing for longer than 15 minutes on cluster {{`{{`}} $labels.cluster {{`}}`}}.
+        {{- end }}
+        {{- if not (hasKey $additionalAnnotations "runbook_url") }}
         runbook_url: {{ .Values.defaultRules.runbookUrl }}/kubernetes/kubedeploymentrolloutstuck
+        {{- end }}
+        {{- if not (hasKey $additionalAnnotations "summary") }}
         summary: Deployment rollout is not progressing.
+        {{- end }}
       expr: |-
         kube_deployment_status_condition{condition="Progressing", status="false",job="{{ $kubeStateMetricsJob }}", namespace{{ $namespaceOperator }}"{{ $targetNamespace }}"}
         != 0
@@ -196,15 +226,21 @@ spec:
 {{- if not (.Values.defaultRules.disabled.KubeStatefulSetReplicasMismatch | default false) }}
     - alert: KubeStatefulSetReplicasMismatch
       annotations:
-{{- if .Values.defaultRules.additionalRuleAnnotations }}
-{{ toYaml .Values.defaultRules.additionalRuleAnnotations | indent 8 }}
+{{- $ruleAnnotations := dig "KubeStatefulSetReplicasMismatch" (dict) .Values.defaultRules.additionalRuleAnnotations }}
+{{- $groupAnnotations := default (dict) .Values.defaultRules.additionalRuleGroupAnnotations.kubernetesApps }}
+{{- $additionalAnnotations := mergeOverwrite (dict) $groupAnnotations $ruleAnnotations }}
+{{- if $additionalAnnotations }}
+{{ toYaml $additionalAnnotations | indent 8 }}
 {{- end }}
-{{- if .Values.defaultRules.additionalRuleGroupAnnotations.kubernetesApps }}
-{{ toYaml .Values.defaultRules.additionalRuleGroupAnnotations.kubernetesApps | indent 8 }}
-{{- end }}
+        {{- if not (hasKey $additionalAnnotations "description") }}
         description: StatefulSet {{`{{`}} $labels.namespace {{`}}`}}/{{`{{`}} $labels.statefulset {{`}}`}} has not matched the expected number of replicas for longer than 15 minutes on cluster {{`{{`}} $labels.cluster {{`}}`}}.
+        {{- end }}
+        {{- if not (hasKey $additionalAnnotations "runbook_url") }}
         runbook_url: {{ .Values.defaultRules.runbookUrl }}/kubernetes/kubestatefulsetreplicasmismatch
+        {{- end }}
+        {{- if not (hasKey $additionalAnnotations "summary") }}
         summary: StatefulSet has not matched the expected number of replicas.
+        {{- end }}
       expr: |-
         (
           kube_statefulset_status_replicas_ready{job="{{ $kubeStateMetricsJob }}", namespace{{ $namespaceOperator }}"{{ $targetNamespace }}"}
@@ -233,15 +269,21 @@ spec:
 {{- if not (.Values.defaultRules.disabled.KubeStatefulSetGenerationMismatch | default false) }}
     - alert: KubeStatefulSetGenerationMismatch
       annotations:
-{{- if .Values.defaultRules.additionalRuleAnnotations }}
-{{ toYaml .Values.defaultRules.additionalRuleAnnotations | indent 8 }}
+{{- $ruleAnnotations := dig "KubeStatefulSetGenerationMismatch" (dict) .Values.defaultRules.additionalRuleAnnotations }}
+{{- $groupAnnotations := default (dict) .Values.defaultRules.additionalRuleGroupAnnotations.kubernetesApps }}
+{{- $additionalAnnotations := mergeOverwrite (dict) $groupAnnotations $ruleAnnotations }}
+{{- if $additionalAnnotations }}
+{{ toYaml $additionalAnnotations | indent 8 }}
 {{- end }}
-{{- if .Values.defaultRules.additionalRuleGroupAnnotations.kubernetesApps }}
-{{ toYaml .Values.defaultRules.additionalRuleGroupAnnotations.kubernetesApps | indent 8 }}
-{{- end }}
+        {{- if not (hasKey $additionalAnnotations "description") }}
         description: StatefulSet generation for {{`{{`}} $labels.namespace {{`}}`}}/{{`{{`}} $labels.statefulset {{`}}`}} does not match, this indicates that the StatefulSet has failed but has not been rolled back on cluster {{`{{`}} $labels.cluster {{`}}`}}.
+        {{- end }}
+        {{- if not (hasKey $additionalAnnotations "runbook_url") }}
         runbook_url: {{ .Values.defaultRules.runbookUrl }}/kubernetes/kubestatefulsetgenerationmismatch
+        {{- end }}
+        {{- if not (hasKey $additionalAnnotations "summary") }}
         summary: StatefulSet generation mismatch due to possible roll-back
+        {{- end }}
       expr: |-
         kube_statefulset_status_observed_generation{job="{{ $kubeStateMetricsJob }}", namespace{{ $namespaceOperator }}"{{ $targetNamespace }}"}
           !=
@@ -264,15 +306,21 @@ spec:
 {{- if not (.Values.defaultRules.disabled.KubeStatefulSetUpdateNotRolledOut | default false) }}
     - alert: KubeStatefulSetUpdateNotRolledOut
       annotations:
-{{- if .Values.defaultRules.additionalRuleAnnotations }}
-{{ toYaml .Values.defaultRules.additionalRuleAnnotations | indent 8 }}
+{{- $ruleAnnotations := dig "KubeStatefulSetUpdateNotRolledOut" (dict) .Values.defaultRules.additionalRuleAnnotations }}
+{{- $groupAnnotations := default (dict) .Values.defaultRules.additionalRuleGroupAnnotations.kubernetesApps }}
+{{- $additionalAnnotations := mergeOverwrite (dict) $groupAnnotations $ruleAnnotations }}
+{{- if $additionalAnnotations }}
+{{ toYaml $additionalAnnotations | indent 8 }}
 {{- end }}
-{{- if .Values.defaultRules.additionalRuleGroupAnnotations.kubernetesApps }}
-{{ toYaml .Values.defaultRules.additionalRuleGroupAnnotations.kubernetesApps | indent 8 }}
-{{- end }}
+        {{- if not (hasKey $additionalAnnotations "description") }}
         description: StatefulSet {{`{{`}} $labels.namespace {{`}}`}}/{{`{{`}} $labels.statefulset {{`}}`}} update has not been rolled out on cluster {{`{{`}} $labels.cluster {{`}}`}}.
+        {{- end }}
+        {{- if not (hasKey $additionalAnnotations "runbook_url") }}
         runbook_url: {{ .Values.defaultRules.runbookUrl }}/kubernetes/kubestatefulsetupdatenotrolledout
+        {{- end }}
+        {{- if not (hasKey $additionalAnnotations "summary") }}
         summary: StatefulSet update has not been rolled out.
+        {{- end }}
       expr: |-
         (
           max by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}namespace, statefulset, job, cluster) (
@@ -309,15 +357,21 @@ spec:
 {{- if not (.Values.defaultRules.disabled.KubeDaemonSetRolloutStuck | default false) }}
     - alert: KubeDaemonSetRolloutStuck
       annotations:
-{{- if .Values.defaultRules.additionalRuleAnnotations }}
-{{ toYaml .Values.defaultRules.additionalRuleAnnotations | indent 8 }}
+{{- $ruleAnnotations := dig "KubeDaemonSetRolloutStuck" (dict) .Values.defaultRules.additionalRuleAnnotations }}
+{{- $groupAnnotations := default (dict) .Values.defaultRules.additionalRuleGroupAnnotations.kubernetesApps }}
+{{- $additionalAnnotations := mergeOverwrite (dict) $groupAnnotations $ruleAnnotations }}
+{{- if $additionalAnnotations }}
+{{ toYaml $additionalAnnotations | indent 8 }}
 {{- end }}
-{{- if .Values.defaultRules.additionalRuleGroupAnnotations.kubernetesApps }}
-{{ toYaml .Values.defaultRules.additionalRuleGroupAnnotations.kubernetesApps | indent 8 }}
-{{- end }}
+        {{- if not (hasKey $additionalAnnotations "description") }}
         description: DaemonSet {{`{{`}} $labels.namespace {{`}}`}}/{{`{{`}} $labels.daemonset {{`}}`}} has not finished or progressed for at least 15m on cluster {{`{{`}} $labels.cluster {{`}}`}}.
+        {{- end }}
+        {{- if not (hasKey $additionalAnnotations "runbook_url") }}
         runbook_url: {{ .Values.defaultRules.runbookUrl }}/kubernetes/kubedaemonsetrolloutstuck
+        {{- end }}
+        {{- if not (hasKey $additionalAnnotations "summary") }}
         summary: DaemonSet rollout is stuck.
+        {{- end }}
       expr: |-
         (
           (
@@ -360,15 +414,21 @@ spec:
 {{- if not (.Values.defaultRules.disabled.KubeContainerWaiting | default false) }}
     - alert: KubeContainerWaiting
       annotations:
-{{- if .Values.defaultRules.additionalRuleAnnotations }}
-{{ toYaml .Values.defaultRules.additionalRuleAnnotations | indent 8 }}
+{{- $ruleAnnotations := dig "KubeContainerWaiting" (dict) .Values.defaultRules.additionalRuleAnnotations }}
+{{- $groupAnnotations := default (dict) .Values.defaultRules.additionalRuleGroupAnnotations.kubernetesApps }}
+{{- $additionalAnnotations := mergeOverwrite (dict) $groupAnnotations $ruleAnnotations }}
+{{- if $additionalAnnotations }}
+{{ toYaml $additionalAnnotations | indent 8 }}
 {{- end }}
-{{- if .Values.defaultRules.additionalRuleGroupAnnotations.kubernetesApps }}
-{{ toYaml .Values.defaultRules.additionalRuleGroupAnnotations.kubernetesApps | indent 8 }}
-{{- end }}
+        {{- if not (hasKey $additionalAnnotations "description") }}
         description: 'pod/{{`{{`}} $labels.pod {{`}}`}} in namespace {{`{{`}} $labels.namespace {{`}}`}} on container {{`{{`}} $labels.container{{`}}`}} has been in waiting state for longer than 1 hour. (reason: "{{`{{`}} $labels.reason {{`}}`}}") on cluster {{`{{`}} $labels.cluster {{`}}`}}.'
+        {{- end }}
+        {{- if not (hasKey $additionalAnnotations "runbook_url") }}
         runbook_url: {{ .Values.defaultRules.runbookUrl }}/kubernetes/kubecontainerwaiting
+        {{- end }}
+        {{- if not (hasKey $additionalAnnotations "summary") }}
         summary: Pod container waiting longer than 1 hour
+        {{- end }}
       expr: kube_pod_container_status_waiting_reason{reason!="CrashLoopBackOff", job="{{ $kubeStateMetricsJob }}", namespace{{ $namespaceOperator }}"{{ $targetNamespace }}"} > 0
       for: {{ dig "KubeContainerWaiting" "for" "1h" .Values.customRules }}
       {{- with .Values.defaultRules.keepFiringFor }}
@@ -388,15 +448,21 @@ spec:
 {{- if not (.Values.defaultRules.disabled.KubeDaemonSetNotScheduled | default false) }}
     - alert: KubeDaemonSetNotScheduled
       annotations:
-{{- if .Values.defaultRules.additionalRuleAnnotations }}
-{{ toYaml .Values.defaultRules.additionalRuleAnnotations | indent 8 }}
+{{- $ruleAnnotations := dig "KubeDaemonSetNotScheduled" (dict) .Values.defaultRules.additionalRuleAnnotations }}
+{{- $groupAnnotations := default (dict) .Values.defaultRules.additionalRuleGroupAnnotations.kubernetesApps }}
+{{- $additionalAnnotations := mergeOverwrite (dict) $groupAnnotations $ruleAnnotations }}
+{{- if $additionalAnnotations }}
+{{ toYaml $additionalAnnotations | indent 8 }}
 {{- end }}
-{{- if .Values.defaultRules.additionalRuleGroupAnnotations.kubernetesApps }}
-{{ toYaml .Values.defaultRules.additionalRuleGroupAnnotations.kubernetesApps | indent 8 }}
-{{- end }}
+        {{- if not (hasKey $additionalAnnotations "description") }}
         description: '{{`{{`}} $value {{`}}`}} Pods of DaemonSet {{`{{`}} $labels.namespace {{`}}`}}/{{`{{`}} $labels.daemonset {{`}}`}} are not scheduled on cluster {{`{{`}} $labels.cluster {{`}}`}}.'
+        {{- end }}
+        {{- if not (hasKey $additionalAnnotations "runbook_url") }}
         runbook_url: {{ .Values.defaultRules.runbookUrl }}/kubernetes/kubedaemonsetnotscheduled
+        {{- end }}
+        {{- if not (hasKey $additionalAnnotations "summary") }}
         summary: DaemonSet pods are not scheduled.
+        {{- end }}
       expr: |-
         kube_daemonset_status_desired_number_scheduled{job="{{ $kubeStateMetricsJob }}", namespace{{ $namespaceOperator }}"{{ $targetNamespace }}"}
           -
@@ -419,15 +485,21 @@ spec:
 {{- if not (.Values.defaultRules.disabled.KubeDaemonSetMisScheduled | default false) }}
     - alert: KubeDaemonSetMisScheduled
       annotations:
-{{- if .Values.defaultRules.additionalRuleAnnotations }}
-{{ toYaml .Values.defaultRules.additionalRuleAnnotations | indent 8 }}
+{{- $ruleAnnotations := dig "KubeDaemonSetMisScheduled" (dict) .Values.defaultRules.additionalRuleAnnotations }}
+{{- $groupAnnotations := default (dict) .Values.defaultRules.additionalRuleGroupAnnotations.kubernetesApps }}
+{{- $additionalAnnotations := mergeOverwrite (dict) $groupAnnotations $ruleAnnotations }}
+{{- if $additionalAnnotations }}
+{{ toYaml $additionalAnnotations | indent 8 }}
 {{- end }}
-{{- if .Values.defaultRules.additionalRuleGroupAnnotations.kubernetesApps }}
-{{ toYaml .Values.defaultRules.additionalRuleGroupAnnotations.kubernetesApps | indent 8 }}
-{{- end }}
+        {{- if not (hasKey $additionalAnnotations "description") }}
         description: '{{`{{`}} $value {{`}}`}} Pods of DaemonSet {{`{{`}} $labels.namespace {{`}}`}}/{{`{{`}} $labels.daemonset {{`}}`}} are running where they are not supposed to run on cluster {{`{{`}} $labels.cluster {{`}}`}}.'
+        {{- end }}
+        {{- if not (hasKey $additionalAnnotations "runbook_url") }}
         runbook_url: {{ .Values.defaultRules.runbookUrl }}/kubernetes/kubedaemonsetmisscheduled
+        {{- end }}
+        {{- if not (hasKey $additionalAnnotations "summary") }}
         summary: DaemonSet pods are misscheduled.
+        {{- end }}
       expr: kube_daemonset_status_number_misscheduled{job="{{ $kubeStateMetricsJob }}", namespace{{ $namespaceOperator }}"{{ $targetNamespace }}"} > 0
       for: {{ dig "KubeDaemonSetMisScheduled" "for" "15m" .Values.customRules }}
       {{- with .Values.defaultRules.keepFiringFor }}
@@ -447,15 +519,21 @@ spec:
 {{- if not (.Values.defaultRules.disabled.KubeJobNotCompleted | default false) }}
     - alert: KubeJobNotCompleted
       annotations:
-{{- if .Values.defaultRules.additionalRuleAnnotations }}
-{{ toYaml .Values.defaultRules.additionalRuleAnnotations | indent 8 }}
+{{- $ruleAnnotations := dig "KubeJobNotCompleted" (dict) .Values.defaultRules.additionalRuleAnnotations }}
+{{- $groupAnnotations := default (dict) .Values.defaultRules.additionalRuleGroupAnnotations.kubernetesApps }}
+{{- $additionalAnnotations := mergeOverwrite (dict) $groupAnnotations $ruleAnnotations }}
+{{- if $additionalAnnotations }}
+{{ toYaml $additionalAnnotations | indent 8 }}
 {{- end }}
-{{- if .Values.defaultRules.additionalRuleGroupAnnotations.kubernetesApps }}
-{{ toYaml .Values.defaultRules.additionalRuleGroupAnnotations.kubernetesApps | indent 8 }}
-{{- end }}
+        {{- if not (hasKey $additionalAnnotations "description") }}
         description: Job {{`{{`}} $labels.namespace {{`}}`}}/{{`{{`}} $labels.job_name {{`}}`}} is taking more than {{`{{`}} "43200" | humanizeDuration {{`}}`}} to complete on cluster {{`{{`}} $labels.cluster {{`}}`}}.
+        {{- end }}
+        {{- if not (hasKey $additionalAnnotations "runbook_url") }}
         runbook_url: {{ .Values.defaultRules.runbookUrl }}/kubernetes/kubejobnotcompleted
+        {{- end }}
+        {{- if not (hasKey $additionalAnnotations "summary") }}
         summary: Job did not complete in time
+        {{- end }}
       expr: |-
         time() - max by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}namespace, job_name, cluster) (kube_job_status_start_time{job="{{ $kubeStateMetricsJob }}", namespace{{ $namespaceOperator }}"{{ $targetNamespace }}"}
           and
@@ -474,15 +552,21 @@ spec:
 {{- if not (.Values.defaultRules.disabled.KubeJobFailed | default false) }}
     - alert: KubeJobFailed
       annotations:
-{{- if .Values.defaultRules.additionalRuleAnnotations }}
-{{ toYaml .Values.defaultRules.additionalRuleAnnotations | indent 8 }}
+{{- $ruleAnnotations := dig "KubeJobFailed" (dict) .Values.defaultRules.additionalRuleAnnotations }}
+{{- $groupAnnotations := default (dict) .Values.defaultRules.additionalRuleGroupAnnotations.kubernetesApps }}
+{{- $additionalAnnotations := mergeOverwrite (dict) $groupAnnotations $ruleAnnotations }}
+{{- if $additionalAnnotations }}
+{{ toYaml $additionalAnnotations | indent 8 }}
 {{- end }}
-{{- if .Values.defaultRules.additionalRuleGroupAnnotations.kubernetesApps }}
-{{ toYaml .Values.defaultRules.additionalRuleGroupAnnotations.kubernetesApps | indent 8 }}
-{{- end }}
+        {{- if not (hasKey $additionalAnnotations "description") }}
         description: Job {{`{{`}} $labels.namespace {{`}}`}}/{{`{{`}} $labels.job_name {{`}}`}} failed to complete. Removing failed job after investigation should clear this alert on cluster {{`{{`}} $labels.cluster {{`}}`}}.
+        {{- end }}
+        {{- if not (hasKey $additionalAnnotations "runbook_url") }}
         runbook_url: {{ .Values.defaultRules.runbookUrl }}/kubernetes/kubejobfailed
+        {{- end }}
+        {{- if not (hasKey $additionalAnnotations "summary") }}
         summary: Job failed to complete.
+        {{- end }}
       expr: kube_job_failed{job="{{ $kubeStateMetricsJob }}", namespace{{ $namespaceOperator }}"{{ $targetNamespace }}"}  > 0
       for: {{ dig "KubeJobFailed" "for" "15m" .Values.customRules }}
       {{- with .Values.defaultRules.keepFiringFor }}
@@ -502,15 +586,21 @@ spec:
 {{- if not (.Values.defaultRules.disabled.KubeHpaReplicasMismatch | default false) }}
     - alert: KubeHpaReplicasMismatch
       annotations:
-{{- if .Values.defaultRules.additionalRuleAnnotations }}
-{{ toYaml .Values.defaultRules.additionalRuleAnnotations | indent 8 }}
+{{- $ruleAnnotations := dig "KubeHpaReplicasMismatch" (dict) .Values.defaultRules.additionalRuleAnnotations }}
+{{- $groupAnnotations := default (dict) .Values.defaultRules.additionalRuleGroupAnnotations.kubernetesApps }}
+{{- $additionalAnnotations := mergeOverwrite (dict) $groupAnnotations $ruleAnnotations }}
+{{- if $additionalAnnotations }}
+{{ toYaml $additionalAnnotations | indent 8 }}
 {{- end }}
-{{- if .Values.defaultRules.additionalRuleGroupAnnotations.kubernetesApps }}
-{{ toYaml .Values.defaultRules.additionalRuleGroupAnnotations.kubernetesApps | indent 8 }}
-{{- end }}
+        {{- if not (hasKey $additionalAnnotations "description") }}
         description: HPA {{`{{`}} $labels.namespace {{`}}`}}/{{`{{`}} $labels.horizontalpodautoscaler  {{`}}`}} has not matched the desired number of replicas for longer than 15 minutes on cluster {{`{{`}} $labels.cluster {{`}}`}}.
+        {{- end }}
+        {{- if not (hasKey $additionalAnnotations "runbook_url") }}
         runbook_url: {{ .Values.defaultRules.runbookUrl }}/kubernetes/kubehpareplicasmismatch
+        {{- end }}
+        {{- if not (hasKey $additionalAnnotations "summary") }}
         summary: HPA has not matched desired number of replicas.
+        {{- end }}
       expr: |-
         (kube_horizontalpodautoscaler_status_desired_replicas{job="{{ $kubeStateMetricsJob }}", namespace{{ $namespaceOperator }}"{{ $targetNamespace }}"}
           !=
@@ -543,15 +633,21 @@ spec:
 {{- if not (.Values.defaultRules.disabled.KubeHpaMaxedOut | default false) }}
     - alert: KubeHpaMaxedOut
       annotations:
-{{- if .Values.defaultRules.additionalRuleAnnotations }}
-{{ toYaml .Values.defaultRules.additionalRuleAnnotations | indent 8 }}
+{{- $ruleAnnotations := dig "KubeHpaMaxedOut" (dict) .Values.defaultRules.additionalRuleAnnotations }}
+{{- $groupAnnotations := default (dict) .Values.defaultRules.additionalRuleGroupAnnotations.kubernetesApps }}
+{{- $additionalAnnotations := mergeOverwrite (dict) $groupAnnotations $ruleAnnotations }}
+{{- if $additionalAnnotations }}
+{{ toYaml $additionalAnnotations | indent 8 }}
 {{- end }}
-{{- if .Values.defaultRules.additionalRuleGroupAnnotations.kubernetesApps }}
-{{ toYaml .Values.defaultRules.additionalRuleGroupAnnotations.kubernetesApps | indent 8 }}
-{{- end }}
+        {{- if not (hasKey $additionalAnnotations "description") }}
         description: HPA {{`{{`}} $labels.namespace {{`}}`}}/{{`{{`}} $labels.horizontalpodautoscaler  {{`}}`}} has been running at max replicas for longer than 15 minutes on cluster {{`{{`}} $labels.cluster {{`}}`}}.
+        {{- end }}
+        {{- if not (hasKey $additionalAnnotations "runbook_url") }}
         runbook_url: {{ .Values.defaultRules.runbookUrl }}/kubernetes/kubehpamaxedout
+        {{- end }}
+        {{- if not (hasKey $additionalAnnotations "summary") }}
         summary: HPA is running at max replicas
+        {{- end }}
       expr: |-
         (
           kube_horizontalpodautoscaler_status_current_replicas{job="{{ $kubeStateMetricsJob }}", namespace{{ $namespaceOperator }}"{{ $targetNamespace }}"}
@@ -581,15 +677,21 @@ spec:
 {{- if not (.Values.defaultRules.disabled.KubePdbNotEnoughHealthyPods | default false) }}
     - alert: KubePdbNotEnoughHealthyPods
       annotations:
-{{- if .Values.defaultRules.additionalRuleAnnotations }}
-{{ toYaml .Values.defaultRules.additionalRuleAnnotations | indent 8 }}
+{{- $ruleAnnotations := dig "KubePdbNotEnoughHealthyPods" (dict) .Values.defaultRules.additionalRuleAnnotations }}
+{{- $groupAnnotations := default (dict) .Values.defaultRules.additionalRuleGroupAnnotations.kubernetesApps }}
+{{- $additionalAnnotations := mergeOverwrite (dict) $groupAnnotations $ruleAnnotations }}
+{{- if $additionalAnnotations }}
+{{ toYaml $additionalAnnotations | indent 8 }}
 {{- end }}
-{{- if .Values.defaultRules.additionalRuleGroupAnnotations.kubernetesApps }}
-{{ toYaml .Values.defaultRules.additionalRuleGroupAnnotations.kubernetesApps | indent 8 }}
-{{- end }}
+        {{- if not (hasKey $additionalAnnotations "description") }}
         description: PDB {{`{{`}} $labels.cluster {{`}}`}}/{{`{{`}} $labels.namespace {{`}}`}}/{{`{{`}} $labels.poddisruptionbudget {{`}}`}} expects {{`{{`}} $value {{`}}`}} more healthy pods. The desired number of healthy pods has not been met for at least 15m.
+        {{- end }}
+        {{- if not (hasKey $additionalAnnotations "runbook_url") }}
         runbook_url: {{ .Values.defaultRules.runbookUrl }}/kubernetes/kubepdbnotenoughhealthypods
+        {{- end }}
+        {{- if not (hasKey $additionalAnnotations "summary") }}
         summary: PDB does not have enough healthy pods.
+        {{- end }}
       expr: |-
         (
           kube_poddisruptionbudget_status_desired_healthy{job="{{ $kubeStateMetricsJob }}", namespace{{ $namespaceOperator }}"{{ $targetNamespace }}"}

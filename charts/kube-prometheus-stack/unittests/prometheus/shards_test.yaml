@@ -1,0 +1,27 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/helm-unittest/helm-unittest/main/schema/helm-testsuite.json
+suite: test shards
+templates:
+  - prometheus/prometheus.yaml
+tests:
+  - it: should render shards with the default value
+    asserts:
+      - equal:
+          path: spec.shards
+          value: 1
+  - it: should render shards when set greater than 1
+    set:
+      prometheus:
+        prometheusSpec:
+          shards: 3
+    asserts:
+      - equal:
+          path: spec.shards
+          value: 3
+  - it: should be omitted, if set to null
+    set:
+      prometheus:
+        prometheusSpec:
+          shards: null
+    asserts:
+      - notExists:
+          path: spec.shards

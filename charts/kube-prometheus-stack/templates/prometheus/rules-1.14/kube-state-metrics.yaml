@@ -28,15 +28,21 @@ spec:
 {{- if not (.Values.defaultRules.disabled.KubeStateMetricsListErrors | default false) }}
     - alert: KubeStateMetricsListErrors
       annotations:
-{{- if .Values.defaultRules.additionalRuleAnnotations }}
-{{ toYaml .Values.defaultRules.additionalRuleAnnotations | indent 8 }}
+{{- $ruleAnnotations := dig "KubeStateMetricsListErrors" (dict) .Values.defaultRules.additionalRuleAnnotations }}
+{{- $groupAnnotations := default (dict) .Values.defaultRules.additionalRuleGroupAnnotations.kubeStateMetrics }}
+{{- $additionalAnnotations := mergeOverwrite (dict) $groupAnnotations $ruleAnnotations }}
+{{- if $additionalAnnotations }}
+{{ toYaml $additionalAnnotations | indent 8 }}
 {{- end }}
-{{- if .Values.defaultRules.additionalRuleGroupAnnotations.kubeStateMetrics }}
-{{ toYaml .Values.defaultRules.additionalRuleGroupAnnotations.kubeStateMetrics | indent 8 }}
-{{- end }}
+        {{- if not (hasKey $additionalAnnotations "description") }}
         description: kube-state-metrics is experiencing errors at an elevated rate in list operations. This is likely causing it to not be able to expose metrics about Kubernetes objects correctly or at all.
+        {{- end }}
+        {{- if not (hasKey $additionalAnnotations "runbook_url") }}
         runbook_url: {{ .Values.defaultRules.runbookUrl }}/kube-state-metrics/kubestatemetricslisterrors
+        {{- end }}
+        {{- if not (hasKey $additionalAnnotations "summary") }}
         summary: kube-state-metrics is experiencing errors in list operations.
+        {{- end }}
       expr: |-
         (sum(rate(kube_state_metrics_list_total{job="{{ $kubeStateMetricsJob }}",result="error"}[5m])) by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster)
           /
@@ -60,15 +66,21 @@ spec:
 {{- if not (.Values.defaultRules.disabled.KubeStateMetricsWatchErrors | default false) }}
     - alert: KubeStateMetricsWatchErrors
       annotations:
-{{- if .Values.defaultRules.additionalRuleAnnotations }}
-{{ toYaml .Values.defaultRules.additionalRuleAnnotations | indent 8 }}
+{{- $ruleAnnotations := dig "KubeStateMetricsWatchErrors" (dict) .Values.defaultRules.additionalRuleAnnotations }}
+{{- $groupAnnotations := default (dict) .Values.defaultRules.additionalRuleGroupAnnotations.kubeStateMetrics }}
+{{- $additionalAnnotations := mergeOverwrite (dict) $groupAnnotations $ruleAnnotations }}
+{{- if $additionalAnnotations }}
+{{ toYaml $additionalAnnotations | indent 8 }}
 {{- end }}
-{{- if .Values.defaultRules.additionalRuleGroupAnnotations.kubeStateMetrics }}
-{{ toYaml .Values.defaultRules.additionalRuleGroupAnnotations.kubeStateMetrics | indent 8 }}
-{{- end }}
+        {{- if not (hasKey $additionalAnnotations "description") }}
         description: kube-state-metrics is experiencing errors at an elevated rate in watch operations. This is likely causing it to not be able to expose metrics about Kubernetes objects correctly or at all.
+        {{- end }}
+        {{- if not (hasKey $additionalAnnotations "runbook_url") }}
         runbook_url: {{ .Values.defaultRules.runbookUrl }}/kube-state-metrics/kubestatemetricswatcherrors
+        {{- end }}
+        {{- if not (hasKey $additionalAnnotations "summary") }}
         summary: kube-state-metrics is experiencing errors in watch operations.
+        {{- end }}
       expr: |-
         (sum(rate(kube_state_metrics_watch_total{job="{{ $kubeStateMetricsJob }}",result="error"}[5m])) by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster)
           /
@@ -92,15 +104,21 @@ spec:
 {{- if not (.Values.defaultRules.disabled.KubeStateMetricsShardingMismatch | default false) }}
     - alert: KubeStateMetricsShardingMismatch
       annotations:
-{{- if .Values.defaultRules.additionalRuleAnnotations }}
-{{ toYaml .Values.defaultRules.additionalRuleAnnotations | indent 8 }}
+{{- $ruleAnnotations := dig "KubeStateMetricsShardingMismatch" (dict) .Values.defaultRules.additionalRuleAnnotations }}
+{{- $groupAnnotations := default (dict) .Values.defaultRules.additionalRuleGroupAnnotations.kubeStateMetrics }}
+{{- $additionalAnnotations := mergeOverwrite (dict) $groupAnnotations $ruleAnnotations }}
+{{- if $additionalAnnotations }}
+{{ toYaml $additionalAnnotations | indent 8 }}
 {{- end }}
-{{- if .Values.defaultRules.additionalRuleGroupAnnotations.kubeStateMetrics }}
-{{ toYaml .Values.defaultRules.additionalRuleGroupAnnotations.kubeStateMetrics | indent 8 }}
-{{- end }}
+        {{- if not (hasKey $additionalAnnotations "description") }}
         description: kube-state-metrics pods are running with different --total-shards configuration, some Kubernetes objects may be exposed multiple times or not exposed at all.
+        {{- end }}
+        {{- if not (hasKey $additionalAnnotations "runbook_url") }}
         runbook_url: {{ .Values.defaultRules.runbookUrl }}/kube-state-metrics/kubestatemetricsshardingmismatch
+        {{- end }}
+        {{- if not (hasKey $additionalAnnotations "summary") }}
         summary: kube-state-metrics sharding is misconfigured.
+        {{- end }}
       expr: stdvar (kube_state_metrics_total_shards{job="{{ $kubeStateMetricsJob }}"}) by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster) != 0
       for: {{ dig "KubeStateMetricsShardingMismatch" "for" "15m" .Values.customRules }}
       {{- with .Values.defaultRules.keepFiringFor }}
@@ -120,15 +138,21 @@ spec:
 {{- if not (.Values.defaultRules.disabled.KubeStateMetricsShardsMissing | default false) }}
     - alert: KubeStateMetricsShardsMissing
       annotations:
-{{- if .Values.defaultRules.additionalRuleAnnotations }}
-{{ toYaml .Values.defaultRules.additionalRuleAnnotations | indent 8 }}
+{{- $ruleAnnotations := dig "KubeStateMetricsShardsMissing" (dict) .Values.defaultRules.additionalRuleAnnotations }}
+{{- $groupAnnotations := default (dict) .Values.defaultRules.additionalRuleGroupAnnotations.kubeStateMetrics }}
+{{- $additionalAnnotations := mergeOverwrite (dict) $groupAnnotations $ruleAnnotations }}
+{{- if $additionalAnnotations }}
+{{ toYaml $additionalAnnotations | indent 8 }}
 {{- end }}
-{{- if .Values.defaultRules.additionalRuleGroupAnnotations.kubeStateMetrics }}
-{{ toYaml .Values.defaultRules.additionalRuleGroupAnnotations.kubeStateMetrics | indent 8 }}
-{{- end }}
+        {{- if not (hasKey $additionalAnnotations "description") }}
         description: kube-state-metrics shards are missing, some Kubernetes objects are not being exposed.
+        {{- end }}
+        {{- if not (hasKey $additionalAnnotations "runbook_url") }}
         runbook_url: {{ .Values.defaultRules.runbookUrl }}/kube-state-metrics/kubestatemetricsshardsmissing
+        {{- end }}
+        {{- if not (hasKey $additionalAnnotations "summary") }}
         summary: kube-state-metrics shards are missing.
+        {{- end }}
       expr: |-
         2^max(kube_state_metrics_total_shards{job="{{ $kubeStateMetricsJob }}"}) by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster) - 1
           -
