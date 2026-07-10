@@ -1,0 +1,52 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/helm-unittest/helm-unittest/main/schema/helm-testsuite.json
+suite: daemonset defaultArgs / extraArgs ordering
+templates:
+  - daemonset.yaml
+tests:
+  - it: renders defaultArgs before extraArgs by default
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: --collector.filesystem.ignored-mount-points=^/(dev|proc|sys|var/lib/docker/.+|var/lib/kubelet/.+)($|/)
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: --collector.filesystem.ignored-fs-types=^(autofs|binfmt_misc|bpf|cgroup2?|configfs|debugfs|devpts|devtmpfs|fusectl|hugetlbfs|iso9660|mqueue|nsfs|overlay|proc|procfs|pstore|rpc_pipefs|securityfs|selinuxfs|squashfs|sysfs|tracefs)$
+
+  - it: appends extraArgs after defaultArgs
+    set:
+      extraArgs:
+        - --collector.diskstats.ignored-devices=^(ram|loop)\\d+$
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: --collector.filesystem.ignored-mount-points=^/(dev|proc|sys|var/lib/docker/.+|var/lib/kubelet/.+)($|/)
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: --collector.diskstats.ignored-devices=^(ram|loop)\\d+$
+      - equal:
+          path: spec.template.spec.containers[0].args[-1]
+          value: --collector.diskstats.ignored-devices=^(ram|loop)\\d+$
+
+  - it: omits all defaultArgs when defaultArgs is set to empty list
+    set:
+      defaultArgs: []
+    asserts:
+      - notContains:
+          path: spec.template.spec.containers[0].args
+          content: --collector.filesystem.ignored-mount-points=^/(dev|proc|sys|var/lib/docker/.+|var/lib/kubelet/.+)($|/)
+      - notContains:
+          path: spec.template.spec.containers[0].args
+          content: --collector.filesystem.ignored-fs-types=^(autofs|binfmt_misc|bpf|cgroup2?|configfs|debugfs|devpts|devtmpfs|fusectl|hugetlbfs|iso9660|mqueue|nsfs|overlay|proc|procfs|pstore|rpc_pipefs|securityfs|selinuxfs|squashfs|sysfs|tracefs)$
+
+  - it: renders only extraArgs when defaultArgs is empty and extraArgs is set
+    set:
+      defaultArgs: []
+      extraArgs:
+        - --collector.textfile.directory=/run/prometheus
+    asserts:
+      - notContains:
+          path: spec.template.spec.containers[0].args
+          content: --collector.filesystem.ignored-mount-points=^/(dev|proc|sys|var/lib/docker/.+|var/lib/kubelet/.+)($|/)
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: --collector.textfile.directory=/run/prometheus
