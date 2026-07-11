@@ -27,17 +27,23 @@ spec:
 {{- if not (.Values.defaultRules.disabled.ConfigReloaderSidecarErrors | default false) }}
     - alert: ConfigReloaderSidecarErrors
       annotations:
-{{- if .Values.defaultRules.additionalRuleAnnotations }}
-{{ toYaml .Values.defaultRules.additionalRuleAnnotations | indent 8 }}
+{{- $ruleAnnotations := dig "ConfigReloaderSidecarErrors" (dict) .Values.defaultRules.additionalRuleAnnotations }}
+{{- $groupAnnotations := default (dict) .Values.defaultRules.additionalRuleGroupAnnotations.configReloaders }}
+{{- $additionalAnnotations := mergeOverwrite (dict) $groupAnnotations $ruleAnnotations }}
+{{- if $additionalAnnotations }}
+{{ toYaml $additionalAnnotations | indent 8 }}
 {{- end }}
-{{- if .Values.defaultRules.additionalRuleGroupAnnotations.configReloaders }}
-{{ toYaml .Values.defaultRules.additionalRuleGroupAnnotations.configReloaders | indent 8 }}
-{{- end }}
+        {{- if not (hasKey $additionalAnnotations "description") }}
         description: 'Errors encountered while the {{`{{`}}$labels.pod{{`}}`}} config-reloader sidecar attempts to sync config in {{`{{`}}$labels.namespace{{`}}`}} namespace.
+        {{- end }}
 
           As a result, configuration for service running in {{`{{`}}$labels.pod{{`}}`}} may be stale and cannot be updated anymore.'
+        {{- if not (hasKey $additionalAnnotations "runbook_url") }}
         runbook_url: {{ .Values.defaultRules.runbookUrl }}/prometheus-operator/configreloadersidecarerrors
+        {{- end }}
+        {{- if not (hasKey $additionalAnnotations "summary") }}
         summary: config-reloader sidecar has not had a successful reload for 10m
+        {{- end }}
       expr: max_over_time(reloader_last_reload_successful{namespace=~".+"}[5m]) == 0
       for: {{ dig "ConfigReloaderSidecarErrors" "for" "10m" .Values.customRules }}
       {{- with .Values.defaultRules.keepFiringFor }}

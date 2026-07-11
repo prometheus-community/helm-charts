@@ -27,15 +27,21 @@ spec:
 {{- if not (.Values.defaultRules.disabled.TargetDown | default false) }}
     - alert: TargetDown
       annotations:
-{{- if .Values.defaultRules.additionalRuleAnnotations }}
-{{ toYaml .Values.defaultRules.additionalRuleAnnotations | indent 8 }}
+{{- $ruleAnnotations := dig "TargetDown" (dict) .Values.defaultRules.additionalRuleAnnotations }}
+{{- $groupAnnotations := default (dict) .Values.defaultRules.additionalRuleGroupAnnotations.general }}
+{{- $additionalAnnotations := mergeOverwrite (dict) $groupAnnotations $ruleAnnotations }}
+{{- if $additionalAnnotations }}
+{{ toYaml $additionalAnnotations | indent 8 }}
 {{- end }}
-{{- if .Values.defaultRules.additionalRuleGroupAnnotations.general }}
-{{ toYaml .Values.defaultRules.additionalRuleGroupAnnotations.general | indent 8 }}
-{{- end }}
+        {{- if not (hasKey $additionalAnnotations "description") }}
         description: '{{`{{`}} printf "%.4g" $value {{`}}`}}% of the {{`{{`}} $labels.job {{`}}`}}/{{`{{`}} $labels.service {{`}}`}} targets in {{`{{`}} $labels.namespace {{`}}`}} namespace are down.'
+        {{- end }}
+        {{- if not (hasKey $additionalAnnotations "runbook_url") }}
         runbook_url: {{ .Values.defaultRules.runbookUrl }}/general/targetdown
+        {{- end }}
+        {{- if not (hasKey $additionalAnnotations "summary") }}
         summary: One or more targets are unreachable.
+        {{- end }}
       expr: 100 * (count(up == 0) BY ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster, job, namespace, service) / count(up) BY ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster, job, namespace, service)) > 10
       for: {{ dig "TargetDown" "for" "10m" .Values.customRules }}
       {{- with .Values.defaultRules.keepFiringFor }}
@@ -55,13 +61,15 @@ spec:
 {{- if not (.Values.defaultRules.disabled.Watchdog | default false) }}
     - alert: Watchdog
       annotations:
-{{- if .Values.defaultRules.additionalRuleAnnotations }}
-{{ toYaml .Values.defaultRules.additionalRuleAnnotations | indent 8 }}
+{{- $ruleAnnotations := dig "Watchdog" (dict) .Values.defaultRules.additionalRuleAnnotations }}
+{{- $groupAnnotations := default (dict) .Values.defaultRules.additionalRuleGroupAnnotations.general }}
+{{- $additionalAnnotations := mergeOverwrite (dict) $groupAnnotations $ruleAnnotations }}
+{{- if $additionalAnnotations }}
+{{ toYaml $additionalAnnotations | indent 8 }}
 {{- end }}
-{{- if .Values.defaultRules.additionalRuleGroupAnnotations.general }}
-{{ toYaml .Values.defaultRules.additionalRuleGroupAnnotations.general | indent 8 }}
-{{- end }}
+        {{- if not (hasKey $additionalAnnotations "description") }}
         description: 'This is an alert meant to ensure that the entire alerting pipeline is functional.
+        {{- end }}
 
           This alert is always firing, therefore it should always be firing in Alertmanager
 
@@ -72,8 +80,12 @@ spec:
           "DeadMansSnitch" integration in PagerDuty.
 
           '
+        {{- if not (hasKey $additionalAnnotations "runbook_url") }}
         runbook_url: {{ .Values.defaultRules.runbookUrl }}/general/watchdog
+        {{- end }}
+        {{- if not (hasKey $additionalAnnotations "summary") }}
         summary: An alert that should always be firing to certify that Alertmanager is working properly.
+        {{- end }}
       expr: vector(1)
       labels:
         severity: {{ dig "Watchdog" "severity" "none" .Values.customRules }}
@@ -89,13 +101,15 @@ spec:
 {{- if not (.Values.defaultRules.disabled.InfoInhibitor | default false) }}
     - alert: InfoInhibitor
       annotations:
-{{- if .Values.defaultRules.additionalRuleAnnotations }}
-{{ toYaml .Values.defaultRules.additionalRuleAnnotations | indent 8 }}
+{{- $ruleAnnotations := dig "InfoInhibitor" (dict) .Values.defaultRules.additionalRuleAnnotations }}
+{{- $groupAnnotations := default (dict) .Values.defaultRules.additionalRuleGroupAnnotations.general }}
+{{- $additionalAnnotations := mergeOverwrite (dict) $groupAnnotations $ruleAnnotations }}
+{{- if $additionalAnnotations }}
+{{ toYaml $additionalAnnotations | indent 8 }}
 {{- end }}
-{{- if .Values.defaultRules.additionalRuleGroupAnnotations.general }}
-{{ toYaml .Values.defaultRules.additionalRuleGroupAnnotations.general | indent 8 }}
-{{- end }}
+        {{- if not (hasKey $additionalAnnotations "description") }}
         description: 'This is an alert that is used to inhibit info alerts.
+        {{- end }}
 
           By themselves, the info-level alerts are sometimes very noisy, but they are relevant when combined with
 
@@ -108,9 +122,13 @@ spec:
           This alert should be routed to a null receiver and configured to inhibit alerts with severity="info".
 
           '
+        {{- if not (hasKey $additionalAnnotations "runbook_url") }}
         runbook_url: {{ .Values.defaultRules.runbookUrl }}/general/infoinhibitor
+        {{- end }}
+        {{- if not (hasKey $additionalAnnotations "summary") }}
         summary: Info-level alert inhibition.
-      expr: ALERTS{severity = "info"} == 1 unless on ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}namespace) ALERTS{alertname != "InfoInhibitor", severity =~ "warning|critical", alertstate="firing"} == 1
+        {{- end }}
+      expr: group by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}namespace) (ALERTS{severity = "info"} == 1) unless on ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}namespace) group by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}namespace) (ALERTS{alertname != "InfoInhibitor", alertstate = "firing", severity =~ "warning|critical"} == 1)
       labels:
         severity: {{ dig "InfoInhibitor" "severity" "none" .Values.customRules }}
       {{- if or .Values.defaultRules.additionalRuleLabels .Values.defaultRules.additionalRuleGroupLabels.general }}

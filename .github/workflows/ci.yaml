@@ -7,24 +7,30 @@ on:
       - main
 
 jobs:
-  lint-test:
-    # name: Lint and Test Charts
+  chart-testing:
+    name: Chart Testing
     runs-on: ubuntu-24.04
+    timeout-minutes: 5
     permissions:
       contents: read
+    outputs:
+      changed: ${{ steps.list-changed.outputs.changed }}
+      changed_list: ${{ steps.list-changed.outputs.changed_list }}
+      values_files_json: ${{ steps.test-matrix.outputs.values_files_json }}
     steps:
       - name: Checkout Code
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           fetch-depth: 0
+          persist-credentials: false
 
       - name: Set up Helm
-        uses: azure/setup-helm@1a275c3b69536ee54be43f2070a358922e12c8d4 # v4.3.1
+        uses: azure/setup-helm@9bc31f4ebc9c6b171d7bfbaa5d006ae7abdb4310 # v5.0.1
         with:
           # renovate: github=helm/helm
-          version: v4.1.0
+          version: v4.2.3
 
-      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
         with:
           python-version: '3.13'
 
@@ -36,56 +42,294 @@ jobs:
 
       - name: Run chart-testing (list-changed)
         id: list-changed
+        # language=bash
         run: |
           changed="$(ct list-changed --config .github/linters/ct.yaml)"
           if [[ -n "$changed" ]]; then
+            num_changed="$(printf '%s\n' "$changed" | wc -l | tr -d ' ')"
+            if [ "$num_changed" -gt 1 ]; then
+              echo "More than one chart changed (count=$num_changed). Failing."
+              printf '%s\n' "$changed"
+              exit 1
+            fi
+
             echo "changed=true" >> "$GITHUB_OUTPUT"
-            echo "changed_list=\"${changed//$'\n'/ }\"" >> "$GITHUB_OUTPUT"
+            echo "changed_list=${changed//$'\n'/ }" >> "$GITHUB_OUTPUT"
           fi
 
       - name: install helm unittest plugin
         if: steps.list-changed.outputs.changed == 'true'
-        run: helm plugin install https://github.com/helm-unittest/helm-unittest.git --version 1.0.3 --verify=false
+        run: helm plugin install https://github.com/helm-unittest/helm-unittest.git --version "${VERSION}" --verify=false
+        env:
+          # renovate: github=helm-unittest/helm-unittest
+          VERSION: 1.1.1
+
+      - name: install helm values-schema plugin
+        if: steps.list-changed.outputs.changed == 'true'
+        run: helm plugin install https://github.com/losisin/helm-values-schema-json.git --version "${VERSION}" --verify=false
+        env:
+          # renovate: github=losisin/helm-values-schema-json
+          VERSION: 2.5.0
 
       - name: Run chart-testing (lint)
         run: ct lint --config .github/linters/ct.yaml
 
-      - name: Create kind cluster
-        uses: helm/kind-action@92086f6be054225fa813e0a4b13787fc9088faab # v1.13.0
+      - name: Generate test matrix
         if: steps.list-changed.outputs.changed == 'true'
+        id: test-matrix
+        env:
+          CHANGED_LIST: ${{ steps.list-changed.outputs.changed_list }}
+        #language=bash
+        run: |
+          set -euo pipefail
+
+          read -r -a charts <<< "$CHANGED_LIST"
+          values_files_json="[\"${charts[0]}/values.yaml\"]"
+          if [[ -d "${charts[0]}/ci" ]]; then
+            ci_values_files_json="$(
+              find "${charts[0]}/ci" -maxdepth 1 -type f -name '*-values.yaml' -print \
+                | sort \
+                | jq --raw-input --slurp --compact-output 'split("\n") | map(select(length > 0))'
+            )"
+            if [[ "$ci_values_files_json" != "[]" ]]; then
+              values_files_json="$ci_values_files_json"
+            fi
+          fi
+
+          values_files_json="$(
+            jq --compact-output 'map({valuefile: ., name: sub("^charts/[^/]+/"; "")})' <<< "$values_files_json"
+          )"
+
+          echo "values_files_json=$values_files_json" >> "$GITHUB_OUTPUT"
+
+
+  integration-tests:
+    name: Integration Tests (${{ matrix.name }})
+    timeout-minutes: 15
+    needs: chart-testing
+    runs-on: ubuntu-latest
+    if: needs.chart-testing.outputs.changed == 'true'
+    strategy:
+      fail-fast: false
+      matrix:
+        include: ${{ fromJson(needs.chart-testing.outputs.values_files_json) }}
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
+
+      - name: Checkout Target of PR
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          path: target
+          ref: ${{ github.event.pull_request.base.ref }}
+          persist-credentials: false
+
+      - name: Set up Helm
+        uses: azure/setup-helm@9bc31f4ebc9c6b171d7bfbaa5d006ae7abdb4310 # v5.0.1
+        with:
+          # renovate: github=helm/helm
+          version: v4.2.3
+
+      - name: install helm diff plugin
+        run: helm plugin install https://github.com/databus23/helm-diff --version "${VERSION}" --verify=false
+        env:
+          # renovate: github=databus23/helm-diff
+          VERSION: 3.15.10
+
+      - name: Create kind cluster
+        uses: helm/kind-action@ef37e7f390d99f746eb8b610417061a60e82a6cc # v1.14.0
+        with:
+          config: .github/linters/kind.yaml
+          ignore_failed_clean: 'true'
+
+      - name: Setup chart dependencies
+        id: setup
+        env:
+          value_file: "${{ matrix.valuefile }}"
+        # language=bash
+        run: |
+          set -euo pipefail
+          IFS=$'\n\t'
+
+          echo "Running diff for value file: $value_file"
+          # extract chart name from path like charts/<chart>/values.yaml or charts/<chart>/ci/<file>
+          chart="${value_file#./}"
+          chart="${chart#charts/}"
+          chart="${chart%%/*}"
+
+          helm dependency update "./target/charts/$chart"
+          helm dependency update "./charts/$chart"
+
+          echo chart="$chart" >> "$GITHUB_OUTPUT"
 
       - name: Apply Gateway API CRDs
         run: kubectl apply -k https://github.com/kubernetes-sigs/gateway-api/config/crd
-        if: steps.list-changed.outputs.changed == 'true'
 
-      - name: Apply Prometheus Operator CRDs (unless for charts already installing it)
-        env:
-          CHANGED_LIST: ${{ steps.list-changed.outputs.changed_list }}
+      - name: Apply Prometheus Operator CRDs
         run: |
           # Always run unless only changed chart is one of impacted charts
-          echo "List is: $CHANGED_LIST"
-          if [ "$CHANGED_LIST" = '"charts/kube-prometheus-stack"' ] || [ "$CHANGED_LIST" = '"charts/prometheus-operator-crds"' ]; then
+          if [ "$chart" = "kube-prometheus-stack" ] || [ "$chart" = "prometheus-operator-crds" ]; then
             echo "Skipping install"
           else
             helm install prometheus-operator-crds oci://ghcr.io/prometheus-community/charts/prometheus-operator-crds
           fi
-        if: steps.list-changed.outputs.changed == 'true'
+        env:
+          chart: "${{ steps.setup.outputs.chart }}"
 
-      - name: Run chart-testing (install)
-        run: ct install --config .github/linters/ct.yaml
+      - name: Run helm install from main branch
+        id: install
+        env:
+          chart: "${{ steps.setup.outputs.chart }}"
+          value_file: "${{ matrix.valuefile }}"
+        # language=bash
+        run: |
+          # install current target chart into cluster so helm diff has a baseline
+          helm upgrade -i "$chart" "./target/charts/$chart" \
+            --create-namespace \
+            --namespace "$chart" \
+            --wait \
+            --values "$value_file"
 
-  check-codeowners-maintainers:
-    name: Check CODEOWNERS & MAINTAINERS.md
+      - name: Debug failed installation
+        if: failure() && steps.install.outcome == 'failure'
+        timeout-minutes: 6
+        env:
+          chart: "${{ steps.setup.outputs.chart }}"
+        # language=bash
+        run: |
+          echo "::group::kubectl describe nodes"
+          kubectl describe nodes
+          echo "::endgroup::"
+          echo "::group::kubectl get ns"
+          kubectl get ns --show-labels
+          echo "::endgroup::"
+          echo "::group::kubectl get events"
+          kubectl events --namespace "$chart"
+          echo "::endgroup::"
+          echo "::group::kubectl get deploy,ds,sts"
+          kubectl get deploy,ds,sts --namespace "$chart"
+          echo "::endgroup::"
+          echo "::group::kubectl get pods"
+          kubectl get pods --namespace "$chart" -o wide
+          echo "::endgroup::"
+          for pod in $(kubectl get pods --namespace "$chart" -o jsonpath='{.items[*].metadata.name}'); do
+            echo "::group::pods/$pod"
+            kubectl describe --namespace "$chart" "pods/$pod" || true
+            echo "--------------------------------"
+            kubectl logs --namespace "$chart" "$pod" || true
+            echo "--------------------------------"
+            kubectl logs --namespace "$chart" "$pod" -p || true
+            echo "::endgroup::"
+          done
+
+      - name: Run helm diff
+        env:
+          chart: "${{ steps.setup.outputs.chart }}"
+          value_file: "${{ matrix.valuefile }}"
+        #language=bash
+        run: |
+          set -euo pipefail
+          IFS=$'\n\t'
+
+          {
+            printf '```diff\n'
+            helm diff upgrade "$chart" "./charts/$chart" \
+              --namespace "$chart" \
+              --suppress=CustomResourceDefinition \
+              --normalize-manifests \
+              --reset-values \
+              --no-color \
+              -C 5 \
+              --suppress-output-line-regex="helm.sh/chart:" \
+              --suppress-output-line-regex="chart:" \
+              --suppress-output-line-regex="app.kubernetes.io/version:" \
+              --values "$value_file" | tee /dev/stderr
+            printf '\n```'
+          } > "$GITHUB_STEP_SUMMARY"
+
+
+      - name: Run helm install from PR branch
+        timeout-minutes: 6
+        id: upgrade
+        env:
+          chart: "${{ steps.setup.outputs.chart }}"
+          value_file: "${{ matrix.valuefile }}"
+        # language=bash
+        run: |
+          helm upgrade -i "$chart" "./charts/$chart" \
+            --create-namespace \
+            --namespace "$chart" \
+            --wait \
+            --values "$value_file"
+
+      - name: Debug failed upgrade
+        if: failure() && steps.upgrade.outcome == 'failure'
+        env:
+          chart: "${{ steps.setup.outputs.chart }}"
+        # language=bash
+        run: |
+          echo "::group::kubectl describe nodes"
+          kubectl describe nodes
+          echo "::endgroup::"
+          echo "::group::kubectl get ns"
+          kubectl get ns --show-labels
+          echo "::endgroup::"
+          echo "::group::kubectl get events"
+          kubectl events --namespace "$chart"
+          echo "::endgroup::"
+          echo "::group::kubectl get deploy,ds,sts"
+          kubectl get deploy,ds,sts --namespace "$chart"
+          echo "::endgroup::"
+          echo "::group::kubectl get pods"
+          kubectl get pods --namespace "$chart" -o wide
+          echo "::endgroup::"
+          for pod in $(kubectl get pods --namespace "$chart" -o jsonpath='{.items[*].metadata.name}'); do
+            echo "::group::pods/$pod"
+            kubectl describe --namespace "$chart" "pods/$pod" || true
+            echo "--------------------------------"
+            kubectl logs --namespace "$chart" "$pod" || true
+            echo "--------------------------------"
+            kubectl logs --namespace "$chart" "$pod" -p || true
+            echo "::endgroup::"
+          done
+
+      - name: helm test
+        timeout-minutes: 6
+        env:
+          chart: "${{ steps.setup.outputs.chart }}"
+          value_file: "${{ matrix.valuefile }}"
+        # language=bash
+        run: |
+          helm test "$chart" --namespace "$chart" --logs
+
+  fail:
+    if: "${{ cancelled() || contains(needs.*.result, 'cancelled') || contains(needs.*.result, 'failure') }}"
+    needs:
+      - chart-testing
+      - integration-tests
+    runs-on: "ubuntu-24.04"
+    steps:
+      - name: "verify checks passed"
+        run: |
+          echo "Some checks have failed!"
+          exit 1
+
+  check-generated-files:
+    name: Check Generated Files
     runs-on: ubuntu-24.04
     permissions:
       contents: read
     steps:
       - name: Checkout Code
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
 
       - name: generate CODEOWNERS
         run: |
-          ./scripts/check-codeowners.sh | tee .github/CODEOWNERS
+          ./scripts/generate-codeowners.sh | tee .github/CODEOWNERS
 
       - name: check CODEOWNERS for modifications
         run: |
@@ -93,66 +337,107 @@ jobs:
 
       - name: generate MAINTAINERS.md
         run: |
-          ./scripts/check-maintainers.sh | tee MAINTAINERS.md
+          ./scripts/generate-maintainers.sh | tee MAINTAINERS.md
 
       - name: check MAINTAINERS.md for modifications
         run: |
           git diff --exit-code
 
+      - name: generate advanced-issue-labeler.yml
+        run: |
+          ./scripts/generate-labeler.sh | tee .github/advanced-issue-labeler.yml
+
+      - name: check advanced-issue-labeler.yml for modifications
+        run: |
+          git diff --exit-code
+
+      - name: check issue template chart dropdowns
+        run: |
+          EXPECTED=$(find charts/ -mindepth 1 -maxdepth 1 -type d -printf '%f\n' | sort)
+          for template in .github/ISSUE_TEMPLATE/*.yml; do
+            ACTUAL=$(yq -r '.body[] | select(.id == "chart-name") | .attributes.options[]' "$template" 2>/dev/null | sort)
+            if [[ -z "$ACTUAL" ]]; then
+              continue
+            fi
+            if [[ "$EXPECTED" != "$ACTUAL" ]]; then
+              echo "ERROR: Chart dropdown in $template is out of sync with charts/ directory." >&2
+              diff <(echo "$EXPECTED") <(echo "$ACTUAL")
+              exit 1
+            fi
+          done
+
   super-linter:
-    name: Lint Code Base
+    name: Super Linter
     runs-on: ubuntu-24.04
     permissions:
       contents: read
     steps:
       - name: Checkout Code
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
+          persist-credentials: false
           fetch-depth: 0
+          fetch-tags: 'false'
 
       - name: Lint Code Base
-        uses: super-linter/super-linter/slim@61abc07d755095a68f4987d1c2c3d1d64408f1f9 # v8.5.0
+        uses: super-linter/super-linter/slim@4ce20838b8ab83717e78138c5b3a1407148e0918 # v8.7.0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          LINTER_RULES_PATH: .github/linters
           MULTI_STATUS: false
+          LINTER_RULES_PATH: .github/linters
+          GITHUB_ACTIONS_ZIZMOR_CONFIG_FILE: ../../../github/workspace/.github/linters/zizmor.yml
+          ENABLE_GITHUB_ACTIONS_STEP_SUMMARY: true
+          ENABLE_GITHUB_PULL_REQUEST_SUMMARY_COMMENT: false
+          SAVE_SUPER_LINTER_SUMMARY: true
           VALIDATE_ALL_CODEBASE: false
           VALIDATE_BASH: true
           VALIDATE_BASH_EXEC: true
-          # VALIDATE_CHECKOV: true - always scans everything and all charts have too much errors
           VALIDATE_EDITORCONFIG: true
           VALIDATE_ENV: true
           VALIDATE_GITHUB_ACTIONS: true
+          VALIDATE_GITHUB_ACTIONS_ZIZMOR: true
           VALIDATE_GITLEAKS: true
+          VALIDATE_HTML: true
           VALIDATE_JSON: true
-          VALIDATE_MARKDOWN: true
+          # VALIDATE_MARKDOWN: true
           VALIDATE_NATURAL_LANGUAGE: true
           VALIDATE_PYTHON: true
-          VALIDATE_RENOVATE: true # does not support newest renovate config
+          VALIDATE_RENOVATE: true
           VALIDATE_SHELL_SHFMT: true
-          VALIDATE_XML: true
+          VALIDATE_SPELL_CODESPELL: true
+          # VALIDATE_XML: true
+          # VALIDATE_YAML: true
 
   renovate-auto-merge:
     name: Auto-approve PRs from Renovate
     runs-on: ubuntu-24.04
+    environment: renovate-auto-merge
     needs:
-      - lint-test
-      - check-codeowners-maintainers
+      - chart-testing
+      - integration-tests
+      - check-generated-files
       - super-linter
     if: >-
-      github.event.pull_request.head.repo.full_name == github.repository 
-      && contains(github.event.pull_request.labels.*.name, 'dependencies/auto-merge') 
-      && (github.actor == 'renovate[bot]' || github.actor == 'mend[bot]' || github.actor == 'helm-charts-renovate-helper[bot]')
+      always()
+      && needs.chart-testing.result == 'success'
+      && (needs.integration-tests.result == 'success' || needs.integration-tests.result == 'skipped')
+      && needs.check-generated-files.result == 'success'
+      && needs.super-linter.result == 'success'
+      && github.event.pull_request.head.repo.full_name == github.repository
+      && contains(github.event.pull_request.labels.*.name, 'dependencies/auto-merge')
+      && (github.event.pull_request.user.login == 'renovate[bot]' || github.event.pull_request.user.login == 'helm-charts-renovate-helper-app[bot]')
     steps:
       # Using a GitHub App token, because GitHub Actions doesn't run on commits from github-actions bot
       # Used App:
       # https://github.com/organizations/prometheus-community/settings/apps/helm-charts-renovate-helper.
       # Ref: https://github.com/prometheus-community/helm-charts/issues/5213.
-      - uses: actions/create-github-app-token@29824e69f54612133e76f7eaac726eef6c875baf # v2.2.1
+      - uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
         id: app-token
         with:
           app-id: 1179738
           private-key: ${{ secrets.APP_RENOVATE_HELPER_PRIVATE_KEY }}
+          permission-contents: write
+          permission-pull-requests: write
 
       - name: Approve PR
         run: |

@@ -1,0 +1,373 @@
+{
+    "$schema": "https://json-schema.org/schema#",
+    "type": "object",
+    "properties": {
+        "replicaCount": {
+            "type": "integer",
+            "description": "Number of replicas"
+        },
+        "image": {
+            "type": "object",
+            "properties": {
+                "repository": {
+                    "type": "string",
+                    "description": "Image repository"
+                },
+                "tag": {
+                    "type": "string",
+                    "description": "Image tag, if not set chart's appVersion is used"
+                },
+                "pullPolicy": {
+                    "type": "string",
+                    "description": "Image pull policy",
+                    "enum": [
+                        "Never",
+                        "IfNotPresent",
+                        "Always"
+                    ]
+                },
+                "pullSecrets": {
+                    "type": "array",
+                    "description": "Image pull secrets",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "service": {
+            "type": "object",
+            "properties": {
+                "type": {
+                    "type": "string",
+                    "description": "Service type",
+                    "enum": [
+                        "ClusterIP",
+                        "NodePort",
+                        "LoadBalancer",
+                        "ExternalName"
+                    ]
+                },
+                "port": {
+                    "type": "integer",
+                    "description": "Service port"
+                },
+                "targetPort": {
+                    "type": "integer",
+                    "description": "Container target port"
+                },
+                "name": {
+                    "type": "string",
+                    "description": "Service name"
+                },
+                "labels": {
+                    "type": "object",
+                    "description": "Service labels",
+                    "additionalProperties": true
+                },
+                "annotations": {
+                    "type": "object",
+                    "description": "Service annotations",
+                    "additionalProperties": true
+                }
+            }
+        },
+        "serviceMonitor": {
+            "type": "object",
+            "properties": {
+                "enabled": {
+                    "type": "boolean",
+                    "description": "Enable prometheus-operator ServiceMonitor"
+                },
+                "namespace": {
+                    "type": "string",
+                    "description": "Namespace for the ServiceMonitor"
+                },
+                "interval": {
+                    "type": "string",
+                    "description": "Scrape interval"
+                },
+                "telemetryPath": {
+                    "type": "string",
+                    "description": "Metrics path"
+                },
+                "labels": {
+                    "type": "object",
+                    "description": "Labels for the ServiceMonitor",
+                    "additionalProperties": true
+                },
+                "timeout": {
+                    "type": "string",
+                    "description": "Scrape timeout"
+                },
+                "targetLabels": {
+                    "type": "array",
+                    "description": "Labels to transfer from Service to target",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "metricRelabelings": {
+                    "type": "array",
+                    "description": "Metric relabeling rules"
+                },
+                "relabelings": {
+                    "type": "array",
+                    "description": "Relabel configs"
+                }
+            }
+        },
+        "prometheusRule": {
+            "type": "object",
+            "properties": {
+                "enabled": {
+                    "type": "boolean",
+                    "description": "Enable custom PrometheusRules"
+                },
+                "additionalLabels": {
+                    "type": "object",
+                    "description": "Additional labels for PrometheusRule",
+                    "additionalProperties": true
+                },
+                "namespace": {
+                    "type": "string",
+                    "description": "Namespace for PrometheusRule"
+                },
+                "rules": {
+                    "type": "array",
+                    "description": "PrometheusRule rules",
+                    "items": {
+                        "type": "object"
+                    }
+                }
+            }
+        },
+        "resources": {
+            "type": "object",
+            "description": "Resource limits and requests for the container"
+        },
+        "serviceAccount": {
+            "type": "object",
+            "properties": {
+                "create": {
+                    "type": "boolean",
+                    "description": "Specifies whether a ServiceAccount should be created"
+                },
+                "name": {
+                    "oneOf": [
+                        {"type": "string"},
+                        {"type": "null"}
+                    ],
+                    "description": "The name of the ServiceAccount to use"
+                },
+                "annotations": {
+                    "type": "object",
+                    "description": "ServiceAccount annotations",
+                    "additionalProperties": true
+                }
+            }
+        },
+        "networkPolicy": {
+            "type": "object",
+            "properties": {
+                "enabled": {
+                    "type": "boolean",
+                    "description": "Specifies whether a NetworkPolicy should be created"
+                },
+                "labels": {
+                    "type": "object",
+                    "description": "NetworkPolicy labels",
+                    "additionalProperties": true
+                }
+            }
+        },
+        "podSecurityContext": {
+            "type": "object",
+            "description": "Pod security context"
+        },
+        "securityContext": {
+            "type": "object",
+            "description": "Container security context"
+        },
+        "hostAliases": {
+            "type": "array",
+            "description": "Host aliases for the pod",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "ip": {
+                        "type": "string"
+                    },
+                    "hostnames": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "config": {
+            "type": "object",
+            "description": "sql_exporter configuration, see https://github.com/justwatchcom/sql_exporter/blob/master/config.yml.dist"
+        },
+        "configFilePath": {
+            "type": "string",
+            "description": "Path to the config file inside the container"
+        },
+        "containerCommand": {
+            "type": "array",
+            "description": "Command to launch the sql_exporter container",
+            "items": {
+                "type": "string"
+            }
+        },
+        "nodeSelector": {
+            "type": "object",
+            "description": "Node selector for pod assignment",
+            "additionalProperties": true
+        },
+        "tolerations": {
+            "type": "array",
+            "description": "Tolerations for pod assignment"
+        },
+        "affinity": {
+            "type": "object",
+            "description": "Affinity for pod assignment"
+        },
+        "annotations": {
+            "type": "object",
+            "description": "Annotations to add to the pod",
+            "additionalProperties": true
+        },
+        "podLabels": {
+            "type": "object",
+            "description": "Labels to add to the pod",
+            "additionalProperties": true
+        },
+        "deployment": {
+            "type": "object",
+            "properties": {
+                "annotations": {
+                    "type": "object",
+                    "description": "Annotations for the Deployment resource",
+                    "additionalProperties": true
+                },
+                "labels": {
+                    "type": "object",
+                    "description": "Labels for the Deployment resource",
+                    "additionalProperties": true
+                }
+            }
+        },
+        "livenessProbe": {
+            "type": "object",
+            "properties": {
+                "initialDelaySeconds": {
+                    "type": "integer",
+                    "description": "Initial delay before liveness probe"
+                },
+                "timeoutSeconds": {
+                    "type": "integer",
+                    "description": "Timeout for liveness probe"
+                }
+            }
+        },
+        "readinessProbe": {
+            "type": "object",
+            "properties": {
+                "initialDelaySeconds": {
+                    "type": "integer",
+                    "description": "Initial delay before readiness probe"
+                },
+                "timeoutSeconds": {
+                    "type": "integer",
+                    "description": "Timeout for readiness probe"
+                }
+            }
+        },
+        "extraEnvs": {
+            "oneOf": [
+                {
+                    "type": "array",
+                    "description": "Extra environment variables as array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "name": {"type": "string"},
+                            "value": {"type": "string"},
+                            "valueFrom": {"type": "object"}
+                        }
+                    }
+                },
+                {
+                    "type": "object",
+                    "description": "Extra environment variables as key-value map",
+                    "additionalProperties": {"type": "string"}
+                }
+            ]
+        },
+        "initContainers": {
+            "type": "array",
+            "description": "Init containers for the pod",
+            "items": {
+                "type": "object"
+            }
+        },
+        "extraContainers": {
+            "type": "array",
+            "description": "Additional sidecar containers",
+            "items": {
+                "type": "object"
+            }
+        },
+        "extraVolumes": {
+            "type": "array",
+            "description": "Additional volumes for the pod",
+            "items": {
+                "type": "object"
+            }
+        },
+        "extraVolumeMounts": {
+            "type": "array",
+            "description": "Additional volume mounts for the container",
+            "items": {
+                "type": "object"
+            }
+        },
+        "podDisruptionBudget": {
+            "type": "object",
+            "properties": {
+                "enabled": {
+                    "type": "boolean",
+                    "description": "Enable PodDisruptionBudget"
+                },
+                "maxUnavailable": {
+                    "type": "integer",
+                    "description": "Maximum number of unavailable pods"
+                }
+            }
+        },
+        "extraManifests": {
+            "type": "array",
+            "description": "Extra manifests to deploy. Supports both string format (with pipe |) and object format",
+            "items": {
+                "oneOf": [
+                    {
+                        "type": "string",
+                        "description": "Manifest as YAML string"
+                    },
+                    {
+                        "type": "object",
+                        "description": "Manifest as structured object",
+                        "properties": {
+                            "apiVersion": {"type": "string"},
+                            "kind": {"type": "string"},
+                            "metadata": {"type": "object"}
+                        }
+                    }
+                ]
+            }
+        }
+    }
+}

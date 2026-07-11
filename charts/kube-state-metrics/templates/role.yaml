@@ -129,6 +129,12 @@ rules:
   - roles
   verbs: ["list", "watch"]
 {{ end -}}
+{{ if has "rolebindings" $.Values.collectors }}
+- apiGroups: ["rbac.authorization.k8s.io"]
+  resources:
+  - rolebindings
+  verbs: ["list", "watch"]
+{{ end -}}
 {{ if has "nodes" $.Values.collectors }}
 - apiGroups: [""]
   resources:
@@ -183,6 +189,12 @@ rules:
   - secrets
   verbs: ["list", "watch"]
 {{ end -}}
+{{ if has "serviceaccounts" $.Values.collectors }}
+- apiGroups: [""]
+  resources:
+  - serviceaccounts
+  verbs: ["list", "watch"]
+{{ end -}}
 {{ if has "services" $.Values.collectors }}
 - apiGroups: [""]
   resources:
@@ -213,7 +225,7 @@ rules:
     - volumeattachments
   verbs: ["list", "watch"]
 {{ end -}}
-{{-  if $.Values.kubeRBACProxy.enabled  }}
+{{-  if or $.Values.kubeRBACProxy.enabled $.Values.authFilter.enabled  }}
 - apiGroups: ["authentication.k8s.io"]
   resources:
     - tokenreviews

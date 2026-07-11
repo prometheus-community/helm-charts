@@ -149,6 +149,21 @@ servicePerReplica:
   #
   type: ClusterIP
 
+serviceMonitor:
+  enabled: false
+  namespace: ""
+  additionalLabels: {}
+  interval: ""
+  scrapeTimeout: ""
+  path: /metrics
+  scheme: ""
+  tlsConfig: {}
+  bearerTokenFile: ""
+  basicAuth: {}
+  honorLabels: false
+  metricRelabelings: []
+  relabelings: []
+
 ingress:
   enabled: false
   className: ""
@@ -209,6 +224,52 @@ ingressPerReplica:
     # {{ tlsSecretPerReplica.prefix }}-{{ $replicaNumber }}
     #
     prefix: "alertmanager"
+
+## route (map) allows configuration of Gateway API HTTPRoute resources
+## Requires Gateway API resources and a suitable controller installed within the cluster
+## Ref. https://gateway-api.sigs.k8s.io/guides/http-routing/
+route:
+  main:
+    ## Enable this route
+    enabled: false
+
+    ## apiVersion set by default to "gateway.networking.k8s.io/v1"
+    apiVersion: ""
+    ## kind set by default to HTTPRoute
+    kind: ""
+
+    ## Annotations to attach to the HTTPRoute resource
+    annotations: {}
+    ## Labels to attach to the HTTPRoute resource
+    labels: {}
+
+    ## ParentRefs references the resources (usually Gateways) this HTTPRoute should be attached to
+    parentRefs: []
+      # - name: contour
+      #   sectionName: http
+
+    ## Hostnames (templated) defines a set of hostnames that should match against the HTTP Host
+    ## header to select an HTTPRoute used to process the request
+    hostnames: []
+      # - alertmanager.domain.com
+
+    ## additionalRules (templated) allows adding custom rules to the route
+    additionalRules: []
+
+    ## Filters define the filters that are applied to requests that match this rule
+    filters: []
+
+    ## Matches define conditions used for matching the rule against incoming HTTP requests
+    matches:
+      - path:
+          type: PathPrefix
+          value: /
+
+    ## httpsRedirect adds a filter for redirecting to https (HTTP 301 Moved Permanently).
+    ## To redirect HTTP traffic to HTTPS, you need a Gateway with both HTTP and HTTPS listeners.
+    ## Matches and filters do not take effect if enabled.
+    ## Ref. https://gateway-api.sigs.k8s.io/guides/http-redirect-rewrite/
+    httpsRedirect: false
 
 resources: {}
   # We usually recommend not to specify default resources and to leave this as a conscious
@@ -346,7 +407,7 @@ configmapReload:
   ##
   image:
     repository: quay.io/prometheus-operator/prometheus-config-reloader
-    tag: v0.89.0
+    tag: v0.92.1
     pullPolicy: IfNotPresent
 
   # containerPort: 9533

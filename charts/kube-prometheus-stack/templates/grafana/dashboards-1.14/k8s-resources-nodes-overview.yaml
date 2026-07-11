@@ -1,0 +1,57 @@
+{{- /*
+Generated from 'k8s-resources-nodes-overview' from https://raw.githubusercontent.com/prometheus-operator/kube-prometheus/a44e949d79c6a608fe2261edcff9adaef7c00923/manifests/grafana-dashboardDefinitions.yaml
+Do not change in-place! In order to change this file first read following link:
+https://github.com/prometheus-community/helm-charts/tree/main/charts/kube-prometheus-stack/hack
+*/ -}}
+{{- $kubeTargetVersion := default .Capabilities.KubeVersion.GitVersion .Values.kubeTargetVersionOverride }}
+{{- if and (or .Values.grafana.enabled .Values.grafana.forceDeployDashboards) (semverCompare ">=1.14.0-0" $kubeTargetVersion) (semverCompare "<9.9.9-9" $kubeTargetVersion) .Values.grafana.defaultDashboardsEnabled }}
+{{- $kubeletJob := include "kube-prometheus-stack-kubelet.name" . }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  namespace: {{ template "kube-prometheus-stack-grafana.namespace" . }}
+  name: {{ printf "%s-%s" (include "kube-prometheus-stack.fullname" $) "k8s-resources-nodes-overview" | trunc 63 | trimSuffix "-" }}
+  annotations:
+{{ toYaml .Values.grafana.sidecar.dashboards.annotations | indent 4 }}
+  labels:
+    {{- if $.Values.grafana.sidecar.dashboards.label }}
+    {{ tpl $.Values.grafana.sidecar.dashboards.label $ }}: {{ ((tpl $.Values.grafana.sidecar.dashboards.labelValue $) | default 1) | quote }}
+    {{- end }}
+    app: {{ template "kube-prometheus-stack.name" $ }}-grafana
+    {{- include "kube-prometheus-stack.labels" $ | nindent 4 }}
+data:
+  k8s-resources-nodes-overview.json: |-
+    {{`{"editable":`}}{{ .Values.grafana.defaultDashboardsEditable }}{{`,"links":[{"asDropdown":true,"includeVars":true,"keepTime":true,"tags":["kubernetes-mixin"],"targetBlank":false,"title":"Kubernetes","type":"dashboards"}],"panels":[{"datasource":{"type":"datasource","uid":"-- Mixed --"},"fieldConfig":{"defaults":{"custom":{"fillOpacity":0,"showPoints":"never","spanNulls":true},"decimals":0,"unit":"short"},"overrides":[{"matcher":{"id":"byName","options":"pods"},"properties":[{"id":"custom.axisPlacement","value":"right"},{"id":"custom.axisSoftMin","value":0}]}]},"gridPos":{"h":8,"w":24,"x":0,"y":0},"id":1,"interval":"`}}{{ .Values.grafana.defaultDashboardsInterval }}{{`","options":{"legend":{"asTable":true,"calcs":["lastNotNull"],"displayMode":"table","placement":"right","showLegend":true},"tooltip":{"mode":"single"}},"pluginVersion":"v11.4.0","targets":[{"datasource":{"type":"prometheus","uid":"${datasource}"},"expr":"count(kube_node_info{cluster=\"$cluster\", job=\"kube-state-metrics\"})","legendFormat":"nodes"},{"datasource":{"type":"prometheus","uid":"${datasource}"},"expr":"sum(kubelet_running_pods{cluster=\"$cluster\", job=\"`}}{{ $kubeletJob }}{{`\", metrics_path=\"/metrics\"})","legendFormat":"pods"}],"title":"Node & Pod Count","type":"timeseries"},{"datasource":{"type":"datasource","uid":"-- Mixed --"},"fieldConfig":{"defaults":{"custom":{"fillOpacity":10,"showPoints":"never","spanNulls":true},"unit":"short"}},"gridPos":{"h":8,"w":24,"x":0,"y":8},"id":2,"interval":"`}}{{ .Values.grafana.defaultDashboardsInterval }}{{`","options":{"legend":{"asTable":true,"calcs":["lastNotNull"],"displayMode":"table","placement":"right","showLegend":true},"tooltip":{"mode":"single"}},"pluginVersion":"v11.4.0","targets":[{"datasource":{"type":"prometheus","uid":"${datasource}"},"expr":"sum(kube_node_status_allocatable{cluster=\"$cluster\", job=\"kube-state-metrics\", resource=\"cpu\"})","legendFormat":"allocatable"},{"datasource":{"type":"prometheus","uid":"${datasource}"},"expr":"sum(cluster:namespace:pod_cpu:active:kube_pod_container_resource_requests{cluster=\"$cluster\"})","legendFormat":"requests"},{"datasource":{"type":"prometheus","uid":"${datasource}"},"expr":"sum(node_namespace_pod_container:container_cpu_usage_seconds_total:sum_rate5m{cluster=\"$cluster\"})","legendFormat":"usage"}],"title":"CPU Usage","type":"timeseries"},{"datasource":{"type":"datasource","uid":"-- Mixed --"},"fieldConfig":{"defaults":{"custom":{"fillOpacity":10,"showPoints":"never","spanNulls":true},"unit":"bytes"}},"gridPos":{"h":8,"w":24,"x":0,"y":16},"id":3,"interval":"`}}{{ .Values.grafana.defaultDashboardsInterval }}{{`","options":{"legend":{"asTable":true,"calcs":["lastNotNull"],"displayMode":"table","placement":"right","showLegend":true},"tooltip":{"mode":"single"}},"pluginVersion":"v11.4.0","targets":[{"datasource":{"type":"prometheus","uid":"${datasource}"},"expr":"sum(kube_node_status_allocatable{cluster=\"$cluster\", job=\"kube-state-metrics\", resource=\"memory\"})","legendFormat":"allocatable"},{"datasource":{"type":"prometheus","uid":"${datasource}"},"expr":"sum(cluster:namespace:pod_memory:active:kube_pod_container_resource_requests{cluster=\"$cluster\"})","legendFormat":"requests"},{"datasource":{"type":"prometheus","uid":"${datasource}"},"expr":"sum(node_namespace_pod_container:container_memory_working_set_bytes{cluster=\"$cluster\", container!=\"\"})","legendFormat":"usage"}],"title":"Memory Usage","type":"timeseries"},{"datasource":{"type":"datasource","uid":"-- Mixed --"},"fieldConfig":{"defaults":{"custom":{"fillOpacity":10,"showPoints":"never","spanNulls":true},"unit":"percentunit"}},"gridPos":{"h":8,"w":24,"x":0,"y":24},"id":4,"interval":"`}}{{ .Values.grafana.defaultDashboardsInterval }}{{`","options":{"legend":{"asTable":true,"calcs":["lastNotNull"],"displayMode":"table","placement":"right","showLegend":true},"tooltip":{"mode":"single"}},"pluginVersion":"v11.4.0","targets":[{"datasource":{"type":"prometheus","uid":"${datasource}"},"expr":"sum by (node) (node_namespace_pod_container:container_cpu_usage_seconds_total:sum_rate5m{cluster=\"$cluster\"})\n/\nsum by (node) (kube_node_status_allocatable{cluster=\"$cluster\", job=\"kube-state-metrics\", resource=\"cpu\"})\n","legendFormat":"{{node}}"}],"title":"CPU Utilization per Node","type":"timeseries"},{"datasource":{"type":"datasource","uid":"-- Mixed --"},"fieldConfig":{"defaults":{"custom":{"fillOpacity":10,"showPoints":"never","spanNulls":true},"unit":"percentunit"}},"gridPos":{"h":8,"w":24,"x":0,"y":32},"id":5,"interval":"`}}{{ .Values.grafana.defaultDashboardsInterval }}{{`","options":{"legend":{"asTable":true,"calcs":["lastNotNull"],"displayMode":"table","placement":"right","showLegend":true},"tooltip":{"mode":"single"}},"pluginVersion":"v11.4.0","targets":[{"datasource":{"type":"prometheus","uid":"${datasource}"},"expr":"sum by (node) (node_namespace_pod_container:container_memory_working_set_bytes{cluster=\"$cluster\", container!=\"\"})\n/\nsum by (node) (kube_node_status_allocatable{cluster=\"$cluster\", job=\"kube-state-metrics\", resource=\"memory\"})\n","legendFormat":"{{node}}"}],"title":"Memory Utilization per Node","type":"timeseries"}],"refresh":"10s","schemaVersion":39,"tags":["kubernetes-mixin"],"templating":{"list":[{"current":{"selected":true,"text":"default","value":"default"},"hide":0,"label":"Data source","name":"datasource","query":"prometheus","regex":"","type":"datasource"},{"datasource":{"type":"prometheus","uid":"${datasource}"},"hide":`}}{{ if .Values.grafana.sidecar.dashboards.multicluster.global.enabled }}0{{ else }}2{{ end }}{{`,"label":"cluster","name":"cluster","query":"label_values(up{job=\"kube-state-metrics\"}, cluster)","refresh":2,"sort":1,"type":"query","allValue":".*"}]},"time":{"from":"now-6h","to":"now"},"timezone": "`}}{{ .Values.grafana.defaultDashboardsTimezone }}{{`","title":"Kubernetes / Compute Resources / Nodes Overview","uid":"058020e04168bfdea0c52269cb699df2"}`}}
+{{- end }}
+---
+{{- if and .Values.grafana.operator.dashboardsConfigMapRefEnabled (or .Values.grafana.enabled .Values.grafana.forceDeployDashboards) (semverCompare ">=1.14.0-0" $kubeTargetVersion) (semverCompare "<9.9.9-9" $kubeTargetVersion) .Values.grafana.defaultDashboardsEnabled }}
+apiVersion: grafana.integreatly.org/v1beta1
+kind: GrafanaDashboard
+metadata:
+  name: {{ printf "%s-%s" (include "kube-prometheus-stack.fullname" $) "k8s-resources-nodes-overview" | trunc 63 | trimSuffix "-" }}
+  namespace: {{ template "kube-prometheus-stack-grafana.namespace" . }}
+  {{ with .Values.grafana.operator.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{ end }}
+  labels:
+    {{- if $.Values.grafana.sidecar.dashboards.label }}
+    {{ tpl $.Values.grafana.sidecar.dashboards.label $ }}: {{ ((tpl $.Values.grafana.sidecar.dashboards.labelValue $) | default 1) | quote }}
+    {{- end }}
+    app: {{ template "kube-prometheus-stack.name" $ }}-grafana
+    {{- include "kube-prometheus-stack.labels" $ | nindent 4 }}
+spec:
+  allowCrossNamespaceImport: true
+  resyncPeriod: {{ .Values.grafana.operator.resyncPeriod | quote | default "10m" }}
+  {{- include "kube-prometheus-stack.grafana.operator.folder" . | nindent 2 }}
+  instanceSelector:
+    matchLabels:
+    {{- if .Values.grafana.operator.matchLabels }}
+      {{- toYaml .Values.grafana.operator.matchLabels | nindent 6 }}
+    {{- else }}
+      {{- fail "grafana.operator.matchLabels must be specified when grafana.operator.dashboardsConfigMapRefEnabled is true" }}
+    {{- end }}
+  configMapRef:
+    name: {{ printf "%s-%s" (include "kube-prometheus-stack.fullname" $) "k8s-resources-nodes-overview" | trunc 63 | trimSuffix "-" }}
+    key: k8s-resources-nodes-overview.json
+{{- end }}

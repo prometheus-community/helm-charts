@@ -213,6 +213,17 @@ Allow kube-proxy job name to be overridden
 {{- end -}}
 
 {{/*
+Allow kube-apiserver job name to be overridden
+*/}}
+{{- define "kube-prometheus-stack-kube-apiserver.name" -}}
+  {{- if index .Values "kubeApiServer" "jobNameOverride" -}}
+    {{- index .Values "kubeApiServer" "jobNameOverride" -}}
+  {{- else -}}
+    {{- print "apiserver" -}}
+  {{- end -}}
+{{- end -}}
+
+{{/*
 Allow kube-state-metrics job name to be overridden
 */}}
 {{- define "kube-prometheus-stack-kube-state-metrics.name" -}}
@@ -384,5 +395,82 @@ folder: {{ $folder | quote }}
 folderUID: {{ $folderUID | quote }}
 {{- else if $folderRef }}
 folderRef: {{ $folderRef | quote }}
+{{- end }}
+{{- end }}
+
+{{/*
+Render a full Gateway API route object.
+Shared by the route and routePerReplica templates.
+Expects a dict:
+  { "context": $, "route": <route values>, "name": <string>, "namespace": <string>,
+    "labelApp": <string>, "hostnames": <list>, "serviceName": <string>, "servicePort": <string|int> }
+*/}}
+{{- define "kube-prometheus-stack.route" -}}
+{{- $context := .context -}}
+{{- $route := .route -}}
+apiVersion: {{ $route.apiVersion | default "gateway.networking.k8s.io/v1" }}
+kind: {{ $route.kind | default "HTTPRoute" }}
+metadata:
+  {{- with $route.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  name: {{ .name }}
+  namespace: {{ .namespace }}
+  labels:
+    app: {{ .labelApp }}
+    {{- include "kube-prometheus-stack.labels" $context | nindent 4 }}
+    {{- with $route.labels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+spec:
+  {{- with $route.parentRefs }}
+  parentRefs:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  {{- with .hostnames }}
+  hostnames:
+    {{- tpl (toYaml .) $context | nindent 4 }}
+  {{- end }}
+  rules:
+    {{- include "kube-prometheus-stack.route.rules" (dict "context" $context "route" $route "serviceName" .serviceName "servicePort" .servicePort) | trim | nindent 4 }}
+{{- end }}
+
+{{/*
+Render the rules block for a Gateway API route.
+Shared by the route and routePerReplica templates.
+Expects a dict: { "context": $, "route": <route values>, "serviceName": <string>, "servicePort": <string|int> }
+*/}}
+{{- define "kube-prometheus-stack.route.rules" -}}
+{{- $context := .context -}}
+{{- $route := .route -}}
+{{- if $route.additionalRules }}
+{{- tpl (toYaml $route.additionalRules) $context }}
+{{- end }}
+{{- if $route.httpsRedirect }}
+- filters:
+    - type: RequestRedirect
+      requestRedirect:
+        scheme: https
+        statusCode: 301
+{{- else }}
+- backendRefs:
+    - group: ""
+      kind: Service
+      weight: 1
+      name: {{ .serviceName }}
+      port: {{ .servicePort }}
+  {{- with $route.filters }}
+  filters:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  {{- with $route.matches }}
+  matches:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  {{- with $route.sessionPersistence }}
+  sessionPersistence:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
 {{- end }}
 {{- end }}

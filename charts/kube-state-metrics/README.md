@@ -85,3 +85,9 @@ rules:
 ```
 
 See [kube-rbac-proxy examples](https://github.com/brancz/kube-rbac-proxy/tree/master/examples/resource-attributes) for more details.
+
+### auth-filter
+
+As an alternative to `kube-rbac-proxy`, `kube-state-metrics` can authenticate and authorize requests itself using its built-in `--auth-filter`. Set `authFilter.enabled: true` to add the `--auth-filter` flag and the `create` permissions on `tokenreviews` and `subjectaccessreviews` that the filter requires.
+
+Scrapers must then authenticate (for example via a `ServiceAccount` token) and be authorized to `get` the `kube-state-metrics` service. See the upstream [Authentication / Authorization](https://github.com/kubernetes/kube-state-metrics/blob/main/docs/README.md#protecting-metrics-endpoints) documentation for the scraper-side `ClusterRole` and `ClusterRoleBinding`.
