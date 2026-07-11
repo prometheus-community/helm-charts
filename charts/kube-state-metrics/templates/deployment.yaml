@@ -44,6 +44,9 @@ spec:
     spec:
       automountServiceAccountToken: {{ .Values.automountServiceAccountToken }}
       hostNetwork: {{ .Values.hostNetwork }}
+      {{- if kindIs "bool" .Values.hostUsers }}
+      hostUsers: {{ .Values.hostUsers }}
+      {{- end }}
       serviceAccountName: {{ template "kube-state-metrics.serviceAccountName" . }}
       {{- if .Values.securityContext.enabled }}
       securityContext: {{- omit .Values.securityContext "enabled" | toYaml | nindent 8 }}
@@ -140,6 +143,9 @@ spec:
         {{- end }}
         {{- if .Values.customResourceState.enabled }}
         - --custom-resource-state-config-file=/etc/customresourcestate/{{ .Values.customResourceState.key }}
+        {{- end }}
+        {{- if .Values.authFilter.enabled }}
+        - --auth-filter
         {{- end }}
         {{- if or (.Values.kubeconfig.enabled) (.Values.customResourceState.enabled) (.Values.volumeMounts) }}
         volumeMounts:

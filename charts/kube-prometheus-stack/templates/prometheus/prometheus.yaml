@@ -51,17 +51,11 @@ spec:
 {{- end }}
 {{- if .Values.prometheus.prometheusSpec.image }}
   {{- $registry := .Values.global.imageRegistry | default .Values.prometheus.prometheusSpec.image.registry -}}
-  {{- if and .Values.prometheus.prometheusSpec.image.tag .Values.prometheus.prometheusSpec.image.sha }}
-  image: "{{ $registry }}/{{ .Values.prometheus.prometheusSpec.image.repository }}:{{ .Values.prometheus.prometheusSpec.image.tag }}@sha256:{{ .Values.prometheus.prometheusSpec.image.sha }}"
-  {{- else if .Values.prometheus.prometheusSpec.image.sha }}
-  image: "{{ $registry }}/{{ .Values.prometheus.prometheusSpec.image.repository }}@sha256:{{ .Values.prometheus.prometheusSpec.image.sha }}"
-  {{- else if .Values.prometheus.prometheusSpec.image.tag }}
-  image: "{{ $registry }}/{{ .Values.prometheus.prometheusSpec.image.repository }}:{{ .Values.prometheus.prometheusSpec.image.tag }}"
-  {{- else }}
-  image: "{{ $registry }}/{{ .Values.prometheus.prometheusSpec.image.repository }}"
-  {{- end }}
+  {{- $tag := (.Values.prometheus.prometheusSpec.image.tag | empty | not) | ternary (printf ":%s" .Values.prometheus.prometheusSpec.image.tag) "" -}}
+  {{- $sha := (.Values.prometheus.prometheusSpec.image.sha | empty | not) | ternary (printf "@sha256:%s" .Values.prometheus.prometheusSpec.image.sha) "" }}
+  image: "{{ printf "%s/%s%s%s" $registry .Values.prometheus.prometheusSpec.image.repository $tag $sha }}"
   imagePullPolicy: "{{ .Values.prometheus.prometheusSpec.image.pullPolicy }}"
-  version: {{ default .Values.prometheus.prometheusSpec.image.tag .Values.prometheus.prometheusSpec.version }}
+  version: "{{ default .Values.prometheus.prometheusSpec.image.tag .Values.prometheus.prometheusSpec.version }}"
 {{- end }}
 {{- if .Values.prometheus.prometheusSpec.additionalArgs }}
   additionalArgs:
@@ -97,7 +91,9 @@ spec:
 {{- end }}
   paused: {{ .Values.prometheus.prometheusSpec.paused }}
   replicas: {{ .Values.prometheus.prometheusSpec.replicas }}
+{{- if not (kindIs "invalid" .Values.prometheus.prometheusSpec.shards) }}
   shards: {{ .Values.prometheus.prometheusSpec.shards }}
+{{- end }}
   logLevel:  {{ .Values.prometheus.prometheusSpec.logLevel | quote }}
   logFormat:  {{ .Values.prometheus.prometheusSpec.logFormat }}
   listenLocal: {{ .Values.prometheus.prometheusSpec.listenLocal }}
@@ -392,11 +388,11 @@ spec:
 {{- end }}
 {{- if .Values.prometheus.prometheusSpec.containers }}
   containers:
-{{ toYaml .Values.prometheus.prometheusSpec.containers | indent 4 }}
+{{ tpl (toYaml .Values.prometheus.prometheusSpec.containers) . | indent 4 }}
 {{- end }}
 {{- if .Values.prometheus.prometheusSpec.initContainers }}
   initContainers:
-{{ toYaml .Values.prometheus.prometheusSpec.initContainers | indent 4 }}
+{{ tpl (toYaml .Values.prometheus.prometheusSpec.initContainers) . | indent 4 }}
 {{- end }}
 {{- if .Values.prometheus.prometheusSpec.priorityClassName }}
   priorityClassName: {{ .Values.prometheus.prometheusSpec.priorityClassName }}
@@ -404,7 +400,10 @@ spec:
 {{- if not .Values.prometheus.agentMode }}
 {{- if .Values.prometheus.prometheusSpec.thanos }}
   thanos:
-{{- with (omit .Values.prometheus.prometheusSpec.thanos "objectStorageConfig" "secretProviderClass") }}
+{{- with .Values.prometheus.prometheusSpec.thanos.image }}
+    image: {{ . }} 
+{{- end }}
+{{- with (omit .Values.prometheus.prometheusSpec.thanos "image" "objectStorageConfig" "secretProviderClass") }}
 {{ toYaml . | indent 4 }}
 {{- end }}
 {{- if ((.Values.prometheus.prometheusSpec.thanos.objectStorageConfig).existingSecret) }}
@@ -477,6 +476,27 @@ spec:
 {{- if .Values.prometheus.prometheusSpec.sampleLimit }}
   sampleLimit: {{ .Values.prometheus.prometheusSpec.sampleLimit }}
 {{- end }}
+{{- if .Values.prometheus.prometheusSpec.targetLimit }}
+  targetLimit: {{ .Values.prometheus.prometheusSpec.targetLimit }}
+{{- end }}
+{{- if .Values.prometheus.prometheusSpec.labelLimit }}
+  labelLimit: {{ .Values.prometheus.prometheusSpec.labelLimit }}
+{{- end }}
+{{- if .Values.prometheus.prometheusSpec.labelNameLengthLimit }}
+  labelNameLengthLimit: {{ .Values.prometheus.prometheusSpec.labelNameLengthLimit }}
+{{- end }}
+{{- if .Values.prometheus.prometheusSpec.labelValueLengthLimit }}
+  labelValueLengthLimit: {{ .Values.prometheus.prometheusSpec.labelValueLengthLimit }}
+{{- end }}
+{{- if .Values.prometheus.prometheusSpec.keepDroppedTargets }}
+  keepDroppedTargets: {{ .Values.prometheus.prometheusSpec.keepDroppedTargets }}
+{{- end }}
+{{- if .Values.prometheus.prometheusSpec.bodySizeLimit }}
+  bodySizeLimit: {{ .Values.prometheus.prometheusSpec.bodySizeLimit }}
+{{- end }}
+{{- if .Values.prometheus.prometheusSpec.enforcedBodySizeLimit }}
+  enforcedBodySizeLimit: {{ .Values.prometheus.prometheusSpec.enforcedBodySizeLimit }}
+{{- end }}
 {{- if .Values.prometheus.prometheusSpec.enforcedKeepDroppedTargets }}
   enforcedKeepDroppedTargets: {{ .Values.prometheus.prometheusSpec.enforcedKeepDroppedTargets }}
 {{- end }}
@@ -531,6 +551,37 @@ spec:
 {{- end }}
 {{- if .Values.prometheus.prometheusSpec.serviceDiscoveryRole }}
   serviceDiscoveryRole: {{ .Values.prometheus.prometheusSpec.serviceDiscoveryRole }}
+{{- end }}
+{{- if kindIs "bool" .Values.prometheus.prometheusSpec.enableServiceLinks }}
+  enableServiceLinks: {{ .Values.prometheus.prometheusSpec.enableServiceLinks }}
+{{- end }}
+{{- with .Values.prometheus.prometheusSpec.schedulerName }}
+  schedulerName: {{ . }}
+{{- end }}
+{{- if .Values.prometheus.prometheusSpec.nameEscapingScheme }}
+  nameEscapingScheme: {{ .Values.prometheus.prometheusSpec.nameEscapingScheme }}
+{{- end }}
+{{- if .Values.prometheus.prometheusSpec.reloadStrategy }}
+  reloadStrategy: {{ .Values.prometheus.prometheusSpec.reloadStrategy }}
+{{- end }}
+{{- if .Values.prometheus.prometheusSpec.ruleQueryOffset }}
+  ruleQueryOffset: {{ .Values.prometheus.prometheusSpec.ruleQueryOffset | quote }}
+{{- end }}
+{{- with .Values.prometheus.prometheusSpec.runtime }}
+  runtime:
+{{ toYaml . | indent 4 }}
+{{- end }}
+{{- with .Values.prometheus.prometheusSpec.shardingStrategy }}
+  shardingStrategy:
+{{ toYaml . | indent 4 }}
+{{- end }}
+{{- with .Values.prometheus.prometheusSpec.shardRetentionPolicy }}
+  shardRetentionPolicy:
+{{ toYaml . | indent 4 }}
+{{- end }}
+{{- with .Values.prometheus.prometheusSpec.remoteWriteReceiverMessageVersions }}
+  remoteWriteReceiverMessageVersions:
+{{ toYaml . | indent 4 }}
 {{- end }}
 {{- with .Values.prometheus.prometheusSpec.additionalConfig }}
   {{- tpl (toYaml .) $ | nindent 2 }}

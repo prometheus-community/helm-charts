@@ -33,6 +33,9 @@ spec:
       labels:
         {{- include "prometheus-smartctl-exporter.selectorLabels" $global | nindent 8 }}
         idx: i{{ $idx }}
+        {{- with $global.Values.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
     spec:
       {{- if $global.Values.image.pullSecrets }}
       imagePullSecrets:
@@ -79,7 +82,7 @@ spec:
       priorityClassName: {{ $item.priorityClassName }}
       {{- end }}
       restartPolicy: Always
-      serviceAccountName: {{ template "prometheus-smartctl-exporter.fullname" $global }}
+      serviceAccountName: {{ include "prometheus-smartctl-exporter.serviceAccountName" $global }}
       volumes:
       - hostPath:
           path: /dev

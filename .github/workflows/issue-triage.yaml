@@ -1,0 +1,56 @@
+name: Issue Triage
+permissions: {}
+
+on:
+  issues:
+    types:
+      - opened
+      - edited
+
+jobs:
+  label-and-assign:
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      issues: write
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
+
+      - name: Parse issue form
+        if: contains(github.event.issue.labels.*.name, 'bug') || contains(github.event.issue.labels.*.name, 'enhancement')
+        uses: stefanbuck/github-issue-parser@cb6e97157cbf851e3a393ff8d57c93a484cc323f # v3.2.5
+        id: issue-parser
+        with:
+          template-path: >-
+            .github/ISSUE_TEMPLATE/${{
+              contains(github.event.issue.labels.*.name, 'bug')
+              && 'bug_report.yml' || 'feature_request.yml'
+            }}
+
+      - name: Create chart labels
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          for chart in $(find charts/ -mindepth 1 -maxdepth 1 -type d -printf '%f\n' | sort); do
+            gh label create "chart/${chart}" \
+              --color ec6d13 \
+              --description "Issues related to the ${chart} Helm Chart" \
+              --force
+          done
+
+      - name: Label issue by chart name
+        if: steps.issue-parser.outputs.jsonString
+        uses: redhat-plumbers-in-action/advanced-issue-labeler@b80ae64e3e156e9c111b075bfa04b295d54e8e2e # v3.2.4
+        with:
+          issue-form: ${{ steps.issue-parser.outputs.jsonString }}
+          template: >-
+            ${{
+              contains(github.event.issue.labels.*.name, 'bug')
+              && 'bug_report.yml' || 'feature_request.yml'
+            }}
+          section: chart-name
+          config-path: .github/advanced-issue-labeler.yml
+          token: ${{ github.token }}

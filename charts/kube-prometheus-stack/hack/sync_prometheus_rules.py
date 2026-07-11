@@ -29,9 +29,9 @@ def change_style(style, representer):
 
 refs = {
     # renovate: git-refs=https://github.com/prometheus-operator/kube-prometheus branch=main
-    'ref.kube-prometheus': '3425561cdfea89a8ea65194c56dfcd81b2e84afd',
+    'ref.kube-prometheus': 'a44e949d79c6a608fe2261edcff9adaef7c00923',
     # renovate: git-refs=https://github.com/kubernetes-monitoring/kubernetes-mixin branch=master
-    'ref.kubernetes-mixin': 'bb22ff75f235469052283a112e64c00259500939',
+    'ref.kubernetes-mixin': '464d0ae592cb7d7b1c6f40741fc72fb7bb2449ac',
     'ref.etcd': '479c194f3f5754f039a74c396f3e70f6419edf8e',
 }
 
@@ -153,11 +153,11 @@ condition_map = {
     'kubernetes-resources': ' .Values.defaultRules.rules.kubernetesResources',
     'kubernetes-storage': ' .Values.defaultRules.rules.kubernetesStorage',
     'kubernetes-system': ' .Values.defaultRules.rules.kubernetesSystem',
-    'kubernetes-system-kube-proxy': ' .Values.kubeProxy.enabled .Values.defaultRules.rules.kubeProxy',
+    'kubernetes-system-kube-proxy': ' .Values.kubeProxy.enabled .Values.defaultRules.rules.kubeProxy (not (.Values.defaultRules.disabled.KubeProxyDown | default false))',
     'kubernetes-system-apiserver': ' .Values.defaultRules.rules.kubernetesSystem', # kubernetes-system was split into more groups in 1.14, one of them is kubernetes-system-apiserver
     'kubernetes-system-kubelet': ' .Values.defaultRules.rules.kubernetesSystem', # kubernetes-system was split into more groups in 1.14, one of them is kubernetes-system-kubelet
-    'kubernetes-system-controller-manager': ' .Values.kubeControllerManager.enabled .Values.defaultRules.rules.kubeControllerManager',
-    'kubernetes-system-scheduler': ' .Values.kubeScheduler.enabled .Values.defaultRules.rules.kubeSchedulerAlerting',
+    'kubernetes-system-controller-manager': ' .Values.kubeControllerManager.enabled .Values.defaultRules.rules.kubeControllerManager (not (.Values.defaultRules.disabled.KubeControllerManagerDown | default false))',
+    'kubernetes-system-scheduler': ' .Values.kubeScheduler.enabled .Values.defaultRules.rules.kubeSchedulerAlerting (not (.Values.defaultRules.disabled.KubeSchedulerDown | default false))',
     'node-exporter.rules': ' .Values.defaultRules.rules.nodeExporterRecording',
     'node-exporter': ' .Values.defaultRules.rules.nodeExporterAlerting',
     'node.rules': ' .Values.defaultRules.rules.node',
@@ -179,6 +179,13 @@ alert_condition_map = {
     'KubeStateMetricsDown': '.Values.kubeStateMetrics.enabled',  # there are more alerts which are left enabled, because they'll never fire without metrics
     'NodeExporterDown': '.Values.nodeExporter.enabled',
     'PrometheusOperatorDown': '.Values.prometheusOperator.enabled',
+}
+
+alerts_without_additional_aggregation_labels = {
+    # KubeletDown joins kube_node_info and kubelet up{} series. Labels such as
+    # namespace can legitimately differ between those sources, which would make
+    # the absence check fire even when kubelets are healthy.
+    'KubeletDown',
 }
 
 replacement_map = {
@@ -220,6 +227,9 @@ replacement_map = {
     'job="kube-proxy"': {
         'replacement': 'job="{{ $kubeProxyJob }}"',
         'init': '{{- $kubeProxyJob := include "kube-prometheus-stack-kube-proxy.name" . }}'},
+    'job="apiserver"': {
+        'replacement': 'job="{{ $kubeApiserverJob }}"',
+        'init': '{{- $kubeApiserverJob := include "kube-prometheus-stack-kube-apiserver.name" . }}'},
     'runbook_url: https://runbooks.prometheus-operator.dev/runbooks/': {
         'replacement': 'runbook_url: {{ .Values.defaultRules.runbookUrl }}/',
         'init': ''},
@@ -231,6 +241,18 @@ replacement_map = {
         'init': ''},
     '$.Values.defaultRules.node.fsSelector': {
         'replacement': '{{ $.Values.defaultRules.node.fsSelector }}',
+        'init': ''},
+    'kubelet_certificate_manager_client_ttl_seconds < 604800': {
+        'replacement': 'kubelet_certificate_manager_client_ttl_seconds < {{ .Values.defaultRules.kubeletClientCertificateExpiration.warning }}',
+        'init': ''},
+    'kubelet_certificate_manager_client_ttl_seconds < 86400': {
+        'replacement': 'kubelet_certificate_manager_client_ttl_seconds < {{ .Values.defaultRules.kubeletClientCertificateExpiration.critical }}',
+        'init': ''},
+    'kubelet_certificate_manager_server_ttl_seconds < 604800': {
+        'replacement': 'kubelet_certificate_manager_server_ttl_seconds < {{ .Values.defaultRules.kubeletServerCertificateExpiration.warning }}',
+        'init': ''},
+    'kubelet_certificate_manager_server_ttl_seconds < 86400': {
+        'replacement': 'kubelet_certificate_manager_server_ttl_seconds < {{ .Values.defaultRules.kubeletServerCertificateExpiration.critical }}',
         'init': ''},
 }
 
@@ -297,10 +319,11 @@ def get_rule_group_condition(group_name, value_key):
     if group_name == '':
         return ''
 
-    if group_name.count(".Values") > 1:
-        group_name = group_name.split(' ')[-1]
+    rule_condition = re.search(r'\.Values\.defaultRules\.rules\.[A-Za-z0-9_]+', group_name)
+    if rule_condition is None:
+        return ''
 
-    return group_name.replace('Values.defaultRules.rules', f"Values.defaultRules.{value_key}").strip()
+    return rule_condition.group(0).replace('Values.defaultRules.rules', f"Values.defaultRules.{value_key}").strip()
 
 
 def add_rules_conditions(rules, rules_map, indent=4):
@@ -346,6 +369,22 @@ def add_rules_conditions(rules, rules_map, indent=4):
 def add_rules_conditions_from_condition_map(rules, indent=4):
     """Add if wrapper for rules, listed in alert_condition_map"""
     rules = add_rules_conditions(rules, alert_condition_map, indent)
+    return rules
+
+
+def remove_additional_aggregation_labels_for_alerts(rules, alert_names, indent=4):
+    """Remove additionalAggregationLabels from selected alert blocks."""
+    label_range = '{{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}'
+    alert_prefix = ' ' * indent + '- alert: '
+
+    for alert_name in alert_names:
+        alert_block_pattern = (
+            r'(?ms)^' + re.escape(alert_prefix + alert_name) +
+            r'\n.*?(?=^' + re.escape(alert_prefix) + r'|\Z)'
+        )
+        alert_block = re.compile(alert_block_pattern)
+        rules = alert_block.sub(lambda match: match.group(0).replace(label_range, ''), rules)
+
     return rules
 
 
@@ -418,27 +457,124 @@ def add_custom_labels(rules_str, group, indent=4, label_indent=2):
     return head + "".join(rules) + "\n"
 
 
+def add_custom_annotations_etcd_runbook_urls(rules, group, indent=4):
+    """Add kube-prometheus runbook_url annotations to all etcd alerts.
+
+    This is done after rendering the YAML text instead of mutating the rule
+    objects directly, because yaml_str_repr escapes Helm templates in rule
+    values. The generated runbook_url needs to remain a Helm template.
+    """
+    if group['name'] != 'etcd':
+        return rules
+
+    alert_prefix = ' ' * indent + '- alert: '
+    alert_pattern = r'(?m)^' + re.escape(alert_prefix) + r'([A-Za-z0-9_]+)$'
+    alerts_positions = list(re.finditer(alert_pattern, rules))
+    if not alerts_positions:
+        return rules
+
+    updated_rules = []
+    last_index = 0
+    annotations_pattern = r'(?m)^([ \t]+annotations:)$'
+    runbook_pattern = r'(?m)^[ \t]+runbook_url: .*$'
+
+    for alert_index, alert_position in enumerate(alerts_positions):
+        if alert_index + 1 < len(alerts_positions):
+            next_alert_index = alerts_positions[alert_index + 1].start()
+        else:
+            next_alert_index = len(rules)
+
+        alert_name = alert_position.group(1)
+        alert_block = rules[alert_position.start():next_alert_index]
+        runbook_url = f'{" " * (indent + 4)}runbook_url: {{{{ .Values.defaultRules.runbookUrl }}}}/etcd/{alert_name.lower()}'
+
+        if re.search(runbook_pattern, alert_block):
+            alert_block = re.sub(runbook_pattern, runbook_url, alert_block, count=1)
+        else:
+            alert_block = re.sub(annotations_pattern, r'\1\n' + runbook_url, alert_block, count=1)
+
+        updated_rules.append(rules[last_index:alert_position.start()])
+        updated_rules.append(alert_block)
+        last_index = next_alert_index
+
+    updated_rules.append(rules[last_index:])
+    return "".join(updated_rules)
+
+
 def add_custom_annotations(rules, group, indent=4):
     """Add if wrapper for additional rules annotations"""
-    rule_condition = '{{- if .Values.defaultRules.additionalRuleAnnotations }}\n{{ toYaml .Values.defaultRules.additionalRuleAnnotations | indent 8 }}\n{{- end }}'
-    rule_group_labels = get_rule_group_condition(condition_map.get(group['name'], ''), 'additionalRuleGroupAnnotations')
-    rule_group_condition = '\n{{- if %s }}\n{{ toYaml %s | indent 8 }}\n{{- end }}' % (rule_group_labels, rule_group_labels)
+    rule_group_annotations = get_rule_group_condition(condition_map.get(group['name'], ''), 'additionalRuleGroupAnnotations')
     annotations = "      annotations:"
     annotations_len = len(annotations) + 1
-    rule_condition_len = len(rule_condition) + 1
-    rule_group_condition_len = len(rule_group_condition)
+    description_pattern = r'(?m)^([ \t]+)description: (.+)$'
+    runbook_pattern = r'(?m)^([ \t]+)runbook_url: (.+)$'
+    summary_pattern = r'(?m)^([ \t]+)summary: (.+)$'
 
     separator = " " * indent + "- alert:.*"
-    alerts_positions = re.finditer(separator,rules)
-    alert = 0
+    alerts_positions = list(re.finditer(separator, rules))
+    if not alerts_positions:
+        return rules
 
-    for alert_position in alerts_positions:
-        # Add rule_condition after 'annotations:' statement
-        index = alert_position.end() + annotations_len + (rule_condition_len + rule_group_condition_len) * alert
-        rules = rules[:index] + "\n" + rule_condition + rule_group_condition +  rules[index:]
-        alert += 1
+    updated_rules = []
+    last_index = 0
 
-    return rules
+    def wrap_annotation(block, pattern, alert_name, key):
+        def replace_match(match):
+            prefix = match.group(1)
+            upstream_value = match.group(2)
+            return "\n".join([
+                f'{prefix}{{{{- if not (hasKey $additionalAnnotations "{key}") }}}}',
+                f'{prefix}{key}: {upstream_value}',
+                f'{prefix}{{{{- end }}}}',
+            ])
+
+        return re.sub(pattern, replace_match, block, count=1)
+
+    def render_annotation_setup(alert_name):
+        if rule_group_annotations:
+            group_annotations_line = f'{{{{- $groupAnnotations := default (dict) {rule_group_annotations} }}}}'
+        else:
+            group_annotations_line = '{{- $groupAnnotations := dict }}'
+
+        return "\n".join([
+            f'{{{{- $ruleAnnotations := dig "{alert_name}" (dict) .Values.defaultRules.additionalRuleAnnotations }}}}',
+            group_annotations_line,
+            '{{- $additionalAnnotations := mergeOverwrite (dict) $groupAnnotations $ruleAnnotations }}',
+            '{{- if $additionalAnnotations }}',
+            '{{ toYaml $additionalAnnotations | indent 8 }}',
+            '{{- end }}',
+        ])
+
+    # handle one alert block at a time
+    for alert_index, alert_position in enumerate(alerts_positions):
+        if alert_index + 1 < len(alerts_positions):
+            next_alert_index = alerts_positions[alert_index + 1].start()
+        else:
+            next_alert_index = len(rules)
+
+        alert_block = rules[alert_position.start():next_alert_index]
+        alert_name = alert_position.group(0).split('- alert: ', 1)[1]
+
+        annotations_index = alert_block.find(annotations)
+        if annotations_index != -1:
+            annotations_index += annotations_len
+            alert_block = (
+                alert_block[:annotations_index]
+                + render_annotation_setup(alert_name)
+                + "\n"
+                + alert_block[annotations_index:]
+            )
+
+        alert_block = wrap_annotation(alert_block, description_pattern, alert_name, "description")
+        alert_block = wrap_annotation(alert_block, runbook_pattern, alert_name, "runbook_url")
+        alert_block = wrap_annotation(alert_block, summary_pattern, alert_name, "summary")
+
+        updated_rules.append(rules[last_index:alert_position.start()])
+        updated_rules.append(alert_block)
+        last_index = next_alert_index
+
+    updated_rules.append(rules[last_index:])
+    return "".join(updated_rules)
 
 
 def add_custom_keep_firing_for(rules, indent=4):
@@ -534,6 +670,7 @@ def write_group_to_file(group, url, destination, min_kubernetes, max_kubernetes)
                 init_line += '\n' + replacement_map[line]['init']
     # append per-alert rules
     rules = add_custom_labels(rules, group)
+    rules = add_custom_annotations_etcd_runbook_urls(rules, group)
     rules = add_custom_annotations(rules, group)
     rules = add_custom_keep_firing_for(rules)
     rules = add_custom_for(rules)
@@ -557,6 +694,7 @@ def write_group_to_file(group, url, destination, min_kubernetes, max_kubernetes)
         rules,
         flags=re.IGNORECASE
     )
+    lines = remove_additional_aggregation_labels_for_alerts(lines, alerts_without_additional_aggregation_labels)
 
     # footer
     lines += '{{- end }}'

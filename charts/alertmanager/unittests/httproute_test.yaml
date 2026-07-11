@@ -1,0 +1,74 @@
+suite: test httproute
+templates:
+  - httproute.yaml
+tests:
+  - it: should be empty if no route is enabled
+    asserts:
+      - hasDocuments:
+          count: 0
+  - it: should render an HTTPRoute when enabled
+    set:
+      route.main.enabled: true
+      route.main.parentRefs:
+        - name: my-gateway
+      route.main.hostnames:
+        - alertmanager.example.com
+    asserts:
+      - hasDocuments:
+          count: 1
+      - isKind:
+          of: HTTPRoute
+      - isAPIVersion:
+          of: gateway.networking.k8s.io/v1
+  - it: should default the backendRef to the alertmanager service port
+    set:
+      route.main.enabled: true
+    asserts:
+      - equal:
+          path: spec.rules[0].backendRefs[0].name
+          value: RELEASE-NAME-alertmanager
+      - equal:
+          path: spec.rules[0].backendRefs[0].port
+          value: 9093
+  - it: should set parentRefs and hostnames
+    set:
+      route.main.enabled: true
+      route.main.parentRefs:
+        - name: my-gateway
+          namespace: gateway-system
+      route.main.hostnames:
+        - alertmanager.example.com
+    asserts:
+      - equal:
+          path: spec.parentRefs[0].name
+          value: my-gateway
+      - equal:
+          path: spec.parentRefs[0].namespace
+          value: gateway-system
+      - equal:
+          path: spec.hostnames[0]
+          value: alertmanager.example.com
+  - it: should allow overriding apiVersion and kind
+    set:
+      route.main.enabled: true
+      route.main.apiVersion: gateway.networking.k8s.io/v1beta1
+      route.main.kind: TLSRoute
+    asserts:
+      - isAPIVersion:
+          of: gateway.networking.k8s.io/v1beta1
+      - isKind:
+          of: TLSRoute
+  - it: should render a RequestRedirect filter when httpsRedirect is enabled
+    set:
+      route.main.enabled: true
+      route.main.httpsRedirect: true
+    asserts:
+      - equal:
+          path: spec.rules[0].filters[0].type
+          value: RequestRedirect
+      - equal:
+          path: spec.rules[0].filters[0].requestRedirect.scheme
+          value: https
+      - equal:
+          path: spec.rules[0].filters[0].requestRedirect.statusCode
+          value: 301

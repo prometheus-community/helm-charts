@@ -1,5 +1,5 @@
 global:
-  ## Global image registry to use if it needs to be overriden for some specific use cases (e.g local registries, custom images, ...)
+  ## Global image registry to use if it needs to be overridden for some specific use cases (e.g local registries, custom images, ...)
   ##
   imageRegistry: ""
 
@@ -253,6 +253,57 @@ ingress:
   #    hosts:
   #      - chart-example.local
 
+## A HTTPRoute (Gateway API) resource is an alternative to Ingress for routing
+## external HTTP traffic to the blackbox exporter Service.
+## ref: https://gateway-api.sigs.k8s.io/api-types/httproute/
+route:
+  main:
+    ## Enable this route
+    enabled: false
+
+    ## ApiVersion set by default to "gateway.networking.k8s.io/v1"
+    apiVersion: ""
+    ## kind set by default to HTTPRoute
+    kind: ""
+
+    ## Optional name for the default rule in the rendered HTTPRoute.
+    name: ""
+
+    ## Annotations to attach to the HTTPRoute resource
+    annotations: {}
+    ## Labels to attach to the HTTPRoute resource
+    labels: {}
+
+    ## ParentRefs refers to resources this HTTPRoute is to be attached to (Gateways)
+    parentRefs: []
+      # - name: contour
+      #   sectionName: http
+
+    ## Hostnames (templated) defines a set of hostnames that should match against the HTTP Host
+    ## header to select a HTTPRoute used to process the request
+    hostnames: []
+      # - my.example.com
+
+    ## additionalRules (templated) allows adding custom rules to the route
+    additionalRules: []
+
+    ## Filters define the filters that are applied to requests that match
+    ## this rule
+    filters: []
+
+    ## Matches define conditions used for matching the rule against incoming
+    ## HTTP requests
+    matches:
+      - path:
+          type: PathPrefix
+          value: /
+
+    ## httpsRedirect adds a filter for redirecting to https (HTTP 301 Moved Permanently).
+    ## To redirect HTTP traffic to HTTPS, you need to have a Gateway with both HTTP and HTTPS listeners.
+    ## Matches and filters do not take effect if enabled.
+    ## Ref. https://gateway-api.sigs.k8s.io/guides/http-redirect-rewrite/
+    httpsRedirect: false
+
 podAnnotations: {}
 
 # Annotations for the Deployment
@@ -384,7 +435,7 @@ networkPolicy:
   # Enable network policy and allow access from anywhere
   enabled: false
   # Limit access only from monitoring namespace
-  # Before setting this value to true, you must add the name=monitoring label to the monitoring namespace.  Name can be rewritten by monitoringNamespaceName
+  # Before setting this value to true, the monitoring namespace must exist. Kubernetes automatically sets the kubernetes.io/metadata.name label on all namespaces. The namespace name can be configured via monitoringNamespaceName
   # Network Policy uses label filtering
   allowMonitoringNamespace: false
   # Rewrite monitoring namespace in network policy (default value monitoring)
@@ -405,7 +456,7 @@ extraManifests: []
   #   data:
   #     extra-data: "value"
 
-# global common labels, applied to all ressources
+# global common labels, applied to all resources
 commonLabels: {}
 
 # Enable vertical pod autoscaler support for prometheus-blackbox-exporter
@@ -449,7 +500,7 @@ configReloader:
   image:
     registry: quay.io
     repository: prometheus-operator/prometheus-config-reloader
-    tag: "v0.90.1"
+    tag: "v0.92.1"
     pullPolicy: IfNotPresent
     digest: ""
   securityContext:
