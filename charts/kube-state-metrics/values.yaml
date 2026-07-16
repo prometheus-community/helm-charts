@@ -103,6 +103,15 @@ rbac:
   #   verbs: ["list", "watch"]
   extraRules: []
 
+# Enable kube-state-metrics native request authn/authz on the metrics endpoints
+# via the `--auth-filter` flag, as an alternative to running kube-rbac-proxy.
+# When enabled, the `create` permissions on `tokenreviews` and
+# `subjectaccessreviews` required by the filter are added to the (Cluster)Role
+# automatically. Scrapers must authenticate; see the chart README and the
+# kube-state-metrics docs on protecting metrics endpoints.
+authFilter:
+  enabled: false
+
 # Configure kube-rbac-proxy. When enabled, creates one kube-rbac-proxy container per exposed HTTP endpoint (metrics and telemetry if enabled).
 # The requests are served through the same service but requests are then HTTPS.
 kubeRBACProxy:
@@ -110,7 +119,7 @@ kubeRBACProxy:
   image:
     registry: quay.io
     repository: brancz/kube-rbac-proxy
-    tag: v0.22.0
+    tag: v0.22.1
     sha: ""
     pullPolicy: IfNotPresent
 
@@ -441,6 +450,8 @@ collectors:
   # - clusterrolebindings
   # - clusterroles
   # - roles
+  # - rolebindings
+  # - serviceaccounts
 
 # Enabling kubeconfig will pass the --kubeconfig argument to the container
 kubeconfig:
