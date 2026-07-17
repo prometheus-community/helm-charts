@@ -1,0 +1,40 @@
+suite: test kube-scheduler exporter
+templates:
+  - exporters/kube-scheduler/servicemonitor.yaml
+tests:
+  - it: should be empty if kubeScheduler is not enabled
+    set:
+      kubeScheduler.enabled: false
+    asserts:
+      - hasDocuments:
+          count: 0
+  - it: should be empty if kubeScheduler.serviceMonitor is not enabled
+    set:
+      kubeScheduler.serviceMonitor.enabled: false
+    asserts:
+      - hasDocuments:
+          count: 0
+  - it: should be empty if kubernetesServiceMonitors is not enabled
+    set:
+      kubernetesServiceMonitors.enabled: false
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: should have one endpoint if kubeScheduler.serviceMonitor.resource is not enabled
+    set:
+      kubeScheduler.serviceMonitor.resource.enabled: false
+    asserts:
+      - lengthEqual:
+          path: spec.endpoints
+          count: 1
+  - it: should have a second endpoint if kubeScheduler.serviceMonitor.resource is enabled
+    set:
+      kubeScheduler.serviceMonitor.resource.enabled: true
+    asserts:
+      - lengthEqual:
+          path: spec.endpoints
+          count: 2
+      - equal:
+          path: spec.endpoints[1].path
+          value: "/metrics/resources"
