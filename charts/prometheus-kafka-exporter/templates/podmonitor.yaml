@@ -1,0 +1,52 @@
+{{- if and .Values.prometheus.podMonitor.enabled .Values.prometheus.serviceMonitor.enabled }}
+{{- fail "Either .Values.prometheus.podMonitor.enabled or .Values.serviceMonitor.enabled can be enabled at a time, but not both." }}
+{{- else if .Values.prometheus.podMonitor.enabled }}
+apiVersion: {{ .Values.prometheus.podMonitor.apiVersion }}
+kind: PodMonitor
+metadata:
+  name: {{ template "prometheus-kafka-exporter.fullname" . }}
+  {{- if .Values.prometheus.podMonitor.namespace }}
+  namespace: {{ .Values.prometheus.podMonitor.namespace }}
+  {{- end }}
+  labels:
+    app.kubernetes.io/name: {{ include "prometheus-kafka-exporter.name" . }}
+    helm.sh/chart: {{ include "prometheus-kafka-exporter.chart" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    {{- if .Values.prometheus.podMonitor.additionalLabels }}
+{{ toYaml .Values.prometheus.podMonitor.additionalLabels | indent 4 -}}
+    {{- end }}
+spec:
+  
+  jobLabel: jobLabel
+{{- if .Values.prometheus.podMonitor.podTargetLabels }}
+  podTargetLabels:
+{{- range .Values.prometheus.podMonitor.podTargetLabels }}
+    - {{ . }}
+{{- end }}
+{{- end }}
+  namespaceSelector:
+    matchNames:
+      - {{ .Release.Namespace }}
+  podMetricsEndpoints:
+  - port: exporter-port
+    path: {{ .Values.prometheus.podMonitor.path }}
+  {{- if .Values.prometheus.podMonitor.interval }}
+    interval: {{ .Values.prometheus.podMonitor.interval }}
+  {{- end }}
+  {{- if .Values.prometheus.podMonitor.scrapeTimeout }}
+    scrapeTimeout: {{ .Values.prometheus.podMonitor.scrapeTimeout }}
+  {{- end }}
+  {{- with .Values.prometheus.podMonitor.metricRelabelings }}
+    metricRelabelings:
+    {{- toYaml . | nindent 6 }}
+  {{- end }}
+  
+  {{- with .Values.prometheus.podMonitor.relabelings }}
+    relabelings:
+    {{- toYaml . | nindent 6 }}
+  {{- end }}
+  selector:
+    matchLabels:
+      app: {{ template "prometheus-kafka-exporter.name" . }}
+      release: {{ .Release.Name }}
+{{- end }}
