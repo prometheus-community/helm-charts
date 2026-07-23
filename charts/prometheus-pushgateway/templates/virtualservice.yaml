@@ -1,0 +1,82 @@
+{{- if .Values.istioGateway.enabled }}
+apiVersion: networking.istio.io/v1
+kind: VirtualService
+metadata:
+  name: {{ include "prometheus-pushgateway.fullname" . }}
+  namespace: {{ include "prometheus-pushgateway.namespace" . }}
+  labels:
+    {{- include "prometheus-pushgateway.defaultLabels" . | nindent 4 }}
+    {{- with .Values.istioGateway.labels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+  {{- with .Values.istioGateway.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  {{- with .Values.istioGateway.hosts }}
+  hosts:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  gateways:
+  {{- if kindIs "string" .Values.istioGateway.gateway }}
+    - {{ .Values.istioGateway.gateway }}
+  {{- else }}
+    {{- toYaml .Values.istioGateway.gateway | nindent 4 }}
+  {{- end }}
+  http:
+    - {{- with .Values.istioGateway.match }}
+      match:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.istioGateway.rewrite }}
+      rewrite:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.istioGateway.redirect }}
+      redirect:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.istioGateway.timeout }}
+      timeout: {{ . }}
+      {{- end }}
+      {{- with .Values.istioGateway.retries }}
+      retries:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.istioGateway.fault }}
+      fault:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.istioGateway.mirror }}
+      mirror:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.istioGateway.mirrorPercentage }}
+      mirrorPercentage:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.istioGateway.corsPolicy }}
+      corsPolicy:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.istioGateway.headers }}
+      headers:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- if not .Values.istioGateway.redirect }}
+      route:
+        {{- if .Values.istioGateway.route }}
+        {{- toYaml .Values.istioGateway.route | nindent 8 }}
+        {{- else }}
+        - destination:
+            host: {{ include "prometheus-pushgateway.fullname" . }}
+            port:
+              number: {{ .Values.istioGateway.port | default .Values.service.port }}
+            {{- with .Values.istioGateway.subset }}
+            subset: {{ . }}
+            {{- end }}
+        {{- end }}
+      {{- end }}
+{{- end }}
+
