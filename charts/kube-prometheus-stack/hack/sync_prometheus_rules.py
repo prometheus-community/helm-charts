@@ -29,9 +29,9 @@ def change_style(style, representer):
 
 refs = {
     # renovate: git-refs=https://github.com/prometheus-operator/kube-prometheus branch=main
-    'ref.kube-prometheus': '2b49d6f4e55bd25b346c333f26879686fae498d6',
+    'ref.kube-prometheus': '174e45d20337d6cdfd5d8bfd042acdf479a38424',
     # renovate: git-refs=https://github.com/kubernetes-monitoring/kubernetes-mixin branch=master
-    'ref.kubernetes-mixin': '349819ffca696c61140103ec4a27c0c508334f18',
+    'ref.kubernetes-mixin': '3a304c8daec0c9b592f92faaaaf97dceb812e343',
     'ref.etcd': '479c194f3f5754f039a74c396f3e70f6419edf8e',
 }
 
@@ -457,6 +457,50 @@ def add_custom_labels(rules_str, group, indent=4, label_indent=2):
     return head + "".join(rules) + "\n"
 
 
+def add_custom_annotations_etcd_runbook_urls(rules, group, indent=4):
+    """Add kube-prometheus runbook_url annotations to all etcd alerts.
+
+    This is done after rendering the YAML text instead of mutating the rule
+    objects directly, because yaml_str_repr escapes Helm templates in rule
+    values. The generated runbook_url needs to remain a Helm template.
+    """
+    if group['name'] != 'etcd':
+        return rules
+
+    alert_prefix = ' ' * indent + '- alert: '
+    alert_pattern = r'(?m)^' + re.escape(alert_prefix) + r'([A-Za-z0-9_]+)$'
+    alerts_positions = list(re.finditer(alert_pattern, rules))
+    if not alerts_positions:
+        return rules
+
+    updated_rules = []
+    last_index = 0
+    annotations_pattern = r'(?m)^([ \t]+annotations:)$'
+    runbook_pattern = r'(?m)^[ \t]+runbook_url: .*$'
+
+    for alert_index, alert_position in enumerate(alerts_positions):
+        if alert_index + 1 < len(alerts_positions):
+            next_alert_index = alerts_positions[alert_index + 1].start()
+        else:
+            next_alert_index = len(rules)
+
+        alert_name = alert_position.group(1)
+        alert_block = rules[alert_position.start():next_alert_index]
+        runbook_url = f'{" " * (indent + 4)}runbook_url: {{{{ .Values.defaultRules.runbookUrl }}}}/etcd/{alert_name.lower()}'
+
+        if re.search(runbook_pattern, alert_block):
+            alert_block = re.sub(runbook_pattern, runbook_url, alert_block, count=1)
+        else:
+            alert_block = re.sub(annotations_pattern, r'\1\n' + runbook_url, alert_block, count=1)
+
+        updated_rules.append(rules[last_index:alert_position.start()])
+        updated_rules.append(alert_block)
+        last_index = next_alert_index
+
+    updated_rules.append(rules[last_index:])
+    return "".join(updated_rules)
+
+
 def add_custom_annotations(rules, group, indent=4):
     """Add if wrapper for additional rules annotations"""
     rule_group_annotations = get_rule_group_condition(condition_map.get(group['name'], ''), 'additionalRuleGroupAnnotations')
@@ -626,6 +670,7 @@ def write_group_to_file(group, url, destination, min_kubernetes, max_kubernetes)
                 init_line += '\n' + replacement_map[line]['init']
     # append per-alert rules
     rules = add_custom_labels(rules, group)
+    rules = add_custom_annotations_etcd_runbook_urls(rules, group)
     rules = add_custom_annotations(rules, group)
     rules = add_custom_keep_firing_for(rules)
     rules = add_custom_for(rules)

@@ -1,0 +1,126 @@
+suite: test prometheus spec fields
+templates:
+  - prometheus/prometheus.yaml
+tests:
+  - it: should not render the new spec fields with default values
+    set:
+      prometheus.enabled: true
+    asserts:
+      - notExists:
+          path: spec.targetLimit
+      - notExists:
+          path: spec.bodySizeLimit
+      - notExists:
+          path: spec.enableServiceLinks
+      - notExists:
+          path: spec.schedulerName
+      - notExists:
+          path: spec.reloadStrategy
+      - notExists:
+          path: spec.runtime
+      - notExists:
+          path: spec.shardingStrategy
+      - notExists:
+          path: spec.remoteWriteReceiverMessageVersions
+
+  - it: should render the global scrape limits
+    set:
+      prometheus.enabled: true
+      prometheus.prometheusSpec.targetLimit: 100
+      prometheus.prometheusSpec.labelLimit: 30
+      prometheus.prometheusSpec.labelNameLengthLimit: 40
+      prometheus.prometheusSpec.labelValueLengthLimit: 50
+      prometheus.prometheusSpec.keepDroppedTargets: 10
+      prometheus.prometheusSpec.bodySizeLimit: 100MB
+      prometheus.prometheusSpec.enforcedBodySizeLimit: 50MB
+    asserts:
+      - equal:
+          path: spec.targetLimit
+          value: 100
+      - equal:
+          path: spec.labelLimit
+          value: 30
+      - equal:
+          path: spec.keepDroppedTargets
+          value: 10
+      - equal:
+          path: spec.bodySizeLimit
+          value: 100MB
+      - equal:
+          path: spec.enforcedBodySizeLimit
+          value: 50MB
+
+  - it: should render enableServiceLinks only when set to a bool
+    set:
+      prometheus.enabled: true
+      prometheus.prometheusSpec.enableServiceLinks: false
+    asserts:
+      - equal:
+          path: spec.enableServiceLinks
+          value: false
+
+  - it: should render schedulerName, nameEscapingScheme and reloadStrategy
+    set:
+      prometheus.enabled: true
+      prometheus.prometheusSpec.schedulerName: my-scheduler
+      prometheus.prometheusSpec.nameEscapingScheme: Underscores
+      prometheus.prometheusSpec.reloadStrategy: ProcessSignal
+    asserts:
+      - equal:
+          path: spec.schedulerName
+          value: my-scheduler
+      - equal:
+          path: spec.nameEscapingScheme
+          value: Underscores
+      - equal:
+          path: spec.reloadStrategy
+          value: ProcessSignal
+
+  - it: should render ruleQueryOffset quoted
+    set:
+      prometheus.enabled: true
+      prometheus.prometheusSpec.ruleQueryOffset: 1m
+    asserts:
+      - equal:
+          path: spec.ruleQueryOffset
+          value: "1m"
+
+  - it: should render runtime, sharding and remoteWriteReceiverMessageVersions
+    set:
+      prometheus.enabled: true
+      prometheus.prometheusSpec.runtime:
+        goGC: 75
+      prometheus.prometheusSpec.shardingStrategy:
+        mode: OnResource
+      prometheus.prometheusSpec.shardRetentionPolicy:
+        whenScaled: Retain
+      prometheus.prometheusSpec.remoteWriteReceiverMessageVersions:
+        - V1.0
+        - V2.0
+    asserts:
+      - equal:
+          path: spec.runtime.goGC
+          value: 75
+      - equal:
+          path: spec.shardingStrategy.mode
+          value: OnResource
+      - equal:
+          path: spec.shardRetentionPolicy.whenScaled
+          value: Retain
+      - equal:
+          path: spec.remoteWriteReceiverMessageVersions[1]
+          value: V2.0
+
+  # 7106
+  - it: should set externalUrl to hostname of main route
+    set:
+      prometheus.route.main:
+        enabled: true
+        hostnames:
+          - alertmanager.example.com 
+    asserts:
+      - hasDocuments:
+          count: 1
+      - equal:
+          path: spec.externalUrl
+          value: http://alertmanager.example.com/
