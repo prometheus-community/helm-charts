@@ -3,6 +3,10 @@
 {{- range .Values.ingress.hosts }}
   http{{ if $.Values.ingress.tls }}s{{ end }}://{{ . }}{{ $.Values.ingress.path }}
 {{- end }}
+{{- else if .Values.route.main.enabled }}
+{{- range .Values.route.main.hostnames }}
+  http://{{ tpl . $ }}
+{{- end }}
 {{- else if contains "NodePort" .Values.service.type }}
   export NODE_PORT=$(kubectl get --namespace {{ template "prometheus-pushgateway.namespace" . }} -o jsonpath="{.spec.ports[0].nodePort}" services {{ template "prometheus-pushgateway.fullname" . }})
   export NODE_IP=$(kubectl get nodes --namespace {{ template "prometheus-pushgateway.namespace" . }} -o jsonpath="{.items[0].status.addresses[0].address}")

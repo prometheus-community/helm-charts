@@ -16,7 +16,7 @@ The chart is distributed as an [OCI Artifact](https://helm.sh/docs/topics/regist
 - OCI Artifact: `oci://ghcr.io/prometheus-community/charts/prometheus`
 - Helm Repository: `https://prometheus-community.github.io/helm-charts` with chart `prometheus`
 
-The installation instructions use the OCI registry. Refer to the [`helm repo`]([`helm repo`](https://helm.sh/docs/helm/helm_repo/)) command documentation for information on installing charts via the traditional repository.
+The installation instructions use the OCI registry. Refer to the [`helm repo`](https://helm.sh/docs/helm/helm_repo/) command documentation for information on installing charts via the traditional repository.
 
 ### Install Chart
 
@@ -37,7 +37,7 @@ By default this chart installs additional, dependent charts:
 - [alertmanager](https://github.com/prometheus-community/helm-charts/tree/main/charts/alertmanager)
 - [kube-state-metrics](https://github.com/prometheus-community/helm-charts/tree/main/charts/kube-state-metrics)
 - [prometheus-node-exporter](https://github.com/prometheus-community/helm-charts/tree/main/charts/prometheus-node-exporter)
-- [prometheus-pushgateway](https://github.com/walker-tom/helm-charts/tree/main/charts/prometheus-pushgateway)
+- [prometheus-pushgateway](https://github.com/prometheus-community/helm-charts/tree/main/charts/prometheus-pushgateway)
 
 To disable the dependency during installation, set `alertmanager.enabled`, `kube-state-metrics.enabled`, `prometheus-node-exporter.enabled` and `prometheus-pushgateway.enabled` to `false`.
 
@@ -65,15 +65,91 @@ helm upgrade [RELEASE_NAME] oci://ghcr.io/prometheus-community/charts/prometheus
 
 _See [helm upgrade](https://helm.sh/docs/helm/helm_upgrade/) for command documentation._
 
+#### To 29.0
+
+Starting with version 29.0, the default `kubernetes_sd_configs` roles for several scrape configurations have been migrated from `endpoints` to `endpointslice` due to the deprecation of the former in Kubernetes release 1.33.
+
+Affected scrape configurations in `scrapeConfigs`:
+
+- `kubernetes-api-servers`
+- `kubernetes-service-endpoints`
+- `kubernetes-service-endpoints-slow`
+
+Users who currently apply custom relabelings with the `endpoints` labels should adjust their configuration for the `endpointslice` labels before upgrading.
+
+#### To 28.0
+
+Scrape configs previously defined in field `serverFiles."prometheus.yml".scrape_configs`
+(array) have been moved in the new field `scrapeConfigs` (map). The contents of the scrape configs have not changed.
+
+Each scrape config can be disabled by setting `enabled` to _false_, each key becomes the
+default value of `job_name`. Further scrape configs can be inserted as new keys whereby these get enabled by default. A scrape config expects native Prometheus' configuration.
+
+Field `extraScrapeConfigs` can still be used for additional scrape configs and is not affected by the change.
+
+Using the new field is not mandatory, `serverFiles."prometheus.yml".scrape_configs` works in the same way
+as before but is _unset_ by default. Users wishing to continue using this field via a custom values file should unset
+`scrapeConfigs` before upgrading:
+
+```yaml
+scrapeConfigs: null
+```
+
+Similarly, users who wish to make use of the new field but have modified the previous default scrape configs should
+transfer the modifications in `scrapeConfigs` and remove the previous scrape configs.
+
+Some examples:
+
+- Skip certificate verification for API servers (default is not to skip the verification)
+
+```yaml
+scrapeConfigs:
+  kubernetes-api-servers:
+    tls_config:
+      insecure_skip_verify: true
+```
+
+- Add basic auth in the default scrape config for prometheus
+
+```yaml
+scrapeConfigs:
+  prometheus:
+    basic_auth:
+      username: "admin"
+      password_file: /etc/private/auth-passwd
+```
+
+- Disable scrape config _kubernetes-pods-slow_
+
+```yaml
+scrapeConfigs:
+  kubernetes-pods-slow:
+    enabled: false
+```
+
+- Add a new scrape config with `job_name` set to _foo_ (gets enabled by default)
+
+```yaml
+scrapeConfigs:
+  foo:
+    honor_labels: true
+    kubernetes_sd_configs:
+      - role: service
+    relabel_configs:
+      - source_labels: [__meta_kubernetes_service_annotation_prometheus_io_probe]
+        action: keep
+        regex: true
+```
+
 #### To 27.0
 
 Prometheus' configuration parameter `insecure_skip_verify` in scrape configs `serverFiles."prometheus.yml".scrape_configs` has been commented out keeping thus the default Prometheus' value.
-If certificate verification must be skipped, please, uncomment the line before upgrading.
+If certificate verification must be skipped, please, set the configuration parameter in your scrape configs.
 
 #### To 26.0
 
-This release changes default version of promethues to v3.0.0, See official [migration guide](https://prometheus.io/docs/prometheus/latest/migration/#prometheus-3-0-migration-guide
-) and [release notes](https://github.com/prometheus/prometheus/releases/tag/v3.0.0) for more details.
+This release changes default version of prometheus to v3.0.0, See official
+[migration guide](https://prometheus.io/docs/prometheus/latest/migration/#prometheus-3-0-migration-guide) and [release notes](https://github.com/prometheus/prometheus/releases/tag/v3.0.0) for more details.
 
 #### To 25.0
 
@@ -161,7 +237,7 @@ Extra command-line arguments specified via configmapReload.prometheus.extraArgs 
 Prometheus has been updated to version v2.40.5.
 
 Prometheus-pushgateway was updated to version 2.0.0 which adapted [Helm label and annotation best practices](https://helm.sh/docs/chart_best_practices/labels/).
-See the [upgrade docs of the prometheus-pushgateway chart](https://github.com/prometheus-community/helm-charts/tree/main/charts/prometheus-pushgateway#to-200) to see whats to do, before you upgrade Prometheus!
+See the [upgrade docs of the prometheus-pushgateway chart](https://github.com/prometheus-community/helm-charts/tree/main/charts/prometheus-pushgateway#to-200) to see what's to do, before you upgrade Prometheus!
 
 The condition in Chart.yaml to disable kube-state-metrics has been changed from `kubeStateMetrics.enabled` to `kube-state-metrics.enabled`
 

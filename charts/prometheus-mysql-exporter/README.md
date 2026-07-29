@@ -177,3 +177,58 @@ Available collector flags can be found in the [values.yaml](https://github.com/p
 
 Enable it with flag  [`cloudsqlproxy.workloadIdentity`](https://github.com/prometheus-community/helm-charts/blob/main/charts/prometheus-mysql-exporter/values.yaml)
 To more details about Workload Identity visit [Use Workload Identity](https://cloud.google.com/kubernetes-engine/docs/how-to/workload-identity)
+
+### Extra Manifests
+
+This chart supports deploying extra Kubernetes manifests alongside the MySQL exporter. This can be useful for creating additional resources like ConfigMaps, Secrets, or other Kubernetes objects.
+
+The `extraManifests` value supports two formats and is evaluated as a template, allowing you to use Helm template functions and access values like `.Release.Name`, `.Release.Namespace`, `.Chart.Name`, etc.
+
+#### Object Format (Recommended)
+
+Provides better IDE support, validation, and readability:
+
+```yaml
+extraManifests:
+  - apiVersion: v1
+    kind: ConfigMap
+    metadata:
+      name: "{{ .Release.Name }}-extra-config"
+      namespace: "{{ .Release.Namespace }}"
+      labels:
+        app: "{{ .Chart.Name }}"
+    data:
+      extra-data: "value"
+  - apiVersion: v1
+    kind: Secret
+    metadata:
+      name: "{{ .Release.Name }}-extra-secret"
+    type: Opaque
+    stringData:
+      key: "secret-value"
+```
+
+#### String Format (Alternative)
+
+Uses YAML multiline strings with pipe `|`:
+
+```yaml
+extraManifests:
+  - |
+    apiVersion: v1
+    kind: ConfigMap
+    metadata:
+      name: mysql-exporter-extra
+    data:
+      key: value
+  - |
+    apiVersion: v1
+    kind: Secret
+    metadata:
+      name: mysql-exporter-secret
+    type: Opaque
+    stringData:
+      password: "{{ .Values.mysql.pass }}"
+```
+
+Both formats can be mixed in the same `extraManifests` array if needed.

@@ -59,7 +59,9 @@ spec:
   selector:
     matchLabels:
       {{- include "prometheus.server.matchLabels" . | nindent 6 }}
+  {{- if not .Values.server.daemonSet.enabled }}
   replicas: {{ .Values.server.replicaCount }}
+  {{- end }}
   revisionHistoryLimit: {{ .Values.server.revisionHistoryLimit }}
   template:
     metadata:
@@ -177,7 +179,7 @@ spec:
           {{- if .Values.server.image.digest }}
           image: "{{ tpl .Values.server.image.repository . }}@{{ tpl .Values.server.image.digest . }}"
           {{- else }}
-          image: "{{ tpl .Values.server.image.repository . }}:{{ tpl .Values.server.image.tag . | default .Chart.AppVersion}}"
+          image: "{{ tpl .Values.server.image.repository . }}:{{ tpl .Values.server.image.tag . | default .Chart.AppVersion}}{{ if .Values.server.image.distroless }}-distroless{{ end }}"
           {{- end }}
           imagePullPolicy: "{{ .Values.server.image.pullPolicy }}"
           {{- with .Values.server.command }}

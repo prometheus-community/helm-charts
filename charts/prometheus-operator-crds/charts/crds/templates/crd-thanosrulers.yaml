@@ -1,5 +1,5 @@
 {{- if .Values.thanosrulers.enabled -}}
-# https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/v0.86.1/example/prometheus-operator-crd/monitoring.coreos.com_thanosrulers.yaml
+# https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/v0.93.0/example/prometheus-operator-crd/monitoring.coreos.com_thanosrulers.yaml
 ---
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
@@ -8,8 +8,8 @@ metadata:
 {{- with .Values.annotations }}
 {{- toYaml . | nindent 4 }}
 {{- end }}
-    controller-gen.kubebuilder.io/version: v0.19.0
-    operator.prometheus.io/version: 0.86.1
+    controller-gen.kubebuilder.io/version: v0.21.0
+    operator.prometheus.io/version: 0.93.0
   name: thanosrulers.monitoring.coreos.com
 spec:
   group: monitoring.coreos.com
@@ -1124,13 +1124,19 @@ spec:
                 type: array
               containers:
                 description: |-
-                  containers allows injecting additional containers or modifying operator generated
-                  containers. This can be used to allow adding an authentication proxy to a ThanosRuler pod or
-                  to change the behavior of an operator generated container. Containers described here modify
-                  an operator generated container if they share the same name and modifications are done via a
-                  strategic merge patch. The current container names are: `thanos-ruler` and `config-reloader`.
-                  Overriding containers is entirely outside the scope of what the maintainers will support and by doing
-                  so, you accept that this behaviour may break at any time without notice.
+                  containers allows injecting additional containers or modifying operator
+                  generated containers. This can be used to allow adding an authentication
+                  proxy to the Pods or to change the behavior of an operator generated
+                  container. Containers described here modify an operator generated
+                  container if they share the same name and modifications are done via a
+                  strategic merge patch.
+
+                  The names of containers managed by the operator are:
+                  * `thanos-ruler`
+                  * `config-reloader`
+
+                  Overriding containers which are managed by the operator require careful
+                  testing, especially when upgrading to a new version of the operator.
                 items:
                   description: A single application container that you want to run
                     within a pod.
@@ -1998,7 +2004,9 @@ spec:
                           type: integer
                       type: object
                     resizePolicy:
-                      description: Resources resize policy for the container.
+                      description: |-
+                        Resources resize policy for the container.
+                        This field cannot be set on ephemeral containers.
                       items:
                         description: ContainerResizePolicy represents resource resize
                           policy for the container.
@@ -2227,7 +2235,6 @@ spec:
                             procMount denotes the type of proc mount to use for the containers.
                             The default value is Default which uses the container runtime defaults for
                             readonly paths and masked paths.
-                            This requires the ProcMountType feature flag to be enabled.
                             Note that this field cannot be set when spec.os.name is windows.
                           type: string
                         readOnlyRootFilesystem:
@@ -2787,8 +2794,8 @@ spec:
                 description: |-
                   grpcServerTlsConfig defines the gRPC server from which Thanos Querier reads
                   recorded rule data.
-                  Note: Currently only the CAFile, CertFile, and KeyFile fields are supported.
-                  Maps to the '--grpc-server-tls-*' CLI args.
+
+                  Note: Currently only the `minVersion`, `caFile`, `certFile`, `keyFile`, `cipherSuites` and `curves` fields are supported.
                 properties:
                   ca:
                     description: ca defines the Certificate authority used when verifying
@@ -2906,6 +2913,38 @@ spec:
                     description: certFile defines the path to the client cert file
                       in the Prometheus container for the targets.
                     type: string
+                  cipherSuites:
+                    description: |-
+                      cipherSuites defines the list of supported cipher suites for TLS
+                      versions up to TLS 1.2.
+
+                      If not defined, the Go default cipher suites are used.
+                      Available cipher suites are documented in the Go documentation:
+                      https://golang.org/pkg/crypto/tls/#pkg-constants
+
+                      It requires Thanos >= v0.42.0. Note that the operator doesn't verify if
+                      the Thanos version supports the provided values.
+                    items:
+                      type: string
+                    minItems: 1
+                    type: array
+                    x-kubernetes-list-type: set
+                  curves:
+                    description: |-
+                      curves defines the list of preferred elliptic curves for
+                      TLS handshakes.
+
+                      If not defined, the Go default curves are used.
+                      Available curves are documented in the Go documentation:
+                      https://golang.org/pkg/crypto/tls/#CurveID
+
+                      It requires Thanos >= v0.42.0. Note that the operator doesn't verify if
+                      the Thanos version supports the provided values.
+                    items:
+                      type: string
+                    minItems: 1
+                    type: array
+                    x-kubernetes-list-type: set
                   insecureSkipVerify:
                     description: insecureSkipVerify defines how to disable target
                       certificate validation.
@@ -3035,13 +3074,11 @@ spec:
                 type: array
               initContainers:
                 description: |-
-                  initContainers allows adding initContainers to the pod definition. Those can be used to e.g.
-                  fetch secrets for injection into the ThanosRuler configuration from external sources. Any
-                  errors during the execution of an initContainer will lead to a restart of the Pod.
-                  More info: https://kubernetes.io/docs/concepts/workloads/pods/init-containers/
-                  Using initContainers for any use case other then secret fetching is entirely outside the scope
-                  of what the maintainers will support and by doing so, you accept that this behaviour may break
-                  at any time without notice.
+                  initContainers allows injecting initContainers to the Pod definition.
+                  Those can be used to e.g. fetch secrets for injection into the
+                  configuration from external sources. Any errors during the execution of
+                  an initContainer will lead to a restart of the Pod. More info:
+                  https://kubernetes.io/docs/concepts/workloads/pods/init-containers/
                 items:
                   description: A single application container that you want to run
                     within a pod.
@@ -3909,7 +3946,9 @@ spec:
                           type: integer
                       type: object
                     resizePolicy:
-                      description: Resources resize policy for the container.
+                      description: |-
+                        Resources resize policy for the container.
+                        This field cannot be set on ephemeral containers.
                       items:
                         description: ContainerResizePolicy represents resource resize
                           policy for the container.
@@ -4138,7 +4177,6 @@ spec:
                             procMount denotes the type of proc mount to use for the containers.
                             The default value is Default which uses the container runtime defaults for
                             readonly paths and masked paths.
-                            This requires the ProcMountType feature flag to be enabled.
                             Note that this field cannot be set when spec.os.name is windows.
                           type: string
                         readOnlyRootFilesystem:
@@ -4649,6 +4687,21 @@ spec:
                   paused defines when a ThanosRuler deployment is paused, no actions except for deletion
                   will be performed on the underlying objects.
                 type: boolean
+              podManagementPolicy:
+                description: |-
+                  podManagementPolicy defines the policy for creating/deleting pods when
+                  scaling up and down.
+
+                  Unlike the default StatefulSet behavior, the default policy is
+                  `Parallel` to avoid manual intervention in case a pod gets stuck during
+                  a rollout.
+
+                  Note that updating this value implies the recreation of the StatefulSet
+                  which incurs a service outage.
+                enum:
+                - OrderedReady
+                - Parallel
+                type: string
               podMetadata:
                 description: |-
                   podMetadata defines labels and annotations which are propagated to the ThanosRuler pods.
@@ -4842,19 +4895,20 @@ spec:
                         managedIdentity:
                           description: |-
                             managedIdentity defines the Azure User-assigned Managed identity.
-                            Cannot be set at the same time as `oauth` or `sdk`.
+                            Cannot be set at the same time as `oauth`, `sdk` or `workloadIdentity`.
                           properties:
                             clientId:
-                              description: clientId defines defines the Azure User-assigned
-                                Managed identity.
+                              description: |-
+                                clientId defines the Azure User-assigned Managed identity.
+
+                                For Prometheus >= 3.5.0 and Thanos >= 0.40.0, this field is allowed to be empty to support system-assigned managed identities.
+                              minLength: 1
                               type: string
-                          required:
-                          - clientId
                           type: object
                         oauth:
                           description: |-
                             oauth defines the oauth config that is being used to authenticate.
-                            Cannot be set at the same time as `managedIdentity` or `sdk`.
+                            Cannot be set at the same time as `managedIdentity`, `sdk` or `workloadIdentity`.
 
                             It requires Prometheus >= v2.48.0 or Thanos >= v0.31.0.
                           properties:
@@ -4902,11 +4956,17 @@ spec:
                           - clientSecret
                           - tenantId
                           type: object
+                        scope:
+                          description: |-
+                            scope is the custom OAuth 2.0 scope to request when acquiring tokens.
+                            It requires Prometheus >= 3.9.0. Currently not supported by Thanos.
+                          pattern: ^[\w\s:/.\\-]+$
+                          type: string
                         sdk:
                           description: |-
                             sdk defines the Azure SDK config that is being used to authenticate.
                             See https://learn.microsoft.com/en-us/azure/developer/go/azure-sdk-authentication
-                            Cannot be set at the same time as `oauth` or `managedIdentity`.
+                            Cannot be set at the same time as `oauth`, `managedIdentity` or `workloadIdentity`.
 
                             It requires Prometheus >= v2.52.0 or Thanos >= v0.36.0.
                           properties:
@@ -4916,6 +4976,27 @@ spec:
                                 authenticate.
                               pattern: ^[0-9a-zA-Z-.]+$
                               type: string
+                          type: object
+                        workloadIdentity:
+                          description: |-
+                            workloadIdentity defines the Azure Workload Identity authentication.
+                            Cannot be set at the same time as `oauth`, `managedIdentity`, or `sdk`.
+
+                            It requires Prometheus >= 3.7.0. Currently not supported by Thanos.
+                          properties:
+                            clientId:
+                              description: clientId is the clientID of the Azure Active
+                                Directory application.
+                              minLength: 1
+                              type: string
+                            tenantId:
+                              description: tenantId is the tenant ID of the Azure
+                                Active Directory application.
+                              minLength: 1
+                              type: string
+                          required:
+                          - clientId
+                          - tenantId
                           type: object
                       type: object
                     basicAuth:
@@ -5026,8 +5107,11 @@ spec:
                       - V2.0
                       type: string
                     metadataConfig:
-                      description: metadataConfig defines how to send a series metadata
-                        to the remote storage.
+                      description: |-
+                        metadataConfig defines how to send a series metadata to the remote storage.
+
+                        When the field is empty, **no metadata** is sent. But when the field is
+                        null, metadata is sent.
                       properties:
                         maxSamplesPerSend:
                           description: |-
@@ -5038,8 +5122,10 @@ spec:
                           minimum: -1
                           type: integer
                         send:
-                          description: send defines whether metric metadata is sent
-                            to the remote storage or not.
+                          description: |-
+                            send defines whether metric metadata is sent to the remote storage or not.
+
+                            The setting is ignored when Remote Write message's version 2.0 is used.
                           type: boolean
                         sendInterval:
                           description: sendInterval defines how frequently metric
@@ -5388,7 +5474,7 @@ spec:
                         tokenUrl:
                           description: tokenUrl defines the URL to fetch the token
                             from.
-                          minLength: 1
+                          pattern: ^(http|https)://.+$
                           type: string
                       required:
                       - clientId
@@ -5559,6 +5645,12 @@ spec:
                           - key
                           type: object
                           x-kubernetes-map-type: atomic
+                        externalId:
+                          description: |-
+                            externalId defines the external ID used when assuming an AWS role. Can only be used with roleArn.
+                            It requires Prometheus >= v3.11.0 or Alertmanager >= v0.33.0. Currently not supported by Thanos.
+                          minLength: 1
+                          type: string
                         profile:
                           description: profile defines the named AWS profile used
                             to authenticate.
@@ -5599,10 +5691,13 @@ spec:
                           x-kubernetes-map-type: atomic
                         useFIPSSTSEndpoint:
                           description: |-
-                            useFIPSSTSEndpoint defines FIPS mode for AWS STS endpoint.
+                            useFIPSSTSEndpoint defines the FIPS mode for the AWS STS endpoint.
                             It requires Prometheus >= v2.54.0.
                           type: boolean
                       type: object
+                      x-kubernetes-validations:
+                      - message: externalId can only be used when roleArn is specified
+                        rule: '!has(self.externalId) || has(self.roleArn)'
                     tlsConfig:
                       description: tlsConfig to use for the URL.
                       properties:
@@ -5783,9 +5878,11 @@ spec:
                           type: string
                       type: object
                     url:
-                      description: url defines the URL of the endpoint to send samples
-                        to.
-                      minLength: 1
+                      description: |-
+                        url defines the URL of the endpoint to send samples to.
+
+                        It must use the HTTP or HTTPS scheme.
+                      pattern: ^(http|https)://.+$
                       type: string
                     writeRelabelConfigs:
                       description: writeRelabelConfigs defines the list of remote
@@ -5836,6 +5933,7 @@ spec:
 
                               Only applicable when the action is `HashMod`.
                             format: int64
+                            minimum: 0
                             type: integer
                           regex:
                             description: regex defines the regular expression against
@@ -6088,6 +6186,11 @@ spec:
                     type: object
                 type: object
                 x-kubernetes-map-type: atomic
+              schedulerName:
+                description: schedulerName defines the scheduler to use for Pod scheduling.
+                  If not specified, the default scheduler is used.
+                minLength: 1
+                type: string
               securityContext:
                 description: |-
                   securityContext defines the pod-level security attributes and common container settings.
@@ -6506,7 +6609,7 @@ spec:
                               resources:
                                 description: |-
                                   resources represents the minimum resources the volume should have.
-                                  If RecoverVolumeExpansionFailure feature is enabled users are allowed to specify resource requirements
+                                  Users are allowed to specify resource requirements
                                   that are lower than previous value but must still be higher than capacity recorded in the
                                   status field of the claim.
                                   More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#resources
@@ -6761,7 +6864,7 @@ spec:
                           resources:
                             description: |-
                               resources represents the minimum resources the volume should have.
-                              If RecoverVolumeExpansionFailure feature is enabled users are allowed to specify resource requirements
+                              Users are allowed to specify resource requirements
                               that are lower than previous value but must still be higher than capacity recorded in the
                               status field of the claim.
                               More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#resources
@@ -6917,9 +7020,7 @@ spec:
                               ignore the update for the purpose it was designed. For
                               example - a controller that\nonly is responsible for
                               resizing capacity of the volume, should ignore PVC updates
-                              that change other valid\nresources associated with PVC.\n\nThis
-                              is an alpha field and requires enabling RecoverVolumeExpansionFailure
-                              feature."
+                              that change other valid\nresources associated with PVC."
                             type: object
                             x-kubernetes-map-type: granular
                           allocatedResources:
@@ -6951,9 +7052,7 @@ spec:
                               ignore the update for the purpose it was designed. For
                               example - a controller that\nonly is responsible for
                               resizing capacity of the volume, should ignore PVC updates
-                              that change other valid\nresources associated with PVC.\n\nThis
-                              is an alpha field and requires enabling RecoverVolumeExpansionFailure
-                              feature."
+                              that change other valid\nresources associated with PVC."
                             type: object
                           capacity:
                             additionalProperties:
@@ -7080,9 +7179,10 @@ spec:
                     operator:
                       description: |-
                         Operator represents a key's relationship to the value.
-                        Valid operators are Exists and Equal. Defaults to Equal.
+                        Valid operators are Exists, Equal, Lt, and Gt. Defaults to Equal.
                         Exists is equivalent to wildcard for value, so that a pod can
                         tolerate all taints of a particular category.
+                        Lt and Gt perform numeric comparisons (requires feature gate TaintTolerationComparisonOperators).
                       type: string
                     tolerationSeconds:
                       description: |-
@@ -7320,6 +7420,48 @@ spec:
 
                   This field takes precedence over `tracingConfig`.
                 type: string
+              updateStrategy:
+                description: |-
+                  updateStrategy indicates the strategy that will be employed to update
+                  Pods in the StatefulSet when a revision is made to statefulset's Pod
+                  Template.
+
+                  The default strategy is RollingUpdate.
+                properties:
+                  rollingUpdate:
+                    description: rollingUpdate is used to communicate parameters when
+                      type is RollingUpdate.
+                    properties:
+                      maxUnavailable:
+                        anyOf:
+                        - type: integer
+                        - type: string
+                        description: |-
+                          maxUnavailable is the maximum number of pods that can be unavailable
+                          during the update. The value can be an absolute number (ex: 5) or a
+                          percentage of desired pods (ex: 10%). Absolute number is calculated from
+                          percentage by rounding up. This can not be 0.  Defaults to 1. This field
+                          is alpha-level and is only honored by servers that enable the
+                          MaxUnavailableStatefulSet feature. The field applies to all pods in the
+                          range 0 to Replicas-1.  That means if there is any unavailable pod in
+                          the range 0 to Replicas-1, it will be counted towards MaxUnavailable.
+                        x-kubernetes-int-or-string: true
+                    type: object
+                  type:
+                    description: |-
+                      type indicates the type of the StatefulSetUpdateStrategy.
+
+                      Default is RollingUpdate.
+                    enum:
+                    - OnDelete
+                    - RollingUpdate
+                    type: string
+                required:
+                - type
+                type: object
+                x-kubernetes-validations:
+                - message: rollingUpdate requires type to be RollingUpdate
+                  rule: '!(self.type != ''RollingUpdate'' && has(self.rollingUpdate))'
               version:
                 description: version of Thanos to be deployed.
                 type: string
@@ -7977,7 +8119,7 @@ spec:
                                 resources:
                                   description: |-
                                     resources represents the minimum resources the volume should have.
-                                    If RecoverVolumeExpansionFailure feature is enabled users are allowed to specify resource requirements
+                                    Users are allowed to specify resource requirements
                                     that are lower than previous value but must still be higher than capacity recorded in the
                                     status field of the claim.
                                     More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#resources
@@ -8309,7 +8451,7 @@ spec:
                         A failure to resolve or pull the image during pod startup will block containers from starting and may add significant latency. Failures will be retried using normal volume backoff and will be reported on the pod reason and message.
                         The types of objects that may be mounted by this volume are defined by the container runtime implementation on a host machine and at minimum must include all valid types supported by the container image field.
                         The OCI object gets mounted in a single directory (spec.containers[*].volumeMounts.mountPath) by merging the manifest layers in the same way as for container images.
-                        The volume will be mounted read-only (ro) and non-executable files (noexec).
+                        The volume will be mounted read-only (ro).
                         Sub path mounts for containers are not supported (spec.containers[*].volumeMounts.subpath) before 1.33.
                         The field spec.securityContext.fsGroupChangePolicy has no effect on this volume type.
                       properties:
@@ -8481,8 +8623,7 @@ spec:
                       description: |-
                         portworxVolume represents a portworx volume attached and mounted on kubelets host machine.
                         Deprecated: PortworxVolume is deprecated. All operations for the in-tree portworxVolume type
-                        are redirected to the pxd.portworx.com CSI driver when the CSIMigrationPortworx feature-gate
-                        is on.
+                        are redirected to the pxd.portworx.com CSI driver.
                       properties:
                         fsType:
                           description: |-
@@ -8856,6 +8997,24 @@ spec:
                                     description: Kubelet's generated CSRs will be
                                       addressed to this signer.
                                     type: string
+                                  userAnnotations:
+                                    additionalProperties:
+                                      type: string
+                                    description: |-
+                                      userAnnotations allow pod authors to pass additional information to
+                                      the signer implementation.  Kubernetes does not restrict or validate this
+                                      metadata in any way.
+
+                                      These values are copied verbatim into the `spec.unverifiedUserAnnotations` field of
+                                      the PodCertificateRequest objects that Kubelet creates.
+
+                                      Entries are subject to the same validation as object metadata annotations,
+                                      with the addition that all keys must be domain-prefixed. No restrictions
+                                      are placed on values, except an overall size limitation on the entire field.
+
+                                      Signers should document the keys and values they support. Signers should
+                                      deny requests that contain keys they do not recognize.
+                                    type: object
                                 required:
                                 - keyType
                                 - signerName

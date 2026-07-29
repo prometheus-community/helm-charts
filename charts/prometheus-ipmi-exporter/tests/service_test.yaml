@@ -1,0 +1,96 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/helm-unittest/helm-unittest/main/schema/helm-testsuite.json
+suite: test service
+templates:
+  - service.yaml
+tests:
+  - it: should render default service
+    asserts:
+      - isKind:
+          of: Service
+      - equal:
+          path: apiVersion
+          value: v1
+
+  - it: should use default ClusterIP type
+    asserts:
+      - equal:
+          path: spec.type
+          value: ClusterIP
+
+  - it: should use custom service type
+    set:
+      service:
+        type: LoadBalancer
+    asserts:
+      - equal:
+          path: spec.type
+          value: LoadBalancer
+
+  - it: should use default port 9290
+    asserts:
+      - equal:
+          path: spec.ports[0].port
+          value: 9290
+      - equal:
+          path: spec.ports[0].protocol
+          value: TCP
+      - equal:
+          path: spec.ports[0].name
+          value: http
+
+  - it: should use custom port
+    set:
+      service:
+        port: 8080
+    asserts:
+      - equal:
+          path: spec.ports[0].port
+          value: 8080
+
+  - it: should have correct selector labels
+    asserts:
+      - equal:
+          path: spec.selector
+          value:
+            app.kubernetes.io/name: prometheus-ipmi-exporter
+            app.kubernetes.io/instance: RELEASE-NAME
+
+  - it: should have helm chart labels
+    asserts:
+      - equal:
+          path: metadata.labels["app.kubernetes.io/name"]
+          value: prometheus-ipmi-exporter
+      - equal:
+          path: metadata.labels["app.kubernetes.io/instance"]
+          value: RELEASE-NAME
+      - isNotEmpty:
+          path: metadata.labels["helm.sh/chart"]
+      - equal:
+          path: metadata.labels["app.kubernetes.io/managed-by"]
+          value: Helm
+
+  - it: should set custom annotations
+    set:
+      service:
+        annotations:
+          prometheus.io/scrape: "true"
+          prometheus.io/port: "9290"
+    asserts:
+      - equal:
+          path: metadata.annotations["prometheus.io/scrape"]
+          value: "true"
+      - equal:
+          path: metadata.annotations["prometheus.io/port"]
+          value: "9290"
+
+  - it: should have empty annotations by default
+    asserts:
+      - equal:
+          path: metadata.annotations
+          value: {}
+
+  - it: should use correct service name
+    asserts:
+      - equal:
+          path: metadata.name
+          value: RELEASE-NAME-prometheus-ipmi-exporter

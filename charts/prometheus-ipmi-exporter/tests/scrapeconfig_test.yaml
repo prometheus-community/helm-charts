@@ -1,0 +1,248 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/helm-unittest/helm-unittest/main/schema/helm-testsuite.json
+suite: test scrapeconfig
+templates:
+  - scrapeconfig.yaml
+capabilities:
+  apiVersions:
+    - monitoring.coreos.com/v1alpha1
+tests:
+  - it: should not render scrapeconfig when disabled
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: should render scrapeconfig when enabled with static configs
+    set:
+      scrapeConfig:
+        enabled: true
+        staticConfigs:
+          - targets:
+              - 192.168.1.10
+    asserts:
+      - isKind:
+          of: ScrapeConfig
+      - equal:
+          path: apiVersion
+          value: monitoring.coreos.com/v1alpha1
+
+  - it: should fail when both staticConfigs and fileSDConfigs are set
+    set:
+      scrapeConfig:
+        enabled: true
+        staticConfigs:
+          - targets:
+              - 192.168.1.10
+        fileSDConfigs:
+          - files:
+              - /tmp/targets.yml
+    asserts:
+      - failedTemplate:
+          errorMessage: "scrapeConfig cannot have both staticConfigs and fileSDConfigs defined"
+
+  - it: should fail when neither staticConfigs nor fileSDConfigs are set
+    set:
+      scrapeConfig:
+        enabled: true
+    asserts:
+      - failedTemplate:
+          errorMessage: "scrapeConfig requires either staticConfigs or fileSDConfigs to be defined"
+
+  - it: should use remote mode by default
+    set:
+      scrapeConfig:
+        enabled: true
+        staticConfigs:
+          - targets:
+              - 192.168.1.10
+    asserts:
+      - equal:
+          path: spec.metricsPath
+          value: /ipmi
+      - isNotEmpty:
+          path: spec.params.module
+      - isNotEmpty:
+          path: spec.relabelings
+
+  - it: should use local mode when specified
+    set:
+      scrapeConfig:
+        enabled: true
+        mode: local
+        staticConfigs:
+          - targets:
+              - localhost:9290
+    asserts:
+      - equal:
+          path: spec.metricsPath
+          value: /metrics
+      - isNull:
+          path: spec.params
+      - isNull:
+          path: spec.relabelings
+
+  - it: should set custom job name
+    set:
+      scrapeConfig:
+        enabled: true
+        jobName: custom-ipmi
+        staticConfigs:
+          - targets:
+              - 192.168.1.10
+    asserts:
+      - equal:
+          path: spec.jobName
+          value: custom-ipmi
+
+  - it: should use default job name if not specified
+    set:
+      scrapeConfig:
+        enabled: true
+        staticConfigs:
+          - targets:
+              - 192.168.1.10
+    asserts:
+      - equal:
+          path: spec.jobName
+          value: ipmi-exporter
+
+  - it: should set custom modules
+    set:
+      scrapeConfig:
+        enabled: true
+        modules:
+          - default
+          - dcmi
+        staticConfigs:
+          - targets:
+              - 192.168.1.10
+    asserts:
+      - contains:
+          path: spec.params.module
+          content: default
+      - contains:
+          path: spec.params.module
+          content: dcmi
+
+  - it: should set custom namespace
+    set:
+      scrapeConfig:
+        enabled: true
+        namespace: monitoring
+        staticConfigs:
+          - targets:
+              - 192.168.1.10
+    asserts:
+      - equal:
+          path: metadata.namespace
+          value: monitoring
+
+  - it: should set custom labels
+    set:
+      scrapeConfig:
+        enabled: true
+        labels:
+          app: ipmi
+          env: prod
+        staticConfigs:
+          - targets:
+              - 192.168.1.10
+    asserts:
+      - equal:
+          path: metadata.labels.app
+          value: ipmi
+      - equal:
+          path: metadata.labels.env
+          value: prod
+
+  - it: should set custom scrape interval and timeout
+    set:
+      scrapeConfig:
+        enabled: true
+        scrapeInterval: 2m
+        scrapeTimeout: 45s
+        staticConfigs:
+          - targets:
+              - 192.168.1.10
+    asserts:
+      - equal:
+          path: spec.scrapeInterval
+          value: 2m
+      - equal:
+          path: spec.scrapeTimeout
+          value: 45s
+
+  - it: should work with fileSDConfigs
+    set:
+      scrapeConfig:
+        enabled: true
+        fileSDConfigs:
+          - files:
+              - /etc/prometheus/targets.yml
+            refreshInterval: 5m
+    asserts:
+      - isKind:
+          of: ScrapeConfig
+      - equal:
+          path: spec.fileSDConfigs[0].files[0]
+          value: /etc/prometheus/targets.yml
+      - equal:
+          path: spec.fileSDConfigs[0].refreshInterval
+          value: 5m
+
+  - it: should use HTTPS scheme when specified
+    set:
+      scrapeConfig:
+        enabled: true
+        scheme: HTTPS
+        staticConfigs:
+          - targets:
+              - 192.168.1.10
+    asserts:
+      - equal:
+          path: spec.scheme
+          value: HTTPS
+
+  - it: should use custom relabelings when provided
+    set:
+      scrapeConfig:
+        enabled: true
+        relabelings:
+          - sourceLabels: [__address__]
+            targetLabel: custom_label
+        staticConfigs:
+          - targets:
+              - 192.168.1.10
+    asserts:
+      - equal:
+          path: spec.relabelings[0].sourceLabels[0]
+          value: __address__
+      - equal:
+          path: spec.relabelings[0].targetLabel
+          value: custom_label
+
+  - it: should use default cluster.local domain in remote mode
+    set:
+      scrapeConfig:
+        enabled: true
+        mode: remote
+        staticConfigs:
+          - targets:
+              - 192.168.1.10
+    asserts:
+      - matchRegex:
+          path: spec.relabelings[2].replacement
+          pattern: "^RELEASE-NAME-prometheus-ipmi-exporter\\.NAMESPACE\\.svc\\.cluster\\.local:\\d+$"
+
+  - it: should use custom clusterDomain in remote mode
+    set:
+      clusterDomain: custom.local
+      scrapeConfig:
+        enabled: true
+        mode: remote
+        staticConfigs:
+          - targets:
+              - 192.168.1.10
+    asserts:
+      - matchRegex:
+          path: spec.relabelings[2].replacement
+          pattern: "^RELEASE-NAME-prometheus-ipmi-exporter\\.NAMESPACE\\.svc\\.custom\\.local:\\d+$"

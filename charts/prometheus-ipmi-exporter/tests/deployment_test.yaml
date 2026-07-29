@@ -1,0 +1,117 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/helm-unittest/helm-unittest/main/schema/helm-testsuite.json
+suite: test deployment
+templates:
+  - deployment.yaml
+tests:
+  - it: should render default deployment
+    asserts:
+      - isKind:
+          of: Deployment
+      - equal:
+          path: spec.replicas
+          value: 1
+      - equal:
+          path: spec.template.spec.containers[0].name
+          value: ipmi-exporter
+      - equal:
+          path: spec.template.spec.containers[0].args
+          value:
+            - "--config.file"
+            - "/config.yml"
+
+  - it: should add --native-ipmi flag when nativeIPMI.enabled is true
+    set:
+      nativeIPMI:
+        enabled: true
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: "--native-ipmi"
+
+  - it: should not add --native-ipmi flag when nativeIPMI.enabled is false
+    set:
+      nativeIPMI:
+        enabled: false
+    asserts:
+      - notContains:
+          path: spec.template.spec.containers[0].args
+          content: "--native-ipmi"
+
+  - it: should add extraArgs to container args
+    set:
+      extraArgs:
+        - "--log.level=debug"
+        - "--web.listen-address=:9291"
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: "--log.level=debug"
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: "--web.listen-address=:9291"
+
+  - it: should combine nativeIPMI and extraArgs
+    set:
+      nativeIPMI:
+        enabled: true
+      extraArgs:
+        - "--log.level=debug"
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].args
+          value:
+            - "--config.file"
+            - "/config.yml"
+            - "--native-ipmi"
+            - "--log.level=debug"
+
+  - it: should handle empty extraArgs
+    set:
+      extraArgs: []
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].args
+          value:
+            - "--config.file"
+            - "/config.yml"
+
+  - it: should use custom image
+    set:
+      image:
+        repository: custom/ipmi-exporter
+        tag: "v1.0.0"
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: "custom/ipmi-exporter:v1.0.0"
+
+  - it: should set custom resource limits
+    set:
+      resources:
+        limits:
+          cpu: "500m"
+          memory: "512Mi"
+        requests:
+          cpu: "200m"
+          memory: "256Mi"
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].resources.limits.cpu
+          value: "500m"
+      - equal:
+          path: spec.template.spec.containers[0].resources.limits.memory
+          value: "512Mi"
+      - equal:
+          path: spec.template.spec.containers[0].resources.requests.cpu
+          value: "200m"
+      - equal:
+          path: spec.template.spec.containers[0].resources.requests.memory
+          value: "256Mi"
+
+  - it: should set replica count
+    set:
+      replicaCount: 3
+    asserts:
+      - equal:
+          path: spec.replicas
+          value: 3
