@@ -157,6 +157,8 @@ kubectl patch deployment prometheus-postgres-exporter --type=json -p='[{"op": "r
 
 ## Configuration
 
+This chart can scrape metrics using either a [ServiceMonitor](https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/api-reference/api.md#servicemonitor) (`serviceMonitor.enabled`) or a [PodMonitor](https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/api-reference/api.md#podmonitor) (`podMonitor.enabled`) for the Prometheus Operator. Use PodMonitor when scraping pods directly without going through the Kubernetes Service.
+
 See [Customizing the Chart Before Installing](https://helm.sh/docs/intro/using_helm/#customizing-the-chart-before-installing).
 To see all configurable options with detailed comments, visit the chart's [values.yaml](./values.yaml), or run this command:
 

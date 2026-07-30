@@ -1,4 +1,6 @@
 alertmanager:
+  alertmanagerSpec:
+    replicas: 2
   ingress:
     enabled: true
     hosts:
@@ -25,9 +27,26 @@ alertmanager:
             - path:
                 type: PathPrefix
                 value: /foo/
+  servicePerReplica:
+    enabled: true
+  routePerReplica:
+    main:
+      enabled: true
+      hostPrefix: alertmanager
+      hostDomain: example.com
+      parentRefs:
+        - name: gateway
+      filters:
+        - type: RequestHeaderModifier
+          requestHeaderModifier:
+            set:
+              - name: my-header-name
+                value: my-new-header-value
 
 
 prometheus:
+  prometheusSpec:
+    replicas: 2
   ingress:
     enabled: true
     hosts:
@@ -54,6 +73,21 @@ prometheus:
             - path:
                 type: PathPrefix
                 value: /foo/
+  servicePerReplica:
+    enabled: true
+  routePerReplica:
+    main:
+      enabled: true
+      hostPrefix: prometheus
+      hostDomain: example.com
+      parentRefs:
+        - name: gateway
+      filters:
+        - type: RequestHeaderModifier
+          requestHeaderModifier:
+            set:
+              - name: my-header-name
+                value: my-new-header-value
 
 thanosRuler:
   ingress:
