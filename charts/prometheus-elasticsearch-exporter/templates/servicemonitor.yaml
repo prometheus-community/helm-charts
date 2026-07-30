@@ -4,9 +4,7 @@ apiVersion: {{ .Values.serviceMonitor.apiVersion }}
 kind: ServiceMonitor
 metadata:
   name: {{ template "elasticsearch-exporter.fullname" . }}
-  {{- if .Values.serviceMonitor.namespace }}
-  namespace: {{ .Values.serviceMonitor.namespace }}
-  {{- end }}
+  namespace: {{ .Values.serviceMonitor.namespace | default (include "prometheus-elasticsearch-exporter.namespace" .)  }}
   labels:
     {{- include "elasticsearch-exporter.labels" . | nindent 4 }}
     {{- if .Values.serviceMonitor.labels }}
@@ -36,7 +34,7 @@ spec:
       {{- include "elasticsearch-exporter.selectorLabels" . | nindent 6 }}
   namespaceSelector:
     matchNames:
-      - {{ .Release.Namespace }}
+      - {{ include "prometheus-elasticsearch-exporter.namespace" . }}
 {{- if .Values.serviceMonitor.targetLabels }}
   targetLabels:
 {{- range .Values.serviceMonitor.targetLabels }}

@@ -27,7 +27,7 @@ spec:
   image: "{{ $registry }}/{{ .Values.alertmanager.alertmanagerSpec.image.repository }}"
   {{- end }}
   imagePullPolicy: "{{ .Values.alertmanager.alertmanagerSpec.image.pullPolicy }}"
-  version: {{ default .Values.alertmanager.alertmanagerSpec.image.tag .Values.alertmanager.alertmanagerSpec.version }}
+  version: "{{ default .Values.alertmanager.alertmanagerSpec.image.tag .Values.alertmanager.alertmanagerSpec.version }}"
   {{- if .Values.alertmanager.alertmanagerSpec.image.sha }}
   sha: {{ .Values.alertmanager.alertmanagerSpec.image.sha }}
   {{- end }}
@@ -43,6 +43,8 @@ spec:
   externalUrl: "{{ tpl .Values.alertmanager.alertmanagerSpec.externalUrl . }}"
 {{- else if and .Values.alertmanager.ingress.enabled .Values.alertmanager.ingress.hosts }}
   externalUrl: "http://{{ tpl (index .Values.alertmanager.ingress.hosts 0) . }}{{ .Values.alertmanager.alertmanagerSpec.routePrefix }}"
+{{- else if and .Values.alertmanager.route.main.enabled .Values.alertmanager.route.main.hostnames }}
+  externalUrl: "http://{{ tpl (index .Values.alertmanager.route.main.hostnames 0) . }}{{ .Values.alertmanager.alertmanagerSpec.routePrefix }}"
 {{- else }}
   externalUrl: http://{{ template "kube-prometheus-stack.fullname" . }}-alertmanager.{{ template "kube-prometheus-stack.namespace" . }}:{{ .Values.alertmanager.service.port }}
 {{- end }}
@@ -99,6 +101,9 @@ spec:
 {{- if .Values.alertmanager.alertmanagerSpec.securityContext }}
   securityContext:
 {{ toYaml .Values.alertmanager.alertmanagerSpec.securityContext | indent 4 }}
+{{- end }}
+{{- if kindIs "bool" .Values.alertmanager.alertmanagerSpec.hostUsers }}
+  hostUsers: {{ .Values.alertmanager.alertmanagerSpec.hostUsers }}
 {{- end }}
 {{- if .Values.alertmanager.alertmanagerSpec.dnsConfig }}
   dnsConfig:
@@ -201,7 +206,35 @@ spec:
 {{- if .Values.alertmanager.alertmanagerSpec.minReadySeconds }}
   minReadySeconds: {{ .Values.alertmanager.alertmanagerSpec.minReadySeconds }}
 {{- end }}
+{{- if .Values.alertmanager.alertmanagerSpec.podManagementPolicy }}
+  podManagementPolicy: {{ .Values.alertmanager.alertmanagerSpec.podManagementPolicy }}
+{{- end }}
+{{- if .Values.alertmanager.alertmanagerSpec.updateStrategy }}
+  updateStrategy:
+{{ toYaml .Values.alertmanager.alertmanagerSpec.updateStrategy | indent 4 }}
+{{- end }}
   hostNetwork: {{ .Values.alertmanager.alertmanagerSpec.hostNetwork }}
+{{- if .Values.alertmanager.alertmanagerSpec.terminationGracePeriodSeconds }}
+  terminationGracePeriodSeconds: {{ .Values.alertmanager.alertmanagerSpec.terminationGracePeriodSeconds }}
+{{- end }}
+{{- if kindIs "bool" .Values.alertmanager.alertmanagerSpec.enableServiceLinks }}
+  enableServiceLinks: {{ .Values.alertmanager.alertmanagerSpec.enableServiceLinks }}
+{{- end }}
+{{- with .Values.alertmanager.alertmanagerSpec.schedulerName }}
+  schedulerName: {{ . }}
+{{- end }}
+{{- with .Values.alertmanager.alertmanagerSpec.hostAliases }}
+  hostAliases:
+{{ toYaml . | indent 4 }}
+{{- end }}
+{{- with .Values.alertmanager.alertmanagerSpec.limits }}
+  limits:
+{{ toYaml . | indent 4 }}
+{{- end }}
+{{- with .Values.alertmanager.alertmanagerSpec.clusterTLS }}
+  clusterTLS:
+{{ toYaml . | indent 4 }}
+{{- end }}
 {{- with .Values.alertmanager.alertmanagerSpec.additionalConfig }}
   {{- tpl (toYaml .) $ | nindent 2 }}
 {{- end }}
