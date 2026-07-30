@@ -29,15 +29,21 @@ spec:
 {{- if not (.Values.defaultRules.disabled.KubeSchedulerDown | default false) }}
     - alert: KubeSchedulerDown
       annotations:
-{{- if .Values.defaultRules.additionalRuleAnnotations }}
-{{ toYaml .Values.defaultRules.additionalRuleAnnotations | indent 8 }}
+{{- $ruleAnnotations := dig "KubeSchedulerDown" (dict) .Values.defaultRules.additionalRuleAnnotations }}
+{{- $groupAnnotations := default (dict) .Values.defaultRules.additionalRuleGroupAnnotations.kubeSchedulerAlerting }}
+{{- $additionalAnnotations := mergeOverwrite (dict) $groupAnnotations $ruleAnnotations }}
+{{- if $additionalAnnotations }}
+{{ toYaml $additionalAnnotations | indent 8 }}
 {{- end }}
-{{- if .Values.defaultRules.additionalRuleGroupAnnotations.kubeSchedulerAlerting }}
-{{ toYaml .Values.defaultRules.additionalRuleGroupAnnotations.kubeSchedulerAlerting | indent 8 }}
-{{- end }}
+        {{- if not (hasKey $additionalAnnotations "description") }}
         description: KubeScheduler has disappeared from Prometheus target discovery.
+        {{- end }}
+        {{- if not (hasKey $additionalAnnotations "runbook_url") }}
         runbook_url: {{ .Values.defaultRules.runbookUrl }}/kubernetes/kubeschedulerdown
+        {{- end }}
+        {{- if not (hasKey $additionalAnnotations "summary") }}
         summary: Target disappeared from Prometheus target discovery.
+        {{- end }}
       expr: absent(up{job="{{ $kubeSchedulerJob }}"})
       for: {{ dig "KubeSchedulerDown" "for" "15m" .Values.customRules }}
       {{- with .Values.defaultRules.keepFiringFor }}
@@ -58,15 +64,21 @@ spec:
 {{- if not (.Values.defaultRules.disabled.KubeSchedulerInstanceUnreachable | default false) }}
     - alert: KubeSchedulerInstanceUnreachable
       annotations:
-{{- if .Values.defaultRules.additionalRuleAnnotations }}
-{{ toYaml .Values.defaultRules.additionalRuleAnnotations | indent 8 }}
+{{- $ruleAnnotations := dig "KubeSchedulerInstanceUnreachable" (dict) .Values.defaultRules.additionalRuleAnnotations }}
+{{- $groupAnnotations := default (dict) .Values.defaultRules.additionalRuleGroupAnnotations.kubeSchedulerAlerting }}
+{{- $additionalAnnotations := mergeOverwrite (dict) $groupAnnotations $ruleAnnotations }}
+{{- if $additionalAnnotations }}
+{{ toYaml $additionalAnnotations | indent 8 }}
 {{- end }}
-{{- if .Values.defaultRules.additionalRuleGroupAnnotations.kubeSchedulerAlerting }}
-{{ toYaml .Values.defaultRules.additionalRuleGroupAnnotations.kubeSchedulerAlerting | indent 8 }}
-{{- end }}
+        {{- if not (hasKey $additionalAnnotations "description") }}
         description: A KubeScheduler instance has been unreachable for more than 15 minutes.
+        {{- end }}
+        {{- if not (hasKey $additionalAnnotations "runbook_url") }}
         runbook_url: {{ .Values.defaultRules.runbookUrl }}/kubernetes/kubeschedulerinstanceunreachable
+        {{- end }}
+        {{- if not (hasKey $additionalAnnotations "summary") }}
         summary: KubeScheduler instance is unreachable.
+        {{- end }}
       expr: up{job="{{ $kubeSchedulerJob }}"} == 0
       for: {{ dig "KubeSchedulerInstanceUnreachable" "for" "15m" .Values.customRules }}
       {{- with .Values.defaultRules.keepFiringFor }}

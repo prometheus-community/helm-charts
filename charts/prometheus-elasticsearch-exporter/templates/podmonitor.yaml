@@ -5,9 +5,7 @@ apiVersion: {{ .Values.podMonitor.apiVersion }}
 kind: PodMonitor
 metadata:
   name: {{ template "elasticsearch-exporter.fullname" . }}
-  {{- if .Values.podMonitor.namespace }}
-  namespace: {{ .Values.podMonitor.namespace }}
-  {{- end }}
+  namespace: {{ .Values.podMonitor.namespace | default (include "prometheus-elasticsearch-exporter.namespace" .)  }}
   labels:
     {{- include "elasticsearch-exporter.labels" . | nindent 4 }}
     {{- if .Values.podMonitor.labels }}
@@ -16,7 +14,7 @@ metadata:
 spec:
   namespaceSelector:
     matchNames:
-      - {{ .Release.Namespace }}
+      - {{ include "prometheus-elasticsearch-exporter.namespace" . }}
   podMetricsEndpoints:
   - path: {{ .Values.web.path }}
     port: {{ .Values.deployment.metricsPort.name }}

@@ -28,15 +28,21 @@ spec:
 {{- if not (.Values.defaultRules.disabled.KubeVersionMismatch | default false) }}
     - alert: KubeVersionMismatch
       annotations:
-{{- if .Values.defaultRules.additionalRuleAnnotations }}
-{{ toYaml .Values.defaultRules.additionalRuleAnnotations | indent 8 }}
+{{- $ruleAnnotations := dig "KubeVersionMismatch" (dict) .Values.defaultRules.additionalRuleAnnotations }}
+{{- $groupAnnotations := default (dict) .Values.defaultRules.additionalRuleGroupAnnotations.kubernetesSystem }}
+{{- $additionalAnnotations := mergeOverwrite (dict) $groupAnnotations $ruleAnnotations }}
+{{- if $additionalAnnotations }}
+{{ toYaml $additionalAnnotations | indent 8 }}
 {{- end }}
-{{- if .Values.defaultRules.additionalRuleGroupAnnotations.kubernetesSystem }}
-{{ toYaml .Values.defaultRules.additionalRuleGroupAnnotations.kubernetesSystem | indent 8 }}
-{{- end }}
+        {{- if not (hasKey $additionalAnnotations "description") }}
         description: There are {{`{{`}} $value {{`}}`}} different semantic versions of Kubernetes components running on cluster {{`{{`}} $labels.cluster {{`}}`}}.
+        {{- end }}
+        {{- if not (hasKey $additionalAnnotations "runbook_url") }}
         runbook_url: {{ .Values.defaultRules.runbookUrl }}/kubernetes/kubeversionmismatch
+        {{- end }}
+        {{- if not (hasKey $additionalAnnotations "summary") }}
         summary: Different semantic versions of Kubernetes components running.
+        {{- end }}
       expr: count by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster) (count by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}git_version, cluster) (label_replace(kubernetes_build_info{job!~"kube-dns|coredns"},"git_version","$1","git_version","(v[0-9]*.[0-9]*).*"))) > 1
       for: {{ dig "KubeVersionMismatch" "for" "15m" .Values.customRules }}
       {{- with .Values.defaultRules.keepFiringFor }}
@@ -56,15 +62,21 @@ spec:
 {{- if not (.Values.defaultRules.disabled.KubeClientErrors | default false) }}
     - alert: KubeClientErrors
       annotations:
-{{- if .Values.defaultRules.additionalRuleAnnotations }}
-{{ toYaml .Values.defaultRules.additionalRuleAnnotations | indent 8 }}
+{{- $ruleAnnotations := dig "KubeClientErrors" (dict) .Values.defaultRules.additionalRuleAnnotations }}
+{{- $groupAnnotations := default (dict) .Values.defaultRules.additionalRuleGroupAnnotations.kubernetesSystem }}
+{{- $additionalAnnotations := mergeOverwrite (dict) $groupAnnotations $ruleAnnotations }}
+{{- if $additionalAnnotations }}
+{{ toYaml $additionalAnnotations | indent 8 }}
 {{- end }}
-{{- if .Values.defaultRules.additionalRuleGroupAnnotations.kubernetesSystem }}
-{{ toYaml .Values.defaultRules.additionalRuleGroupAnnotations.kubernetesSystem | indent 8 }}
-{{- end }}
+        {{- if not (hasKey $additionalAnnotations "description") }}
         description: Kubernetes API server client '{{`{{`}} $labels.job {{`}}`}}/{{`{{`}} $labels.instance {{`}}`}}' is experiencing {{`{{`}} $value | humanizePercentage {{`}}`}} errors on cluster {{`{{`}} $labels.cluster {{`}}`}}.
+        {{- end }}
+        {{- if not (hasKey $additionalAnnotations "runbook_url") }}
         runbook_url: {{ .Values.defaultRules.runbookUrl }}/kubernetes/kubeclienterrors
+        {{- end }}
+        {{- if not (hasKey $additionalAnnotations "summary") }}
         summary: Kubernetes API server client is experiencing errors.
+        {{- end }}
       expr: |-
         (sum(rate(rest_client_requests_total{job="{{ $kubeApiserverJob }}",code=~"5.."}[5m])) by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster, instance, job, namespace)
           /

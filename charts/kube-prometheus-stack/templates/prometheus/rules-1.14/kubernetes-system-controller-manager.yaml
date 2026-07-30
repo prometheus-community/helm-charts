@@ -29,15 +29,21 @@ spec:
 {{- if not (.Values.defaultRules.disabled.KubeControllerManagerDown | default false) }}
     - alert: KubeControllerManagerDown
       annotations:
-{{- if .Values.defaultRules.additionalRuleAnnotations }}
-{{ toYaml .Values.defaultRules.additionalRuleAnnotations | indent 8 }}
+{{- $ruleAnnotations := dig "KubeControllerManagerDown" (dict) .Values.defaultRules.additionalRuleAnnotations }}
+{{- $groupAnnotations := default (dict) .Values.defaultRules.additionalRuleGroupAnnotations.kubeControllerManager }}
+{{- $additionalAnnotations := mergeOverwrite (dict) $groupAnnotations $ruleAnnotations }}
+{{- if $additionalAnnotations }}
+{{ toYaml $additionalAnnotations | indent 8 }}
 {{- end }}
-{{- if .Values.defaultRules.additionalRuleGroupAnnotations.kubeControllerManager }}
-{{ toYaml .Values.defaultRules.additionalRuleGroupAnnotations.kubeControllerManager | indent 8 }}
-{{- end }}
+        {{- if not (hasKey $additionalAnnotations "description") }}
         description: KubeControllerManager has disappeared from Prometheus target discovery.
+        {{- end }}
+        {{- if not (hasKey $additionalAnnotations "runbook_url") }}
         runbook_url: {{ .Values.defaultRules.runbookUrl }}/kubernetes/kubecontrollermanagerdown
+        {{- end }}
+        {{- if not (hasKey $additionalAnnotations "summary") }}
         summary: Target disappeared from Prometheus target discovery.
+        {{- end }}
       expr: absent(up{job="{{ $kubeControllerManagerJob }}"})
       for: {{ dig "KubeControllerManagerDown" "for" "15m" .Values.customRules }}
       {{- with .Values.defaultRules.keepFiringFor }}
@@ -58,15 +64,21 @@ spec:
 {{- if not (.Values.defaultRules.disabled.KubeControllerManagerInstanceUnreachable | default false) }}
     - alert: KubeControllerManagerInstanceUnreachable
       annotations:
-{{- if .Values.defaultRules.additionalRuleAnnotations }}
-{{ toYaml .Values.defaultRules.additionalRuleAnnotations | indent 8 }}
+{{- $ruleAnnotations := dig "KubeControllerManagerInstanceUnreachable" (dict) .Values.defaultRules.additionalRuleAnnotations }}
+{{- $groupAnnotations := default (dict) .Values.defaultRules.additionalRuleGroupAnnotations.kubeControllerManager }}
+{{- $additionalAnnotations := mergeOverwrite (dict) $groupAnnotations $ruleAnnotations }}
+{{- if $additionalAnnotations }}
+{{ toYaml $additionalAnnotations | indent 8 }}
 {{- end }}
-{{- if .Values.defaultRules.additionalRuleGroupAnnotations.kubeControllerManager }}
-{{ toYaml .Values.defaultRules.additionalRuleGroupAnnotations.kubeControllerManager | indent 8 }}
-{{- end }}
+        {{- if not (hasKey $additionalAnnotations "description") }}
         description: A KubeControllerManager instance has been unreachable for more than 15 minutes.
+        {{- end }}
+        {{- if not (hasKey $additionalAnnotations "runbook_url") }}
         runbook_url: {{ .Values.defaultRules.runbookUrl }}/kubernetes/kubecontrollermanagerinstanceunreachable
+        {{- end }}
+        {{- if not (hasKey $additionalAnnotations "summary") }}
         summary: KubeControllerManager instance is unreachable.
+        {{- end }}
       expr: up{job="{{ $kubeControllerManagerJob }}"} == 0
       for: {{ dig "KubeControllerManagerInstanceUnreachable" "for" "15m" .Values.customRules }}
       {{- with .Values.defaultRules.keepFiringFor }}
