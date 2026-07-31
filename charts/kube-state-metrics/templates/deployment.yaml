@@ -65,6 +65,8 @@ spec:
       containers:
       {{- $servicePort := ternary .Values.kubeRBACProxy.port (.Values.service.port | default 8080) .Values.kubeRBACProxy.enabled}}
       {{- $telemetryPort := ternary 9091 (.Values.selfMonitor.telemetryPort | default 8081) .Values.kubeRBACProxy.enabled}}
+      {{- $probePort := ternary (.Values.service.port | default 8080) "http" .Values.kubeRBACProxy.enabled }}
+      {{- $probeTelemetryPort := ternary (.Values.service.port | default 8080) "metrics" .Values.kubeRBACProxy.enabled }}
       - name: {{ template "kube-state-metrics.name" . }}
         {{- if  .Values.autosharding.enabled }}
         env:
@@ -187,7 +189,7 @@ spec:
             {{- end }}
             {{- end }}
             path: /healthz
-            port: http
+            port: {{ $probePort }}
             {{- if .Values.kubeRBACProxy.enabled }}
             scheme: HTTPS
             {{- else }}
@@ -212,7 +214,7 @@ spec:
             {{- end }}
             {{- end }}
             path: /livez
-            port: http
+            port: {{ $probePort }}
             {{- if .Values.kubeRBACProxy.enabled }}
             scheme: HTTPS
             {{- else }}
@@ -236,7 +238,7 @@ spec:
             {{- end }}
             {{- end }}
             path: /readyz
-            port: metrics
+            port: {{ $probeTelemetryPort }}
             {{- if .Values.kubeRBACProxy.enabled }}
             scheme: HTTPS
             {{- else }}
