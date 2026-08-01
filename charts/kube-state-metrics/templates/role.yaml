@@ -14,19 +14,7 @@ metadata:
 {{- if eq $.Values.rbac.useClusterRole false }}
   namespace: {{ . }}
 {{- end }}
-{{- $exclude := $.Values.collectorsExclude | default list }}
-{{- $extra := $.Values.collectorsExtra | default list }}
-{{- $activeCollectors := list }}
-{{- range $.Values.collectors }}
-{{- if not (has . $exclude) }}
-{{- $activeCollectors = append $activeCollectors . }}
-{{- end }}
-{{- end }}
-{{- range $extra }}
-{{- if not (has . $activeCollectors) }}
-{{- $activeCollectors = append $activeCollectors . }}
-{{- end }}
-{{- end }}
+{{- $activeCollectors := include "kube-state-metrics.collectors" $ | fromYamlArray }}
 rules:
 {{ if has "certificatesigningrequests" $activeCollectors }}
 - apiGroups: ["certificates.k8s.io"]
