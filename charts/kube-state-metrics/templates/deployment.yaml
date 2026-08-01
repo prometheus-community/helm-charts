@@ -93,11 +93,11 @@ spec:
         - --host=127.0.0.1
         {{- end }}
         - --port={{ $servicePort }}
-        {{- if or (.Values.collectors) (.Values.collectorsExtra) }}
         {{- $exclude := .Values.collectorsExclude | default list }}
+        {{- $collectors := .Values.collectors | default list }}
         {{- $extra := .Values.collectorsExtra | default list }}
         {{- $final := list }}
-        {{- range .Values.collectors }}
+        {{- range $collectors }}
         {{- if not (has . $exclude ) }}
         {{- $final = append $final . }}
         {{- end }}
@@ -111,7 +111,6 @@ spec:
         {{- fail "collectorsExclude removed all collectors; keep at least one" }}
         {{- end }}
         - --resources={{ join "," $final }}
-        {{- end }}
         {{- if .Values.metricLabelsAllowlist }}
         - --metric-labels-allowlist={{ .Values.metricLabelsAllowlist | join "," }}
         {{- end }}
