@@ -93,9 +93,9 @@ spec:
         - --host=127.0.0.1
         {{- end }}
         - --port={{ $servicePort }}
-        {{- if or (.Values.collectors) (.Values.collectorExtra) }}
-        {{- $exclude := .Values.collectorExclude | default list }}
-        {{- $extra := .Values.collectorExtra | default list }}
+        {{- if or (.Values.collectors) (.Values.collectorsExtra) }}
+        {{- $exclude := .Values.collectorsExclude | default list }}
+        {{- $extra := .Values.collectorsExtra | default list }}
         {{- $final := list }}
         {{- range .Values.collectors }}
         {{- if not (has . $exclude ) }}
@@ -106,6 +106,9 @@ spec:
         {{- if not (has . $final) }}
         {{- $final = append $final . }}
         {{- end }}
+        {{- end }}
+        {{- if not $final }}
+        {{- fail "collectorsExclude removed all collectors; keep at least one" }}
         {{- end }}
         - --resources={{ join "," $final }}
         {{- end }}
