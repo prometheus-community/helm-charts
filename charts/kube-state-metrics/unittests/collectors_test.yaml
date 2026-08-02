@@ -78,16 +78,34 @@ tests:
           path: spec.template.spec.containers[0].args
           content: --resources=nodes
 
-  - it: should fail when collectors empty and no extra
+  - it: should omit --resources when collectors is empty and no extra
     template: deployment.yaml
     set:
       collectors: []
       collectorsExclude: []
     asserts:
-      - failedTemplate:
-          errorMessage: "collectors minus collectorsExclude plus collectorsExtra is empty; keep at least one collector"
+      - notContains:
+          path: spec.template.spec.containers[0].args
+          content: --resources=certificatesigningrequests,configmaps,cronjobs,daemonsets,deployments,endpointslices,horizontalpodautoscalers,ingresses,jobs,leases,limitranges,mutatingwebhookconfigurations,namespaces,networkpolicies,nodes,persistentvolumeclaims,persistentvolumes,poddisruptionbudgets,pods,replicasets,replicationcontrollers,resourcequotas,secrets,services,statefulsets,storageclasses,validatingwebhookconfigurations,volumeattachments
+      - notContains:
+          path: spec.template.spec.containers[0].args
+          content: "--resources="
 
-  - it: should fail when excluding all collectors leaves no resources
+  - it: should omit --resources for a custom-resource-state-only setup (collectors empty)
+    template: deployment.yaml
+    set:
+      collectors: []
+      extraArgs:
+        - --custom-resource-state-only=true
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: --custom-resource-state-only=true
+      - notContains:
+          path: spec.template.spec.containers[0].args
+          content: "--resources="
+
+  - it: should omit --resources when excluding all collectors leaves no resources
     template: deployment.yaml
     set:
       collectorsExclude:
@@ -120,8 +138,9 @@ tests:
         - validatingwebhookconfigurations
         - volumeattachments
     asserts:
-      - failedTemplate:
-          errorMessage: "collectors minus collectorsExclude plus collectorsExtra is empty; keep at least one collector"
+      - notContains:
+          path: spec.template.spec.containers[0].args
+          content: "--resources="
 
   - it: should include RBAC for collectorsExtra resources
     template: role.yaml
