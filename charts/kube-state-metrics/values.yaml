@@ -28,6 +28,11 @@ global:
   # Allow parent charts to override registry hostname
   imageRegistry: ""
 
+# Provide a name in place of kube-state-metrics for `app.kubernetes.io/name` labels.
+nameOverride: ""
+# Provide a name to substitute for the full names of resources.
+fullnameOverride: ""
+
 # If set to true, this will deploy kube-state-metrics as a StatefulSet and the data
 # will be automatically sharded across <.Values.replicas> pods using the built-in
 # autodiscovery feature: https://github.com/kubernetes/kube-state-metrics#automated-sharding
@@ -440,6 +445,17 @@ collectors:
   # - roles
   # - rolebindings
   # - serviceaccounts
+
+# collectorsExclude / collectorsExtra tweak the default `collectors` list above
+# without redefining it. Both operate on `.Values.collectors` (not on KSM's
+# built-in defaults): with `collectors: []` there is nothing to layer onto and
+# `collectorsExtra` becomes the entire --resources list.
+# collectorsExclude removes entries from the list:
+collectorsExclude: []
+  # - pods
+# collectorsExtra appends entries after exclusion (deduplicated):
+collectorsExtra: []
+  # - rolebindings
 
 # Enabling kubeconfig will pass the --kubeconfig argument to the container
 kubeconfig:
