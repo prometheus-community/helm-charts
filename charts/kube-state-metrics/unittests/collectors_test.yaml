@@ -1,0 +1,230 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/helm-unittest/helm-unittest/main/schema/helm-testsuite.json
+suite: test collectors templates
+templates:
+  - deployment.yaml
+  - role.yaml
+tests:
+  - it: should render default resources flag
+    template: deployment.yaml
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: --resources=certificatesigningrequests,configmaps,cronjobs,daemonsets,deployments,endpointslices,horizontalpodautoscalers,ingresses,jobs,leases,limitranges,mutatingwebhookconfigurations,namespaces,networkpolicies,nodes,persistentvolumeclaims,persistentvolumes,poddisruptionbudgets,pods,replicasets,replicationcontrollers,resourcequotas,secrets,services,statefulsets,storageclasses,validatingwebhookconfigurations,volumeattachments
+
+  - it: should render resources flag when collectors are excluded
+    template: deployment.yaml
+    set:
+      collectorsExclude:
+        - pods
+        - services
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: --resources=certificatesigningrequests,configmaps,cronjobs,daemonsets,deployments,endpointslices,horizontalpodautoscalers,ingresses,jobs,leases,limitranges,mutatingwebhookconfigurations,namespaces,networkpolicies,nodes,persistentvolumeclaims,persistentvolumes,poddisruptionbudgets,replicasets,replicationcontrollers,resourcequotas,secrets,statefulsets,storageclasses,validatingwebhookconfigurations,volumeattachments
+
+  - it: should render resources flag when collectors are added
+    template: deployment.yaml
+    set:
+      collectorsExtra:
+        - rolebindings
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: --resources=certificatesigningrequests,configmaps,cronjobs,daemonsets,deployments,endpointslices,horizontalpodautoscalers,ingresses,jobs,leases,limitranges,mutatingwebhookconfigurations,namespaces,networkpolicies,nodes,persistentvolumeclaims,persistentvolumes,poddisruptionbudgets,pods,replicasets,replicationcontrollers,resourcequotas,secrets,services,statefulsets,storageclasses,validatingwebhookconfigurations,volumeattachments,rolebindings
+
+  - it: should render resources flag when collectors list is empty and extra collectors are added
+    template: deployment.yaml
+    set:
+      collectors: []
+      collectorsExtra:
+        - rolebindings
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: --resources=rolebindings
+
+  - it: should not duplicate collectors when extra collector already exists in the default list
+    template: deployment.yaml
+    set:
+      collectorsExtra:
+        - pods
+    asserts:
+      - notContains:
+          path: spec.template.spec.containers[0].args
+          content: pods,pods
+
+  - it: should render resources flag when collectors are excluded and added
+    template: deployment.yaml
+    set:
+      collectorsExclude:
+        - pods
+      collectorsExtra:
+        - rolebindings
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: --resources=certificatesigningrequests,configmaps,cronjobs,daemonsets,deployments,endpointslices,horizontalpodautoscalers,ingresses,jobs,leases,limitranges,mutatingwebhookconfigurations,namespaces,networkpolicies,nodes,persistentvolumeclaims,persistentvolumes,poddisruptionbudgets,replicasets,replicationcontrollers,resourcequotas,secrets,services,statefulsets,storageclasses,validatingwebhookconfigurations,volumeattachments,rolebindings
+
+  - it: should work with custom collectors
+    template: deployment.yaml
+    set:
+      collectors:
+        - pods
+        - nodes
+      collectorsExclude:
+        - pods
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: --resources=nodes
+
+  - it: should omit --resources when collectors is empty and no extra
+    template: deployment.yaml
+    set:
+      collectors: []
+      collectorsExclude: []
+    asserts:
+      - notContains:
+          path: spec.template.spec.containers[0].args
+          content: --resources=certificatesigningrequests,configmaps,cronjobs,daemonsets,deployments,endpointslices,horizontalpodautoscalers,ingresses,jobs,leases,limitranges,mutatingwebhookconfigurations,namespaces,networkpolicies,nodes,persistentvolumeclaims,persistentvolumes,poddisruptionbudgets,pods,replicasets,replicationcontrollers,resourcequotas,secrets,services,statefulsets,storageclasses,validatingwebhookconfigurations,volumeattachments
+      - notContains:
+          path: spec.template.spec.containers[0].args
+          content: "--resources="
+
+  - it: should omit --resources for a custom-resource-state-only setup (collectors empty)
+    template: deployment.yaml
+    set:
+      collectors: []
+      extraArgs:
+        - --custom-resource-state-only=true
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: --custom-resource-state-only=true
+      - notContains:
+          path: spec.template.spec.containers[0].args
+          content: "--resources="
+
+  - it: should omit --resources when excluding all collectors leaves no resources
+    template: deployment.yaml
+    set:
+      collectorsExclude:
+        - certificatesigningrequests
+        - configmaps
+        - cronjobs
+        - daemonsets
+        - deployments
+        - endpointslices
+        - horizontalpodautoscalers
+        - ingresses
+        - jobs
+        - leases
+        - limitranges
+        - mutatingwebhookconfigurations
+        - namespaces
+        - networkpolicies
+        - nodes
+        - persistentvolumeclaims
+        - persistentvolumes
+        - poddisruptionbudgets
+        - pods
+        - replicasets
+        - replicationcontrollers
+        - resourcequotas
+        - secrets
+        - services
+        - statefulsets
+        - storageclasses
+        - validatingwebhookconfigurations
+        - volumeattachments
+    asserts:
+      - notContains:
+          path: spec.template.spec.containers[0].args
+          content: "--resources="
+
+  - it: should include RBAC for collectorsExtra resources
+    template: role.yaml
+    set:
+      collectorsExtra:
+        - rolebindings
+    asserts:
+      - contains:
+          path: rules
+          content:
+            apiGroups:
+              - rbac.authorization.k8s.io
+            resources:
+              - rolebindings
+            verbs:
+              - list
+              - watch
+
+  - it: should omit RBAC for excluded collectors
+    template: role.yaml
+    set:
+      collectorsExclude:
+        - pods
+    asserts:
+      - notContains:
+          path: rules
+          content:
+            apiGroups:
+              - ""
+            resources:
+              - pods
+            verbs:
+              - list
+              - watch
+
+  - it: should include RBAC for collectorsExtra and exclude combined
+    template: role.yaml
+    set:
+      collectorsExclude:
+        - pods
+      collectorsExtra:
+        - rolebindings
+    asserts:
+      - contains:
+          path: rules
+          content:
+            apiGroups:
+              - rbac.authorization.k8s.io
+            resources:
+              - rolebindings
+            verbs:
+              - list
+              - watch
+      - notContains:
+          path: rules
+          content:
+            apiGroups:
+              - ""
+            resources:
+              - pods
+            verbs:
+              - list
+              - watch
+
+  - it: should keep default RBAC rules when no overrides are set
+    template: role.yaml
+    asserts:
+      - contains:
+          path: rules
+          content:
+            apiGroups:
+              - ""
+            resources:
+              - pods
+            verbs:
+              - list
+              - watch
+      - contains:
+          path: rules
+          content:
+            apiGroups:
+              - apps
+            resources:
+              - deployments
+            verbs:
+              - list
+              - watch

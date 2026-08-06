@@ -93,9 +93,10 @@ spec:
         - --host=127.0.0.1
         {{- end }}
         - --port={{ $servicePort }}
-        {{-  if .Values.collectors  }}
-        - --resources={{ .Values.collectors | join "," }}
-        {{-  end  }}
+        {{- $activeCollectors := include "kube-state-metrics.collectors" . | fromYamlArray }}
+        {{- if $activeCollectors }}
+        - --resources={{ join "," $activeCollectors }}
+        {{- end }}
         {{- if .Values.metricLabelsAllowlist }}
         - --metric-labels-allowlist={{ .Values.metricLabelsAllowlist | join "," }}
         {{- end }}
