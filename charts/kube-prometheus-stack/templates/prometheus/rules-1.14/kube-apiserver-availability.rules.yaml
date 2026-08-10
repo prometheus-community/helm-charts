@@ -5,6 +5,7 @@ https://github.com/prometheus-community/helm-charts/tree/main/charts/kube-promet
 */ -}}
 {{- $kubeTargetVersion := default .Capabilities.KubeVersion.GitVersion .Values.kubeTargetVersionOverride }}
 {{- if and (semverCompare ">=1.14.0-0" $kubeTargetVersion) (semverCompare "<9.9.9-9" $kubeTargetVersion) .Values.defaultRules.create .Values.kubeApiServer.enabled .Values.defaultRules.rules.kubeApiserverAvailability }}
+{{- $kubeApiserverJob := include "kube-prometheus-stack-kube-apiserver.name" . }}
 apiVersion: monitoring.coreos.com/v1
 kind: PrometheusRule
 metadata:
@@ -194,7 +195,7 @@ spec:
         {{- end }}
       {{- end }}
       record: apiserver_request:availability30d
-    - expr: sum by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster,code,resource) (rate(apiserver_request_total{job="apiserver",verb=~"LIST|GET"}[5m]))
+    - expr: sum by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster,code,resource) (rate(apiserver_request_total{job="{{ $kubeApiserverJob }}",verb=~"LIST|GET"}[5m]))
       labels:
         verb: read
       {{- if or .Values.defaultRules.additionalRuleLabels .Values.defaultRules.additionalRuleGroupLabels.kubeApiserverAvailability }}
@@ -206,7 +207,7 @@ spec:
         {{- end }}
       {{- end }}
       record: code_resource:apiserver_request_total:rate5m
-    - expr: sum by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster,code,resource) (rate(apiserver_request_total{job="apiserver",verb=~"POST|PUT|PATCH|DELETE"}[5m]))
+    - expr: sum by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster,code,resource) (rate(apiserver_request_total{job="{{ $kubeApiserverJob }}",verb=~"POST|PUT|PATCH|DELETE"}[5m]))
       labels:
         verb: write
       {{- if or .Values.defaultRules.additionalRuleLabels .Values.defaultRules.additionalRuleGroupLabels.kubeApiserverAvailability }}
@@ -218,7 +219,7 @@ spec:
         {{- end }}
       {{- end }}
       record: code_resource:apiserver_request_total:rate5m
-    - expr: sum by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster, code, verb) (increase(apiserver_request_total{job="apiserver",verb=~"LIST|GET|POST|PUT|PATCH|DELETE",code=~"2.."}[1h]))
+    - expr: sum by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster, code, verb) (increase(apiserver_request_total{job="{{ $kubeApiserverJob }}",verb=~"LIST|GET|POST|PUT|PATCH|DELETE",code=~"2.."}[1h]))
       record: code_verb:apiserver_request_total:increase1h
       {{- if or .Values.defaultRules.additionalRuleLabels .Values.defaultRules.additionalRuleGroupLabels.kubeApiserverAvailability }}
       labels:
@@ -229,7 +230,7 @@ spec:
           {{- toYaml . | nindent 8 }}
         {{- end }}
       {{- end }}
-    - expr: sum by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster, code, verb) (increase(apiserver_request_total{job="apiserver",verb=~"LIST|GET|POST|PUT|PATCH|DELETE",code=~"3.."}[1h]))
+    - expr: sum by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster, code, verb) (increase(apiserver_request_total{job="{{ $kubeApiserverJob }}",verb=~"LIST|GET|POST|PUT|PATCH|DELETE",code=~"3.."}[1h]))
       record: code_verb:apiserver_request_total:increase1h
       {{- if or .Values.defaultRules.additionalRuleLabels .Values.defaultRules.additionalRuleGroupLabels.kubeApiserverAvailability }}
       labels:
@@ -240,7 +241,7 @@ spec:
           {{- toYaml . | nindent 8 }}
         {{- end }}
       {{- end }}
-    - expr: sum by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster, code, verb) (increase(apiserver_request_total{job="apiserver",verb=~"LIST|GET|POST|PUT|PATCH|DELETE",code=~"4.."}[1h]))
+    - expr: sum by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster, code, verb) (increase(apiserver_request_total{job="{{ $kubeApiserverJob }}",verb=~"LIST|GET|POST|PUT|PATCH|DELETE",code=~"4.."}[1h]))
       record: code_verb:apiserver_request_total:increase1h
       {{- if or .Values.defaultRules.additionalRuleLabels .Values.defaultRules.additionalRuleGroupLabels.kubeApiserverAvailability }}
       labels:
@@ -251,7 +252,7 @@ spec:
           {{- toYaml . | nindent 8 }}
         {{- end }}
       {{- end }}
-    - expr: sum by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster, code, verb) (increase(apiserver_request_total{job="apiserver",verb=~"LIST|GET|POST|PUT|PATCH|DELETE",code=~"5.."}[1h]))
+    - expr: sum by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster, code, verb) (increase(apiserver_request_total{job="{{ $kubeApiserverJob }}",verb=~"LIST|GET|POST|PUT|PATCH|DELETE",code=~"5.."}[1h]))
       record: code_verb:apiserver_request_total:increase1h
       {{- if or .Values.defaultRules.additionalRuleLabels .Values.defaultRules.additionalRuleGroupLabels.kubeApiserverAvailability }}
       labels:
