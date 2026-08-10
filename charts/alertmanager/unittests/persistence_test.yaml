@@ -1,0 +1,106 @@
+suite: test statefulset persistence
+templates:
+  - statefulset.yaml
+  - configmap.yaml
+tests:
+  - it: should use a volumeClaimTemplate and no emptyDir storage volume with default values
+    template: statefulset.yaml
+    asserts:
+      # First two assertions check that with persistence, volumeClaimTemplates gets rendered
+      - equal:
+          path: spec.volumeClaimTemplates[0].metadata.name
+          value: storage
+      - equal:
+          path: spec.volumeClaimTemplates[0].spec.resources.requests.storage
+          value: 50Mi
+      # Next two assertions check that 'config' is the only volume that gets rendered
+      - lengthEqual:
+          path: spec.template.spec.volumes
+          count: 1
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: config
+            configMap:
+              name: RELEASE-NAME-alertmanager
+
+  - it: should mount an empty emptyDir storage volume when persistence is disabled
+    template: statefulset.yaml
+    set:
+      persistence.enabled: false
+    asserts:
+      - notExists:
+          path: spec.volumeClaimTemplates
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: storage
+            emptyDir: {}
+      # The storage mount must still resolve to a volume that exists.
+      - contains:
+          path: spec.template.spec.containers[?(@.name=="alertmanager")].volumeMounts
+          content:
+            name: storage
+            mountPath: /alertmanager
+
+  - it: should render configured emptyDir values when persistence is disabled
+    template: statefulset.yaml
+    set:
+      persistence.enabled: false
+      persistence.emptyDir:
+        medium: Memory
+        sizeLimit: 100Mi
+    asserts:
+      - notExists:
+          path: spec.volumeClaimTemplates
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: storage
+            emptyDir:
+              medium: Memory
+              sizeLimit: 100Mi
+
+  - it: should render both the emptyDir storage volume and extraPodConfigs when persistence is disabled
+    template: statefulset.yaml
+    set:
+      persistence.enabled: false
+      persistence.emptyDir:
+        sizeLimit: 100Mi
+      extraPodConfigs:
+        hostNetwork: true
+        dnsPolicy: ClusterFirstWithHostNet
+    asserts:
+      - notExists:
+          path: spec.volumeClaimTemplates
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: storage
+            emptyDir:
+              sizeLimit: 100Mi
+      # extraPodConfigs must be rendered at pod-spec level, alongside the volume.
+      - equal:
+          path: spec.template.spec.hostNetwork
+          value: true
+      - equal:
+          path: spec.template.spec.dnsPolicy
+          value: ClusterFirstWithHostNet
+
+  - it: should keep the volumeClaimTemplate and render extraPodConfigs when persistence is enabled
+    template: statefulset.yaml
+    set:
+      extraPodConfigs:
+        hostNetwork: true
+    asserts:
+      - equal:
+          path: spec.volumeClaimTemplates[0].metadata.name
+          value: storage
+      - notContains:
+          path: spec.template.spec.volumes
+          content:
+            name: storage
+            emptyDir: {}
+      - equal:
+          path: spec.template.spec.hostNetwork
+          value: true

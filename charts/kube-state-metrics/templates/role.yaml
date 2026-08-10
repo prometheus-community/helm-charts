@@ -14,206 +14,223 @@ metadata:
 {{- if eq $.Values.rbac.useClusterRole false }}
   namespace: {{ . }}
 {{- end }}
+{{- $activeCollectors := include "kube-state-metrics.collectors" $ | fromYamlArray }}
+{{- if and $.Values.rbac.useClusterRole $.Values.rbac.clusterRoleSelectors }}
+aggregationRule:
+  clusterRoleSelectors: {{- toYaml $.Values.rbac.clusterRoleSelectors | nindent 4 }}
+{{- else }}
 rules:
-{{ if has "certificatesigningrequests" $.Values.collectors }}
+{{ if has "certificatesigningrequests" $activeCollectors }}
 - apiGroups: ["certificates.k8s.io"]
   resources:
   - certificatesigningrequests
   verbs: ["list", "watch"]
 {{ end -}}
-{{ if has "configmaps" $.Values.collectors }}
+{{ if has "configmaps" $activeCollectors }}
 - apiGroups: [""]
   resources:
   - configmaps
   verbs: ["list", "watch"]
 {{ end -}}
-{{ if has "cronjobs" $.Values.collectors }}
+{{ if has "cronjobs" $activeCollectors }}
 - apiGroups: ["batch"]
   resources:
   - cronjobs
   verbs: ["list", "watch"]
 {{ end -}}
-{{ if has "daemonsets" $.Values.collectors }}
+{{ if has "daemonsets" $activeCollectors }}
 - apiGroups: ["apps"]
   resources:
   - daemonsets
   verbs: ["list", "watch"]
 {{ end -}}
-{{ if has "deployments" $.Values.collectors }}
+{{ if has "deployments" $activeCollectors }}
 - apiGroups: ["apps"]
   resources:
   - deployments
   verbs: ["list", "watch"]
 {{ end -}}
-{{ if has "endpoints" $.Values.collectors }}
+{{ if has "endpoints" $activeCollectors }}
 - apiGroups: [""]
   resources:
   - endpoints
   verbs: ["list", "watch"]
 {{ end -}}
-{{ if has "endpointslices" $.Values.collectors }}
+{{ if has "endpointslices" $activeCollectors }}
 - apiGroups: ["discovery.k8s.io"]
   resources:
   - endpointslices
   verbs: ["list", "watch"]
 {{ end -}}
-{{ if has "horizontalpodautoscalers" $.Values.collectors }}
+{{ if has "horizontalpodautoscalers" $activeCollectors }}
 - apiGroups: ["autoscaling"]
   resources:
   - horizontalpodautoscalers
   verbs: ["list", "watch"]
 {{ end -}}
-{{ if has "ingresses" $.Values.collectors }}
+{{ if has "ingresses" $activeCollectors }}
 - apiGroups: ["networking.k8s.io"]
   resources:
   - ingresses
   verbs: ["list", "watch"]
 {{ end -}}
-{{ if has "jobs" $.Values.collectors }}
+{{ if has "jobs" $activeCollectors }}
 - apiGroups: ["batch"]
   resources:
   - jobs
   verbs: ["list", "watch"]
 {{ end -}}
-{{ if has "leases" $.Values.collectors }}
+{{ if has "leases" $activeCollectors }}
 - apiGroups: ["coordination.k8s.io"]
   resources:
   - leases
   verbs: ["list", "watch"]
 {{ end -}}
-{{ if has "limitranges" $.Values.collectors }}
+{{ if has "limitranges" $activeCollectors }}
 - apiGroups: [""]
   resources:
   - limitranges
   verbs: ["list", "watch"]
 {{ end -}}
-{{ if has "mutatingwebhookconfigurations" $.Values.collectors }}
+{{ if has "mutatingwebhookconfigurations" $activeCollectors }}
 - apiGroups: ["admissionregistration.k8s.io"]
   resources:
     - mutatingwebhookconfigurations
   verbs: ["list", "watch"]
 {{ end -}}
-{{ if has "namespaces" $.Values.collectors }}
+{{ if has "namespaces" $activeCollectors }}
 - apiGroups: [""]
   resources:
   - namespaces
   verbs: ["list", "watch"]
 {{ end -}}
-{{ if has "networkpolicies" $.Values.collectors }}
+{{ if has "networkpolicies" $activeCollectors }}
 - apiGroups: ["networking.k8s.io"]
   resources:
   - networkpolicies
   verbs: ["list", "watch"]
 {{ end -}}
-{{ if has "ingressclasses" $.Values.collectors }}
+{{ if has "ingressclasses" $activeCollectors }}
 - apiGroups: ["networking.k8s.io"]
   resources:
   - ingressclasses
   verbs: ["list", "watch"]
 {{ end -}}
-{{ if has "clusterrolebindings" $.Values.collectors }}
+{{ if has "clusterrolebindings" $activeCollectors }}
 - apiGroups: ["rbac.authorization.k8s.io"]
   resources:
   - clusterrolebindings
   verbs: ["list", "watch"]
 {{ end -}}
-{{ if has "clusterroles" $.Values.collectors }}
+{{ if has "clusterroles" $activeCollectors }}
 - apiGroups: ["rbac.authorization.k8s.io"]
   resources:
   - clusterroles
   verbs: ["list", "watch"]
 {{ end -}}
-{{ if has "roles" $.Values.collectors }}
+{{ if has "roles" $activeCollectors }}
 - apiGroups: ["rbac.authorization.k8s.io"]
   resources:
   - roles
   verbs: ["list", "watch"]
 {{ end -}}
-{{ if has "nodes" $.Values.collectors }}
+{{ if has "rolebindings" $activeCollectors }}
+- apiGroups: ["rbac.authorization.k8s.io"]
+  resources:
+  - rolebindings
+  verbs: ["list", "watch"]
+{{ end -}}
+{{ if has "nodes" $activeCollectors }}
 - apiGroups: [""]
   resources:
   - nodes
   verbs: ["list", "watch"]
 {{ end -}}
-{{ if has "persistentvolumeclaims" $.Values.collectors }}
+{{ if has "persistentvolumeclaims" $activeCollectors }}
 - apiGroups: [""]
   resources:
   - persistentvolumeclaims
   verbs: ["list", "watch"]
 {{ end -}}
-{{ if has "persistentvolumes" $.Values.collectors }}
+{{ if has "persistentvolumes" $activeCollectors }}
 - apiGroups: [""]
   resources:
   - persistentvolumes
   verbs: ["list", "watch"]
 {{ end -}}
-{{ if has "poddisruptionbudgets" $.Values.collectors }}
+{{ if has "poddisruptionbudgets" $activeCollectors }}
 - apiGroups: ["policy"]
   resources:
     - poddisruptionbudgets
   verbs: ["list", "watch"]
 {{ end -}}
-{{ if has "pods" $.Values.collectors }}
+{{ if has "pods" $activeCollectors }}
 - apiGroups: [""]
   resources:
   - pods
   verbs: ["list", "watch"]
 {{ end -}}
-{{ if has "replicasets" $.Values.collectors }}
+{{ if has "replicasets" $activeCollectors }}
 - apiGroups: ["apps"]
   resources:
   - replicasets
   verbs: ["list", "watch"]
 {{ end -}}
-{{ if has "replicationcontrollers" $.Values.collectors }}
+{{ if has "replicationcontrollers" $activeCollectors }}
 - apiGroups: [""]
   resources:
   - replicationcontrollers
   verbs: ["list", "watch"]
 {{ end -}}
-{{ if has "resourcequotas" $.Values.collectors }}
+{{ if has "resourcequotas" $activeCollectors }}
 - apiGroups: [""]
   resources:
   - resourcequotas
   verbs: ["list", "watch"]
 {{ end -}}
-{{ if has "secrets" $.Values.collectors }}
+{{ if has "secrets" $activeCollectors }}
 - apiGroups: [""]
   resources:
   - secrets
   verbs: ["list", "watch"]
 {{ end -}}
-{{ if has "services" $.Values.collectors }}
+{{ if has "serviceaccounts" $activeCollectors }}
+- apiGroups: [""]
+  resources:
+  - serviceaccounts
+  verbs: ["list", "watch"]
+{{ end -}}
+{{ if has "services" $activeCollectors }}
 - apiGroups: [""]
   resources:
   - services
   verbs: ["list", "watch"]
 {{ end -}}
-{{ if has "statefulsets" $.Values.collectors }}
+{{ if has "statefulsets" $activeCollectors }}
 - apiGroups: ["apps"]
   resources:
   - statefulsets
   verbs: ["list", "watch"]
 {{ end -}}
-{{ if has "storageclasses" $.Values.collectors }}
+{{ if has "storageclasses" $activeCollectors }}
 - apiGroups: ["storage.k8s.io"]
   resources:
     - storageclasses
   verbs: ["list", "watch"]
 {{ end -}}
-{{ if has "validatingwebhookconfigurations" $.Values.collectors }}
+{{ if has "validatingwebhookconfigurations" $activeCollectors }}
 - apiGroups: ["admissionregistration.k8s.io"]
   resources:
     - validatingwebhookconfigurations
   verbs: ["list", "watch"]
 {{ end -}}
-{{ if has "volumeattachments" $.Values.collectors }}
+{{ if has "volumeattachments" $activeCollectors }}
 - apiGroups: ["storage.k8s.io"]
   resources:
     - volumeattachments
   verbs: ["list", "watch"]
 {{ end -}}
-{{-  if $.Values.kubeRBACProxy.enabled  }}
+{{-  if or $.Values.kubeRBACProxy.enabled $.Values.authFilter.enabled  }}
 - apiGroups: ["authentication.k8s.io"]
   resources:
     - tokenreviews
@@ -232,5 +249,6 @@ rules:
 {{ if $.Values.rbac.extraRules }}
 {{ toYaml $.Values.rbac.extraRules }}
 {{ end }}
+{{- end }}
 {{- end -}}
 {{- end -}}
