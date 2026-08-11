@@ -45,6 +45,11 @@ You can upgrade in-place:
 
 1. [upgrade](#upgrading-chart) your existing release name using the new chart repository
 
+## Upgrading to v8.0.0
+
+This version drops support for configuring `CiliumNetworkPolicy` as it is a vendor specific resource.
+In addition, the `networkPolicy.flavor` setting is no longer persistent and can be safely dropped as only Kubernetes `NetworkPolicy` resources are supported.
+
 ## Upgrading to v6.0.0
 
 This version drops support for deprecated Pod Security Policy resources.
