@@ -1,0 +1,52 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/helm-unittest/helm-unittest/main/schema/helm-testsuite.json
+suite: test customResourceState ClusterRole rule
+templates:
+  - role.yaml
+tests:
+  - it: should include CRD list/watch rule when createClusterRoleRules defaults true
+    set:
+      customResourceState:
+        enabled: true
+    asserts:
+      - isKind:
+          of: ClusterRole
+      - contains:
+          path: rules
+          content:
+            apiGroups: ["apiextensions.k8s.io"]
+            resources:
+              - customresourcedefinitions
+            verbs: ["list", "watch"]
+
+  - it: should omit CRD list/watch rule when createClusterRoleRules is false
+    set:
+      customResourceState:
+        enabled: true
+      rbac:
+        customResourceState:
+          createClusterRoleRules: false
+    asserts:
+      - isKind:
+          of: ClusterRole
+      - notContains:
+          path: rules
+          content:
+            apiGroups: ["apiextensions.k8s.io"]
+            resources:
+              - customresourcedefinitions
+            verbs: ["list", "watch"]
+
+  - it: should omit CRD list/watch rule when customResourceState is disabled
+    set:
+      customResourceState:
+        enabled: false
+    asserts:
+      - isKind:
+          of: ClusterRole
+      - notContains:
+          path: rules
+          content:
+            apiGroups: ["apiextensions.k8s.io"]
+            resources:
+              - customresourcedefinitions
+            verbs: ["list", "watch"]
