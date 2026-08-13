@@ -93,6 +93,19 @@ The image to use
 {{- end }}
 
 {{/*
+App version for semverCompare. Strips an OCI digest suffix from
+image.tag when present (tag@sha256:...), preferring Values.version.
+*/}}
+{{- define "prometheus-node-exporter.appVersion" -}}
+{{- $v := coalesce .Values.version .Values.image.tag .Chart.AppVersion | toString -}}
+{{- if contains "@" $v -}}
+{{- index (splitList "@" $v) 0 -}}
+{{- else -}}
+{{- $v -}}
+{{- end -}}
+{{- end -}}
+
+{{/*
 Allow the release namespace to be overridden for multi-namespace deployments in combined charts
 */}}
 {{- define "prometheus-node-exporter.namespace" -}}
