@@ -124,3 +124,33 @@ tests:
       - equal:
           path: spec.externalUrl
           value: http://alertmanager.example.com/
+
+  - it: should set externalUrl to http ingress hostname when ingress tls is not configured
+    set:
+      prometheus.enabled: true
+      prometheus.ingress.enabled: true
+      prometheus.ingress.hosts:
+        - prometheus.example.com
+    asserts:
+      - hasDocuments:
+          count: 1
+      - equal:
+          path: spec.externalUrl
+          value: http://prometheus.example.com/
+
+  - it: should set externalUrl to https ingress hostname when ingress tls is configured
+    set:
+      prometheus.enabled: true
+      prometheus.ingress.enabled: true
+      prometheus.ingress.hosts:
+        - prometheus.example.com
+      prometheus.ingress.tls:
+        - secretName: prometheus-general-tls
+          hosts:
+            - prometheus.example.com
+    asserts:
+      - hasDocuments:
+          count: 1
+      - equal:
+          path: spec.externalUrl
+          value: https://prometheus.example.com/
