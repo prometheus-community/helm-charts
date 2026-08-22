@@ -8,6 +8,9 @@
 app: {{ template "kube-prometheus-stack.name" . }}-operator
 app.kubernetes.io/name: {{ template "kube-prometheus-stack.name" . }}-prometheus-operator
 app.kubernetes.io/component: crds-upgrade
+{{- with .Values.upgradeJob.labels }}
+{{ toYaml . }}
+{{- end }}
 {{- end -}}
 
 {{/* Create the name of crd.upgradeJob service account to use */}}
