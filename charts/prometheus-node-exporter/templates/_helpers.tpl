@@ -72,11 +72,17 @@ Create the name of the service account to use
 {{- end }}
 
 {{/*
-The image to use
+The image to use.
+
+If image.tag contains "/", treat it as a full image reference (optionally with
+@digest) and use it as-is. Prefer image.registry/repository/tag (+ image.digest)
+for the normal case.
 */}}
 {{- define "prometheus-node-exporter.image" -}}
 {{- if .Values.image.sha }}
 {{- fail "image.sha forbidden. Use image.digest instead" }}
+{{- else if and .Values.image.tag (contains "/" (.Values.image.tag | toString)) }}
+{{- .Values.image.tag }}
 {{- else if .Values.image.digest }}
 {{- if .Values.global.imageRegistry }}
 {{- printf "%s/%s:%s%s@%s" .Values.global.imageRegistry .Values.image.repository (default (printf "v%s" .Chart.AppVersion) .Values.image.tag) (ternary "-distroless" "" .Values.image.distroless) .Values.image.digest }}
@@ -91,6 +97,23 @@ The image to use
 {{- end }}
 {{- end }}
 {{- end }}
+
+{{/*
+Semver used for feature gates (semverCompare). Prefers Values.version, then
+image.tag, then Chart.AppVersion. Normalizes common image-ref forms:
+- tag@sha256:...
+- registry/repository:tag[@digest]
+- registry:port/repository:tag[@digest]
+*/}}
+{{- define "prometheus-node-exporter.appSemver" -}}
+{{- $raw := coalesce .Values.version .Values.image.tag .Chart.AppVersion | toString -}}
+{{- $noDigest := ternary (index (splitList "@" $raw) 0) $raw (contains "@" $raw) -}}
+{{- if contains "/" $noDigest -}}
+{{- last (splitList ":" $noDigest) -}}
+{{- else -}}
+{{- $noDigest -}}
+{{- end -}}
+{{- end -}}
 
 {{/*
 Allow the release namespace to be overridden for multi-namespace deployments in combined charts
