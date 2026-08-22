@@ -1,0 +1,125 @@
+suite: test servicemonitor
+templates:
+  - servicemonitor.yaml
+tests:
+  - it: should not render when disabled
+    set:
+      serviceMonitor.enabled: false
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: should render the built-in instance and target relabelings
+    set:
+      serviceMonitor.enabled: true
+      serviceMonitor.targets:
+        - name: example
+          url: http://example.com/healthz
+    asserts:
+      - hasDocuments:
+          count: 1
+      - isKind:
+          of: ServiceMonitor
+      - equal:
+          path: spec.endpoints[0].metricRelabelings
+          value:
+            - sourceLabels: [instance]
+              targetLabel: instance
+              replacement: http://example.com/healthz
+              action: replace
+            - sourceLabels: [target]
+              targetLabel: target
+              replacement: example
+              action: replace
+
+  - it: should render the map form as replace relabelings after the built-ins
+    set:
+      serviceMonitor.enabled: true
+      serviceMonitor.targets:
+        - name: example
+          url: http://example.com/healthz
+          additionalMetricsRelabels:
+            team: backend
+    asserts:
+      - equal:
+          path: spec.endpoints[0].metricRelabelings[2]
+          value:
+            targetLabel: team
+            replacement: backend
+            action: replace
+
+  - it: should render the list form as full relabeling specs after the built-ins
+    set:
+      serviceMonitor.enabled: true
+      serviceMonitor.targets:
+        - name: example
+          url: http://example.com/healthz
+          additionalMetricsRelabels:
+            - sourceLabels: [__name__]
+              regex: 'go_.*'
+              action: drop
+    asserts:
+      - equal:
+          path: spec.endpoints[0].metricRelabelings[2]
+          value:
+            sourceLabels: [__name__]
+            regex: 'go_.*'
+            action: drop
+
+  - it: should render only the built-ins for an empty map
+    set:
+      serviceMonitor.enabled: true
+      serviceMonitor.targets:
+        - name: example
+          url: http://example.com/healthz
+          additionalMetricsRelabels: {}
+    asserts:
+      - lengthEqual:
+          path: spec.endpoints[0].metricRelabelings
+          count: 2
+
+  - it: should render only the built-ins for an empty list
+    set:
+      serviceMonitor.enabled: true
+      serviceMonitor.targets:
+        - name: example
+          url: http://example.com/healthz
+          additionalMetricsRelabels: []
+    asserts:
+      - lengthEqual:
+          path: spec.endpoints[0].metricRelabelings
+          count: 2
+
+  - it: should apply the list form from defaults when the target omits it
+    set:
+      serviceMonitor.enabled: true
+      serviceMonitor.defaults.additionalMetricsRelabels:
+        - sourceLabels: [__name__]
+          regex: 'go_.*'
+          action: drop
+      serviceMonitor.targets:
+        - name: example
+          url: http://example.com/healthz
+    asserts:
+      - equal:
+          path: spec.endpoints[0].metricRelabelings[2]
+          value:
+            sourceLabels: [__name__]
+            regex: 'go_.*'
+            action: drop
+
+  - it: should still render additionalRelabels as relabelings
+    set:
+      serviceMonitor.enabled: true
+      serviceMonitor.targets:
+        - name: example
+          url: http://example.com/healthz
+          additionalRelabels:
+            - sourceLabels: [__meta_kubernetes_pod_node_name]
+              targetLabel: node
+    asserts:
+      - equal:
+          path: spec.endpoints[0].relabelings
+          value:
+            - sourceLabels: [__meta_kubernetes_pod_node_name]
+              targetLabel: node
