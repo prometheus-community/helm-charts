@@ -468,6 +468,12 @@ Expects a dict: { "context": $, "route": <route values>, "serviceName": <string>
   matches:
     {{- toYaml . | nindent 4 }}
   {{- end }}
+  {{- if eq ($route.kind | default "HTTPRoute") "HTTPRoute" }}
+  {{- with $route.timeouts }}
+  timeouts:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  {{- end }}
   {{- with $route.sessionPersistence }}
   sessionPersistence:
     {{- toYaml . | nindent 4 }}

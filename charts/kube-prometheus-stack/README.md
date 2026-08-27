@@ -110,6 +110,28 @@ You may also `helm show values` on this chart's [dependencies](#dependencies) fo
 
 For templated Grafana datasource definitions (e.g. when using Helm flow control), use `grafana.additionalDataSourcesString`, which is rendered via `tpl`.
 
+### HTTPRoute timeouts
+
+Set `timeouts` on a route to configure request and backend request timeouts for its generated HTTPRoute rule:
+
+```yaml
+prometheus:
+  route:
+    main:
+      enabled: true
+      parentRefs:
+        - name: gateway
+      timeouts:
+        request: 120s
+        backendRequest: 60s
+```
+
+The same settings are available under `alertmanager.route`, `thanosRuler.route`, and the `routePerReplica` settings for Prometheus and Alertmanager.
+
+Timeouts are only rendered for `kind: HTTPRoute`. They do not apply to generated HTTPS redirect rules or propagate to `additionalRules`; configure timeouts directly on additional rules when needed. Leaving `timeouts` empty preserves the Gateway controller's defaults.
+
+This requires Gateway API CRDs that support HTTPRoute timeouts (available in the Standard channel since v1.2.0) and a Gateway controller that supports the corresponding timeout features. When both values are set, `backendRequest` must not exceed `request`, unless `request` is `"0s"`. See the [Gateway API timeout documentation](https://gateway-api.sigs.k8s.io/reference/api-types/httproute/#timeouts-optional) for duration semantics and controller support requirements.
+
 ### Prometheus High Availability (HA)
 
 For a basic HA setup, run multiple Prometheus replicas:
