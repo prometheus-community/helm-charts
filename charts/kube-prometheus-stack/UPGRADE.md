@@ -1,5 +1,9 @@
 # Upgrade
 
+## From 88.x to 89.x
+
+This version upgrades the Grafana helm chart to v13.0.0. Please check [Grafana Helm Chart upgrade guide]([https://grafana.com/docs/grafana/latest/whatsnew/whats-new-in-v13-0/](https://github.com/grafana-community/helm-charts/tree/main/charts/grafana#to-1300)).
+
 ## From 87.x to 88.x
 
 This version upgrades Prometheus-Operator to v0.93.0
