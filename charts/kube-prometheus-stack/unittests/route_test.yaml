@@ -1,0 +1,233 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/helm-unittest/helm-unittest/main/schema/helm-testsuite.json
+suite: test Gateway API route timeouts
+templates:
+  - prometheus/route.yaml
+  - prometheus/routeperreplica.yaml
+  - alertmanager/route.yaml
+  - alertmanager/routeperreplica.yaml
+  - thanos-ruler/route.yaml
+set:
+  prometheus.enabled: true
+  prometheus.route.main.enabled: true
+  alertmanager.enabled: true
+  alertmanager.route.main.enabled: true
+  thanosRuler.enabled: true
+  thanosRuler.route.main.enabled: true
+tests:
+  - it: should omit timeouts from component routes by default
+    templates:
+      - prometheus/route.yaml
+      - alertmanager/route.yaml
+      - thanos-ruler/route.yaml
+    asserts:
+      - hasDocuments:
+          count: 1
+      - notExists:
+          path: spec.rules[0].timeouts
+
+  - it: should render request and backend timeouts independently for each component
+    templates:
+      - prometheus/route.yaml
+      - alertmanager/route.yaml
+      - thanos-ruler/route.yaml
+    set:
+      prometheus.route.main.timeouts:
+        request: 30s
+      alertmanager.route.main.timeouts:
+        backendRequest: 15s
+      thanosRuler.route.main.timeouts:
+        request: 60s
+        backendRequest: 45s
+    asserts:
+      - template: prometheus/route.yaml
+        equal:
+          path: spec.rules[0].timeouts
+          value:
+            request: 30s
+      - template: alertmanager/route.yaml
+        equal:
+          path: spec.rules[0].timeouts
+          value:
+            backendRequest: 15s
+      - template: thanos-ruler/route.yaml
+        equal:
+          path: spec.rules[0].timeouts
+          value:
+            request: 60s
+            backendRequest: 45s
+
+  - it: should preserve zero-duration timeouts
+    template: prometheus/route.yaml
+    set:
+      prometheus.route.main.timeouts:
+        request: "0s"
+        backendRequest: "0s"
+    asserts:
+      - equal:
+          path: spec.rules[0].timeouts
+          value:
+            request: "0s"
+            backendRequest: "0s"
+
+  - it: should render timeouts on every Prometheus and Alertmanager replica route
+    templates:
+      - prometheus/routeperreplica.yaml
+      - alertmanager/routeperreplica.yaml
+    set:
+      prometheus.servicePerReplica.enabled: true
+      prometheus.prometheusSpec.replicas: 2
+      prometheus.routePerReplica.main.enabled: true
+      prometheus.routePerReplica.main.hostPrefix: prometheus
+      prometheus.routePerReplica.main.hostDomain: example.com
+      prometheus.routePerReplica.main.timeouts:
+        request: 30s
+        backendRequest: 15s
+      alertmanager.servicePerReplica.enabled: true
+      alertmanager.alertmanagerSpec.replicas: 2
+      alertmanager.routePerReplica.main.enabled: true
+      alertmanager.routePerReplica.main.hostPrefix: alertmanager
+      alertmanager.routePerReplica.main.hostDomain: example.com
+      alertmanager.routePerReplica.main.timeouts:
+        request: 10s
+        backendRequest: 5s
+    documentSelector:
+      path: kind
+      value: HTTPRoute
+      matchMany: true
+    asserts:
+      - hasDocuments:
+          count: 2
+          filterAware: true
+      - template: prometheus/routeperreplica.yaml
+        equal:
+          path: spec.rules[0].timeouts
+          value:
+            request: 30s
+            backendRequest: 15s
+      - template: alertmanager/routeperreplica.yaml
+        equal:
+          path: spec.rules[0].timeouts
+          value:
+            request: 10s
+            backendRequest: 5s
+
+  - it: should keep named route timeouts independent and default to HTTPRoute
+    template: prometheus/route.yaml
+    set:
+      prometheus.route.main.timeouts:
+        request: 30s
+      prometheus.route.reports:
+        enabled: true
+        timeouts:
+          request: 60s
+          backendRequest: 45s
+    asserts:
+      - hasDocuments:
+          count: 2
+      - equal:
+          path: spec.rules[0].timeouts
+          value:
+            request: 30s
+        documentSelector:
+          path: metadata.name
+          value: RELEASE-NAME-kube-promethe-prometheus
+      - isKind:
+          of: HTTPRoute
+        documentSelector:
+          path: metadata.name
+          value: RELEASE-NAME-kube-promethe-prometheus-reports
+      - equal:
+          path: spec.rules[0].timeouts
+          value:
+            request: 60s
+            backendRequest: 45s
+        documentSelector:
+          path: metadata.name
+          value: RELEASE-NAME-kube-promethe-prometheus-reports
+
+  - it: should preserve additional rules without inheriting the route timeouts
+    template: prometheus/route.yaml
+    set:
+      prometheus.route.main.timeouts:
+        request: 30s
+        backendRequest: 15s
+      prometheus.route.main.additionalRules:
+        - backendRefs:
+            - name: custom-backend
+              port: 8080
+          timeouts:
+            request: 5s
+            backendRequest: 2s
+        - backendRefs:
+            - name: other-backend
+              port: 8081
+    asserts:
+      - lengthEqual:
+          path: spec.rules
+          count: 3
+      - equal:
+          path: spec.rules[0]
+          value:
+            backendRefs:
+              - name: custom-backend
+                port: 8080
+            timeouts:
+              request: 5s
+              backendRequest: 2s
+      - equal:
+          path: spec.rules[1]
+          value:
+            backendRefs:
+              - name: other-backend
+                port: 8081
+      - equal:
+          path: spec.rules[2].timeouts
+          value:
+            request: 30s
+            backendRequest: 15s
+
+  - it: should not add backend timeouts to an HTTPS redirect rule
+    template: prometheus/route.yaml
+    set:
+      prometheus.route.main.httpsRedirect: true
+      prometheus.route.main.timeouts:
+        request: 30s
+        backendRequest: 15s
+    asserts:
+      - equal:
+          path: spec.rules
+          value:
+            - filters:
+                - type: RequestRedirect
+                  requestRedirect:
+                    scheme: https
+                    statusCode: 301
+
+  - it: should not add HTTP timeouts to a GRPCRoute
+    template: prometheus/route.yaml
+    set:
+      prometheus.route.main.kind: GRPCRoute
+      prometheus.route.main.matches: []
+      prometheus.route.main.timeouts:
+        request: 30s
+        backendRequest: 15s
+    asserts:
+      - isKind:
+          of: GRPCRoute
+      - notExists:
+          path: spec.rules[0].timeouts
+
+  - it: should not add HTTP timeouts to a TCPRoute
+    template: prometheus/route.yaml
+    set:
+      prometheus.route.main.apiVersion: gateway.networking.k8s.io/v1alpha2
+      prometheus.route.main.kind: TCPRoute
+      prometheus.route.main.matches: []
+      prometheus.route.main.timeouts:
+        request: 30s
+        backendRequest: 15s
+    asserts:
+      - isKind:
+          of: TCPRoute
+      - notExists:
+          path: spec.rules[0].timeouts
