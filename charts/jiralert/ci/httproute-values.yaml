@@ -1,0 +1,29 @@
+---
+## Test case: httproute
+## jiralert requires at least one receiver for the pod to start, so the
+## install test mirrors ci/test-values.yaml's minimal config.
+config:
+  defaults:
+    user: jiraUser
+    password: jiraToken
+  receivers:
+    - name: 'default'
+      project: EXAMPLE
+route:
+  main:
+    enabled: true
+    hostnames:
+      - "an.example.com"
+    parentRefs:
+      - name: contour
+    filters:
+      - type: RequestHeaderModifier
+        requestHeaderModifier:
+          set:
+            - name: my-header-name
+              value: my-new-header-value
+    additionalRules:
+      - filters:
+          - type: RequestHeaderModifier
+            requestHeaderModifier:
+              remove: ["x-request-id"]

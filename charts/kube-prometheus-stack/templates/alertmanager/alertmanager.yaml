@@ -43,6 +43,8 @@ spec:
   externalUrl: "{{ tpl .Values.alertmanager.alertmanagerSpec.externalUrl . }}"
 {{- else if and .Values.alertmanager.ingress.enabled .Values.alertmanager.ingress.hosts }}
   externalUrl: "http://{{ tpl (index .Values.alertmanager.ingress.hosts 0) . }}{{ .Values.alertmanager.alertmanagerSpec.routePrefix }}"
+{{- else if and .Values.alertmanager.route.main.enabled .Values.alertmanager.route.main.hostnames }}
+  externalUrl: "http://{{ tpl (index .Values.alertmanager.route.main.hostnames 0) . }}{{ .Values.alertmanager.alertmanagerSpec.routePrefix }}"
 {{- else }}
   externalUrl: http://{{ template "kube-prometheus-stack.fullname" . }}-alertmanager.{{ template "kube-prometheus-stack.namespace" . }}:{{ .Values.alertmanager.service.port }}
 {{- end }}
@@ -214,6 +216,24 @@ spec:
   hostNetwork: {{ .Values.alertmanager.alertmanagerSpec.hostNetwork }}
 {{- if .Values.alertmanager.alertmanagerSpec.terminationGracePeriodSeconds }}
   terminationGracePeriodSeconds: {{ .Values.alertmanager.alertmanagerSpec.terminationGracePeriodSeconds }}
+{{- end }}
+{{- if kindIs "bool" .Values.alertmanager.alertmanagerSpec.enableServiceLinks }}
+  enableServiceLinks: {{ .Values.alertmanager.alertmanagerSpec.enableServiceLinks }}
+{{- end }}
+{{- with .Values.alertmanager.alertmanagerSpec.schedulerName }}
+  schedulerName: {{ . }}
+{{- end }}
+{{- with .Values.alertmanager.alertmanagerSpec.hostAliases }}
+  hostAliases:
+{{ toYaml . | indent 4 }}
+{{- end }}
+{{- with .Values.alertmanager.alertmanagerSpec.limits }}
+  limits:
+{{ toYaml . | indent 4 }}
+{{- end }}
+{{- with .Values.alertmanager.alertmanagerSpec.clusterTLS }}
+  clusterTLS:
+{{ toYaml . | indent 4 }}
 {{- end }}
 {{- with .Values.alertmanager.alertmanagerSpec.additionalConfig }}
   {{- tpl (toYaml .) $ | nindent 2 }}
