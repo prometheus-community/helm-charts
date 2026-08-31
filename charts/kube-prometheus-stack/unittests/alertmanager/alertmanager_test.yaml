@@ -45,5 +45,77 @@ tests:
           path: spec.alertmanagerConfigNamespaceSelector
           value: {}
 
+  - it: should not render the new spec fields with default values
+    asserts:
+      - notExists:
+          path: spec.enableServiceLinks
+      - notExists:
+          path: spec.schedulerName
+      - notExists:
+          path: spec.hostAliases
+      - notExists:
+          path: spec.limits
+      - notExists:
+          path: spec.clusterTLS
 
-    
+  - it: should render enableServiceLinks only when set to a bool
+    set:
+      alertmanager.alertmanagerSpec.enableServiceLinks: false
+    asserts:
+      - equal:
+          path: spec.enableServiceLinks
+          value: false
+
+  - it: should render schedulerName and hostAliases
+    set:
+      alertmanager.alertmanagerSpec.schedulerName: my-scheduler
+      alertmanager.alertmanagerSpec.hostAliases:
+        - ip: "10.10.0.100"
+          hostnames:
+            - a1.app.local
+    asserts:
+      - equal:
+          path: spec.schedulerName
+          value: my-scheduler
+      - equal:
+          path: spec.hostAliases[0].ip
+          value: "10.10.0.100"
+
+  - it: should render alertmanager silence limits
+    set:
+      alertmanager.alertmanagerSpec.limits:
+        maxSilences: 1000
+        maxPerSilenceBytes: 1MB
+    asserts:
+      - equal:
+          path: spec.limits.maxSilences
+          value: 1000
+      - equal:
+          path: spec.limits.maxPerSilenceBytes
+          value: 1MB
+
+  - it: should render clusterTLS
+    set:
+      alertmanager.alertmanagerSpec.clusterTLS:
+        server:
+          certSecret:
+            name: am-tls
+            key: tls.crt
+    asserts:
+      - equal:
+          path: spec.clusterTLS.server.certSecret.name
+          value: am-tls
+
+  # 7106
+  - it: should set externalUrl to hostname of main route
+    set:
+      alertmanager.route.main:
+        enabled: true
+        hostnames:
+          - alertmanager.example.com 
+    asserts:
+      - hasDocuments:
+          count: 1
+      - equal:
+          path: spec.externalUrl
+          value: http://alertmanager.example.com/
