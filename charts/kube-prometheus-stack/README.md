@@ -108,6 +108,28 @@ helm show values oci://ghcr.io/prometheus-community/charts/kube-prometheus-stack
 
 You may also `helm show values` on this chart's [dependencies](#dependencies) for additional options.
 
+### PersistentVolumeClaim `storageClassName` is immutable after bind
+
+Grafana persistence (`grafana.persistence.*`) and other chart-managed PVCs follow
+Kubernetes PVC immutability: once a claim is **Bound**, `spec.storageClassName`
+(and most other `spec` fields besides storage size expansion where supported)
+cannot be changed. A Helm upgrade that only changes
+`grafana.persistence.storageClassName` fails with:
+
+```text
+PersistentVolumeClaim is invalid: spec: Forbidden: spec is immutable after creation
+except resources.requests for bound claims
+```
+
+GitOps controllers (Flux HelmRelease, Argo CD) will retry the same rejected
+upgrade until values match the bound PVC. This is expected Kubernetes behavior,
+not a chart bug.
+
+To move Grafana (or a similar PVC) to another StorageClass: snapshot/backup,
+delete the PVC (and usually the Grafana Pod), then upgrade with the new class so
+a new claim can bind. The same class of failure can affect Alertmanager /
+Prometheus volume claim templates if those fields change after first bind.
+
 For templated Grafana datasource definitions (e.g. when using Helm flow control), use `grafana.additionalDataSourcesString`, which is rendered via `tpl`.
 
 ### HTTPRoute timeouts
