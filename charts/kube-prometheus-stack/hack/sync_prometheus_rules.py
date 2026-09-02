@@ -506,7 +506,7 @@ def add_custom_annotations(rules, group, indent=4):
     rule_group_annotations = get_rule_group_condition(condition_map.get(group['name'], ''), 'additionalRuleGroupAnnotations')
     annotations = "      annotations:"
     annotations_len = len(annotations) + 1
-    description_pattern = r'(?m)^([ \t]+)description: (.+)$'
+    description_pattern = r'(?ms)^([ \t]+)description: (.*?)(?=\n\1(?:runbook_url|summary):)'
     runbook_pattern = r'(?m)^([ \t]+)runbook_url: (.+)$'
     summary_pattern = r'(?m)^([ \t]+)summary: (.+)$'
 
