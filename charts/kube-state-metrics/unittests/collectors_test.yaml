@@ -228,3 +228,161 @@ tests:
             verbs:
               - list
               - watch
+
+  - it: should not grant admission policy permissions by default
+    template: role.yaml
+    asserts:
+      - notContains:
+          path: rules[*].resources
+          content: mutatingadmissionpolicies
+      - notContains:
+          path: rules[*].resources
+          content: mutatingadmissionpolicybindings
+      - notContains:
+          path: rules[*].resources
+          content: validatingadmissionpolicies
+      - notContains:
+          path: rules[*].resources
+          content: validatingadmissionpolicybindings
+
+  - it: should grant only mutating admission policy permissions when selected
+    template: role.yaml
+    set:
+      rbac.useClusterRole: true
+      collectors:
+        - mutatingadmissionpolicies
+    asserts:
+      - equal:
+          path: rules
+          value:
+            - apiGroups:
+                - admissionregistration.k8s.io
+              resources:
+                - mutatingadmissionpolicies
+              verbs:
+                - list
+                - watch
+
+  - it: should grant only mutating admission policy binding permissions when selected
+    template: role.yaml
+    set:
+      rbac.useClusterRole: true
+      collectors:
+        - mutatingadmissionpolicybindings
+    asserts:
+      - equal:
+          path: rules
+          value:
+            - apiGroups:
+                - admissionregistration.k8s.io
+              resources:
+                - mutatingadmissionpolicybindings
+              verbs:
+                - list
+                - watch
+
+  - it: should grant only validating admission policy permissions when selected
+    template: role.yaml
+    set:
+      rbac.useClusterRole: true
+      collectors:
+        - validatingadmissionpolicies
+    asserts:
+      - equal:
+          path: rules
+          value:
+            - apiGroups:
+                - admissionregistration.k8s.io
+              resources:
+                - validatingadmissionpolicies
+              verbs:
+                - list
+                - watch
+
+  - it: should grant only validating admission policy binding permissions when selected
+    template: role.yaml
+    set:
+      rbac.useClusterRole: true
+      collectors:
+        - validatingadmissionpolicybindings
+    asserts:
+      - equal:
+          path: rules
+          value:
+            - apiGroups:
+                - admissionregistration.k8s.io
+              resources:
+                - validatingadmissionpolicybindings
+              verbs:
+                - list
+                - watch
+
+  - it: should add admission policy RBAC and resources through collectorsExtra
+    set:
+      rbac.useClusterRole: true
+      collectors:
+        - pods
+      collectorsExtra:
+        - mutatingadmissionpolicies
+    asserts:
+      - template: deployment.yaml
+        contains:
+          path: spec.template.spec.containers[0].args
+          content: --resources=pods,mutatingadmissionpolicies
+      - template: role.yaml
+        lengthEqual:
+          path: rules
+          count: 2
+      - template: role.yaml
+        contains:
+          path: rules
+          content:
+            apiGroups:
+              - ""
+            resources:
+              - pods
+            verbs:
+              - list
+              - watch
+      - template: role.yaml
+        contains:
+          path: rules
+          content:
+            apiGroups:
+              - admissionregistration.k8s.io
+            resources:
+              - mutatingadmissionpolicies
+            verbs:
+              - list
+              - watch
+
+  - it: should omit admission policy RBAC and resources when collectors are excluded
+    set:
+      rbac.useClusterRole: true
+      collectors:
+        - pods
+        - mutatingadmissionpolicies
+        - mutatingadmissionpolicybindings
+        - validatingadmissionpolicies
+        - validatingadmissionpolicybindings
+      collectorsExclude:
+        - mutatingadmissionpolicies
+        - mutatingadmissionpolicybindings
+        - validatingadmissionpolicies
+        - validatingadmissionpolicybindings
+    asserts:
+      - template: deployment.yaml
+        contains:
+          path: spec.template.spec.containers[0].args
+          content: --resources=pods
+      - template: role.yaml
+        equal:
+          path: rules
+          value:
+            - apiGroups:
+                - ""
+              resources:
+                - pods
+              verbs:
+                - list
+                - watch
