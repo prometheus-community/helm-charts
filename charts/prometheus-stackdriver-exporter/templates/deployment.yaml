@@ -79,24 +79,17 @@ spec:
             {{- toYaml .Values.extraVolumeMounts | nindent 12 }}
           {{- end }}
           args:
-            {{- if .Values.stackdriver.projectIds }}
             {{- range .Values.stackdriver.projectIds }}
             - --google.project-ids={{ . }}
-            {{- end }}
-            {{- else }}
-            - --google.project-id={{ .Values.stackdriver.projectId }}
             {{- end }}
             {{- if .Values.stackdriver.projectFilters }}
             - --google.projects.filter='{{ .Values.stackdriver.projectFilters }}'
             {{- end }}
             - --monitoring.metrics-interval={{ .Values.stackdriver.metrics.interval }}
             - --monitoring.metrics-offset={{ .Values.stackdriver.metrics.offset }}
-            {{- if .Values.stackdriver.metrics.prefixes }}
+            - --monitoring.descriptor-cache-ttl={{ .Values.stackdriver.metrics.descriptorCacheTTL }}
             {{- range .Values.stackdriver.metrics.prefixes }}
             - --monitoring.metrics-prefixes={{ . }}
-            {{- end }}
-            {{- else }}
-            - --monitoring.metrics-type-prefixes={{ .Values.stackdriver.metrics.typePrefixes | replace " " "" }}
             {{- end }}
             {{- range .Values.stackdriver.metrics.filters }}
             - --monitoring.filters={{ . }}

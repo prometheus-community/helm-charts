@@ -1,0 +1,22 @@
+{{- if and .Values.alertmanager.enabled .Values.alertmanager.servicePerReplica.enabled }}
+{{- $count := .Values.alertmanager.alertmanagerSpec.replicas | int -}}
+{{- $servicePort := .Values.alertmanager.service.port -}}
+{{- range $name, $route := .Values.alertmanager.routePerReplica }}
+{{- if $route.enabled }}
+{{- range $i := until $count }}
+{{- $serviceName := printf "%s-alertmanager-%d" (include "kube-prometheus-stack.fullname" $) $i }}
+---
+{{ include "kube-prometheus-stack.route" (dict
+     "context" $
+     "route" $route
+     "name" (ternary $serviceName (printf "%s-%s" $serviceName $name) (eq $name "main"))
+     "namespace" (include "kube-prometheus-stack-alertmanager.namespace" $)
+     "labelApp" (printf "%s-alertmanager" (include "kube-prometheus-stack.name" $))
+     "hostnames" (list (printf "%s-%d.%s" $route.hostPrefix $i $route.hostDomain))
+     "serviceName" $serviceName
+     "servicePort" $servicePort
+   ) }}
+{{- end }}
+{{- end }}
+{{- end }}
+{{- end }}
