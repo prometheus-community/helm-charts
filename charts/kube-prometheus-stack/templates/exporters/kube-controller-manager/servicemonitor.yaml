@@ -37,14 +37,14 @@ spec:
     {{- if .Values.kubeControllerManager.serviceMonitor.interval }}
     interval: {{ .Values.kubeControllerManager.serviceMonitor.interval }}
     {{- end }}
-    bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
+    {{- include "kube-prometheus-stack.serviceMonitor.authorization" (list .Values.kubeControllerManager.serviceMonitor.authorization "/var/run/secrets/kubernetes.io/serviceaccount/token" 4) }}
     {{- if .Values.kubeControllerManager.serviceMonitor.proxyUrl }}
     proxyUrl: {{ .Values.kubeControllerManager.serviceMonitor.proxyUrl}}
     {{- end }}
     {{- if eq (include "kube-prometheus-stack.kubeControllerManager.insecureScrape" (list . false true .Values.kubeControllerManager.serviceMonitor.https )) "true" }}
     scheme: https
     tlsConfig:
-      caFile: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+      {{- include "kube-prometheus-stack.serviceMonitor.tlsSecret" (list "ca" .Values.kubeControllerManager.serviceMonitor.caSecret "/var/run/secrets/kubernetes.io/serviceaccount/ca.crt" 6) }}
       {{- if eq (include "kube-prometheus-stack.kubeControllerManager.insecureScrape" (list . nil true .Values.kubeControllerManager.serviceMonitor.insecureSkipVerify)) "true" }}
       insecureSkipVerify: true
       {{- end }}

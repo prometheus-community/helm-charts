@@ -37,16 +37,14 @@ spec:
     {{- if .Values.kubeProxy.serviceMonitor.interval }}
     interval: {{ .Values.kubeProxy.serviceMonitor.interval }}
     {{- end }}
-    {{- if .Values.kubeProxy.serviceMonitor.bearerTokenFile }}
-    bearerTokenFile: {{ .Values.kubeProxy.serviceMonitor.bearerTokenFile }}
-    {{- end }}
+    {{- include "kube-prometheus-stack.serviceMonitor.authorization" (list .Values.kubeProxy.serviceMonitor.authorization .Values.kubeProxy.serviceMonitor.bearerTokenFile 4) }}
     {{- if .Values.kubeProxy.serviceMonitor.proxyUrl }}
     proxyUrl: {{ .Values.kubeProxy.serviceMonitor.proxyUrl}}
     {{- end }}
     {{- if .Values.kubeProxy.serviceMonitor.https }}
     scheme: https
     tlsConfig:
-      caFile: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+      {{- include "kube-prometheus-stack.serviceMonitor.tlsSecret" (list "ca" .Values.kubeProxy.serviceMonitor.caSecret "/var/run/secrets/kubernetes.io/serviceaccount/ca.crt" 6) }}
     {{- end}}
 {{- if .Values.kubeProxy.serviceMonitor.metricRelabelings }}
     metricRelabelings:

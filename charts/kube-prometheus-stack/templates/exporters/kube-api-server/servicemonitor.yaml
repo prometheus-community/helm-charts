@@ -17,15 +17,15 @@ metadata:
 spec:
   {{- include "servicemonitor.scrapeLimits" .Values.kubeApiServer.serviceMonitor | nindent 2 }}
   endpoints:
-  - bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
+  - port: https
+    scheme: https
     {{- if .Values.kubeApiServer.serviceMonitor.interval }}
     interval: {{ .Values.kubeApiServer.serviceMonitor.interval }}
     {{- end }}
     {{- if .Values.kubeApiServer.serviceMonitor.proxyUrl }}
     proxyUrl: {{ .Values.kubeApiServer.serviceMonitor.proxyUrl }}
     {{- end }}
-    port: https
-    scheme: https
+    {{- include "kube-prometheus-stack.serviceMonitor.authorization" (list .Values.kubeApiServer.serviceMonitor.authorization "/var/run/secrets/kubernetes.io/serviceaccount/token" 4) }}
 {{- if .Values.kubeApiServer.serviceMonitor.metricRelabelings }}
     metricRelabelings:
 {{ tpl (toYaml .Values.kubeApiServer.serviceMonitor.metricRelabelings | indent 6) . }}
@@ -35,7 +35,7 @@ spec:
 {{ tpl (toYaml .Values.kubeApiServer.serviceMonitor.relabelings | indent 6) . }}
 {{- end }}
     tlsConfig:
-      caFile: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+      {{- include "kube-prometheus-stack.serviceMonitor.tlsSecret" (list "ca" .Values.kubeApiServer.tlsConfig.caSecret "/var/run/secrets/kubernetes.io/serviceaccount/ca.crt" 6) }}
       serverName: {{ .Values.kubeApiServer.tlsConfig.serverName }}
       insecureSkipVerify: {{ .Values.kubeApiServer.tlsConfig.insecureSkipVerify }}
   jobLabel: {{ .Values.kubeApiServer.serviceMonitor.jobLabel }}
