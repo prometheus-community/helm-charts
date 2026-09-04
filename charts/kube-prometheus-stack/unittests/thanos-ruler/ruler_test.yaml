@@ -1,0 +1,126 @@
+suite: test thanos ruler
+templates:
+  - thanos-ruler/ruler.yaml
+tests:
+  - it: should be empty if thanosRuler is not enabled
+    set:
+      thanosRuler.enabled: false
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: should not render the new spec fields with default values
+    set:
+      thanosRuler.enabled: true
+    asserts:
+      - hasDocuments:
+          count: 1
+      - notExists:
+          path: spec.enableFeatures
+      - notExists:
+          path: spec.enableServiceLinks
+      - notExists:
+          path: spec.remoteWrite
+      - notExists:
+          path: spec.tracingConfig
+      - notExists:
+          path: spec.alertRelabelConfigs
+      - notExists:
+          path: spec.ruleQueryOffset
+
+  - it: should render enableFeatures as a list
+    set:
+      thanosRuler.enabled: true
+      thanosRuler.thanosRulerSpec.enableFeatures:
+        - promql-experimental-functions
+    asserts:
+      - equal:
+          path: spec.enableFeatures[0]
+          value: promql-experimental-functions
+
+  - it: should render enableServiceLinks only when set to a bool
+    set:
+      thanosRuler.enabled: true
+      thanosRuler.thanosRulerSpec.enableServiceLinks: false
+    asserts:
+      - equal:
+          path: spec.enableServiceLinks
+          value: false
+
+  - it: should render rule evaluation tuning and duration fields quoted
+    set:
+      thanosRuler.enabled: true
+      thanosRuler.thanosRulerSpec.ruleConcurrentEval: 4
+      thanosRuler.thanosRulerSpec.ruleOutageTolerance: 1h
+      thanosRuler.thanosRulerSpec.ruleGracePeriod: 10m
+      thanosRuler.thanosRulerSpec.ruleQueryOffset: 30s
+      thanosRuler.thanosRulerSpec.resendDelay: 1m
+    asserts:
+      - equal:
+          path: spec.ruleConcurrentEval
+          value: 4
+      - equal:
+          path: spec.ruleOutageTolerance
+          value: "1h"
+      - equal:
+          path: spec.ruleQueryOffset
+          value: "30s"
+
+  - it: should render remoteWrite
+    set:
+      thanosRuler.enabled: true
+      thanosRuler.thanosRulerSpec.remoteWrite:
+        - url: http://remote/api/v1/write
+    asserts:
+      - equal:
+          path: spec.remoteWrite[0].url
+          value: http://remote/api/v1/write
+
+  - it: should render tracingConfig from an existing secret
+    set:
+      thanosRuler.enabled: true
+      thanosRuler.thanosRulerSpec.tracingConfig.existingSecret.name: my-tracing
+      thanosRuler.thanosRulerSpec.tracingConfig.existingSecret.key: tracing.yaml
+    asserts:
+      - equal:
+          path: spec.tracingConfig.name
+          value: my-tracing
+      - equal:
+          path: spec.tracingConfig.key
+          value: tracing.yaml
+
+  - it: should render tracingConfig pointing at the chart-managed secret
+    set:
+      thanosRuler.enabled: true
+      thanosRuler.thanosRulerSpec.tracingConfig.secret:
+        type: JAEGER
+    asserts:
+      - equal:
+          path: spec.tracingConfig.key
+          value: tracing-configs.yaml
+
+  - it: should render alertRelabelConfigs from an existing secret
+    set:
+      thanosRuler.enabled: true
+      thanosRuler.thanosRulerSpec.alertRelabelConfigs.existingSecret.name: my-relabel
+      thanosRuler.thanosRulerSpec.alertRelabelConfigs.existingSecret.key: relabel.yaml
+    asserts:
+      - equal:
+          path: spec.alertRelabelConfigs.name
+          value: my-relabel
+
+  - it: should render excludedFromEnforcement only alongside enforcedNamespaceLabel
+    set:
+      thanosRuler.enabled: true
+      thanosRuler.thanosRulerSpec.enforcedNamespaceLabel: namespace
+      thanosRuler.thanosRulerSpec.excludedFromEnforcement:
+        - namespace: kube-system
+          resource: prometheusrules
+          name: my-rule
+    asserts:
+      - equal:
+          path: spec.enforcedNamespaceLabel
+          value: namespace
+      - equal:
+          path: spec.excludedFromEnforcement[0].namespace
+          value: kube-system

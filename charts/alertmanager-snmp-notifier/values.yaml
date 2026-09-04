@@ -19,7 +19,7 @@ snmpNotifier:
   snmpDestinations:
     - snmp-server:162
 
-  # SNMP authentication secrets, that may be instanciated by the chart, or may use an already created secret
+  # SNMP authentication secrets, that may be instantiated by the chart, or may use an already created secret
   # snmpCommunity: public
   # snmpAuthenticationUsername: my_authentication_username
   # snmpAuthenticationPassword: my_authentication_password
@@ -92,6 +92,9 @@ securityContext: {}
   # runAsNonRoot: true
   # runAsUser: 1000
 
+## Provide a namespace to substitute for the namespace on resources
+namespaceOverride: ""
+
 service:
   type: ClusterIP
   port: 9464
@@ -115,6 +118,57 @@ ingress:
   #  - secretName: snmp-notifier-tls
   #    hosts:
   #      - snmp-notifier.local
+
+## A HTTPRoute (Gateway API) resource is an alternative to Ingress for routing
+## external HTTP traffic to the SNMP notifier Service.
+## ref: https://gateway-api.sigs.k8s.io/api-types/httproute/
+route:
+  main:
+    ## Enable this route
+    enabled: false
+
+    ## ApiVersion set by default to "gateway.networking.k8s.io/v1"
+    apiVersion: ""
+    ## kind set by default to HTTPRoute
+    kind: ""
+
+    ## Optional name for the default rule in the rendered HTTPRoute.
+    name: ""
+
+    ## Annotations to attach to the HTTPRoute resource
+    annotations: {}
+    ## Labels to attach to the HTTPRoute resource
+    labels: {}
+
+    ## ParentRefs refers to resources this HTTPRoute is to be attached to (Gateways)
+    parentRefs: []
+      # - name: contour
+      #   sectionName: http
+
+    ## Hostnames (templated) defines a set of hostnames that should match against the HTTP Host
+    ## header to select a HTTPRoute used to process the request
+    hostnames: []
+      # - my.example.com
+
+    ## additionalRules (templated) allows adding custom rules to the route
+    additionalRules: []
+
+    ## Filters define the filters that are applied to requests that match
+    ## this rule
+    filters: []
+
+    ## Matches define conditions used for matching the rule against incoming
+    ## HTTP requests
+    matches:
+      - path:
+          type: PathPrefix
+          value: /
+
+    ## httpsRedirect adds a filter for redirecting to https (HTTP 301 Moved Permanently).
+    ## To redirect HTTP traffic to HTTPS, you need to have a Gateway with both HTTP and HTTPS listeners.
+    ## Matches and filters do not take effect if enabled.
+    ## Ref. https://gateway-api.sigs.k8s.io/guides/http-redirect-rewrite/
+    httpsRedirect: false
 
 resources: {}
   # We usually recommend not to specify default resources and to leave this as a conscious

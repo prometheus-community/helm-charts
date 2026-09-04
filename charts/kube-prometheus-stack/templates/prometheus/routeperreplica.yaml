@@ -1,0 +1,22 @@
+{{- if and .Values.prometheus.enabled .Values.prometheus.servicePerReplica.enabled }}
+{{- $count := .Values.prometheus.prometheusSpec.replicas | int -}}
+{{- $servicePort := .Values.prometheus.servicePerReplica.port -}}
+{{- range $name, $route := .Values.prometheus.routePerReplica }}
+{{- if $route.enabled }}
+{{- range $i := until $count }}
+{{- $serviceName := printf "%s-prometheus-%d" (include "kube-prometheus-stack.fullname" $) $i }}
+---
+{{ include "kube-prometheus-stack.route" (dict
+     "context" $
+     "route" $route
+     "name" (ternary $serviceName (printf "%s-%s" $serviceName $name) (eq $name "main"))
+     "namespace" (include "kube-prometheus-stack.namespace" $)
+     "labelApp" (printf "%s-prometheus" (include "kube-prometheus-stack.name" $))
+     "hostnames" (list (printf "%s-%d.%s" $route.hostPrefix $i $route.hostDomain))
+     "serviceName" $serviceName
+     "servicePort" $servicePort
+   ) }}
+{{- end }}
+{{- end }}
+{{- end }}
+{{- end }}
