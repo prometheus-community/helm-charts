@@ -1,0 +1,18 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/helm-unittest/helm-unittest/main/schema/helm-testsuite.json
+suite: test KubeletDown aggregation
+templates:
+  - prometheus/rules-1.14/kubernetes-system-kubelet.yaml
+tests:
+  - it: should not add extra aggregation labels to KubeletDown
+    set:
+      defaultRules.additionalAggregationLabels[0]: namespace
+    asserts:
+      - contains:
+          path: spec.groups[0].rules
+          content:
+            alert: KubeletDown
+            expr: |-
+              count by (cluster) (kube_node_info{job="kube-state-metrics"})
+              unless on (cluster)
+              count by (cluster) (up{job="kubelet", metrics_path="/metrics"} == 1)
+          any: true
