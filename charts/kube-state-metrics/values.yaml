@@ -28,6 +28,11 @@ global:
   # Allow parent charts to override registry hostname
   imageRegistry: ""
 
+# Provide a name in place of kube-state-metrics for `app.kubernetes.io/name` labels.
+nameOverride: ""
+# Provide a name to substitute for the full names of resources.
+fullnameOverride: ""
+
 # If set to true, this will deploy kube-state-metrics as a StatefulSet and the data
 # will be automatically sharded across <.Values.replicas> pods using the built-in
 # autodiscovery feature: https://github.com/kubernetes/kube-state-metrics#automated-sharding
@@ -82,9 +87,19 @@ releaseLabel: false
 
 hostNetwork: false
 
+## Use the host's user namespace for deployment.
+## ref: https://kubernetes.io/docs/tasks/configure-pod-container/user-namespaces/
+hostUsers: ~
+
 rbac:
   # If true, create & use RBAC resources
   create: true
+  # Set to false only when the customresourcedefinitions list/watch permission is
+  # granted to the ServiceAccount by other means (e.g. a cluster-scoped ClusterRole
+  # managed outside this chart). kube-state-metrics always needs it for
+  # customResourceState; this only controls whether the chart creates the rule.
+  customResourceState:
+    createClusterRoleRules: true
 
   # Set to a rolename to use existing role - skipping role creating - but still doing serviceaccount and rolebinding to it, rolename set here.
   # useExistingRole: your-existing-role
@@ -99,6 +114,26 @@ rbac:
   #   verbs: ["list", "watch"]
   extraRules: []
 
+  # Aggregate ClusterRoles using label selectors (only applies when useClusterRole: true).
+  # When set, this ClusterRole aggregates matching ClusterRoles instead of defining rules
+  # directly, so the built-in collector rules above are NOT included. Make sure the
+  # aggregated ClusterRoles grant the permissions kube-state-metrics needs.
+  # ref: https://kubernetes.io/docs/reference/access-authn-authz/rbac/#aggregated-clusterroles
+  # Example:
+  # clusterRoleSelectors:
+  #   - matchLabels:
+  #       rbac.example.com/aggregate-to-monitoring: "true"
+  clusterRoleSelectors: []
+
+# Enable kube-state-metrics native request authn/authz on the metrics endpoints
+# via the `--auth-filter` flag, as an alternative to running kube-rbac-proxy.
+# When enabled, the `create` permissions on `tokenreviews` and
+# `subjectaccessreviews` required by the filter are added to the (Cluster)Role
+# automatically. Scrapers must authenticate; see the chart README and the
+# kube-state-metrics docs on protecting metrics endpoints.
+authFilter:
+  enabled: false
+
 # Configure kube-rbac-proxy. When enabled, creates one kube-rbac-proxy container per exposed HTTP endpoint (metrics and telemetry if enabled).
 # The requests are served through the same service but requests are then HTTPS.
 kubeRBACProxy:
@@ -106,7 +141,7 @@ kubeRBACProxy:
   image:
     registry: quay.io
     repository: brancz/kube-rbac-proxy
-    tag: v0.21.0
+    tag: v0.22.1
     sha: ""
     pullPolicy: IfNotPresent
 
@@ -293,18 +328,6 @@ prometheus:
 ## Configure network policy for kube-state-metrics
 networkPolicy:
   enabled: false
-  # networkPolicy.flavor -- Flavor of the network policy to use.
-  # Can be:
-  # * kubernetes for networking.k8s.io/v1/NetworkPolicy
-  # * cilium     for cilium.io/v2/CiliumNetworkPolicy
-  flavor: kubernetes
-
-  ## Configure the cilium network policy kube-apiserver selector
-  # cilium:
-    # kubeApiServerSelector:
-      # - toEntities:
-      #   - kube-apiserver
-
   # egress:
   # - {}
   # ingress:
@@ -402,8 +425,8 @@ metricLabelsAllowlist: []
 metricAnnotationsAllowList: []
   # - pods=[k8s-annotation-1,k8s-annotation-n]
 
-# Available collectors for kube-state-metrics.
-# By default, all available resources are enabled, comment out to disable.
+# Collectors enabled by default. Comment out entries to disable them.
+# Additional opt-in collectors are listed below.
 collectors:
   - certificatesigningrequests
   - configmaps
@@ -437,6 +460,26 @@ collectors:
   # - clusterrolebindings
   # - clusterroles
   # - roles
+  # - rolebindings
+  # - serviceaccounts
+  # Admission policy collectors require kube-state-metrics v2.20.0 or later.
+  # These validating admission policy collectors require Kubernetes v1.30+.
+  # - validatingadmissionpolicies
+  # - validatingadmissionpolicybindings
+  # These mutating admission policy collectors require Kubernetes v1.36+.
+  # - mutatingadmissionpolicies
+  # - mutatingadmissionpolicybindings
+
+# collectorsExclude / collectorsExtra tweak the default `collectors` list above
+# without redefining it. Both operate on `.Values.collectors` (not on KSM's
+# built-in defaults): with `collectors: []` there is nothing to layer onto and
+# `collectorsExtra` becomes the entire --resources list.
+# collectorsExclude removes entries from the list:
+collectorsExclude: []
+  # - pods
+# collectorsExtra appends entries after exclusion (deduplicated):
+collectorsExtra: []
+  # - rolebindings
 
 # Enabling kubeconfig will pass the --kubeconfig argument to the container
 kubeconfig:
