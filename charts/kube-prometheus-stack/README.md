@@ -132,6 +132,44 @@ Timeouts are only rendered for `kind: HTTPRoute`. They do not apply to generated
 
 This requires Gateway API CRDs that support HTTPRoute timeouts (available in the Standard channel since v1.2.0) and a Gateway controller that supports the corresponding timeout features. When both values are set, `backendRequest` must not exceed `request`, unless `request` is `"0s"`. See the [Gateway API timeout documentation](https://gateway-api.sigs.k8s.io/reference/api-types/httproute/#timeouts-optional) for duration semantics and controller support requirements.
 
+### Secret-based authentication for control-plane ServiceMonitors
+
+The built-in ServiceMonitors for kubelet, kube-apiserver, kube-controller-manager, kube-scheduler, kube-etcd, kube-proxy, and coredns default to the deprecated `bearerTokenFile` / `tlsConfig.caFile` fields. Environments that set `prometheus.prometheusSpec.arbitraryFSAccessThroughSMs.deny: true`, or that scrape with Grafana Alloy's `prometheus.operator.servicemonitors` component (which defaults `allow_arbitrary_file_access` to `false`), reject these ServiceMonitors outright and drop the targets.
+
+Each component's `serviceMonitor` accepts an `authorization` field (in place of `bearerTokenFile`) and a `caSecret` field (in place of `caFile`, for components that support TLS) to reference a Kubernetes Secret instead:
+
+```yaml
+kubelet:
+  serviceMonitor:
+    authorization:
+      type: Bearer
+      credentials:
+        name: kubelet-scrape-auth
+        key: token
+    caSecret:
+      name: kubelet-scrape-auth
+      key: ca.crt
+```
+
+Setting either field switches that endpoint to the secret-based equivalent and drops the corresponding file-based field; leaving them unset (the default) preserves today's `bearerTokenFile`/`caFile` behavior. `kubeApiServer` keeps its CA override under `kubeApiServer.tlsConfig.caSecret` (alongside the existing `tlsConfig.serverName`/`insecureSkipVerify`) rather than under `serviceMonitor`. `coreDns`/`kubeDns` only expose `authorization`, since those endpoints have no TLS support.
+
+`kubeEtcd` is the only component that scrapes with client certificates, so it additionally accepts `certSecret` and `keySecret` in place of `certFile` and `keyFile`:
+
+```yaml
+kubeEtcd:
+  serviceMonitor:
+    scheme: https
+    caSecret:
+      name: etcd-client-cert
+      key: ca.crt
+    certSecret:
+      name: etcd-client-cert
+      key: tls.crt
+    keySecret:
+      name: etcd-client-cert
+      key: tls.key
+```
+
 ### Prometheus High Availability (HA)
 
 For a basic HA setup, run multiple Prometheus replicas:

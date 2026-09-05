@@ -1,0 +1,164 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/helm-unittest/helm-unittest/main/schema/helm-testsuite.json
+suite: test control-plane exporter secret-based auth
+templates:
+  - exporters/kubelet/servicemonitor.yaml
+  - exporters/kube-api-server/servicemonitor.yaml
+  - exporters/kube-controller-manager/servicemonitor.yaml
+  - exporters/kube-scheduler/servicemonitor.yaml
+  - exporters/kube-etcd/servicemonitor.yaml
+  - exporters/kube-proxy/servicemonitor.yaml
+  - exporters/core-dns/servicemonitor.yaml
+  - exporters/kube-dns/servicemonitor.yaml
+set:
+  kubeDns.enabled: true
+  kubeDns.serviceMonitor.bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
+  kubeControllerManager.serviceMonitor.https: true
+  kubeProxy.serviceMonitor.https: true
+  kubeScheduler.serviceMonitor.https: true
+  kubeScheduler.serviceMonitor.resource.enabled: true
+  kubeEtcd.serviceMonitor.scheme: https
+  kubeEtcd.serviceMonitor.caFile: /etc/prometheus/secrets/etcd-client-cert/etcd-ca
+  kubeEtcd.serviceMonitor.certFile: /etc/prometheus/secrets/etcd-client-cert/etcd-client
+  kubeEtcd.serviceMonitor.keyFile: /etc/prometheus/secrets/etcd-client-cert/etcd-client-key
+tests:
+  - it: should fall back to bearerTokenFile and caFile by default
+    asserts:
+      - equal:
+          path: spec.endpoints[0].bearerTokenFile
+          value: /var/run/secrets/kubernetes.io/serviceaccount/token
+      - template: exporters/kube-scheduler/servicemonitor.yaml
+        equal:
+          path: spec.endpoints[1].bearerTokenFile
+          value: /var/run/secrets/kubernetes.io/serviceaccount/token
+      - template: exporters/kube-dns/servicemonitor.yaml
+        equal:
+          path: spec.endpoints[1].bearerTokenFile
+          value: /var/run/secrets/kubernetes.io/serviceaccount/token
+      - template: exporters/kubelet/servicemonitor.yaml
+        equal:
+          path: spec.endpoints[0].tlsConfig.caFile
+          value: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+      - template: exporters/kube-api-server/servicemonitor.yaml
+        equal:
+          path: spec.endpoints[0].tlsConfig.caFile
+          value: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+      - template: exporters/kube-controller-manager/servicemonitor.yaml
+        equal:
+          path: spec.endpoints[0].tlsConfig.caFile
+          value: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+      - template: exporters/kube-proxy/servicemonitor.yaml
+        equal:
+          path: spec.endpoints[0].tlsConfig.caFile
+          value: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+      - template: exporters/kube-scheduler/servicemonitor.yaml
+        equal:
+          path: spec.endpoints[0].tlsConfig.caFile
+          value: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+      - template: exporters/kube-scheduler/servicemonitor.yaml
+        equal:
+          path: spec.endpoints[1].tlsConfig.caFile
+          value: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+      - template: exporters/kube-etcd/servicemonitor.yaml
+        equal:
+          path: spec.endpoints[0].tlsConfig.caFile
+          value: /etc/prometheus/secrets/etcd-client-cert/etcd-ca
+      - template: exporters/kube-etcd/servicemonitor.yaml
+        equal:
+          path: spec.endpoints[0].tlsConfig.certFile
+          value: /etc/prometheus/secrets/etcd-client-cert/etcd-client
+      - template: exporters/kube-etcd/servicemonitor.yaml
+        equal:
+          path: spec.endpoints[0].tlsConfig.keyFile
+          value: /etc/prometheus/secrets/etcd-client-cert/etcd-client-key
+
+  - it: should use authorization instead of bearerTokenFile when set
+    set:
+      kubelet.serviceMonitor.authorization: &authorization
+        type: Bearer
+        credentials:
+          name: my-secret
+          key: token
+      kubeApiServer.serviceMonitor.authorization: *authorization
+      kubeControllerManager.serviceMonitor.authorization: *authorization
+      kubeScheduler.serviceMonitor.authorization: *authorization
+      kubeEtcd.serviceMonitor.authorization: *authorization
+      kubeProxy.serviceMonitor.authorization: *authorization
+      coreDns.serviceMonitor.authorization: *authorization
+      kubeDns.serviceMonitor.authorization: *authorization
+    asserts:
+      - equal:
+          path: spec.endpoints[0].authorization.type
+          value: Bearer
+      - equal:
+          path: spec.endpoints[0].authorization.credentials.name
+          value: my-secret
+      - notExists:
+          path: spec.endpoints[0].bearerTokenFile
+      - template: exporters/kube-scheduler/servicemonitor.yaml
+        equal:
+          path: spec.endpoints[1].authorization.type
+          value: Bearer
+      - template: exporters/kube-scheduler/servicemonitor.yaml
+        notExists:
+          path: spec.endpoints[1].bearerTokenFile
+      - template: exporters/kube-dns/servicemonitor.yaml
+        equal:
+          path: spec.endpoints[1].authorization.type
+          value: Bearer
+      - template: exporters/kube-dns/servicemonitor.yaml
+        notExists:
+          path: spec.endpoints[1].bearerTokenFile
+
+  - it: should use secret-based TLS credentials instead of caFile, certFile and keyFile when set
+    templates:
+      - exporters/kubelet/servicemonitor.yaml
+      - exporters/kube-api-server/servicemonitor.yaml
+      - exporters/kube-controller-manager/servicemonitor.yaml
+      - exporters/kube-scheduler/servicemonitor.yaml
+      - exporters/kube-etcd/servicemonitor.yaml
+      - exporters/kube-proxy/servicemonitor.yaml
+    set:
+      kubelet.serviceMonitor.caSecret: &caSecret
+        name: my-ca
+        key: ca.crt
+      kubeApiServer.tlsConfig.caSecret: *caSecret
+      kubeControllerManager.serviceMonitor.caSecret: *caSecret
+      kubeScheduler.serviceMonitor.caSecret: *caSecret
+      kubeEtcd.serviceMonitor.caSecret: *caSecret
+      kubeProxy.serviceMonitor.caSecret: *caSecret
+      kubeEtcd.serviceMonitor.certSecret:
+        name: etcd-client
+        key: tls.crt
+      kubeEtcd.serviceMonitor.keySecret:
+        name: etcd-client
+        key: tls.key
+    asserts:
+      - equal:
+          path: spec.endpoints[0].tlsConfig.ca.secret.name
+          value: my-ca
+      - equal:
+          path: spec.endpoints[0].tlsConfig.ca.secret.key
+          value: ca.crt
+      - notExists:
+          path: spec.endpoints[0].tlsConfig.caFile
+      - template: exporters/kube-scheduler/servicemonitor.yaml
+        equal:
+          path: spec.endpoints[1].tlsConfig.ca.secret.name
+          value: my-ca
+      - template: exporters/kube-scheduler/servicemonitor.yaml
+        notExists:
+          path: spec.endpoints[1].tlsConfig.caFile
+      - template: exporters/kube-etcd/servicemonitor.yaml
+        equal:
+          path: spec.endpoints[0].tlsConfig.cert.secret.name
+          value: etcd-client
+      - template: exporters/kube-etcd/servicemonitor.yaml
+        notExists:
+          path: spec.endpoints[0].tlsConfig.certFile
+      - template: exporters/kube-etcd/servicemonitor.yaml
+        equal:
+          path: spec.endpoints[0].tlsConfig.keySecret.name
+          value: etcd-client
+      - template: exporters/kube-etcd/servicemonitor.yaml
+        notExists:
+          path: spec.endpoints[0].tlsConfig.keyFile
