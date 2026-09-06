@@ -40,7 +40,10 @@ spec:
     {{- if .Values.coreDns.serviceMonitor.proxyUrl }}
     proxyUrl: {{ .Values.coreDns.serviceMonitor.proxyUrl}}
     {{- end }}
-    {{- include "kube-prometheus-stack.serviceMonitor.authorization" (list .Values.coreDns.serviceMonitor.authorization .Values.coreDns.serviceMonitor.bearerTokenFile 4) }}
+    {{- with .Values.coreDns.serviceMonitor.authorization }}
+    authorization:
+      {{- tpl (toYaml .) $ | nindent 6 }}
+    {{- end }}
 {{- if .Values.coreDns.serviceMonitor.metricRelabelings }}
     metricRelabelings:
 {{ tpl (toYaml .Values.coreDns.serviceMonitor.metricRelabelings | indent 4) . }}

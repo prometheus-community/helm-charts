@@ -113,6 +113,20 @@ heritage: {{ $.Release.Service | quote }}
 {{- end -}}
 {{- end -}}
 
+{{/*
+Name of the Secret holding the Prometheus service account token that the control-plane
+ServiceMonitors authenticate with by default. The chart only creates that Secret alongside the
+service account, so fail with an actionable message rather than render a ServiceMonitor pointing at
+a Secret that will never exist. Only reached when a component still carries the default
+`authorization`, so overriding or clearing it keeps working with prometheus disabled.
+*/}}
+{{- define "kube-prometheus-stack.prometheus.tokenSecretName" -}}
+{{- if not (and .Values.prometheus.enabled .Values.prometheus.serviceAccount.create .Values.prometheus.serviceAccount.createTokenSecret) -}}
+{{- fail "The control-plane ServiceMonitors authenticate by default with the Secret created by prometheus.serviceAccount.createTokenSecret, which is only rendered when prometheus.enabled and prometheus.serviceAccount.create are also true. Enable them, or set the serviceMonitor.authorization of each enabled control-plane component to a Secret you manage yourself, or to null to scrape without authentication." -}}
+{{- end -}}
+{{ include "kube-prometheus-stack.prometheus.serviceAccountName" . }}-token
+{{- end -}}
+
 {{/* Create the name of alertmanager service account to use */}}
 {{- define "kube-prometheus-stack.alertmanager.serviceAccountName" -}}
 {{- if .Values.alertmanager.serviceAccount.create -}}
@@ -358,69 +372,16 @@ global:
 {{- end }}
 {{- define "kube-prometheus-stack.kubelet.authConfig" }}
 {{- if .Values.kubelet.serviceMonitor.https }}
+{{- with .Values.kubelet.serviceMonitor.tlsConfig }}
 tlsConfig:
-  {{- include "kube-prometheus-stack.serviceMonitor.tlsSecret" (list "ca" .Values.kubelet.serviceMonitor.caSecret "/var/run/secrets/kubernetes.io/serviceaccount/ca.crt" 2) }}
-  insecureSkipVerify: {{ .Values.kubelet.serviceMonitor.insecureSkipVerify }}
-{{- include "kube-prometheus-stack.serviceMonitor.authorization" (list .Values.kubelet.serviceMonitor.authorization "/var/run/secrets/kubernetes.io/serviceaccount/token" 0) }}
+  {{- tpl (toYaml .) $ | nindent 2 }}
+{{- end }}
+{{- with .Values.kubelet.serviceMonitor.authorization }}
+authorization:
+  {{- tpl (toYaml .) $ | nindent 2 }}
 {{- end }}
 {{- end }}
-
-{{/*
-Render `authorization:` for a ServiceMonitor endpoint.
-Takes a list: (authorization value, bearerTokenFile default, indent width). Renders `authorization:`
-from the first argument if set, otherwise falls back to `bearerTokenFile: <default>`, and renders
-nothing at all if both are empty. Output is newline-prefixed and indented, so do not pipe it through
-`nindent` at the call site.
-*/}}
-{{- define "kube-prometheus-stack.serviceMonitor.authorization" -}}
-{{- $authorization := index . 0 -}}
-{{- $bearerTokenFile := index . 1 -}}
-{{- $indent := index . 2 | int -}}
-{{- if $authorization -}}
-{{- printf "authorization:\n%s" (toYaml $authorization | indent 2) | nindent $indent }}
-{{- else if $bearerTokenFile -}}
-{{- printf "bearerTokenFile: %s" $bearerTokenFile | nindent $indent }}
-{{- end -}}
 {{- end }}
-
-{{/*
-Render the CA or client certificate portion of `tlsConfig:` for a ServiceMonitor endpoint.
-Takes a list: (field name, secret value, file default, indent width), where field name is `ca` or
-`cert`. Renders `<field>.secret:` from the secret value if set, otherwise falls back to
-`<field>File: <default>`, and renders nothing at all if both are empty. Output is newline-prefixed
-and indented, so do not pipe it through `nindent` at the call site.
-*/}}
-{{- define "kube-prometheus-stack.serviceMonitor.tlsSecret" -}}
-{{- $field := index . 0 -}}
-{{- $secret := index . 1 -}}
-{{- $file := index . 2 -}}
-{{- $indent := index . 3 | int -}}
-{{- if $secret -}}
-{{- printf "%s:\n  secret:\n%s" $field (toYaml $secret | indent 4) | nindent $indent }}
-{{- else if $file -}}
-{{- printf "%sFile: %s" $field $file | nindent $indent }}
-{{- end -}}
-{{- end }}
-
-{{/*
-Render the private key portion of `tlsConfig:` for a ServiceMonitor endpoint. Unlike the CA and
-client certificate, the key has no `configMap` alternative, so the secret is not nested under a
-`secret:` key. Takes a list: (keySecret value, keyFile default, indent width). Renders `keySecret:`
-from the first argument if set, otherwise falls back to `keyFile: <default>`, and renders nothing at
-all if both are empty. Output is newline-prefixed and indented, so do not pipe it through `nindent`
-at the call site.
-*/}}
-{{- define "kube-prometheus-stack.serviceMonitor.tlsKeySecret" -}}
-{{- $keySecret := index . 0 -}}
-{{- $keyFile := index . 1 -}}
-{{- $indent := index . 2 | int -}}
-{{- if $keySecret -}}
-{{- printf "keySecret:\n%s" (toYaml $keySecret | indent 2) | nindent $indent }}
-{{- else if $keyFile -}}
-{{- printf "keyFile: %s" $keyFile | nindent $indent }}
-{{- end -}}
-{{- end }}
-
 
 {{/* To help configure anti-affinity rules for Prometheus pods */}}
 {{- define "kube-prometheus-stack.prometheus.pod-anti-affinity.matchExpressions" }}
