@@ -1719,14 +1719,33 @@ kubernetesServiceMonitors:
 ##
 kubeApiServer:
   enabled: true
+  ## TLS configuration of the ServiceMonitor endpoint. Rendered as-is, so any field of the
+  ## Prometheus Operator SafeTLSConfig type can be set here.
+  ## ref: https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/api-reference/api.md#monitoring.coreos.com/v1.SafeTLSConfig
+  ##
   tlsConfig:
     serverName: kubernetes
     insecureSkipVerify: false
+    ca:
+      configMap:
+        name: kube-root-ca.crt
+        key: ca.crt
   serviceMonitor:
     enabled: true
     ## Scrape interval. If not set, the Prometheus default scrape interval is used.
     ##
     interval: ""
+
+    ## Bearer credentials used to scrape this component. Rendered as-is, so any field of the
+    ## Prometheus Operator SafeAuthorization type can be set here. Set to null to scrape without
+    ## authentication.
+    ## ref: https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/api-reference/api.md#monitoring.coreos.com/v1.SafeAuthorization
+    ##
+    authorization:
+      type: Bearer
+      credentials:
+        name: '{{ include "kube-prometheus-stack.prometheus.tokenSecretName" . }}'
+        key: token
 
     ## SampleLimit defines per-scrape limit on number of scraped samples that will be accepted.
     ##
@@ -1865,11 +1884,30 @@ kubelet:
     ##
     https: true
 
-    ## Skip TLS certificate validation when scraping.
-    ## This is enabled by default because kubelet serving certificate deployed by kubeadm is by default self-signed
-    ## ref: https://kubernetes.io/docs/tasks/administer-cluster/kubeadm/kubeadm-certs/#kubelet-serving-certs
+    ## Bearer credentials used to scrape this component. Rendered as-is, so any field of the
+    ## Prometheus Operator SafeAuthorization type can be set here. Set to null to scrape without
+    ## authentication.
+    ## ref: https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/api-reference/api.md#monitoring.coreos.com/v1.SafeAuthorization
     ##
-    insecureSkipVerify: true
+    authorization:
+      type: Bearer
+      credentials:
+        name: '{{ include "kube-prometheus-stack.prometheus.tokenSecretName" . }}'
+        key: token
+
+    ## TLS configuration of the ServiceMonitor endpoint. Only applies when scraping over https.
+    ## Rendered as-is, so any field of the Prometheus Operator SafeTLSConfig type can be set here.
+    ## insecureSkipVerify is enabled by default because the kubelet serving certificate deployed by
+    ## kubeadm is self-signed.
+    ## ref: https://kubernetes.io/docs/tasks/administer-cluster/kubeadm/kubeadm-certs/#kubelet-serving-certs
+    ## ref: https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/api-reference/api.md#monitoring.coreos.com/v1.SafeTLSConfig
+    ##
+    tlsConfig:
+      insecureSkipVerify: true
+      ca:
+        configMap:
+          name: kube-root-ca.crt
+          key: ca.crt
 
     ## Enable scraping /metrics/probes from kubelet's service
     ##
@@ -2121,11 +2159,27 @@ kubeControllerManager:
     ##
     https: null
 
-    # Skip TLS certificate validation when scraping
-    insecureSkipVerify: null
+    ## Bearer credentials used to scrape this component. Rendered as-is, so any field of the
+    ## Prometheus Operator SafeAuthorization type can be set here. Set to null to scrape without
+    ## authentication.
+    ## ref: https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/api-reference/api.md#monitoring.coreos.com/v1.SafeAuthorization
+    ##
+    authorization:
+      type: Bearer
+      credentials:
+        name: '{{ include "kube-prometheus-stack.prometheus.tokenSecretName" . }}'
+        key: token
 
-    # Name of the server to use when validating TLS certificate
-    serverName: null
+    ## TLS configuration of the ServiceMonitor endpoint. Only applies when scraping over https.
+    ## Rendered as-is, so any field of the Prometheus Operator SafeTLSConfig type can be set here.
+    ## ref: https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/api-reference/api.md#monitoring.coreos.com/v1.SafeTLSConfig
+    ##
+    tlsConfig:
+      insecureSkipVerify: true
+      ca:
+        configMap:
+          name: kube-root-ca.crt
+          key: ca.crt
 
     ## MetricRelabelConfigs to apply to samples after scraping, but before ingestion.
     ## ref: https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/api-reference/api.md#relabelconfig
@@ -2237,10 +2291,16 @@ coreDns:
     ## https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/api-reference/api.md#servicemonitor
     targetLabels: []
 
-    ## File containing bearer token to be used when scraping targets
-    ## Empty value do not send any bearer token.
+    ## Bearer credentials used to scrape this component. Rendered as-is, so any field of the
+    ## Prometheus Operator SafeAuthorization type can be set here. Set to null to scrape without
+    ## authentication.
+    ## ref: https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/api-reference/api.md#monitoring.coreos.com/v1.SafeAuthorization
     ##
-    bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
+    authorization:
+      type: Bearer
+      credentials:
+        name: '{{ include "kube-prometheus-stack.prometheus.tokenSecretName" . }}'
+        key: token
 
 ## Component scraping kubeDns. Use either this or coreDns
 ##
@@ -2340,10 +2400,16 @@ kubeDns:
     ## https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/api-reference/api.md#servicemonitor
     targetLabels: []
 
-    ## File containing bearer token to be used when scraping targets
-    ## Empty value do not send any bearer token.
+    ## Bearer credentials used to scrape this component. Rendered as-is, so any field of the
+    ## Prometheus Operator SafeAuthorization type can be set here. Set to null to scrape without
+    ## authentication.
+    ## ref: https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/api-reference/api.md#monitoring.coreos.com/v1.SafeAuthorization
     ##
-    bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
+    authorization:
+      type: Bearer
+      credentials:
+        name: '{{ include "kube-prometheus-stack.prometheus.tokenSecretName" . }}'
+        key: token
 
 ## Component scraping etcd
 ##
@@ -2370,16 +2436,25 @@ kubeEtcd:
     # selector:
     #   component: etcd
 
-  ## Configure secure access to the etcd cluster by loading a secret into prometheus and
-  ## specifying security configuration below. For example, with a secret named etcd-client-cert
+  ## Configure secure access to the etcd cluster by referencing a secret holding the client
+  ## certificate. For example, with a secret named etcd-client-cert
   ##
   ## serviceMonitor:
   ##   scheme: https
-  ##   insecureSkipVerify: false
-  ##   serverName: localhost
-  ##   caFile: /etc/prometheus/secrets/etcd-client-cert/etcd-ca
-  ##   certFile: /etc/prometheus/secrets/etcd-client-cert/etcd-client
-  ##   keyFile: /etc/prometheus/secrets/etcd-client-cert/etcd-client-key
+  ##   tlsConfig:
+  ##     insecureSkipVerify: false
+  ##     serverName: localhost
+  ##     ca:
+  ##       secret:
+  ##         name: etcd-client-cert
+  ##         key: etcd-ca
+  ##     cert:
+  ##       secret:
+  ##         name: etcd-client-cert
+  ##         key: etcd-client
+  ##     keySecret:
+  ##       name: etcd-client-cert
+  ##       key: etcd-client-key
   ##
   serviceMonitor:
     enabled: true
@@ -2411,11 +2486,14 @@ kubeEtcd:
     ##
     proxyUrl: ""
     scheme: http
-    insecureSkipVerify: false
-    serverName: ""
-    caFile: ""
-    certFile: ""
-    keyFile: ""
+
+    ## TLS configuration of the ServiceMonitor endpoint. Only applies when scheme is https.
+    ## Rendered as-is, so any field of the Prometheus Operator SafeTLSConfig type can be set here.
+    ## etcd requires client certificates, see the commented example above.
+    ## ref: https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/api-reference/api.md#monitoring.coreos.com/v1.SafeTLSConfig
+    ##
+    tlsConfig:
+      insecureSkipVerify: false
 
     ## port: Name of the port the metrics will be scraped from
     ##
@@ -2454,10 +2532,16 @@ kubeEtcd:
     ## https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/api-reference/api.md#servicemonitor
     targetLabels: []
 
-    ## File containing bearer token to be used when scraping targets
-    ## Empty value do not send any bearer token.
+    ## Bearer credentials used to scrape this component. Rendered as-is, so any field of the
+    ## Prometheus Operator SafeAuthorization type can be set here. Set to null to scrape without
+    ## authentication.
+    ## ref: https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/api-reference/api.md#monitoring.coreos.com/v1.SafeAuthorization
     ##
-    bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
+    authorization:
+      type: Bearer
+      credentials:
+        name: '{{ include "kube-prometheus-stack.prometheus.tokenSecretName" . }}'
+        key: token
 
 ## Component scraping kube scheduler
 ##
@@ -2535,11 +2619,27 @@ kubeScheduler:
     #  matchLabels:
     #    component: kube-scheduler
 
-    ## Skip TLS certificate validation when scraping
-    insecureSkipVerify: null
+    ## Bearer credentials used to scrape this component. Rendered as-is, so any field of the
+    ## Prometheus Operator SafeAuthorization type can be set here. Set to null to scrape without
+    ## authentication.
+    ## ref: https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/api-reference/api.md#monitoring.coreos.com/v1.SafeAuthorization
+    ##
+    authorization:
+      type: Bearer
+      credentials:
+        name: '{{ include "kube-prometheus-stack.prometheus.tokenSecretName" . }}'
+        key: token
 
-    ## Name of the server to use when validating TLS certificate
-    serverName: null
+    ## TLS configuration of the ServiceMonitor endpoint. Only applies when scraping over https.
+    ## Rendered as-is, so any field of the Prometheus Operator SafeTLSConfig type can be set here.
+    ## ref: https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/api-reference/api.md#monitoring.coreos.com/v1.SafeTLSConfig
+    ##
+    tlsConfig:
+      insecureSkipVerify: true
+      ca:
+        configMap:
+          name: kube-root-ca.crt
+          key: ca.crt
 
     ## MetricRelabelConfigs to apply to samples after scraping, but before ingestion.
     ## ref: https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/api-reference/api.md#relabelconfig
@@ -2669,6 +2769,16 @@ kubeProxy:
     ##
     https: false
 
+    ## TLS configuration of the ServiceMonitor endpoint. Only applies when scraping over https.
+    ## Rendered as-is, so any field of the Prometheus Operator SafeTLSConfig type can be set here.
+    ## ref: https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/api-reference/api.md#monitoring.coreos.com/v1.SafeTLSConfig
+    ##
+    tlsConfig:
+      ca:
+        configMap:
+          name: kube-root-ca.crt
+          key: ca.crt
+
     ## MetricRelabelConfigs to apply to samples after scraping, but before ingestion.
     ## ref: https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/api-reference/api.md#relabelconfig
     ##
@@ -2694,10 +2804,16 @@ kubeProxy:
     ## https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/api-reference/api.md#servicemonitor
     targetLabels: []
 
-    ## File containing bearer token to be used when scraping targets
-    ## Empty value do not send any bearer token.
+    ## Bearer credentials used to scrape this component. Rendered as-is, so any field of the
+    ## Prometheus Operator SafeAuthorization type can be set here. Set to null to scrape without
+    ## authentication.
+    ## ref: https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/api-reference/api.md#monitoring.coreos.com/v1.SafeAuthorization
     ##
-    bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
+    authorization:
+      type: Bearer
+      credentials:
+        name: '{{ include "kube-prometheus-stack.prometheus.tokenSecretName" . }}'
+        key: token
 
 ## Component scraping kube state metrics
 ##
@@ -3618,8 +3734,10 @@ prometheusOperator:
   thanosRulerInstanceSelector: ""
 
   ## Set a Field Selector to filter watched secrets
+  ## `kubernetes.io/service-account-token` secrets are no longer excluded, so that changes to the
+  ## secret the control-plane ServiceMonitors authenticate with trigger a reconciliation.
   ##
-  secretFieldSelector: "type!=kubernetes.io/dockercfg,type!=kubernetes.io/service-account-token,type!=helm.sh/release.v1"
+  secretFieldSelector: "type!=kubernetes.io/dockercfg,type!=helm.sh/release.v1"
 
   ## Feature gates to enable/disable operator features, rendered as --feature-gates=<key>=<value>.
   ## See https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/api-reference/feature-gates.md
@@ -3693,6 +3811,18 @@ prometheus:
     name: ""
     annotations: {}
     automountServiceAccountToken: true
+
+    ## Create a `kubernetes.io/service-account-token` Secret for the Prometheus service account.
+    ## The control-plane ServiceMonitors reference it by default, because ServiceMonitors can only
+    ## authenticate through a Secret and Kubernetes no longer creates one automatically.
+    ## The resulting token is long-lived and does not expire; disable this and set the
+    ## `authorization` values of the control-plane components if you manage the credential yourself.
+    ## Only rendered together with the service account, so it requires `prometheus.enabled` and
+    ## `create` above. Leaving a control-plane component on the default `authorization` while the
+    ## Secret is not rendered is a rendering error rather than a silently broken ServiceMonitor.
+    ## ref: https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-account/#manually-create-an-api-token-for-a-serviceaccount
+    ##
+    createTokenSecret: true
 
   # Service for thanos service discovery on sidecar
   # Enable this can make Thanos Query can use

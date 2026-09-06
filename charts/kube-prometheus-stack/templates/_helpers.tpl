@@ -113,6 +113,20 @@ heritage: {{ $.Release.Service | quote }}
 {{- end -}}
 {{- end -}}
 
+{{/*
+Name of the Secret holding the Prometheus service account token that the control-plane
+ServiceMonitors authenticate with by default. The chart only creates that Secret alongside the
+service account, so fail with an actionable message rather than render a ServiceMonitor pointing at
+a Secret that will never exist. Only reached when a component still carries the default
+`authorization`, so overriding or clearing it keeps working with prometheus disabled.
+*/}}
+{{- define "kube-prometheus-stack.prometheus.tokenSecretName" -}}
+{{- if not (and .Values.prometheus.enabled .Values.prometheus.serviceAccount.create .Values.prometheus.serviceAccount.createTokenSecret) -}}
+{{- fail "The control-plane ServiceMonitors authenticate by default with the Secret created by prometheus.serviceAccount.createTokenSecret, which is only rendered when prometheus.enabled and prometheus.serviceAccount.create are also true. Enable them, or set the serviceMonitor.authorization of each enabled control-plane component to a Secret you manage yourself, or to null to scrape without authentication." -}}
+{{- end -}}
+{{ include "kube-prometheus-stack.prometheus.serviceAccountName" . }}-token
+{{- end -}}
+
 {{/* Create the name of alertmanager service account to use */}}
 {{- define "kube-prometheus-stack.alertmanager.serviceAccountName" -}}
 {{- if .Values.alertmanager.serviceAccount.create -}}
@@ -358,13 +372,16 @@ global:
 {{- end }}
 {{- define "kube-prometheus-stack.kubelet.authConfig" }}
 {{- if .Values.kubelet.serviceMonitor.https }}
+{{- with .Values.kubelet.serviceMonitor.tlsConfig }}
 tlsConfig:
-  caFile: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
-  insecureSkipVerify: {{ .Values.kubelet.serviceMonitor.insecureSkipVerify }}
-bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
+  {{- tpl (toYaml .) $ | nindent 2 }}
+{{- end }}
+{{- with .Values.kubelet.serviceMonitor.authorization }}
+authorization:
+  {{- tpl (toYaml .) $ | nindent 2 }}
 {{- end }}
 {{- end }}
-
+{{- end }}
 
 {{/* To help configure anti-affinity rules for Prometheus pods */}}
 {{- define "kube-prometheus-stack.prometheus.pod-anti-affinity.matchExpressions" }}
