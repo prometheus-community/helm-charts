@@ -132,6 +132,66 @@ Timeouts are only rendered for `kind: HTTPRoute`. They do not apply to generated
 
 This requires Gateway API CRDs that support HTTPRoute timeouts (available in the Standard channel since v1.2.0) and a Gateway controller that supports the corresponding timeout features. When both values are set, `backendRequest` must not exceed `request`, unless `request` is `"0s"`. See the [Gateway API timeout documentation](https://gateway-api.sigs.k8s.io/reference/api-types/httproute/#timeouts-optional) for duration semantics and controller support requirements.
 
+### Authentication of the control-plane ServiceMonitors
+
+The built-in ServiceMonitors for kubelet, kube-apiserver, kube-controller-manager, kube-scheduler, kube-etcd, kube-proxy, coredns and kube-dns authenticate through Kubernetes objects rather than through files on the scraper's filesystem. The bearer token comes from a Secret referenced by `authorization`, and the CA comes from the `kube-root-ca.crt` ConfigMap that Kubernetes maintains in every namespace. This keeps the ServiceMonitors valid when `prometheus.prometheusSpec.arbitraryFSAccessThroughSMs.deny` is `true`, and when they are scraped by Grafana Alloy's `prometheus.operator.servicemonitors` component, which rejects filesystem references by default since v1.19.0.
+
+The chart creates the credential itself: `prometheus.serviceAccount.createTokenSecret` (enabled by default) renders a `kubernetes.io/service-account-token` Secret named `<prometheus service account>-token`, which every component references by default:
+
+```yaml
+kubelet:
+  serviceMonitor:
+    authorization:
+      type: Bearer
+      credentials:
+        name: '{{ include "kube-prometheus-stack.prometheus.tokenSecretName" . }}'
+        key: token
+    tlsConfig:
+      insecureSkipVerify: true
+      ca:
+        configMap:
+          name: kube-root-ca.crt
+          key: ca.crt
+```
+
+Both `authorization` and `tlsConfig` are rendered as-is, so any field of the Prometheus Operator [SafeAuthorization](https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/api-reference/api.md#monitoring.coreos.com/v1.SafeAuthorization) and [SafeTLSConfig](https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/api-reference/api.md#monitoring.coreos.com/v1.SafeTLSConfig) types can be set. Set `authorization` to `null` to scrape a component without authentication. `kubeApiServer` keeps its TLS settings under `kubeApiServer.tlsConfig`; `coreDns` and `kubeDns` have no `tlsConfig`, since those endpoints are scraped over HTTP.
+
+That Secret is only rendered alongside the Prometheus service account, so it also requires `prometheus.enabled` and `prometheus.serviceAccount.create`. Leaving a component on the default `authorization` while the Secret is not rendered fails the release with an explanatory message, rather than producing a ServiceMonitor that references a Secret which will never exist. When the control plane is scraped by a Prometheus this chart does not deploy, point each enabled component at the scraper's own credential; `ci/08-external-scraper-values.yaml` is a complete example.
+
+To use your own credential, disable `prometheus.serviceAccount.createTokenSecret` and point the components at your Secret. The Secret must live in the namespace of the ServiceMonitor, which is the release namespace unless `prometheus.prometheusSpec.ignoreNamespaceSelectors` is enabled. Because Helm deep-merges values, replacing the CA reference requires clearing the default explicitly:
+
+```yaml
+kubelet:
+  serviceMonitor:
+    tlsConfig:
+      ca:
+        configMap: null
+        secret:
+          name: kubelet-scrape-auth
+          key: ca.crt
+```
+
+`kubeEtcd` is the only component that scrapes with client certificates:
+
+```yaml
+kubeEtcd:
+  serviceMonitor:
+    scheme: https
+    tlsConfig:
+      insecureSkipVerify: false
+      ca:
+        secret:
+          name: etcd-client-cert
+          key: etcd-ca
+      cert:
+        secret:
+          name: etcd-client-cert
+          key: etcd-client
+      keySecret:
+        name: etcd-client-cert
+        key: etcd-client-key
+```
+
 ### Prometheus High Availability (HA)
 
 For a basic HA setup, run multiple Prometheus replicas:
