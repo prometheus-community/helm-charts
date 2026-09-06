@@ -33,10 +33,10 @@ The installation instructions use the OCI registry. Refer to the [`helm repo`]([
 
 ```console
 # Helm 3
-$ helm install [RELEASE_NAME] oci://ghcr.io/prometheus-community/charts/prometheus-stackdriver-exporter --set stackdriver.projectId=google-project-name
+$ helm install [RELEASE_NAME] oci://ghcr.io/prometheus-community/charts/prometheus-stackdriver-exporter --set 'stackdriver.projectIds[0]=google-project-name'
 
 # Helm 2
-$ helm install --name [RELEASE_NAME] oci://ghcr.io/prometheus-community/charts/prometheus-stackdriver-exporter --set stackdriver.projectId=google-project-name
+$ helm install --name [RELEASE_NAME] oci://ghcr.io/prometheus-community/charts/prometheus-stackdriver-exporter --set 'stackdriver.projectIds[0]=google-project-name'
 ```
 
 The command deploys Stackdriver-Exporter on the Kubernetes cluster using the default configuration.
@@ -71,6 +71,30 @@ _See [helm upgrade](https://helm.sh/docs/helm/helm_upgrade/) for command documen
 #### Upgrading an existing Release to a new major version
 
 A major chart version change (like v1.2.3 -> v2.0.0) indicates that there is an incompatible breaking change needing manual actions.
+
+##### 4.x to 5.x
+
+The deprecated `stackdriver.projectId` and
+`stackdriver.metrics.typePrefixes` parameters have been removed.
+
+Replace:
+
+```yaml
+stackdriver:
+  projectId: my-project
+  metrics:
+    typePrefixes: compute.googleapis.com/instance/cpu
+```
+with:
+
+```yaml
+stackdriver:
+  projectIds:
+    - my-project
+  metrics:
+    prefixes:
+      - compute.googleapis.com/instance/cpu
+```
 
 ##### 3.x to 4.x
 
@@ -141,7 +165,7 @@ $ helm inspect values oci://ghcr.io/prometheus-community/charts/prometheus-stack
 $ helm show values oci://ghcr.io/prometheus-community/charts/prometheus-stackdriver-exporter
 ```
 
-> **Tip**: You can use the default [values.yaml](values.yaml), as long as you provide a value for stackdriver.projectId
+> **Tip**: You can use the default [values.yaml](values.yaml), as long as you provide a value for stackdriver.projectIds.
 
 ### Namespace Override
 

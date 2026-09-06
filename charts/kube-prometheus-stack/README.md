@@ -110,6 +110,52 @@ You may also `helm show values` on this chart's [dependencies](#dependencies) fo
 
 For templated Grafana datasource definitions (e.g. when using Helm flow control), use `grafana.additionalDataSourcesString`, which is rendered via `tpl`.
 
+### HTTPRoute timeouts
+
+Set `timeouts` on a route to configure request and backend request timeouts for its generated HTTPRoute rule:
+
+```yaml
+prometheus:
+  route:
+    main:
+      enabled: true
+      parentRefs:
+        - name: gateway
+      timeouts:
+        request: 120s
+        backendRequest: 60s
+```
+
+The same settings are available under `alertmanager.route`, `thanosRuler.route`, and the `routePerReplica` settings for Prometheus and Alertmanager.
+
+Timeouts are only rendered for `kind: HTTPRoute`. They do not apply to generated HTTPS redirect rules or propagate to `additionalRules`; configure timeouts directly on additional rules when needed. Leaving `timeouts` empty preserves the Gateway controller's defaults.
+
+This requires Gateway API CRDs that support HTTPRoute timeouts (available in the Standard channel since v1.2.0) and a Gateway controller that supports the corresponding timeout features. When both values are set, `backendRequest` must not exceed `request`, unless `request` is `"0s"`. See the [Gateway API timeout documentation](https://gateway-api.sigs.k8s.io/reference/api-types/httproute/#timeouts-optional) for duration semantics and controller support requirements.
+
+### Prometheus High Availability (HA)
+
+For a basic HA setup, run multiple Prometheus replicas:
+
+```yaml
+prometheus:
+  prometheusSpec:
+    replicas: 2
+    podAntiAffinity: "hard"
+    externalLabels:
+      cluster: prod-eu1
+```
+
+Important notes:
+
+1. `replicas` controls how many Prometheus pods are deployed for each shard.
+2. Keep anti-affinity enabled (or hardened) to avoid scheduling all replicas on one node.
+3. Do not clear replica/instance external labels in HA setups (`replicaExternalLabelNameClear` / `prometheusExternalLabelNameClear`), otherwise deduplication and alert/source identification become harder.
+4. Querying replicas through a Kubernetes Service provides availability, but not sample deduplication across replicas by itself. For global/deduplicated querying, use a Thanos Query layer (or another backend that performs deduplication).
+
+See also Prometheus Operator HA guidance:
+
+- [Prometheus Operator HA docs](https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/platform/high-availability.md#prometheus)
+
 ### Multiple releases
 
 The same chart can be used to run multiple Prometheus instances in the same cluster if required. To achieve this, it is necessary to run only one instance of prometheus-operator and a pair of alertmanager pods for an HA configuration, while all other components need to be disabled. To disable a dependency during installation, set `kubeStateMetrics.enabled`, `nodeExporter.enabled` and `grafana.enabled` to `false`.
