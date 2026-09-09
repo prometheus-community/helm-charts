@@ -1,0 +1,162 @@
+{{- $ds := .Values.grafana.sidecar.datasources -}}
+{{- $operator := .Values.grafana.operator -}}
+{{- if and $operator.datasourcesEnabled (or (and .Values.grafana.enabled $ds.enabled) .Values.grafana.forceDeployDatasources) -}}
+{{- if not $operator.matchLabels }}{{- fail "grafana.operator.matchLabels must be specified when grafana.operator.datasourcesEnabled is true" }}{{- end }}
+{{- $scrapeInterval := $ds.defaultDatasourceScrapeInterval | default .Values.prometheus.prometheusSpec.scrapeInterval | default "30s" }}
+{{- if $ds.defaultDatasourceEnabled }}
+apiVersion: grafana.integreatly.org/v1beta1
+kind: GrafanaDatasource
+metadata:
+  name: {{ printf "%s-%s" (include "kube-prometheus-stack.fullname" $) "grafana-datasource" | trunc 63 | trimSuffix "-" }}
+  namespace: {{ template "kube-prometheus-stack-grafana.namespace" . }}
+  {{- with $operator.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  labels:
+    app: {{ template "kube-prometheus-stack.name" $ }}-grafana
+    {{- include "kube-prometheus-stack.labels" $ | nindent 4 }}
+spec:
+  allowCrossNamespaceImport: true
+  resyncPeriod: {{ default "10m" $operator.resyncPeriod | quote }}
+  instanceSelector:
+    matchLabels:
+      {{- toYaml $operator.matchLabels | nindent 6 }}
+  datasource:
+    name: {{ $ds.name | quote }}
+    type: prometheus
+    uid: {{ $ds.uid }}
+    {{- if $ds.url }}
+    url: {{ $ds.url }}
+    {{- else }}
+    url: http://{{ template "kube-prometheus-stack.fullname" . }}-prometheus.{{ template "kube-prometheus-stack.namespace" . }}:{{ .Values.prometheus.service.port }}/{{ trimPrefix "/" .Values.prometheus.prometheusSpec.routePrefix }}
+    {{- end }}
+    access: proxy
+    isDefault: {{ $ds.isDefaultDatasource }}
+    jsonData:
+      {{- with $ds.extraJsonData }}
+      {{- tpl (toYaml .) $ | nindent 6 }}
+      {{- end }}
+      httpMethod: {{ $ds.httpMethod }}
+      timeInterval: {{ $scrapeInterval }}
+      {{- if $ds.timeout }}
+      timeout: {{ $ds.timeout }}
+      {{- end }}
+      {{- if $ds.customQueryParameters }}
+      customQueryParameters: {{ $ds.customQueryParameters }}
+      {{- end }}
+      {{- if $ds.exemplarTraceIdDestinations }}
+      exemplarTraceIdDestinations:
+        - datasourceUid: {{ $ds.exemplarTraceIdDestinations.datasourceUid }}
+          name: {{ $ds.exemplarTraceIdDestinations.traceIdLabelName }}
+          urlDisplayLabel: {{ $ds.exemplarTraceIdDestinations.urlDisplayLabel }}
+      {{- end }}
+{{- if $ds.createPrometheusReplicasDatasources }}
+{{- range $replica := until (int .Values.prometheus.prometheusSpec.replicas) }}
+---
+apiVersion: grafana.integreatly.org/v1beta1
+kind: GrafanaDatasource
+metadata:
+  name: {{ printf "%s-%s-%d" (include "kube-prometheus-stack.fullname" $) "grafana-datasource-replica" $replica | trunc 63 | trimSuffix "-" }}
+  namespace: {{ template "kube-prometheus-stack-grafana.namespace" $ }}
+  {{- with $operator.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  labels:
+    app: {{ template "kube-prometheus-stack.name" $ }}-grafana
+    {{- include "kube-prometheus-stack.labels" $ | nindent 4 }}
+spec:
+  allowCrossNamespaceImport: true
+  resyncPeriod: {{ default "10m" $operator.resyncPeriod | quote }}
+  instanceSelector:
+    matchLabels:
+      {{- toYaml $operator.matchLabels | nindent 6 }}
+  datasource:
+    name: "{{ $ds.name }}-{{ $replica }}"
+    type: prometheus
+    uid: {{ $ds.uid }}-replica-{{ $replica }}
+    url: http://prometheus-{{ template "kube-prometheus-stack.prometheus.crname" $ }}-{{ $replica }}.{{ $ds.prometheusServiceName }}:9090/{{ trimPrefix "/" $.Values.prometheus.prometheusSpec.routePrefix }}
+    access: proxy
+    isDefault: false
+    jsonData:
+      {{- with $ds.extraJsonData }}
+      {{- tpl (toYaml .) $ | nindent 6 }}
+      {{- end }}
+      timeInterval: {{ $scrapeInterval }}
+      {{- if $ds.exemplarTraceIdDestinations }}
+      exemplarTraceIdDestinations:
+        - datasourceUid: {{ $ds.exemplarTraceIdDestinations.datasourceUid }}
+          name: {{ $ds.exemplarTraceIdDestinations.traceIdLabelName }}
+          urlDisplayLabel: {{ $ds.exemplarTraceIdDestinations.urlDisplayLabel }}
+      {{- end }}
+{{- end }}
+{{- end }}
+{{- if $ds.alertmanager.enabled }}
+---
+apiVersion: grafana.integreatly.org/v1beta1
+kind: GrafanaDatasource
+metadata:
+  name: {{ printf "%s-%s" (include "kube-prometheus-stack.fullname" $) "grafana-datasource-alertmanager" | trunc 63 | trimSuffix "-" }}
+  namespace: {{ template "kube-prometheus-stack-grafana.namespace" . }}
+  {{- with $operator.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  labels:
+    app: {{ template "kube-prometheus-stack.name" $ }}-grafana
+    {{- include "kube-prometheus-stack.labels" $ | nindent 4 }}
+spec:
+  allowCrossNamespaceImport: true
+  resyncPeriod: {{ default "10m" $operator.resyncPeriod | quote }}
+  instanceSelector:
+    matchLabels:
+      {{- toYaml $operator.matchLabels | nindent 6 }}
+  datasource:
+    name: {{ $ds.alertmanager.name | quote }}
+    type: alertmanager
+    uid: {{ $ds.alertmanager.uid }}
+    {{- if $ds.alertmanager.url }}
+    url: {{ $ds.alertmanager.url }}
+    {{- else }}
+    url: http://{{ template "kube-prometheus-stack.fullname" . }}-alertmanager.{{ template "kube-prometheus-stack.namespace" . }}:{{ .Values.alertmanager.service.port }}/{{ trimPrefix "/" .Values.alertmanager.alertmanagerSpec.routePrefix }}
+    {{- end }}
+    access: proxy
+    jsonData:
+      handleGrafanaManagedAlerts: {{ $ds.alertmanager.handleGrafanaManagedAlerts }}
+      implementation: {{ $ds.alertmanager.implementation }}
+{{- end }}
+{{- end }}
+{{- range $datasource := .Values.grafana.additionalDataSources }}
+{{- $slug := regexReplaceAll "[^a-z0-9]+" (default $datasource.name $datasource.uid | lower) "-" | trimAll "-" }}
+---
+apiVersion: grafana.integreatly.org/v1beta1
+kind: GrafanaDatasource
+metadata:
+  name: {{ printf "%s-%s" (include "kube-prometheus-stack.fullname" $) $slug | trunc 63 | trimSuffix "-" }}
+  namespace: {{ template "kube-prometheus-stack-grafana.namespace" $ }}
+  {{- with $operator.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  labels:
+    app: {{ template "kube-prometheus-stack.name" $ }}-grafana
+    {{- include "kube-prometheus-stack.labels" $ | nindent 4 }}
+spec:
+  allowCrossNamespaceImport: true
+  resyncPeriod: {{ default "10m" $operator.resyncPeriod | quote }}
+  instanceSelector:
+    matchLabels:
+      {{- toYaml $operator.matchLabels | nindent 6 }}
+  {{- with $datasource.valuesFrom }}
+  valuesFrom:
+    {{- tpl (toYaml .) $ | nindent 4 }}
+  {{- end }}
+  {{- with $datasource.plugins }}
+  plugins:
+    {{- tpl (toYaml .) $ | nindent 4 }}
+  {{- end }}
+  datasource:
+    {{- tpl (toYaml (omit $datasource "valuesFrom" "plugins")) $ | nindent 4 }}
+{{- end }}
+{{- end -}}
