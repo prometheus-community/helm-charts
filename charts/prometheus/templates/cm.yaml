@@ -51,6 +51,26 @@ data:
     scrape_config_files:
 {{ toYaml $root.Values.scrapeConfigFiles | indent 4 }}
 {{- end }}
+{{- if or $root.Values.scrapeConfigs $root.Values.extraScrapeConfigs $value.scrape_configs }}
+    scrape_configs:
+{{- range $scrapeKey, $scrapeValue := $root.Values.scrapeConfigs }}
+{{- if not (hasKey $scrapeValue "enabled") }}
+{{- $_ := set $scrapeValue "enabled" true }}
+{{- end }}
+{{- if $scrapeValue.enabled }}
+{{- $jobName := default $scrapeKey $scrapeValue.job_name}}
+    - {{ printf "job_name: %s" $jobName }}
+      {{- toYaml (omit $scrapeValue "enabled" "job_name") | nindent 6 }}
+{{- end }}
+{{- end }}
+{{- if $value.scrape_configs }}
+{{- toYaml $value.scrape_configs | nindent 4 }}
+{{- $_ := unset $value "scrape_configs"}}
+{{- end }}
+{{- if $root.Values.extraScrapeConfigs }}
+{{ tpl $root.Values.extraScrapeConfigs $root | indent 4 }}
+{{- end }}
+{{- end }}
 {{- end }}
 {{- if eq $key "alerts" }}
 {{- if and (not (empty $value)) (empty $value.groups) }}
@@ -67,9 +87,6 @@ data:
 {{ toYaml $value | default "{}" | indent 4 }}
 {{- end }}
 {{- if eq $key "prometheus.yml" -}}
-{{- if $root.Values.extraScrapeConfigs }}
-{{ tpl $root.Values.extraScrapeConfigs $root | indent 4 }}
-{{- end -}}
 {{- if or ($root.Values.alertmanager.enabled) ($root.Values.server.alertmanagers) }}
     alerting:
 {{- if $root.Values.alertRelabelConfigs }}

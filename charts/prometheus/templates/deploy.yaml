@@ -59,7 +59,9 @@ spec:
   selector:
     matchLabels:
       {{- include "prometheus.server.matchLabels" . | nindent 6 }}
+  {{- if not .Values.server.daemonSet.enabled }}
   replicas: {{ .Values.server.replicaCount }}
+  {{- end }}
   revisionHistoryLimit: {{ .Values.server.revisionHistoryLimit }}
   template:
     metadata:
@@ -112,9 +114,9 @@ spec:
           {{- end }}
           args:
             - --watched-dir=/etc/config
-          {{- $default_url := "http://127.0.0.1:9090/-/reload" }}
+          {{- $default_url := (printf "http://127.0.0.1:%s/-/reload" (include "prometheus.port" .)) }}
           {{- with .Values.server.prefixURL }}
-          {{- $default_url = printf "http://127.0.0.1:9090%s/-/reload" . }}
+          {{- $default_url = printf "http://127.0.0.1:%s%s/-/reload" (include "prometheus.port" .) . }}
           {{- end }}
           {{- if .Values.configmapReload.prometheus.containerPort }}
             - --listen-address=0.0.0.0:{{ .Values.configmapReload.prometheus.containerPort }}
@@ -177,7 +179,7 @@ spec:
           {{- if .Values.server.image.digest }}
           image: "{{ tpl .Values.server.image.repository . }}@{{ tpl .Values.server.image.digest . }}"
           {{- else }}
-          image: "{{ tpl .Values.server.image.repository . }}:{{ tpl .Values.server.image.tag . | default .Chart.AppVersion}}"
+          image: "{{ tpl .Values.server.image.repository . }}:{{ tpl .Values.server.image.tag . | default .Chart.AppVersion}}{{ if .Values.server.image.distroless }}-distroless{{ end }}"
           {{- end }}
           imagePullPolicy: "{{ .Values.server.image.pullPolicy }}"
           {{- with .Values.server.command }}
@@ -224,7 +226,7 @@ spec:
           {{- end }}
         {{- end }}
           ports:
-            - containerPort: 9090
+            - containerPort: {{ include "prometheus.port" . }}
           {{- if .Values.server.portName }}
               name: {{ .Values.server.portName }}
           {{- end }}
@@ -235,7 +237,7 @@ spec:
             {{- if not .Values.server.tcpSocketProbeEnabled }}
             httpGet:
               path: {{ .Values.server.prefixURL }}/-/ready
-              port: 9090
+              port: {{ default (include "prometheus.port" .) .Values.server.portName }}
               scheme: {{ .Values.server.probeScheme }}
               {{- with .Values.server.probeHeaders }}
               httpHeaders:
@@ -243,7 +245,7 @@ spec:
               {{- end }}
             {{- else }}
             tcpSocket:
-              port: 9090
+              port: {{ default (include "prometheus.port" .) .Values.server.portName }}
             {{- end }}
             initialDelaySeconds: {{ .Values.server.readinessProbeInitialDelay }}
             periodSeconds: {{ .Values.server.readinessProbePeriodSeconds }}
@@ -254,7 +256,7 @@ spec:
             {{- if not .Values.server.tcpSocketProbeEnabled }}
             httpGet:
               path: {{ .Values.server.prefixURL }}/-/healthy
-              port: 9090
+              port: {{ default (include "prometheus.port" .) .Values.server.portName }}
               scheme: {{ .Values.server.probeScheme }}
               {{- with .Values.server.probeHeaders }}
               httpHeaders:
@@ -262,7 +264,7 @@ spec:
               {{- end }}
             {{- else }}
             tcpSocket:
-              port: 9090
+              port: {{ default (include "prometheus.port" .) .Values.server.portName }}
             {{- end }}
             initialDelaySeconds: {{ .Values.server.livenessProbeInitialDelay }}
             periodSeconds: {{ .Values.server.livenessProbePeriodSeconds }}
@@ -274,7 +276,7 @@ spec:
             {{- if not .Values.server.tcpSocketProbeEnabled }}
             httpGet:
               path: {{ .Values.server.prefixURL }}/-/healthy
-              port: 9090
+              port: {{ default (include "prometheus.port" .) .Values.server.portName }}
               scheme: {{ .Values.server.probeScheme }}
               {{- if .Values.server.probeHeaders }}
               httpHeaders:
@@ -285,7 +287,7 @@ spec:
               {{- end }}
             {{- else }}
             tcpSocket:
-              port: 9090
+              port: {{ default (include "prometheus.port" .) .Values.server.portName }}
             {{- end }}
             failureThreshold: {{ .Values.server.startupProbe.failureThreshold }}
             periodSeconds: {{ .Values.server.startupProbe.periodSeconds }}
@@ -295,10 +297,11 @@ spec:
           resources:
             {{- toYaml . | nindent 12 }}
           {{- end }}
+          {{- $storageVolumeName := ternary .Values.server.persistentVolume.statefulSetNameOverride "storage-volume" (and .Values.server.persistentVolume.enabled .Values.server.statefulSet.enabled (not (empty .Values.server.persistentVolume.statefulSetNameOverride))) }}
           volumeMounts:
             - name: config-volume
               mountPath: /etc/config
-            - name: {{ ternary .Values.server.persistentVolume.statefulSetNameOverride "storage-volume" (and .Values.server.persistentVolume.enabled (not (empty .Values.server.persistentVolume.statefulSetNameOverride))) }}
+            - name: {{ $storageVolumeName }}
               mountPath: {{ .Values.server.persistentVolume.mountPath }}
               subPath: "{{ .Values.server.persistentVolume.subPath }}"
           {{- range .Values.server.extraHostPathMounts }}
@@ -437,12 +440,12 @@ spec:
 {{- if .Values.server.extraVolumes }}
 {{ toYaml .Values.server.extraVolumes | indent 8}}
 {{- end }}
-      {{- if not .Values.server.statefulSet.enabled }}
-        - name: {{ .Values.server.persistentVolume.statefulSetNameOverride | default "storage-volume" }}
-        {{- if .Values.server.persistentVolume.enabled }}
+        {{- if and .Values.server.persistentVolume.enabled (not .Values.server.statefulSet.enabled) }}
+        - name: {{ $storageVolumeName }}
           persistentVolumeClaim:
             claimName: {{ if .Values.server.persistentVolume.existingClaim }}{{ .Values.server.persistentVolume.existingClaim }}{{- else }}{{ template "prometheus.server.fullname" . }}{{- end }}
-        {{- else }}
+        {{- else if not .Values.server.persistentVolume.enabled }}
+        - name: {{ $storageVolumeName }}
           emptyDir:
           {{- if or .Values.server.emptyDir.sizeLimit .Values.server.emptyDir.medium }}
           {{- if .Values.server.emptyDir.medium }}
@@ -455,24 +458,23 @@ spec:
             {}
           {{- end -}}
         {{- end -}}
-      {{- end -}}
   {{- if and .Values.server.statefulSet.enabled .Values.server.persistentVolume.enabled }}
   volumeClaimTemplates:
     - apiVersion: v1
       kind: PersistentVolumeClaim
       metadata:
-        name: {{ .Values.server.persistentVolume.statefulSetNameOverride | default "storage-volume" }}
-        {{- if .Values.server.persistentVolume.annotations }}
+        name: {{ $storageVolumeName }}
+        {{- with .Values.server.persistentVolume.annotations }}
         annotations:
-{{ toYaml .Values.server.persistentVolume.annotations | indent 10 }}
+          {{- toYaml . | nindent 10 }}
         {{- end }}
-        {{- if .Values.server.persistentVolume.labels }}
+        {{- with .Values.server.persistentVolume.labels }}
         labels:
-{{ toYaml .Values.server.persistentVolume.labels | indent 10 }}
+          {{- toYaml . | nindent 10 }}
         {{- end }}
       spec:
         accessModes:
-{{ toYaml .Values.server.persistentVolume.accessModes | indent 10 }}
+          {{- toYaml .Values.server.persistentVolume.accessModes | nindent 10 }}
         resources:
           requests:
             storage: "{{ .Values.server.persistentVolume.size }}"

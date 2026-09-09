@@ -1,0 +1,15 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/helm-unittest/helm-unittest/main/schema/helm-testsuite.json
+suite: test disabled default rules
+templates:
+  - prometheus/rules-1.14/kubernetes-system-controller-manager.yaml
+  - prometheus/rules-1.14/kubernetes-system-kube-proxy.yaml
+  - prometheus/rules-1.14/kubernetes-system-scheduler.yaml
+tests:
+  - it: should not render single-rule groups when their only rule is disabled
+    set:
+      defaultRules.disabled.KubeControllerManagerDown: true
+      defaultRules.disabled.KubeProxyDown: true
+      defaultRules.disabled.KubeSchedulerDown: true
+    asserts:
+      - hasDocuments:
+          count: 0

@@ -59,11 +59,18 @@ tests:
       alertmanager.enabled: true
       alertmanager.networkPolicy.enabled: true
       alertmanager.networkPolicy.monitoringRules.prometheus: true
+      alertmanager.networkPolicy.monitoringRules.configReloader: true
       alertmanager.service.port: 9093
     asserts:
       - equal:
           path: spec.ingress[0].from[0].podSelector.matchLabels["app.kubernetes.io/name"]
           value: prometheus
+      - equal:
+          path: spec.ingress[0].ports[0].port
+          value: 9093
+      - equal:
+          path: spec.ingress[0].ports[1].port
+          value: 8080
 
   - it: should include Alertmanager rules when enabled
     set:
@@ -75,6 +82,18 @@ tests:
       - equal:
           path: spec.ingress[1].from[0].podSelector.matchLabels["app.kubernetes.io/name"]
           value: alertmanager
+
+  - it: should not include reloader port for Prometheus when reloader monitoring is disabled
+    set:
+      alertmanager.enabled: true
+      alertmanager.networkPolicy.enabled: true
+      alertmanager.networkPolicy.monitoringRules.prometheus: true
+      alertmanager.networkPolicy.monitoringRules.configReloader: false
+      alertmanager.service.port: 9093
+    asserts:
+      - lengthEqual:
+          path: spec.ingress[0].ports
+          count: 1
 
   - it: should include cluster rules when enabled
     set:

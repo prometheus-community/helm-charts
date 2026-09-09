@@ -1,0 +1,72 @@
+{{- if .Values.scrapeConfig }}
+{{- if and ( .Capabilities.APIVersions.Has "monitoring.coreos.com/v1alpha1" ) ( .Values.scrapeConfig.enabled ) }}
+{{- $hasStatic := .Values.scrapeConfig.staticConfigs }}
+{{- $hasFile := .Values.scrapeConfig.fileSDConfigs }}
+{{- $isRemote := eq .Values.scrapeConfig.mode "remote" }}
+{{- if not (or $hasStatic $hasFile) }}
+{{- fail "scrapeConfig requires either staticConfigs or fileSDConfigs to be defined" }}
+{{- end }}
+{{- if and $hasStatic $hasFile }}
+{{- fail "scrapeConfig cannot have both staticConfigs and fileSDConfigs defined" }}
+{{- end }}
+apiVersion: monitoring.coreos.com/v1alpha1
+kind: ScrapeConfig
+metadata:
+{{- if .Values.scrapeConfig.labels }}
+  labels:
+{{- toYaml .Values.scrapeConfig.labels | nindent 4 }}
+{{- end }}
+  name: {{ template "prometheus-ipmi-exporter.fullname" . }}
+{{- if .Values.scrapeConfig.namespace }}
+  namespace: {{ .Values.scrapeConfig.namespace }}
+{{- end }}
+spec:
+  jobName: {{ .Values.scrapeConfig.jobName | default "ipmi-exporter" }}
+{{- if .Values.scrapeConfig.modules }}
+  params:
+    module:
+{{- toYaml .Values.scrapeConfig.modules | nindent 6 }}
+{{- else if $isRemote }}
+  params:
+    module:
+      - default
+{{- end }}
+  scrapeInterval: {{ .Values.scrapeConfig.scrapeInterval | default "1m" }}
+  scrapeTimeout: {{ .Values.scrapeConfig.scrapeTimeout | default "30s" }}
+{{- if .Values.scrapeConfig.metricsPath }}
+  metricsPath: {{ .Values.scrapeConfig.metricsPath }}
+{{- else if $isRemote }}
+  metricsPath: /ipmi
+{{- else }}
+  metricsPath: /metrics
+{{- end }}
+  scheme: {{ .Values.scrapeConfig.scheme | default "HTTP" }}
+{{- if .Values.scrapeConfig.fileSDConfigs }}
+  fileSDConfigs:
+{{- toYaml .Values.scrapeConfig.fileSDConfigs | nindent 4 }}
+{{- end }}
+{{- if .Values.scrapeConfig.staticConfigs }}
+  staticConfigs:
+{{- toYaml .Values.scrapeConfig.staticConfigs | nindent 4 }}
+{{- end }}
+{{- if .Values.scrapeConfig.relabelings }}
+  relabelings:
+{{- toYaml .Values.scrapeConfig.relabelings | nindent 4 }}
+{{- else if $isRemote }}
+  relabelings:
+    - sourceLabels: [__address__]
+      targetLabel: __param_target
+      action: replace
+    - sourceLabels: [__param_target]
+      targetLabel: instance
+      action: replace
+    - targetLabel: __address__
+      replacement: {{ include "prometheus-ipmi-exporter.fullname" . }}.{{ .Release.Namespace }}.svc.{{ .Values.clusterDomain }}:{{ .Values.service.port }}
+      action: replace
+{{- end }}
+{{- if .Values.scrapeConfig.metricRelabelings }}
+  metricRelabelings:
+{{- toYaml .Values.scrapeConfig.metricRelabelings | nindent 4 }}
+{{- end }}
+{{- end }}
+{{- end }}

@@ -6,7 +6,7 @@ This chart bootstraps a [Kafka Exporter](https://github.com/danielqsj/kafka_expo
 
 ## Prerequisites
 
-- Kubernetes 1.19+
+- Kubernetes 1.25+
 - Helm 3
 
 Helm v2 is no longer supported from chart version 2.0.0.
@@ -55,3 +55,13 @@ See [Customizing the Chart Before Installing](https://helm.sh/docs/intro/using_h
 ```console
 helm show values oci://ghcr.io/prometheus-community/charts/prometheus-kafka-exporter
 ```
+
+### Upgrading an existing Release to a new major version
+
+A major chart version change (like v1.2.3 -> v2.0.0) indicates that there is an incompatible breaking change needing manual actions.
+
+#### 2.x to 3.x
+
+From version 3.0.0, support for pod security policies was removed.
+
+The minimum Kubernetes version required by the helm chart is 1.25.

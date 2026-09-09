@@ -49,6 +49,10 @@ helm upgrade [RELEASE_NAME] oci://ghcr.io/prometheus-community/charts/prometheus
 
 _See [helm upgrade](https://helm.sh/docs/helm/helm_upgrade/) for command documentation._
 
+### To 7.0.0
+
+In Release 7.0.0, the chart has dropped support for PodSecurityPolicy, which was remvoed in k8s 1.25.
+
 #### To 6.0.0
 
 In release 6.0, the chart API version has been increased to v2. From now on, the chart supports Helm 3 only.

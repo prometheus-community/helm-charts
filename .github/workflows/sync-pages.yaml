@@ -1,0 +1,36 @@
+permissions: {}
+
+on:
+  push:
+    branches:
+      - 'main'
+    paths:
+      - 'README.md'
+      - 'changelog/index.html'
+
+jobs:
+  build:
+    permissions:
+      contents: write # for git push
+
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - run: |
+          cp -f README.md ${{ runner.temp }}/README.md
+          cp -f changelog/index.html ${{ runner.temp }}/index.html
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: true
+          ref: gh-pages
+      - run: |
+          cp -f ${{ runner.temp }}/README.md .
+          mkdir -p changelog
+          cp -f ${{ runner.temp }}/index.html changelog/index.html
+          git config user.name "$GITHUB_ACTOR"
+          git config user.email "$GITHUB_ACTOR@users.noreply.github.com"
+          git add README.md changelog/index.html
+          git commit --signoff -m "Sync from main"
+          git push

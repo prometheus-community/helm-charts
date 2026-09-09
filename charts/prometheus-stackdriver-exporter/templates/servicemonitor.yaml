@@ -12,8 +12,12 @@ metadata:
     {{- toYaml .Values.serviceMonitor.additionalLabels | nindent 4 }}
     {{- end }}
 spec:
+  {{- if .Values.serviceMonitor.scrapeClass }}
+  scrapeClass: {{ .Values.serviceMonitor.scrapeClass }}
+  {{- end }}
   endpoints:
   - port: http
+    path: {{ .Values.web.telemetryPath }}
     {{- if .Values.serviceMonitor.interval }}
     interval: {{ .Values.serviceMonitor.interval }}
     {{- end }}
@@ -30,6 +34,26 @@ spec:
     relabelings:
     {{- toYaml .Values.serviceMonitor.relabelings | nindent 4 }}
     {{- end }}
+  {{- if ne .Values.web.telemetryPath .Values.web.stackdriverTelemetryPath }}
+  - port: http
+    path: {{ .Values.web.stackdriverTelemetryPath }}
+    {{- if .Values.serviceMonitor.interval }}
+    interval: {{ .Values.serviceMonitor.interval }}
+    {{- end }}
+    {{- if .Values.serviceMonitor.scrapeTimeout }}
+    scrapeTimeout: {{ .Values.serviceMonitor.scrapeTimeout }}
+    {{- end }}
+    honorLabels: {{ .Values.serviceMonitor.honorLabels }}
+    honorTimestamps: {{ .Values.serviceMonitor.honorTimestamps }}
+    {{- if .Values.serviceMonitor.metricRelabelings }}
+    metricRelabelings:
+    {{- toYaml .Values.serviceMonitor.metricRelabelings | nindent 4 }}
+    {{- end }}
+    {{- if .Values.serviceMonitor.relabelings }}
+    relabelings:
+    {{- toYaml .Values.serviceMonitor.relabelings | nindent 4 }}
+    {{- end }}
+  {{- end }}
   selector:
     matchLabels:
       {{- include "stackdriver-exporter.selectorLabels" . | indent 6 }}

@@ -53,6 +53,9 @@ spec:
             {{- if .Values.config.metrics.gatewayz }}
             - "-gatewayz"
             {{- end }}
+            {{- if .Values.config.metrics.healthz }}
+            - "-healthz"
+            {{- end }}
             {{- if .Values.config.metrics.jsz }}
             - "-jsz=all"
             {{- end }}
@@ -70,10 +73,14 @@ spec:
             httpGet:
               path: /metrics
               port: http
+            timeoutSeconds: {{ .Values.livenessProbe.timeoutSeconds }}
+            periodSeconds: {{ .Values.livenessProbe.periodSeconds }}
           readinessProbe:
             httpGet:
               path: /metrics
               port: http
+            timeoutSeconds: {{ .Values.readinessProbe.timeoutSeconds }}
+            periodSeconds: {{ .Values.readinessProbe.periodSeconds }}
           resources:
 {{ toYaml .Values.resources | indent 12 }}
     {{- with .Values.nodeSelector }}

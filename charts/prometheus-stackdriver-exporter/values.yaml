@@ -4,6 +4,9 @@ nameOverride: ""
 # Provide a name to substitute for the full names of resources
 fullnameOverride: ""
 
+# Override namespace for all namespaced resources in this chart.
+namespaceOverride: ""
+
 # Number of exporters to run
 replicaCount: 1
 
@@ -35,6 +38,26 @@ securityContext: {}
 
 containerSecurityContext: {}
 
+## Liveness probe
+##
+livenessProbe:
+  httpGet:
+    path: /
+    port: http
+    scheme: HTTP
+  initialDelaySeconds: 30
+  timeoutSeconds: 10
+
+## Readiness probe
+##
+readinessProbe:
+  httpGet:
+    path: /
+    port: http
+    scheme: HTTP
+  initialDelaySeconds: 10
+  timeoutSeconds: 10
+
 service:
   type: ClusterIP
   httpPort: 9255
@@ -48,10 +71,10 @@ secret:
   labels: {}
 
 stackdriver:
-  # DEPRECATED - The Google Project ID to gather metrics for
-  projectId: "FALSE"
   # The Google Project IDs to gather metrics for (requires 0.17.0+)
   projectIds: []
+  # filter for selecting google projects
+  projectFilters: ""
     # - "google-project-id"
   # An existing secret which contains credentials.json
   serviceAccountSecret: ""
@@ -61,6 +84,8 @@ stackdriver:
   serviceAccountKey: ""
   # Max number of retries that should be attempted on 503 errors from Stackdriver
   maxRetries: 0
+  # The Google Cloud universe domain to use (requires stackdriver_exporter 0.19.0+)
+  universeDomain: ""
   # How long should Stackdriver_exporter wait for a result from the Stackdriver API
   httpTimeout: 10s
   # Max time between each request in an exp backoff scenario
@@ -72,11 +97,9 @@ stackdriver:
   # Drop metrics from attached projects and fetch `project_id` only
   dropDelegatedProjects: false
   metrics:
-    # DEPRECATED - The prefixes to gather metrics for, we default to just CPU metrics.
-    typePrefixes: 'compute.googleapis.com/instance/cpu'
-    # The prefixes to gather metrics for (requires 0.17.0+)
-    prefixes: []
-      # - 'compute.googleapis.com/instance/cpu'
+    # The prefixes to gather metrics for
+    prefixes:
+      - 'compute.googleapis.com/instance/cpu'
     # The filters to refine the metrics query by using Filter objects that Google provides.
     # Filter objects: project, group.id, resource.type, resource.labels.[KEY], metric.type, metric.labels.[KEY]
     # https://cloud.google.com/monitoring/api/v3/filters
@@ -92,12 +115,16 @@ stackdriver:
     aggregateDeltas: false
     # How long should a delta metric continue to be exported after GCP stops producing a metric
     aggregateDeltasTTL: '30m'
+    # How long metric descriptors should be cached for
+    descriptorCacheTTL: '0s'
 
 web:
   # Port to listen on
   listenAddress: ':9255'
-  # Path under which to expose metrics.
-  path: /metrics
+  # Path under which to expose Stackdriver metrics.
+  stackdriverTelemetryPath: /metrics
+  # Path under which to expose Prometheus metrics
+  telemetryPath: /metrics
 
 ## Pod affinity
 ##
@@ -114,6 +141,23 @@ extraArgs: {}
 extraEnv: []
   # - name: GOMAXPROCS
   #   value: "2"
+
+# Additional containers to add to the pod
+extraContainers: []
+
+## Additional volumes to mount
+##
+extraVolumes: []
+  # - name: custom-ca
+  #   secret:
+  #     secretName: custom-ca
+
+## Additional volume mounts for the container
+##
+extraVolumeMounts: []
+  # - name: custom-ca
+  #   mountPath: /etc/ssl/certs/ca-certificates.crt
+  #   subPath: ca.crt
 
 ## Node labels for stackdriver-exporter pod assignment
 ## Ref: https://kubernetes.io/docs/user-guide/node-selection/
@@ -142,12 +186,15 @@ serviceAccount:
   # If not set and create is false, 'default' is used
   # If not set and create is true, a name is generated using the fullname template
   name:
+  # Annotations to add to the service account. Keys and values can be templated, as an example: "{{ .Values.foo }}: {{ .Values.bar }}"
   annotations: {}
 
 # Enable this if you're using https://github.com/coreos/prometheus-operator
 serviceMonitor:
   enabled: false
   namespace: monitoring
+  # scrapeClass
+  scrapeClass:
   # additionalLabels is the set of additional labels to add to the ServiceMonitor
   additionalLabels: {}
   # How long until a scrape request times out.

@@ -27,7 +27,17 @@ rules:
   resources:
   - ingresses
   verbs: ["get", "list", "watch"]
-- nonResourceURLs: ["/metrics", "/metrics/cadvisor"]
+- nonResourceURLs:
+  - "/metrics"
+  {{- if .Values.kubelet.serviceMonitor.cAdvisor }}
+  - "/metrics/cadvisor"
+  {{- end }}
+  {{- if .Values.kubelet.serviceMonitor.resource }}
+  - {{ .Values.kubelet.serviceMonitor.resourcePath }}
+  {{- end }}
+  {{- if .Values.kubeScheduler.serviceMonitor.resource.enabled }}
+  - "/metrics/resources"
+  {{- end }}
   verbs: ["get"]
 {{/* fix(#3338): add required rules to use node-exporter with the RBAC proxy */}}
 {{- if and .Values.nodeExporter.enabled (index .Values "prometheus-node-exporter").kubeRBACProxy.enabled }}

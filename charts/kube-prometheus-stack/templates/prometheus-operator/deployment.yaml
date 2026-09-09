@@ -137,6 +137,13 @@ spec:
             {{- if .Values.prometheusOperator.clusterDomain }}
             - --cluster-domain={{ .Values.prometheusOperator.clusterDomain }}
             {{- end }}
+            {{- with .Values.prometheusOperator.featureGates }}
+            {{- $gates := list }}
+            {{- range $key, $value := . }}
+            {{- $gates = append $gates (printf "%s=%v" $key $value) }}
+            {{- end }}
+            - --feature-gates={{ join "," $gates }}
+            {{- end }}
             {{- if .Values.prometheusOperator.tls.enabled }}
             - --web.enable-tls=true
             - --web.cert-file=/cert/{{ if .Values.prometheusOperator.admissionWebhooks.certManager.enabled }}tls.crt{{ else }}cert{{ end }}
@@ -218,6 +225,9 @@ spec:
       dnsConfig:
 {{ toYaml . | indent 8 }}
     {{- end }}
+{{- if kindIs "bool" .Values.prometheusOperator.hostUsers }}
+      hostUsers: {{ .Values.prometheusOperator.hostUsers }}
+{{- end }}
 {{- if .Values.prometheusOperator.securityContext }}
       securityContext:
 {{ toYaml .Values.prometheusOperator.securityContext | indent 8 }}

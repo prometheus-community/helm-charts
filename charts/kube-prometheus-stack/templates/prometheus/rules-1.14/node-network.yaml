@@ -27,15 +27,21 @@ spec:
 {{- if not (.Values.defaultRules.disabled.NodeNetworkInterfaceFlapping | default false) }}
     - alert: NodeNetworkInterfaceFlapping
       annotations:
-{{- if .Values.defaultRules.additionalRuleAnnotations }}
-{{ toYaml .Values.defaultRules.additionalRuleAnnotations | indent 8 }}
+{{- $ruleAnnotations := dig "NodeNetworkInterfaceFlapping" (dict) .Values.defaultRules.additionalRuleAnnotations }}
+{{- $groupAnnotations := default (dict) .Values.defaultRules.additionalRuleGroupAnnotations.network }}
+{{- $additionalAnnotations := mergeOverwrite (dict) $groupAnnotations $ruleAnnotations }}
+{{- if $additionalAnnotations }}
+{{ toYaml $additionalAnnotations | indent 8 }}
 {{- end }}
-{{- if .Values.defaultRules.additionalRuleGroupAnnotations.network }}
-{{ toYaml .Values.defaultRules.additionalRuleGroupAnnotations.network | indent 8 }}
-{{- end }}
+        {{- if not (hasKey $additionalAnnotations "description") }}
         description: Network interface "{{`{{`}} $labels.device {{`}}`}}" changing its up status often on node-exporter {{`{{`}} $labels.namespace {{`}}`}}/{{`{{`}} $labels.pod {{`}}`}}
+        {{- end }}
+        {{- if not (hasKey $additionalAnnotations "runbook_url") }}
         runbook_url: {{ .Values.defaultRules.runbookUrl }}/general/nodenetworkinterfaceflapping
+        {{- end }}
+        {{- if not (hasKey $additionalAnnotations "summary") }}
         summary: Network interface is often changing its status
+        {{- end }}
       expr: changes(node_network_up{job="node-exporter",device!~"veth.+"}[2m]) > 2
       for: {{ dig "NodeNetworkInterfaceFlapping" "for" "2m" .Values.customRules }}
       {{- with .Values.defaultRules.keepFiringFor }}

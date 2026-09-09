@@ -1,0 +1,22 @@
+suite: test rbac chart label
+templates:
+  - role.yaml
+  - rolebinding.yaml
+tests:
+  - it: should set the chart label from the chart helper
+    set:
+      rbac.create: true
+    asserts:
+      - matchRegex:
+          path: metadata.labels.chart
+          pattern: ^prometheus-kafka-exporter-[^+]+$
+
+  - it: should escape build metadata in the chart label
+    chart:
+      version: 1.2.3+c4affc05c6f2
+    set:
+      rbac.create: true
+    asserts:
+      - equal:
+          path: metadata.labels.chart
+          value: prometheus-kafka-exporter-1.2.3_c4affc05c6f2

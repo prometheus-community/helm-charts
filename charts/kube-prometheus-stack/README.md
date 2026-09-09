@@ -11,26 +11,26 @@ _Note: This chart was formerly named `prometheus-operator` chart, now renamed to
 - Kubernetes 1.19+
 - Helm 3+
 
-## Get Helm Repository Info
+## Usage
+
+The chart is distributed as an [OCI Artifact](https://helm.sh/docs/topics/registries/) as well as via a traditional [Helm Repository](https://helm.sh/docs/topics/chart_repository/).
+
+- OCI Artifact: `oci://ghcr.io/prometheus-community/charts/kube-prometheus-stack`
+- Helm Repository: `https://prometheus-community.github.io/helm-charts` with chart `kube-prometheus-stack`
+
+The installation instructions use the OCI registry. Refer to the [`helm repo`]([`helm repo`](https://helm.sh/docs/helm/helm_repo/)) command documentation for information on installing charts via the traditional repository.
+
+### Install Helm Chart
 
 ```console
-helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
-helm repo update
-```
-
-_See [`helm repo`](https://helm.sh/docs/helm/helm_repo/) for command documentation._
-
-## Install Helm Chart
-
-```console
-helm install [RELEASE_NAME] prometheus-community/kube-prometheus-stack
+helm install [RELEASE_NAME] oci://ghcr.io/prometheus-community/charts/kube-prometheus-stack
 ```
 
 _See [configuration](#configuration) below._
 
 _See [helm install](https://helm.sh/docs/helm/helm_install/) for command documentation._
 
-## Dependencies
+### Dependencies
 
 By default this chart installs additional, dependent charts:
 
@@ -42,7 +42,7 @@ To disable dependencies during installation, see [multiple releases](#multiple-r
 
 _See [helm dependency](https://helm.sh/docs/helm/helm_dependency/) for command documentation._
 
-### Grafana Dashboards
+#### Grafana Dashboards
 
 This chart provisions a collection of curated Grafana dashboards that are automatically loaded into Grafana via ConfigMaps. These dashboards are rendered into the Helm chart under [`templates/grafana/`](https://github.com/prometheus-community/helm-charts/tree/main/charts/kube-prometheus-stack/templates/grafana/), but **this is not their source of truth**.
 
@@ -52,7 +52,7 @@ The dashboards originate from various upstream projects and are gathered and pro
 
 If you wish to contribute or modify dashboards, please follow the guidance in the `hack/README.md` to ensure consistency and reproducibility.
 
-## Uninstall Helm Chart
+### Uninstall Helm Chart
 
 ```console
 helm uninstall [RELEASE_NAME]
@@ -77,10 +77,10 @@ kubectl delete crd servicemonitors.monitoring.coreos.com
 kubectl delete crd thanosrulers.monitoring.coreos.com
 ```
 
-## Upgrading Chart
+### Upgrading Chart
 
 ```console
-helm upgrade [RELEASE_NAME] prometheus-community/kube-prometheus-stack
+helm upgrade [RELEASE_NAME] [CHART]
 ```
 
 With Helm v3, CRDs created by this chart are not updated by default and should be manually updated.
@@ -91,7 +91,7 @@ The Chart's [appVersion](https://github.com/prometheus-community/helm-charts/blo
 
 _See [helm upgrade](https://helm.sh/docs/helm/helm_upgrade/) for command documentation._
 
-### Upgrading an existing Release to a new major version
+#### Upgrading an existing Release to a new major version
 
 A major chart version change (like v1.2.3 -> v2.0.0) indicates that there is an incompatible breaking change needing manual actions.
 
@@ -103,10 +103,118 @@ for breaking changes between versions.
 See [Customizing the Chart Before Installing](https://helm.sh/docs/intro/using_helm/#customizing-the-chart-before-installing). To see all configurable options with detailed comments:
 
 ```console
-helm show values prometheus-community/kube-prometheus-stack
+helm show values oci://ghcr.io/prometheus-community/charts/kube-prometheus-stack
 ```
 
 You may also `helm show values` on this chart's [dependencies](#dependencies) for additional options.
+
+For templated Grafana datasource definitions (e.g. when using Helm flow control), use `grafana.additionalDataSourcesString`, which is rendered via `tpl`.
+
+### HTTPRoute timeouts
+
+Set `timeouts` on a route to configure request and backend request timeouts for its generated HTTPRoute rule:
+
+```yaml
+prometheus:
+  route:
+    main:
+      enabled: true
+      parentRefs:
+        - name: gateway
+      timeouts:
+        request: 120s
+        backendRequest: 60s
+```
+
+The same settings are available under `alertmanager.route`, `thanosRuler.route`, and the `routePerReplica` settings for Prometheus and Alertmanager.
+
+Timeouts are only rendered for `kind: HTTPRoute`. They do not apply to generated HTTPS redirect rules or propagate to `additionalRules`; configure timeouts directly on additional rules when needed. Leaving `timeouts` empty preserves the Gateway controller's defaults.
+
+This requires Gateway API CRDs that support HTTPRoute timeouts (available in the Standard channel since v1.2.0) and a Gateway controller that supports the corresponding timeout features. When both values are set, `backendRequest` must not exceed `request`, unless `request` is `"0s"`. See the [Gateway API timeout documentation](https://gateway-api.sigs.k8s.io/reference/api-types/httproute/#timeouts-optional) for duration semantics and controller support requirements.
+
+### Authentication of the control-plane ServiceMonitors
+
+The built-in ServiceMonitors for kubelet, kube-apiserver, kube-controller-manager, kube-scheduler, kube-etcd, kube-proxy, coredns and kube-dns authenticate through Kubernetes objects rather than through files on the scraper's filesystem. The bearer token comes from a Secret referenced by `authorization`, and the CA comes from the `kube-root-ca.crt` ConfigMap that Kubernetes maintains in every namespace. This keeps the ServiceMonitors valid when `prometheus.prometheusSpec.arbitraryFSAccessThroughSMs.deny` is `true`, and when they are scraped by Grafana Alloy's `prometheus.operator.servicemonitors` component, which rejects filesystem references by default since v1.19.0.
+
+The chart creates the credential itself: `prometheus.serviceAccount.createTokenSecret` (enabled by default) renders a `kubernetes.io/service-account-token` Secret named `<prometheus service account>-token`, which every component references by default:
+
+```yaml
+kubelet:
+  serviceMonitor:
+    authorization:
+      type: Bearer
+      credentials:
+        name: '{{ include "kube-prometheus-stack.prometheus.tokenSecretName" . }}'
+        key: token
+    tlsConfig:
+      insecureSkipVerify: true
+      ca:
+        configMap:
+          name: kube-root-ca.crt
+          key: ca.crt
+```
+
+Both `authorization` and `tlsConfig` are rendered as-is, so any field of the Prometheus Operator [SafeAuthorization](https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/api-reference/api.md#monitoring.coreos.com/v1.SafeAuthorization) and [SafeTLSConfig](https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/api-reference/api.md#monitoring.coreos.com/v1.SafeTLSConfig) types can be set. Set `authorization` to `null` to scrape a component without authentication. `kubeApiServer` keeps its TLS settings under `kubeApiServer.tlsConfig`; `coreDns` and `kubeDns` have no `tlsConfig`, since those endpoints are scraped over HTTP.
+
+That Secret is only rendered alongside the Prometheus service account, so it also requires `prometheus.enabled` and `prometheus.serviceAccount.create`. Leaving a component on the default `authorization` while the Secret is not rendered fails the release with an explanatory message, rather than producing a ServiceMonitor that references a Secret which will never exist. When the control plane is scraped by a Prometheus this chart does not deploy, point each enabled component at the scraper's own credential; `ci/08-external-scraper-values.yaml` is a complete example.
+
+To use your own credential, disable `prometheus.serviceAccount.createTokenSecret` and point the components at your Secret. The Secret must live in the namespace of the ServiceMonitor, which is the release namespace unless `prometheus.prometheusSpec.ignoreNamespaceSelectors` is enabled. Because Helm deep-merges values, replacing the CA reference requires clearing the default explicitly:
+
+```yaml
+kubelet:
+  serviceMonitor:
+    tlsConfig:
+      ca:
+        configMap: null
+        secret:
+          name: kubelet-scrape-auth
+          key: ca.crt
+```
+
+`kubeEtcd` is the only component that scrapes with client certificates:
+
+```yaml
+kubeEtcd:
+  serviceMonitor:
+    scheme: https
+    tlsConfig:
+      insecureSkipVerify: false
+      ca:
+        secret:
+          name: etcd-client-cert
+          key: etcd-ca
+      cert:
+        secret:
+          name: etcd-client-cert
+          key: etcd-client
+      keySecret:
+        name: etcd-client-cert
+        key: etcd-client-key
+```
+
+### Prometheus High Availability (HA)
+
+For a basic HA setup, run multiple Prometheus replicas:
+
+```yaml
+prometheus:
+  prometheusSpec:
+    replicas: 2
+    podAntiAffinity: "hard"
+    externalLabels:
+      cluster: prod-eu1
+```
+
+Important notes:
+
+1. `replicas` controls how many Prometheus pods are deployed for each shard.
+2. Keep anti-affinity enabled (or hardened) to avoid scheduling all replicas on one node.
+3. Do not clear replica/instance external labels in HA setups (`replicaExternalLabelNameClear` / `prometheusExternalLabelNameClear`), otherwise deduplication and alert/source identification become harder.
+4. Querying replicas through a Kubernetes Service provides availability, but not sample deduplication across replicas by itself. For global/deduplicated querying, use a Thanos Query layer (or another backend that performs deduplication).
+
+See also Prometheus Operator HA guidance:
+
+- [Prometheus Operator HA docs](https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/platform/high-availability.md#prometheus)
 
 ### Multiple releases
 
@@ -262,7 +370,7 @@ There is no simple and direct migration path between the charts as the changes a
 
 The capabilities of the old chart are all available in the new chart, including the ability to run multiple prometheus instances on a single cluster - you will need to disable the parts of the chart you do not wish to deploy.
 
-You can check out the tickets for this change [here](https://github.com/prometheus-operator/prometheus-operator/issues/592) and [here](https://github.com/helm/charts/pull/6765).
+You can check out the tickets for this change at [prometheus-operator/prometheus-operator #592](https://github.com/prometheus-operator/prometheus-operator/issues/592) and [helm/charts #6765](https://github.com/helm/charts/pull/6765).
 
 ### High-level overview of Changes
 

@@ -107,6 +107,9 @@ spec:
 {{- if .Values.thanosRuler.thanosRulerSpec.routePrefix }}
   routePrefix: "{{ .Values.thanosRuler.thanosRulerSpec.routePrefix }}"
 {{- end }}
+{{- if kindIs "bool" .Values.thanosRuler.thanosRulerSpec.hostUsers }}
+  hostUsers: {{ .Values.thanosRuler.thanosRulerSpec.hostUsers }}
+{{- end }}
 {{- if .Values.thanosRuler.thanosRulerSpec.securityContext }}
   securityContext:
 {{ toYaml .Values.thanosRuler.thanosRulerSpec.securityContext | indent 4 }}
@@ -169,9 +172,22 @@ spec:
   imagePullSecrets:
 {{ toYaml .Values.global.imagePullSecrets | indent 4 }}
 {{- end }}
-{{- if .Values.thanosRuler.thanosRulerSpec.containers }}
+{{- if or .Values.thanosRuler.thanosRulerSpec.containers .Values.thanosRuler.thanosRulerSpec.extraEnv }}
   containers:
+{{- if .Values.thanosRuler.thanosRulerSpec.extraEnv }}
+{{/* The operator applies env overrides through a strategic merge patch on the generated thanos-ruler container. */}}
+{{- range .Values.thanosRuler.thanosRulerSpec.containers }}
+{{- if eq .name "thanos-ruler" }}
+{{- fail "thanosRuler.thanosRulerSpec.extraEnv cannot be used together with a thanos-ruler entry in thanosRuler.thanosRulerSpec.containers" }}
+{{- end }}
+{{- end }}
+  - name: thanos-ruler
+    env:
+{{ toYaml .Values.thanosRuler.thanosRulerSpec.extraEnv | indent 6 }}
+{{- end }}
+{{- if .Values.thanosRuler.thanosRulerSpec.containers }}
 {{ toYaml .Values.thanosRuler.thanosRulerSpec.containers | indent 4 }}
+{{- end }}
 {{- end }}
 {{- if .Values.thanosRuler.thanosRulerSpec.initContainers }}
   initContainers:
@@ -193,6 +209,106 @@ spec:
 {{ toYaml .Values.thanosRuler.thanosRulerSpec.alertDropLabels | indent 4 }}
 {{- end }}
   portName: {{ .Values.thanosRuler.thanosRulerSpec.portName }}
+{{- if .Values.thanosRuler.thanosRulerSpec.podManagementPolicy }}
+  podManagementPolicy: {{ .Values.thanosRuler.thanosRulerSpec.podManagementPolicy }}
+{{- end }}
+{{- if .Values.thanosRuler.thanosRulerSpec.updateStrategy }}
+  updateStrategy:
+{{ toYaml .Values.thanosRuler.thanosRulerSpec.updateStrategy | indent 4 }}
+{{- end }}
+{{- if .Values.thanosRuler.thanosRulerSpec.terminationGracePeriodSeconds }}
+  terminationGracePeriodSeconds: {{ .Values.thanosRuler.thanosRulerSpec.terminationGracePeriodSeconds }}
+{{- end }}
+{{- if .Values.thanosRuler.thanosRulerSpec.version }}
+  version: {{ .Values.thanosRuler.thanosRulerSpec.version }}
+{{- end }}
+{{- if .Values.thanosRuler.thanosRulerSpec.imagePullPolicy }}
+  imagePullPolicy: {{ .Values.thanosRuler.thanosRulerSpec.imagePullPolicy }}
+{{- end }}
+{{- if .Values.thanosRuler.thanosRulerSpec.enableFeatures }}
+  enableFeatures:
+{{- range $enableFeatures := .Values.thanosRuler.thanosRulerSpec.enableFeatures }}
+  - {{ tpl $enableFeatures $ }}
+{{- end }}
+{{- end }}
+{{- if kindIs "bool" .Values.thanosRuler.thanosRulerSpec.enableServiceLinks }}
+  enableServiceLinks: {{ .Values.thanosRuler.thanosRulerSpec.enableServiceLinks }}
+{{- end }}
+{{- if .Values.thanosRuler.thanosRulerSpec.minReadySeconds }}
+  minReadySeconds: {{ .Values.thanosRuler.thanosRulerSpec.minReadySeconds }}
+{{- end }}
+{{- if .Values.thanosRuler.thanosRulerSpec.dnsConfig }}
+  dnsConfig:
+{{ toYaml .Values.thanosRuler.thanosRulerSpec.dnsConfig | indent 4 }}
+{{- end }}
+{{- if .Values.thanosRuler.thanosRulerSpec.dnsPolicy }}
+  dnsPolicy: {{ .Values.thanosRuler.thanosRulerSpec.dnsPolicy }}
+{{- end }}
+{{- if .Values.thanosRuler.thanosRulerSpec.hostAliases }}
+  hostAliases:
+{{ toYaml .Values.thanosRuler.thanosRulerSpec.hostAliases | indent 4 }}
+{{- end }}
+{{- if .Values.thanosRuler.thanosRulerSpec.remoteWrite }}
+  remoteWrite:
+{{ tpl (toYaml .Values.thanosRuler.thanosRulerSpec.remoteWrite | indent 4) . }}
+{{- end }}
+{{- if .Values.thanosRuler.thanosRulerSpec.tracingConfig.existingSecret }}
+  tracingConfig:
+    key: "{{ .Values.thanosRuler.thanosRulerSpec.tracingConfig.existingSecret.key }}"
+    name: "{{ .Values.thanosRuler.thanosRulerSpec.tracingConfig.existingSecret.name }}"
+{{- else if .Values.thanosRuler.thanosRulerSpec.tracingConfig.secret }}
+  tracingConfig:
+    key: tracing-configs.yaml
+    name: {{ template "kube-prometheus-stack.thanosRuler.name" . }}
+{{- end }}
+{{- if .Values.thanosRuler.thanosRulerSpec.tracingConfigFile }}
+  tracingConfigFile: "{{ .Values.thanosRuler.thanosRulerSpec.tracingConfigFile }}"
+{{- end }}
+{{- if .Values.thanosRuler.thanosRulerSpec.alertRelabelConfigs.existingSecret }}
+  alertRelabelConfigs:
+    key: "{{ .Values.thanosRuler.thanosRulerSpec.alertRelabelConfigs.existingSecret.key }}"
+    name: "{{ .Values.thanosRuler.thanosRulerSpec.alertRelabelConfigs.existingSecret.name }}"
+{{- else if .Values.thanosRuler.thanosRulerSpec.alertRelabelConfigs.secret }}
+  alertRelabelConfigs:
+    key: alert-relabel-configs.yaml
+    name: {{ template "kube-prometheus-stack.thanosRuler.name" . }}
+{{- end }}
+{{- if .Values.thanosRuler.thanosRulerSpec.alertRelabelConfigFile }}
+  alertRelabelConfigFile: "{{ .Values.thanosRuler.thanosRulerSpec.alertRelabelConfigFile }}"
+{{- end }}
+{{- if .Values.thanosRuler.thanosRulerSpec.grpcServerTlsConfig }}
+  grpcServerTlsConfig:
+{{ toYaml .Values.thanosRuler.thanosRulerSpec.grpcServerTlsConfig | indent 4 }}
+{{- end }}
+{{- if .Values.thanosRuler.thanosRulerSpec.objectStorageConfigFile }}
+  objectStorageConfigFile: "{{ .Values.thanosRuler.thanosRulerSpec.objectStorageConfigFile }}"
+{{- end }}
+{{- if .Values.thanosRuler.thanosRulerSpec.ruleConcurrentEval }}
+  ruleConcurrentEval: {{ .Values.thanosRuler.thanosRulerSpec.ruleConcurrentEval }}
+{{- end }}
+{{- if .Values.thanosRuler.thanosRulerSpec.ruleOutageTolerance }}
+  ruleOutageTolerance: {{ .Values.thanosRuler.thanosRulerSpec.ruleOutageTolerance | quote }}
+{{- end }}
+{{- if .Values.thanosRuler.thanosRulerSpec.ruleGracePeriod }}
+  ruleGracePeriod: {{ .Values.thanosRuler.thanosRulerSpec.ruleGracePeriod | quote }}
+{{- end }}
+{{- if .Values.thanosRuler.thanosRulerSpec.ruleQueryOffset }}
+  ruleQueryOffset: {{ .Values.thanosRuler.thanosRulerSpec.ruleQueryOffset | quote }}
+{{- end }}
+{{- if .Values.thanosRuler.thanosRulerSpec.resendDelay }}
+  resendDelay: {{ .Values.thanosRuler.thanosRulerSpec.resendDelay | quote }}
+{{- end }}
+{{- if .Values.thanosRuler.thanosRulerSpec.enforcedNamespaceLabel }}
+  enforcedNamespaceLabel: {{ .Values.thanosRuler.thanosRulerSpec.enforcedNamespaceLabel }}
+{{- if .Values.thanosRuler.thanosRulerSpec.excludedFromEnforcement }}
+  excludedFromEnforcement:
+  {{- if kindIs "string" .Values.thanosRuler.thanosRulerSpec.excludedFromEnforcement }}
+{{ tpl .Values.thanosRuler.thanosRulerSpec.excludedFromEnforcement . | indent 4 }}
+  {{- else }}
+{{ tpl (toYaml .Values.thanosRuler.thanosRulerSpec.excludedFromEnforcement | indent 4) . }}
+  {{- end }}
+{{- end }}
+{{- end }}
 {{- with .Values.thanosRuler.thanosRulerSpec.additionalConfig }}
   {{- tpl (toYaml .) $ | nindent 2 }}
 {{- end }}

@@ -1,0 +1,120 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/helm-unittest/helm-unittest/main/schema/helm-testsuite.json
+suite: test statefulset sharding
+templates:
+  - service.yaml
+  - deployment.yaml
+tests:
+  - it: renders headless ClusterIP service for StatefulSet autosharding
+    set:
+      autosharding:
+        enabled: true
+    template: service.yaml
+    asserts:
+      - equal:
+          path: spec.type
+          value: ClusterIP
+      - equal:
+          path: spec.clusterIP
+          value: None
+
+  - it: renders StatefulSet resource when autosharding is enabled
+    set:
+      autosharding:
+        enabled: true
+    template: deployment.yaml
+    asserts:
+      - equal:
+          path: kind
+          value: StatefulSet
+      - equal:
+          path: spec.serviceName
+          value: RELEASE-NAME-kube-state-metrics
+
+  - it: renders normal Deployment and non-headless service when autosharding is disabled
+    set:
+      autosharding:
+        enabled: false
+      service:
+        type: ClusterIP
+    template: service.yaml
+    asserts:
+      - equal:
+          path: spec.type
+          value: ClusterIP
+
+  - it: renders NodePort service when autosharding is disabled and NodePort is set
+    set:
+      autosharding:
+        enabled: false
+      service:
+        type: NodePort
+        nodePort: 30007
+    template: service.yaml
+    asserts:
+      - equal:
+          path: spec.type
+          value: NodePort
+      - equal:
+          path: spec.ports[0].nodePort
+          value: 30007
+
+  - it: renders LoadBalancer service settings when autosharding is disabled
+    set:
+      autosharding:
+        enabled: false
+      service:
+        type: LoadBalancer
+        loadBalancerIP: 1.2.3.4
+        loadBalancerSourceRanges:
+          - 10.0.0.0/24
+    template: service.yaml
+    asserts:
+      - equal:
+          path: spec.type
+          value: LoadBalancer
+      - equal:
+          path: spec.loadBalancerIP
+          value: 1.2.3.4
+      - equal:
+          path: spec.loadBalancerSourceRanges[0]
+          value: 10.0.0.0/24
+
+  - it: renders Deployment resource when autosharding is disabled
+    set:
+      autosharding:
+        enabled: false
+    template: deployment.yaml
+    asserts:
+      - equal:
+          path: kind
+          value: Deployment
+
+  - it: forces headless ClusterIP even when service.type is NodePort
+    set:
+      autosharding:
+        enabled: true
+      service:
+        type: NodePort
+    template: service.yaml
+    asserts:
+      - equal:
+          path: spec.type
+          value: ClusterIP
+      - equal:
+          path: spec.clusterIP
+          value: None
+
+  - it: forces headless ClusterIP even when service.type is LoadBalancer
+    set:
+      autosharding:
+        enabled: true
+      service:
+        type: LoadBalancer
+    template: service.yaml
+    asserts:
+      - equal:
+          path: spec.type
+          value: ClusterIP
+      - equal:
+          path: spec.clusterIP
+          value: None

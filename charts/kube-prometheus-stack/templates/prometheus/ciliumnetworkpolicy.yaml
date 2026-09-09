@@ -1,4 +1,4 @@
-{{- if and .Values.prometheus.networkPolicy.enabled (eq .Values.prometheus.networkPolicy.flavor "cilium") }}
+{{- if and .Values.prometheus.networkPolicy.enabled (eq .Values.prometheus.networkPolicy.flavor "cilium") .Values.prometheus.networkPolicy.cilium }}
 apiVersion: cilium.io/v2
 kind: CiliumNetworkPolicy
 metadata:
@@ -15,11 +15,11 @@ spec:
     matchExpressions:
 {{- include "kube-prometheus-stack.prometheus.pod-anti-affinity.matchExpressions" . | indent 6 }}
     {{- end }}
-  {{- if and .Values.prometheus.networkPolicy.cilium .Values.prometheus.networkPolicy.cilium.egress }}  
+  {{- if .Values.prometheus.networkPolicy.cilium.egress }}
   egress:
     {{ toYaml .Values.prometheus.networkPolicy.cilium.egress | nindent 4 }}
   {{- end }}
-  {{- if and .Values.prometheus.networkPolicy.cilium .Values.prometheus.networkPolicy.cilium.ingress }}  
+  {{- if .Values.prometheus.networkPolicy.cilium.ingress }}
   ingress:
     {{ toYaml .Values.prometheus.networkPolicy.cilium.ingress | nindent 4 }}
   {{- end }}

@@ -36,12 +36,12 @@
 - gianrubio (<gianrubio@gmail.com> / @gianrubio)
 - gkarthiks (<github.gkarthiks@gmail.com> / @gkarthiks)
 - jkroepke (<github@jkroepke.de> / @jkroepke)
-- scottrigby (<scott@r6by.com> / @scottrigby)
 
 ### kube-state-metrics
 
 - dotdc (<david@0xdc.me> / @dotdc)
 - mrueg (<manuel@rueg.eu> / @mrueg)
+- sebastiangaiser (<git@gaiser.bayern> / @sebastiangaiser)
 - tariq1890 (<tariq.ibrahim@mulesoft.com> / @tariq1890)
 
 ### prom-label-proxy
@@ -217,7 +217,6 @@
 
 ### prometheus-systemd-exporter
 
-- capuche2412 (<aleroux@wiremind.io> / @capuche2412)
 - maxime1907 (<19607336+maxime1907@users.noreply.github.com> / @maxime1907)
 
 ### prometheus-to-sd
@@ -230,8 +229,10 @@
 
 ### prometheus-yet-another-cloudwatch-exporter
 
-- cristiangreco (<cristian.greco@grafana.com> / @cristiangreco)
-- thomaspeitz (<info@thomas-peitz.de> / @thomaspeitz)
+- Andrii Kushch (<andrii.kushch@grafana.com> / @andriikushch)
+- Cristian Greco (<cristian.greco@grafana.com> / @cristiangreco)
+- Thomas Peitz (<info@thomas-peitz.de> / @thomaspeitz)
+- Tristan Burgess (<tristan.burgess@grafana.com> / @tristanburgess)
 
 ### prometheus
 
