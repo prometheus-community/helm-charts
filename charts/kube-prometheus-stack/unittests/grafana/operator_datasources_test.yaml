@@ -1,0 +1,299 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/helm-unittest/helm-unittest/main/schema/helm-testsuite.json
+suite: test grafana operator datasources
+templates:
+  - grafana/grafanadatasource.yaml
+tests:
+  - it: is not rendered by default
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: renders the default datasource as a GrafanaDatasource
+    release:
+      name: kps
+    set:
+      grafana:
+        enabled: false
+        forceDeployDatasources: true
+        operator:
+          datasourcesEnabled: true
+          matchLabels:
+            dashboards: "external-grafana"
+        sidecar:
+          datasources:
+            alertmanager:
+              enabled: false
+    asserts:
+      - hasDocuments:
+          count: 1
+      - isKind:
+          of: GrafanaDatasource
+      - isAPIVersion:
+          of: grafana.integreatly.org/v1beta1
+      - equal:
+          path: spec.instanceSelector.matchLabels.dashboards
+          value: external-grafana
+      - equal:
+          path: spec.datasource.name
+          value: Prometheus
+      - equal:
+          path: spec.datasource.type
+          value: prometheus
+      - equal:
+          path: spec.datasource.isDefault
+          value: true
+      - equal:
+          path: spec.datasource.url
+          value: http://kps-kube-prometheus-stack-prometheus.NAMESPACE:9090/
+
+  - it: fails when matchLabels is missing
+    set:
+      grafana:
+        enabled: false
+        forceDeployDatasources: true
+        operator:
+          datasourcesEnabled: true
+    asserts:
+      - failedTemplate:
+          errorMessage: "grafana.operator.matchLabels must be specified when grafana.operator.datasourcesEnabled is true"
+
+  - it: renders one datasource per Prometheus replica
+    set:
+      grafana:
+        enabled: false
+        forceDeployDatasources: true
+        operator:
+          datasourcesEnabled: true
+          matchLabels:
+            dashboards: "external-grafana"
+        sidecar:
+          datasources:
+            createPrometheusReplicasDatasources: true
+            alertmanager:
+              enabled: false
+      prometheus:
+        prometheusSpec:
+          replicas: 2
+    asserts:
+      - hasDocuments:
+          count: 3
+      - equal:
+          path: spec.datasource.name
+          value: Prometheus-1
+        documentIndex: 2
+      - equal:
+          path: spec.datasource.uid
+          value: prometheus-replica-1
+        documentIndex: 2
+      - equal:
+          path: spec.datasource.isDefault
+          value: false
+        documentIndex: 2
+
+  - it: renders the alertmanager datasource
+    set:
+      grafana:
+        enabled: false
+        forceDeployDatasources: true
+        operator:
+          datasourcesEnabled: true
+          matchLabels:
+            dashboards: "external-grafana"
+        sidecar:
+          datasources:
+            alertmanager:
+              enabled: true
+    asserts:
+      - hasDocuments:
+          count: 2
+      - equal:
+          path: spec.datasource.type
+          value: alertmanager
+        documentIndex: 1
+      - equal:
+          path: spec.datasource.jsonData.implementation
+          value: prometheus
+        documentIndex: 1
+
+  - it: renders additionalDataSources and moves valuesFrom and plugins to the spec
+    release:
+      name: kps
+    set:
+      grafana:
+        enabled: false
+        forceDeployDatasources: true
+        operator:
+          datasourcesEnabled: true
+          matchLabels:
+            dashboards: "external-grafana"
+        sidecar:
+          datasources:
+            defaultDatasourceEnabled: false
+        additionalDataSources:
+          - name: Example Opensearch
+            uid: example-opensearch
+            type: grafana-opensearch-datasource
+            url: https://opensearch.example.com
+            basicAuth: true
+            basicAuthUser: reader
+            secureJsonData:
+              basicAuthPassword: "${password}"
+            valuesFrom:
+              - targetPath: secureJsonData.basicAuthPassword
+                valueFrom:
+                  secretKeyRef:
+                    name: example-datasource
+                    key: password
+            plugins:
+              - name: grafana-opensearch-datasource
+                version: latest
+    asserts:
+      - hasDocuments:
+          count: 1
+      - equal:
+          path: metadata.name
+          value: kps-kube-prometheus-stack-example-opensearch
+      - equal:
+          path: spec.valuesFrom[0].valueFrom.secretKeyRef.name
+          value: example-datasource
+      - equal:
+          path: spec.plugins[0].name
+          value: grafana-opensearch-datasource
+      - notExists:
+          path: spec.datasource.valuesFrom
+      - notExists:
+          path: spec.datasource.plugins
+      - equal:
+          path: spec.datasource.name
+          value: Example Opensearch
+
+  - it: renders without forceDeployDatasources when grafana is enabled
+    set:
+      grafana:
+        enabled: true
+        operator:
+          datasourcesEnabled: true
+          matchLabels:
+            dashboards: "external-grafana"
+        sidecar:
+          datasources:
+            enabled: true
+            alertmanager:
+              enabled: false
+    asserts:
+      - hasDocuments:
+          count: 1
+
+  - it: passes annotations and resyncPeriod on
+    set:
+      grafana:
+        enabled: false
+        forceDeployDatasources: true
+        operator:
+          datasourcesEnabled: true
+          resyncPeriod: 1h
+          annotations:
+            example.com/owner: operations
+          matchLabels:
+            dashboards: "external-grafana"
+        sidecar:
+          datasources:
+            alertmanager:
+              enabled: false
+    asserts:
+      - equal:
+          path: metadata.annotations['example.com/owner']
+          value: operations
+      - equal:
+          path: spec.resyncPeriod
+          value: 1h
+
+  - it: carries the optional jsonData fields of the default datasource
+    set:
+      grafana:
+        enabled: false
+        forceDeployDatasources: true
+        operator:
+          datasourcesEnabled: true
+          matchLabels:
+            dashboards: "external-grafana"
+        sidecar:
+          datasources:
+            url: http://prometheus.example.com
+            isDefaultDatasource: false
+            timeout: 60
+            customQueryParameters: max_source_resolution=5m
+            extraJsonData:
+              manageAlerts: false
+            exemplarTraceIdDestinations:
+              datasourceUid: tempo
+              traceIdLabelName: trace_id
+              urlDisplayLabel: View in Tempo
+            alertmanager:
+              enabled: false
+    asserts:
+      - equal:
+          path: spec.datasource.url
+          value: http://prometheus.example.com
+      - equal:
+          path: spec.datasource.isDefault
+          value: false
+      - equal:
+          path: spec.datasource.jsonData.timeout
+          value: 60
+      - equal:
+          path: spec.datasource.jsonData.customQueryParameters
+          value: max_source_resolution=5m
+      - equal:
+          path: spec.datasource.jsonData.manageAlerts
+          value: false
+      - equal:
+          path: spec.datasource.jsonData.exemplarTraceIdDestinations[0].datasourceUid
+          value: tempo
+
+  - it: falls back to the datasource name when no uid is set
+    release:
+      name: kps
+    set:
+      grafana:
+        enabled: false
+        forceDeployDatasources: true
+        operator:
+          datasourcesEnabled: true
+          matchLabels:
+            dashboards: "external-grafana"
+        sidecar:
+          datasources:
+            defaultDatasourceEnabled: false
+        additionalDataSources:
+          - name: Example Datasource (With Punctuation)
+            type: prometheus
+            url: http://prometheus.example.com
+    asserts:
+      - equal:
+          path: metadata.name
+          value: kps-kube-prometheus-stack-example-datasource-with-punctuation
+
+  - it: templates additionalDataSources
+    release:
+      name: kps
+    set:
+      grafana:
+        enabled: false
+        forceDeployDatasources: true
+        operator:
+          datasourcesEnabled: true
+          matchLabels:
+            dashboards: "external-grafana"
+        sidecar:
+          datasources:
+            defaultDatasourceEnabled: false
+        additionalDataSources:
+          - name: extra-ds
+            uid: extra-ds
+            type: prometheus
+            url: http://{{ .Release.Name }}-prom
+    asserts:
+      - equal:
+          path: spec.datasource.url
+          value: http://kps-prom
