@@ -59,14 +59,9 @@ Pod labels: the common labels without helm.sh/chart. That label carries the char
 including it in the pod template restarts the DaemonSet on every chart upgrade, on every node,
 even when nothing about the workload changed.
 */}}
-{{- define "prometheus-node-exporter.podLabels" -}}
-app.kubernetes.io/managed-by: {{ .Release.Service }}
-app.kubernetes.io/component: metrics
-app.kubernetes.io/part-of: {{ include "prometheus-node-exporter.name" . }}
-{{ include "prometheus-node-exporter.selectorLabels" . }}
-{{- with .Chart.AppVersion }}
-app.kubernetes.io/version: {{ . | quote }}
-{{- end }}
+{{- define "prometheus-node-exporter.podLabels" }}
+{{- $podLabels := (include "prometheus-node-exporter.labels" . | fromYaml) }}
+{{- omit $podLabels "helm.sh/chart" | toYaml }}
 {{- end }}
 
 {{- define "prometheus-node-exporter.selectorLabels" -}}
