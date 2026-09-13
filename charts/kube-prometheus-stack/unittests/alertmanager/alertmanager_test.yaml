@@ -119,3 +119,20 @@ tests:
       - equal:
           path: spec.externalUrl
           value: http://alertmanager.example.com/
+
+  - it: should not render clusterPeerName by default
+    asserts:
+      - hasDocuments:
+          count: 1
+      - notExists:
+          path: spec.clusterPeerName
+
+  - it: should render clusterPeerName when set
+    set:
+      alertmanager.alertmanagerSpec.clusterPeerName: $(POD_NAME).$(NAMESPACE)
+    asserts:
+      - hasDocuments:
+          count: 1
+      - equal:
+          path: spec.clusterPeerName
+          value: $(POD_NAME).$(NAMESPACE)

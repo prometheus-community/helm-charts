@@ -154,3 +154,28 @@ tests:
       - equal:
           path: spec.externalUrl
           value: https://prometheus.example.com/
+
+  - it: should not render retentionPercentage by default
+    set:
+      prometheus.enabled: true
+    asserts:
+      - notExists:
+          path: spec.retentionPercentage
+
+  - it: should render retentionPercentage when set
+    set:
+      prometheus.enabled: true
+      prometheus.prometheusSpec.retentionPercentage: 80
+    asserts:
+      - equal:
+          path: spec.retentionPercentage
+          value: 80
+
+  - it: should not render retentionPercentage in agent mode
+    set:
+      prometheus.enabled: true
+      prometheus.agentMode: true
+      prometheus.prometheusSpec.retentionPercentage: 80
+    asserts:
+      - notExists:
+          path: spec.retentionPercentage
