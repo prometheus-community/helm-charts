@@ -232,23 +232,7 @@ Alternatively, you can disable the hooks by setting `prometheusOperator.admissio
 
 ### Argo CD
 
-Argo CD reports the application as permanently OutOfSync on two resources the chart cannot render deterministically.
-
-The `caBundle` of the admission webhook configurations is injected into the cluster after the manifests are applied, either by the `admission-create` job or by cert-manager's CA injector, so it never matches what Helm rendered. Ignore it:
-
-```yaml
-ignoreDifferences:
-  - group: admissionregistration.k8s.io
-    kind: ValidatingWebhookConfiguration
-    jqPathExpressions:
-      - .webhooks[]?.clientConfig.caBundle
-  - group: admissionregistration.k8s.io
-    kind: MutatingWebhookConfiguration
-    jqPathExpressions:
-      - .webhooks[]?.clientConfig.caBundle
-```
-
-The operator CRDs are also larger than the 262144 byte limit for the `kubectl.kubernetes.io/last-applied-configuration` annotation, so sync them with `ServerSideApply=true`.
+The operator CRDs are larger than the 262144 byte limit on the `kubectl.kubernetes.io/last-applied-configuration` annotation — `crd-prometheuses.yaml` alone is around 840 KiB — so a client-side apply fails with `metadata.annotations: Too long: must have at most 262144 bytes`. Sync the application with `ServerSideApply=true`.
 
 ## PrometheusRules Admission Webhooks
 
