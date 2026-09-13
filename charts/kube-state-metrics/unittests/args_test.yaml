@@ -1,0 +1,38 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/helm-unittest/helm-unittest/main/schema/helm-testsuite.json
+suite: test optional cli arguments
+templates:
+  - deployment.yaml
+tests:
+  - it: should not render the optional flags by default
+    asserts:
+      - notContains:
+          path: spec.template.spec.containers[0].args
+          content: --enable-gzip-encoding
+      - notContains:
+          path: spec.template.spec.containers[0].args
+          content: --track-unscheduled-pods
+      - notMatchRegex:
+          path: spec.template.spec.containers[0].args[*]
+          pattern: ^--metric-opt-in-list=
+
+  - it: should render the metric opt-in list
+    set:
+      metricOptInList:
+        - kube_secret_annotations
+        - kube_node_annotations
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: --metric-opt-in-list=kube_secret_annotations,kube_node_annotations
+
+  - it: should render gzip encoding and unscheduled pod tracking
+    set:
+      enableGZIPEncoding: true
+      trackUnscheduledPods: true
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: --enable-gzip-encoding
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: --track-unscheduled-pods

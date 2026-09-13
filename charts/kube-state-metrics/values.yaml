@@ -53,11 +53,16 @@ replicas: 1
 revisionHistoryLimit: 10
 
 # List of additional cli arguments to configure kube-state-metrics
-# for example: --enable-gzip-encoding, --log-file, etc.
+# for example: --log-file, --auto-gomemlimit, etc.
 # all the possible args can be found here: https://github.com/kubernetes/kube-state-metrics/blob/main/docs/developer/cli-arguments.md
 extraArgs: []
 
-# If false then the user will opt out of automounting API credentials.
+# Gzip responses to scrapes that accept the encoding.
+enableGZIPEncoding: false
+
+# If false then the user will opt out of automounting API credentials. kube-state-metrics still needs
+# credentials to reach the API server: supply them with kubeconfig.enabled below, or mount a projected
+# serviceAccountToken volume at /var/run/secrets/kubernetes.io/serviceaccount yourself.
 automountServiceAccountToken: true
 
 service:
@@ -407,6 +412,10 @@ metricAllowlist: []
 # The allowlist and denylist are mutually exclusive.
 metricDenylist: []
 
+# Comma-separated list of metrics which are opt-in and not enabled by default.
+# This is in addition to the metrics enabled by the collectors above.
+metricOptInList: []
+
 # Comma-separated list of additional Kubernetes label keys that will be used in the resource's
 # labels metric. By default the metric contains only name and namespace labels.
 # To include additional labels, provide a list of resource names in their plural form and Kubernetes
@@ -514,6 +523,9 @@ namespaces: ""
 # Comma-separated list of namespaces not to be enabled. If namespaces and namespaces-denylist are both set,
 # only namespaces that are excluded in namespaces-denylist will be used.
 namespacesDenylist: ""
+
+# Track unscheduled pods, which are otherwise skipped because they are not assigned to a node.
+trackUnscheduledPods: false
 
 ## Override the deployment namespace
 ##
