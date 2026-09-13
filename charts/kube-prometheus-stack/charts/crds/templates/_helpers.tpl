@@ -9,7 +9,7 @@ app: {{ template "kube-prometheus-stack.name" . }}-operator
 app.kubernetes.io/name: {{ template "kube-prometheus-stack.name" . }}-prometheus-operator
 app.kubernetes.io/component: crds-upgrade
 {{- with .Values.upgradeJob.labels }}
-{{- toYaml . }}
+{{- toYaml . | nindent 0 }}
 {{- end }}
 {{- end -}}
 
