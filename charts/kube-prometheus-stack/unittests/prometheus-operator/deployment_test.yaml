@@ -26,3 +26,22 @@ tests:
       - contains:
           path: spec.template.spec.containers[0].args
           content: --feature-gates=PrometheusAgentDaemonSet=false
+
+  - it: should not render topologySpreadConstraints by default
+    asserts:
+      - notExists:
+          path: spec.template.spec.topologySpreadConstraints
+
+  - it: should render topologySpreadConstraints when set
+    set:
+      prometheusOperator.topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: topology.kubernetes.io/zone
+          whenUnsatisfiable: DoNotSchedule
+          labelSelector:
+            matchLabels:
+              app: kube-prometheus-stack-operator
+    asserts:
+      - equal:
+          path: spec.template.spec.topologySpreadConstraints[0].topologyKey
+          value: topology.kubernetes.io/zone
