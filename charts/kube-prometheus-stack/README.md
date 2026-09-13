@@ -232,7 +232,7 @@ Alternatively, you can disable the hooks by setting `prometheusOperator.admissio
 
 ### Argo CD
 
-The operator CRDs are larger than the 262144 byte limit on the `kubectl.kubernetes.io/last-applied-configuration` annotation — `crd-prometheuses.yaml` alone is around 840 KiB — so a client-side apply fails with `metadata.annotations: Too long: must have at most 262144 bytes`. Sync the application with `ServerSideApply=true`.
+The operator CRDs are larger than the 262144 byte limit on the `kubectl.kubernetes.io/last-applied-configuration` annotation — `crd-prometheuses.yaml` alone is around 840 KiB — so a client-side apply fails with `metadata.annotations: Too long`. Sync the application with `ServerSideApply=true`.
 
 ## PrometheusRules Admission Webhooks
 
