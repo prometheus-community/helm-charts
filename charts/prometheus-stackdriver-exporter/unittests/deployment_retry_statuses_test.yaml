@@ -1,0 +1,40 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/helm-unittest/helm-unittest/main/schema/helm-testsuite.json
+suite: deployment retry statuses
+templates:
+  - deployment.yaml
+tests:
+  - it: renders the default retry status
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: --stackdriver.retry-statuses=503
+
+  - it: renders one flag per configured retry status
+    set:
+      stackdriver:
+        maxRetries: 3
+        retryStatuses:
+          - 503
+          - 500
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: --stackdriver.max-retries=3
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: --stackdriver.retry-statuses=503
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: --stackdriver.retry-statuses=500
+
+  - it: supports the legacy scalar retry status
+    set:
+      stackdriver:
+        retryStatuses: 503
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: --stackdriver.retry-statuses=503
+      - notContains:
+          path: spec.template.spec.containers[0].args
+          content: --stackdriver.retry-statuses=[503]
