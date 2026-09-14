@@ -230,6 +230,10 @@ You can read more information on how to add firewall rules for the GKE control p
 
 Alternatively, you can disable the hooks by setting `prometheusOperator.admissionWebhooks.enabled=false`.
 
+### Argo CD
+
+The operator CRDs are larger than the 262144 byte limit on the `kubectl.kubernetes.io/last-applied-configuration` annotation — `crd-prometheuses.yaml` alone is around 840 KiB — so a client-side apply fails with `metadata.annotations: Too long`. Sync the application with `ServerSideApply=true`.
+
 ## PrometheusRules Admission Webhooks
 
 With Prometheus Operator version 0.30+, the core Prometheus Operator pod exposes an endpoint that will integrate with the `validatingwebhookconfiguration` Kubernetes feature to prevent malformed rules from being added to the cluster.
