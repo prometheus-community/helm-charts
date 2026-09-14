@@ -808,7 +808,10 @@ server:
 ## scrapeConfigs (map) defines Prometheus' default scrape_configs.
 ## Each can be disabled by setting "enabled" to "false" or leaving it empty. The key sets the default "job_name".
 ## Further scrapeConfigs can be added as new keys, these are then enabled by default.
+## `pre_relabel_configs` and `post_relabel_configs` accept templated YAML block-scalar strings.
+## Their rendered rules are inserted before and after the chart-managed `relabel_configs`, respectively.
 ## ref. https://prometheus.io/docs/prometheus/latest/configuration/configuration/#scrape_config
+# @schema additionalProperties: {type: object, properties: {pre_relabel_configs: {type: string}, post_relabel_configs: {type: string}}}
 scrapeConfigs:
   prometheus:
     enabled: true
@@ -832,6 +835,8 @@ scrapeConfigs:
         - __meta_kubernetes_endpointslice_port_name
         action: keep
         regex: default;kubernetes;https
+    pre_relabel_configs: ""
+    post_relabel_configs: ""
   kubernetes-nodes:
     enabled: true
     job_name: ""
@@ -845,6 +850,8 @@ scrapeConfigs:
     relabel_configs:
       - action: labelmap
         regex: __meta_kubernetes_node_label_(.+)
+    pre_relabel_configs: ""
+    post_relabel_configs: ""
   kubernetes-nodes-cadvisor:
     enabled: true
     job_name: ""
@@ -861,6 +868,8 @@ scrapeConfigs:
         regex: __meta_kubernetes_node_label_(.+)
       - source_labels: [__metrics_path__]
         target_label: metrics_path
+    pre_relabel_configs: ""
+    post_relabel_configs: ""
   kubernetes-service-endpoints:
     enabled: true
     job_name: ""
@@ -903,6 +912,8 @@ scrapeConfigs:
       - source_labels: [__meta_kubernetes_pod_node_name]
         action: replace
         target_label: node
+    pre_relabel_configs: ""
+    post_relabel_configs: ""
   kubernetes-service-endpoints-slow:
     enabled: true
     job_name: ""
@@ -954,6 +965,8 @@ scrapeConfigs:
       - source_labels: [__meta_kubernetes_service_annotation_prometheus_io_probe]
         action: keep
         regex: pushgateway
+    pre_relabel_configs: ""
+    post_relabel_configs: ""
   kubernetes-services:
     enabled: true
     job_name: ""
@@ -979,6 +992,8 @@ scrapeConfigs:
         target_label: namespace
       - source_labels: [__meta_kubernetes_service_name]
         target_label: service
+    pre_relabel_configs: ""
+    post_relabel_configs: ""
   kubernetes-pods:
     enabled: true
     job_name: ""
@@ -1031,6 +1046,8 @@ scrapeConfigs:
       - source_labels: [__meta_kubernetes_pod_node_name]
         action: replace
         target_label: node
+    pre_relabel_configs: ""
+    post_relabel_configs: ""
   kubernetes-pods-slow:
     enabled: true
     job_name: ""
@@ -1082,6 +1099,8 @@ scrapeConfigs:
       - source_labels: [__meta_kubernetes_pod_node_name]
         action: replace
         target_label: node
+    pre_relabel_configs: ""
+    post_relabel_configs: ""
 
 # extraScrapeConfigs adds additional scrape configs to prometheus.yml
 # must be a string so you have to add a | after extraScrapeConfigs:
