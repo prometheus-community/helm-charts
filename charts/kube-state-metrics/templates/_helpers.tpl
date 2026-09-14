@@ -76,6 +76,16 @@ release: {{ .Release.Name }}
 {{/*
 Selector labels
 */}}
+{{/*
+Pod labels: the common labels without helm.sh/chart. That label carries the chart version, so
+including it in the pod template recreates the pod on every chart upgrade, even when nothing
+about the workload changed.
+*/}}
+{{- define "kube-state-metrics.podLabels" }}
+{{- $podLabels := (include "kube-state-metrics.labels" . | fromYaml) }}
+{{- omit $podLabels "helm.sh/chart" | toYaml }}
+{{- end }}
+
 {{- define "kube-state-metrics.selectorLabels" }}
 {{- if .Values.selectorOverride }}
 {{ toYaml .Values.selectorOverride }}
