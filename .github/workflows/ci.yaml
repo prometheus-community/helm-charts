@@ -192,11 +192,17 @@ jobs:
         # language=bash
         run: |
           # install current target chart into cluster so helm diff has a baseline
+          target_value_file="./target/$value_file"
+          if [[ ! -f "$target_value_file" ]]; then
+            # A new CI values file exists only on the PR branch.
+            target_value_file="./target/charts/$chart/values.yaml"
+          fi
+
           helm upgrade -i "$chart" "./target/charts/$chart" \
             --create-namespace \
             --namespace "$chart" \
             --wait \
-            --values "$value_file"
+            --values "$target_value_file"
 
       - name: Debug failed installation
         if: failure() && steps.install.outcome == 'failure'
