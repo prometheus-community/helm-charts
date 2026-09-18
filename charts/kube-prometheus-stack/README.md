@@ -126,11 +126,30 @@ prometheus:
         backendRequest: 60s
 ```
 
-The same settings are available under `alertmanager.route`, `thanosRuler.route`, and the `routePerReplica` settings for Prometheus and Alertmanager.
+The same settings are available under `alertmanager.route`, `thanosRuler.route`, `prometheus.thanosRoute`, and the `routePerReplica` settings for Prometheus and Alertmanager.
 
 Timeouts are only rendered for `kind: HTTPRoute`. They do not apply to generated HTTPS redirect rules or propagate to `additionalRules`; configure timeouts directly on additional rules when needed. Leaving `timeouts` empty preserves the Gateway controller's defaults.
 
 This requires Gateway API CRDs that support HTTPRoute timeouts (available in the Standard channel since v1.2.0) and a Gateway controller that supports the corresponding timeout features. When both values are set, `backendRequest` must not exceed `request`, unless `request` is `"0s"`. See the [Gateway API timeout documentation](https://gateway-api.sigs.k8s.io/reference/api-types/httproute/#timeouts-optional) for duration semantics and controller support requirements.
+
+### Thanos sidecar Gateway API
+
+`prometheus.thanosIngress` creates a Kubernetes Ingress for the Thanos sidecar Store API. `prometheus.thanosRoute` is the Gateway API equivalent and targets the `*-thanos-discovery` Service, so enable `prometheus.thanosService` as well. Set `kind: GRPCRoute` when attaching to a GRPC Gateway listener.
+
+```yaml
+prometheus:
+  thanosService:
+    enabled: true
+  thanosRoute:
+    main:
+      enabled: true
+      parentRefs:
+        - name: gateway
+          sectionName: grpc
+      hostnames:
+        - thanos-sidecar.example.com
+```
+
 
 ### Authentication of the control-plane ServiceMonitors
 
