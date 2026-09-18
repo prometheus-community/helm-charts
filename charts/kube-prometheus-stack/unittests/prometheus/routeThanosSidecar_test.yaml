@@ -1,0 +1,98 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/helm-unittest/helm-unittest/main/schema/helm-testsuite.json
+suite: test Thanos sidecar Gateway API route
+templates:
+  - prometheus/routeThanosSidecar.yaml
+tests:
+  - it: should be empty if prometheus is not enabled
+    set:
+      prometheus.enabled: false
+      prometheus.thanosRoute.main.enabled: true
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: should be empty if the thanos sidecar route is not enabled
+    set:
+      prometheus.enabled: true
+      prometheus.thanosRoute.main.enabled: false
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: should render an HTTPRoute to the thanos-discovery service
+    set:
+      prometheus.enabled: true
+      prometheus.thanosRoute.main.enabled: true
+      prometheus.thanosRoute.main.hostnames:
+        - thanos-sidecar.example.com
+      prometheus.thanosRoute.main.parentRefs:
+        - name: gateway
+          sectionName: grpc
+    asserts:
+      - hasDocuments:
+          count: 1
+      - isKind:
+          of: HTTPRoute
+      - isAPIVersion:
+          of: gateway.networking.k8s.io/v1
+      - equal:
+          path: metadata.name
+          value: RELEASE-NAME-kube-promethe-thanos-discovery
+      - equal:
+          path: spec.hostnames
+          value:
+            - thanos-sidecar.example.com
+      - equal:
+          path: spec.parentRefs
+          value:
+            - name: gateway
+              sectionName: grpc
+      - equal:
+          path: spec.rules[0].backendRefs
+          value:
+            - group: ""
+              kind: Service
+              weight: 1
+              name: RELEASE-NAME-kube-promethe-thanos-discovery
+              port: 10901
+
+  - it: should honor thanosIngress.servicePort for the backend
+    set:
+      prometheus.enabled: true
+      prometheus.thanosIngress.servicePort: 10911
+      prometheus.thanosRoute.main.enabled: true
+    asserts:
+      - equal:
+          path: spec.rules[0].backendRefs[0].port
+          value: 10911
+
+  - it: should keep named routes independent of the main route
+    set:
+      prometheus.enabled: true
+      prometheus.thanosRoute.main.enabled: true
+      prometheus.thanosRoute.grpc:
+        enabled: true
+        kind: GRPCRoute
+        matches: []
+        parentRefs:
+          - name: gateway
+            sectionName: grpc
+    asserts:
+      - hasDocuments:
+          count: 2
+      - isKind:
+          of: HTTPRoute
+        documentSelector:
+          path: metadata.name
+          value: RELEASE-NAME-kube-promethe-thanos-discovery
+      - isKind:
+          of: GRPCRoute
+        documentSelector:
+          path: metadata.name
+          value: RELEASE-NAME-kube-promethe-thanos-discovery-grpc
+      - equal:
+          path: spec.rules[0].backendRefs[0].name
+          value: RELEASE-NAME-kube-promethe-thanos-discovery
+        documentSelector:
+          path: metadata.name
+          value: RELEASE-NAME-kube-promethe-thanos-discovery-grpc
