@@ -31,9 +31,16 @@ spec:
         - name: {{ .Chart.Name }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
+          {{- if .Values.invokeViaShell }}
+          command: ["/bin/sh"]
+          args:
+            - "-c"
+            - "consul_exporter --consul.server={{ .Values.consulServer }}"
+          {{- else }}
           command: ["consul_exporter"]
           args:
             - "--consul.server={{ .Values.consulServer }}"
+          {{ end }}
             {{- range $key, $value := .Values.options }}
             - "--{{ $key }}{{ if $value }}={{ $value }}{{ end }}"
             {{- end }}
