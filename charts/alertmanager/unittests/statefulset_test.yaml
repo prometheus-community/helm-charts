@@ -3,6 +3,77 @@ templates:
   - statefulset.yaml
   - configmap.yaml
 tests:
+  - it: renders the default config reloader and hardened container defaults
+    template: statefulset.yaml
+    release:
+      name: am
+    asserts:
+      - equal:
+          path: metadata.labels["app.kubernetes.io/name"]
+          value: alertmanager
+      - equal:
+          path: spec.template.metadata.annotations["kubectl.kubernetes.io/default-container"]
+          value: alertmanager
+      - notExists:
+          path: spec.template.metadata.annotations["checksum/config"]
+      - equal:
+          path: spec.template.spec.containers[0].name
+          value: alertmanager-configmap-reload
+      - equal:
+          path: spec.template.spec.containers[0].args[2]
+          value: --listen-address=0.0.0.0:8080
+      - equal:
+          path: spec.template.spec.containers[0].ports[0]
+          value:
+            containerPort: 8080
+            name: metrics
+            protocol: TCP
+      - equal:
+          path: spec.template.spec.containers[1].livenessProbe.httpGet.path
+          value: /-/healthy
+      - equal:
+          path: spec.template.spec.containers[1].securityContext.seccompProfile.type
+          value: RuntimeDefault
+
+  - it: supports templated and numeric extra arguments
+    template: statefulset.yaml
+    release:
+      name: am
+    set:
+      statefulSet:
+        labels:
+          example.com/team: operations
+      configmapReload:
+        extraArgs:
+          interval: 60
+      extraArgs:
+        web.listen-address: "0.0.0.0:{{ .Values.service.port }}"
+      baseURL: "https://{{ .Release.Name }}.example.com"
+    asserts:
+      - equal:
+          path: metadata.labels["example.com/team"]
+          value: operations
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: --interval=60
+      - contains:
+          path: spec.template.spec.containers[1].args
+          content: --web.listen-address=0.0.0.0:9093
+      - contains:
+          path: spec.template.spec.containers[1].args
+          content: --web.external-url=https://am.example.com
+
+  - it: omits the config reloader and adds a config checksum when disabled
+    template: statefulset.yaml
+    set:
+      configmapReload.enabled: false
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].name
+          value: alertmanager
+      - exists:
+          path: spec.template.metadata.annotations["checksum/config"]
+
   - it: persistentVolumeClaim contain apiVersion and kind
     template: statefulset.yaml
     set:

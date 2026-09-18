@@ -5,6 +5,9 @@ metadata:
   name: {{ include "alertmanager.fullname" . }}
   labels:
     {{- include "alertmanager.labels" . | nindent 4 }}
+    {{- with .Values.statefulSet.labels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
   {{- with .Values.statefulSet.annotations }}
   annotations:
     {{- toYaml . | nindent 4 }}
@@ -26,6 +29,7 @@ spec:
         {{- toYaml . | nindent 8 }}
         {{- end }}
       annotations:
+        kubectl.kubernetes.io/default-container: {{ .Chart.Name }}
         {{- if not .Values.configmapReload.enabled }}
         checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
         {{- end }}
@@ -104,23 +108,30 @@ spec:
           imagePullPolicy: "{{ .Values.configmapReload.image.pullPolicy }}"
           {{- with .Values.configmapReload.extraEnv }}
           env:
-            {{- toYaml . | nindent 12 }}
+            {{- tpl (toYaml .) $ | nindent 12 }}
           {{- end }}
           args:
             {{- if and (hasKey .Values.configmapReload.extraArgs "config-file" | not) (hasKey .Values.configmapReload.extraArgs "watched-dir" | not)  }}
-            - --watched-dir=/etc/alertmanager
+            - "--watched-dir=/etc/alertmanager"
             {{- end }}
             {{- if not (hasKey .Values.configmapReload.extraArgs "reload-url") }}
-            - --reload-url=http://127.0.0.1:9093/-/reload
+            - "--reload-url=http://127.0.0.1:9093/-/reload"
+            {{- end }}
+            {{- if and .Values.configmapReload.containerPort (not (hasKey .Values.configmapReload.extraArgs "listen-address")) }}
+            - "--listen-address=0.0.0.0:{{ .Values.configmapReload.containerPort }}"
             {{- end }}
             {{- range $key, $value := .Values.configmapReload.extraArgs }}
-            - --{{ $key }}={{ $value }}
+            - "--{{ $key }}={{ tpl (toString $value) $ }}"
             {{- end }}
+          {{- with .Values.configmapReload.resources }}
           resources:
-            {{- toYaml .Values.configmapReload.resources | nindent 12 }}
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
           {{- with .Values.configmapReload.containerPort }}
           ports:
             - containerPort: {{ . }}
+              name: metrics
+              protocol: TCP
           {{- end }}
           {{- with .Values.configmapReload.livenessProbe }}
           livenessProbe:
@@ -155,37 +166,37 @@ spec:
                   apiVersion: v1
                   fieldPath: status.podIP
             {{- if .Values.extraEnv }}
-            {{- toYaml .Values.extraEnv | nindent 12 }}
+            {{- tpl (toYaml .Values.extraEnv) $ | nindent 12 }}
             {{- end }}
           {{- with .Values.command }}
           command:
             {{- toYaml . | nindent 12 }}
           {{- end }}
           args:
-            - --storage.path=/alertmanager
+            - "--storage.path=/alertmanager"
             {{- if not (hasKey .Values.extraArgs "config.file") }}
-            - --config.file=/etc/alertmanager/alertmanager.yml
+            - "--config.file=/etc/alertmanager/alertmanager.yml"
             {{- end }}
             {{- if or (gt (int .Values.replicaCount) 1) (.Values.additionalPeers) }}
-            - --cluster.advertise-address=[$(POD_IP)]:{{ $svcClusterPort }}
-            - --cluster.listen-address=0.0.0.0:{{ $svcClusterPort }}
+            - "--cluster.advertise-address=[$(POD_IP)]:{{ $svcClusterPort }}"
+            - "--cluster.listen-address=0.0.0.0:{{ $svcClusterPort }}"
             {{- end }}
             {{- if gt (int .Values.replicaCount) 1}}
             {{- $fullName := include "alertmanager.fullname" . }}
             {{- range $i := until (int .Values.replicaCount) }}
-            - --cluster.peer={{ $fullName }}-{{ $i }}.{{ $fullName }}-headless:{{ $svcClusterPort }}
+            - "--cluster.peer={{ $fullName }}-{{ $i }}.{{ $fullName }}-headless:{{ $svcClusterPort }}"
             {{- end }}
             {{- end }}
             {{- if .Values.additionalPeers }}
             {{- range $item := .Values.additionalPeers }}
-            - --cluster.peer={{ $item }}
+            - "--cluster.peer={{ $item }}"
             {{- end }}
             {{- end }}
             {{- range $key, $value := .Values.extraArgs }}
-            - --{{ $key }}={{ $value }}
+            - "--{{ $key }}={{ tpl (toString $value) $ }}"
             {{- end }}
             {{- if .Values.baseURL }}
-            - --web.external-url={{ .Values.baseURL }}
+            - "--web.external-url={{ tpl (.Values.baseURL) $ }}"
             {{- end }}
           ports:
             - name: {{ .Values.containerPortName }}
