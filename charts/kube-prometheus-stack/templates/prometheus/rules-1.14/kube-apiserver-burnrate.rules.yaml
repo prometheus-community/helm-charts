@@ -29,26 +29,24 @@ spec:
         (
           (
             # too slow
-            sum by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster) (rate(apiserver_request_sli_duration_seconds_count{job="{{ $kubeApiserverJob }}",verb=~"LIST|GET",subresource!~"proxy|attach|log|exec|portforward"}[1d]))
+            sum by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster) (rate(apiserver_request_sli_duration_seconds_count{job="{{ $kubeApiserverJob }}",verb=~"LIST|GET",subresource!~"proxy|attach|log|exec|portforward"}[5m]))
             -
             (
               (
-                sum by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster) (rate(apiserver_request_sli_duration_seconds_bucket{job="{{ $kubeApiserverJob }}",verb=~"LIST|GET",subresource!~"proxy|attach|log|exec|portforward",scope=~"resource|",le=~"1(\\.0)?"}[1d]))
+                sum by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster) (rate(apiserver_request_sli_duration_seconds_bucket{job="{{ $kubeApiserverJob }}",verb=~"LIST|GET",subresource!~"proxy|attach|log|exec|portforward",scope=~"resource|",le=~"1(\\.0)?"}[5m]))
                 or
                 vector(0)
               )
               +
-              sum by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster) (rate(apiserver_request_sli_duration_seconds_bucket{job="{{ $kubeApiserverJob }}",verb=~"LIST|GET",subresource!~"proxy|attach|log|exec|portforward",scope="namespace",le=~"5(\\.0)?"}[1d]))
+              sum by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster) (rate(apiserver_request_sli_duration_seconds_bucket{job="{{ $kubeApiserverJob }}",verb=~"LIST|GET",subresource!~"proxy|attach|log|exec|portforward",scope="namespace",le=~"5(\\.0)?"}[5m]))
               +
-              sum by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster) (rate(apiserver_request_sli_duration_seconds_bucket{job="{{ $kubeApiserverJob }}",verb=~"LIST|GET",subresource!~"proxy|attach|log|exec|portforward",scope="cluster",le=~"30(\\.0)?"}[1d]))
+              sum by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster) (rate(apiserver_request_sli_duration_seconds_bucket{job="{{ $kubeApiserverJob }}",verb=~"LIST|GET",subresource!~"proxy|attach|log|exec|portforward",scope="cluster",le=~"30(\\.0)?"}[5m]))
             )
           )
           +
           # errors
-          sum by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster) (rate(apiserver_request_total{job="{{ $kubeApiserverJob }}",verb=~"LIST|GET",code=~"5.."}[1d]))
+          sum by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster) (rate(apiserver_request_total{job="{{ $kubeApiserverJob }}",verb=~"LIST|GET",code=~"5.."}[5m]))
         )
-        /
-        sum by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster) (rate(apiserver_request_total{job="{{ $kubeApiserverJob }}",verb=~"LIST|GET"}[1d]))
       labels:
         verb: read
       {{- if or .Values.defaultRules.additionalRuleLabels .Values.defaultRules.additionalRuleGroupLabels.kubeApiserverBurnrate }}
@@ -59,7 +57,68 @@ spec:
           {{- toYaml . | nindent 8 }}
         {{- end }}
       {{- end }}
-      record: apiserver_request:burnrate1d
+      record: cluster_verb:apiserver_request_sli_bad_events:rate5m
+    - expr: |-
+        (
+          (
+            # too slow
+            sum by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster) (rate(apiserver_request_sli_duration_seconds_count{job="{{ $kubeApiserverJob }}",verb=~"POST|PUT|PATCH|DELETE",subresource!~"proxy|attach|log|exec|portforward"}[5m]))
+            -
+            sum by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster) (rate(apiserver_request_sli_duration_seconds_bucket{job="{{ $kubeApiserverJob }}",verb=~"POST|PUT|PATCH|DELETE",subresource!~"proxy|attach|log|exec|portforward",le=~"1(\\.0)?"}[5m]))
+          )
+          +
+          # errors
+          sum by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster) (rate(apiserver_request_total{job="{{ $kubeApiserverJob }}",verb=~"POST|PUT|PATCH|DELETE",code=~"5.."}[5m]))
+        )
+      labels:
+        verb: write
+      {{- if or .Values.defaultRules.additionalRuleLabels .Values.defaultRules.additionalRuleGroupLabels.kubeApiserverBurnrate }}
+        {{- with .Values.defaultRules.additionalRuleLabels }}
+          {{- toYaml . | nindent 8 }}
+        {{- end }}
+        {{- with .Values.defaultRules.additionalRuleGroupLabels.kubeApiserverBurnrate }}
+          {{- toYaml . | nindent 8 }}
+        {{- end }}
+      {{- end }}
+      record: cluster_verb:apiserver_request_sli_bad_events:rate5m
+    - expr: sum by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster) (rate(apiserver_request_total{job="{{ $kubeApiserverJob }}",verb=~"LIST|GET"}[5m]))
+      labels:
+        verb: read
+      {{- if or .Values.defaultRules.additionalRuleLabels .Values.defaultRules.additionalRuleGroupLabels.kubeApiserverBurnrate }}
+        {{- with .Values.defaultRules.additionalRuleLabels }}
+          {{- toYaml . | nindent 8 }}
+        {{- end }}
+        {{- with .Values.defaultRules.additionalRuleGroupLabels.kubeApiserverBurnrate }}
+          {{- toYaml . | nindent 8 }}
+        {{- end }}
+      {{- end }}
+      record: cluster_verb:apiserver_request_sli_events:rate5m
+    - expr: sum by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster) (rate(apiserver_request_total{job="{{ $kubeApiserverJob }}",verb=~"POST|PUT|PATCH|DELETE"}[5m]))
+      labels:
+        verb: write
+      {{- if or .Values.defaultRules.additionalRuleLabels .Values.defaultRules.additionalRuleGroupLabels.kubeApiserverBurnrate }}
+        {{- with .Values.defaultRules.additionalRuleLabels }}
+          {{- toYaml . | nindent 8 }}
+        {{- end }}
+        {{- with .Values.defaultRules.additionalRuleGroupLabels.kubeApiserverBurnrate }}
+          {{- toYaml . | nindent 8 }}
+        {{- end }}
+      {{- end }}
+      record: cluster_verb:apiserver_request_sli_events:rate5m
+    - expr: |-
+        cluster_verb:apiserver_request_sli_bad_events:rate5m
+        /
+        cluster_verb:apiserver_request_sli_events:rate5m
+      record: apiserver_request:burnrate5m
+      {{- if or .Values.defaultRules.additionalRuleLabels .Values.defaultRules.additionalRuleGroupLabels.kubeApiserverBurnrate }}
+      labels:
+        {{- with .Values.defaultRules.additionalRuleLabels }}
+          {{- toYaml . | nindent 8 }}
+        {{- end }}
+        {{- with .Values.defaultRules.additionalRuleGroupLabels.kubeApiserverBurnrate }}
+          {{- toYaml . | nindent 8 }}
+        {{- end }}
+      {{- end }}
     - expr: |-
         (
           (
@@ -86,6 +145,31 @@ spec:
         sum by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster) (rate(apiserver_request_total{job="{{ $kubeApiserverJob }}",verb=~"LIST|GET"}[1h]))
       labels:
         verb: read
+      {{- if or .Values.defaultRules.additionalRuleLabels .Values.defaultRules.additionalRuleGroupLabels.kubeApiserverBurnrate }}
+        {{- with .Values.defaultRules.additionalRuleLabels }}
+          {{- toYaml . | nindent 8 }}
+        {{- end }}
+        {{- with .Values.defaultRules.additionalRuleGroupLabels.kubeApiserverBurnrate }}
+          {{- toYaml . | nindent 8 }}
+        {{- end }}
+      {{- end }}
+      record: apiserver_request:burnrate1h
+    - expr: |-
+        (
+          (
+            # too slow
+            sum by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster) (rate(apiserver_request_sli_duration_seconds_count{job="{{ $kubeApiserverJob }}",verb=~"POST|PUT|PATCH|DELETE",subresource!~"proxy|attach|log|exec|portforward"}[1h]))
+            -
+            sum by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster) (rate(apiserver_request_sli_duration_seconds_bucket{job="{{ $kubeApiserverJob }}",verb=~"POST|PUT|PATCH|DELETE",subresource!~"proxy|attach|log|exec|portforward",le=~"1(\\.0)?"}[1h]))
+          )
+          +
+          # errors
+          sum by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster) (rate(apiserver_request_total{job="{{ $kubeApiserverJob }}",verb=~"POST|PUT|PATCH|DELETE",code=~"5.."}[1h]))
+        )
+        /
+        sum by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster) (rate(apiserver_request_total{job="{{ $kubeApiserverJob }}",verb=~"POST|PUT|PATCH|DELETE"}[1h]))
+      labels:
+        verb: write
       {{- if or .Values.defaultRules.additionalRuleLabels .Values.defaultRules.additionalRuleGroupLabels.kubeApiserverBurnrate }}
         {{- with .Values.defaultRules.additionalRuleLabels }}
           {{- toYaml . | nindent 8 }}
@@ -134,6 +218,31 @@ spec:
         (
           (
             # too slow
+            sum by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster) (rate(apiserver_request_sli_duration_seconds_count{job="{{ $kubeApiserverJob }}",verb=~"POST|PUT|PATCH|DELETE",subresource!~"proxy|attach|log|exec|portforward"}[2h]))
+            -
+            sum by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster) (rate(apiserver_request_sli_duration_seconds_bucket{job="{{ $kubeApiserverJob }}",verb=~"POST|PUT|PATCH|DELETE",subresource!~"proxy|attach|log|exec|portforward",le=~"1(\\.0)?"}[2h]))
+          )
+          +
+          # errors
+          sum by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster) (rate(apiserver_request_total{job="{{ $kubeApiserverJob }}",verb=~"POST|PUT|PATCH|DELETE",code=~"5.."}[2h]))
+        )
+        /
+        sum by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster) (rate(apiserver_request_total{job="{{ $kubeApiserverJob }}",verb=~"POST|PUT|PATCH|DELETE"}[2h]))
+      labels:
+        verb: write
+      {{- if or .Values.defaultRules.additionalRuleLabels .Values.defaultRules.additionalRuleGroupLabels.kubeApiserverBurnrate }}
+        {{- with .Values.defaultRules.additionalRuleLabels }}
+          {{- toYaml . | nindent 8 }}
+        {{- end }}
+        {{- with .Values.defaultRules.additionalRuleGroupLabels.kubeApiserverBurnrate }}
+          {{- toYaml . | nindent 8 }}
+        {{- end }}
+      {{- end }}
+      record: apiserver_request:burnrate2h
+    - expr: |-
+        (
+          (
+            # too slow
             sum by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster) (rate(apiserver_request_sli_duration_seconds_count{job="{{ $kubeApiserverJob }}",verb=~"LIST|GET",subresource!~"proxy|attach|log|exec|portforward"}[30m]))
             -
             (
@@ -169,28 +278,18 @@ spec:
         (
           (
             # too slow
-            sum by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster) (rate(apiserver_request_sli_duration_seconds_count{job="{{ $kubeApiserverJob }}",verb=~"LIST|GET",subresource!~"proxy|attach|log|exec|portforward"}[3d]))
+            sum by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster) (rate(apiserver_request_sli_duration_seconds_count{job="{{ $kubeApiserverJob }}",verb=~"POST|PUT|PATCH|DELETE",subresource!~"proxy|attach|log|exec|portforward"}[30m]))
             -
-            (
-              (
-                sum by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster) (rate(apiserver_request_sli_duration_seconds_bucket{job="{{ $kubeApiserverJob }}",verb=~"LIST|GET",subresource!~"proxy|attach|log|exec|portforward",scope=~"resource|",le=~"1(\\.0)?"}[3d]))
-                or
-                vector(0)
-              )
-              +
-              sum by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster) (rate(apiserver_request_sli_duration_seconds_bucket{job="{{ $kubeApiserverJob }}",verb=~"LIST|GET",subresource!~"proxy|attach|log|exec|portforward",scope="namespace",le=~"5(\\.0)?"}[3d]))
-              +
-              sum by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster) (rate(apiserver_request_sli_duration_seconds_bucket{job="{{ $kubeApiserverJob }}",verb=~"LIST|GET",subresource!~"proxy|attach|log|exec|portforward",scope="cluster",le=~"30(\\.0)?"}[3d]))
-            )
+            sum by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster) (rate(apiserver_request_sli_duration_seconds_bucket{job="{{ $kubeApiserverJob }}",verb=~"POST|PUT|PATCH|DELETE",subresource!~"proxy|attach|log|exec|portforward",le=~"1(\\.0)?"}[30m]))
           )
           +
           # errors
-          sum by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster) (rate(apiserver_request_total{job="{{ $kubeApiserverJob }}",verb=~"LIST|GET",code=~"5.."}[3d]))
+          sum by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster) (rate(apiserver_request_total{job="{{ $kubeApiserverJob }}",verb=~"POST|PUT|PATCH|DELETE",code=~"5.."}[30m]))
         )
         /
-        sum by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster) (rate(apiserver_request_total{job="{{ $kubeApiserverJob }}",verb=~"LIST|GET"}[3d]))
+        sum by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster) (rate(apiserver_request_total{job="{{ $kubeApiserverJob }}",verb=~"POST|PUT|PATCH|DELETE"}[30m]))
       labels:
-        verb: read
+        verb: write
       {{- if or .Values.defaultRules.additionalRuleLabels .Values.defaultRules.additionalRuleGroupLabels.kubeApiserverBurnrate }}
         {{- with .Values.defaultRules.additionalRuleLabels }}
           {{- toYaml . | nindent 8 }}
@@ -199,42 +298,7 @@ spec:
           {{- toYaml . | nindent 8 }}
         {{- end }}
       {{- end }}
-      record: apiserver_request:burnrate3d
-    - expr: |-
-        (
-          (
-            # too slow
-            sum by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster) (rate(apiserver_request_sli_duration_seconds_count{job="{{ $kubeApiserverJob }}",verb=~"LIST|GET",subresource!~"proxy|attach|log|exec|portforward"}[5m]))
-            -
-            (
-              (
-                sum by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster) (rate(apiserver_request_sli_duration_seconds_bucket{job="{{ $kubeApiserverJob }}",verb=~"LIST|GET",subresource!~"proxy|attach|log|exec|portforward",scope=~"resource|",le=~"1(\\.0)?"}[5m]))
-                or
-                vector(0)
-              )
-              +
-              sum by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster) (rate(apiserver_request_sli_duration_seconds_bucket{job="{{ $kubeApiserverJob }}",verb=~"LIST|GET",subresource!~"proxy|attach|log|exec|portforward",scope="namespace",le=~"5(\\.0)?"}[5m]))
-              +
-              sum by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster) (rate(apiserver_request_sli_duration_seconds_bucket{job="{{ $kubeApiserverJob }}",verb=~"LIST|GET",subresource!~"proxy|attach|log|exec|portforward",scope="cluster",le=~"30(\\.0)?"}[5m]))
-            )
-          )
-          +
-          # errors
-          sum by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster) (rate(apiserver_request_total{job="{{ $kubeApiserverJob }}",verb=~"LIST|GET",code=~"5.."}[5m]))
-        )
-        /
-        sum by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster) (rate(apiserver_request_total{job="{{ $kubeApiserverJob }}",verb=~"LIST|GET"}[5m]))
-      labels:
-        verb: read
-      {{- if or .Values.defaultRules.additionalRuleLabels .Values.defaultRules.additionalRuleGroupLabels.kubeApiserverBurnrate }}
-        {{- with .Values.defaultRules.additionalRuleLabels }}
-          {{- toYaml . | nindent 8 }}
-        {{- end }}
-        {{- with .Values.defaultRules.additionalRuleGroupLabels.kubeApiserverBurnrate }}
-          {{- toYaml . | nindent 8 }}
-        {{- end }}
-      {{- end }}
-      record: apiserver_request:burnrate5m
+      record: apiserver_request:burnrate30m
     - expr: |-
         (
           (
@@ -274,155 +338,12 @@ spec:
         (
           (
             # too slow
-            sum by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster) (rate(apiserver_request_sli_duration_seconds_count{job="{{ $kubeApiserverJob }}",verb=~"POST|PUT|PATCH|DELETE",subresource!~"proxy|attach|log|exec|portforward"}[1d]))
-            -
-            sum by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster) (rate(apiserver_request_sli_duration_seconds_bucket{job="{{ $kubeApiserverJob }}",verb=~"POST|PUT|PATCH|DELETE",subresource!~"proxy|attach|log|exec|portforward",le=~"1(\\.0)?"}[1d]))
-          )
-          +
-          sum by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster) (rate(apiserver_request_total{job="{{ $kubeApiserverJob }}",verb=~"POST|PUT|PATCH|DELETE",code=~"5.."}[1d]))
-        )
-        /
-        sum by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster) (rate(apiserver_request_total{job="{{ $kubeApiserverJob }}",verb=~"POST|PUT|PATCH|DELETE"}[1d]))
-      labels:
-        verb: write
-      {{- if or .Values.defaultRules.additionalRuleLabels .Values.defaultRules.additionalRuleGroupLabels.kubeApiserverBurnrate }}
-        {{- with .Values.defaultRules.additionalRuleLabels }}
-          {{- toYaml . | nindent 8 }}
-        {{- end }}
-        {{- with .Values.defaultRules.additionalRuleGroupLabels.kubeApiserverBurnrate }}
-          {{- toYaml . | nindent 8 }}
-        {{- end }}
-      {{- end }}
-      record: apiserver_request:burnrate1d
-    - expr: |-
-        (
-          (
-            # too slow
-            sum by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster) (rate(apiserver_request_sli_duration_seconds_count{job="{{ $kubeApiserverJob }}",verb=~"POST|PUT|PATCH|DELETE",subresource!~"proxy|attach|log|exec|portforward"}[1h]))
-            -
-            sum by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster) (rate(apiserver_request_sli_duration_seconds_bucket{job="{{ $kubeApiserverJob }}",verb=~"POST|PUT|PATCH|DELETE",subresource!~"proxy|attach|log|exec|portforward",le=~"1(\\.0)?"}[1h]))
-          )
-          +
-          sum by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster) (rate(apiserver_request_total{job="{{ $kubeApiserverJob }}",verb=~"POST|PUT|PATCH|DELETE",code=~"5.."}[1h]))
-        )
-        /
-        sum by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster) (rate(apiserver_request_total{job="{{ $kubeApiserverJob }}",verb=~"POST|PUT|PATCH|DELETE"}[1h]))
-      labels:
-        verb: write
-      {{- if or .Values.defaultRules.additionalRuleLabels .Values.defaultRules.additionalRuleGroupLabels.kubeApiserverBurnrate }}
-        {{- with .Values.defaultRules.additionalRuleLabels }}
-          {{- toYaml . | nindent 8 }}
-        {{- end }}
-        {{- with .Values.defaultRules.additionalRuleGroupLabels.kubeApiserverBurnrate }}
-          {{- toYaml . | nindent 8 }}
-        {{- end }}
-      {{- end }}
-      record: apiserver_request:burnrate1h
-    - expr: |-
-        (
-          (
-            # too slow
-            sum by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster) (rate(apiserver_request_sli_duration_seconds_count{job="{{ $kubeApiserverJob }}",verb=~"POST|PUT|PATCH|DELETE",subresource!~"proxy|attach|log|exec|portforward"}[2h]))
-            -
-            sum by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster) (rate(apiserver_request_sli_duration_seconds_bucket{job="{{ $kubeApiserverJob }}",verb=~"POST|PUT|PATCH|DELETE",subresource!~"proxy|attach|log|exec|portforward",le=~"1(\\.0)?"}[2h]))
-          )
-          +
-          sum by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster) (rate(apiserver_request_total{job="{{ $kubeApiserverJob }}",verb=~"POST|PUT|PATCH|DELETE",code=~"5.."}[2h]))
-        )
-        /
-        sum by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster) (rate(apiserver_request_total{job="{{ $kubeApiserverJob }}",verb=~"POST|PUT|PATCH|DELETE"}[2h]))
-      labels:
-        verb: write
-      {{- if or .Values.defaultRules.additionalRuleLabels .Values.defaultRules.additionalRuleGroupLabels.kubeApiserverBurnrate }}
-        {{- with .Values.defaultRules.additionalRuleLabels }}
-          {{- toYaml . | nindent 8 }}
-        {{- end }}
-        {{- with .Values.defaultRules.additionalRuleGroupLabels.kubeApiserverBurnrate }}
-          {{- toYaml . | nindent 8 }}
-        {{- end }}
-      {{- end }}
-      record: apiserver_request:burnrate2h
-    - expr: |-
-        (
-          (
-            # too slow
-            sum by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster) (rate(apiserver_request_sli_duration_seconds_count{job="{{ $kubeApiserverJob }}",verb=~"POST|PUT|PATCH|DELETE",subresource!~"proxy|attach|log|exec|portforward"}[30m]))
-            -
-            sum by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster) (rate(apiserver_request_sli_duration_seconds_bucket{job="{{ $kubeApiserverJob }}",verb=~"POST|PUT|PATCH|DELETE",subresource!~"proxy|attach|log|exec|portforward",le=~"1(\\.0)?"}[30m]))
-          )
-          +
-          sum by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster) (rate(apiserver_request_total{job="{{ $kubeApiserverJob }}",verb=~"POST|PUT|PATCH|DELETE",code=~"5.."}[30m]))
-        )
-        /
-        sum by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster) (rate(apiserver_request_total{job="{{ $kubeApiserverJob }}",verb=~"POST|PUT|PATCH|DELETE"}[30m]))
-      labels:
-        verb: write
-      {{- if or .Values.defaultRules.additionalRuleLabels .Values.defaultRules.additionalRuleGroupLabels.kubeApiserverBurnrate }}
-        {{- with .Values.defaultRules.additionalRuleLabels }}
-          {{- toYaml . | nindent 8 }}
-        {{- end }}
-        {{- with .Values.defaultRules.additionalRuleGroupLabels.kubeApiserverBurnrate }}
-          {{- toYaml . | nindent 8 }}
-        {{- end }}
-      {{- end }}
-      record: apiserver_request:burnrate30m
-    - expr: |-
-        (
-          (
-            # too slow
-            sum by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster) (rate(apiserver_request_sli_duration_seconds_count{job="{{ $kubeApiserverJob }}",verb=~"POST|PUT|PATCH|DELETE",subresource!~"proxy|attach|log|exec|portforward"}[3d]))
-            -
-            sum by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster) (rate(apiserver_request_sli_duration_seconds_bucket{job="{{ $kubeApiserverJob }}",verb=~"POST|PUT|PATCH|DELETE",subresource!~"proxy|attach|log|exec|portforward",le=~"1(\\.0)?"}[3d]))
-          )
-          +
-          sum by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster) (rate(apiserver_request_total{job="{{ $kubeApiserverJob }}",verb=~"POST|PUT|PATCH|DELETE",code=~"5.."}[3d]))
-        )
-        /
-        sum by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster) (rate(apiserver_request_total{job="{{ $kubeApiserverJob }}",verb=~"POST|PUT|PATCH|DELETE"}[3d]))
-      labels:
-        verb: write
-      {{- if or .Values.defaultRules.additionalRuleLabels .Values.defaultRules.additionalRuleGroupLabels.kubeApiserverBurnrate }}
-        {{- with .Values.defaultRules.additionalRuleLabels }}
-          {{- toYaml . | nindent 8 }}
-        {{- end }}
-        {{- with .Values.defaultRules.additionalRuleGroupLabels.kubeApiserverBurnrate }}
-          {{- toYaml . | nindent 8 }}
-        {{- end }}
-      {{- end }}
-      record: apiserver_request:burnrate3d
-    - expr: |-
-        (
-          (
-            # too slow
-            sum by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster) (rate(apiserver_request_sli_duration_seconds_count{job="{{ $kubeApiserverJob }}",verb=~"POST|PUT|PATCH|DELETE",subresource!~"proxy|attach|log|exec|portforward"}[5m]))
-            -
-            sum by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster) (rate(apiserver_request_sli_duration_seconds_bucket{job="{{ $kubeApiserverJob }}",verb=~"POST|PUT|PATCH|DELETE",subresource!~"proxy|attach|log|exec|portforward",le=~"1(\\.0)?"}[5m]))
-          )
-          +
-          sum by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster) (rate(apiserver_request_total{job="{{ $kubeApiserverJob }}",verb=~"POST|PUT|PATCH|DELETE",code=~"5.."}[5m]))
-        )
-        /
-        sum by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster) (rate(apiserver_request_total{job="{{ $kubeApiserverJob }}",verb=~"POST|PUT|PATCH|DELETE"}[5m]))
-      labels:
-        verb: write
-      {{- if or .Values.defaultRules.additionalRuleLabels .Values.defaultRules.additionalRuleGroupLabels.kubeApiserverBurnrate }}
-        {{- with .Values.defaultRules.additionalRuleLabels }}
-          {{- toYaml . | nindent 8 }}
-        {{- end }}
-        {{- with .Values.defaultRules.additionalRuleGroupLabels.kubeApiserverBurnrate }}
-          {{- toYaml . | nindent 8 }}
-        {{- end }}
-      {{- end }}
-      record: apiserver_request:burnrate5m
-    - expr: |-
-        (
-          (
-            # too slow
             sum by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster) (rate(apiserver_request_sli_duration_seconds_count{job="{{ $kubeApiserverJob }}",verb=~"POST|PUT|PATCH|DELETE",subresource!~"proxy|attach|log|exec|portforward"}[6h]))
             -
             sum by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster) (rate(apiserver_request_sli_duration_seconds_bucket{job="{{ $kubeApiserverJob }}",verb=~"POST|PUT|PATCH|DELETE",subresource!~"proxy|attach|log|exec|portforward",le=~"1(\\.0)?"}[6h]))
           )
           +
+          # errors
           sum by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster) (rate(apiserver_request_total{job="{{ $kubeApiserverJob }}",verb=~"POST|PUT|PATCH|DELETE",code=~"5.."}[6h]))
         )
         /
@@ -438,4 +359,32 @@ spec:
         {{- end }}
       {{- end }}
       record: apiserver_request:burnrate6h
+    - expr: |-
+        avg_over_time(cluster_verb:apiserver_request_sli_bad_events:rate5m[1d])
+        /
+        avg_over_time(cluster_verb:apiserver_request_sli_events:rate5m[1d])
+      record: apiserver_request:burnrate1d
+      {{- if or .Values.defaultRules.additionalRuleLabels .Values.defaultRules.additionalRuleGroupLabels.kubeApiserverBurnrate }}
+      labels:
+        {{- with .Values.defaultRules.additionalRuleLabels }}
+          {{- toYaml . | nindent 8 }}
+        {{- end }}
+        {{- with .Values.defaultRules.additionalRuleGroupLabels.kubeApiserverBurnrate }}
+          {{- toYaml . | nindent 8 }}
+        {{- end }}
+      {{- end }}
+    - expr: |-
+        avg_over_time(cluster_verb:apiserver_request_sli_bad_events:rate5m[3d])
+        /
+        avg_over_time(cluster_verb:apiserver_request_sli_events:rate5m[3d])
+      record: apiserver_request:burnrate3d
+      {{- if or .Values.defaultRules.additionalRuleLabels .Values.defaultRules.additionalRuleGroupLabels.kubeApiserverBurnrate }}
+      labels:
+        {{- with .Values.defaultRules.additionalRuleLabels }}
+          {{- toYaml . | nindent 8 }}
+        {{- end }}
+        {{- with .Values.defaultRules.additionalRuleGroupLabels.kubeApiserverBurnrate }}
+          {{- toYaml . | nindent 8 }}
+        {{- end }}
+      {{- end }}
 {{- end }}

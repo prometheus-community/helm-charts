@@ -540,6 +540,8 @@ spec:
         time() - max by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}namespace, job_name, cluster) (kube_job_status_start_time{job="{{ $kubeStateMetricsJob }}", namespace{{ $namespaceOperator }}"{{ $targetNamespace }}"}
           and
         kube_job_status_active{job="{{ $kubeStateMetricsJob }}", namespace{{ $namespaceOperator }}"{{ $targetNamespace }}"} > 0) > 43200
+          unless on ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}namespace, job_name, cluster)
+        max by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}namespace, job_name, cluster) (kube_job_labels{job="{{ $kubeStateMetricsJob }}", namespace{{ $namespaceOperator }}"{{ $targetNamespace }}",label_excluded_from_alerts="true"} == 1)
       labels:
         severity: {{ dig "KubeJobNotCompleted" "severity" "warning" .Values.customRules }}
       {{- if or .Values.defaultRules.additionalRuleLabels .Values.defaultRules.additionalRuleGroupLabels.kubernetesApps }}
