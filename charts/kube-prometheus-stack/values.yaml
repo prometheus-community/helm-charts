@@ -4137,6 +4137,65 @@ prometheus:
     #   - thanos-gateway.domain.com
     #
 
+  # -- BETA: Configure Gateway API routes for the Thanos sidecar Store API.
+  # More routes can be added by adding a dictionary key like the 'main' route.
+  # Routes target the thanos-discovery Service created by prometheus.thanosService
+  # (enable that as well). kind defaults to HTTPRoute so existing HTTP/HTTPS
+  # Gateway listeners work; set kind: GRPCRoute when the parent listener is GRPC.
+  # Be aware that this is an early beta of this feature,
+  # kube-prometheus-stack does not guarantee this works and is subject to change.
+  # Being BETA this can/will change in the future without notice, do not use unless you want to take that risk
+  # [[ref]](https://gateway-api.sigs.k8s.io/reference/spec/#gateway.networking.k8s.io%2fv1alpha2)
+  thanosRoute:
+    main:
+      # -- Enables or disables the route
+      enabled: false
+
+      # -- Set the route apiVersion, e.g. gateway.networking.k8s.io/v1 or gateway.networking.k8s.io/v1alpha2
+      apiVersion: gateway.networking.k8s.io/v1
+      # -- Set the route kind
+      # Valid options are GRPCRoute, HTTPRoute, TCPRoute, TLSRoute, UDPRoute
+      kind: HTTPRoute
+
+      annotations: {}
+      labels: {}
+
+      hostnames: []
+      # - thanos-sidecar.example.com
+      parentRefs: []
+      # - name: acme-gw
+      #   sectionName: grpc
+
+      # -- create http route for redirect (https://gateway-api.sigs.k8s.io/guides/http-redirect-rewrite/#http-to-https-redirects)
+      ## Take care that you only enable this on the http listener of the gateway to avoid an infinite redirect.
+      ## matches, filters and additionalRules will be ignored if this is set to true. Be are
+      httpsRedirect: false
+
+      matches:
+        - path:
+            type: PathPrefix
+            value: /
+
+      ## Filters define the filters that are applied to requests that match this rule.
+      filters: []
+
+      ## Timeouts for the generated HTTPRoute backend rule.
+      ## Requires Gateway API CRDs and a controller that support HTTPRoute timeouts.
+      timeouts: {}
+      # request: 120s
+      # backendRequest: 60s
+
+      ## Session persistence configuration for the route rule.
+      sessionPersistence: {}
+      # sessionName: route
+      # type: Cookie
+      # absoluteTimeout: 12h
+      # cookieConfig:
+      #   lifetimeType: Permanent
+
+      ## Additional custom rules that can be added to the route
+      additionalRules: []
+
   ## ExtraSecret can be used to store various data in an extra secret
   ## (use it for example to store hashed basic auth credentials)
   extraSecret:
