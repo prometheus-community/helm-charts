@@ -1,0 +1,37 @@
+apiVersion: iac-guard-v.io/v1alpha1
+kind: InfrastructureContract
+metadata:
+  name: kube-prometheus-stack-rbac-relationships
+spec:
+  artifactClass: kubernetes_rendered
+  subjects:
+    include:
+      identities:
+        - rbac.authorization.k8s.io/v1/ClusterRoleBinding/_cluster/relationship-check-grafana-clusterrolebinding
+        - rbac.authorization.k8s.io/v1/ClusterRoleBinding/_cluster/relationship-check-kube-state-metrics
+        - rbac.authorization.k8s.io/v1/ClusterRoleBinding/_cluster/relationship-check-kube-pr-operator
+        - rbac.authorization.k8s.io/v1/ClusterRoleBinding/_cluster/relationship-check-kube-pr-prometheus
+        - rbac.authorization.k8s.io/v1/ClusterRoleBinding/_cluster/relationship-check-kube-pr-admission
+        - rbac.authorization.k8s.io/v1/RoleBinding/monitoring/relationship-check-kube-pr-admission
+    cardinality: {min: 6, max: 6}
+  responsibility:
+    class: PROJECT_MANAGED
+    reason: These rendered bindings should resolve their role references and ServiceAccount subjects with Kubernetes-consistent scope.
+  expect:
+    - id: role-ref-resolves
+      property:
+        namespace: iac_guard_v
+        id: IACGV_K8S_RBAC_ROLE_REF_RESOLVES_V1
+        version: "1"
+      parameters: {complete_expected_domain: true}
+    - id: subjects-resolve
+      property:
+        namespace: iac_guard_v
+        id: IACGV_K8S_RBAC_SERVICEACCOUNT_SUBJECT_RESOLVES_V1
+        version: "1"
+      parameters: {complete_expected_domain: true}
+    - id: scope-consistent
+      property:
+        namespace: iac_guard_v
+        id: IACGV_K8S_RBAC_BINDING_SCOPE_CONSISTENT_V1
+        version: "1"

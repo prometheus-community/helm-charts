@@ -1,0 +1,26 @@
+apiVersion: iac-guard-v.io/v1alpha1
+kind: InfrastructureContract
+metadata:
+  name: kube-prometheus-stack-monitoring-relationships
+spec:
+  artifactClass: kubernetes_rendered
+  subjects:
+    include:
+      identities:
+        - monitoring.coreos.com/v1/ServiceMonitor/monitoring/relationship-check-grafana
+        - monitoring.coreos.com/v1/ServiceMonitor/monitoring/relationship-check-kube-state-metrics
+        - monitoring.coreos.com/v1/ServiceMonitor/monitoring/relationship-check-prometheus-node-exporter
+        - monitoring.coreos.com/v1/ServiceMonitor/monitoring/relationship-check-kube-pr-operator
+    cardinality: {min: 4, max: 4}
+  responsibility:
+    class: PROJECT_MANAGED
+    reason: These rendered monitoring paths should resolve from each ServiceMonitor through its Service to the selected workload port.
+  expect:
+    - id: metrics-paths-resolve
+      property:
+        namespace: iac_guard_v
+        id: IACGV_PROM_SERVICEMONITOR_RESOLVES_SERVICE_PORT_V1
+        version: "1"
+      parameters:
+        endpoint_index: 0
+      relationCardinality: {targetMin: 4, targetMax: 4}

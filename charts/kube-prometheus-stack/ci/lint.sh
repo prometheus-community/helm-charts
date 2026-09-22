@@ -23,6 +23,7 @@ set -euo pipefail
   source venv/bin/activate
 
   pip3 install -r requirements.txt
+  pip3 install iac-guard-v==0.1.0b1
 
   go install -a github.com/jsonnet-bundler/jsonnet-bundler/cmd/jb@latest
   PATH="$(go env GOPATH)/bin:$PATH"
@@ -41,6 +42,9 @@ set -euo pipefail
     echo "Please go into the ./hack/ directory and run ./sync_grafana_dashboards.py"
     exit 1
   fi
+
+  shellcheck ../ci/verify-relationships.sh
+  ../ci/verify-relationships.sh
 
   rm -rf ./venv ./*.git
 } 2>&1
