@@ -1,0 +1,14 @@
+{{- $extraManifests := .Values.extraManifests | default (list) -}}
+
+{{- if kindIs "map" $extraManifests -}}
+  {{- $extraManifests = values $extraManifests -}}
+{{- end -}}
+
+{{- range $extraManifests }}
+---
+  {{- if kindIs "map" . }}
+    {{- tpl (toYaml .) $ | nindent 0 }}
+  {{- else if kindIs "string" . }}
+    {{- tpl . $ | nindent 0 }}
+  {{- end }}
+{{- end }}
