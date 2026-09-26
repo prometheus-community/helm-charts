@@ -136,3 +136,30 @@ tests:
       - equal:
           path: spec.clusterPeerName
           value: $(POD_NAME).$(NAMESPACE)
+
+  - it: should not render hostNetwork by default
+    asserts:
+      - hasDocuments:
+          count: 1
+      - notExists:
+          path: spec.hostNetwork
+
+  - it: should render hostNetwork when enabled
+    set:
+      alertmanager.alertmanagerSpec.hostNetwork: true
+    asserts:
+      - hasDocuments:
+          count: 1
+      - equal:
+          path: spec.hostNetwork
+          value: true
+
+  - it: should render hostNetwork when explicitly disabled
+    set:
+      alertmanager.alertmanagerSpec.hostNetwork: false
+    asserts:
+      - hasDocuments:
+          count: 1
+      - equal:
+          path: spec.hostNetwork
+          value: false
