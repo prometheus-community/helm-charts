@@ -1,0 +1,27 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/helm-unittest/helm-unittest/main/schema/helm-testsuite.json
+suite: test service templatization
+templates:
+  - service.yaml
+tests:
+  - it: should not have prometheus scape annotation
+    set:
+      prometheusScrape: false
+    asserts:
+      - notExists:
+          path: metadata.annotations['prometheus.io/scrape']
+  - it: should have prometheus scrape annotations by default
+    asserts:
+      - isSubset:
+          path: metadata.annotations
+          content:
+            prometheus.io/scrape: "true"
+  - it: should have annotations
+    set:
+      service:
+        annotations:
+          test-annotation: test-annotation-value
+    asserts:
+      - isSubset:
+          path: metadata.annotations
+          content:
+            test-annotation: test-annotation-value
