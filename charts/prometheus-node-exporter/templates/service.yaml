@@ -9,9 +9,14 @@ metadata:
     {{- with .Values.service.labels }}
     {{- toYaml . | nindent 4 }}
     {{- end }}
-  {{- with .Values.service.annotations }}
+  {{- if or .Values.prometheusScrape .Values.service.annotations }}
   annotations:
+    {{- if .Values.prometheusScrape }}
+    prometheus.io/scrape: {{ .Values.prometheusScrape | quote }}
+    {{- end }}
+    {{- with .Values.service.annotations }}
     {{- toYaml . | nindent 4 }}
+    {{- end }}
   {{- end }}
 spec:
 {{- if .Values.service.ipDualStack.enabled }}
