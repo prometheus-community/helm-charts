@@ -1,0 +1,35 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/helm-unittest/helm-unittest/main/schema/helm-testsuite.json
+suite: test control-plane exporter scrape class
+templates:
+  - exporters/kubelet/servicemonitor.yaml
+  - exporters/kube-api-server/servicemonitor.yaml
+  - exporters/kube-controller-manager/servicemonitor.yaml
+  - exporters/kube-scheduler/servicemonitor.yaml
+  - exporters/kube-etcd/servicemonitor.yaml
+  - exporters/kube-proxy/servicemonitor.yaml
+  - exporters/core-dns/servicemonitor.yaml
+  - exporters/kube-dns/servicemonitor.yaml
+release:
+  name: kps
+set:
+  kubeDns.enabled: true
+tests:
+  - it: should not set a scrape class by default
+    asserts:
+      - notExists:
+          path: spec.scrapeClass
+
+  - it: should set the scrape class when configured
+    set:
+      kubelet.serviceMonitor.scrapeClass: control-plane
+      kubeApiServer.serviceMonitor.scrapeClass: control-plane
+      kubeControllerManager.serviceMonitor.scrapeClass: control-plane
+      kubeScheduler.serviceMonitor.scrapeClass: control-plane
+      kubeEtcd.serviceMonitor.scrapeClass: control-plane
+      kubeProxy.serviceMonitor.scrapeClass: control-plane
+      coreDns.serviceMonitor.scrapeClass: control-plane
+      kubeDns.serviceMonitor.scrapeClass: control-plane
+    asserts:
+      - equal:
+          path: spec.scrapeClass
+          value: control-plane
