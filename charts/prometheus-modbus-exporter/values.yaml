@@ -110,6 +110,15 @@ configReloaderSidecar:
     pullPolicy: IfNotPresent
     # Overrides the image tag whose default is the chart appVersion.
     tag: "20230519_90573b0"
+  # The config-reloader-sidecar image runs as root in order to send signals
+  # to the modbus_exporter process via the shared PID namespace. When the
+  # pod-level podSecurityContext sets runAsNonRoot: true (the default), the
+  # sidecar must declare a container-level securityContext that overrides it,
+  # otherwise kubelet refuses to start the container with
+  # "container has runAsNonRoot and image will run as root".
+  securityContext:
+    runAsNonRoot: false
+    runAsUser: 0
 
 imagePullSecrets: []
 nameOverride: ""
