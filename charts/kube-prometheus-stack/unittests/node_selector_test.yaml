@@ -102,3 +102,33 @@ tests:
           path: spec.nodeSelector
           value:
             kubernetes.io/os: custom
+
+  - it: removes the linux default when kubernetes.io/os is set to null
+    template: prometheus/prometheus.yaml
+    set:
+      prometheus.prometheusSpec.nodeSelector:
+        kubernetes.io/os: null
+    asserts:
+      - notExists:
+          path: spec.nodeSelector
+
+  - it: removes the linux default from the operator when kubernetes.io/os is set to null
+    template: prometheus-operator/deployment.yaml
+    set:
+      prometheusOperator.nodeSelector:
+        kubernetes.io/os: null
+    asserts:
+      - notExists:
+          path: spec.template.spec.nodeSelector
+
+  - it: keeps other nodeSelector keys when kubernetes.io/os is set to null
+    template: alertmanager/alertmanager.yaml
+    set:
+      alertmanager.alertmanagerSpec.nodeSelector:
+        kubernetes.io/os: null
+        node-role.kubernetes.io/monitoring: "true"
+    asserts:
+      - equal:
+          path: spec.nodeSelector
+          value:
+            node-role.kubernetes.io/monitoring: "true"
