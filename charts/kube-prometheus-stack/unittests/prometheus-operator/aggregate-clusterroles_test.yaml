@@ -1,0 +1,111 @@
+suite: test prometheus-operator aggregate clusterroles
+templates:
+  - prometheus-operator/aggregate-clusterroles.yaml
+tests:
+  - it: should render both roles by default
+    asserts:
+      - hasDocuments:
+          count: 2
+
+  - it: should not render when global.rbac.createAggregateClusterRoles is false
+    set:
+      global.rbac.createAggregateClusterRoles: false
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: should not render when global.rbac.create is false
+    set:
+      global.rbac.create: false
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: should render a read-only role for all kinds aggregated into view, edit and admin
+    documentIndex: 0
+    asserts:
+      - hasDocuments:
+          count: 2
+      - isKind:
+          of: ClusterRole
+      - equal:
+          path: metadata.name
+          value: RELEASE-NAME-kube-promethe-prometheus-crd-view
+      - equal:
+          path: metadata.labels["rbac.authorization.k8s.io/aggregate-to-view"]
+          value: "true"
+      - equal:
+          path: metadata.labels["rbac.authorization.k8s.io/aggregate-to-edit"]
+          value: "true"
+      - equal:
+          path: metadata.labels["rbac.authorization.k8s.io/aggregate-to-admin"]
+          value: "true"
+      - lengthEqual:
+          path: rules
+          count: 1
+      - equal:
+          path: rules[0].apiGroups
+          value:
+            - monitoring.coreos.com
+      - equal:
+          path: rules[0].resources
+          value:
+            - alertmanagers
+            - alertmanagerconfigs
+            - podmonitors
+            - probes
+            - prometheuses
+            - prometheusagents
+            - prometheusrules
+            - scrapeconfigs
+            - servicemonitors
+            - thanosrulers
+      - equal:
+          path: rules[0].verbs
+          value:
+            - get
+            - list
+            - watch
+
+  - it: should render a read-write role for all kinds aggregated into edit and admin only
+    documentIndex: 1
+    asserts:
+      - isKind:
+          of: ClusterRole
+      - equal:
+          path: metadata.name
+          value: RELEASE-NAME-kube-promethe-prometheus-crd-edit
+      - equal:
+          path: metadata.labels["rbac.authorization.k8s.io/aggregate-to-edit"]
+          value: "true"
+      - equal:
+          path: metadata.labels["rbac.authorization.k8s.io/aggregate-to-admin"]
+          value: "true"
+      - notExists:
+          path: metadata.labels["rbac.authorization.k8s.io/aggregate-to-view"]
+      - lengthEqual:
+          path: rules
+          count: 1
+      - equal:
+          path: rules[0].resources
+          value:
+            - alertmanagers
+            - alertmanagerconfigs
+            - podmonitors
+            - probes
+            - prometheuses
+            - prometheusagents
+            - prometheusrules
+            - scrapeconfigs
+            - servicemonitors
+            - thanosrulers
+      - equal:
+          path: rules[0].verbs
+          value:
+            - get
+            - list
+            - watch
+            - create
+            - update
+            - patch
+            - delete
