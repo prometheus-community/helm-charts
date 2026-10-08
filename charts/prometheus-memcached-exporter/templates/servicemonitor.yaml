@@ -31,9 +31,10 @@ spec:
     params:
       target:
       - {{ .url }}
-{{- if $.Values.serviceMonitor.relabelings }}
+{{- $relabelings := concat (.relabelings | default list) ($.Values.serviceMonitor.relabelings | default list) (.additionalRelabeling | default list) ($.Values.serviceMonitor.additionalRelabeling | default list) }}
+{{- if $relabelings }}
     relabelings:
-{{ toYaml $.Values.serviceMonitor.relabelings | indent 4 }}
+{{ toYaml $relabelings | indent 4 }}
 {{- end }}
     metricRelabelings:
       - action: replace
@@ -49,9 +50,6 @@ spec:
         targetLabel: {{ $targetLabel | quote }}
         replacement: {{ $replacement | quote }}
         {{- end }}
-{{- if concat (.additionalRelabeling | default list) $.Values.serviceMonitor.additionalRelabeling }}
-{{ toYaml (concat (.additionalRelabeling | default list) $.Values.serviceMonitor.additionalRelabeling) | indent 6 }}
-{{- end }}
 {{- end }}
 {{- else }}
   - port: {{ .Values.service.portName }}
