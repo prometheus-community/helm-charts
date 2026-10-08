@@ -1,4 +1,6 @@
-{{- if or (and .Values.grafana.enabled .Values.grafana.sidecar.datasources.enabled) .Values.grafana.forceDeployDatasources }}
+{{- $fileDatasources := and .Values.grafana.sidecar.datasources.defaultDatasourceEnabled (not .Values.grafana.operator.datasourcesEnabled) }}
+{{- $fileAdditionalDatasources := or (and .Values.grafana.additionalDataSources (not .Values.grafana.operator.datasourcesEnabled)) .Values.grafana.additionalDataSourcesString .Values.grafana.deleteDatasources .Values.grafana.prune }}
+{{- if and (or (and .Values.grafana.enabled .Values.grafana.sidecar.datasources.enabled) .Values.grafana.forceDeployDatasources) (or $fileDatasources $fileAdditionalDatasources) }}
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -24,7 +26,7 @@ data:
 {{- end }}
     datasources:
 {{- $scrapeInterval := .Values.grafana.sidecar.datasources.defaultDatasourceScrapeInterval | default .Values.prometheus.prometheusSpec.scrapeInterval | default "30s" }}
-{{- if .Values.grafana.sidecar.datasources.defaultDatasourceEnabled }}
+{{- if $fileDatasources }}
     - name: "{{ .Values.grafana.sidecar.datasources.name }}"
       type: prometheus
       uid: {{ .Values.grafana.sidecar.datasources.uid }}
@@ -89,7 +91,7 @@ data:
         implementation: {{ .Values.grafana.sidecar.datasources.alertmanager.implementation }}
 {{- end }}
 {{- end }}
-{{- if .Values.grafana.additionalDataSources }}
+{{- if and .Values.grafana.additionalDataSources (not .Values.grafana.operator.datasourcesEnabled) }}
 {{ tpl (toYaml .Values.grafana.additionalDataSources | indent 4) . }}
 {{- end }}
 {{- with .Values.grafana.additionalDataSourcesString }}

@@ -1,0 +1,22 @@
+suite: admission webhook matchConditions
+templates:
+  - prometheus-operator/admission-webhooks/mutatingWebhookConfiguration.yaml
+  - prometheus-operator/admission-webhooks/validatingWebhookConfiguration.yaml
+tests:
+  - it: should not render matchConditions by default
+    asserts:
+      - notExists:
+          path: webhooks[0].matchConditions
+
+  - it: should render matchConditions as a list
+    set:
+      prometheusOperator.admissionWebhooks.matchConditions:
+        - name: exclude-leases
+          expression: '!(request.resource.group == "coordination.k8s.io")'
+    asserts:
+      - equal:
+          path: webhooks[0].matchConditions[0].name
+          value: exclude-leases
+      - equal:
+          path: webhooks[0].matchConditions[0].expression
+          value: '!(request.resource.group == "coordination.k8s.io")'

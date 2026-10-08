@@ -1,0 +1,115 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/helm-unittest/helm-unittest/main/schema/helm-testsuite.json
+suite: test httproute
+templates:
+  - httproute.yaml
+tests:
+  - it: should not render a route by default
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: should render an HTTPRoute when enabled
+    set:
+      route.main.enabled: true
+    asserts:
+      - hasDocuments:
+          count: 1
+      - isKind:
+          of: HTTPRoute
+      - equal:
+          path: apiVersion
+          value: gateway.networking.k8s.io/v1
+      - equal:
+          path: metadata.name
+          value: RELEASE-NAME-prometheus-pushgateway
+
+  - it: should suffix the resource name of routes other than main
+    set:
+      route.main.enabled: true
+      route.internal.enabled: true
+    asserts:
+      - hasDocuments:
+          count: 2
+      - equal:
+          path: metadata.name
+          value: RELEASE-NAME-prometheus-pushgateway-internal
+        documentIndex: 0
+      - equal:
+          path: metadata.name
+          value: RELEASE-NAME-prometheus-pushgateway
+        documentIndex: 1
+
+  - it: should name the rule after the route key
+    set:
+      route.main.enabled: true
+    asserts:
+      - equal:
+          path: spec.rules[0].name
+          value: main
+
+  - it: should use a custom rule name
+    set:
+      route.main.enabled: true
+      route.main.name: ui
+    asserts:
+      - equal:
+          path: spec.rules[0].name
+          value: ui
+
+  - it: should not set session persistence by default
+    set:
+      route.main.enabled: true
+    asserts:
+      - notExists:
+          path: spec.rules[0].sessionPersistence
+
+  - it: should set session persistence on the rule
+    set:
+      route.main.enabled: true
+      route.main.sessionPersistence:
+        sessionName: pushgateway-session
+        type: Cookie
+        absoluteTimeout: 24h
+        cookieConfig:
+          lifetimeType: Permanent
+    asserts:
+      - equal:
+          path: spec.rules[0].sessionPersistence
+          value:
+            sessionName: pushgateway-session
+            type: Cookie
+            absoluteTimeout: 24h
+            cookieConfig:
+              lifetimeType: Permanent
+
+  - it: should not set session persistence on a redirect rule
+    set:
+      route.main.enabled: true
+      route.main.httpsRedirect: true
+      route.main.sessionPersistence:
+        sessionName: pushgateway-session
+        type: Cookie
+    asserts:
+      - equal:
+          path: spec.rules[0].filters[0].type
+          value: RequestRedirect
+      - notExists:
+          path: spec.rules[0].sessionPersistence
+
+  - it: should keep session persistence on the backend rule when additional rules exist
+    set:
+      route.main.enabled: true
+      route.main.additionalRules:
+        - filters:
+            - type: RequestHeaderModifier
+              requestHeaderModifier:
+                remove: ["x-request-id"]
+      route.main.sessionPersistence:
+        sessionName: pushgateway-session
+        type: Cookie
+    asserts:
+      - notExists:
+          path: spec.rules[0].sessionPersistence
+      - equal:
+          path: spec.rules[1].sessionPersistence.sessionName
+          value: pushgateway-session

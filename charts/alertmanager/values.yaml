@@ -80,13 +80,15 @@ hostAliases: []
   #   - "foo.remote"
   #   - "bar.remote"
 securityContext:
-  # capabilities:
-  #   drop:
-  #   - ALL
-  # readOnlyRootFilesystem: true
-  runAsUser: 65534
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop: ["ALL"]
+  readOnlyRootFilesystem: true
   runAsNonRoot: true
+  runAsUser: 65534
   runAsGroup: 65534
+  seccompProfile:
+    type: RuntimeDefault
 
 additionalPeers: []
 
@@ -99,17 +101,20 @@ extraInitContainers: []
 ##
 extraContainers: []
 
-containerPortName: &containerPortName http
+containerPortName: http
 
 livenessProbe:
   httpGet:
-    path: /
-    port: *containerPortName
+    path: /-/healthy
+    port: http
+  periodSeconds: 10
+  initialDelaySeconds: 2
 
 readinessProbe:
   httpGet:
-    path: /
-    port: *containerPortName
+    path: /-/ready
+    port: http
+  periodSeconds: 10
 
 service:
   annotations: {}
@@ -312,6 +317,7 @@ topologySpreadConstraints: []
   #       app.kubernetes.io/instance: alertmanager
 
 statefulSet:
+  labels: {}
   annotations: {}
 
 ## Minimum number of seconds for which a newly created pod should be ready without any of its container crashing for it to
@@ -397,7 +403,7 @@ config:
 configmapReload:
   ## If false, the configmap-reload container will not be deployed
   ##
-  enabled: false
+  enabled: true
 
   ## configmap-reload container name
   ##
@@ -407,26 +413,30 @@ configmapReload:
   ##
   image:
     repository: quay.io/prometheus-operator/prometheus-config-reloader
-    tag: v0.93.1
+    tag: v0.94.1
     pullPolicy: IfNotPresent
 
-  # containerPort: 9533
+  containerPort: 8080
 
   ## configmap-reload resource requests and limits
   ## Ref: http://kubernetes.io/docs/user-guide/compute-resources/
   ##
   resources: {}
 
-  livenessProbe: {}
-    # httpGet:
-    #   path: /healthz
-    #   port: 8080
-    #   scheme: HTTP
-  readinessProbe: {}
-    # httpGet:
-    #   path: /healthz
-    #   port: 8080
-    #   scheme: HTTP
+  livenessProbe:
+    httpGet:
+      path: /healthz
+      port: metrics
+      scheme: HTTP
+    periodSeconds: 10
+    initialDelaySeconds: 2
+
+  readinessProbe:
+    httpGet:
+      path: /healthz
+      port: metrics
+      scheme: HTTP
+    periodSeconds: 10
 
   extraArgs: {}
 
@@ -441,14 +451,16 @@ configmapReload:
     # - name: FOO
     #   value: BAR
 
-  securityContext: {}
-    # capabilities:
-    #   drop:
-    #   - ALL
-    # readOnlyRootFilesystem: true
-    # runAsUser: 65534
-    # runAsNonRoot: true
-    # runAsGroup: 65534
+  securityContext:
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop: ["ALL"]
+    readOnlyRootFilesystem: true
+    runAsNonRoot: true
+    runAsUser: 65534
+    runAsGroup: 65534
+    seccompProfile:
+      type: RuntimeDefault
 
 templates: {}
 #   alertmanager.tmpl: |-
@@ -499,3 +511,21 @@ verticalPodAutoscaler:
 extraPodConfigs: {}
   # dnsPolicy: ClusterFirstWithHostNet
   # hostNetwork: true
+
+## Extra manifests to deploy. Can be of type dict or list.
+## If dict, keys are ignored and only values are used.
+## Items contained within extraManifests can be defined as dict or string and are passed through tpl.
+extraManifests: null
+  # - apiVersion: v1
+  #   kind: ConfigMap
+  #   metadata:
+  #     name: alertmanager-extra
+  #   data:
+  #     extra-data: "value"
+  #
+  # can also be defined as a string, useful for templating field names
+  # - |
+  #   apiVersion: v1
+  #   kind: ConfigMap
+  #   metadata:
+  #     name: {{ .Release.Name }}-extra

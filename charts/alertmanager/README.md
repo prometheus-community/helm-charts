@@ -47,6 +47,10 @@ helm upgrade [RELEASE_NAME] [CHART] --install
 
 _See [helm upgrade](https://helm.sh/docs/helm/helm_upgrade/) for command documentation._
 
+#### To 2.0
+
+Version 2.0 enables the config reloader by default and adds hardened default security contexts and health probes for Alertmanager and the config reloader. Review custom `securityContext`, probe, and `configmapReload` values before upgrading.
+
 ### To 1.0
 
 The [configmap-reload](https://github.com/jimmidyson/configmap-reload) container was replaced by the [prometheus-config-reloader](https://github.com/prometheus-operator/prometheus-operator/tree/main/cmd/prometheus-config-reloader).

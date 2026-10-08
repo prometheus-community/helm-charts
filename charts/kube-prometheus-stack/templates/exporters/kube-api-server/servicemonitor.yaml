@@ -17,15 +17,18 @@ metadata:
 spec:
   {{- include "servicemonitor.scrapeLimits" .Values.kubeApiServer.serviceMonitor | nindent 2 }}
   endpoints:
-  - bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
+  - port: https
+    scheme: https
     {{- if .Values.kubeApiServer.serviceMonitor.interval }}
     interval: {{ .Values.kubeApiServer.serviceMonitor.interval }}
     {{- end }}
     {{- if .Values.kubeApiServer.serviceMonitor.proxyUrl }}
     proxyUrl: {{ .Values.kubeApiServer.serviceMonitor.proxyUrl }}
     {{- end }}
-    port: https
-    scheme: https
+    {{- with .Values.kubeApiServer.serviceMonitor.authorization }}
+    authorization:
+      {{- tpl (toYaml .) $ | nindent 6 }}
+    {{- end }}
 {{- if .Values.kubeApiServer.serviceMonitor.metricRelabelings }}
     metricRelabelings:
 {{ tpl (toYaml .Values.kubeApiServer.serviceMonitor.metricRelabelings | indent 6) . }}
@@ -34,10 +37,10 @@ spec:
     relabelings:
 {{ tpl (toYaml .Values.kubeApiServer.serviceMonitor.relabelings | indent 6) . }}
 {{- end }}
+    {{- with .Values.kubeApiServer.tlsConfig }}
     tlsConfig:
-      caFile: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
-      serverName: {{ .Values.kubeApiServer.tlsConfig.serverName }}
-      insecureSkipVerify: {{ .Values.kubeApiServer.tlsConfig.insecureSkipVerify }}
+      {{- tpl (toYaml .) $ | nindent 6 }}
+    {{- end }}
   jobLabel: {{ .Values.kubeApiServer.serviceMonitor.jobLabel }}
   {{- with .Values.kubeApiServer.serviceMonitor.targetLabels }}
   targetLabels:

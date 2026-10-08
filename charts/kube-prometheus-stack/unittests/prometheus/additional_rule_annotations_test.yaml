@@ -1,0 +1,17 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/helm-unittest/helm-unittest/main/schema/helm-testsuite.json
+suite: test additionalRuleAnnotations
+
+templates:
+  - prometheus/rules-1.14/node-exporter.yaml
+
+tests:
+  - it: should fully override multiline default annotations
+    set:
+      defaultRules.additionalRuleAnnotations.NodeSystemSaturation.summary: Custom summary
+      defaultRules.additionalRuleAnnotations.NodeSystemSaturation.description: Custom description
+    asserts:
+      - isSubset:
+          path: spec.groups[0].rules[?(@.alert == "NodeSystemSaturation")].annotations
+          content:
+            summary: Custom summary
+            description: Custom description

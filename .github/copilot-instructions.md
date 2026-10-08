@@ -10,6 +10,6 @@ Most tasks are Helm chart feature changes. When changing a chart:
 - Update `values.yaml`, templates, tests, and generated schema artifacts together when a new value changes rendered behavior.
 - If `values.yaml` contains `# @schema` comments or `# $schema: ./values.schema.json`, follow the `helm-values-schema` skill guidance and regenerate `values.schema.json`.
 - Add or update helm-unittest coverage for rendered behavior changed by templates or values.
-- Run `make helm-unittest HELM_CHART=<chart-name>` for charts with helm-unittest coverage.
+- Run `helm unittest --strict --file 'unittests/**/*.yaml' charts/<chart-name>` for charts with helm-unittest coverage.
 - Bump the chart version in `Chart.yaml` for chart changes not ignored by `.helmignore`.
 - Do not edit generated ownership files such as `.github/CODEOWNERS` or `MAINTAINERS.md` directly.

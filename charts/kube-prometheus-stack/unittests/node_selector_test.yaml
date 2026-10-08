@@ -1,0 +1,134 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/helm-unittest/helm-unittest/main/schema/helm-testsuite.json
+suite: test linux nodeSelector defaults
+templates:
+  - alertmanager/alertmanager.yaml
+  - prometheus/prometheus.yaml
+  - thanos-ruler/ruler.yaml
+  - prometheus-operator/deployment.yaml
+  - prometheus-operator/admission-webhooks/deployment/deployment.yaml
+  - prometheus-operator/admission-webhooks/job-patch/job-createSecret.yaml
+  - prometheus-operator/admission-webhooks/job-patch/job-patchWebhook.yaml
+  - charts/crds/templates/upgrade/job.yaml
+tests:
+  - it: schedules alertmanager on linux nodes by default
+    template: alertmanager/alertmanager.yaml
+    asserts:
+      - equal:
+          path: spec.nodeSelector
+          value:
+            kubernetes.io/os: linux
+
+  - it: schedules prometheus on linux nodes by default
+    template: prometheus/prometheus.yaml
+    asserts:
+      - equal:
+          path: spec.nodeSelector
+          value:
+            kubernetes.io/os: linux
+
+  - it: schedules thanos ruler on linux nodes by default
+    template: thanos-ruler/ruler.yaml
+    set:
+      thanosRuler.enabled: true
+    asserts:
+      - equal:
+          path: spec.nodeSelector
+          value:
+            kubernetes.io/os: linux
+
+  - it: schedules prometheus-operator on linux nodes by default
+    template: prometheus-operator/deployment.yaml
+    asserts:
+      - equal:
+          path: spec.template.spec.nodeSelector
+          value:
+            kubernetes.io/os: linux
+
+  - it: schedules the admission webhook deployment on linux nodes by default
+    template: prometheus-operator/admission-webhooks/deployment/deployment.yaml
+    set:
+      prometheusOperator.admissionWebhooks.deployment.enabled: true
+    asserts:
+      - equal:
+          path: spec.template.spec.nodeSelector
+          value:
+            kubernetes.io/os: linux
+
+  - it: schedules the admission webhook create secret job on linux nodes by default
+    template: prometheus-operator/admission-webhooks/job-patch/job-createSecret.yaml
+    asserts:
+      - equal:
+          path: spec.template.spec.nodeSelector
+          value:
+            kubernetes.io/os: linux
+
+  - it: schedules the admission webhook patch job on linux nodes by default
+    template: prometheus-operator/admission-webhooks/job-patch/job-patchWebhook.yaml
+    asserts:
+      - equal:
+          path: spec.template.spec.nodeSelector
+          value:
+            kubernetes.io/os: linux
+
+  - it: schedules the crds upgrade job on linux nodes by default
+    template: charts/crds/templates/upgrade/job.yaml
+    set:
+      crds.upgradeJob.enabled: true
+    asserts:
+      - equal:
+          path: spec.template.spec.nodeSelector
+          value:
+            kubernetes.io/os: linux
+
+  - it: adds user nodeSelector keys to the linux default
+    template: prometheus/prometheus.yaml
+    set:
+      prometheus.prometheusSpec.nodeSelector:
+        node-role.kubernetes.io/monitoring: "true"
+    asserts:
+      - equal:
+          path: spec.nodeSelector
+          value:
+            kubernetes.io/os: linux
+            node-role.kubernetes.io/monitoring: "true"
+
+  - it: keeps a user value for kubernetes.io/os
+    template: alertmanager/alertmanager.yaml
+    set:
+      alertmanager.alertmanagerSpec.nodeSelector:
+        kubernetes.io/os: custom
+    asserts:
+      - equal:
+          path: spec.nodeSelector
+          value:
+            kubernetes.io/os: custom
+
+  - it: removes the linux default when kubernetes.io/os is set to null
+    template: prometheus/prometheus.yaml
+    set:
+      prometheus.prometheusSpec.nodeSelector:
+        kubernetes.io/os: null
+    asserts:
+      - notExists:
+          path: spec.nodeSelector
+
+  - it: removes the linux default from the operator when kubernetes.io/os is set to null
+    template: prometheus-operator/deployment.yaml
+    set:
+      prometheusOperator.nodeSelector:
+        kubernetes.io/os: null
+    asserts:
+      - notExists:
+          path: spec.template.spec.nodeSelector
+
+  - it: keeps other nodeSelector keys when kubernetes.io/os is set to null
+    template: alertmanager/alertmanager.yaml
+    set:
+      alertmanager.alertmanagerSpec.nodeSelector:
+        kubernetes.io/os: null
+        node-role.kubernetes.io/monitoring: "true"
+    asserts:
+      - equal:
+          path: spec.nodeSelector
+          value:
+            node-role.kubernetes.io/monitoring: "true"
