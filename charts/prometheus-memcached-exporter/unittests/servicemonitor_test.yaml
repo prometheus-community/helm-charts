@@ -1,0 +1,56 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/helm-unittest/helm-unittest/main/schema/helm-testsuite.json
+suite: service monitor port configuration
+tests:
+  - it: uses the configured port name and number on the Service
+    templates:
+      - templates/service.yaml
+    set:
+      service.port: 9160
+      service.portName: metrics
+    asserts:
+      - equal:
+          path: spec.ports[0].port
+          value: 9160
+      - equal:
+          path: spec.ports[0].name
+          value: metrics
+      - equal:
+          path: spec.ports[0].targetPort
+          value: metrics
+
+  - it: uses the service port name for scraping
+    templates:
+      - templates/servicemonitor.yaml
+    set:
+      service.portName: metrics
+      serviceMonitor.enabled: true
+    capabilities:
+      apiVersions:
+        - monitoring.coreos.com/v1
+    asserts:
+      - equal:
+          path: spec.endpoints[0].port
+          value: metrics
+
+  - it: uses the service port name for each multiple-target endpoint
+    templates:
+      - templates/servicemonitor.yaml
+    set:
+      service.portName: metrics
+      serviceMonitor.enabled: true
+      serviceMonitor.multipleTarget: true
+      serviceMonitor.targets:
+        - url: memcached.default.svc:11211
+          name: cache-a
+        - url: memcached-backup.default.svc:11211
+          name: cache-b
+    capabilities:
+      apiVersions:
+        - monitoring.coreos.com/v1
+    asserts:
+      - equal:
+          path: spec.endpoints[0].port
+          value: metrics
+      - equal:
+          path: spec.endpoints[1].port
+          value: metrics
