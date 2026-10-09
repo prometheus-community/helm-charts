@@ -311,8 +311,11 @@ Use the prometheus-node-exporter namespace override for multi-namespace deployme
   {{- include "kube-prometheus-stack.kubeVersionDefaultValue" (list $values ">= 1.23-0" $insecure $secure $userValue) -}}
 {{- end -}}
 
-{{/* Sets default scrape limits for servicemonitor */}}
+{{/* Sets default scrape limits and scrape class for servicemonitor */}}
 {{- define "servicemonitor.scrapeLimits" -}}
+{{- with .scrapeClass }}
+scrapeClass: {{ . }}
+{{- end }}
 {{- with .sampleLimit }}
 sampleLimit: {{ . }}
 {{- end }}
