@@ -56,7 +56,12 @@ spec:
           {{- if .Values.config.logFormat }}
           - "--log.format={{ .Values.config.logFormat }}"
           {{- end }}
+          {{ if .Values.config.datasourceSecret -}}
+          - --pgBouncer.connectionString
+          - $(DATA_SOURCE_NAME)
+          {{- else -}}
           - "--pgBouncer.connectionString=user={{ .Values.config.datasource.user }} password='$(DATA_SOURCE_PASS)' host={{ .Values.config.datasource.host }} port={{ .Values.config.datasource.port }} dbname={{ .Values.config.datasource.database }} sslmode='{{ .Values.config.datasource.sslmode }}'"
+          {{- end }}
           env:
           {{- if .Values.config.datasourceSecret }}
           - name: DATA_SOURCE_NAME
