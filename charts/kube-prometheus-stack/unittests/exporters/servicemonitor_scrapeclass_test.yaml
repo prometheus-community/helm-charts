@@ -33,3 +33,53 @@ tests:
       - equal:
           path: spec.scrapeClass
           value: control-plane
+
+  - it: should select the control-plane scrape class and drop the token Secret authorization when enabled
+    set:
+      prometheus.controlPlaneScrapeClass.enabled: true
+      prometheus.serviceAccount.createTokenSecret: false
+    asserts:
+      - equal:
+          path: spec.scrapeClass
+          value: kube-prometheus-stack-control-plane
+      - notExists:
+          path: spec.endpoints[0].authorization
+      - template: exporters/kube-scheduler/servicemonitor.yaml
+        notExists:
+          path: spec.endpoints[1].authorization
+      - template: exporters/kube-dns/servicemonitor.yaml
+        notExists:
+          path: spec.endpoints[1].authorization
+      - template: exporters/kubelet/servicemonitor.yaml
+        notExists:
+          path: spec.endpoints[2].authorization
+
+  - it: should keep its own authorization when a ServiceMonitor selects a different scrape class
+    templates:
+      - exporters/kube-api-server/servicemonitor.yaml
+    set:
+      prometheus.controlPlaneScrapeClass.enabled: true
+      kubeApiServer.serviceMonitor.scrapeClass: other
+    asserts:
+      - equal:
+          path: spec.scrapeClass
+          value: other
+      - equal:
+          path: spec.endpoints[0].authorization.credentials.name
+          value: kps-kube-prometheus-stack-prometheus-token
+
+  - it: should not select the control-plane scrape class when prometheus is disabled
+    set:
+      prometheus.enabled: false
+      prometheus.controlPlaneScrapeClass.enabled: true
+      kubelet.serviceMonitor.authorization: null
+      kubeApiServer.serviceMonitor.authorization: null
+      kubeControllerManager.serviceMonitor.authorization: null
+      kubeScheduler.serviceMonitor.authorization: null
+      kubeEtcd.serviceMonitor.authorization: null
+      kubeProxy.serviceMonitor.authorization: null
+      coreDns.serviceMonitor.authorization: null
+      kubeDns.serviceMonitor.authorization: null
+    asserts:
+      - notExists:
+          path: spec.scrapeClass

@@ -311,11 +311,8 @@ Use the prometheus-node-exporter namespace override for multi-namespace deployme
   {{- include "kube-prometheus-stack.kubeVersionDefaultValue" (list $values ">= 1.23-0" $insecure $secure $userValue) -}}
 {{- end -}}
 
-{{/* Sets default scrape limits and scrape class for servicemonitor */}}
+{{/* Sets default scrape limits for servicemonitor */}}
 {{- define "servicemonitor.scrapeLimits" -}}
-{{- with .scrapeClass }}
-scrapeClass: {{ . }}
-{{- end }}
 {{- with .sampleLimit }}
 sampleLimit: {{ . }}
 {{- end }}
@@ -379,12 +376,58 @@ global:
 tlsConfig:
   {{- tpl (toYaml .) $ | nindent 2 }}
 {{- end }}
+{{- if not (include "kube-prometheus-stack.controlPlaneScrapeClass.selected" (dict "serviceMonitor" .Values.kubelet.serviceMonitor "root" .)) }}
 {{- with .Values.kubelet.serviceMonitor.authorization }}
 authorization:
   {{- tpl (toYaml .) $ | nindent 2 }}
 {{- end }}
 {{- end }}
 {{- end }}
+{{- end }}
+
+{{/*
+Whether a control-plane ServiceMonitor authenticates through prometheus.controlPlaneScrapeClass.
+True when the class is enabled for this chart's Prometheus and the ServiceMonitor has not selected a
+different scrape class. Takes a dict with "serviceMonitor" (the component's serviceMonitor values) and "root".
+*/}}
+{{- define "kube-prometheus-stack.controlPlaneScrapeClass.selected" -}}
+{{- $scrapeClass := .root.Values.prometheus.controlPlaneScrapeClass -}}
+{{- if and .root.Values.prometheus.enabled $scrapeClass.enabled (or (not .serviceMonitor.scrapeClass) (eq .serviceMonitor.scrapeClass $scrapeClass.name)) -}}
+true
+{{- end -}}
+{{- end -}}
+
+{{/*
+Scrape classes for the Prometheus spec: prometheus.prometheusSpec.scrapeClasses, plus prometheus.controlPlaneScrapeClass
+when it is enabled and no class with its name is already defined. Rendered as a YAML list.
+*/}}
+{{- define "kube-prometheus-stack.prometheus.scrapeClasses" -}}
+{{- $scrapeClasses := .Values.prometheus.prometheusSpec.scrapeClasses | default list -}}
+{{- $controlPlaneScrapeClass := .Values.prometheus.controlPlaneScrapeClass -}}
+{{- if $controlPlaneScrapeClass.enabled -}}
+{{- $definedNames := list -}}
+{{- range $scrapeClasses -}}
+{{- $definedNames = append $definedNames .name -}}
+{{- end -}}
+{{- if not (has $controlPlaneScrapeClass.name $definedNames) -}}
+{{- $scrapeClasses = append $scrapeClasses (dict "name" $controlPlaneScrapeClass.name "authorization" $controlPlaneScrapeClass.authorization) -}}
+{{- end -}}
+{{- end -}}
+{{- toYaml $scrapeClasses -}}
+{{- end -}}
+
+{{/*
+Scrape class for a ServiceMonitor or PodMonitor: its own serviceMonitor.scrapeClass when set, otherwise
+prometheus.controlPlaneScrapeClass for the control-plane ServiceMonitors when that applies.
+Takes a dict with "serviceMonitor", and "root" with "controlPlane" set to true for the control-plane ServiceMonitors.
+*/}}
+{{- define "kube-prometheus-stack.serviceMonitor.scrapeClass" -}}
+{{- if .serviceMonitor.scrapeClass -}}
+scrapeClass: {{ .serviceMonitor.scrapeClass }}
+{{- else if and .controlPlane (include "kube-prometheus-stack.controlPlaneScrapeClass.selected" .) -}}
+scrapeClass: {{ .root.Values.prometheus.controlPlaneScrapeClass.name }}
+{{- end -}}
+{{- end -}}
 
 {{/* To help configure anti-affinity rules for Prometheus pods */}}
 {{- define "kube-prometheus-stack.prometheus.pod-anti-affinity.matchExpressions" }}
