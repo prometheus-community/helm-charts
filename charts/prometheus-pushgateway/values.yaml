@@ -12,7 +12,7 @@ nameOverride: ""
 # Provide a name to substitute for the full names of resources
 fullnameOverride: ""
 
-# Provide a namespace to substitude for the namespace on resources
+# Provide a namespace to substitute for the namespace on resources
 namespaceOverride: ""
 
 image:
@@ -123,6 +123,16 @@ resources: {}
 webConfiguration: {}
   # basicAuthUsers:
   #   username: password
+  #
+  # Alternatively, reference an existing Secret that already holds the web
+  # configuration (e.g. managed by Sealed Secrets, Vault, ...) so that no
+  # credentials are kept in plaintext here. The Secret must contain a key named
+  # web-config.yaml, the file name Pushgateway expects. When existingSecret is
+  # set the chart-managed web-config Secret is not rendered, and the liveness and
+  # readiness probes switch to a tcpSocket check, because the chart cannot read
+  # the credentials to authenticate HTTP probes.
+  # existingSecret:
+  #   name: pushgateway-web-config
 
 liveness:
   enabled: true
@@ -204,6 +214,9 @@ route:
     ## kind set by default to HTTPRoute
     kind: ""
 
+    ## Optional name for the default rule in the rendered HTTPRoute.
+    name: ""
+
     ## Annotations to attach to the HTTPRoute resource
     annotations: {}
     ## Labels to attach to the HTTPRoute resource
@@ -233,9 +246,19 @@ route:
           type: PathPrefix
           value: /
 
+    ## SessionPersistence defines and configures session persistence for the rule,
+    ## e.g. to keep a client on the same replica
+    ## Ref. https://gateway-api.sigs.k8s.io/geps/gep-1619/
+    sessionPersistence: {}
+      # sessionName: pushgateway-session
+      # type: Cookie
+      # absoluteTimeout: 24h
+      # cookieConfig:
+      #   lifetimeType: Permanent
+
     ## httpsRedirect adds a filter for redirecting to https (HTTP 301 Moved Permanently).
     ## To redirect HTTP traffic to HTTPS, you need to have a Gateway with both HTTP and HTTPS listeners.
-    ## Matches and filters do not take effect if enabled.
+    ## Matches, filters and session persistence do not take effect if enabled.
     ## Ref. https://gateway-api.sigs.k8s.io/guides/http-redirect-rewrite/
     httpsRedirect: false
 
@@ -410,6 +433,11 @@ persistentVolume:
   ## Useful if the volume's root directory is not empty
   ##
   subPath: ""
+
+  ## pushgateway data EmptyDir configuration,
+  ## used when pushgateway.persistentVolume.enabled: false
+  ##
+  emptyDir: {}
 
 extraVolumes: []
   # - name: extra

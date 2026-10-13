@@ -43,6 +43,8 @@ spec:
   externalUrl: "{{ tpl .Values.alertmanager.alertmanagerSpec.externalUrl . }}"
 {{- else if and .Values.alertmanager.ingress.enabled .Values.alertmanager.ingress.hosts }}
   externalUrl: "http://{{ tpl (index .Values.alertmanager.ingress.hosts 0) . }}{{ .Values.alertmanager.alertmanagerSpec.routePrefix }}"
+{{- else if and .Values.alertmanager.route.main.enabled .Values.alertmanager.route.main.hostnames }}
+  externalUrl: "http://{{ tpl (index .Values.alertmanager.route.main.hostnames 0) . }}{{ .Values.alertmanager.alertmanagerSpec.routePrefix }}"
 {{- else }}
   externalUrl: http://{{ template "kube-prometheus-stack.fullname" . }}-alertmanager.{{ template "kube-prometheus-stack.namespace" . }}:{{ .Values.alertmanager.service.port }}
 {{- end }}
@@ -189,6 +191,9 @@ spec:
 {{- if .Values.alertmanager.alertmanagerSpec.clusterGossipInterval }}
   clusterGossipInterval: {{ .Values.alertmanager.alertmanagerSpec.clusterGossipInterval }}
 {{- end }}
+{{- if .Values.alertmanager.alertmanagerSpec.clusterPeerName }}
+  clusterPeerName: {{ .Values.alertmanager.alertmanagerSpec.clusterPeerName | quote }}
+{{- end }}
 {{- if .Values.alertmanager.alertmanagerSpec.clusterPeerTimeout }}
   clusterPeerTimeout: {{ .Values.alertmanager.alertmanagerSpec.clusterPeerTimeout }}
 {{- end }}
@@ -211,9 +216,29 @@ spec:
   updateStrategy:
 {{ toYaml .Values.alertmanager.alertmanagerSpec.updateStrategy | indent 4 }}
 {{- end }}
+{{- if kindIs "bool" .Values.alertmanager.alertmanagerSpec.hostNetwork }}
   hostNetwork: {{ .Values.alertmanager.alertmanagerSpec.hostNetwork }}
+{{- end }}
 {{- if .Values.alertmanager.alertmanagerSpec.terminationGracePeriodSeconds }}
   terminationGracePeriodSeconds: {{ .Values.alertmanager.alertmanagerSpec.terminationGracePeriodSeconds }}
+{{- end }}
+{{- if kindIs "bool" .Values.alertmanager.alertmanagerSpec.enableServiceLinks }}
+  enableServiceLinks: {{ .Values.alertmanager.alertmanagerSpec.enableServiceLinks }}
+{{- end }}
+{{- with .Values.alertmanager.alertmanagerSpec.schedulerName }}
+  schedulerName: {{ . }}
+{{- end }}
+{{- with .Values.alertmanager.alertmanagerSpec.hostAliases }}
+  hostAliases:
+{{ toYaml . | indent 4 }}
+{{- end }}
+{{- with .Values.alertmanager.alertmanagerSpec.limits }}
+  limits:
+{{ toYaml . | indent 4 }}
+{{- end }}
+{{- with .Values.alertmanager.alertmanagerSpec.clusterTLS }}
+  clusterTLS:
+{{ toYaml . | indent 4 }}
 {{- end }}
 {{- with .Values.alertmanager.alertmanagerSpec.additionalConfig }}
   {{- tpl (toYaml .) $ | nindent 2 }}

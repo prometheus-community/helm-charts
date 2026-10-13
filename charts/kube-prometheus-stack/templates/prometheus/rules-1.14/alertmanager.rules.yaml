@@ -29,15 +29,21 @@ spec:
 {{- if not (.Values.defaultRules.disabled.AlertmanagerFailedReload | default false) }}
     - alert: AlertmanagerFailedReload
       annotations:
-{{- if .Values.defaultRules.additionalRuleAnnotations }}
-{{ toYaml .Values.defaultRules.additionalRuleAnnotations | indent 8 }}
+{{- $ruleAnnotations := dig "AlertmanagerFailedReload" (dict) .Values.defaultRules.additionalRuleAnnotations }}
+{{- $groupAnnotations := default (dict) .Values.defaultRules.additionalRuleGroupAnnotations.alertmanager }}
+{{- $additionalAnnotations := mergeOverwrite (dict) $groupAnnotations $ruleAnnotations }}
+{{- if $additionalAnnotations }}
+{{ toYaml $additionalAnnotations | indent 8 }}
 {{- end }}
-{{- if .Values.defaultRules.additionalRuleGroupAnnotations.alertmanager }}
-{{ toYaml .Values.defaultRules.additionalRuleGroupAnnotations.alertmanager | indent 8 }}
-{{- end }}
+        {{- if not (hasKey $additionalAnnotations "description") }}
         description: Configuration has failed to load for {{`{{`}} $labels.namespace {{`}}`}}/{{`{{`}} $labels.pod{{`}}`}}.
+        {{- end }}
+        {{- if not (hasKey $additionalAnnotations "runbook_url") }}
         runbook_url: {{ .Values.defaultRules.runbookUrl }}/alertmanager/alertmanagerfailedreload
+        {{- end }}
+        {{- if not (hasKey $additionalAnnotations "summary") }}
         summary: Reloading an Alertmanager configuration has failed.
+        {{- end }}
       expr: |-
         # Without max_over_time, failed scrapes could create false negatives, see
         # https://www.robustperception.io/alerting-on-gauges-in-prometheus-2-0 for details.
@@ -60,15 +66,21 @@ spec:
 {{- if not (.Values.defaultRules.disabled.AlertmanagerMembersInconsistent | default false) }}
     - alert: AlertmanagerMembersInconsistent
       annotations:
-{{- if .Values.defaultRules.additionalRuleAnnotations }}
-{{ toYaml .Values.defaultRules.additionalRuleAnnotations | indent 8 }}
+{{- $ruleAnnotations := dig "AlertmanagerMembersInconsistent" (dict) .Values.defaultRules.additionalRuleAnnotations }}
+{{- $groupAnnotations := default (dict) .Values.defaultRules.additionalRuleGroupAnnotations.alertmanager }}
+{{- $additionalAnnotations := mergeOverwrite (dict) $groupAnnotations $ruleAnnotations }}
+{{- if $additionalAnnotations }}
+{{ toYaml $additionalAnnotations | indent 8 }}
 {{- end }}
-{{- if .Values.defaultRules.additionalRuleGroupAnnotations.alertmanager }}
-{{ toYaml .Values.defaultRules.additionalRuleGroupAnnotations.alertmanager | indent 8 }}
-{{- end }}
+        {{- if not (hasKey $additionalAnnotations "description") }}
         description: Alertmanager {{`{{`}} $labels.namespace {{`}}`}}/{{`{{`}} $labels.pod{{`}}`}} has only found {{`{{`}} $value {{`}}`}} members of the {{`{{`}}$labels.job{{`}}`}} cluster.
+        {{- end }}
+        {{- if not (hasKey $additionalAnnotations "runbook_url") }}
         runbook_url: {{ .Values.defaultRules.runbookUrl }}/alertmanager/alertmanagermembersinconsistent
+        {{- end }}
+        {{- if not (hasKey $additionalAnnotations "summary") }}
         summary: A member of an Alertmanager cluster has not found all other cluster members.
+        {{- end }}
       expr: |-
         # Without max_over_time, failed scrapes could create false negatives, see
         # https://www.robustperception.io/alerting-on-gauges-in-prometheus-2-0 for details.
@@ -93,15 +105,21 @@ spec:
 {{- if not (.Values.defaultRules.disabled.AlertmanagerFailedToSendAlerts | default false) }}
     - alert: AlertmanagerFailedToSendAlerts
       annotations:
-{{- if .Values.defaultRules.additionalRuleAnnotations }}
-{{ toYaml .Values.defaultRules.additionalRuleAnnotations | indent 8 }}
+{{- $ruleAnnotations := dig "AlertmanagerFailedToSendAlerts" (dict) .Values.defaultRules.additionalRuleAnnotations }}
+{{- $groupAnnotations := default (dict) .Values.defaultRules.additionalRuleGroupAnnotations.alertmanager }}
+{{- $additionalAnnotations := mergeOverwrite (dict) $groupAnnotations $ruleAnnotations }}
+{{- if $additionalAnnotations }}
+{{ toYaml $additionalAnnotations | indent 8 }}
 {{- end }}
-{{- if .Values.defaultRules.additionalRuleGroupAnnotations.alertmanager }}
-{{ toYaml .Values.defaultRules.additionalRuleGroupAnnotations.alertmanager | indent 8 }}
-{{- end }}
+        {{- if not (hasKey $additionalAnnotations "description") }}
         description: Alertmanager {{`{{`}} $labels.namespace {{`}}`}}/{{`{{`}} $labels.pod{{`}}`}} failed to send {{`{{`}} $value | humanizePercentage {{`}}`}} of notifications to {{`{{`}} $labels.integration {{`}}`}}.
+        {{- end }}
+        {{- if not (hasKey $additionalAnnotations "runbook_url") }}
         runbook_url: {{ .Values.defaultRules.runbookUrl }}/alertmanager/alertmanagerfailedtosendalerts
+        {{- end }}
+        {{- if not (hasKey $additionalAnnotations "summary") }}
         summary: An Alertmanager instance failed to send notifications.
+        {{- end }}
       expr: |-
         (
           rate(alertmanager_notifications_failed_total{job="{{ $alertmanagerJob }}",container="alertmanager",namespace="{{ $namespace }}"}[15m])
@@ -127,15 +145,21 @@ spec:
 {{- if not (.Values.defaultRules.disabled.AlertmanagerClusterFailedToSendAlerts | default false) }}
     - alert: AlertmanagerClusterFailedToSendAlerts
       annotations:
-{{- if .Values.defaultRules.additionalRuleAnnotations }}
-{{ toYaml .Values.defaultRules.additionalRuleAnnotations | indent 8 }}
+{{- $ruleAnnotations := dig "AlertmanagerClusterFailedToSendAlerts" (dict) .Values.defaultRules.additionalRuleAnnotations }}
+{{- $groupAnnotations := default (dict) .Values.defaultRules.additionalRuleGroupAnnotations.alertmanager }}
+{{- $additionalAnnotations := mergeOverwrite (dict) $groupAnnotations $ruleAnnotations }}
+{{- if $additionalAnnotations }}
+{{ toYaml $additionalAnnotations | indent 8 }}
 {{- end }}
-{{- if .Values.defaultRules.additionalRuleGroupAnnotations.alertmanager }}
-{{ toYaml .Values.defaultRules.additionalRuleGroupAnnotations.alertmanager | indent 8 }}
-{{- end }}
+        {{- if not (hasKey $additionalAnnotations "description") }}
         description: The minimum notification failure rate to {{`{{`}} $labels.integration {{`}}`}} sent from any instance in the {{`{{`}}$labels.job{{`}}`}} cluster is {{`{{`}} $value | humanizePercentage {{`}}`}}.
+        {{- end }}
+        {{- if not (hasKey $additionalAnnotations "runbook_url") }}
         runbook_url: {{ .Values.defaultRules.runbookUrl }}/alertmanager/alertmanagerclusterfailedtosendalerts
+        {{- end }}
+        {{- if not (hasKey $additionalAnnotations "summary") }}
         summary: All Alertmanager instances in a cluster failed to send notifications to a critical integration.
+        {{- end }}
       expr: |-
         min by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}namespace,service, integration) (
           rate(alertmanager_notifications_failed_total{job="{{ $alertmanagerJob }}",container="alertmanager",namespace="{{ $namespace }}", integration=~`.*`}[15m])
@@ -161,15 +185,21 @@ spec:
 {{- if not (.Values.defaultRules.disabled.AlertmanagerClusterFailedToSendAlerts | default false) }}
     - alert: AlertmanagerClusterFailedToSendAlerts
       annotations:
-{{- if .Values.defaultRules.additionalRuleAnnotations }}
-{{ toYaml .Values.defaultRules.additionalRuleAnnotations | indent 8 }}
+{{- $ruleAnnotations := dig "AlertmanagerClusterFailedToSendAlerts" (dict) .Values.defaultRules.additionalRuleAnnotations }}
+{{- $groupAnnotations := default (dict) .Values.defaultRules.additionalRuleGroupAnnotations.alertmanager }}
+{{- $additionalAnnotations := mergeOverwrite (dict) $groupAnnotations $ruleAnnotations }}
+{{- if $additionalAnnotations }}
+{{ toYaml $additionalAnnotations | indent 8 }}
 {{- end }}
-{{- if .Values.defaultRules.additionalRuleGroupAnnotations.alertmanager }}
-{{ toYaml .Values.defaultRules.additionalRuleGroupAnnotations.alertmanager | indent 8 }}
-{{- end }}
+        {{- if not (hasKey $additionalAnnotations "description") }}
         description: The minimum notification failure rate to {{`{{`}} $labels.integration {{`}}`}} sent from any instance in the {{`{{`}}$labels.job{{`}}`}} cluster is {{`{{`}} $value | humanizePercentage {{`}}`}}.
+        {{- end }}
+        {{- if not (hasKey $additionalAnnotations "runbook_url") }}
         runbook_url: {{ .Values.defaultRules.runbookUrl }}/alertmanager/alertmanagerclusterfailedtosendalerts
+        {{- end }}
+        {{- if not (hasKey $additionalAnnotations "summary") }}
         summary: All Alertmanager instances in a cluster failed to send notifications to a non-critical integration.
+        {{- end }}
       expr: |-
         min by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}namespace,service, integration) (
           rate(alertmanager_notifications_failed_total{job="{{ $alertmanagerJob }}",container="alertmanager",namespace="{{ $namespace }}", integration!~`.*`}[15m])
@@ -195,15 +225,21 @@ spec:
 {{- if not (.Values.defaultRules.disabled.AlertmanagerConfigInconsistent | default false) }}
     - alert: AlertmanagerConfigInconsistent
       annotations:
-{{- if .Values.defaultRules.additionalRuleAnnotations }}
-{{ toYaml .Values.defaultRules.additionalRuleAnnotations | indent 8 }}
+{{- $ruleAnnotations := dig "AlertmanagerConfigInconsistent" (dict) .Values.defaultRules.additionalRuleAnnotations }}
+{{- $groupAnnotations := default (dict) .Values.defaultRules.additionalRuleGroupAnnotations.alertmanager }}
+{{- $additionalAnnotations := mergeOverwrite (dict) $groupAnnotations $ruleAnnotations }}
+{{- if $additionalAnnotations }}
+{{ toYaml $additionalAnnotations | indent 8 }}
 {{- end }}
-{{- if .Values.defaultRules.additionalRuleGroupAnnotations.alertmanager }}
-{{ toYaml .Values.defaultRules.additionalRuleGroupAnnotations.alertmanager | indent 8 }}
-{{- end }}
+        {{- if not (hasKey $additionalAnnotations "description") }}
         description: Alertmanager instances within the {{`{{`}}$labels.job{{`}}`}} cluster have different configurations.
+        {{- end }}
+        {{- if not (hasKey $additionalAnnotations "runbook_url") }}
         runbook_url: {{ .Values.defaultRules.runbookUrl }}/alertmanager/alertmanagerconfiginconsistent
+        {{- end }}
+        {{- if not (hasKey $additionalAnnotations "summary") }}
         summary: Alertmanager instances within the same cluster have different configurations.
+        {{- end }}
       expr: |-
         count by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}namespace,service,cluster) (
           count_values by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}namespace,service,cluster) ("config_hash", alertmanager_config_hash{job="{{ $alertmanagerJob }}",container="alertmanager",namespace="{{ $namespace }}"})
@@ -227,15 +263,21 @@ spec:
 {{- if not (.Values.defaultRules.disabled.AlertmanagerClusterDown | default false) }}
     - alert: AlertmanagerClusterDown
       annotations:
-{{- if .Values.defaultRules.additionalRuleAnnotations }}
-{{ toYaml .Values.defaultRules.additionalRuleAnnotations | indent 8 }}
+{{- $ruleAnnotations := dig "AlertmanagerClusterDown" (dict) .Values.defaultRules.additionalRuleAnnotations }}
+{{- $groupAnnotations := default (dict) .Values.defaultRules.additionalRuleGroupAnnotations.alertmanager }}
+{{- $additionalAnnotations := mergeOverwrite (dict) $groupAnnotations $ruleAnnotations }}
+{{- if $additionalAnnotations }}
+{{ toYaml $additionalAnnotations | indent 8 }}
 {{- end }}
-{{- if .Values.defaultRules.additionalRuleGroupAnnotations.alertmanager }}
-{{ toYaml .Values.defaultRules.additionalRuleGroupAnnotations.alertmanager | indent 8 }}
-{{- end }}
+        {{- if not (hasKey $additionalAnnotations "description") }}
         description: '{{`{{`}} $value | humanizePercentage {{`}}`}} of Alertmanager instances within the {{`{{`}}$labels.job{{`}}`}} cluster have been up for less than half of the last 5m.'
+        {{- end }}
+        {{- if not (hasKey $additionalAnnotations "runbook_url") }}
         runbook_url: {{ .Values.defaultRules.runbookUrl }}/alertmanager/alertmanagerclusterdown
+        {{- end }}
+        {{- if not (hasKey $additionalAnnotations "summary") }}
         summary: Half or more of the Alertmanager instances within the same cluster are down.
+        {{- end }}
       expr: |-
         (
           count by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}namespace,service,cluster) (
@@ -265,15 +307,21 @@ spec:
 {{- if not (.Values.defaultRules.disabled.AlertmanagerClusterCrashlooping | default false) }}
     - alert: AlertmanagerClusterCrashlooping
       annotations:
-{{- if .Values.defaultRules.additionalRuleAnnotations }}
-{{ toYaml .Values.defaultRules.additionalRuleAnnotations | indent 8 }}
+{{- $ruleAnnotations := dig "AlertmanagerClusterCrashlooping" (dict) .Values.defaultRules.additionalRuleAnnotations }}
+{{- $groupAnnotations := default (dict) .Values.defaultRules.additionalRuleGroupAnnotations.alertmanager }}
+{{- $additionalAnnotations := mergeOverwrite (dict) $groupAnnotations $ruleAnnotations }}
+{{- if $additionalAnnotations }}
+{{ toYaml $additionalAnnotations | indent 8 }}
 {{- end }}
-{{- if .Values.defaultRules.additionalRuleGroupAnnotations.alertmanager }}
-{{ toYaml .Values.defaultRules.additionalRuleGroupAnnotations.alertmanager | indent 8 }}
-{{- end }}
+        {{- if not (hasKey $additionalAnnotations "description") }}
         description: '{{`{{`}} $value | humanizePercentage {{`}}`}} of Alertmanager instances within the {{`{{`}}$labels.job{{`}}`}} cluster have restarted at least 5 times in the last 10m.'
+        {{- end }}
+        {{- if not (hasKey $additionalAnnotations "runbook_url") }}
         runbook_url: {{ .Values.defaultRules.runbookUrl }}/alertmanager/alertmanagerclustercrashlooping
+        {{- end }}
+        {{- if not (hasKey $additionalAnnotations "summary") }}
         summary: Half or more of the Alertmanager instances within the same cluster are crashlooping.
+        {{- end }}
       expr: |-
         (
           count by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}namespace,service,cluster) (
@@ -291,6 +339,43 @@ spec:
       {{- end }}
       labels:
         severity: {{ dig "AlertmanagerClusterCrashlooping" "severity" "critical" .Values.customRules }}
+      {{- if or .Values.defaultRules.additionalRuleLabels .Values.defaultRules.additionalRuleGroupLabels.alertmanager }}
+        {{- with .Values.defaultRules.additionalRuleLabels }}
+          {{- toYaml . | nindent 8 }}
+        {{- end }}
+        {{- with .Values.defaultRules.additionalRuleGroupLabels.alertmanager }}
+          {{- toYaml . | nindent 8 }}
+        {{- end }}
+      {{- end }}
+{{- end }}
+{{- if not (.Values.defaultRules.disabled.AlertmanagerClusterFailedPeers | default false) }}
+    - alert: AlertmanagerClusterFailedPeers
+      annotations:
+{{- $ruleAnnotations := dig "AlertmanagerClusterFailedPeers" (dict) .Values.defaultRules.additionalRuleAnnotations }}
+{{- $groupAnnotations := default (dict) .Values.defaultRules.additionalRuleGroupAnnotations.alertmanager }}
+{{- $additionalAnnotations := mergeOverwrite (dict) $groupAnnotations $ruleAnnotations }}
+{{- if $additionalAnnotations }}
+{{ toYaml $additionalAnnotations | indent 8 }}
+{{- end }}
+        {{- if not (hasKey $additionalAnnotations "description") }}
+        description: Alertmanager {{`{{`}} $labels.namespace {{`}}`}}/{{`{{`}} $labels.pod{{`}}`}} has {{`{{`}} $value {{`}}`}} failed peers in the {{`{{`}}$labels.job{{`}}`}} cluster.
+        {{- end }}
+        {{- if not (hasKey $additionalAnnotations "runbook_url") }}
+        runbook_url: {{ .Values.defaultRules.runbookUrl }}/alertmanager/alertmanagerclusterfailedpeers
+        {{- end }}
+        {{- if not (hasKey $additionalAnnotations "summary") }}
+        summary: An Alertmanager instance has failed peers in the cluster.
+        {{- end }}
+      expr: |-
+        # Without max_over_time, failed scrapes could create false negatives, see
+        # https://www.robustperception.io/alerting-on-gauges-in-prometheus-2-0 for details.
+        max_over_time(alertmanager_cluster_failed_peers{job="{{ $alertmanagerJob }}",container="alertmanager",namespace="{{ $namespace }}"}[5m]) > 0
+      for: {{ dig "AlertmanagerClusterFailedPeers" "for" "15m" .Values.customRules }}
+      {{- with .Values.defaultRules.keepFiringFor }}
+      keep_firing_for: "{{ . }}"
+      {{- end }}
+      labels:
+        severity: {{ dig "AlertmanagerClusterFailedPeers" "severity" "warning" .Values.customRules }}
       {{- if or .Values.defaultRules.additionalRuleLabels .Values.defaultRules.additionalRuleGroupLabels.alertmanager }}
         {{- with .Values.defaultRules.additionalRuleLabels }}
           {{- toYaml . | nindent 8 }}
