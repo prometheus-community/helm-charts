@@ -1,5 +1,18 @@
 # Upgrade
 
+## From 91.x to 92.x
+
+The workloads this chart deploys itself now default to `nodeSelector: {kubernetes.io/os: linux}`, so they are no
+longer scheduled onto Windows nodes in mixed clusters. This applies to `prometheus.prometheusSpec`,
+`alertmanager.alertmanagerSpec`, `thanosRuler.thanosRulerSpec`, `prometheusOperator`,
+`prometheusOperator.admissionWebhooks.deployment`, `prometheusOperator.admissionWebhooks.patch` and
+`crds.upgradeJob`. The `grafana`, `kube-state-metrics`, `prometheus-node-exporter` and `prometheus-windows-exporter`
+subcharts keep the defaults of their own charts.
+
+The pod spec changes, so Prometheus, Alertmanager, Thanos Ruler, the operator and the admission webhook deployment
+restart once on upgrade. Helm merges maps, so a `nodeSelector` you already set keeps its keys and gains
+`kubernetes.io/os: linux`.
+
 ## From 90.x to 91.x
 
 This version upgrades Prometheus-Operator to v0.94.0
