@@ -2,6 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: {{ template "stackdriver-exporter.fullname" . }}
+  namespace: {{ template "stackdriver-exporter.namespace" . }}
   labels:
     {{- include "stackdriver-exporter.labels" . | indent 4 }}
   {{- with .Values.annotations }}
@@ -79,24 +80,20 @@ spec:
             {{- toYaml .Values.extraVolumeMounts | nindent 12 }}
           {{- end }}
           args:
-            {{- if .Values.stackdriver.projectIds }}
             {{- range .Values.stackdriver.projectIds }}
             - --google.project-ids={{ . }}
-            {{- end }}
-            {{- else }}
-            - --google.project-id={{ .Values.stackdriver.projectId }}
             {{- end }}
             {{- if .Values.stackdriver.projectFilters }}
             - --google.projects.filter='{{ .Values.stackdriver.projectFilters }}'
             {{- end }}
+            {{- if .Values.stackdriver.universeDomain }}
+            - --google.universe-domain={{ .Values.stackdriver.universeDomain }}
+            {{- end }}
             - --monitoring.metrics-interval={{ .Values.stackdriver.metrics.interval }}
             - --monitoring.metrics-offset={{ .Values.stackdriver.metrics.offset }}
-            {{- if .Values.stackdriver.metrics.prefixes }}
+            - --monitoring.descriptor-cache-ttl={{ .Values.stackdriver.metrics.descriptorCacheTTL }}
             {{- range .Values.stackdriver.metrics.prefixes }}
             - --monitoring.metrics-prefixes={{ . }}
-            {{- end }}
-            {{- else }}
-            - --monitoring.metrics-type-prefixes={{ .Values.stackdriver.metrics.typePrefixes | replace " " "" }}
             {{- end }}
             {{- range .Values.stackdriver.metrics.filters }}
             - --monitoring.filters={{ . }}
@@ -105,7 +102,13 @@ spec:
             - --stackdriver.http-timeout={{ .Values.stackdriver.httpTimeout }}
             - --stackdriver.max-backoff={{ .Values.stackdriver.maxBackoff }}
             - --stackdriver.max-retries={{ .Values.stackdriver.maxRetries }}
+            {{- if kindIs "slice" .Values.stackdriver.retryStatuses }}
+            {{- range .Values.stackdriver.retryStatuses }}
+            - --stackdriver.retry-statuses={{ . }}
+            {{- end }}
+            {{- else }}
             - --stackdriver.retry-statuses={{ .Values.stackdriver.retryStatuses }}
+            {{- end }}
             - --web.listen-address={{ .Values.web.listenAddress }}
             - --web.telemetry-path={{ .Values.web.telemetryPath }}
             - --web.stackdriver-telemetry-path={{ .Values.web.stackdriverTelemetryPath }}

@@ -1,6 +1,10 @@
 # Default values for prometheus-node-exporter.
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
+
+# Prometheus scrape service annotation flag
+prometheusScrape: true
+
 image:
   registry: quay.io
   repository: prometheus/node-exporter
@@ -47,7 +51,7 @@ kubeRBACProxy:
   image:
     registry: quay.io
     repository: brancz/kube-rbac-proxy
-    tag: v0.22.1
+    tag: v0.23.0
     sha: ""
     pullPolicy: IfNotPresent
 
@@ -63,6 +67,8 @@ kubeRBACProxy:
 
   # Specify the port used for the Node exporter container (upstream port)
   port: 8100
+  # Host/interface prefix for --secure-listen-address (for example ":" or "$(POD_IP):")
+  listenHost: ":"
   # Specify the name of the container port
   portName: http
   # Configure a hostPort. If true, hostPort will be enabled in the container and set to service.port.
@@ -144,8 +150,8 @@ service:
   listenOnAllInterfaces: true
 
   ## Additional annotations and labels for the service
-  annotations:
-    prometheus.io/scrape: "true"
+  annotations: {}
+
   labels: {}
 
   ## Dual stack settings for the service
@@ -487,9 +493,11 @@ terminationMessageParams:
 
 ## Additional container arguments
 ##
-extraArgs: []
-#   - --collector.diskstats.ignored-devices=^(ram|loop|fd|(h|s|v)d[a-z]|nvme\\d+n\\d+p)\\d+$
-#   - --collector.textfile.directory=/run/prometheus
+extraArgs:
+  - --collector.filesystem.mount-points-exclude=^/(dev|proc|sys|run/containerd/.+|var/lib/docker/.+|var/lib/kubelet/.+)($|/)
+  - --collector.filesystem.fs-types-exclude=^(autofs|binfmt_misc|bpf|cgroup2?|configfs|debugfs|devpts|devtmpfs|fusectl|hugetlbfs|iso9660|mqueue|nsfs|overlay|proc|procfs|pstore|rpc_pipefs|securityfs|selinuxfs|squashfs|sysfs|tracefs|erofs)$
+# - --collector.diskstats.ignored-devices=^(ram|loop|fd|(h|s|v)d[a-z]|nvme\\d+n\\d+p)\\d+$
+# - --collector.textfile.directory=/run/prometheus
 
 ## Additional mounts from the host to node-exporter container
 ##

@@ -28,17 +28,18 @@ jobs:
         uses: azure/setup-helm@9bc31f4ebc9c6b171d7bfbaa5d006ae7abdb4310 # v5.0.1
         with:
           # renovate: github=helm/helm
-          version: v4.2.4
+          version: v4.3.0
 
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
           python-version: '3.13'
 
       - name: Set up chart-testing
-        uses: helm/chart-testing-action@6ec842c01de15ebb84c8627d2744a0c2f2755c9f # v2.8.0
+        uses: helm/chart-testing-action@720270857a28afd41e2426521a7801db09e9b510 # v2.9.0
         with:
+          # v3.15.0 uses Sigstore bundles unsupported by chart-testing-action v2.8.0.
           # renovate: github=helm/chart-testing
-          version: v3.14.0
+          version: v3.15.0
 
       - name: Run chart-testing (list-changed)
         id: list-changed
@@ -62,7 +63,7 @@ jobs:
         run: helm plugin install https://github.com/helm-unittest/helm-unittest.git --version "${VERSION}" --verify=false
         env:
           # renovate: github=helm-unittest/helm-unittest
-          VERSION: 1.1.2
+          VERSION: 1.2.1
 
       - name: install helm values-schema plugin
         if: steps.list-changed.outputs.changed == 'true'
@@ -130,16 +131,16 @@ jobs:
         uses: azure/setup-helm@9bc31f4ebc9c6b171d7bfbaa5d006ae7abdb4310 # v5.0.1
         with:
           # renovate: github=helm/helm
-          version: v4.2.4
+          version: v4.3.0
 
       - name: install helm diff plugin
         run: helm plugin install https://github.com/databus23/helm-diff --version "${VERSION}" --verify=false
         env:
           # renovate: github=databus23/helm-diff
-          VERSION: 3.15.11
+          VERSION: 3.15.15
 
       - name: Create kind cluster
-        uses: helm/kind-action@ef37e7f390d99f746eb8b610417061a60e82a6cc # v1.14.0
+        uses: helm/kind-action@1544676c07bb3570fcb70166beaa07c4528fd4aa # v1.15.1
         with:
           config: .github/linters/kind.yaml
           ignore_failed_clean: 'true'
@@ -167,6 +168,12 @@ jobs:
       - name: Apply Gateway API CRDs
         run: kubectl apply -k https://github.com/kubernetes-sigs/gateway-api/config/crd
 
+      - name: Apply Grafana Operator CRDs
+        run: kubectl apply --server-side -f "https://github.com/grafana/grafana-operator/releases/download/v${GRAFANA_OPERATOR_VERSION}/crds.yaml"
+        env:
+          # renovate: github=grafana/grafana-operator
+          GRAFANA_OPERATOR_VERSION: 5.25.0
+
       - name: Apply Prometheus Operator CRDs
         run: |
           # Always run unless only changed chart is one of impacted charts
@@ -186,11 +193,17 @@ jobs:
         # language=bash
         run: |
           # install current target chart into cluster so helm diff has a baseline
+          target_value_file="./target/$value_file"
+          if [[ ! -f "$target_value_file" ]]; then
+            # A new CI values file exists only on the PR branch.
+            target_value_file="./target/charts/$chart/values.yaml"
+          fi
+
           helm upgrade -i "$chart" "./target/charts/$chart" \
             --create-namespace \
             --namespace "$chart" \
             --wait \
-            --values "$value_file"
+            --values "$target_value_file"
 
       - name: Debug failed installation
         if: failure() && steps.install.outcome == 'failure'
@@ -380,7 +393,7 @@ jobs:
           fetch-tags: 'false'
 
       - name: Lint Code Base
-        uses: super-linter/super-linter/slim@4ce20838b8ab83717e78138c5b3a1407148e0918 # v8.7.0
+        uses: super-linter/super-linter/slim@2da136927bd4a73596db63044b504547c62cb854 # v9.0.0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           MULTI_STATUS: false
@@ -431,7 +444,7 @@ jobs:
       # Used App:
       # https://github.com/organizations/prometheus-community/settings/apps/helm-charts-renovate-helper.
       # Ref: https://github.com/prometheus-community/helm-charts/issues/5213.
-      - uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+      - uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
         id: app-token
         with:
           app-id: 1179738

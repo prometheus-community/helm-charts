@@ -163,11 +163,21 @@ spec:
 {{- if .Values.prometheus.prometheusSpec.retentionSize }}
   retentionSize: {{ .Values.prometheus.prometheusSpec.retentionSize | quote }}
 {{- end }}
+{{- if .Values.prometheus.prometheusSpec.retentionPercentage }}
+  retentionPercentage: {{ .Values.prometheus.prometheusSpec.retentionPercentage }}
+{{- end }}
 {{- end }}
 {{- if .Values.prometheus.prometheusSpec.tsdb }}
   tsdb:
     {{- if .Values.prometheus.prometheusSpec.tsdb.outOfOrderTimeWindow }}
     outOfOrderTimeWindow: {{ .Values.prometheus.prometheusSpec.tsdb.outOfOrderTimeWindow }}
+    {{- end }}
+    {{- with .Values.prometheus.prometheusSpec.tsdb.chunkEncoding }}
+    chunkEncoding:
+{{ toYaml . | indent 6 }}
+    {{- end }}
+    {{- if .Values.prometheus.prometheusSpec.tsdb.staleSeriesCompactionThreshold }}
+    staleSeriesCompactionThreshold: {{ .Values.prometheus.prometheusSpec.tsdb.staleSeriesCompactionThreshold }}
     {{- end }}
 {{- end }}
 {{- if eq .Values.prometheus.prometheusSpec.walCompression false }}
@@ -568,6 +578,10 @@ spec:
 {{- end }}
 {{- if .Values.prometheus.prometheusSpec.ruleQueryOffset }}
   ruleQueryOffset: {{ .Values.prometheus.prometheusSpec.ruleQueryOffset | quote }}
+{{- end }}
+{{- with .Values.prometheus.prometheusSpec.rules }}
+  rules:
+{{ toYaml . | indent 4 }}
 {{- end }}
 {{- with .Values.prometheus.prometheusSpec.runtime }}
   runtime:

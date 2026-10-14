@@ -1,5 +1,117 @@
 # Upgrade
 
+## From 91.x to 92.x
+
+The workloads this chart deploys itself now default to `nodeSelector: {kubernetes.io/os: linux}`, so they are no
+longer scheduled onto Windows nodes in mixed clusters. This applies to `prometheus.prometheusSpec`,
+`alertmanager.alertmanagerSpec`, `thanosRuler.thanosRulerSpec`, `prometheusOperator`,
+`prometheusOperator.admissionWebhooks.deployment`, `prometheusOperator.admissionWebhooks.patch` and
+`crds.upgradeJob`. The `grafana`, `kube-state-metrics`, `prometheus-node-exporter` and `prometheus-windows-exporter`
+subcharts keep the defaults of their own charts.
+
+The pod spec changes, so Prometheus, Alertmanager, Thanos Ruler, the operator and the admission webhook deployment
+restart once on upgrade. Helm merges maps, so a `nodeSelector` you already set keeps its keys and gains
+`kubernetes.io/os: linux`.
+
+## From 90.x to 91.x
+
+This version upgrades Prometheus-Operator to v0.94.0
+The operator's ClusterRole no longer grants wildcard verbs, following the tightened RBAC shipped upstream in v0.94.0.
+Since [68.4.0](https://github.com/prometheus-community/helm-charts/pull/5175) it is also possible to use `crds.upgradeJob.enabled` for upgrading the CRDs.
+For traditional upgrades, please run these commands to update the CRDs before applying the upgrade.
+
+```console
+kubectl apply --server-side -f https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/v0.94.0/example/prometheus-operator-crd/monitoring.coreos.com_alertmanagerconfigs.yaml
+kubectl apply --server-side -f https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/v0.94.0/example/prometheus-operator-crd/monitoring.coreos.com_alertmanagers.yaml
+kubectl apply --server-side -f https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/v0.94.0/example/prometheus-operator-crd/monitoring.coreos.com_podmonitors.yaml
+kubectl apply --server-side -f https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/v0.94.0/example/prometheus-operator-crd/monitoring.coreos.com_probes.yaml
+kubectl apply --server-side -f https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/v0.94.0/example/prometheus-operator-crd/monitoring.coreos.com_prometheusagents.yaml
+kubectl apply --server-side -f https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/v0.94.0/example/prometheus-operator-crd/monitoring.coreos.com_prometheuses.yaml
+kubectl apply --server-side -f https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/v0.94.0/example/prometheus-operator-crd/monitoring.coreos.com_prometheusrules.yaml
+kubectl apply --server-side -f https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/v0.94.0/example/prometheus-operator-crd/monitoring.coreos.com_scrapeconfigs.yaml
+kubectl apply --server-side -f https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/v0.94.0/example/prometheus-operator-crd/monitoring.coreos.com_servicemonitors.yaml
+kubectl apply --server-side -f https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/v0.94.0/example/prometheus-operator-crd/monitoring.coreos.com_thanosrulers.yaml
+```
+
+## From 89.x to 90.x
+
+The control-plane ServiceMonitors (kubelet, kube-apiserver, kube-controller-manager, kube-scheduler, kube-etcd,
+kube-proxy, coredns, kube-dns) no longer reference credentials on the scraper's filesystem. `bearerTokenFile` and
+`tlsConfig.caFile` are rejected by Prometheus Operator when `arbitraryFSAccessThroughSMs.deny` is enabled, and by
+Grafana Alloy's `prometheus.operator.servicemonitors` component since v1.19.0, which silently dropped every
+control-plane target. The bearer token now comes from a Secret through `authorization`, and the CA from the
+`kube-root-ca.crt` ConfigMap that Kubernetes maintains in every namespace since 1.21.
+
+Because a ServiceMonitor can only authenticate through a Secret, and Kubernetes no longer creates a token Secret for a
+service account automatically, the chart now creates one itself:
+`prometheus.serviceAccount.createTokenSecret` (default `true`) renders a `kubernetes.io/service-account-token` Secret
+named `<prometheus service account>-token`. That token is long-lived and does not expire. Disable the value and set the
+`authorization` of each component if you would rather manage the credential yourself. The Secret must exist in the
+namespace of the ServiceMonitor: that is the release namespace, or `kube-system` (`default` for kube-apiserver) when
+`prometheus.prometheusSpec.ignoreNamespaceSelectors` is enabled — in the latter case the chart-created Secret is in the
+wrong namespace and you have to supply your own.
+
+The Secret is only rendered alongside the service account, so it also requires `prometheus.enabled` and
+`prometheus.serviceAccount.create`. If you scrape the control plane with a Prometheus this chart does not deploy, the
+Secret does not exist and the default `authorization` would reference it anyway, so rendering now fails with an
+explanatory message instead of producing ServiceMonitors the operator drops. Point each enabled control-plane component
+at the credential your scraper uses:
+
+```yaml
+prometheus:
+  enabled: false
+
+kubelet:
+  serviceMonitor:
+    authorization:
+      type: Bearer
+      credentials:
+        name: external-scraper-token
+        key: token
+```
+
+Set `authorization: null` instead to scrape that component without authentication. See
+`ci/08-external-scraper-values.yaml` for a complete example.
+
+`prometheusOperator.secretFieldSelector` no longer excludes `kubernetes.io/service-account-token`, so that changes to
+that Secret trigger a reconciliation. The operator reads Secrets referenced by a ServiceMonitor directly, so scraping
+also works with the previous value, but the generated configuration is then only refreshed on the next unrelated
+reconciliation.
+
+Removed values, all replaced by the `authorization` and `tlsConfig` blocks of the same component, which are rendered
+as-is and accept any field of the Prometheus Operator `SafeAuthorization` and `SafeTLSConfig` types:
+
+| Removed | Replacement |
+| --- | --- |
+| `<component>.serviceMonitor.bearerTokenFile` | `<component>.serviceMonitor.authorization` |
+| `kubelet.serviceMonitor.insecureSkipVerify` | `kubelet.serviceMonitor.tlsConfig.insecureSkipVerify` |
+| `kubeApiServer.tlsConfig.caSecret` | `kubeApiServer.tlsConfig.ca` |
+| `kubeControllerManager.serviceMonitor.insecureSkipVerify` / `.serverName` / `.caSecret` | `kubeControllerManager.serviceMonitor.tlsConfig` |
+| `kubeScheduler.serviceMonitor.insecureSkipVerify` / `.serverName` / `.caSecret` | `kubeScheduler.serviceMonitor.tlsConfig` |
+| `kubeProxy.serviceMonitor.caSecret` | `kubeProxy.serviceMonitor.tlsConfig.ca` |
+| `kubeEtcd.serviceMonitor.insecureSkipVerify` / `.serverName` / `.caFile` / `.certFile` / `.keyFile` / `.caSecret` / `.certSecret` / `.keySecret` | `kubeEtcd.serviceMonitor.tlsConfig` |
+
+`kubeControllerManager` and `kubeScheduler` now carry `insecureSkipVerify: true` as a literal default. This is the value
+those components already resolved to on every Kubernetes version the chart supports, so the rendered output does not
+change.
+
+Values are deep-merged, so replacing the default CA reference requires clearing it explicitly:
+
+```yaml
+kubelet:
+  serviceMonitor:
+    tlsConfig:
+      ca:
+        configMap: null
+        secret:
+          name: my-ca
+          key: ca.crt
+```
+
+## From 88.x to 89.x
+
+This version upgrades the Grafana helm chart to v13.0.0. Please check [Grafana Helm Chart upgrade guide]([https://grafana.com/docs/grafana/latest/whatsnew/whats-new-in-v13-0/](https://github.com/grafana-community/helm-charts/tree/main/charts/grafana#to-1300)).
+
 ## From 87.x to 88.x
 
 This version upgrades Prometheus-Operator to v0.93.0
