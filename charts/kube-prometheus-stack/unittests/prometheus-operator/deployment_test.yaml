@@ -27,7 +27,7 @@ tests:
           path: spec.template.spec.containers[0].args
           content: --feature-gates=PrometheusAgentDaemonSet=false
 
-  - it: should read the TLS certificate from the kubernetes.io/tls secret keys
+  - it: should read the certificate from the kubernetes.io/tls keys of the certgen secret
     asserts:
       - contains:
           path: spec.template.spec.containers[0].args
@@ -36,7 +36,7 @@ tests:
           path: spec.template.spec.containers[0].args
           content: --web.key-file=/cert/tls.key
 
-  - it: should read the TLS certificate from the kubernetes.io/tls secret keys with cert-manager
+  - it: should read the certificate from the kubernetes.io/tls keys of the cert-manager secret
     set:
       prometheusOperator.admissionWebhooks.certManager.enabled: true
     asserts:
@@ -46,3 +46,36 @@ tests:
       - contains:
           path: spec.template.spec.containers[0].args
           content: --web.key-file=/cert/tls.key
+
+  - it: should keep reading cert and key of the certgen secret without secretType
+    set:
+      prometheusOperator.admissionWebhooks.patch.secretType: ""
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: --web.cert-file=/cert/cert
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: --web.key-file=/cert/key
+
+  - it: should keep reading cert and key of a self-managed secret if the certgen job is disabled
+    set:
+      prometheusOperator.admissionWebhooks.patch.enabled: false
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: --web.cert-file=/cert/cert
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: --web.key-file=/cert/key
+
+  - it: should keep reading cert and key of a self-managed secret if admission webhooks are disabled
+    set:
+      prometheusOperator.admissionWebhooks.enabled: false
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: --web.cert-file=/cert/cert
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: --web.key-file=/cert/key

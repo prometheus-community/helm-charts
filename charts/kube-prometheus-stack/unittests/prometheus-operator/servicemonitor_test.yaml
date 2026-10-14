@@ -1,0 +1,33 @@
+suite: test prometheus-operator servicemonitor
+templates:
+  - prometheus-operator/servicemonitor.yaml
+tests:
+  - it: should read the CA from the kubernetes.io/tls key of the certgen secret
+    asserts:
+      - equal:
+          path: spec.endpoints[0].tlsConfig.ca.secret.key
+          value: ca.crt
+
+  - it: should read the CA from the kubernetes.io/tls key of the cert-manager secret
+    set:
+      prometheusOperator.admissionWebhooks.certManager.enabled: true
+    asserts:
+      - equal:
+          path: spec.endpoints[0].tlsConfig.ca.secret.key
+          value: ca.crt
+
+  - it: should keep reading ca of the certgen secret without secretType
+    set:
+      prometheusOperator.admissionWebhooks.patch.secretType: ""
+    asserts:
+      - equal:
+          path: spec.endpoints[0].tlsConfig.ca.secret.key
+          value: ca
+
+  - it: should keep reading ca of a self-managed secret if the certgen job is disabled
+    set:
+      prometheusOperator.admissionWebhooks.patch.enabled: false
+    asserts:
+      - equal:
+          path: spec.endpoints[0].tlsConfig.ca.secret.key
+          value: ca
