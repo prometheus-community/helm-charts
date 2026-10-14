@@ -26,3 +26,23 @@ tests:
       - contains:
           path: spec.template.spec.containers[0].args
           content: --feature-gates=PrometheusAgentDaemonSet=false
+
+  - it: should read the TLS certificate from the kubernetes.io/tls secret keys
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: --web.cert-file=/cert/tls.crt
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: --web.key-file=/cert/tls.key
+
+  - it: should read the TLS certificate from the kubernetes.io/tls secret keys with cert-manager
+    set:
+      prometheusOperator.admissionWebhooks.certManager.enabled: true
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: --web.cert-file=/cert/tls.crt
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: --web.key-file=/cert/tls.key

@@ -12,3 +12,26 @@ tests:
       - contains:
           path: spec.template.spec.containers[0].args
           content: --promql-options=extended-range-selectors,experimental-functions
+
+  - it: reads the TLS certificate from the kubernetes.io/tls secret keys
+    set:
+      prometheusOperator.admissionWebhooks.deployment.enabled: true
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: --web.cert-file=/cert/tls.crt
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: --web.key-file=/cert/tls.key
+
+  - it: reads the TLS certificate from the kubernetes.io/tls secret keys with cert-manager
+    set:
+      prometheusOperator.admissionWebhooks.deployment.enabled: true
+      prometheusOperator.admissionWebhooks.certManager.enabled: true
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: --web.cert-file=/cert/tls.crt
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: --web.key-file=/cert/tls.key
