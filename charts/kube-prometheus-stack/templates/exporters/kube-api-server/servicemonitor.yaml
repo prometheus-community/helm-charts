@@ -15,6 +15,9 @@ metadata:
   {{- end }}
 {{ include "kube-prometheus-stack.labels" . | indent 4 }}
 spec:
+  {{- with include "kube-prometheus-stack.serviceMonitor.scrapeClass" (dict "serviceMonitor" .Values.kubeApiServer.serviceMonitor "root" . "controlPlane" true) }}
+  {{- . | nindent 2 }}
+  {{- end }}
   {{- include "servicemonitor.scrapeLimits" .Values.kubeApiServer.serviceMonitor | nindent 2 }}
   endpoints:
   - port: https
@@ -25,9 +28,11 @@ spec:
     {{- if .Values.kubeApiServer.serviceMonitor.proxyUrl }}
     proxyUrl: {{ .Values.kubeApiServer.serviceMonitor.proxyUrl }}
     {{- end }}
+    {{- if not (include "kube-prometheus-stack.controlPlaneScrapeClass.selected" (dict "serviceMonitor" $.Values.kubeApiServer.serviceMonitor "root" $)) }}
     {{- with .Values.kubeApiServer.serviceMonitor.authorization }}
     authorization:
       {{- tpl (toYaml .) $ | nindent 6 }}
+    {{- end }}
     {{- end }}
 {{- if .Values.kubeApiServer.serviceMonitor.metricRelabelings }}
     metricRelabelings:
