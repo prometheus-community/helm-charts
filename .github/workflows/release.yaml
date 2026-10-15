@@ -81,8 +81,6 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Push charts to GHCR
-        env:
-          GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
         run: |
           shopt -s nullglob
           for pkg in .cr-release-packages/*.tgz; do
@@ -94,25 +92,14 @@ jobs:
             chart="$(helm show chart "${pkg}")"
             name="$(yq -r '.name' <<< "${chart}")"
             version="$(yq -r '.version' <<< "${chart}")"
-            repository="${GITHUB_REPOSITORY_OWNER}/charts/${name}"
-            # Request the same scope as helm push, so the check also works for charts that were never published.
-            token="$(curl -sSf -u "${GITHUB_ACTOR}:${GITHUB_TOKEN}" \
-              "https://ghcr.io/token?service=ghcr.io&scope=repository:${repository}:pull,push" | jq -r '.token')"
-            status="$(curl -sS -o /dev/null -w '%{http_code}' \
-              -H "Authorization: Bearer ${token}" \
-              -H "Accept: application/vnd.oci.image.manifest.v1+json" \
-              "https://ghcr.io/v2/${repository}/manifests/${version}")"
+            ref="oci://ghcr.io/${GITHUB_REPOSITORY_OWNER}/charts/${name}"
 
-            case "${status}" in
-              200)
-                echo "Skipping ${name}:${version}, already published"
-                ;;
-              404)
-                helm push "${pkg}" "oci://ghcr.io/${GITHUB_REPOSITORY_OWNER}/charts"
-                ;;
-              *)
-                echo "::error::Unexpected HTTP ${status} while checking ghcr.io for ${name}:${version}"
-                exit 1
-                ;;
-            esac
+            if output="$(helm show chart "${ref}" --version "${version}" 2>&1)"; then
+              echo "Skipping ${name}:${version}, already published"
+            elif [[ "${output}" == *": not found"* ]]; then
+              helm push "${pkg}" "oci://ghcr.io/${GITHUB_REPOSITORY_OWNER}/charts"
+            else
+              echo "::error::Failed to check ghcr.io for ${name}:${version}: ${output}"
+              exit 1
+            fi
           done
