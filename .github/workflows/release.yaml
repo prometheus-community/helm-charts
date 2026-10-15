@@ -96,7 +96,8 @@ jobs:
 
             if output="$(helm show chart "${ref}" --version "${version}" 2>&1)"; then
               echo "Skipping ${name}:${version}, already published"
-            elif [[ "${output}" == *": not found"* ]]; then
+            # ghcr.io may answer denied instead of not found for charts that were never published.
+            elif [[ "${output}" == *": not found"* || "${output}" == *"denied"* ]]; then
               helm push "${pkg}" "oci://ghcr.io/${GITHUB_REPOSITORY_OWNER}/charts"
             else
               echo "::error::Failed to check ghcr.io for ${name}:${version}: ${output}"
