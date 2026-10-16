@@ -87,5 +87,20 @@ jobs:
             if [ -z "${pkg:-}" ]; then
               break
             fi
-            helm push "${pkg}" "oci://ghcr.io/${GITHUB_REPOSITORY_OWNER}/charts"
+            # chart-releaser packages every chart with changed files, even without a version bump.
+            # Never overwrite a published version, so tags keep resolving to the same digest.
+            chart="$(helm show chart "${pkg}")"
+            name="$(yq -r '.name' <<< "${chart}")"
+            version="$(yq -r '.version' <<< "${chart}")"
+            ref="oci://ghcr.io/${GITHUB_REPOSITORY_OWNER}/charts/${name}"
+
+            if output="$(helm show chart "${ref}" --version "${version}" 2>&1)"; then
+              echo "Skipping ${name}:${version}, already published"
+            # ghcr.io may answer denied instead of not found for charts that were never published.
+            elif [[ "${output}" == *": not found"* || "${output}" == *"denied"* ]]; then
+              helm push "${pkg}" "oci://ghcr.io/${GITHUB_REPOSITORY_OWNER}/charts"
+            else
+              echo "::error::Failed to check ghcr.io for ${name}:${version}: ${output}"
+              exit 1
+            fi
           done
