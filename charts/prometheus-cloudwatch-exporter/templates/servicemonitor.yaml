@@ -2,9 +2,14 @@
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
-{{- if .Values.serviceMonitor.labels }}
+{{- if or .Values.serviceMonitor.labels .Values.commonLabels }}
   labels:
-{{ toYaml .Values.serviceMonitor.labels | indent 4}}
+  {{- with .Values.commonLabels }}
+{{ toYaml . | indent 4 }}
+  {{- end }}
+  {{- with .Values.serviceMonitor.labels }}
+{{ toYaml . | indent 4 }}
+  {{- end }}
 {{- end }}
   name: {{ template "prometheus-cloudwatch-exporter.fullname" . }}
 {{- if .Values.serviceMonitor.namespace }}

@@ -3,9 +3,14 @@
 apiVersion: monitoring.coreos.com/v1
 kind: PrometheusRule
 metadata:
-{{- if .Values.prometheusRule.labels }}
+{{- if or .Values.prometheusRule.labels .Values.commonLabels }}
   labels:
-{{ toYaml .Values.prometheusRule.labels | indent 4}}
+  {{- with .Values.commonLabels }}
+{{ toYaml . | indent 4 }}
+  {{- end }}
+  {{- with .Values.prometheusRule.labels }}
+{{ toYaml . | indent 4 }}
+  {{- end }}
 {{- end }}
   name: {{ $fullName }}
 {{- if .Values.prometheusRule.namespace }}
