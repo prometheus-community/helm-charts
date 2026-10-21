@@ -358,10 +358,8 @@ global:
 {{- define "kube-prometheus-stack.operator.admission-webhook.dnsNames" }}
 {{- $fullname := include "kube-prometheus-stack.operator.fullname" . }}
 {{- $namespace := include "kube-prometheus-stack.namespace" . }}
-{{- $fullname }}
 {{ $fullname }}.{{ $namespace }}.svc
 {{- if .Values.prometheusOperator.admissionWebhooks.deployment.enabled }}
-{{ $fullname }}-webhook
 {{ $fullname }}-webhook.{{ $namespace }}.svc
 {{- end }}
 {{- end }}
