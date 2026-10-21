@@ -1,0 +1,59 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/helm-unittest/helm-unittest/main/schema/helm-testsuite.json
+suite: test kube-state-metrics container probes
+templates:
+  - deployment.yaml
+tests:
+  - it: should probe the named ports of the kube-state-metrics container
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].livenessProbe.httpGet.port
+          value: http
+      - equal:
+          path: spec.template.spec.containers[0].readinessProbe.httpGet.port
+          value: metrics
+
+  - it: should probe the kube-rbac-proxy ports by number, as the named ports are not on the kube-state-metrics container
+    set:
+      kubeRBACProxy:
+        enabled: true
+      selfMonitor:
+        enabled: true
+      startupProbe:
+        enabled: true
+    asserts:
+      - notExists:
+          path: spec.template.spec.containers[0].ports
+      - equal:
+          path: spec.template.spec.containers[0].startupProbe.httpGet.port
+          value: 8080
+      - equal:
+          path: spec.template.spec.containers[0].livenessProbe.httpGet.port
+          value: 8080
+      - equal:
+          path: spec.template.spec.containers[0].readinessProbe.httpGet.port
+          value: 8081
+      - equal:
+          path: spec.template.spec.containers[0].readinessProbe.httpGet.scheme
+          value: HTTPS
+
+  - it: should follow a custom service port and telemetry port with kube-rbac-proxy
+    set:
+      kubeRBACProxy:
+        enabled: true
+      selfMonitor:
+        enabled: true
+        telemetryPort: 9443
+      service:
+        port: 8443
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].livenessProbe.httpGet.port
+          value: 8443
+      - equal:
+          path: spec.template.spec.containers[0].readinessProbe.httpGet.port
+          value: 9443
+      - contains:
+          path: spec.template.spec.containers[1].ports
+          content:
+            containerPort: 8443
+            name: http
