@@ -53,7 +53,7 @@ replicas: 1
 revisionHistoryLimit: 10
 
 # List of additional cli arguments to configure kube-state-metrics
-# for example: --log-file, --auto-gomemlimit, etc.
+# for example: --log_file, --auto-gomemlimit, etc.
 # all the possible args can be found here: https://github.com/kubernetes/kube-state-metrics/blob/main/docs/developer/cli-arguments.md
 extraArgs: []
 
@@ -413,7 +413,7 @@ metricAllowlist: []
 metricDenylist: []
 
 # Comma-separated list of metrics which are opt-in and not enabled by default.
-# This is in addition to the metrics enabled by the collectors above.
+# This is applied in addition to the allowlist and denylist above.
 metricOptInList: []
 
 # Comma-separated list of additional Kubernetes label keys that will be used in the resource's
@@ -524,7 +524,9 @@ namespaces: ""
 # only namespaces that are excluded in namespaces-denylist will be used.
 namespacesDenylist: ""
 
-# Track unscheduled pods, which are otherwise skipped because they are not assigned to a node.
+# Only collect pods that are not assigned to a node yet. This applies a spec.nodeName= field
+# selector to every enabled collector, so it belongs in a dedicated release with collectors set
+# to [pods]. On a default install it drops the metrics of all scheduled pods. Experimental.
 trackUnscheduledPods: false
 
 ## Override the deployment namespace
