@@ -36,6 +36,7 @@ spec:
             {{- toYaml . | nindent 12 }}
           {{- end }}
           args:
+            - --web.listen-address=:{{ .Values.service.port }}
           {{- range $key, $value := .Values.extraArgs }}
             - --{{ $key }}={{ $value }}
           {{- end }}
@@ -44,17 +45,17 @@ spec:
             {{- toYaml . | nindent 12 }}
           {{- end }}
           ports:
-            - name: http-alt
+            - name: {{ .Values.service.portName }}
               containerPort: {{ .Values.service.port }}
               protocol: TCP
           livenessProbe:
             httpGet:
               path: /
-              port: http-alt
+              port: {{ .Values.service.portName }}
           readinessProbe:
             httpGet:
               path: /
-              port: http-alt
+              port: {{ .Values.service.portName }}
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
       {{- with .Values.nodeSelector }}

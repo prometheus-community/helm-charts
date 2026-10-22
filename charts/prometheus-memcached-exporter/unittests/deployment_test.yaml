@@ -1,0 +1,37 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/helm-unittest/helm-unittest/main/schema/helm-testsuite.json
+suite: deployment port configuration
+templates:
+  - templates/deployment.yaml
+tests:
+  - it: uses the default listen port and service port name
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: --web.listen-address=:9150
+      - equal:
+          path: spec.template.spec.containers[0].ports[0].containerPort
+          value: 9150
+      - equal:
+          path: spec.template.spec.containers[0].ports[0].name
+          value: http-alt
+
+  - it: synchronizes a custom listen port and named port
+    set:
+      service.port: 9160
+      service.portName: metrics
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: --web.listen-address=:9160
+      - equal:
+          path: spec.template.spec.containers[0].ports[0].containerPort
+          value: 9160
+      - equal:
+          path: spec.template.spec.containers[0].ports[0].name
+          value: metrics
+      - equal:
+          path: spec.template.spec.containers[0].livenessProbe.httpGet.port
+          value: metrics
+      - equal:
+          path: spec.template.spec.containers[0].readinessProbe.httpGet.port
+          value: metrics
