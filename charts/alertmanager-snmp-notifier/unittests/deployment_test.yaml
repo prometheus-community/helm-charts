@@ -1,0 +1,57 @@
+suite: test deployment
+templates:
+  - deployment.yaml
+tests:
+  - it: renders no pod labels, priority class or topology spread constraints by default
+    asserts:
+      - equal:
+          path: spec.template.metadata.labels
+          value:
+            app.kubernetes.io/name: alertmanager-snmp-notifier
+            app.kubernetes.io/instance: RELEASE-NAME
+      - notExists:
+          path: spec.template.spec.priorityClassName
+      - notExists:
+          path: spec.template.spec.topologySpreadConstraints
+
+  - it: adds podLabels to the pod template without changing the selector
+    set:
+      podLabels:
+        team: monitoring
+    asserts:
+      - equal:
+          path: spec.template.metadata.labels.team
+          value: monitoring
+      - equal:
+          path: spec.template.metadata.labels["app.kubernetes.io/name"]
+          value: alertmanager-snmp-notifier
+      - notExists:
+          path: spec.selector.matchLabels.team
+
+  - it: sets priorityClassName
+    set:
+      priorityClassName: system-cluster-critical
+    asserts:
+      - equal:
+          path: spec.template.spec.priorityClassName
+          value: system-cluster-critical
+
+  - it: sets topologySpreadConstraints
+    set:
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: topology.kubernetes.io/zone
+          whenUnsatisfiable: ScheduleAnyway
+          labelSelector:
+            matchLabels:
+              app.kubernetes.io/name: alertmanager-snmp-notifier
+    asserts:
+      - equal:
+          path: spec.template.spec.topologySpreadConstraints
+          value:
+            - maxSkew: 1
+              topologyKey: topology.kubernetes.io/zone
+              whenUnsatisfiable: ScheduleAnyway
+              labelSelector:
+                matchLabels:
+                  app.kubernetes.io/name: alertmanager-snmp-notifier
