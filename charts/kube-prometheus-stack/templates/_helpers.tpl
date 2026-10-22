@@ -113,6 +113,20 @@ heritage: {{ $.Release.Service | quote }}
 {{- end -}}
 {{- end -}}
 
+{{/*
+Name of the Secret holding the Prometheus service account token that the control-plane
+ServiceMonitors authenticate with by default. The chart only creates that Secret alongside the
+service account, so fail with an actionable message rather than render a ServiceMonitor pointing at
+a Secret that will never exist. Only reached when a component still carries the default
+`authorization`, so overriding or clearing it keeps working with prometheus disabled.
+*/}}
+{{- define "kube-prometheus-stack.prometheus.tokenSecretName" -}}
+{{- if not (and .Values.prometheus.enabled .Values.prometheus.serviceAccount.create .Values.prometheus.serviceAccount.createTokenSecret) -}}
+{{- fail "The control-plane ServiceMonitors authenticate by default with the Secret created by prometheus.serviceAccount.createTokenSecret, which is only rendered when prometheus.enabled and prometheus.serviceAccount.create are also true. Enable them, or set the serviceMonitor.authorization of each enabled control-plane component to a Secret you manage yourself, or to null to scrape without authentication." -}}
+{{- end -}}
+{{ include "kube-prometheus-stack.prometheus.serviceAccountName" . }}-token
+{{- end -}}
+
 {{/* Create the name of alertmanager service account to use */}}
 {{- define "kube-prometheus-stack.alertmanager.serviceAccountName" -}}
 {{- if .Values.alertmanager.serviceAccount.create -}}
@@ -209,6 +223,17 @@ Allow kube-proxy job name to be overridden
     {{- index .Values "kubeProxy" "jobNameOverride" -}}
   {{- else -}}
     {{- print "kube-proxy" -}}
+  {{- end -}}
+{{- end -}}
+
+{{/*
+Allow kube-apiserver job name to be overridden
+*/}}
+{{- define "kube-prometheus-stack-kube-apiserver.name" -}}
+  {{- if index .Values "kubeApiServer" "jobNameOverride" -}}
+    {{- index .Values "kubeApiServer" "jobNameOverride" -}}
+  {{- else -}}
+    {{- print "apiserver" -}}
   {{- end -}}
 {{- end -}}
 
@@ -347,13 +372,16 @@ global:
 {{- end }}
 {{- define "kube-prometheus-stack.kubelet.authConfig" }}
 {{- if .Values.kubelet.serviceMonitor.https }}
+{{- with .Values.kubelet.serviceMonitor.tlsConfig }}
 tlsConfig:
-  caFile: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
-  insecureSkipVerify: {{ .Values.kubelet.serviceMonitor.insecureSkipVerify }}
-bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
+  {{- tpl (toYaml .) $ | nindent 2 }}
+{{- end }}
+{{- with .Values.kubelet.serviceMonitor.authorization }}
+authorization:
+  {{- tpl (toYaml .) $ | nindent 2 }}
 {{- end }}
 {{- end }}
-
+{{- end }}
 
 {{/* To help configure anti-affinity rules for Prometheus pods */}}
 {{- define "kube-prometheus-stack.prometheus.pod-anti-affinity.matchExpressions" }}
@@ -384,5 +412,88 @@ folder: {{ $folder | quote }}
 folderUID: {{ $folderUID | quote }}
 {{- else if $folderRef }}
 folderRef: {{ $folderRef | quote }}
+{{- end }}
+{{- end }}
+
+{{/*
+Render a full Gateway API route object.
+Shared by the route and routePerReplica templates.
+Expects a dict:
+  { "context": $, "route": <route values>, "name": <string>, "namespace": <string>,
+    "labelApp": <string>, "hostnames": <list>, "serviceName": <string>, "servicePort": <string|int> }
+*/}}
+{{- define "kube-prometheus-stack.route" -}}
+{{- $context := .context -}}
+{{- $route := .route -}}
+apiVersion: {{ $route.apiVersion | default "gateway.networking.k8s.io/v1" }}
+kind: {{ $route.kind | default "HTTPRoute" }}
+metadata:
+  {{- with $route.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  name: {{ .name }}
+  namespace: {{ .namespace }}
+  labels:
+    app: {{ .labelApp }}
+    {{- include "kube-prometheus-stack.labels" $context | nindent 4 }}
+    {{- with $route.labels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+spec:
+  {{- with $route.parentRefs }}
+  parentRefs:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  {{- with .hostnames }}
+  hostnames:
+    {{- tpl (toYaml .) $context | nindent 4 }}
+  {{- end }}
+  rules:
+    {{- include "kube-prometheus-stack.route.rules" (dict "context" $context "route" $route "serviceName" .serviceName "servicePort" .servicePort) | trim | nindent 4 }}
+{{- end }}
+
+{{/*
+Render the rules block for a Gateway API route.
+Shared by the route and routePerReplica templates.
+Expects a dict: { "context": $, "route": <route values>, "serviceName": <string>, "servicePort": <string|int> }
+*/}}
+{{- define "kube-prometheus-stack.route.rules" -}}
+{{- $context := .context -}}
+{{- $route := .route -}}
+{{- if $route.additionalRules }}
+{{- tpl (toYaml $route.additionalRules) $context }}
+{{- end }}
+{{- if $route.httpsRedirect }}
+- filters:
+    - type: RequestRedirect
+      requestRedirect:
+        scheme: https
+        statusCode: 301
+{{- else }}
+- backendRefs:
+    - group: ""
+      kind: Service
+      weight: 1
+      name: {{ .serviceName }}
+      port: {{ .servicePort }}
+  {{- with $route.filters }}
+  filters:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  {{- with $route.matches }}
+  matches:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  {{- if eq ($route.kind | default "HTTPRoute") "HTTPRoute" }}
+  {{- with $route.timeouts }}
+  timeouts:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  {{- end }}
+  {{- with $route.sessionPersistence }}
+  sessionPersistence:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
 {{- end }}
 {{- end }}

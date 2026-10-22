@@ -1,0 +1,169 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/helm-unittest/helm-unittest/main/schema/helm-testsuite.json
+suite: test additionalServiceMonitors
+templates:
+  - prometheus/servicemonitors.yaml
+set:
+  prometheus.enabled: true
+tests:
+  - it: should not render when no additional monitors are configured
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: should preserve list names as strings and monitor fields
+    set:
+      prometheus.additionalServiceMonitors:
+        - name: "true"
+          selector:
+            matchLabels:
+              app: api
+          endpoints:
+            - port: metrics
+    asserts:
+      - hasDocuments:
+          count: 1
+      - isKind:
+          of: List
+      - lengthEqual:
+          path: items
+          count: 1
+      - equal:
+          path: items[0].metadata.name
+          value: "true"
+      - equal:
+          path: items[0].spec
+          value:
+            selector:
+              matchLabels:
+                app: api
+            endpoints:
+              - port: metrics
+
+  - it: should remove a map entry set to null in an overlay
+    values:
+      - fixtures/additional-monitors-base.values
+      - fixtures/additional-monitors-remove.values
+    asserts:
+      - lengthEqual:
+          path: items
+          count: 1
+      - equal:
+          path: items[0].metadata.name
+          value: api
+      - equal:
+          path: items[0].spec
+          value:
+            jobLabel: app
+            selector:
+              matchLabels:
+                app: api
+            endpoints:
+              - port: http
+
+  - it: should render an empty List when all map entries are removed
+    values:
+      - fixtures/additional-monitors-base.values
+      - fixtures/additional-monitors-remove.values
+    set:
+      prometheus.additionalServiceMonitors.api: null
+    asserts:
+      - hasDocuments:
+          count: 1
+      - isKind:
+          of: List
+      - equal:
+          path: items
+          value: []
+
+  - it: should use map keys as names unless an explicit name is set
+    set:
+      prometheus.additionalServiceMonitors:
+        api:
+          selector: {}
+          endpoints:
+            - port: metrics
+        worker:
+          name: custom-worker
+          selector: {}
+          endpoints:
+            - port: metrics
+    asserts:
+      - lengthEqual:
+          path: items
+          count: 2
+      - equal:
+          path: items[0].metadata.name
+          value: api
+      - equal:
+          path: items[1].metadata.name
+          value: custom-worker
+
+  - it: should keep scalar-looking map keys as string names
+    set:
+      prometheus.additionalServiceMonitors:
+        "123":
+          selector: {}
+          endpoints:
+            - port: metrics
+        "null":
+          selector: {}
+          endpoints:
+            - port: metrics
+        "true":
+          selector: {}
+          endpoints:
+            - port: metrics
+    asserts:
+      - lengthEqual:
+          path: items
+          count: 3
+      - equal:
+          path: items[0].metadata.name
+          value: "123"
+      - equal:
+          path: items[1].metadata.name
+          value: "null"
+      - equal:
+          path: items[2].metadata.name
+          value: "true"
+
+  - it: should merge map entries and nested labels across ordered values files
+    values:
+      - fixtures/additional-monitors-base.values
+      - fixtures/additional-monitors-overlay.values
+    asserts:
+      - lengthEqual:
+          path: items
+          count: 2
+      - equal:
+          path: items[0].metadata.name
+          value: api
+      - equal:
+          path: items[0].metadata.labels.team
+          value: platform
+      - equal:
+          path: items[0].metadata.labels.environment
+          value: production
+      - equal:
+          path: items[0].metadata.labels.region
+          value: eu
+      - equal:
+          path: items[0].spec
+          value:
+            jobLabel: service-job
+            selector:
+              matchLabels:
+                app: api
+            endpoints:
+              - port: http
+      - equal:
+          path: items[1].metadata.name
+          value: worker
+      - equal:
+          path: items[1].spec
+          value:
+            selector:
+              matchLabels:
+                app: worker
+            endpoints:
+              - port: metrics
