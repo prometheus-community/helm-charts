@@ -5,6 +5,9 @@ templates:
 tests:
   - it: should probe the named ports of the kube-state-metrics container
     asserts:
+      - lengthEqual:
+          path: spec.template.spec.containers
+          count: 1
       - equal:
           path: spec.template.spec.containers[0].livenessProbe.httpGet.port
           value: http
@@ -35,6 +38,46 @@ tests:
       - equal:
           path: spec.template.spec.containers[0].readinessProbe.httpGet.scheme
           value: HTTPS
+      - contains:
+          path: spec.template.spec.containers[1].args
+          content: --ignore-paths=/healthz,/livez,/readyz
+      - contains:
+          path: spec.template.spec.containers[2].args
+          content: --ignore-paths=/healthz,/livez,/readyz
+
+  - it: should render the telemetry proxy for the readiness probe when selfMonitor is disabled
+    set:
+      kubeRBACProxy:
+        enabled: true
+      selfMonitor:
+        enabled: false
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: --telemetry-host=127.0.0.1
+      - equal:
+          path: spec.template.spec.containers[0].readinessProbe.httpGet.port
+          value: 8081
+      - equal:
+          path: spec.template.spec.containers[0].readinessProbe.httpGet.scheme
+          value: HTTPS
+      - lengthEqual:
+          path: spec.template.spec.containers
+          count: 3
+      - equal:
+          path: spec.template.spec.containers[2].name
+          value: kube-rbac-proxy-telemetry
+      - contains:
+          path: spec.template.spec.containers[2].args
+          content: --upstream=http://127.0.0.1:9091/
+      - contains:
+          path: spec.template.spec.containers[2].args
+          content: --ignore-paths=/healthz,/livez,/readyz
+      - contains:
+          path: spec.template.spec.containers[2].ports
+          content:
+            containerPort: 8081
+            name: metrics
 
   - it: should follow a custom service port and telemetry port with kube-rbac-proxy
     set:
@@ -57,3 +100,8 @@ tests:
           content:
             containerPort: 8443
             name: http
+      - contains:
+          path: spec.template.spec.containers[2].ports
+          content:
+            containerPort: 9443
+            name: metrics
