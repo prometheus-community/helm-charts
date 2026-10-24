@@ -20,8 +20,8 @@ spec:
   targetLabels:
     {{- toYaml . | nindent 4 }}
   {{- end }}
-  {{- with include "kube-prometheus-stack.serviceMonitor.scrapeClass" (dict "serviceMonitor" .Values.kubeScheduler.serviceMonitor "root" . "controlPlane" true) }}
-  {{- . | nindent 2 }}
+  {{- with include "kube-prometheus-stack.controlPlane.scrapeClass" (dict "serviceMonitor" .Values.kubeScheduler.serviceMonitor "root" .) }}
+  scrapeClass: {{ . }}
   {{- end }}
   {{- include "servicemonitor.scrapeLimits" .Values.kubeScheduler.serviceMonitor | nindent 2 }}
   selector:
@@ -40,11 +40,8 @@ spec:
     {{- if .Values.kubeScheduler.serviceMonitor.interval }}
     interval: {{ .Values.kubeScheduler.serviceMonitor.interval }}
     {{- end }}
-    {{- if not (include "kube-prometheus-stack.controlPlaneScrapeClass.selected" (dict "serviceMonitor" $.Values.kubeScheduler.serviceMonitor "root" $)) }}
-    {{- with .Values.kubeScheduler.serviceMonitor.authorization }}
-    authorization:
-      {{- tpl (toYaml .) $ | nindent 6 }}
-    {{- end }}
+    {{- with include "kube-prometheus-stack.controlPlane.authorization" (dict "serviceMonitor" $.Values.kubeScheduler.serviceMonitor "root" $) }}
+    {{- . | nindent 4 }}
     {{- end }}
     {{- if .Values.kubeScheduler.serviceMonitor.proxyUrl }}
     proxyUrl: {{ .Values.kubeScheduler.serviceMonitor.proxyUrl}}
@@ -70,11 +67,8 @@ spec:
     {{- if .Values.kubeScheduler.serviceMonitor.resource.interval }}
     interval: {{ .Values.kubeScheduler.serviceMonitor.resource.interval }}
     {{- end }}
-    {{- if not (include "kube-prometheus-stack.controlPlaneScrapeClass.selected" (dict "serviceMonitor" $.Values.kubeScheduler.serviceMonitor "root" $)) }}
-    {{- with .Values.kubeScheduler.serviceMonitor.authorization }}
-    authorization:
-      {{- tpl (toYaml .) $ | nindent 6 }}
-    {{- end }}
+    {{- with include "kube-prometheus-stack.controlPlane.authorization" (dict "serviceMonitor" $.Values.kubeScheduler.serviceMonitor "root" $) }}
+    {{- . | nindent 4 }}
     {{- end }}
     {{- if .Values.kubeScheduler.serviceMonitor.proxyUrl }}
     proxyUrl: {{ .Values.kubeScheduler.serviceMonitor.proxyUrl}}

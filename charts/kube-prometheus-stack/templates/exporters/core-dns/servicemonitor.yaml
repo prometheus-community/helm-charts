@@ -20,8 +20,8 @@ spec:
   targetLabels:
     {{- toYaml . | nindent 4 }}
   {{- end }}
-  {{- with include "kube-prometheus-stack.serviceMonitor.scrapeClass" (dict "serviceMonitor" .Values.coreDns.serviceMonitor "root" . "controlPlane" true) }}
-  {{- . | nindent 2 }}
+  {{- with include "kube-prometheus-stack.controlPlane.scrapeClass" (dict "serviceMonitor" .Values.coreDns.serviceMonitor "root" .) }}
+  scrapeClass: {{ . }}
   {{- end }}
   {{- include "servicemonitor.scrapeLimits" .Values.coreDns.serviceMonitor | nindent 2 }}
   selector:
@@ -43,11 +43,8 @@ spec:
     {{- if .Values.coreDns.serviceMonitor.proxyUrl }}
     proxyUrl: {{ .Values.coreDns.serviceMonitor.proxyUrl}}
     {{- end }}
-    {{- if not (include "kube-prometheus-stack.controlPlaneScrapeClass.selected" (dict "serviceMonitor" $.Values.coreDns.serviceMonitor "root" $)) }}
-    {{- with .Values.coreDns.serviceMonitor.authorization }}
-    authorization:
-      {{- tpl (toYaml .) $ | nindent 6 }}
-    {{- end }}
+    {{- with include "kube-prometheus-stack.controlPlane.authorization" (dict "serviceMonitor" $.Values.coreDns.serviceMonitor "root" $) }}
+    {{- . | nindent 4 }}
     {{- end }}
 {{- if .Values.coreDns.serviceMonitor.metricRelabelings }}
     metricRelabelings:
