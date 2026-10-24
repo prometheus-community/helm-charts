@@ -942,6 +942,11 @@ alertmanager:
     ##
     additionalLabels: {}
 
+    ## ScrapeClass to use for this ServiceMonitor, as defined in prometheus.prometheusSpec.scrapeClasses.
+    ## If not set, the default scrape class (if any) is used.
+    ##
+    scrapeClass: ""
+
     ## SampleLimit defines per-scrape limit on number of scraped samples that will be accepted.
     ##
     sampleLimit: 0
@@ -1764,6 +1769,11 @@ kubeApiServer:
         name: '{{ include "kube-prometheus-stack.prometheus.tokenSecretName" . }}'
         key: token
 
+    ## ScrapeClass to use for this ServiceMonitor, as defined in prometheus.prometheusSpec.scrapeClasses.
+    ## If not set, the default scrape class (if any) is used.
+    ##
+    scrapeClass: ""
+
     ## SampleLimit defines per-scrape limit on number of scraped samples that will be accepted.
     ##
     sampleLimit: 0
@@ -1871,6 +1881,11 @@ kubelet:
     ## We recommend enabling this if you want the best possible accuracy for container_ metrics scraped from cadvisor.
     ## For more details see: https://github.com/prometheus-community/helm-charts/pull/5063#issuecomment-2545374849
     trackTimestampsStaleness: true
+
+    ## ScrapeClass to use for this ServiceMonitor, as defined in prometheus.prometheusSpec.scrapeClasses.
+    ## If not set, the default scrape class (if any) is used.
+    ##
+    scrapeClass: ""
 
     ## SampleLimit defines per-scrape limit on number of scraped samples that will be accepted.
     ##
@@ -2139,6 +2154,11 @@ kubeControllerManager:
     ##
     interval: ""
 
+    ## ScrapeClass to use for this ServiceMonitor, as defined in prometheus.prometheusSpec.scrapeClasses.
+    ## If not set, the default scrape class (if any) is used.
+    ##
+    scrapeClass: ""
+
     ## SampleLimit defines per-scrape limit on number of scraped samples that will be accepted.
     ##
     sampleLimit: 0
@@ -2249,6 +2269,11 @@ coreDns:
     ##
     interval: ""
 
+    ## ScrapeClass to use for this ServiceMonitor, as defined in prometheus.prometheusSpec.scrapeClasses.
+    ## If not set, the default scrape class (if any) is used.
+    ##
+    scrapeClass: ""
+
     ## SampleLimit defines per-scrape limit on number of scraped samples that will be accepted.
     ##
     sampleLimit: 0
@@ -2342,6 +2367,11 @@ kubeDns:
     ## Scrape interval. If not set, the Prometheus default scrape interval is used.
     ##
     interval: ""
+
+    ## ScrapeClass to use for this ServiceMonitor, as defined in prometheus.prometheusSpec.scrapeClasses.
+    ## If not set, the default scrape class (if any) is used.
+    ##
+    scrapeClass: ""
 
     ## SampleLimit defines per-scrape limit on number of scraped samples that will be accepted.
     ##
@@ -2481,6 +2511,11 @@ kubeEtcd:
     ##
     interval: ""
 
+    ## ScrapeClass to use for this ServiceMonitor, as defined in prometheus.prometheusSpec.scrapeClasses.
+    ## If not set, the default scrape class (if any) is used.
+    ##
+    scrapeClass: ""
+
     ## SampleLimit defines per-scrape limit on number of scraped samples that will be accepted.
     ##
     sampleLimit: 0
@@ -2599,6 +2634,11 @@ kubeScheduler:
     ## Scrape interval. If not set, the Prometheus default scrape interval is used.
     ##
     interval: ""
+
+    ## ScrapeClass to use for this ServiceMonitor, as defined in prometheus.prometheusSpec.scrapeClasses.
+    ## If not set, the default scrape class (if any) is used.
+    ##
+    scrapeClass: ""
 
     ## SampleLimit defines per-scrape limit on number of scraped samples that will be accepted.
     ##
@@ -2749,6 +2789,11 @@ kubeProxy:
     ## Scrape interval. If not set, the Prometheus default scrape interval is used.
     ##
     interval: ""
+
+    ## ScrapeClass to use for this ServiceMonitor, as defined in prometheus.prometheusSpec.scrapeClasses.
+    ## If not set, the default scrape class (if any) is used.
+    ##
+    scrapeClass: ""
 
     ## SampleLimit defines per-scrape limit on number of scraped samples that will be accepted.
     ##
@@ -3557,6 +3602,11 @@ prometheusOperator:
     ##
     interval: ""
 
+    ## ScrapeClass to use for this ServiceMonitor, as defined in prometheus.prometheusSpec.scrapeClasses.
+    ## If not set, the default scrape class (if any) is used.
+    ##
+    scrapeClass: ""
+
     ## SampleLimit defines per-scrape limit on number of scraped samples that will be accepted.
     ##
     sampleLimit: 0
@@ -3859,13 +3909,33 @@ prometheus:
     ## The control-plane ServiceMonitors reference it by default, because ServiceMonitors can only
     ## authenticate through a Secret and Kubernetes no longer creates one automatically.
     ## The resulting token is long-lived and does not expire; disable this and set the
-    ## `authorization` values of the control-plane components if you manage the credential yourself.
+    ## `authorization` values of the control-plane components if you manage the credential yourself,
+    ## or enable `prometheus.controlPlaneScrapeClass` below to use the pod's projected token instead.
     ## Only rendered together with the service account, so it requires `prometheus.enabled` and
     ## `create` above. Leaving a control-plane component on the default `authorization` while the
     ## Secret is not rendered is a rendering error rather than a silently broken ServiceMonitor.
     ## ref: https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-account/#manually-create-an-api-token-for-a-serviceaccount
     ##
     createTokenSecret: true
+
+  ## Scrape class for the control-plane ServiceMonitors (kubelet, kubeApiServer, kubeControllerManager,
+  ## kubeScheduler, kubeEtcd, kubeProxy, coreDns and kubeDns), as an alternative to the Secret above.
+  ## When enabled, the class is appended to `prometheusSpec.scrapeClasses` and each control-plane
+  ## ServiceMonitor selects it in place of its `serviceMonitor.authorization`. A ServiceMonitor whose `serviceMonitor.scrapeClass` names a
+  ## different class keeps its own `authorization`.
+  ## The default authorization reads the Prometheus pod's projected service account token, which the
+  ## kubelet rotates, so no long-lived token is needed; set `serviceAccount.createTokenSecret` to false
+  ## once every control-plane component uses this class.
+  ## Only applies to this chart's Prometheus (`prometheus.enabled`). Other scrapers that read these
+  ## ServiceMonitors, such as Grafana Alloy, do not support scrape classes and still need the Secret.
+  ## ref: https://prometheus-operator.dev/docs/developer/scrapeclass/
+  ##
+  controlPlaneScrapeClass:
+    enabled: false
+    name: kube-prometheus-stack-control-plane
+    authorization:
+      type: Bearer
+      credentialsFile: /var/run/secrets/kubernetes.io/serviceaccount/token
 
   # Service for thanos service discovery on sidecar
   # Enable this can make Thanos Query can use
@@ -4374,6 +4444,11 @@ prometheus:
     ## Additional labels
     ##
     additionalLabels: {}
+
+    ## ScrapeClass to use for this ServiceMonitor, as defined in prometheus.prometheusSpec.scrapeClasses.
+    ## If not set, the default scrape class (if any) is used.
+    ##
+    scrapeClass: ""
 
     ## SampleLimit defines per-scrape limit on number of scraped samples that will be accepted.
     ##
@@ -5735,6 +5810,11 @@ thanosRuler:
     ## Additional labels
     ##
     additionalLabels: {}
+
+    ## ScrapeClass to use for this ServiceMonitor, as defined in prometheus.prometheusSpec.scrapeClasses.
+    ## If not set, the default scrape class (if any) is used.
+    ##
+    scrapeClass: ""
 
     ## SampleLimit defines per-scrape limit on number of scraped samples that will be accepted.
     ##

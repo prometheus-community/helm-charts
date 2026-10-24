@@ -376,12 +376,39 @@ global:
 tlsConfig:
   {{- tpl (toYaml .) $ | nindent 2 }}
 {{- end }}
-{{- with .Values.kubelet.serviceMonitor.authorization }}
+{{- with include "kube-prometheus-stack.controlPlane.authorization" (dict "serviceMonitor" .Values.kubelet.serviceMonitor "root" .) }}
+{{ . }}
+{{- end }}
+{{- end }}
+{{- end }}
+
+{{/*
+Scrape class of a control-plane ServiceMonitor: its own serviceMonitor.scrapeClass, otherwise
+prometheus.controlPlaneScrapeClass when that is enabled. Takes a dict with "serviceMonitor" and "root".
+*/}}
+{{- define "kube-prometheus-stack.controlPlane.scrapeClass" -}}
+{{- $controlPlaneScrapeClass := .root.Values.prometheus.controlPlaneScrapeClass -}}
+{{- if .serviceMonitor.scrapeClass -}}
+{{ .serviceMonitor.scrapeClass }}
+{{- else if and .root.Values.prometheus.enabled $controlPlaneScrapeClass.enabled -}}
+{{ $controlPlaneScrapeClass.name }}
+{{- end -}}
+{{- end -}}
+
+{{/*
+Authorization of a control-plane ServiceMonitor endpoint. Left out when the ServiceMonitor uses
+prometheus.controlPlaneScrapeClass, as an endpoint's own authorization takes precedence over its scrape class.
+Takes a dict with "serviceMonitor" and "root".
+*/}}
+{{- define "kube-prometheus-stack.controlPlane.authorization" -}}
+{{- $controlPlaneScrapeClass := .root.Values.prometheus.controlPlaneScrapeClass -}}
+{{- if not (and .root.Values.prometheus.enabled $controlPlaneScrapeClass.enabled (eq (include "kube-prometheus-stack.controlPlane.scrapeClass" .) $controlPlaneScrapeClass.name)) -}}
+{{- with .serviceMonitor.authorization -}}
 authorization:
-  {{- tpl (toYaml .) $ | nindent 2 }}
-{{- end }}
-{{- end }}
-{{- end }}
+  {{- tpl (toYaml .) $.root | nindent 2 }}
+{{- end -}}
+{{- end -}}
+{{- end -}}
 
 {{/* To help configure anti-affinity rules for Prometheus pods */}}
 {{- define "kube-prometheus-stack.prometheus.pod-anti-affinity.matchExpressions" }}
