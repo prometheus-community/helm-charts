@@ -1,0 +1,55 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/helm-unittest/helm-unittest/main/schema/helm-testsuite.json
+suite: daemonset image and semver feature gates
+templates:
+  - daemonset.yaml
+tests:
+  - it: includes udev path arg with default chart appVersion
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: --path.udev.data=/host/root/run/udev/data
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: quay.io/prometheus/node-exporter:v1.12.1
+
+  - it: includes udev path arg when image.tag has digest pin
+    set:
+      image.tag: v1.12.1@sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: --path.udev.data=/host/root/run/udev/data
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: quay.io/prometheus/node-exporter:v1.12.1@sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+
+  - it: includes udev path arg and uses full image ref from image.tag
+    set:
+      image.tag: quay.io/prometheus/node-exporter:v1.6.0@sha256:d2e48098c364e61ee62d9016eed863b66331d87cf67146f2068b70ed9d9b4f98
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: --path.udev.data=/host/root/run/udev/data
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: quay.io/prometheus/node-exporter:v1.6.0@sha256:d2e48098c364e61ee62d9016eed863b66331d87cf67146f2068b70ed9d9b4f98
+
+  - it: omits udev path arg when app semver is below 1.4.0
+    set:
+      image.tag: v1.3.1
+    asserts:
+      - notContains:
+          path: spec.template.spec.containers[0].args
+          content: --path.udev.data=/host/root/run/udev/data
+
+  - it: uses Values.version for feature gate when image.tag is not semver
+    set:
+      image.tag: latest
+      version: 1.12.1
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: --path.udev.data=/host/root/run/udev/data
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: quay.io/prometheus/node-exporter:latest
