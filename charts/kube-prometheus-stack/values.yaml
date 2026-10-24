@@ -3305,6 +3305,15 @@ prometheusOperator:
         tag: 1.11.0
         sha: ""
         pullPolicy: IfNotPresent
+      ## Type of the secret created by the certgen job. Requires kube-webhook-certgen 1.11.0 or newer.
+      ## kubernetes.io/tls stores the certificates as ca.crt, tls.crt and tls.key. An existing Opaque secret is
+      ## deleted and recreated as kubernetes.io/tls with the same certificates, keeping the legacy ca, cert and key entries.
+      ## Set to "" to keep the previous Opaque secret with ca, cert and key, e.g. when using an older certgen image.
+      ## Without cert-manager and the certgen job, the chart reads ca, cert and key from the <fullname>-admission secret.
+      ## A secret created by this job as kubernetes.io/tls only contains ca.crt, tls.crt and tls.key, so replace it
+      ## before disabling the job or the admission webhooks while prometheusOperator.tls.enabled is true.
+      ##
+      secretType: kubernetes.io/tls
       resources: {}
       ## Provide a priority class name to the webhook patching job
       ##
