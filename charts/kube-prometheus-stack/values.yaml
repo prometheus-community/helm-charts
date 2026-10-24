@@ -1975,10 +1975,12 @@ kubelet:
       - sourceLabels: [__name__]
         action: drop
         regex: 'container_fs_(io_current|io_time_seconds_total|io_time_weighted_seconds_total|reads_merged_total|sector_reads_total|sector_writes_total|writes_merged_total)'
-      # Drop less useful / always zero container memory metrics.
+      # Drop less useful container memory metrics. container_memory_swap is kept because the
+      # k8s.rules.container_memory_swap recording rule and the "Memory Usage (Swap)" columns
+      # of the Compute Resources dashboards are built on it.
       - sourceLabels: [__name__]
         action: drop
-        regex: 'container_memory_(mapped_file|swap)'
+        regex: 'container_memory_mapped_file'
       # Drop less useful container process metrics.
       - sourceLabels: [__name__]
         action: drop
@@ -3345,7 +3347,7 @@ prometheusOperator:
       image:
         registry: ghcr.io
         repository: jkroepke/kube-webhook-certgen
-        tag: 1.8.9
+        tag: 1.11.0
         sha: ""
         pullPolicy: IfNotPresent
       resources: {}
@@ -5402,8 +5404,23 @@ prometheus:
   #      - nodes/proxy
   #    verbs: [ "get", "list", "watch" ]
 
-  additionalServiceMonitors: []
-  ## Name of the ServiceMonitor to create
+  ## Additional ServiceMonitors to deploy as a list or map.
+  ## Maps allow individual monitors and their fields to be merged across values files.
+  ## Set a map entry to null to remove it when overriding values.
+  ## The map key is used as the name unless an explicit name is set.
+  ## Nested lists such as endpoints are replaced when overridden.
+  ##
+  additionalServiceMonitors: null
+  ## Map example:
+  #   example-service:
+  #     selector:
+  #       matchLabels:
+  #         app: example-service
+  #     endpoints:
+  #       - port: metrics
+
+  ## List example and available fields:
+  ## Name of the ServiceMonitor to create (required for list entries)
   ##
   # - name: ""
 
@@ -5533,8 +5550,23 @@ prometheus:
     # attachMetadata:
     #   node: true
 
-  additionalPodMonitors: []
-  ## Name of the PodMonitor to create
+  ## Additional PodMonitors to deploy as a list or map.
+  ## Maps allow individual monitors and their fields to be merged across values files.
+  ## Set a map entry to null to remove it when overriding values.
+  ## The map key is used as the name unless an explicit name is set.
+  ## Nested lists such as podMetricsEndpoints are replaced when overridden.
+  ##
+  additionalPodMonitors: null
+  ## Map example:
+  #   example-pod:
+  #     selector:
+  #       matchLabels:
+  #         app: example-pod
+  #     podMetricsEndpoints:
+  #       - port: metrics
+
+  ## List example and available fields:
+  ## Name of the PodMonitor to create (required for list entries)
   ##
   # - name: ""
 

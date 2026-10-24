@@ -1,12 +1,20 @@
 {{- if and .Values.prometheus.enabled .Values.prometheus.additionalPodMonitors }}
+{{- $isMap := kindIs "map" .Values.prometheus.additionalPodMonitors }}
+{{- $hasMonitors := false }}
 apiVersion: v1
 kind: List
 items:
-{{- range .Values.prometheus.additionalPodMonitors }}
+{{- range $key, $monitor := .Values.prometheus.additionalPodMonitors }}
+{{- if $monitor }}
+{{- $hasMonitors = true }}
   - apiVersion: monitoring.coreos.com/v1
     kind: PodMonitor
     metadata:
-      name: {{ .name }}
+      {{- if $isMap }}
+      name: {{ $monitor.name | default $key | quote }}
+      {{- else }}
+      name: {{ .name | quote }}
+      {{- end }}
       namespace: {{ template "kube-prometheus-stack.namespace" $ }}
       labels:
         app: {{ template "kube-prometheus-stack.name" $ }}-prometheus
@@ -44,5 +52,9 @@ items:
       attachMetadata:
         {{- toYaml . | nindent 8 }}
     {{- end }}
+{{- end }}
+{{- end }}
+{{- if not $hasMonitors }}
+  []
 {{- end }}
 {{- end }}
