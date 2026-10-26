@@ -1,0 +1,46 @@
+suite: test extra objects
+templates:
+  - extra-objects.yaml
+tests:
+  - it: should render nothing by default
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: should render templated dict and string objects
+    set:
+      extraManifests:
+        - apiVersion: v1
+          kind: ConfigMap
+          metadata:
+            name: "{{ .Release.Name }}-dict"
+        - |
+          apiVersion: v1
+          kind: ConfigMap
+          metadata:
+            name: {{ .Release.Name }}-string
+    asserts:
+      - hasDocuments:
+          count: 2
+      - equal:
+          path: metadata.name
+          value: RELEASE-NAME-dict
+        documentIndex: 0
+      - equal:
+          path: metadata.name
+          value: RELEASE-NAME-string
+        documentIndex: 1
+
+  - it: should render values of a dict
+    set:
+      extraManifests:
+        policy:
+          apiVersion: networking.k8s.io/v1
+          kind: NetworkPolicy
+          metadata:
+            name: "{{ .Release.Name }}"
+    asserts:
+      - hasDocuments:
+          count: 1
+      - isKind:
+          of: NetworkPolicy
