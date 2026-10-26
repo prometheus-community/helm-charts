@@ -309,6 +309,9 @@ spec:
         securityContext:
 {{ toYaml .Values.kubeRBACProxy.containerSecurityContext | indent 10 }}
 {{- end }}
+      {{- if eq (int (.Values.kubeRBACProxy.proxyEndpointsPort | default 8888)) (int (.Values.kubeRBACProxy.telemetryProxyEndpointsPort | default 8889)) }}
+      {{- fail "kubeRBACProxy.proxyEndpointsPort and kubeRBACProxy.telemetryProxyEndpointsPort must differ, as both kube-rbac-proxy containers share the pod network" }}
+      {{- end }}
       - name: kube-rbac-proxy-telemetry
         args:
         {{-  if .Values.kubeRBACProxy.extraArgs  }}
@@ -319,7 +322,7 @@ spec:
         {{- end }}
         - --secure-listen-address=:{{ $proxyTelemetryPort }}
         - --upstream=http://127.0.0.1:{{ $telemetryPort }}/
-        - --proxy-endpoints-port=8889
+        - --proxy-endpoints-port={{ .Values.kubeRBACProxy.telemetryProxyEndpointsPort | default 8889 }}
         - --config-file=/etc/kube-rbac-proxy-config/config-file.yaml
         volumeMounts:
           - name: kube-rbac-proxy-config
@@ -332,7 +335,7 @@ spec:
         ports:
           - containerPort: {{ $proxyTelemetryPort }}
             name: metrics
-          - containerPort: 8889
+          - containerPort: {{ .Values.kubeRBACProxy.telemetryProxyEndpointsPort | default 8889 }}
             name: metrics-healthz
         readinessProbe:
           httpGet:

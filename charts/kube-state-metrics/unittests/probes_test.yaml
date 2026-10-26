@@ -55,6 +55,9 @@ tests:
       - contains:
           path: spec.template.spec.containers[0].args
           content: --telemetry-host=127.0.0.1
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: --telemetry-port=9091
       - equal:
           path: spec.template.spec.containers[0].readinessProbe.httpGet.port
           value: 8081
@@ -105,3 +108,31 @@ tests:
           content:
             containerPort: 9443
             name: metrics
+
+  - it: should give each kube-rbac-proxy its own proxy endpoints port
+    set:
+      kubeRBACProxy:
+        enabled: true
+        proxyEndpointsPort: 8889
+        telemetryProxyEndpointsPort: 8890
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[1].args
+          content: --proxy-endpoints-port=8889
+      - contains:
+          path: spec.template.spec.containers[2].args
+          content: --proxy-endpoints-port=8890
+      - contains:
+          path: spec.template.spec.containers[2].ports
+          content:
+            containerPort: 8890
+            name: metrics-healthz
+
+  - it: should fail when both kube-rbac-proxy containers get the same proxy endpoints port
+    set:
+      kubeRBACProxy:
+        enabled: true
+        proxyEndpointsPort: 8889
+    asserts:
+      - failedTemplate:
+          errorMessage: kubeRBACProxy.proxyEndpointsPort and kubeRBACProxy.telemetryProxyEndpointsPort must differ, as both kube-rbac-proxy containers share the pod network
