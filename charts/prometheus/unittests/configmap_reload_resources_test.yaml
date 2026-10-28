@@ -1,0 +1,39 @@
+suite: test configmap-reload resources
+templates:
+  - deploy.yaml
+release:
+  name: prometheus
+tests:
+  - it: sets default resources on the configmap-reload container
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[?(@.name == "prometheus-server-configmap-reload")].resources
+          value:
+            limits:
+              cpu: 10m
+              memory: 50Mi
+            requests:
+              cpu: 10m
+              memory: 50Mi
+
+  - it: omits resources when set to null
+    set:
+      configmapReload.prometheus.resources: null
+    asserts:
+      - notExists:
+          path: spec.template.spec.containers[?(@.name == "prometheus-server-configmap-reload")].resources
+
+  - it: allows overriding requests and dropping limits
+    set:
+      configmapReload.prometheus.resources:
+        limits: null
+        requests:
+          cpu: 5m
+          memory: 32Mi
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[?(@.name == "prometheus-server-configmap-reload")].resources
+          value:
+            requests:
+              cpu: 5m
+              memory: 32Mi
