@@ -59,7 +59,7 @@ In release 6.0, the chart API version has been increased to v2. From now on, the
 
 The minimum Kubernetes version supported by the chart has been raised to 1.19.
 
-Labels and selectors have been replaced following [Helm 3 label and annotation best practices](https://helmsh/docs/chart_best_practices/labels/):
+Labels and selectors have been replaced following [Helm 3 label and annotation best practices](https://helm.sh/docs/chart_best_practices/labels/):
 
 | Previous            | Current                      |
 |---------------------|------------------------------|
