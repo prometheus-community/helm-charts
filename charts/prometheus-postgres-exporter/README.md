@@ -61,7 +61,7 @@ Releases that previously installed without a password were producing a `Secret` 
 
 #### To 7.0.0
 
-Labels and selectors have been replaced following [Helm 3 label and annotation best practices](https://helmsh/docs/chart_best_practices/labels/):
+Labels and selectors have been replaced following [Helm 3 label and annotation best practices](https://helm.sh/docs/chart_best_practices/labels/):
 
 | Previous            | Current                      |
 |---------------------|------------------------------|
