@@ -1,0 +1,88 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/helm-unittest/helm-unittest/main/schema/helm-testsuite.json
+suite: test prometheus-operator TLS without the admission webhook
+templates:
+  - prometheus-operator/deployment.yaml
+release:
+  name: kps
+tests:
+  - it: should render with the defaults, where the patch job creates the secret
+    asserts:
+      - isKind:
+          of: Deployment
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: tls-secret
+            secret:
+              defaultMode: 420
+              secretName: kps-kube-prometheus-stack-admission
+
+  - it: should fail rather than mount a TLS secret the chart does not create
+    set:
+      prometheusOperator.admissionWebhooks.enabled: false
+    asserts:
+      - failedTemplate:
+          errorMessage: prometheusOperator.tls.enabled is true, but nothing in this release will create the TLS secret it mounts, so the operator pod would stay in ContainerCreating. That secret is created by the admission webhook patch job (prometheusOperator.admissionWebhooks.enabled and prometheusOperator.admissionWebhooks.patch.enabled, both true by default) or by cert-manager (prometheusOperator.admissionWebhooks.certManager.enabled). Set prometheusOperator.tls.secretName to a secret you manage yourself, holding the cert and key keys; or set prometheusOperator.admissionWebhooks.certManager.enabled=true; or set prometheusOperator.tls.enabled=false to run the operator without TLS on its metrics endpoint.
+
+  - it: should fail when the patch job is disabled, which also leaves no secret
+    set:
+      prometheusOperator.admissionWebhooks.patch.enabled: false
+    asserts:
+      - failedTemplate: {}
+
+  - it: should render and mount the named secret when one is managed by the user
+    set:
+      prometheusOperator.admissionWebhooks.enabled: false
+      prometheusOperator.tls.secretName: my-operator-tls
+    asserts:
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: tls-secret
+            secret:
+              defaultMode: 420
+              secretName: my-operator-tls
+
+  - it: should prefer the named secret over the admission secret even with the webhook enabled
+    set:
+      prometheusOperator.tls.secretName: my-operator-tls
+    asserts:
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: tls-secret
+            secret:
+              defaultMode: 420
+              secretName: my-operator-tls
+
+  - it: should render when cert-manager issues the certificate instead
+    set:
+      prometheusOperator.admissionWebhooks.enabled: false
+      prometheusOperator.admissionWebhooks.certManager.enabled: true
+    asserts:
+      - isKind:
+          of: Deployment
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: --web.enable-tls=true
+
+  - it: should render without TLS when the operator's TLS is disabled
+    set:
+      prometheusOperator.admissionWebhooks.enabled: false
+      prometheusOperator.tls.enabled: false
+    asserts:
+      - isKind:
+          of: Deployment
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: --web.enable-tls=false
+      - isEmpty:
+          path: spec.template.spec.volumes
+
+  - it: should not fail when the operator itself is disabled
+    set:
+      prometheusOperator.enabled: false
+      prometheusOperator.admissionWebhooks.enabled: false
+    asserts:
+      - hasDocuments:
+          count: 0
