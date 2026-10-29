@@ -3050,9 +3050,18 @@ prometheusOperator:
   strategy: {}
 
   ## Prometheus-Operator v0.39.0 and later support TLS natively.
+  ## The certificate comes from the Secret created either by the admission webhook patch job
+  ## (admissionWebhooks.enabled and admissionWebhooks.patch.enabled) or by cert-manager
+  ## (admissionWebhooks.certManager.enabled). With neither of those, the chart fails the render
+  ## rather than leave the operator pod in ContainerCreating waiting for a Secret nothing creates.
   ##
   tls:
     enabled: true
+    ## Name of a secret you manage yourself holding the operator's TLS material, with the cert, key
+    ## and ca keys. Leave empty to use the secret created by the admission webhook patch job or by
+    ## cert-manager. Required when neither of those creates it, since the chart cannot otherwise
+    ## know the certificate exists.
+    secretName: ""
     # Value must match version names from https://pkg.go.dev/crypto/tls#pkg-constants
     tlsMinVersion: VersionTLS13
     # The default webhook port is 10250 in order to work out-of-the-box in GKE private clusters and avoid adding firewall rules.

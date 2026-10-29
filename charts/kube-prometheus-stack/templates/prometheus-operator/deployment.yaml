@@ -1,6 +1,9 @@
 {{- $namespace := printf "%s" (include "kube-prometheus-stack.namespace" .) }}
 {{- $defaultKubeletSvcName := printf "%s-kubelet" (include "kube-prometheus-stack.fullname" .) }}
 {{- if .Values.prometheusOperator.enabled }}
+{{- if and .Values.prometheusOperator.tls.enabled (not .Values.prometheusOperator.tls.secretName) (not .Values.prometheusOperator.admissionWebhooks.certManager.enabled) (not (and .Values.prometheusOperator.admissionWebhooks.enabled .Values.prometheusOperator.admissionWebhooks.patch.enabled)) }}
+{{- fail "prometheusOperator.tls.enabled is true, but nothing in this release will create the TLS secret it mounts, so the operator pod would stay in ContainerCreating. That secret is created by the admission webhook patch job (prometheusOperator.admissionWebhooks.enabled and prometheusOperator.admissionWebhooks.patch.enabled, both true by default) or by cert-manager (prometheusOperator.admissionWebhooks.certManager.enabled). Set prometheusOperator.tls.secretName to a secret you manage yourself, holding the cert and key keys; or set prometheusOperator.admissionWebhooks.certManager.enabled=true; or set prometheusOperator.tls.enabled=false to run the operator without TLS on its metrics endpoint." }}
+{{- end }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -216,7 +219,7 @@ spec:
         - name: tls-secret
           secret:
             defaultMode: 420
-            secretName: {{ template "kube-prometheus-stack.fullname" . }}-admission
+            secretName: {{ .Values.prometheusOperator.tls.secretName | default (printf "%s-admission" (include "kube-prometheus-stack.fullname" .)) }}
         {{- end }}
         {{- with .Values.prometheusOperator.extraVolumes }}
         {{- toYaml . | nindent 8 }}
