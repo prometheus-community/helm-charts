@@ -51,7 +51,7 @@ _See [helm upgrade](https://helm.sh/docs/helm/helm_upgrade/) for command documen
 
 ### To 7.0.0
 
-In Release 7.0.0, the chart has dropped support for PodSecurityPolicy, which was remvoed in k8s 1.25.
+In Release 7.0.0, the chart has dropped support for PodSecurityPolicy, which was removed in k8s 1.25.
 
 #### To 6.0.0
 
