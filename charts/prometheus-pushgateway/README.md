@@ -11,7 +11,7 @@ The chart is distributed as an [OCI Artifact](https://helm.sh/docs/topics/regist
 - OCI Artifact: `oci://ghcr.io/prometheus-community/charts/prometheus-pushgateway`
 - Helm Repository: `https://prometheus-community.github.io/helm-charts` with chart `prometheus-pushgateway`
 
-The installation instructions use the OCI registry. Refer to the [`helm repo`]([`helm repo`](https://helm.sh/docs/helm/helm_repo/)) command documentation for information on installing charts via the traditional repository.
+The installation instructions use the OCI registry. Refer to the [`helm repo`](https://helm.sh/docs/helm/helm_repo/) command documentation for information on installing charts via the traditional repository.
 
 ### Install Chart
 
