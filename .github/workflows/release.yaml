@@ -72,6 +72,47 @@ jobs:
           CR_KEYRING: "~/.gnupg/secring.gpg"
           CR_PASSPHRASE_FILE: "${{ runner.temp }}/gpg-passphrase"
 
+      # Generated notes list every PR since the previous tag of the chart, across all charts.
+      - name: Limit release notes to the released chart
+        env:
+          GH_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
+          NOTES_FILE: "${{ runner.temp }}/release-notes.md"
+        run: |
+          shopt -s nullglob
+          for pkg in .cr-release-packages/*.tgz; do
+            chart="$(helm show chart "${pkg}")"
+            name="$(yq -r '.name' <<< "${chart}")"
+            tag="${name}-$(yq -r '.version' <<< "${chart}")"
+
+            body="$(gh release view "${tag}" --repo "${GITHUB_REPOSITORY}" --json body --jq '.body')"
+            awk -v chart="${name}" '
+              function flush() {
+                if (n > 0) { out = out header "\n\n" buf "\n" }
+                header = ""; buf = ""; n = 0
+              }
+              /^## / { flush(); header = $0; section = ($0 == "## New Contributors") ? "contrib" : "changes"; next }
+              /^\*\*Full Changelog\*\*/ { flush(); section = ""; out = out $0 "\n"; next }
+              section == "changes" && /^\* / {
+                if (index($0, "* [" chart "] ") == 1) { buf = buf $0 "\n"; n++; kept[$NF] = 1 }
+                next
+              }
+              section == "contrib" && /^\* / {
+                if ($NF in kept) { buf = buf $0 "\n"; n++ }
+                next
+              }
+              section != "" { next }
+              { out = out $0 "\n" }
+              END { flush(); printf "%s", out }
+            ' <<< "${body}" > "${NOTES_FILE}"
+
+            notes="$(< "${NOTES_FILE}")"
+            if [[ "${notes}" == "${body}" ]]; then
+              echo "Release notes of ${tag} already limited to ${name}"
+            else
+              gh release edit "${tag}" --repo "${GITHUB_REPOSITORY}" --notes-file "${NOTES_FILE}"
+            fi
+          done
+
       # see https://github.com/helm/chart-releaser/issues/183
       - name: Login to GitHub Container Registry
         uses: docker/login-action@81c6f93d4bc991e510b342a00b419b3bb4efc5c6 # v4.7.0
