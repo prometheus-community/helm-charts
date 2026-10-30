@@ -59,19 +59,22 @@ spec:
   selector:
     matchLabels:
       {{- include "prometheus.server.matchLabels" . | nindent 6 }}
+  {{- if not .Values.server.daemonSet.enabled }}
   replicas: {{ .Values.server.replicaCount }}
+  {{- end }}
   revisionHistoryLimit: {{ .Values.server.revisionHistoryLimit }}
   template:
     metadata:
-    {{- if .Values.server.podAnnotations }}
       annotations:
-        {{ toYaml .Values.server.podAnnotations | nindent 8 }}
-    {{- end }}
+        kubectl.kubernetes.io/default-container: {{ template "prometheus.name" . }}-{{ .Values.server.name }}
+        {{- with .Values.server.podAnnotations }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
       labels:
         {{- include "prometheus.server.labels" . | nindent 8 }}
-        {{- if .Values.server.podLabels}}
-        {{ toYaml .Values.server.podLabels | nindent 8 }}
-        {{- end}}
+        {{- with .Values.server.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
     spec:
 {{- if .Values.server.priorityClassName }}
       priorityClassName: "{{ .Values.server.priorityClassName }}"
@@ -112,9 +115,9 @@ spec:
           {{- end }}
           args:
             - --watched-dir=/etc/config
-          {{- $default_url := "http://127.0.0.1:9090/-/reload" }}
+          {{- $default_url := (printf "http://127.0.0.1:%s/-/reload" (include "prometheus.port" .)) }}
           {{- with .Values.server.prefixURL }}
-          {{- $default_url = printf "http://127.0.0.1:9090%s/-/reload" . }}
+          {{- $default_url = printf "http://127.0.0.1:%s%s/-/reload" (include "prometheus.port" .) . }}
           {{- end }}
           {{- if .Values.configmapReload.prometheus.containerPort }}
             - --listen-address=0.0.0.0:{{ .Values.configmapReload.prometheus.containerPort }}
@@ -177,7 +180,7 @@ spec:
           {{- if .Values.server.image.digest }}
           image: "{{ tpl .Values.server.image.repository . }}@{{ tpl .Values.server.image.digest . }}"
           {{- else }}
-          image: "{{ tpl .Values.server.image.repository . }}:{{ tpl .Values.server.image.tag . | default .Chart.AppVersion}}"
+          image: "{{ tpl .Values.server.image.repository . }}:{{ tpl .Values.server.image.tag . | default .Chart.AppVersion}}{{ if .Values.server.image.distroless }}-distroless{{ end }}"
           {{- end }}
           imagePullPolicy: "{{ .Values.server.image.pullPolicy }}"
           {{- with .Values.server.command }}
@@ -224,7 +227,7 @@ spec:
           {{- end }}
         {{- end }}
           ports:
-            - containerPort: 9090
+            - containerPort: {{ include "prometheus.port" . }}
           {{- if .Values.server.portName }}
               name: {{ .Values.server.portName }}
           {{- end }}
@@ -235,7 +238,7 @@ spec:
             {{- if not .Values.server.tcpSocketProbeEnabled }}
             httpGet:
               path: {{ .Values.server.prefixURL }}/-/ready
-              port: 9090
+              port: {{ default (include "prometheus.port" .) .Values.server.portName }}
               scheme: {{ .Values.server.probeScheme }}
               {{- with .Values.server.probeHeaders }}
               httpHeaders:
@@ -243,7 +246,7 @@ spec:
               {{- end }}
             {{- else }}
             tcpSocket:
-              port: 9090
+              port: {{ default (include "prometheus.port" .) .Values.server.portName }}
             {{- end }}
             initialDelaySeconds: {{ .Values.server.readinessProbeInitialDelay }}
             periodSeconds: {{ .Values.server.readinessProbePeriodSeconds }}
@@ -254,7 +257,7 @@ spec:
             {{- if not .Values.server.tcpSocketProbeEnabled }}
             httpGet:
               path: {{ .Values.server.prefixURL }}/-/healthy
-              port: 9090
+              port: {{ default (include "prometheus.port" .) .Values.server.portName }}
               scheme: {{ .Values.server.probeScheme }}
               {{- with .Values.server.probeHeaders }}
               httpHeaders:
@@ -262,7 +265,7 @@ spec:
               {{- end }}
             {{- else }}
             tcpSocket:
-              port: 9090
+              port: {{ default (include "prometheus.port" .) .Values.server.portName }}
             {{- end }}
             initialDelaySeconds: {{ .Values.server.livenessProbeInitialDelay }}
             periodSeconds: {{ .Values.server.livenessProbePeriodSeconds }}
@@ -274,7 +277,7 @@ spec:
             {{- if not .Values.server.tcpSocketProbeEnabled }}
             httpGet:
               path: {{ .Values.server.prefixURL }}/-/healthy
-              port: 9090
+              port: {{ default (include "prometheus.port" .) .Values.server.portName }}
               scheme: {{ .Values.server.probeScheme }}
               {{- if .Values.server.probeHeaders }}
               httpHeaders:
@@ -285,7 +288,7 @@ spec:
               {{- end }}
             {{- else }}
             tcpSocket:
-              port: 9090
+              port: {{ default (include "prometheus.port" .) .Values.server.portName }}
             {{- end }}
             failureThreshold: {{ .Values.server.startupProbe.failureThreshold }}
             periodSeconds: {{ .Values.server.startupProbe.periodSeconds }}

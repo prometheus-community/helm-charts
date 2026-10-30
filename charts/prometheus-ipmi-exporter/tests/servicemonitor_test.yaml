@@ -1,0 +1,140 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/helm-unittest/helm-unittest/main/schema/helm-testsuite.json
+suite: test servicemonitor
+templates:
+  - servicemonitor.yaml
+capabilities:
+  apiVersions:
+    - monitoring.coreos.com/v1
+tests:
+  - it: should not render servicemonitor when disabled
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: should render servicemonitor when enabled
+    set:
+      serviceMonitor:
+        enabled: true
+    asserts:
+      - isKind:
+          of: ServiceMonitor
+      - equal:
+          path: apiVersion
+          value: monitoring.coreos.com/v1
+
+  - it: should use release namespace by default
+    set:
+      serviceMonitor:
+        enabled: true
+    asserts:
+      - equal:
+          path: spec.namespaceSelector.matchNames[0]
+          value: NAMESPACE
+
+  - it: should set custom namespace when specified
+    set:
+      serviceMonitor:
+        enabled: true
+        namespace: monitoring
+    asserts:
+      - equal:
+          path: metadata.namespace
+          value: monitoring
+
+  - it: should set custom interval
+    set:
+      serviceMonitor:
+        enabled: true
+        interval: 30s
+    asserts:
+      - equal:
+          path: spec.endpoints[0].interval
+          value: 30s
+
+  - it: should set custom telemetry path
+    set:
+      serviceMonitor:
+        enabled: true
+        telemetryPath: /custom-metrics
+    asserts:
+      - equal:
+          path: spec.endpoints[0].path
+          value: /custom-metrics
+
+  - it: should set scrape timeout
+    set:
+      serviceMonitor:
+        enabled: true
+        timeout: 15s
+    asserts:
+      - equal:
+          path: spec.endpoints[0].scrapeTimeout
+          value: 15s
+
+  - it: should set custom labels
+    set:
+      serviceMonitor:
+        enabled: true
+        labels:
+          prometheus: kube-prometheus
+          release: monitoring
+    asserts:
+      - equal:
+          path: metadata.labels.prometheus
+          value: kube-prometheus
+      - equal:
+          path: metadata.labels.release
+          value: monitoring
+
+  - it: should set target labels
+    set:
+      serviceMonitor:
+        enabled: true
+        targetLabels:
+          - app
+          - version
+    asserts:
+      - contains:
+          path: spec.targetLabels
+          content: app
+      - contains:
+          path: spec.targetLabels
+          content: version
+
+  - it: should set metric relabelings
+    set:
+      serviceMonitor:
+        enabled: true
+        metricRelabelings:
+          - sourceLabels: [__name__]
+            targetLabel: __name__
+            replacement: custom_$1
+    asserts:
+      - equal:
+          path: spec.endpoints[0].metricRelabelings[0].sourceLabels[0]
+          value: __name__
+      - equal:
+          path: spec.endpoints[0].metricRelabelings[0].targetLabel
+          value: __name__
+
+  - it: should use correct selector labels
+    set:
+      serviceMonitor:
+        enabled: true
+    asserts:
+      - equal:
+          path: spec.selector.matchLabels
+          value:
+            app.kubernetes.io/name: prometheus-ipmi-exporter
+            app.kubernetes.io/instance: RELEASE-NAME
+
+  - it: should target correct port
+    set:
+      serviceMonitor:
+        enabled: true
+      service:
+        port: 9290
+    asserts:
+      - equal:
+          path: spec.endpoints[0].targetPort
+          value: 9290

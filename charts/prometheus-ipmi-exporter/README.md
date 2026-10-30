@@ -52,3 +52,36 @@ See [Customizing the Chart Before Installing](https://helm.sh/docs/intro/using_h
 ```console
 helm show values oci://ghcr.io/prometheus-community/charts/prometheus-ipmi-exporter
 ```
+
+### ScrapeConfig vs ServiceMonitor
+
+This chart supports both ServiceMonitor (v1) and ScrapeConfig (v1alpha1) from prometheus-operator.
+
+**ScrapeConfig** is recommended for:
+
+- Scraping IPMI targets in remote mode (exporter as a proxy)
+- Using file-based service discovery
+- More flexibility with relabeling
+
+**Example - Remote IPMI scraping:**
+
+```yaml
+scrapeConfig:
+  enabled: true
+  mode: remote  # Uses /ipmi endpoint with target relabeling
+  staticConfigs:
+    - targets:
+        - 192.168.1.10
+        - 192.168.1.11
+```
+
+**Example - Local exporter metrics:**
+
+```yaml
+scrapeConfig:
+  enabled: true
+  mode: local  # Uses /metrics endpoint directly
+  staticConfigs:
+    - targets:
+        - ipmi-exporter:9290
+```

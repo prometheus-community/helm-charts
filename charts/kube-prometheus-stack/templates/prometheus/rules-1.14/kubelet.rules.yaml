@@ -5,6 +5,7 @@ https://github.com/prometheus-community/helm-charts/tree/main/charts/kube-promet
 */ -}}
 {{- $kubeTargetVersion := default .Capabilities.KubeVersion.GitVersion .Values.kubeTargetVersionOverride }}
 {{- if and (semverCompare ">=1.14.0-0" $kubeTargetVersion) (semverCompare "<9.9.9-9" $kubeTargetVersion) .Values.defaultRules.create .Values.kubelet.enabled .Values.defaultRules.rules.kubelet }}
+{{- $kubeletJob := include "kube-prometheus-stack-kubelet.name" . }}
 apiVersion: monitoring.coreos.com/v1
 kind: PrometheusRule
 metadata:
@@ -27,9 +28,9 @@ spec:
     - expr: |-
         histogram_quantile(
           0.99,
-          sum(rate(kubelet_pleg_relist_duration_seconds_bucket{job="kubelet", metrics_path="/metrics"}[5m])) by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster, instance, le)
+          sum(rate(kubelet_pleg_relist_duration_seconds_bucket{job="{{ $kubeletJob }}", metrics_path="/metrics"}[5m])) by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster, instance, le)
           * on ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster, instance) group_left (node)
-          max by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster, instance, node) (kubelet_node_name{job="kubelet", metrics_path="/metrics"})
+          max by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster, instance, node) (kubelet_node_name{job="{{ $kubeletJob }}", metrics_path="/metrics"})
         )
       labels:
         quantile: '0.99'
@@ -45,9 +46,9 @@ spec:
     - expr: |-
         histogram_quantile(
           0.9,
-          sum(rate(kubelet_pleg_relist_duration_seconds_bucket{job="kubelet", metrics_path="/metrics"}[5m])) by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster, instance, le)
+          sum(rate(kubelet_pleg_relist_duration_seconds_bucket{job="{{ $kubeletJob }}", metrics_path="/metrics"}[5m])) by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster, instance, le)
           * on ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster, instance) group_left (node)
-          max by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster, instance, node) (kubelet_node_name{job="kubelet", metrics_path="/metrics"})
+          max by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster, instance, node) (kubelet_node_name{job="{{ $kubeletJob }}", metrics_path="/metrics"})
         )
       labels:
         quantile: '0.9'
@@ -63,9 +64,9 @@ spec:
     - expr: |-
         histogram_quantile(
           0.5,
-          sum(rate(kubelet_pleg_relist_duration_seconds_bucket{job="kubelet", metrics_path="/metrics"}[5m])) by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster, instance, le)
+          sum(rate(kubelet_pleg_relist_duration_seconds_bucket{job="{{ $kubeletJob }}", metrics_path="/metrics"}[5m])) by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster, instance, le)
           * on ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster, instance) group_left (node)
-          max by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster, instance, node) (kubelet_node_name{job="kubelet", metrics_path="/metrics"})
+          max by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster, instance, node) (kubelet_node_name{job="{{ $kubeletJob }}", metrics_path="/metrics"})
         )
       labels:
         quantile: '0.5'

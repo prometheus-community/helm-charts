@@ -30,6 +30,9 @@ spec:
     - {{ $cidr }}
   {{- end }}
 {{- end }}
+{{- if .Values.server.service.loadBalancerClass }}
+  loadBalancerClass: {{ .Values.server.service.loadBalancerClass }}
+{{- end }}
 {{- if .Values.server.service.externalTrafficPolicy }}
   externalTrafficPolicy: {{ .Values.server.service.externalTrafficPolicy }}
 {{- end }}
@@ -37,7 +40,7 @@ spec:
     - name: http
       port: {{ .Values.server.service.servicePort }}
       protocol: TCP
-      targetPort: 9090
+      targetPort: {{ default (include "prometheus.port" .) .Values.server.portName }}
     {{- if ( and (eq .Values.server.service.type "NodePort" ) (not (empty .Values.server.service.nodePort)) ) }}
       nodePort: {{ .Values.server.service.nodePort }}
     {{- end }}

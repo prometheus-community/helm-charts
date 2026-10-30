@@ -19,6 +19,20 @@ You can then run `helm search repo prometheus-community` to see the charts.
 
 OCI artifacts of all Prometheus Helm charts are available in [ghcr.io](https://github.com/orgs/prometheus-community/packages?repo_name=helm-charts).
 
+## Helm Provenance and Integrity
+
+All charts in this repository are signed. More information about how to verify charts can be found in the official [Helm documentation](https://helm.sh/docs/topics/provenance/).
+
+A local running gpg agent is mandatory.
+
+To import the signing key for this repository, please run the following command:
+
+```console
+curl https://prometheus-community.github.io/helm-charts/pubkey.gpg | gpg --import
+```
+
+After importing the key, you can use the `--verify` flag during `helm install` to enable chart signature validation.
+
 ## Contributing
 
 The source code of all [Prometheus](https://prometheus.io) community [Helm](https://helm.sh) charts can be found on GitHub: <https://github.com/prometheus-community/helm-charts/>
