@@ -175,7 +175,7 @@ Set `namespaceOverride` to deploy chart resources into a namespace different fro
 
 In order to get metrics for GCS you need to ensure the metrics interval is >
 24h.  You can read more information about this in [this bug
-report](https://github.com/frodenas/stackdriver_exporter/issues/14).
+report](https://github.com/prometheus-community/stackdriver_exporter/issues/14).
 
 The easiest way to do this is to create two separate exporters with different
 prefixes and intervals, to ensure you gather all appropriate metrics.
