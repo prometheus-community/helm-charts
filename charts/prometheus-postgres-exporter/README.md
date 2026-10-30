@@ -2,33 +2,33 @@
 
 Prometheus exporter for [PostgreSQL](https://www.postgresql.org/about/servers/) server metrics.
 
-This chart bootstraps a prometheus [postgres exporter](https://github.com/prometheus-community/postgres_exporter) deployment on a [Kubernetes](http://kubernetes.io) cluster using the [Helm](https://helm.sh) package manager.
+This chart bootstraps a Prometheus [Postgres exporter](https://github.com/prometheus-community/postgres_exporter) deployment on a [Kubernetes](http://kubernetes.io) cluster using the [Helm](https://helm.sh) package manager.
 
 ## Prerequisites
 
 - Kubernetes 1.16+
 - Helm 3+
 
-## Add Helm Chart Repository
+## Usage
+
+The chart is distributed as an [OCI Artifact](https://helm.sh/docs/topics/registries/) as well as via a traditional [Helm Repository](https://helm.sh/docs/topics/chart_repository/).
+
+- OCI Artifact: `oci://ghcr.io/prometheus-community/charts/prometheus-postgres-exporter`
+- Helm Repository: `https://prometheus-community.github.io/helm-charts` with chart `prometheus-postgres-exporter`
+
+The installation instructions use the OCI registry. Refer to the [`helm repo`]([`helm repo`](https://helm.sh/docs/helm/helm_repo/)) command documentation for information on installing charts via the traditional repository.
+
+### Install Chart
 
 ```console
-helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
-helm repo update
+helm install [RELEASE_NAME] oci://ghcr.io/prometheus-community/charts/prometheus-postgres-exporter
 ```
 
-_See [`helm repo`](https://helm.sh/docs/helm/helm_repo/) for command documentation._
-
-## Install Chart
-
-```console
-helm install [RELEASE_NAME] prometheus-community/prometheus-postgres-exporter
-```
-
-_See [configuration](#configuring) below._
+_See [configuration](#configuration) below._
 
 _See [helm install](https://helm.sh/docs/helm/helm_install/) for command documentation._
 
-## Uninstall Chart
+### Uninstall Chart
 
 ```console
 helm uninstall [RELEASE_NAME]
@@ -38,13 +38,56 @@ This removes all the Kubernetes components associated with the chart and deletes
 
 _See [helm uninstall](https://helm.sh/docs/helm/helm_uninstall/) for command documentation._
 
-## Upgrading
+### Upgrading Chart
 
-### To 6.0.0
+```console
+helm upgrade [RELEASE_NAME] oci://ghcr.io/prometheus-community/charts/prometheus-postgres-exporter --install
+```
+
+_See [helm upgrade](https://helm.sh/docs/helm/helm_upgrade/) for command documentation._
+
+#### To 8.0.0
+
+The hardcoded fallback password previously baked into the generated `Secret` when `config.datasource.password` was unset has been removed. The chart now fails at render time if no password source is configured.
+
+Before upgrading, set exactly one of the following:
+
+- `config.datasource.password` (templated with `tpl`)
+- `config.datasource.passwordFile`
+- `config.datasource.passwordSecret` (reference to an existing `Secret`)
+- `config.datasourceSecret` (reference to an existing `Secret` providing the full data source URI)
+
+Releases that previously installed without a password were producing a `Secret` containing a known plaintext value and an exporter that could not authenticate; configuring one of the options above is required to upgrade.
+
+#### To 7.0.0
+
+Labels and selectors have been replaced following [Helm 3 label and annotation best practices](https://helm.sh/docs/chart_best_practices/labels/):
+
+| Previous            | Current                      |
+|---------------------|------------------------------|
+| app                 | app.kubernetes.io/name       |
+| chart               | helm.sh/chart                |
+| [none]              | app.kubernetes.io/version    |
+| heritage            | [none]                       |
+| release             | app.kubernetes.io/instance   |
+
+As the change is affecting immutable selector labels, the deployment must be deleted before upgrading the release, e.g.:
+
+```console
+kubectl delete deploy -l app=prometheus-postgres-exporter --cascade=orphan
+```
+
+Once the resources have been deleted, you can upgrade the release:
+
+```console
+helm upgrade -i RELEASE_NAME prometheus-community/prometheus-postgres-exporter
+```
+
+#### To 6.0.0
 
 Image repository has been split into two values: the new `image.registry` value and the already existing `image.repository` value. No change is required when using the default for `image.repository`. If you have previously modified field `image.repository`, please, set the two fields accordingly.
 
-### To 5.0.0
+#### To 5.0.0
 
 Deprecated options `auto-discover-databases`, `constantLabels`, `exclude-databases` & `include-databases` has been removed.
 Deprecated custom query config has been removed.
@@ -54,18 +97,18 @@ Labels are templated now.
 Add default securityContext and PodSecurityContext.
 LivenessProbe timeout has been raised to 3.
 
-### To 4.6.0
+#### To 4.6.0
 
 This release adds functionality to template the variables inside `config.datasource` by means of allowing the `tpl` function in the resources that make use of it. This functionality is useful when you want to do sub-charting (e.g. in a postgres chart) and you want to avoid the duplication of variables inside `config.datasource`.
 
 Compared to the previous release (4.5.0) the only thing that changed is the fact that you can no longer leave the `config.datasource.host` variable blank. Leaving it blank could cause errors with the `tpl` function. However, the default value was changed to `''` so this error is not expected to happen.
 
-### To 4.0.0
+#### To 4.0.0
 
 This release removes the `pg_database` query from `config.queries` as it has been converted to a built-in collector
 in postgres_exporter v0.11.0. Any customizations to the removed query are now rendered useless and thus should be removed.
 
-### To 3.0.0
+#### To 3.0.0
 
 This release introduces changes to accommodate Postgres 13 or newer versions by default.
 Older Postgres instances have now to overwrite the `pg_stat_statements` query of `config.queries` with following
@@ -101,7 +144,7 @@ WHERE t2.rolname != 'rdsadmin'
   AND queryid IS NOT NULL `
 ```
 
-### To 2.0.0
+#### To 2.0.0
 
 The primary change in 2.0.0 is the Chart API from v1 to v2. This now requires Helm3.
 Backwards compatibility is not guaranteed unless you modify the labels used on the chart's deployments.
@@ -112,18 +155,13 @@ is prometheus-postgres-exporter:
 kubectl patch deployment prometheus-postgres-exporter --type=json -p='[{"op": "remove", "path": "/spec/selector/matchLabels/chart"}]'
 ```
 
-### Other minor version upgrade
+## Configuration
+
+This chart can scrape metrics using either a [ServiceMonitor](https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/api-reference/api.md#servicemonitor) (`serviceMonitor.enabled`) or a [PodMonitor](https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/api-reference/api.md#podmonitor) (`podMonitor.enabled`) for the Prometheus Operator. Use PodMonitor when scraping pods directly without going through the Kubernetes Service.
+
+See [Customizing the Chart Before Installing](https://helm.sh/docs/intro/using_helm/#customizing-the-chart-before-installing).
+To see all configurable options with detailed comments, visit the chart's [values.yaml](./values.yaml), or run this command:
 
 ```console
-helm upgrade [RELEASE_NAME] [CHART] --install
-```
-
-_See [helm upgrade](https://helm.sh/docs/helm/helm_upgrade/) for command documentation._
-
-## Configuring
-
-See [Customizing the Chart Before Installing](https://helm.sh/docs/intro/using_helm/#customizing-the-chart-before-installing). To see all configurable options with detailed comments, visit the chart's [values.yaml](./values.yaml), or run these configuration commands:
-
-```console
-helm show values prometheus-community/prometheus-postgres-exporter
+helm show values oci://ghcr.io/prometheus-community/charts/prometheus-postgres-exporter
 ```

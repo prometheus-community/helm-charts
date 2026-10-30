@@ -62,9 +62,7 @@ app.kubernetes.io/managed-by: {{ .Release.Service }}
 app.kubernetes.io/component: metrics
 app.kubernetes.io/part-of: {{ template "prometheus-nginx-exporter.name" . }}
 {{- include "prometheus-nginx-exporter.selectorLabels" . }}
-{{- if .Chart.AppVersion }}
-app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
-{{- end }}
+app.kubernetes.io/version: {{ default .Chart.AppVersion .Values.image.tag | quote }}
 {{- if .Values.additionalLabels }}
 {{ toYaml .Values.additionalLabels }}
 {{- end }}
@@ -76,6 +74,18 @@ Selector labels
 {{- define "prometheus-nginx-exporter.selectorLabels" }}
 app.kubernetes.io/name: {{ include "prometheus-nginx-exporter.name" . }}
 app.kubernetes.io/instance: {{ .Release.Name }}
+{{- end }}
+
+{{/*
+Deployment annotations
+*/}}
+{{- define "prometheus-nginx-exporter.deploymentAnnotations" }}
+{{- if .Values.additionalAnnotations }}
+{{ toYaml .Values.additionalAnnotations }}
+{{- end }}
+{{- if .Values.deployment.annotations }}
+{{ toYaml .Values.deployment.annotations }}
+{{- end }}
 {{- end }}
 
 {{/*

@@ -1,0 +1,168 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/helm-unittest/helm-unittest/main/schema/helm-testsuite.json
+suite: test Gateway API route
+templates:
+  - route.yaml
+tests:
+  - it: should render nothing by default
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: should render an HTTPRoute to the exporter service when enabled
+    set:
+      route.main.enabled: true
+    asserts:
+      - hasDocuments:
+          count: 1
+      - isKind:
+          of: HTTPRoute
+      - isAPIVersion:
+          of: gateway.networking.k8s.io/v1
+      - equal:
+          path: metadata.name
+          value: RELEASE-NAME-prometheus-yet-another-cloudwatch-exporter
+      - equal:
+          path: spec.rules[0].name
+          value: main
+      - equal:
+          path: spec.rules[0].backendRefs[0]
+          value:
+            name: RELEASE-NAME-prometheus-yet-another-cloudwatch-exporter
+            port: 80
+      - equal:
+          path: spec.rules[0].matches
+          value:
+            - path:
+                type: PathPrefix
+                value: /
+      - notExists:
+          path: spec.rules[0].filters
+
+  - it: should follow the service port
+    set:
+      route.main.enabled: true
+      service.port: 5000
+    asserts:
+      - equal:
+          path: spec.rules[0].backendRefs[0].port
+          value: 5000
+
+  - it: should honor apiVersion, kind and rule name overrides
+    set:
+      route.main.enabled: true
+      route.main.apiVersion: gateway.networking.k8s.io/v1beta1
+      route.main.kind: GRPCRoute
+      route.main.name: metrics
+    asserts:
+      - isAPIVersion:
+          of: gateway.networking.k8s.io/v1beta1
+      - isKind:
+          of: GRPCRoute
+      - equal:
+          path: spec.rules[0].name
+          value: metrics
+
+  - it: should set annotations and labels
+    set:
+      route.main.enabled: true
+      route.main.annotations:
+        example.com/owner: team-a
+      route.main.labels:
+        tier: monitoring
+    asserts:
+      - equal:
+          path: metadata.annotations
+          value:
+            example.com/owner: team-a
+      - equal:
+          path: metadata.labels.tier
+          value: monitoring
+      - exists:
+          path: metadata.labels["app.kubernetes.io/name"]
+
+  - it: should set parentRefs and templated hostnames
+    set:
+      route.main.enabled: true
+      route.main.parentRefs:
+        - name: my-gateway
+          namespace: gateway-system
+          sectionName: http
+      route.main.hostnames:
+        - "{{ .Release.Name }}.example.com"
+    asserts:
+      - equal:
+          path: spec.parentRefs
+          value:
+            - name: my-gateway
+              namespace: gateway-system
+              sectionName: http
+      - equal:
+          path: spec.hostnames
+          value:
+            - RELEASE-NAME.example.com
+
+  - it: should set filters and matches on the default rule
+    set:
+      route.main.enabled: true
+      route.main.filters:
+        - type: RequestHeaderModifier
+          requestHeaderModifier:
+            set:
+              - name: my-header-name
+                value: my-new-header-value
+      route.main.matches:
+        - path:
+            type: Exact
+            value: /metrics
+    asserts:
+      - equal:
+          path: spec.rules[0].filters[0].type
+          value: RequestHeaderModifier
+      - equal:
+          path: spec.rules[0].matches
+          value:
+            - path:
+                type: Exact
+                value: /metrics
+
+  - it: should put additionalRules before the default rule
+    set:
+      route.main.enabled: true
+      route.main.additionalRules:
+        - filters:
+            - type: RequestHeaderModifier
+              requestHeaderModifier:
+                remove: ["x-request-id"]
+    asserts:
+      - lengthEqual:
+          path: spec.rules
+          count: 2
+      - equal:
+          path: spec.rules[0].filters[0].requestHeaderModifier.remove
+          value:
+            - x-request-id
+      - equal:
+          path: spec.rules[1].name
+          value: main
+
+  - it: should replace the backend rule with a redirect when httpsRedirect is set
+    set:
+      route.main.enabled: true
+      route.main.httpsRedirect: true
+      route.main.filters:
+        - type: RequestHeaderModifier
+          requestHeaderModifier:
+            remove: ["x-request-id"]
+    asserts:
+      - lengthEqual:
+          path: spec.rules
+          count: 1
+      - equal:
+          path: spec.rules[0].filters
+          value:
+            - type: RequestRedirect
+              requestRedirect:
+                scheme: https
+                statusCode: 301
+      - notExists:
+          path: spec.rules[0].backendRefs

@@ -1,5 +1,5 @@
 image:
-  repository: danielqsj/kafka-exporter
+  repository: docker.io/danielqsj/kafka-exporter
   # Overrides the image tag whose default is the chart appVersion.
   tag: ""
   pullPolicy: IfNotPresent
@@ -9,8 +9,15 @@ command: []
 
 imagePullSecrets: []
 
+hostAliases: []
+  # - ip: "10.10.10.10"
+  #   hostnames: ["kafka.server"]
+
 # Additional labels for deployment
 deploymentLabels: {}
+
+# Annotations for the Deployment
+deploymentAnnotations: {}
 
 global:
   # To help compatibility with other charts which use global.imagePullSecrets.
@@ -32,20 +39,24 @@ kafkaServer:
   - kafka-server:9092
 
 # Specifies broker version to use, leave empty for default
-kafkaBrokerVersion:
+kafkaBrokerVersion: ""
+
+# Specifies custom labels visible in Prometheus for the Kafka Server/Cluster
+kafkaLabels: {}
+  # cluster: "prod-cluster"
+  # env: "prod"
+  # tier: "backend"
 
 # Specifies log verbosity
 verbosity: 0
 
-# Sarama logging
+# Sarama logging, useful for awsiam debugging
 sarama:
   logEnabled: false
 
 rbac:
   # Specifies whether RBAC resources should be created
   create: true
-  # Specifies whether a PodSecurityPolicy should be created
-  pspEnabled: false
 
 serviceAccount:
   # Specifies whether a ServiceAccount should be created
@@ -53,6 +64,12 @@ serviceAccount:
   # The name of the ServiceAccount to use.
   # If not set and create is true, a name is generated using the fullname template
   name:
+  # This part is useful when trying to use an SASL AWS IAM role when connecting to MSK
+  annotations: {}
+    # eks.amazonaws.com/role-arn: arn:aws:iam::1234567890:role-irsa
+    # eks.amazonaws.com/sts-regional-endpoints: "true"
+    # eks.amazonaws.com/audience: sts.amazonaws.com
+    # eks.amazonaws.com/token-expiration: "3600"
 
 # Specifies environment variables to be added to the kafka-exporter container.
 # Environment variables can be defined as a list of either key-value pairs or
@@ -83,6 +100,13 @@ service:
   # The field is deprecated, implementation-specific annotations should be set instead.
   loadBalancerIP: null
 
+startup:
+  enabled: false
+  probe:
+    httpGet:
+      path: /
+      port: exporter-port
+
 liveness:
   enabled: false
   probe:
@@ -112,7 +136,7 @@ prometheus:
     additionalLabels: {}
     targetLabels: []
     # Relabel configs to apply to target's labelset before the target gets scraped.
-    # https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/api.md#monitoring.coreos.com/v1.RelabelConfig
+    # https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/api-reference/api.md#relabelconfig
     relabelings: null
     # - sourceLabels: [__meta_kubernetes_pod_node_name]
     #   separator: ;
@@ -121,7 +145,7 @@ prometheus:
     #   replacement: $1
     #   action: replace
     # Metric relabeling is applied to samples as the last step before ingestion
-    # https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/api.md#monitoring.coreos.com/v1.RelabelConfig
+    # https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/api-reference/api.md#relabelconfig
     metricRelabelings: null
     # - sourceLabels: [__meta_kubernetes_pod_node_name]
     #   separator: ;
@@ -155,10 +179,6 @@ tolerations: []
 affinity: {}
 
 # this allows the usage of tls connection to your kafka cluster based on a secret in tls format
-# mandatory keys:
-# ca.crt
-# tls.crt
-# tls.key
 tls:
   enabled: false
   insecureSkipVerify: false
@@ -166,6 +186,9 @@ tls:
   serverName: ""
   # mountPath: /secret/certs
   # secretName: <name of an existing secret>
+  caFile: ca.crt
+  certFile: tls.crt
+  keyFile: tls.key
 
 sasl:
   enabled: false
@@ -181,6 +204,15 @@ sasl:
     # or use an existing secret
     # secretName: <name of an existing secret>
 
+  # If enabled, the exporter will use AWS IAM authentication for SASL.
+  # Be aware that this requires the eks.amazonaws.com/role-arn annotation to be set on the ServiceAccount
+  # and most probably the tls.enabled to be set to true.
+  awsiam:
+    enabled: false
+    awsRegion: ""
+    # The mechanism to use for SASL authentication.
+    mechanism: "awsiam"
+
   kerberos:
     enabled: false
     # serviceName:
@@ -194,13 +226,11 @@ server:
   tls:
     enabled: false
     mutualAuthEnabled: false
-  # mountPath: /secret/certs
-  # secretName: <name of an existing secret>
-
-# If enabled Kafka dependency chart will be used.
-# This is only needed for the CI job so it should always be disabled.
-kafka:
-  enabled: false
+    # mountPath: /secret/certs
+    # secretName: <name of an existing secret>
+    caFile: ca.crt
+    certFile: tls.crt
+    keyFile: tls.key
 
 # Set security context for the kafka-exporter pod. Useful when you need to adapt to an existing PSP
 securityContext: {}
@@ -221,3 +251,30 @@ containerSecurityContext: {}
   # runAsUser: 10001
   # seccompProfile:
   #   type: RuntimeDefault
+
+## Extra manifests to deploy.  Can be of type dict or list.
+## If dict, keys are ignored and only values are used.
+## Items contained within extraObjects can be defined as dict or string and are passed through tpl.
+extraManifests: null
+  # - apiVersion: v1
+  #   kind: ConfigMap
+  #   metadata:
+  #   labels:
+  #     name: prometheus-extra
+  #   data:
+  #     extra-data: "value"
+  #
+  # can also be defined as a string, useful for templating field names
+  # - |
+  #   apiVersion: v1
+  #   kind: Secret
+  #   type: Opaque
+  #   metadata:
+  #     name: super-secret
+  #     labels:
+  #       {{- range $key, $value := .Values.commonLabels }}
+  #       {{ $key }}: {{ $value }}
+  #       {{- end }}
+  #   data:
+  #     plaintext: Zm9vYmFy
+  #     templated: '{{ print "foobar" | upper | b64enc }}'

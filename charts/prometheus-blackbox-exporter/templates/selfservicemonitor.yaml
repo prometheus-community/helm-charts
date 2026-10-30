@@ -1,6 +1,6 @@
 {{- if .Values.serviceMonitor.selfMonitor.enabled }}
 ---
-apiVersion: monitoring.coreos.com/v1
+apiVersion: {{ .Values.serviceMonitor.apiVersion }}
 kind: ServiceMonitor
 metadata:
   name: {{ template "prometheus-blackbox-exporter.fullname" $ }}
@@ -39,6 +39,10 @@ spec:
     {{- if .Values.configReloader.serviceMonitor.selfMonitor.tlsConfig }}
     tlsConfig:
       {{- toYaml .Values.configReloader.serviceMonitor.selfMonitor.tlsConfig | nindent 6 }}
+    {{- end }}
+    {{- with .Values.configReloader.serviceMonitor.selfMonitor.additionalMetricsRelabels }}
+    metricRelabelings:
+      {{- toYaml . | nindent 6 }}
     {{- end }}
     {{- if .Values.configReloader.serviceMonitor.selfMonitor.additionalRelabeling }}
     relabelings:

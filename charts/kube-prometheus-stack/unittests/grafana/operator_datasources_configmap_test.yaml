@@ -1,0 +1,95 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/helm-unittest/helm-unittest/main/schema/helm-testsuite.json
+suite: test grafana datasource configmap with the operator enabled
+templates:
+  - grafana/configmaps-datasources.yaml
+tests:
+  - it: still renders the file provisioned datasources by default
+    set:
+      grafana:
+        enabled: false
+        forceDeployDatasources: true
+    asserts:
+      - hasDocuments:
+          count: 1
+      - matchRegex:
+          path: data['datasource.yaml']
+          pattern: 'name: "Prometheus"'
+
+  - it: is not rendered when every datasource moved to a custom resource
+    set:
+      grafana:
+        enabled: false
+        forceDeployDatasources: true
+        operator:
+          datasourcesEnabled: true
+          matchLabels:
+            dashboards: "external-grafana"
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: drops the default and additional datasources but keeps a string entry
+    set:
+      grafana:
+        enabled: false
+        forceDeployDatasources: true
+        operator:
+          datasourcesEnabled: true
+          matchLabels:
+            dashboards: "external-grafana"
+        additionalDataSources:
+          - name: from-values
+            type: prometheus
+            url: http://prom
+        additionalDataSourcesString: |
+          - name: from-string
+            type: prometheus
+            url: http://prom
+    asserts:
+      - hasDocuments:
+          count: 1
+      - matchRegex:
+          path: data['datasource.yaml']
+          pattern: "name: from-string"
+      - notMatchRegex:
+          path: data['datasource.yaml']
+          pattern: "name: from-values"
+      - notMatchRegex:
+          path: data['datasource.yaml']
+          pattern: 'name: "Prometheus"'
+
+  - it: is kept for a prune only configuration
+    set:
+      grafana:
+        enabled: false
+        forceDeployDatasources: true
+        prune: true
+        operator:
+          datasourcesEnabled: true
+          matchLabels:
+            dashboards: "external-grafana"
+    asserts:
+      - hasDocuments:
+          count: 1
+      - matchRegex:
+          path: data['datasource.yaml']
+          pattern: "prune: true"
+
+  - it: is kept for a deleteDatasources only configuration
+    set:
+      grafana:
+        enabled: false
+        forceDeployDatasources: true
+        deleteDatasources:
+          - name: gone
+            orgId: 1
+        operator:
+          datasourcesEnabled: true
+          matchLabels:
+            dashboards: "external-grafana"
+    asserts:
+      - hasDocuments:
+          count: 1
+      - matchRegex:
+          path: data['datasource.yaml']
+          pattern: "name: gone"

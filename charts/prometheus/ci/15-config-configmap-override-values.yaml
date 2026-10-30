@@ -1,0 +1,40 @@
+---
+## Test case: config file from custom configmap
+server:
+  configMapOverrideName: "prometheus-config"
+  persistentVolume:
+    enabled: false
+
+alertmanager:
+  enabled: false
+
+kube-state-metrics:
+  enabled: false
+
+prometheus-node-exporter:
+  enabled: false
+
+prometheus-pushgateway:
+  enabled: false
+
+extraManifests:
+  - |
+    apiVersion: v1
+    kind: ConfigMap
+    metadata:
+      labels: {{ include "prometheus.server.labels" . | nindent 4 }}
+      name: {{ printf "%s-%s" .Release.Name .Values.server.configMapOverrideName }}
+    data:
+      prometheus.yml: |
+        global:
+          evaluation_interval: 1m
+          scrape_interval: 1m
+          scrape_timeout: 10s
+        rule_files:
+          - /etc/config/recording_rules.yml
+          - /etc/config/alerting_rules.yml
+        scrape_configs:
+          - job_name: prometheus
+            static_configs:
+            - targets:
+              - localhost:9090

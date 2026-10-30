@@ -2,8 +2,13 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: {{ template "stackdriver-exporter.fullname" . }}
+  namespace: {{ template "stackdriver-exporter.namespace" . }}
   labels:
     {{- include "stackdriver-exporter.labels" . | indent 4 }}
+  {{- with .Values.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
 spec:
   replicas: {{ .Values.replicaCount }}
   selector:
@@ -18,9 +23,9 @@ spec:
     metadata:
       labels:
         {{- include "stackdriver-exporter.labels" . | indent 8 }}
-      {{- if .Values.annotations }}
+      {{- with .Values.annotations }}
       annotations:
-        {{- toYaml .Values.annotations | nindent 8 }}
+        {{- toYaml . | nindent 8 }}
       {{- end }}
     spec:
       {{- if .Values.securityContext }}
@@ -58,6 +63,9 @@ spec:
           secret:
             secretName: {{ template "stackdriver-exporter.fullname" . }}
       {{- end}}
+      {{- if .Values.extraVolumes }}
+        {{- toYaml .Values.extraVolumes | nindent 8 }}
+      {{- end }}
       containers:
         - name: {{ .Chart.Name }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
@@ -68,11 +76,25 @@ spec:
             - name: stackdriver-service-account
               mountPath: /etc/secrets/service-account/
           {{- end}}
+          {{- if .Values.extraVolumeMounts }}
+            {{- toYaml .Values.extraVolumeMounts | nindent 12 }}
+          {{- end }}
           args:
-            - --google.project-id={{ .Values.stackdriver.projectId }}
+            {{- range .Values.stackdriver.projectIds }}
+            - --google.project-ids={{ . }}
+            {{- end }}
+            {{- if .Values.stackdriver.projectFilters }}
+            - --google.projects.filter='{{ .Values.stackdriver.projectFilters }}'
+            {{- end }}
+            {{- if .Values.stackdriver.universeDomain }}
+            - --google.universe-domain={{ .Values.stackdriver.universeDomain }}
+            {{- end }}
             - --monitoring.metrics-interval={{ .Values.stackdriver.metrics.interval }}
             - --monitoring.metrics-offset={{ .Values.stackdriver.metrics.offset }}
-            - --monitoring.metrics-type-prefixes={{ .Values.stackdriver.metrics.typePrefixes | replace " " "" }}
+            - --monitoring.descriptor-cache-ttl={{ .Values.stackdriver.metrics.descriptorCacheTTL }}
+            {{- range .Values.stackdriver.metrics.prefixes }}
+            - --monitoring.metrics-prefixes={{ . }}
+            {{- end }}
             {{- range .Values.stackdriver.metrics.filters }}
             - --monitoring.filters={{ . }}
             {{- end }}
@@ -80,9 +102,16 @@ spec:
             - --stackdriver.http-timeout={{ .Values.stackdriver.httpTimeout }}
             - --stackdriver.max-backoff={{ .Values.stackdriver.maxBackoff }}
             - --stackdriver.max-retries={{ .Values.stackdriver.maxRetries }}
+            {{- if kindIs "slice" .Values.stackdriver.retryStatuses }}
+            {{- range .Values.stackdriver.retryStatuses }}
+            - --stackdriver.retry-statuses={{ . }}
+            {{- end }}
+            {{- else }}
             - --stackdriver.retry-statuses={{ .Values.stackdriver.retryStatuses }}
+            {{- end }}
             - --web.listen-address={{ .Values.web.listenAddress }}
-            - --web.telemetry-path={{ .Values.web.path }}
+            - --web.telemetry-path={{ .Values.web.telemetryPath }}
+            - --web.stackdriver-telemetry-path={{ .Values.web.stackdriverTelemetryPath }}
           {{- if .Values.stackdriver.dropDelegatedProjects }}
             - --monitoring.drop-delegated-projects
           {{- end }}
@@ -100,10 +129,15 @@ spec:
             {{- end }}
           {{- end }}
           {{- end }}
-          {{- if or .Values.stackdriver.serviceAccountSecret .Values.stackdriver.serviceAccountKey }}
+          {{- if or .Values.stackdriver.serviceAccountSecret .Values.stackdriver.serviceAccountKey .Values.extraEnv }}
           env:
+            {{- if or .Values.stackdriver.serviceAccountSecret .Values.stackdriver.serviceAccountKey }}
             - name: GOOGLE_APPLICATION_CREDENTIALS
               value: /etc/secrets/service-account/credentials.json
+            {{- end }}
+            {{- with .Values.extraEnv }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
           {{- end }}
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
@@ -111,21 +145,16 @@ spec:
             - containerPort: {{ .Values.service.httpPort }}
               name: http
           livenessProbe:
-            httpGet:
-              path: /health
-              port: http
-            initialDelaySeconds: 30
-            timeoutSeconds: 10
+            {{- toYaml .Values.livenessProbe | nindent 12 }}
           readinessProbe:
-            httpGet:
-              path: /health
-              port: http
-            initialDelaySeconds: 10
-            timeoutSeconds: 10
+            {{- toYaml .Values.readinessProbe | nindent 12 }}
           {{- if .Values.containerSecurityContext }}
           securityContext:
             {{- toYaml .Values.containerSecurityContext | nindent 12 }}
           {{- end }}
+      {{- with .Values.extraContainers }}
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
       {{- if .Values.nodeSelector }}
       nodeSelector:
         {{- toYaml .Values.nodeSelector | nindent 8 }}

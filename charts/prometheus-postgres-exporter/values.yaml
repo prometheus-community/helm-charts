@@ -29,6 +29,8 @@ automountServiceAccountToken: false
 serviceMonitor:
   # When set true then use a ServiceMonitor to configure scraping
   enabled: false
+  # Specify the API version for the ServiceMonitor
+  apiVersion: "monitoring.coreos.com/v1"
   # Set the namespace the ServiceMonitor should be deployed
   # namespace: monitoring
   # Set how frequently Prometheus should scrape
@@ -45,6 +47,55 @@ serviceMonitor:
   # metricRelabelings: []
   # Set relabel_configs as per https://prometheus.io/docs/prometheus/latest/configuration/configuration/#relabel_config
   # relabelings: []
+  # HTTP scheme to use for scraping. For example `http` or `https`. Default is `http`.
+  # scheme: http
+  # TLS configuration to use when scraping the metric endpoint by Prometheus.
+  # tlsConfig: {}
+
+   # Use multipleTarget mode
+  multipleTarget:
+    enabled: false
+    # Use the same auth module for every target
+    # The config file should have a section like [$name]
+    sharedAuthModule:
+      enabled: false
+      name: ""
+
+    # Define each target's endpoint and name
+    # When not using sharedAuthModule the config file should have one authModule for each target with key "client.$name"
+    targets: []
+      # - endpoint: pg01.local
+      #   name: pg01 (there needs to exist an authModule with key "client.pg01" if not using sharedAuthModule)
+      #   port: default 5432
+      #   databaseName: default '' (Set the database name to connect to)
+      #   metricRelabelings: [] (MetricRelabelConfigs to apply to samples from the target before ingestion)
+
+podMonitor:
+  # PodMonitor scrapes pods directly, bypassing the Kubernetes Service.
+  # Useful when a Service isn't desired/available, or you prefer pod-based discovery.
+  # ref. https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/api-reference/api.md#podmonitor
+  # When set true then use a PodMonitor to configure scraping
+  enabled: false
+  # Specify the API version for the PodMonitor
+  apiVersion: "monitoring.coreos.com/v1"
+  # Set the namespace the PodMonitor should be deployed
+  # namespace: monitoring
+  # Set how frequently Prometheus should scrape
+  # interval: 30s
+  # Set path to postgres-exporter telemetry-path
+  # telemetryPath: /metrics
+  # Set labels for the PodMonitor, use this to define your scrape label for Prometheus Operator
+  # labels:
+  # Set timeout for scrape
+  # timeout: 10s
+  # MetricRelabelConfigs to apply to samples before ingestion
+  # metricRelabelings: []
+  # Set relabel_configs as per https://prometheus.io/docs/prometheus/latest/configuration/configuration/#relabel_config
+  # relabelings: []
+  # HTTP scheme to use for scraping. For example `http` or `https`. Default is `http`.
+  # scheme: http
+  # TLS configuration to use when scraping the metric endpoint by Prometheus.
+  # tlsConfig: {}
 
 prometheusRule:
   enabled: false
@@ -88,6 +139,9 @@ serviceAccount:
   name:
   # Add annotations to the ServiceAccount, useful for EKS IAM Roles for Service Accounts or Google Workload Identity.
   annotations: {}
+
+# Force namespace of namespaced resources
+namespaceOverride: ""
 
 # Add a default ingress to allow namespace access to service.targetPort
 # Helpful if other NetworkPolicies are configured in the namespace
@@ -185,6 +239,12 @@ config:
     #     options:
     #       sslmode: disable
 
+  # define an existing secret to be mounted as the config file
+  # needs to have the key 'postgres_exporter.yml'
+  existingSecret:
+    enabled: false
+    name: ""
+
 nodeSelector: {}
 
 tolerations: []
@@ -195,13 +255,23 @@ annotations: {}
 
 podLabels: {}
 
-# Configurable health checks
+# Configurable probes. If TLS client authentication is enabled at the exporter, TCP probe must be used.
 livenessProbe:
-  initialDelaySeconds: 0
+  httpGet:
+    path: /
+    port: http
+    scheme: HTTP
+  # tcpSocket:
+  #   port: http
   timeoutSeconds: 3
 
 readinessProbe:
-  initialDelaySeconds: 0
+  httpGet:
+    path: /
+    port: http
+    scheme: HTTP
+  # tcpSocket:
+  #   port: http
   timeoutSeconds: 1
 
 # Labels and annotations to attach to the deployment resource

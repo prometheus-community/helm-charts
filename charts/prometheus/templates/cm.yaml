@@ -1,4 +1,4 @@
-{{- if (empty .Values.server.configMapOverrideName) -}}
+{{- if and (empty .Values.server.configMapOverrideName) (empty .Values.server.configFromSecret) -}}
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -43,9 +43,37 @@ data:
 {{ $root.Values.server.exemplars | toYaml | indent 8 }}
 {{- end }}
 {{- end }}
+{{- if $root.Values.server.otlp }}
+    otlp:
+{{ $root.Values.server.otlp | toYaml | indent 8 }}
+{{- end }}
 {{- if $root.Values.scrapeConfigFiles }}
     scrape_config_files:
 {{ toYaml $root.Values.scrapeConfigFiles | indent 4 }}
+{{- end }}
+{{- if or $root.Values.scrapeConfigs $root.Values.extraScrapeConfigs $value.scrape_configs }}
+    scrape_configs:
+{{- range $scrapeKey, $scrapeValue := $root.Values.scrapeConfigs }}
+{{- if not (hasKey $scrapeValue "enabled") }}
+{{- $_ := set $scrapeValue "enabled" true }}
+{{- end }}
+{{- if $scrapeValue.enabled }}
+{{- $jobName := default $scrapeKey $scrapeValue.job_name}}
+    - {{ printf "job_name: %s" $jobName }}
+      {{- $relabelConfigs := (concat (tpl ($scrapeValue.pre_relabel_configs | default "[]") $ | fromYamlArray) ($scrapeValue.relabel_configs | default (list)) (tpl ($scrapeValue.post_relabel_configs | default "[]") $ | fromYamlArray))}}
+      {{- if $relabelConfigs }}
+      {{- $_ := set $scrapeValue "relabel_configs" $relabelConfigs }}
+      {{- end }}
+      {{- toYaml (omit $scrapeValue "enabled" "job_name" "pre_relabel_configs" "post_relabel_configs") | nindent 6 }}
+{{- end }}
+{{- end }}
+{{- if $value.scrape_configs }}
+{{- toYaml $value.scrape_configs | nindent 4 }}
+{{- $_ := unset $value "scrape_configs"}}
+{{- end }}
+{{- if $root.Values.extraScrapeConfigs }}
+{{ tpl $root.Values.extraScrapeConfigs $root | indent 4 }}
+{{- end }}
 {{- end }}
 {{- end }}
 {{- if eq $key "alerts" }}
@@ -63,9 +91,6 @@ data:
 {{ toYaml $value | default "{}" | indent 4 }}
 {{- end }}
 {{- if eq $key "prometheus.yml" -}}
-{{- if $root.Values.extraScrapeConfigs }}
-{{ tpl $root.Values.extraScrapeConfigs $root | indent 4 }}
-{{- end -}}
 {{- if or ($root.Values.alertmanager.enabled) ($root.Values.server.alertmanagers) }}
     alerting:
 {{- if $root.Values.alertRelabelConfigs }}

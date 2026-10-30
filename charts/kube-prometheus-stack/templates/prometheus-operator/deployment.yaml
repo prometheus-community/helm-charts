@@ -63,6 +63,8 @@ spec:
             - --kubelet-selector={{ .Values.prometheusOperator.kubeletService.selector }}
             {{- end }}
             {{- end }}
+            - --kubelet-endpoints={{ .Values.prometheusOperator.kubeletEndpointsEnabled }}
+            - --kubelet-endpointslice={{ .Values.prometheusOperator.kubeletEndpointSliceEnabled }}
             {{- if .Values.prometheusOperator.logFormat }}
             - --log-format={{ .Values.prometheusOperator.logFormat }}
             {{- end }}
@@ -135,12 +137,30 @@ spec:
             {{- if .Values.prometheusOperator.clusterDomain }}
             - --cluster-domain={{ .Values.prometheusOperator.clusterDomain }}
             {{- end }}
+            {{- with .Values.prometheusOperator.featureGates }}
+            {{- $gates := list }}
+            {{- range $key, $value := . }}
+            {{- $gates = append $gates (printf "%s=%v" $key $value) }}
+            {{- end }}
+            - --feature-gates={{ join "," $gates }}
+            {{- end }}
             {{- if .Values.prometheusOperator.tls.enabled }}
             - --web.enable-tls=true
-            - --web.cert-file=/cert/{{ if .Values.prometheusOperator.admissionWebhooks.certManager.enabled }}tls.crt{{ else }}cert{{ end }}
-            - --web.key-file=/cert/{{ if .Values.prometheusOperator.admissionWebhooks.certManager.enabled }}tls.key{{ else }}key{{ end }}
+            - --web.cert-file=/cert/{{ if include "kube-prometheus-stack.prometheus-operator-webhook.tlsSecretKeys" . }}tls.crt{{ else }}cert{{ end }}
+            - --web.key-file=/cert/{{ if include "kube-prometheus-stack.prometheus-operator-webhook.tlsSecretKeys" . }}tls.key{{ else }}key{{ end }}
             - --web.listen-address=:{{ .Values.prometheusOperator.tls.internalPort }}
             - --web.tls-min-version={{ .Values.prometheusOperator.tls.tlsMinVersion }}
+            {{- else }}
+            - --web.enable-tls=false
+            - --web.listen-address=:8080
+            {{- end }}
+            {{- with .Values.prometheusOperator.extraArgs }}
+            {{- tpl (toYaml .) $ | nindent 12 }}
+            {{- end }}
+          {{- with .Values.prometheusOperator.lifecycle }}
+          lifecycle: {{ toYaml . | nindent 12 }}
+          {{- end }}
+          {{- if .Values.prometheusOperator.tls.enabled }}
           ports:
             - containerPort: {{ .Values.prometheusOperator.tls.internalPort }}
               name: https
@@ -205,6 +225,9 @@ spec:
       dnsConfig:
 {{ toYaml . | indent 8 }}
     {{- end }}
+{{- if kindIs "bool" .Values.prometheusOperator.hostUsers }}
+      hostUsers: {{ .Values.prometheusOperator.hostUsers }}
+{{- end }}
 {{- if .Values.prometheusOperator.securityContext }}
       securityContext:
 {{ toYaml .Values.prometheusOperator.securityContext | indent 8 }}
@@ -222,6 +245,9 @@ spec:
     {{- with .Values.prometheusOperator.affinity }}
       affinity:
 {{ toYaml . | indent 8 }}
+    {{- end }}
+    {{- with .Values.prometheusOperator.terminationGracePeriodSeconds }}
+      terminationGracePeriodSeconds: {{ . }}
     {{- end }}
     {{- with .Values.prometheusOperator.tolerations }}
       tolerations:

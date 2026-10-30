@@ -9,26 +9,24 @@ This chart bootstraps a [Redis exporter](https://github.com/oliver006/redis_expo
 - Kubernetes 1.10+ with Beta APIs enabled
 - Helm 3+
 
-## Get Repository Info
+## Usage
+
+The chart is distributed as an [OCI Artifact](https://helm.sh/docs/topics/registries/) as well as via a traditional [Helm Repository](https://helm.sh/docs/topics/chart_repository/).
+
+- OCI Artifact: `oci://ghcr.io/prometheus-community/charts/prometheus-redis-exporter`
+- Helm Repository: `https://prometheus-community.github.io/helm-charts` with chart `prometheus-redis-exporter`
+
+The installation instructions use the OCI registry. Refer to the [`helm repo`]([`helm repo`](https://helm.sh/docs/helm/helm_repo/)) command documentation for information on installing charts via the traditional repository.
+
+### Install Chart
 
 ```console
-helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
-helm repo update
+helm install [RELEASE_NAME] oci://ghcr.io/prometheus-community/charts/prometheus-redis-exporter
 ```
-
-_See [`helm repo`](https://helm.sh/docs/helm/helm_repo/) for command documentation._
-
-## Install Chart
-
-```console
-helm install [RELEASE_NAME] prometheus-community/prometheus-redis-exporter
-```
-
-_See [configuration](#configuration) below._
 
 _See [helm install](https://helm.sh/docs/helm/helm_install/) for command documentation._
 
-## Uninstall Chart
+### Uninstall Chart
 
 ```console
 helm uninstall [RELEASE_NAME]
@@ -38,7 +36,7 @@ This removes all the Kubernetes components associated with the chart and deletes
 
 _See [helm uninstall](https://helm.sh/docs/helm/helm_uninstall/) for command documentation._
 
-## Upgrading Chart
+### Upgrading Chart
 
 ```console
 helm upgrade [RELEASE_NAME] [CHART] --install
@@ -46,7 +44,7 @@ helm upgrade [RELEASE_NAME] [CHART] --install
 
 _See [helm upgrade](https://helm.sh/docs/helm/helm_upgrade/) for command documentation._
 
-### To 5.0.0
+#### To 5.0.0
 
 From 5.0.0 redis exporter is using the [Kubernetes recommended labels](https://kubernetes.io/docs/concepts/overview/working-with-objects/common-labels/). Therefore you have to delete the deployment before you upgrade.
 
@@ -75,7 +73,7 @@ serviceMonitor:
       replacement: cluster
 ```
 
-### To 3.0.1
+#### To 3.0.1
 
  The default tag for the exporter image is now `v1.x.x`. This major release includes changes to the names of various metrics and no longer directly supports the configuration (and scraping) of multiple redis instances; that is now the Prometheus server's responsibility. You'll want to use [this dashboard](https://github.com/oliver006/redis_exporter/blob/master/contrib/grafana_prometheus_redis_dashboard.json) now. Please see the [redis_exporter GitHub page](https://github.com/oliver006/redis_exporter#upgrading-from-0x-to-1x) for more details.
 
@@ -84,7 +82,7 @@ serviceMonitor:
 See [Customizing the Chart Before Installing](https://helm.sh/docs/intro/using_helm/#customizing-the-chart-before-installing). To see all configurable options with detailed comments, visit the chart's [values.yaml](./values.yaml), or run these configuration commands:
 
 ```console
-helm show values prometheus-community/prometheus-redis-exporter
+helm show values oci://ghcr.io/prometheus-community/charts/prometheus-redis-exporter
 ```
 
 For more information please refer to the [redis_exporter](https://github.com/oliver006/redis_exporter) documentation.

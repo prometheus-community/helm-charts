@@ -1,7 +1,8 @@
 {{- if .Values.serviceMonitor.enabled }}
 {{- range .Values.serviceMonitor.targets }}
+{{- with (tpl (toYaml .) $ | fromYaml ) }}
 ---
-apiVersion: monitoring.coreos.com/v1
+apiVersion: {{ $.Values.serviceMonitor.apiVersion }}
 kind: ServiceMonitor
 metadata:
   name: {{ template "prometheus-blackbox-exporter.fullname" $ }}-{{ .name }}
@@ -21,14 +22,15 @@ spec:
     {{- if $.Values.serviceMonitor.tlsConfig }}
     tlsConfig: {{ toYaml $.Values.serviceMonitor.tlsConfig | nindent 6 }}
     {{- end }}
-    path: {{ $.Values.serviceMonitor.path }}
+    path: {{ .path | default $.Values.serviceMonitor.path }}
     interval: {{ .interval | default $.Values.serviceMonitor.defaults.interval }}
     scrapeTimeout: {{ .scrapeTimeout | default $.Values.serviceMonitor.defaults.scrapeTimeout }}
+    honorTimestamps: {{ .honorTimestamps | default $.Values.serviceMonitor.defaults.honorTimestamps }}
     params:
       module:
       - {{ .module | default $.Values.serviceMonitor.defaults.module }}
       target:
-      - {{ .url }}
+      - {{ tpl .url $ }}
       {{- if .hostname }}
       hostname:
       - {{ .hostname }}
@@ -36,7 +38,7 @@ spec:
     metricRelabelings:
       - sourceLabels: [instance]
         targetLabel: instance
-        replacement: {{ .url }}
+        replacement: {{ tpl .url $ }}
         action: replace
       - sourceLabels: [target]
         targetLabel: target
@@ -58,5 +60,6 @@ spec:
   namespaceSelector:
     matchNames:
       - {{ template "prometheus-blackbox-exporter.namespace" $ }}
+{{- end }}
 {{- end }}
 {{- end }}

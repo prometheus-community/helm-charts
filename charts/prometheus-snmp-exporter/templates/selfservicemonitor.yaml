@@ -1,0 +1,42 @@
+{{- if .Values.serviceMonitor.selfMonitor.enabled }}
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: {{ template "prometheus-snmp-exporter.fullname" $ }}
+  namespace: {{ template "prometheus-snmp-exporter.namespace" $ }}
+  labels:
+    {{- include "prometheus-snmp-exporter.labels" $ | nindent 4 }}
+    {{- if .Values.serviceMonitor.selfMonitor.labels  }}
+    {{- toYaml (.Values.serviceMonitor.selfMonitor.labels) | nindent 4 }}
+    {{- end }}
+spec:
+  endpoints:
+  - path: {{ .Values.serviceMonitor.selfMonitor.path }}
+    interval: {{ .Values.serviceMonitor.selfMonitor.interval }}
+    scrapeTimeout: {{ .Values.serviceMonitor.selfMonitor.scrapeTimeout }}
+    scheme: {{ .Values.serviceMonitor.selfMonitor.scheme }}
+    {{- with .Values.serviceMonitor.selfMonitor.port }}
+    port: {{ . }}
+    {{- end }}
+    {{- if .Values.serviceMonitor.selfMonitor.additionalMetricsRelabels }}
+    metricRelabelings:
+      {{- toYaml .Values.serviceMonitor.selfMonitor.additionalMetricsRelabels | nindent 6 }}
+    {{- end }}  
+    {{- if .Values.serviceMonitor.selfMonitor.tlsConfig }}
+    tlsConfig:
+      {{- toYaml .Values.serviceMonitor.selfMonitor.tlsConfig | nindent 6 }}
+    {{- end }}
+    {{- if .Values.serviceMonitor.selfMonitor.additionalRelabeling }}
+    relabelings:
+      {{- toYaml .Values.serviceMonitor.selfMonitor.additionalRelabeling | nindent 6 }}
+    {{- end }}
+  jobLabel: "{{ .Release.Name }}"
+  selector:
+    matchLabels:
+      {{- include "prometheus-snmp-exporter.selectorLabels" $ | nindent 6 }}
+  namespaceSelector:
+    matchNames:
+      - {{ template "prometheus-snmp-exporter.namespace" $ }}
+
+{{- end }}

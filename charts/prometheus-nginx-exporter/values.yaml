@@ -24,8 +24,12 @@ image:
   # if not set appVersion field from Chart.yaml is used
   tag: ""
 
+imagePullSecrets: []
 nameOverride: ""
 fullnameOverride: ""
+
+# Override deployment namespace
+namespaceOverride: ""
 
 # Add your nginx server details here
 nginxServer: "http://{{ .Release.Name }}.{{ .Release.Namespace }}.svc.cluster.local:8080/stub_status"
@@ -33,8 +37,8 @@ nginxServer: "http://{{ .Release.Name }}.{{ .Release.Namespace }}.svc.cluster.lo
 
 # Arguments - https://github.com/nginxinc/nginx-prometheus-exporter#command-line-arguments
 options: {}
-  # -nginx.plus
-  # -nginx.retries int
+  # nginx.plus:
+  # nginx.timeout: 5s
 
 livenessProbe:
   httpGet:
@@ -53,22 +57,15 @@ readinessProbe:
 service:
   type: ClusterIP
   port: 9113
+  nodePort: null
   annotations: {}
+  # External traffic policy setting (Cluster, Local)
+  externalTrafficPolicy: ""
 
 podAnnotations: {}
 
-ingress:
-  enabled: false
-  annotations: {}
-    # kubernetes.io/ingress.class: nginx
-    # kubernetes.io/tls-acme: "true"
-  path: /
-  hosts:
-    - chart-example.local
-  tls: []
-  #  - secretName: chart-example-tls
-  #    hosts:
-  #      - chart-example.local
+# Optional pod labels
+podLabels: {}
 
 resources: {}
   # We usually recommend not to specify default resources and to leave this as a conscious
@@ -87,6 +84,8 @@ serviceMonitor:
   enabled: false
   # Set the namespace the ServiceMonitor should be deployed
   namespace: ""
+  # Set the API version of the ServiceMonitor
+  apiVersion: "monitoring.coreos.com/v1"
   # Set how frequently Prometheus should scrape
   interval: 30s
   # Set path to nginx-exporter telemtery-path
@@ -94,16 +93,24 @@ serviceMonitor:
   # Set labels for the ServiceMonitor, use this to define your scrape label for Prometheus Operator
   additionalLabels: {}
   # Set timeout for scrape
-  timeout: 10s
-  # Set of labels to transfer on the Kubernetes Service onto the target.
-  # targetLabels: []
-  # metricRelabelings: []
+  scrapeTimeout: 10s
+  # Set which labels from the Kubernetes Service are transferred to the Prometheus target
+  targetLabels: []
+  # Set relabeling rules to apply to metrics after scraping but before ingestion
+  metricRelabelings: []
+  # Set relabeling rules to configure how scrape targets are discovered and labeled before scraping
+  relabelings: []
 
 nodeSelector: {}
 
 tolerations: []
 
 affinity: {}
+
+# Additional Annotations and Labels for Deployment
+deployment:
+  annotations: {}
+  labels: {}
 
 # Extra environment variables
 extraEnv: []
@@ -125,7 +132,10 @@ extraVolumeMounts: []
   # - name: example
   #   mountPath: /example
 
-# If enabled Nginx dependency chart will be used.
-# This is only needed for the CI job so it should always be disabled.
-nginx:
-  enabled: false
+# Priority ClassName for the pod
+priorityClassName: ""
+
+# Configure the deployment strategy. The default is "RollingUpdate".
+# ref: https://kubernetes.io/docs/concepts/workloads/controllers/deployment/#strategy
+updateStrategy:
+  type: RollingUpdate

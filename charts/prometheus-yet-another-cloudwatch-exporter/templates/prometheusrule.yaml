@@ -1,0 +1,19 @@
+{{- if .Values.prometheusRule.enabled }}
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: {{ template "yet-another-cloudwatch-exporter.fullname" . }}
+{{- if .Values.prometheusRule.namespace }}
+  namespace: {{ .Values.prometheusRule.namespace }}
+{{- end }}
+  labels:
+    {{- include "yet-another-cloudwatch-exporter.labels" . | nindent 4 }}
+    {{- with .Values.prometheusRule.labels }}
+      {{- toYaml . | nindent 4 }}
+    {{- end }}
+spec:
+  groups:
+  - name: {{ template "yet-another-cloudwatch-exporter.fullname" . }}
+    rules:
+      {{- toYaml .Values.prometheusRule.rules | nindent 6 }}
+{{- end }}

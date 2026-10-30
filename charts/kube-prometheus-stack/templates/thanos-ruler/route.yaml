@@ -1,0 +1,19 @@
+{{- if .Values.thanosRuler.enabled -}}
+  {{- $serviceName := include "kube-prometheus-stack.thanosRuler.name" . }}
+  {{- $servicePort := .Values.thanosRuler.service.port -}}
+  {{- range $name, $route := .Values.thanosRuler.route }}
+  {{- if $route.enabled }}
+---
+{{ include "kube-prometheus-stack.route" (dict
+     "context" $
+     "route" $route
+     "name" (ternary $serviceName (printf "%s-%s" $serviceName $name) (eq $name "main"))
+     "namespace" (include "kube-prometheus-stack.namespace" $)
+     "labelApp" (printf "%s-prometheus" (include "kube-prometheus-stack.name" $))
+     "hostnames" $route.hostnames
+     "serviceName" $serviceName
+     "servicePort" $servicePort
+   ) }}
+  {{- end }}
+  {{- end }}
+{{- end }}

@@ -13,6 +13,26 @@ it should be mentioned as a comment so that it's transparent for everyone.
 As a chart maintainer can not approve it's own PRs every chart should have at least two maintainers.
 For charts where this is not the case or where none of the other maintainers does a review within two weeks the maintainer who created the PR could request a review from a repository admin instead.
 
+## Adding helm-chart admins
+
+Chart admins are responsible for managing the repository, such as housekeeping and adding new chart maintainers.
+They are also the point of contact for existing maintainers of the repository.
+While chart admins can also serve as chart maintainers, they should still respect the existing maintainers.
+
+A Helm Chart admin is part of the `@prometheus-community/helm-charts-admins` GitHub group
+and must be listed as a general maintainer in `MAINTAINERS.md`.
+Additionally, they should be added to `artifacthub-repo.yaml`.
+
+Helm Chart admins may not have sufficient permissions to invite new GitHub users to the `prometheus-community` organization.  
+For assistance, they should ask in the CNCF Slack channel `#prometheus-dev`.
+
+Becoming an admin requires a majority vote from all existing admins.  
+The process is tracked through GitHub issues in the [prometheus-community/helm-charts](https://github.com/prometheus-community/helm-charts/) repository.
+See [this example](https://github.com/prometheus-community/helm-charts/issues/5137).
+
+Since the Prometheus Team oversees the entire ecosystem and the GitHub organization, they have additional capabilities — see [Prometheus Governance](https://prometheus.io/governance/).  
+It is recommended to include at least one Prometheus Team member in the process.
+
 ## Adding chart maintainers
 
 Chart maintainers are defined within the chart itself.
@@ -20,6 +40,26 @@ So the procedure for adding maintainers is to add them there.
 The pull request which does that should also update [CODEOWNERS](./.github/CODEOWNERS) file to that the new maintainer is able to approve pull requests.
 One of the existing chart maintainers needs to approve the PR in addition one of the repository admins needs to approve it.
 They are then responsible for also granting the new maintainer write permissions to this repository.
+
+Each maintainer has defined in the Chart.yaml of the chart itself under the maintainer section,
+using the following format:
+
+```yaml
+maintainers:
+- name:   # A freely chosen display name. Required.
+  email:  # A contact mail. Optional
+  url:    # The URL of the GitHub profile, using the format https://github.com/<username>. Required. 
+```
+
+## Maintainer liveness check
+
+A yearly maintainer liveness check ensures that inactive maintainers are retired after some time.
+
+The liveness check is tracked through a GitHub issue in the `prometheus-community/helm-charts` repository. The issue should mention the targeted maintainer and give them 60 days to respond.
+
+If the maintainer does not respond within this 60-day period, they are considered to have resigned from their maintainer role. Their maintainer status can then be removed from the chart, `CODEOWNERS`, and any related repository permissions.
+
+This process helps keep chart ownership accurate and ensures that pull requests can still be reviewed by active maintainers.
 
 ## GitHub Settings
 
@@ -84,7 +124,7 @@ The `main` branch is protected and the following settings are configured:
 
     [Developer Certificate of Origin](https://developercertificate.org/) (DCO) check is performed by [DCO GitHub App](https://github.com/apps/dco)
 
-  - Lint Code Base
+  - Lint codebase
 
     Linting is done using [Super-Linter](https://github.com/github/super-linter).
     It is configured in [linter.yaml](.github/workflows/linter.yml)

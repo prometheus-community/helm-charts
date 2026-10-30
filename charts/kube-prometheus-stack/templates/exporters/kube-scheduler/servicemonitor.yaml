@@ -16,6 +16,13 @@ metadata:
 {{ include "kube-prometheus-stack.labels" . | indent 4 }}
 spec:
   jobLabel: {{ .Values.kubeScheduler.serviceMonitor.jobLabel }}
+  {{- with .Values.kubeScheduler.serviceMonitor.targetLabels }}
+  targetLabels:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  {{- with include "kube-prometheus-stack.controlPlane.scrapeClass" (dict "serviceMonitor" .Values.kubeScheduler.serviceMonitor "root" .) }}
+  scrapeClass: {{ . }}
+  {{- end }}
   {{- include "servicemonitor.scrapeLimits" .Values.kubeScheduler.serviceMonitor | nindent 2 }}
   selector:
     {{- if .Values.kubeScheduler.serviceMonitor.selector }}
@@ -33,20 +40,18 @@ spec:
     {{- if .Values.kubeScheduler.serviceMonitor.interval }}
     interval: {{ .Values.kubeScheduler.serviceMonitor.interval }}
     {{- end }}
-    bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
+    {{- with include "kube-prometheus-stack.controlPlane.authorization" (dict "serviceMonitor" $.Values.kubeScheduler.serviceMonitor "root" $) }}
+    {{- . | nindent 4 }}
+    {{- end }}
     {{- if .Values.kubeScheduler.serviceMonitor.proxyUrl }}
     proxyUrl: {{ .Values.kubeScheduler.serviceMonitor.proxyUrl}}
     {{- end }}
     {{- if eq (include "kube-prometheus-stack.kubeScheduler.insecureScrape" (list . false true .Values.kubeScheduler.serviceMonitor.https )) "true" }}
     scheme: https
+    {{- with .Values.kubeScheduler.serviceMonitor.tlsConfig }}
     tlsConfig:
-      caFile: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
-      {{- if eq (include "kube-prometheus-stack.kubeScheduler.insecureScrape" (list . nil true .Values.kubeScheduler.serviceMonitor.insecureSkipVerify)) "true" }}
-      insecureSkipVerify: true
-      {{- end }}
-      {{- if .Values.kubeScheduler.serviceMonitor.serverName }}
-      serverName: {{ .Values.kubeScheduler.serviceMonitor.serverName }}
-      {{- end}}
+      {{- tpl (toYaml .) $ | nindent 6 }}
+    {{- end }}
     {{- end}}
 {{- if .Values.kubeScheduler.serviceMonitor.metricRelabelings }}
     metricRelabelings:
@@ -55,5 +60,33 @@ spec:
 {{- if .Values.kubeScheduler.serviceMonitor.relabelings }}
     relabelings:
 {{ tpl (toYaml .Values.kubeScheduler.serviceMonitor.relabelings | indent 4) . }}
+{{- end }}
+{{- if .Values.kubeScheduler.serviceMonitor.resource.enabled }}
+  - port: {{ .Values.kubeScheduler.serviceMonitor.port }}
+    path: "/metrics/resources"
+    {{- if .Values.kubeScheduler.serviceMonitor.resource.interval }}
+    interval: {{ .Values.kubeScheduler.serviceMonitor.resource.interval }}
+    {{- end }}
+    {{- with include "kube-prometheus-stack.controlPlane.authorization" (dict "serviceMonitor" $.Values.kubeScheduler.serviceMonitor "root" $) }}
+    {{- . | nindent 4 }}
+    {{- end }}
+    {{- if .Values.kubeScheduler.serviceMonitor.proxyUrl }}
+    proxyUrl: {{ .Values.kubeScheduler.serviceMonitor.proxyUrl}}
+    {{- end }}
+    {{- if eq (include "kube-prometheus-stack.kubeScheduler.insecureScrape" (list . false true .Values.kubeScheduler.serviceMonitor.https )) "true" }}
+    scheme: https
+    {{- with .Values.kubeScheduler.serviceMonitor.tlsConfig }}
+    tlsConfig:
+      {{- tpl (toYaml .) $ | nindent 6 }}
+    {{- end }}
+    {{- end}}
+{{- if .Values.kubeScheduler.serviceMonitor.resource.metricRelabelings }}
+    metricRelabelings:
+{{ tpl (toYaml .Values.kubeScheduler.serviceMonitor.resource.metricRelabelings | indent 4) . }}
+{{- end }}
+{{- if .Values.kubeScheduler.serviceMonitor.resource.relabelings }}
+    relabelings:
+{{ tpl (toYaml .Values.kubeScheduler.serviceMonitor.reource.relabelings | indent 4) . }}
+{{- end }}
 {{- end }}
 {{- end }}

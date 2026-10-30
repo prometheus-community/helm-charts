@@ -1,12 +1,12 @@
 {{- if and .Values.prometheus.networkPolicy.enabled (eq .Values.prometheus.networkPolicy.flavor "kubernetes") }}
-apiVersion: {{ template "kube-prometheus-stack.prometheus.networkPolicy.apiVersion" . }}
+apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   labels:
     app: {{ template "kube-prometheus-stack.name" . }}-prometheus
     {{- include "kube-prometheus-stack.labels" . | nindent 4 }}
   name: {{ template "kube-prometheus-stack.fullname" . }}-prometheus
-  namespace: {{ template "kube-prometheus-stack.namespace" . }}
+  namespace: {{ .Values.prometheus.networkPolicy.namespace | default (include "kube-prometheus-stack.namespace" .) }}
 spec:
   {{- if .Values.prometheus.networkPolicy.egress }}
   egress:

@@ -3,7 +3,7 @@ apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
   name: {{ template "kube-prometheus-stack.fullname" . }}-alertmanager
-  namespace: {{ template "kube-prometheus-stack.namespace" . }}
+  namespace: {{ template "kube-prometheus-stack-alertmanager.namespace" . }}
   labels:
     app: {{ template "kube-prometheus-stack.name" . }}-alertmanager
 {{ include "kube-prometheus-stack.labels" . | indent 4 }}
@@ -11,6 +11,9 @@ metadata:
 {{- toYaml . | nindent 4 }}
 {{- end }}
 spec:
+  {{- with .Values.alertmanager.serviceMonitor.scrapeClass }}
+  scrapeClass: {{ . }}
+  {{- end }}
   {{- include "servicemonitor.scrapeLimits" .Values.alertmanager.serviceMonitor | nindent 2 }}
   selector:
     matchLabels:

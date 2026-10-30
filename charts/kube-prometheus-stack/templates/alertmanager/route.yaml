@@ -1,0 +1,19 @@
+{{- if .Values.alertmanager.enabled -}}
+  {{- $serviceName := printf "%s-%s" (include "kube-prometheus-stack.fullname" .) "alertmanager" }}
+  {{- $servicePort := .Values.alertmanager.ingress.servicePort | default .Values.alertmanager.service.port -}}
+  {{- range $name, $route := .Values.alertmanager.route }}
+  {{- if $route.enabled }}
+---
+{{ include "kube-prometheus-stack.route" (dict
+     "context" $
+     "route" $route
+     "name" (ternary $serviceName (printf "%s-%s" $serviceName $name) (eq $name "main"))
+     "namespace" (include "kube-prometheus-stack-alertmanager.namespace" $)
+     "labelApp" (printf "%s-alertmanager" (include "kube-prometheus-stack.name" $))
+     "hostnames" $route.hostnames
+     "serviceName" $serviceName
+     "servicePort" $servicePort
+   ) }}
+  {{- end }}
+  {{- end }}
+{{- end }}

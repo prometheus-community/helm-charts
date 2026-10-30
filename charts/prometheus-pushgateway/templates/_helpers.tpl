@@ -77,41 +77,6 @@ app.kubernetes.io/instance: {{ .Release.Name }}
 {{- end }}
 
 {{/*
-Return the appropriate apiVersion for networkpolicy.
-*/}}
-{{- define "prometheus-pushgateway.networkPolicy.apiVersion" -}}
-{{- if semverCompare ">=1.4-0, <1.7-0" .Capabilities.KubeVersion.GitVersion }}
-{{- print "extensions/v1beta1" }}
-{{- else if semverCompare "^1.7-0" .Capabilities.KubeVersion.GitVersion }}
-{{- print "networking.k8s.io/v1" }}
-{{- end }}
-{{- end }}
-
-{{/*
-Define PDB apiVersion
-*/}}
-{{- define "prometheus-pushgateway.pdb.apiVersion" -}}
-{{- if $.Capabilities.APIVersions.Has "policy/v1/PodDisruptionBudget" }}
-{{- print "policy/v1" }}
-{{- else }}
-{{- print "policy/v1beta1" }}
-{{- end }}
-{{- end }}
-
-{{/*
-Define Ingress apiVersion
-*/}}
-{{- define "prometheus-pushgateway.ingress.apiVersion" -}}
-{{- if semverCompare ">=1.19-0" .Capabilities.KubeVersion.GitVersion }}
-{{- print "networking.k8s.io/v1" }}
-{{- else if semverCompare ">=1.14-0" .Capabilities.KubeVersion.GitVersion }}
-{{- print "networking.k8s.io/v1beta1" }}
-{{- else }}
-{{- print "extensions/v1beta1" }}
-{{- end }}
-{{- end }}
-
-{{/*
 Define webConfiguration
 */}}
 {{- define "prometheus-pushgateway.webConfiguration" -}}
@@ -122,6 +87,28 @@ basic_auth_users:
 {{- end }}
 
 {{/*
+Return the name of an existing Secret holding the web configuration, or "" if none is set.
+*/}}
+{{- define "prometheus-pushgateway.webConfigurationExistingSecretName" -}}
+{{- $webConfiguration := .Values.webConfiguration | default dict -}}
+{{- $existingSecret := get $webConfiguration "existingSecret" | default dict -}}
+{{- get $existingSecret "name" | default "" -}}
+{{- end -}}
+
+{{/*
+Return the Secret name to mount as the web configuration: the user-provided
+existing Secret when set, otherwise the chart-managed Secret.
+*/}}
+{{- define "prometheus-pushgateway.webConfigurationSecretName" -}}
+{{- $existingSecretName := include "prometheus-pushgateway.webConfigurationExistingSecretName" . -}}
+{{- if $existingSecretName -}}
+{{- $existingSecretName -}}
+{{- else -}}
+{{- include "prometheus-pushgateway.fullname" . -}}
+{{- end -}}
+{{- end -}}
+
+{{/*
 Define Authorization
 */}}
 {{- define "prometheus-pushgateway.Authorization" -}}
@@ -130,6 +117,31 @@ Define Authorization
 {{- $password := index .Values.webConfiguration.basicAuthUsers $user }}
 {{- $user }}:{{ $password }}
 {{- end }}
+
+{{/*
+Define basicAuth
+*/}}
+{{- define "prometheus-pushgateway.basicAuth" -}}
+{{- $users := keys .Values.webConfiguration.basicAuthUsers }}
+{{- $user := first $users }}
+{{- $password := index .Values.webConfiguration.basicAuthUsers $user -}}
+user: {{ $user | b64enc | quote }}
+password: {{ $password | b64enc | quote }}
+{{- end }}
+
+{{/*
+Set the image with or without the registry
+*/}}
+{{- define "prometheus-pushgateway.image" -}}
+{{- $registry := default .Values.image.registry (.Values.global).imageRegistry }}
+{{- $repository := .Values.image.repository }}
+{{- $tag := default .Chart.AppVersion .Values.image.tag }}
+{{- if $registry }}
+    {{- printf "%s/%s:%s" $registry $repository $tag -}}
+{{- else -}}
+    {{- printf "%s:%s"  $repository $tag -}}
+{{- end -}}
+{{- end -}}
 
 {{/*
 Returns pod spec
@@ -144,7 +156,7 @@ priorityClassName: {{ . | quote }}
 hostAliases:
 {{- toYaml . | nindent 2 }}
 {{- end }}
-{{- with .Values.imagePullSecrets }}
+{{- with (.Values.global).imagePullSecrets | default .Values.imagePullSecrets }}
 imagePullSecrets:
   {{- toYaml . | nindent 2 }}
 {{- end }}
@@ -157,7 +169,7 @@ containers:
   {{- toYaml . | nindent 2 }}
   {{- end }}
   - name: pushgateway
-    image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+    image: {{ include "prometheus-pushgateway.image" . }}
     imagePullPolicy: {{ .Values.image.pullPolicy }}
     {{- with .Values.extraVars }}
     env:
@@ -179,10 +191,16 @@ containers:
     {{- if .Values.liveness.enabled }}
     {{- $livenessCommon := omit .Values.liveness.probe "httpGet" }}
     livenessProbe:
+    {{- if (include "prometheus-pushgateway.webConfigurationExistingSecretName" $) }}
+      tcpSocket:
+        port: {{ .Values.liveness.probe.httpGet.port }}
+      {{- toYaml $livenessCommon | nindent 6 }}
+    {{- else }}
     {{- with .Values.liveness.probe }}
       httpGet:
         path: {{ .httpGet.path }}
         port: {{ .httpGet.port }}
+        scheme: {{ .httpGet.scheme }}
         {{- if or .httpGet.httpHeaders $.Values.webConfiguration.basicAuthUsers }}
         httpHeaders:
         {{- if $.Values.webConfiguration.basicAuthUsers }}
@@ -196,13 +214,20 @@ containers:
         {{- toYaml $livenessCommon | nindent 6 }}
       {{- end }}
     {{- end }}
+    {{- end }}
     {{- if .Values.readiness.enabled }}
     {{- $readinessCommon := omit .Values.readiness.probe "httpGet" }}
     readinessProbe:
+    {{- if (include "prometheus-pushgateway.webConfigurationExistingSecretName" $) }}
+      tcpSocket:
+        port: {{ .Values.readiness.probe.httpGet.port }}
+      {{- toYaml $readinessCommon | nindent 6 }}
+    {{- else }}
     {{- with .Values.readiness.probe }}
       httpGet:
         path: {{ .httpGet.path }}
         port: {{ .httpGet.port }}
+        scheme: {{ .httpGet.scheme }}
         {{- if or .httpGet.httpHeaders $.Values.webConfiguration.basicAuthUsers }}
         httpHeaders:
         {{- if $.Values.webConfiguration.basicAuthUsers }}
@@ -216,6 +241,7 @@ containers:
         {{- toYaml $readinessCommon | nindent 6 }}
       {{- end }}
     {{- end }}
+    {{- end }}
     {{- with .Values.resources }}
     resources:
       {{- toYaml . | nindent 6 }}
@@ -223,6 +249,9 @@ containers:
     {{- with .Values.containerSecurityContext }}
     securityContext:
       {{- toYaml . | nindent 6 }}
+    {{- end }}
+    {{- with .Values.lifecycle }}
+    lifecycle: {{ toYaml . | nindent 6 }}
     {{- end }}
     volumeMounts:
       - name: storage-volume
@@ -282,12 +311,13 @@ volumes:
     persistentVolumeClaim:
       claimName: {{ if .Values.persistentVolume.existingClaim }}{{ .Values.persistentVolume.existingClaim }}{{- else }}{{ include "prometheus-pushgateway.fullname" . }}{{- end }}
   {{- else }}
-    emptyDir: {}
+    emptyDir:
+      {{- toYaml .Values.persistentVolume.emptyDir | nindent 6 }}
   {{- end }}
   {{- if .Values.webConfiguration }}
   - name: web-config
     secret:
-      secretName: {{ include "prometheus-pushgateway.fullname" . }}
+      secretName: {{ include "prometheus-pushgateway.webConfigurationSecretName" . }}
   {{- end }}
   {{- end }}
   {{- if .Values.extraVolumes }}
@@ -296,7 +326,7 @@ volumes:
   {{- if .Values.webConfiguration }}
   - name: web-config
     secret:
-      secretName: {{ include "prometheus-pushgateway.fullname" . }}
+      secretName: {{ include "prometheus-pushgateway.webConfigurationSecretName" . }}
   {{- else }}
   []
   {{- end }}

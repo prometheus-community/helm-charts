@@ -1,6 +1,6 @@
 {{- if .Values.server.podDisruptionBudget.enabled }}
 {{- $pdbSpec := omit .Values.server.podDisruptionBudget "enabled" }}
-apiVersion: {{ template "prometheus.podDisruptionBudget.apiVersion" . }}
+apiVersion: policy/v1
 kind: PodDisruptionBudget
 metadata:
   name: {{ template "prometheus.server.fullname" . }}
@@ -11,5 +11,16 @@ spec:
   selector:
     matchLabels:
       {{- include "prometheus.server.matchLabels" . | nindent 6 }}
-  {{- toYaml $pdbSpec | nindent 2 }}
+  {{- if not (or (hasKey $pdbSpec "minAvailable") (hasKey $pdbSpec "maxUnavailable")) }}
+  maxUnavailable: 1
+  {{- end }}
+  {{- if hasKey $pdbSpec "minAvailable" }}
+  minAvailable: {{ $pdbSpec.minAvailable }}
+  {{- end }}
+  {{- if hasKey $pdbSpec "maxUnavailable" }}
+  maxUnavailable: {{ $pdbSpec.maxUnavailable }}
+  {{- end }}
+  {{- if hasKey $pdbSpec "unhealthyPodEvictionPolicy" }}
+  unhealthyPodEvictionPolicy: {{ $pdbSpec.unhealthyPodEvictionPolicy }}
+  {{- end }}
 {{- end }}

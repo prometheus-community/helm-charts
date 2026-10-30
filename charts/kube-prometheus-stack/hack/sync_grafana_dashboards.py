@@ -27,13 +27,16 @@ def change_style(style, representer):
     return new_representer
 
 
+# Sentinel value for dashboards that identify clusters by the job label rather
+# than a dedicated cluster label (e.g. etcd, which predates externalLabels support).
+CLUSTER_SELECTOR_JOB = 'job'
+
 refs = {
-    # https://github.com/prometheus-operator/kube-prometheus
-    'ref.kube-prometheus': 'eb7f83a4071ea3aa8f98d0c8129fe6e6ac88bf34',
-    # https://github.com/kubernetes-monitoring/kubernetes-mixin
-    'ref.kubernetes-mixin': '50150c585ebee6e4d9cb72218182da8f3c616515',
-    # https://github.com/etcd-io/etcd
-    'ref.etcd': 'bf63f917059072b5a33ea5fa6b71c5988b1168b7',
+    # renovate: git-refs=https://github.com/prometheus-operator/kube-prometheus branch=main
+    'ref.kube-prometheus': 'f71fb6c77d108ad2b4cbf4d9771b56cbe92611fb',
+    # renovate: git-refs=https://github.com/kubernetes-monitoring/kubernetes-mixin branch=master
+    'ref.kubernetes-mixin': 'ea8e318e706c0c14fe857e9b0182f6b7e0564e88',
+    'ref.etcd': '479c194f3f5754f039a74c396f3e70f6419edf8e',
 }
 
 # Source files list
@@ -72,12 +75,16 @@ charts = [
         'min_kubernetes': '1.14.0-0',
         'type': 'jsonnet_mixin',
         'mixin_vars': {'_config+': {}},
-        'multicluster_key': '(or .Values.grafana.sidecar.dashboards.multicluster.global.enabled .Values.grafana.sidecar.dashboards.multicluster.etcd.enabled)'
+        'multicluster_key': '(or .Values.grafana.sidecar.dashboards.multicluster.global.enabled .Values.grafana.sidecar.dashboards.multicluster.etcd.enabled)',
+        # etcd metrics use the job label as the cluster identifier in single-cluster
+        # setups; when multicluster is enabled the generator switches to the cluster label.
+        'cluster_selector': CLUSTER_SELECTOR_JOB,
     },
 ]
 
 # Additional conditions map
 condition_map = {
+    'alertmanager-overview': ' (or .Values.alertmanager.enabled .Values.alertmanager.forceDeployDashboards)',
     'grafana-coredns-k8s': ' .Values.coreDns.enabled',
     'etcd': ' .Values.kubeEtcd.enabled',
     'apiserver': ' .Values.kubeApiServer.enabled',
@@ -88,6 +95,7 @@ condition_map = {
     'node-rsrc-use': ' (or .Values.nodeExporter.enabled .Values.nodeExporter.forceDeployDashboards)',
     'node-cluster-rsrc-use': ' (or .Values.nodeExporter.enabled .Values.nodeExporter.forceDeployDashboards)',
     'nodes': ' (and (or .Values.nodeExporter.enabled .Values.nodeExporter.forceDeployDashboards) .Values.nodeExporter.operatingSystems.linux.enabled)',
+    'nodes-aix': ' (and (or .Values.nodeExporter.enabled .Values.nodeExporter.forceDeployDashboards) .Values.nodeExporter.operatingSystems.aix.enabled)',
     'nodes-darwin': ' (and (or .Values.nodeExporter.enabled .Values.nodeExporter.forceDeployDashboards) .Values.nodeExporter.operatingSystems.darwin.enabled)',
     'prometheus-remote-write': ' .Values.prometheus.prometheusSpec.remoteWriteDashboards',
     'k8s-coredns': ' .Values.coreDns.enabled',
@@ -111,6 +119,21 @@ replacement_map = {
     'job=\\"prometheus-k8s\\",namespace=\\"monitoring\\"': {
         'replacement': '',
     },
+    'job=\\"kubelet\\"': {
+        'replacement': 'job=\\"`}}{{ $kubeletJob }}{{`\\"',
+        'init': '{{- $kubeletJob := include "kube-prometheus-stack-kubelet.name" . }}'},
+    'job=\\"kube-controller-manager\\"': {
+        'replacement': 'job=\\"`}}{{ $kubeControllerManagerJob }}{{`\\"',
+        'init': '{{- $kubeControllerManagerJob := include "kube-prometheus-stack-kube-controller-manager.name" . }}'},
+    'job=\\"kube-scheduler\\"': {
+        'replacement': 'job=\\"`}}{{ $kubeSchedulerJob }}{{`\\"',
+        'init': '{{- $kubeSchedulerJob := include "kube-prometheus-stack-kube-scheduler.name" . }}'},
+    'job=\\"kube-proxy\\"': {
+        'replacement': 'job=\\"`}}{{ $kubeProxyJob }}{{`\\"',
+        'init': '{{- $kubeProxyJob := include "kube-prometheus-stack-kube-proxy.name" . }}'},
+    'job=\\"apiserver\\"': {
+        'replacement': 'job=\\"`}}{{ $kubeApiserverJob }}{{`\\"',
+        'init': '{{- $kubeApiserverJob := include "kube-prometheus-stack-kube-apiserver.name" . }}'},
 }
 
 # standard header
@@ -120,7 +143,7 @@ Do not change in-place! In order to change this file first read following link:
 https://github.com/prometheus-community/helm-charts/tree/main/charts/kube-prometheus-stack/hack
 */ -}}
 {{- $kubeTargetVersion := default .Capabilities.KubeVersion.GitVersion .Values.kubeTargetVersionOverride }}
-{{- if and (or .Values.grafana.enabled .Values.grafana.forceDeployDashboards) (semverCompare ">=%(min_kubernetes)s" $kubeTargetVersion) (semverCompare "<%(max_kubernetes)s" $kubeTargetVersion) .Values.grafana.defaultDashboardsEnabled%(condition)s }}
+{{- if and (or .Values.grafana.enabled .Values.grafana.forceDeployDashboards) (semverCompare ">=%(min_kubernetes)s" $kubeTargetVersion) (semverCompare "<%(max_kubernetes)s" $kubeTargetVersion) .Values.grafana.defaultDashboardsEnabled%(condition)s }}%(init_line)s
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -130,13 +153,48 @@ metadata:
 {{ toYaml .Values.grafana.sidecar.dashboards.annotations | indent 4 }}
   labels:
     {{- if $.Values.grafana.sidecar.dashboards.label }}
-    {{ $.Values.grafana.sidecar.dashboards.label }}: {{ ternary $.Values.grafana.sidecar.dashboards.labelValue "1" (not (empty $.Values.grafana.sidecar.dashboards.labelValue)) | quote }}
+    {{ tpl $.Values.grafana.sidecar.dashboards.label $ }}: {{ ((tpl $.Values.grafana.sidecar.dashboards.labelValue $) | default 1) | quote }}
     {{- end }}
     app: {{ template "kube-prometheus-stack.name" $ }}-grafana
-{{ include "kube-prometheus-stack.labels" $ | indent 4 }}
+    {{- include "kube-prometheus-stack.labels" $ | nindent 4 }}
 data:
 '''
 
+    # Add GrafanaDashboard custom resource
+grafana_dashboard_operator = """
+---
+{{- if and .Values.grafana.operator.dashboardsConfigMapRefEnabled (or .Values.grafana.enabled .Values.grafana.forceDeployDashboards) (semverCompare ">=%(min_kubernetes)s" $kubeTargetVersion) (semverCompare "<%(max_kubernetes)s" $kubeTargetVersion) .Values.grafana.defaultDashboardsEnabled%(condition)s }}
+apiVersion: grafana.integreatly.org/v1beta1
+kind: GrafanaDashboard
+metadata:
+  name: {{ printf "%%s-%%s" (include "kube-prometheus-stack.fullname" $) "%(name)s" | trunc 63 | trimSuffix "-" }}
+  namespace: {{ template "kube-prometheus-stack-grafana.namespace" . }}
+  {{ with .Values.grafana.operator.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{ end }}
+  labels:
+    {{- if $.Values.grafana.sidecar.dashboards.label }}
+    {{ tpl $.Values.grafana.sidecar.dashboards.label $ }}: {{ ((tpl $.Values.grafana.sidecar.dashboards.labelValue $) | default 1) | quote }}
+    {{- end }}
+    app: {{ template "kube-prometheus-stack.name" $ }}-grafana
+    {{- include "kube-prometheus-stack.labels" $ | nindent 4 }}
+spec:
+  allowCrossNamespaceImport: true
+  resyncPeriod: {{ .Values.grafana.operator.resyncPeriod | quote | default "10m" }}
+  {{- include "kube-prometheus-stack.grafana.operator.folder" . | nindent 2 }}
+  instanceSelector:
+    matchLabels:
+    {{- if .Values.grafana.operator.matchLabels }}
+      {{- toYaml .Values.grafana.operator.matchLabels | nindent 6 }}
+    {{- else }}
+      {{- fail "grafana.operator.matchLabels must be specified when grafana.operator.dashboardsConfigMapRefEnabled is true" }}
+    {{- end }}
+  configMapRef:
+    name: {{ printf "%%s-%%s" (include "kube-prometheus-stack.fullname" $) "%(name)s" | trunc 63 | trimSuffix "-" }}
+    key: %(name)s.json
+{{- end }}
+"""
 
 def init_yaml_styles():
     represent_literal_str = change_style('|', SafeRepresenter.represent_str)
@@ -166,7 +224,7 @@ def replace_nested_key(data, key, value, replace):
         return data
 
 
-def patch_dashboards_json(content, multicluster_key):
+def patch_dashboards_json(content, multicluster_key, cluster_selector='cluster'):
     try:
         content_struct = json.loads(content)
 
@@ -186,12 +244,29 @@ def patch_dashboards_json(content, multicluster_key):
         content = json.dumps(content_struct, separators=(',', ':'))
         content = content.replace('":multicluster:"', '`}}{{ if %s }}0{{ else }}2{{ end }}{{`' % multicluster_key,)
 
+        # For dashboards that use the job label as a cluster selector (e.g. etcd),
+        # replace job="$cluster" metric selectors and the variable query with
+        # conditionals so multi-cluster setups can filter by the cluster label instead.
+        if cluster_selector == CLUSTER_SELECTOR_JOB:
+            content = content.replace(
+                'label_values(etcd_server_has_leader{job=~\\".*etcd.*\\"}, job)',
+                '`}}{{ if %(key)s }}label_values(etcd_server_has_leader{job=~\\".*etcd.*\\"}, cluster){{ else }}label_values(etcd_server_has_leader{job=~\\".*etcd.*\\"}, job){{ end }}{{`' % {'key': multicluster_key},
+            )
+            content = content.replace(
+                'job=\\"$cluster\\"',
+                '`}}{{ if %(key)s }}cluster{{ else }}job{{ end }}{{`=\\"$cluster\\"' % {'key': multicluster_key},
+            )
+
+        init_line = ''
+
         for line in replacement_map:
+            if line in content and replacement_map[line].get('init'):
+                init_line += '\n' + replacement_map[line]['init']
             content = content.replace(line, replacement_map[line]['replacement'])
     except (ValueError, KeyError):
         pass
 
-    return "{{`" + content + "`}}"
+    return init_line, "{{`" + content + "`}}"
 
 
 def patch_json_set_timezone_as_variable(content):
@@ -204,11 +279,22 @@ def patch_json_set_editable_as_variable(content):
     return re.sub(r'"editable"\s*:\s*(?:true|false)', '"editable":`}}{{ .Values.grafana.defaultDashboardsEditable }}{{`', content, flags=re.IGNORECASE)
 
 
+def patch_json_set_interval_as_variable(content):
+    # content is no more in json format, so we have to replace using regex
+    return re.sub(r'"interval"\s*:\s*"(?:\\.|[^\"])*"', '"interval":"`}}{{ .Values.grafana.defaultDashboardsInterval }}{{`"', content, flags=re.IGNORECASE)
+
 def jsonnet_import_callback(base, rel):
+    # rel_base is the path relative to the current cwd.
+    # see https://github.com/prometheus-community/helm-charts/issues/5283
+    # for more details.
+    rel_base = base
+    if rel_base.startswith(os.getcwd()):
+        rel_base = base[len(os.getcwd()):]
+
     if "github.com" in rel:
         base = os.getcwd() + '/vendor/'
-    elif "github.com" in base:
-        base = os.getcwd() + '/vendor/' + base[base.find('github.com'):]
+    elif "github.com" in rel_base:
+        base = os.getcwd() + '/vendor/' + rel_base[rel_base.find('github.com'):]
 
     if os.path.isfile(base + rel):
         return base + rel, open(base + rel).read().encode('utf-8')
@@ -216,19 +302,22 @@ def jsonnet_import_callback(base, rel):
     raise RuntimeError('File not found')
 
 
-def write_group_to_file(resource_name, content, url, destination, min_kubernetes, max_kubernetes, multicluster_key):
+def write_group_to_file(resource_name, content, url, destination, min_kubernetes, max_kubernetes, multicluster_key, cluster_selector='cluster'):
+    init_line, content = patch_dashboards_json(content, multicluster_key, cluster_selector)
+
     # initialize header
     lines = header % {
         'name': resource_name,
         'url': url,
         'condition': condition_map.get(resource_name, ''),
         'min_kubernetes': min_kubernetes,
-        'max_kubernetes': max_kubernetes
+        'max_kubernetes': max_kubernetes,
+        'init_line': init_line,
     }
 
-    content = patch_dashboards_json(content, multicluster_key)
     content = patch_json_set_timezone_as_variable(content)
     content = patch_json_set_editable_as_variable(content)
+    content = patch_json_set_interval_as_variable(content)
 
     filename_struct = {resource_name + '.json': (LiteralStr(content))}
     # rules themselves
@@ -236,6 +325,15 @@ def write_group_to_file(resource_name, content, url, destination, min_kubernetes
 
     # footer
     lines += '{{- end }}'
+
+    lines_grafana_operator = grafana_dashboard_operator % {
+        'name': resource_name,
+        'condition': condition_map.get(resource_name, ''),
+        'min_kubernetes': min_kubernetes,
+        'max_kubernetes': max_kubernetes
+    }
+
+    lines += lines_grafana_operator
 
     filename = resource_name + '.yaml'
     new_filename = "%s/%s" % (destination, filename)
@@ -317,7 +415,7 @@ def main():
             groups = yaml_text['items']
             for group in groups:
                 for resource, content in group['data'].items():
-                    write_group_to_file(resource.replace('.json', ''), content, url, chart['destination'], chart['min_kubernetes'], chart['max_kubernetes'], chart['multicluster_key'])
+                    write_group_to_file(resource.replace('.json', ''), content, url, chart['destination'], chart['min_kubernetes'], chart['max_kubernetes'], chart['multicluster_key'], chart.get('cluster_selector', 'cluster'))
         elif chart['type'] == 'jsonnet_mixin':
             json_text = json.loads(_jsonnet.evaluate_snippet(source, raw_text + '.grafanaDashboards', import_callback=jsonnet_import_callback))
 
@@ -327,14 +425,14 @@ def main():
             flat_structure = bool(json_text.get('annotations'))
             if flat_structure:
                 resource = os.path.basename(chart['source']).replace('.json', '')
-                write_group_to_file(resource, json.dumps(json_text, indent=4), url, chart['destination'], chart['min_kubernetes'], chart['max_kubernetes'], chart['multicluster_key'])
+                write_group_to_file(resource, json.dumps(json_text, indent=4), url, chart['destination'], chart['min_kubernetes'], chart['max_kubernetes'], chart['multicluster_key'], chart.get('cluster_selector', 'cluster'))
             else:
                 for resource, content in json_text.items():
-                    write_group_to_file(resource.replace('.json', ''), json.dumps(content, indent=4), url, chart['destination'], chart['min_kubernetes'], chart['max_kubernetes'], chart['multicluster_key'])
+                    write_group_to_file(resource.replace('.json', ''), json.dumps(content, indent=4), url, chart['destination'], chart['min_kubernetes'], chart['max_kubernetes'], chart['multicluster_key'], chart.get('cluster_selector', 'cluster'))
         elif chart['type'] == 'dashboard_json':
             write_group_to_file(os.path.basename(source).replace('.json', ''),
                                 raw_text, url, chart['destination'], chart['min_kubernetes'],
-                                chart['max_kubernetes'], chart['multicluster_key'])
+                                chart['max_kubernetes'], chart['multicluster_key'], chart.get('cluster_selector', 'cluster'))
 
 
 print("Finished")
