@@ -1,11 +1,11 @@
-# https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/v0.86.1/example/prometheus-operator-crd/monitoring.coreos.com_servicemonitors.yaml
+# https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/v0.94.2/example/prometheus-operator-crd/monitoring.coreos.com_servicemonitors.yaml
 ---
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.19.0
-    operator.prometheus.io/version: 0.86.1
+    controller-gen.kubebuilder.io/version: v0.22.0
+    operator.prometheus.io/version: 0.94.2
   name: servicemonitors.monitoring.coreos.com
 spec:
   group: monitoring.coreos.com
@@ -69,6 +69,10 @@ spec:
 
                       The Prometheus service account must have the `list` and `watch`
                       permissions on the `Nodes` objects.
+
+                      Node metadata labels are not automatically added to scraped metrics. They are
+                      exposed as `__meta_kubernetes_node_*` labels and can be copied to timeseries
+                      with relabeling configuration.
                     type: boolean
                 type: object
               bodySizeLimit:
@@ -96,10 +100,10 @@ spec:
                   properties:
                     authorization:
                       description: |-
-                        authorization configures the Authorization header credentials to use when
-                        scraping the target.
+                        authorization configures the Authorization header credentials used by
+                        the client.
 
-                        Cannot be set at the same time as `basicAuth`, or `oauth2`.
+                        Cannot be set at the same time as `basicAuth`, `bearerTokenSecret` or `oauth2`.
                       properties:
                         credentials:
                           description: credentials defines a key of a Secret in the
@@ -137,10 +141,10 @@ spec:
                       type: object
                     basicAuth:
                       description: |-
-                        basicAuth defines the Basic Authentication credentials to use when
-                        scraping the target.
+                        basicAuth defines the Basic Authentication credentials used by the
+                        client.
 
-                        Cannot be set at the same time as `authorization`, or `oauth2`.
+                        Cannot be set at the same time as `authorization`, `bearerTokenSecret` or `oauth2`.
                       properties:
                         password:
                           description: |-
@@ -203,9 +207,12 @@ spec:
                       type: string
                     bearerTokenSecret:
                       description: |-
-                        bearerTokenSecret defines a key of a Secret containing the bearer
-                        token for scraping targets. The secret needs to be in the same namespace
-                        as the ServiceMonitor object and readable by the Prometheus Operator.
+                        bearerTokenSecret defines a key of a Secret containing the bearer token
+                        used by the client for authentication. The secret needs to be in the
+                        same namespace as the custom resource and readable by the Prometheus
+                        Operator.
+
+                        Cannot be set at the same time as `authorization`, `basicAuth` or `oauth2`.
 
                         Deprecated: use `authorization` instead.
                       properties:
@@ -231,8 +238,7 @@ spec:
                       type: object
                       x-kubernetes-map-type: atomic
                     enableHttp2:
-                      description: enableHttp2 can be used to disable HTTP2 when scraping
-                        the target.
+                      description: enableHttp2 can be used to disable HTTP2.
                       type: boolean
                     filterRunning:
                       description: |-
@@ -245,8 +251,8 @@ spec:
                       type: boolean
                     followRedirects:
                       description: |-
-                        followRedirects defines whether the scrape requests should follow HTTP
-                        3xx redirects.
+                        followRedirects defines whether the client should follow HTTP 3xx
+                        redirects.
                       type: boolean
                     honorLabels:
                       description: |-
@@ -315,6 +321,7 @@ spec:
 
                               Only applicable when the action is `HashMod`.
                             format: int64
+                            minimum: 0
                             type: integer
                           regex:
                             description: regex defines the regular expression against
@@ -364,11 +371,11 @@ spec:
                       type: string
                     oauth2:
                       description: |-
-                        oauth2 defines the OAuth2 settings to use when scraping the target.
+                        oauth2 defines the OAuth2 settings used by the client.
 
                         It requires Prometheus >= 2.27.0.
 
-                        Cannot be set at the same time as `authorization`, or `basicAuth`.
+                        Cannot be set at the same time as `authorization`, `basicAuth` or `bearerTokenSecret`.
                       properties:
                         clientId:
                           description: |-
@@ -380,7 +387,9 @@ spec:
                                 data to use for the targets.
                               properties:
                                 key:
-                                  description: The key to select.
+                                  description: |-
+                                    The key to select from the ConfigMap's Data field.
+                                    Keys in the BinaryData field are not currently propagated to container env vars.
                                   type: string
                                 name:
                                   default: ""
@@ -530,7 +539,9 @@ spec:
                                     data to use for the targets.
                                   properties:
                                     key:
-                                      description: The key to select.
+                                      description: |-
+                                        The key to select from the ConfigMap's Data field.
+                                        Keys in the BinaryData field are not currently propagated to container env vars.
                                       type: string
                                     name:
                                       default: ""
@@ -584,7 +595,9 @@ spec:
                                     data to use for the targets.
                                   properties:
                                     key:
-                                      description: The key to select.
+                                      description: |-
+                                        The key to select from the ConfigMap's Data field.
+                                        Keys in the BinaryData field are not currently propagated to container env vars.
                                       type: string
                                     name:
                                       default: ""
@@ -688,7 +701,7 @@ spec:
                         tokenUrl:
                           description: tokenUrl defines the URL to fetch the token
                             from.
-                          minLength: 1
+                          pattern: ^(http|https)://.+$
                           type: string
                       required:
                       - clientId
@@ -710,7 +723,8 @@ spec:
                       type: string
                     port:
                       description: |-
-                        port defines the name of the Service port which this endpoint refers to.
+                        port defines the name of the Service port which this endpoint refers to
+                        (e.g. `.spec.ports[].name`).
 
                         It takes precedence over `targetPort`.
                       type: string
@@ -814,6 +828,7 @@ spec:
 
                               Only applicable when the action is `HashMod`.
                             format: int64
+                            minimum: 0
                             type: integer
                           regex:
                             description: regex defines the regular expression against
@@ -854,16 +869,13 @@ spec:
                         type: object
                       type: array
                     scheme:
-                      description: |-
-                        scheme defines the HTTP scheme to use for scraping.
-
-                        `http` and `https` are the expected values unless you rewrite the
-                        `__scheme__` label via relabeling.
-
-                        If empty, Prometheus uses the default value `http`.
+                      description: scheme defines the HTTP scheme to use when scraping
+                        the metrics.
                       enum:
                       - http
                       - https
+                      - HTTP
+                      - HTTPS
                       type: string
                     scrapeTimeout:
                       description: |-
@@ -879,12 +891,14 @@ spec:
                       - type: integer
                       - type: string
                       description: |-
-                        targetPort defines the name or number of the target port of the `Pod` object behind the
-                        Service. The port must be specified with the container's port property.
+                        targetPort defines the name or number of a container port on Pods selected
+                        by the Service.
+                        If a name, it matches against `.spec.containers[].ports[].name` of the Pods.
+                        If a number, it matches against `.spec.containers[].ports[].containerPort` of the Pods.
                       x-kubernetes-int-or-string: true
                     tlsConfig:
-                      description: tlsConfig defines the TLS configuration to use
-                        when scraping the target.
+                      description: tlsConfig defines TLS configuration used by the
+                        client.
                       properties:
                         ca:
                           description: ca defines the Certificate authority used when
@@ -895,7 +909,9 @@ spec:
                                 data to use for the targets.
                               properties:
                                 key:
-                                  description: The key to select.
+                                  description: |-
+                                    The key to select from the ConfigMap's Data field.
+                                    Keys in the BinaryData field are not currently propagated to container env vars.
                                   type: string
                                 name:
                                   default: ""
@@ -953,7 +969,9 @@ spec:
                                 data to use for the targets.
                               properties:
                                 key:
-                                  description: The key to select.
+                                  description: |-
+                                    The key to select from the ConfigMap's Data field.
+                                    Keys in the BinaryData field are not currently propagated to container env vars.
                                   type: string
                                 name:
                                   default: ""
@@ -1104,6 +1122,7 @@ spec:
 
                   It requires Prometheus >= v2.47.0.
                 format: int64
+                minimum: 0
                 type: integer
               labelLimit:
                 description: |-
@@ -1111,6 +1130,7 @@ spec:
 
                   It requires Prometheus >= v2.27.0.
                 format: int64
+                minimum: 0
                 type: integer
               labelNameLengthLimit:
                 description: |-
@@ -1118,6 +1138,7 @@ spec:
 
                   It requires Prometheus >= v2.27.0.
                 format: int64
+                minimum: 0
                 type: integer
               labelValueLengthLimit:
                 description: |-
@@ -1125,6 +1146,7 @@ spec:
 
                   It requires Prometheus >= v2.27.0.
                 format: int64
+                minimum: 0
                 type: integer
               namespaceSelector:
                 description: |-
@@ -1149,6 +1171,7 @@ spec:
                   buckets will be merged to stay within the limit.
                   It requires Prometheus >= v2.45.0.
                 format: int64
+                minimum: 0
                 type: integer
               nativeHistogramMinBucketFactor:
                 anyOf:
@@ -1172,6 +1195,7 @@ spec:
                   sampleLimit defines a per-scrape limit on the number of scraped samples
                   that will be accepted.
                 format: int64
+                minimum: 0
                 type: integer
               scrapeClass:
                 description: scrapeClass defines the scrape class to apply.
@@ -1183,6 +1207,11 @@ spec:
                   It requires Prometheus >= v2.45.0.
 
                   Notice: `scrapeClassicHistograms` corresponds to the `always_scrape_classic_histograms` field in the Prometheus configuration.
+                type: boolean
+              scrapeNativeHistograms:
+                description: |-
+                  scrapeNativeHistograms defines whether to enable scraping of native histograms.
+                  It requires Prometheus >= v3.8.0.
                 type: boolean
               scrapeProtocols:
                 description: |-
@@ -1292,6 +1321,7 @@ spec:
                   targetLimit defines a limit on the number of scraped targets that will
                   be accepted.
                 format: int64
+                minimum: 0
                 type: integer
             required:
             - endpoints

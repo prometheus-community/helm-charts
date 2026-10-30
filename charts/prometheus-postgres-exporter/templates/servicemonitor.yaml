@@ -8,7 +8,7 @@ metadata:
 {{ toYaml .Values.serviceMonitor.labels | indent 4}}
 {{- end }}
   name: {{ template "prometheus-postgres-exporter.fullname" . }}
-  namespace: {{ .Values.serviceMonitor.namespace | default (include "prometheus-postgres-exporter.namespace" .)  }}
+  namespace: {{ .Values.serviceMonitor.namespace | default (include "prometheus-postgres-exporter.namespace" .) | quote }}
 spec:
 {{- if .Values.serviceMonitor.multipleTarget.enabled }}
   endpoints:
@@ -93,7 +93,7 @@ spec:
   jobLabel: {{ template "prometheus-postgres-exporter.fullname" . }}
   namespaceSelector:
     matchNames:
-    - {{ .Release.Namespace }}
+    - {{ .Release.Namespace | quote }}
   selector:
     matchLabels:
       {{- include "prometheus-postgres-exporter.selectorLabels" . | nindent 6 }}

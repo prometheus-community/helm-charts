@@ -51,7 +51,7 @@ _See [helm upgrade](https://helm.sh/docs/helm/helm_upgrade/) for command documen
 
 ### To 7.0.0
 
-In Release 7.0.0, the chart has dropped support for PodSecurityPolicy, which was remvoed in k8s 1.25.
+In Release 7.0.0, the chart has dropped support for PodSecurityPolicy, which was removed in k8s 1.25.
 
 #### To 6.0.0
 
@@ -59,7 +59,7 @@ In release 6.0, the chart API version has been increased to v2. From now on, the
 
 The minimum Kubernetes version supported by the chart has been raised to 1.19.
 
-Labels and selectors have been replaced following [Helm 3 label and annotation best practices](https://helmsh/docs/chart_best_practices/labels/):
+Labels and selectors have been replaced following [Helm 3 label and annotation best practices](https://helm.sh/docs/chart_best_practices/labels/):
 
 | Previous            | Current                      |
 |---------------------|------------------------------|

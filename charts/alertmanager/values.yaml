@@ -80,13 +80,15 @@ hostAliases: []
   #   - "foo.remote"
   #   - "bar.remote"
 securityContext:
-  # capabilities:
-  #   drop:
-  #   - ALL
-  # readOnlyRootFilesystem: true
-  runAsUser: 65534
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop: ["ALL"]
+  readOnlyRootFilesystem: true
   runAsNonRoot: true
+  runAsUser: 65534
   runAsGroup: 65534
+  seccompProfile:
+    type: RuntimeDefault
 
 additionalPeers: []
 
@@ -99,17 +101,20 @@ extraInitContainers: []
 ##
 extraContainers: []
 
-containerPortName: &containerPortName http
+containerPortName: http
 
 livenessProbe:
   httpGet:
-    path: /
-    port: *containerPortName
+    path: /-/healthy
+    port: http
+  periodSeconds: 10
+  initialDelaySeconds: 2
 
 readinessProbe:
   httpGet:
-    path: /
-    port: *containerPortName
+    path: /-/ready
+    port: http
+  periodSeconds: 10
 
 service:
   annotations: {}
@@ -148,6 +153,21 @@ servicePerReplica:
   # Service type
   #
   type: ClusterIP
+
+serviceMonitor:
+  enabled: false
+  namespace: ""
+  additionalLabels: {}
+  interval: ""
+  scrapeTimeout: ""
+  path: /metrics
+  scheme: ""
+  tlsConfig: {}
+  bearerTokenFile: ""
+  basicAuth: {}
+  honorLabels: false
+  metricRelabelings: []
+  relabelings: []
 
 ingress:
   enabled: false
@@ -210,6 +230,52 @@ ingressPerReplica:
     #
     prefix: "alertmanager"
 
+## route (map) allows configuration of Gateway API HTTPRoute resources
+## Requires Gateway API resources and a suitable controller installed within the cluster
+## Ref. https://gateway-api.sigs.k8s.io/guides/http-routing/
+route:
+  main:
+    ## Enable this route
+    enabled: false
+
+    ## apiVersion set by default to "gateway.networking.k8s.io/v1"
+    apiVersion: ""
+    ## kind set by default to HTTPRoute
+    kind: ""
+
+    ## Annotations to attach to the HTTPRoute resource
+    annotations: {}
+    ## Labels to attach to the HTTPRoute resource
+    labels: {}
+
+    ## ParentRefs references the resources (usually Gateways) this HTTPRoute should be attached to
+    parentRefs: []
+      # - name: contour
+      #   sectionName: http
+
+    ## Hostnames (templated) defines a set of hostnames that should match against the HTTP Host
+    ## header to select an HTTPRoute used to process the request
+    hostnames: []
+      # - alertmanager.domain.com
+
+    ## additionalRules (templated) allows adding custom rules to the route
+    additionalRules: []
+
+    ## Filters define the filters that are applied to requests that match this rule
+    filters: []
+
+    ## Matches define conditions used for matching the rule against incoming HTTP requests
+    matches:
+      - path:
+          type: PathPrefix
+          value: /
+
+    ## httpsRedirect adds a filter for redirecting to https (HTTP 301 Moved Permanently).
+    ## To redirect HTTP traffic to HTTPS, you need a Gateway with both HTTP and HTTPS listeners.
+    ## Matches and filters do not take effect if enabled.
+    ## Ref. https://gateway-api.sigs.k8s.io/guides/http-redirect-rewrite/
+    httpsRedirect: false
+
 resources: {}
   # We usually recommend not to specify default resources and to leave this as a conscious
   # choice for the user. This also increases chances charts run on environments with little
@@ -251,6 +317,7 @@ topologySpreadConstraints: []
   #       app.kubernetes.io/instance: alertmanager
 
 statefulSet:
+  labels: {}
   annotations: {}
 
 ## Minimum number of seconds for which a newly created pod should be ready without any of its container crashing for it to
@@ -336,7 +403,7 @@ config:
 configmapReload:
   ## If false, the configmap-reload container will not be deployed
   ##
-  enabled: false
+  enabled: true
 
   ## configmap-reload container name
   ##
@@ -346,26 +413,30 @@ configmapReload:
   ##
   image:
     repository: quay.io/prometheus-operator/prometheus-config-reloader
-    tag: v0.86.1
+    tag: v0.94.2
     pullPolicy: IfNotPresent
 
-  # containerPort: 9533
+  containerPort: 8080
 
   ## configmap-reload resource requests and limits
   ## Ref: http://kubernetes.io/docs/user-guide/compute-resources/
   ##
   resources: {}
 
-  livenessProbe: {}
-    # httpGet:
-    #   path: /healthz
-    #   port: 8080
-    #   scheme: HTTP
-  readinessProbe: {}
-    # httpGet:
-    #   path: /healthz
-    #   port: 8080
-    #   scheme: HTTP
+  livenessProbe:
+    httpGet:
+      path: /healthz
+      port: metrics
+      scheme: HTTP
+    periodSeconds: 10
+    initialDelaySeconds: 2
+
+  readinessProbe:
+    httpGet:
+      path: /healthz
+      port: metrics
+      scheme: HTTP
+    periodSeconds: 10
 
   extraArgs: {}
 
@@ -380,14 +451,16 @@ configmapReload:
     # - name: FOO
     #   value: BAR
 
-  securityContext: {}
-    # capabilities:
-    #   drop:
-    #   - ALL
-    # readOnlyRootFilesystem: true
-    # runAsUser: 65534
-    # runAsNonRoot: true
-    # runAsGroup: 65534
+  securityContext:
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop: ["ALL"]
+    readOnlyRootFilesystem: true
+    runAsNonRoot: true
+    runAsUser: 65534
+    runAsGroup: 65534
+    seccompProfile:
+      type: RuntimeDefault
 
 templates: {}
 #   alertmanager.tmpl: |-
@@ -438,3 +511,21 @@ verticalPodAutoscaler:
 extraPodConfigs: {}
   # dnsPolicy: ClusterFirstWithHostNet
   # hostNetwork: true
+
+## Extra manifests to deploy. Can be of type dict or list.
+## If dict, keys are ignored and only values are used.
+## Items contained within extraManifests can be defined as dict or string and are passed through tpl.
+extraManifests: null
+  # - apiVersion: v1
+  #   kind: ConfigMap
+  #   metadata:
+  #     name: alertmanager-extra
+  #   data:
+  #     extra-data: "value"
+  #
+  # can also be defined as a string, useful for templating field names
+  # - |
+  #   apiVersion: v1
+  #   kind: ConfigMap
+  #   metadata:
+  #     name: {{ .Release.Name }}-extra

@@ -1,12 +1,20 @@
 {{- if and .Values.prometheus.enabled .Values.prometheus.additionalServiceMonitors }}
+{{- $isMap := kindIs "map" .Values.prometheus.additionalServiceMonitors }}
+{{- $hasMonitors := false }}
 apiVersion: v1
 kind: List
 items:
-{{- range .Values.prometheus.additionalServiceMonitors }}
+{{- range $key, $monitor := .Values.prometheus.additionalServiceMonitors }}
+{{- if $monitor }}
+{{- $hasMonitors = true }}
   - apiVersion: monitoring.coreos.com/v1
     kind: ServiceMonitor
     metadata:
-      name: {{ .name }}
+      {{- if $isMap }}
+      name: {{ $monitor.name | default $key | quote }}
+      {{- else }}
+      name: {{ .name | quote }}
+      {{- end }}
       namespace: {{ template "kube-prometheus-stack.namespace" $ }}
       labels:
         app: {{ template "kube-prometheus-stack.name" $ }}-prometheus
@@ -15,6 +23,9 @@ items:
 {{ toYaml .additionalLabels | indent 8 }}
         {{- end }}
     spec:
+      {{- with .scrapeClass }}
+      scrapeClass: {{ . }}
+      {{- end }}
       {{- include "servicemonitor.scrapeLimits" . | nindent 6 }}
       endpoints:
 {{ toYaml .endpoints | indent 8 }}
@@ -42,5 +53,9 @@ items:
       attachMetadata:
         {{- toYaml . | nindent 8 }}
     {{- end }}
+{{- end }}
+{{- end }}
+{{- if not $hasMonitors }}
+  []
 {{- end }}
 {{- end }}

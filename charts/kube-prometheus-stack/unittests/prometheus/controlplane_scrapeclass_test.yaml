@@ -1,0 +1,41 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/helm-unittest/helm-unittest/main/schema/helm-testsuite.json
+suite: test prometheus control-plane scrape class
+templates:
+  - prometheus/prometheus.yaml
+release:
+  name: kps
+tests:
+  - it: should not define any scrape class by default
+    asserts:
+      - notExists:
+          path: spec.scrapeClasses
+
+  - it: should define the control-plane scrape class with the projected service account token when enabled
+    set:
+      prometheus.controlPlaneScrapeClass.enabled: true
+    asserts:
+      - equal:
+          path: spec.scrapeClasses
+          value:
+            - name: kube-prometheus-stack-control-plane
+              authorization:
+                type: Bearer
+                credentialsFile: /var/run/secrets/kubernetes.io/serviceaccount/token
+
+  - it: should append the control-plane scrape class to user-defined scrape classes
+    set:
+      prometheus.controlPlaneScrapeClass.enabled: true
+      prometheus.prometheusSpec.scrapeClasses:
+        - name: custom
+          default: true
+    asserts:
+      - lengthEqual:
+          path: spec.scrapeClasses
+          count: 2
+      - equal:
+          path: spec.scrapeClasses[0].name
+          value: custom
+      - equal:
+          path: spec.scrapeClasses[1].name
+          value: kube-prometheus-stack-control-plane
+
