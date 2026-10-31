@@ -41,6 +41,13 @@ helm upgrade [RELEASE_NAME] oci://ghcr.io/prometheus-community/charts/prometheus
 
 _See [helm upgrade](https://helm.sh/docs/helm/helm_upgrade/) for command documentation._
 
+#### 4.x to 5.x
+
+The default filesystem collector arguments moved from `extraArgs` to the new `defaultArgs` value, and `extraArgs` is now empty, so arguments you add no longer replace the defaults.
+
+If you copied the defaults into your own `extraArgs`, remove them there. node-exporter refuses a flag given twice and would not start.
+To change or drop a default, override `defaultArgs` instead.
+
 #### 3.x to 4.x
 
 Starting from version 4.0.0, the `node exporter` chart is using the [Kubernetes recommended labels](https://kubernetes.io/docs/concepts/overview/working-with-objects/common-labels/). Therefore you have to delete the daemonset before you upgrade.
