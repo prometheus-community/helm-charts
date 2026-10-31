@@ -63,7 +63,13 @@ kubeRBACProxy:
   ## Specify security settings for a Container
   ## Allows overrides and additional options compared to (Pod) securityContext
   ## Ref: https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-the-security-context-for-a-container
-  containerSecurityContext: {}
+  containerSecurityContext:
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+      - ALL
+    seccompProfile:
+      type: RuntimeDefault
 
   # Specify the port used for the Node exporter container (upstream port)
   port: 8100
@@ -370,10 +376,15 @@ securityContext:
   runAsUser: 65534
 
 containerSecurityContext:
+  allowPrivilegeEscalation: false
   readOnlyRootFilesystem: true
-  # capabilities:
-  #   add:
-  #   - SYS_TIME
+  capabilities:
+    drop:
+    - ALL
+    # add:
+    # - SYS_TIME
+  seccompProfile:
+    type: RuntimeDefault
 
 rbac:
   ## If true, create & use RBAC resources
