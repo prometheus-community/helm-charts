@@ -94,13 +94,26 @@ jobs:
             version="$(yq -r '.version' <<< "${chart}")"
             ref="oci://ghcr.io/${GITHUB_REPOSITORY_OWNER}/charts/${name}"
 
-            if output="$(helm show chart "${ref}" --version "${version}" 2>&1)"; then
-              echo "Skipping ${name}:${version}, already published"
-            # ghcr.io may answer denied instead of not found for charts that were never published.
-            elif [[ "${output}" == *": not found"* || "${output}" == *"denied"* ]]; then
-              helm push "${pkg}" "oci://ghcr.io/${GITHUB_REPOSITORY_OWNER}/charts"
-            else
-              echo "::error::Failed to check ghcr.io for ${name}:${version}: ${output}"
-              exit 1
-            fi
+            # ghcr.io sometimes fails the tag step right after uploading the manifest ("Tag" ... not found).
+            # Retry, and check again before each attempt so a push that did land is not sent twice.
+            for attempt in 1 2 3; do
+              if output="$(helm show chart "${ref}" --version "${version}" 2>&1)"; then
+                echo "Skipping ${name}:${version}, already published"
+                break
+              # ghcr.io may answer denied instead of not found for charts that were never published.
+              elif [[ "${output}" != *": not found"* && "${output}" != *"denied"* ]]; then
+                echo "::error::Failed to check ghcr.io for ${name}:${version}: ${output}"
+                exit 1
+              fi
+
+              if helm push "${pkg}" "oci://ghcr.io/${GITHUB_REPOSITORY_OWNER}/charts"; then
+                break
+              elif [ "${attempt}" -eq 3 ]; then
+                echo "::error::Failed to push ${name}:${version} to ghcr.io after ${attempt} attempts"
+                exit 1
+              fi
+
+              echo "::warning::Pushing ${name}:${version} to ghcr.io failed, retrying in $((attempt * 15))s"
+              sleep $((attempt * 15))
+            done
           done
