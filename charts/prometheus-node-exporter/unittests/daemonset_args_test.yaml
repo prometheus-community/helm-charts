@@ -1,0 +1,33 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/helm-unittest/helm-unittest/main/schema/helm-testsuite.json
+suite: daemonset default and extra args
+templates:
+  - daemonset.yaml
+tests:
+  - it: passes the default filesystem args
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: --collector.filesystem.mount-points-exclude=^/(dev|proc|sys|run/containerd/.+|var/lib/docker/.+|var/lib/kubelet/.+)($|/)
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: --collector.filesystem.fs-types-exclude=^(autofs|binfmt_misc|bpf|cgroup2?|configfs|debugfs|devpts|devtmpfs|fusectl|hugetlbfs|iso9660|mqueue|nsfs|overlay|proc|procfs|pstore|rpc_pipefs|securityfs|selinuxfs|squashfs|sysfs|tracefs|erofs)$
+
+  - it: adds extraArgs after the defaults instead of replacing them
+    set:
+      extraArgs:
+        - --collector.textfile.directory=/run/prometheus
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: --collector.textfile.directory=/run/prometheus
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: --collector.filesystem.mount-points-exclude=^/(dev|proc|sys|run/containerd/.+|var/lib/docker/.+|var/lib/kubelet/.+)($|/)
+
+  - it: drops the defaults when defaultArgs is empty
+    set:
+      defaultArgs: []
+    asserts:
+      - notContains:
+          path: spec.template.spec.containers[0].args
+          content: --collector.filesystem.mount-points-exclude=^/(dev|proc|sys|run/containerd/.+|var/lib/docker/.+|var/lib/kubelet/.+)($|/)
