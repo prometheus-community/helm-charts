@@ -1,0 +1,25 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/helm-unittest/helm-unittest/main/schema/helm-testsuite.json
+suite: test grafana prometheus replica datasources with exemplarTraceIdDestinations
+templates:
+  - grafana/configmaps-datasources.yaml
+tests:
+  - it: renders urlDisplayLabel for each replica datasource
+    release:
+      name: kps
+    set:
+      grafana:
+        forceDeployDatasources: true
+        sidecar:
+          datasources:
+            createPrometheusReplicasDatasources: true
+            exemplarTraceIdDestinations:
+              datasourceUid: tempo
+              traceIdLabelName: trace_id
+              urlDisplayLabel: View trace
+      prometheus:
+        prometheusSpec:
+          replicas: 2
+    asserts:
+      - matchRegex:
+          path: data['datasource.yaml']
+          pattern: "(?s)uid: prometheus-replica-0\\n.*?urlDisplayLabel: View trace\\n.*?uid: prometheus-replica-1\\n.*?urlDisplayLabel: View trace\\n"

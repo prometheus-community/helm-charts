@@ -1,0 +1,63 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/helm-unittest/helm-unittest/main/schema/helm-testsuite.json
+suite: test daemonset sidecars
+templates:
+  - daemonset.yaml
+tests:
+  - it: renders sidecars without volume mounts
+    set:
+      sidecars:
+        - name: sidecar
+          image: example/sidecar:1.0.0
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[1]
+          value:
+            name: sidecar
+            image: example/sidecar:1.0.0
+
+  - it: adds sidecarVolumeMount and sidecarHostVolumeMounts to every sidecar
+    set:
+      sidecars:
+        - name: sidecar-a
+          image: example/sidecar-a:1.0.0
+        - name: sidecar-b
+          image: example/sidecar-b:1.0.0
+          volumeMounts:
+            - name: own
+              mountPath: /own
+      sidecarVolumeMount:
+        - name: collector-textfiles
+          mountPath: /run/prometheus
+          readOnly: false
+      sidecarHostVolumeMounts:
+        - name: host-logs
+          hostPath: C:\logs
+          mountPath: /logs
+          readOnly: true
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[1].volumeMounts
+          value:
+            - name: collector-textfiles
+              mountPath: /run/prometheus
+              readOnly: false
+            - name: host-logs
+              mountPath: /logs
+              readOnly: true
+      - equal:
+          path: spec.template.spec.containers[2].volumeMounts
+          value:
+            - name: own
+              mountPath: /own
+            - name: collector-textfiles
+              mountPath: /run/prometheus
+              readOnly: false
+            - name: host-logs
+              mountPath: /logs
+              readOnly: true
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: host-logs
+            hostPath:
+              path: C:\logs
