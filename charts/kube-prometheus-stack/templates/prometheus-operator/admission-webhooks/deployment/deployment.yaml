@@ -61,16 +61,21 @@ spec:
             {{- if .Values.prometheusOperator.admissionWebhooks.deployment.logLevel }}
             - --log-level={{ .Values.prometheusOperator.admissionWebhooks.deployment.logLevel }}
             {{- end }}
+            {{- with .Values.prometheusOperator.admissionWebhooks.deployment.promqlOptions }}
+            - "--promql-options={{ join "," . }}"
+            {{- end }}
           {{- if .Values.prometheusOperator.admissionWebhooks.deployment.tls.enabled }}
             - "--web.enable-tls=true"
-            - "--web.cert-file=/cert/{{ if .Values.prometheusOperator.admissionWebhooks.certManager.enabled }}tls.crt{{ else }}cert{{ end }}"
-            - "--web.key-file=/cert/{{ if .Values.prometheusOperator.admissionWebhooks.certManager.enabled }}tls.key{{ else }}key{{ end }}"
+            - "--web.cert-file=/cert/{{ if include "kube-prometheus-stack.prometheus-operator-webhook.tlsSecretKeys" . }}tls.crt{{ else }}cert{{ end }}"
+            - "--web.key-file=/cert/{{ if include "kube-prometheus-stack.prometheus-operator-webhook.tlsSecretKeys" . }}tls.key{{ else }}key{{ end }}"
             - "--web.listen-address=:{{ .Values.prometheusOperator.admissionWebhooks.deployment.tls.internalPort }}"
             - "--web.tls-min-version={{ .Values.prometheusOperator.admissionWebhooks.deployment.tls.tlsMinVersion }}"
           ports:
             - containerPort: {{ .Values.prometheusOperator.admissionWebhooks.deployment.tls.internalPort }}
               name: https
           {{- else }}
+            - "--web.enable-tls=false"
+            - "--web.listen-address=:8080"
           ports:
             - containerPort: 8080
               name: http
@@ -122,7 +127,7 @@ spec:
       securityContext:
 {{ toYaml .Values.prometheusOperator.admissionWebhooks.deployment.securityContext | indent 8 }}
 {{- end }}
-      serviceAccountName: {{ template "kube-prometheus-stack.operator.serviceAccountName" . }}-webhook
+      serviceAccountName: {{ template "kube-prometheus-stack.operator.admissionWebhooks.serviceAccountName" . }}
       automountServiceAccountToken: {{ .Values.prometheusOperator.admissionWebhooks.deployment.automountServiceAccountToken }}
 {{- if .Values.prometheusOperator.admissionWebhooks.deployment.hostNetwork }}
       hostNetwork: true

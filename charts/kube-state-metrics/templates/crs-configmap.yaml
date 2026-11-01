@@ -1,8 +1,8 @@
-{{- if .Values.customResourceState.enabled}}
+{{- if and .Values.customResourceState.enabled .Values.customResourceState.create }}
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: {{ template "kube-state-metrics.fullname" . }}-customresourcestate-config
+  name: {{ template "kube-state-metrics.crsConfigMapName" . }}
   namespace: {{ template "kube-state-metrics.namespace" . }}
   labels:
     {{- include "kube-state-metrics.labels" . | indent 4 }}
@@ -11,6 +11,6 @@ metadata:
     {{ toYaml .Values.annotations | nindent 4 }}
   {{- end }}
 data:
-  config.yaml: |
+  {{ .Values.customResourceState.key }}: |
     {{- toYaml .Values.customResourceState.config | nindent 4 }}
 {{- end }}

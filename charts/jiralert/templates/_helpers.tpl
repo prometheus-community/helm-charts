@@ -75,17 +75,6 @@ Create the name of the service account to use
 {{- end }}
 {{- end }}
 
-{{/*
-Return the appropriate apiVersion for rbac.
-*/}}
-{{- define "rbac.apiVersion" -}}
-{{- if .Capabilities.APIVersions.Has "rbac.authorization.k8s.io/v1" }}
-{{- print "rbac.authorization.k8s.io/v1" -}}
-{{- else -}}
-{{- print "rbac.authorization.k8s.io/v1beta1" -}}
-{{- end -}}
-{{- end -}}
-
 {{- define "jiralert.namespace" -}}
   {{- if .Values.namespaceOverride -}}
     {{- .Values.namespaceOverride -}}
@@ -93,16 +82,3 @@ Return the appropriate apiVersion for rbac.
     {{- .Release.Namespace -}}
   {{- end -}}
 {{- end -}}
-
-{{/*
-Return the appropriate apiVersion for ingress.
-*/}}
-{{- define "jiralert.ingress.apiversion" -}}
-{{- if semverCompare ">=1.19-0" .Capabilities.KubeVersion.GitVersion -}}
-{{- print "networking.k8s.io/v1" -}}
-{{- else if semverCompare ">=1.14-0" .Capabilities.KubeVersion.GitVersion -}}
-{{- print "networking.k8s.io/v1beta1" -}}
-{{- else -}}
-{{- print "extensions/v1beta1" -}}
-{{- end }}
-{{- end }}

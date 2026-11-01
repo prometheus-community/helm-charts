@@ -7,8 +7,9 @@ metadata:
     app: {{ template "kube-prometheus-stack.name" . }}-prometheus
 {{ include "kube-prometheus-stack.labels" . | indent 4 }}
 rules:
-# This permission are not in the kube-prometheus repo
-# they're grabbed from https://github.com/prometheus/prometheus/blob/master/documentation/examples/rbac-setup.yml
+# These permissions (to examine all namespaces) are not in the kube-prometheus repo.
+# They're grabbed from https://github.com/prometheus/prometheus/blob/master/documentation/examples/rbac-setup.yml
+# kube-prometheus deliberately defaults to a more restrictive setup that is not appropriate for our general audience.
 - apiGroups: [""]
   resources:
   - nodes
@@ -26,7 +27,17 @@ rules:
   resources:
   - ingresses
   verbs: ["get", "list", "watch"]
-- nonResourceURLs: ["/metrics", "/metrics/cadvisor"]
+- nonResourceURLs:
+  - "/metrics"
+  {{- if .Values.kubelet.serviceMonitor.cAdvisor }}
+  - "/metrics/cadvisor"
+  {{- end }}
+  {{- if .Values.kubelet.serviceMonitor.resource }}
+  - {{ .Values.kubelet.serviceMonitor.resourcePath }}
+  {{- end }}
+  {{- if .Values.kubeScheduler.serviceMonitor.resource.enabled }}
+  - "/metrics/resources"
+  {{- end }}
   verbs: ["get"]
 {{/* fix(#3338): add required rules to use node-exporter with the RBAC proxy */}}
 {{- if and .Values.nodeExporter.enabled (index .Values "prometheus-node-exporter").kubeRBACProxy.enabled }}

@@ -24,6 +24,8 @@ if ! which jb &>/dev/null; then
   fi
 fi
 
+"${SCRIPT_DIR}/update_crds.sh"
+
 rm -rf "${SCRIPT_DIR}/tmp"
 mkdir "${SCRIPT_DIR}/tmp"
 

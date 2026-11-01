@@ -1,43 +1,37 @@
-{{- if or .Values.additionalPrometheusRules .Values.additionalPrometheusRulesMap}}
-apiVersion: v1
-kind: List
-metadata:
-  name: {{ include "kube-prometheus-stack.fullname" $ }}-additional-prometheus-rules
-  namespace: {{ template "kube-prometheus-stack.namespace" . }}
-items:
 {{- if .Values.additionalPrometheusRulesMap }}
 {{- range $prometheusRuleName, $prometheusRule := .Values.additionalPrometheusRulesMap }}
-  - apiVersion: monitoring.coreos.com/v1
-    kind: PrometheusRule
-    metadata:
-      name: {{ template "kube-prometheus-stack.name" $ }}-{{ $prometheusRuleName }}
-      namespace: {{ template "kube-prometheus-stack.namespace" $ }}
-      labels:
-        app: {{ template "kube-prometheus-stack.name" $ }}
-{{ include "kube-prometheus-stack.labels" $ | indent 8 }}
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: {{ printf "%s-%s" (include "kube-prometheus-stack.fullname" $) $prometheusRuleName | trunc 63 | trimSuffix "-" }}
+  namespace: {{ template "kube-prometheus-stack.namespace" $ }}
+  labels:
+    app: {{ template "kube-prometheus-stack.name" $ }}
+    {{- include "kube-prometheus-stack.labels" $ | nindent 4 }}
     {{- if $prometheusRule.additionalLabels }}
-{{ toYaml $prometheusRule.additionalLabels | indent 8 }}
+    {{- toYaml $prometheusRule.additionalLabels | nindent 4 }}
     {{- end }}
-    spec:
-      groups:
-{{ toYaml $prometheusRule.groups| indent 8 }}
+spec:
+  groups:
+    {{- toYaml $prometheusRule.groups | nindent 4 }}
 {{- end }}
-{{- else }}
+{{- else if .Values.additionalPrometheusRules }}
 {{- range .Values.additionalPrometheusRules }}
-  - apiVersion: monitoring.coreos.com/v1
-    kind: PrometheusRule
-    metadata:
-      name: {{ template "kube-prometheus-stack.name" $ }}-{{ .name }}
-      namespace: {{ template "kube-prometheus-stack.namespace" $ }}
-      labels:
-        app: {{ template "kube-prometheus-stack.name" $ }}
-{{ include "kube-prometheus-stack.labels" $ | indent 8 }}
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: {{ printf "%s-%s" (include "kube-prometheus-stack.fullname" $) .name | trunc 63 | trimSuffix "-" }}
+  namespace: {{ template "kube-prometheus-stack.namespace" $ }}
+  labels:
+    app: {{ template "kube-prometheus-stack.name" $ }}
+    {{- include "kube-prometheus-stack.labels" $ | nindent 4 }}
     {{- if .additionalLabels }}
-{{ toYaml .additionalLabels | indent 8 }}
+    {{- toYaml .additionalLabels | nindent 4 }}
     {{- end }}
-    spec:
-      groups:
-{{ toYaml .groups| indent 8 }}
-{{- end }}
+spec:
+  groups:
+    {{- toYaml .groups | nindent 4 }}
 {{- end }}
 {{- end }}

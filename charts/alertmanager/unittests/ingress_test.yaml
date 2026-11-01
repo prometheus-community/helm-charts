@@ -32,12 +32,23 @@ tests:
       - equal:
           path: spec.ingressClassName
           value: nginx-test
-  - it: should match snapshot of default values
+  - it: should render valid rules
     set:
       ingress.enabled: true
       ingress.className: nginx-test
-    chart:
-      version: 1.0.0
-      appVersion: 1.0.0
     asserts:
-      - matchSnapshot: { }
+      - equal:
+          path: spec.rules[0].host
+          value: alertmanager.domain.com
+      - equal:
+          path: spec.rules[0].http.paths[0].path
+          value: /
+      - equal:
+          path: spec.rules[0].http.paths[0].pathType
+          value: ImplementationSpecific
+      - equal:
+          path: spec.rules[0].http.paths[0].backend.service.name
+          value: RELEASE-NAME-alertmanager
+      - equal:
+          path: spec.rules[0].http.paths[0].backend.service.port.number
+          value: 9093

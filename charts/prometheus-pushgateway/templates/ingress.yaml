@@ -5,7 +5,7 @@
 {{- $ingressClassName := .Values.ingress.className }}
 {{- $ingressPathType := .Values.ingress.pathType }}
 {{- $extraPaths := .Values.ingress.extraPaths }}
-apiVersion: {{ include "prometheus-pushgateway.ingress.apiVersion" . }}
+apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   {{- with .Values.ingress.annotations }}
@@ -17,9 +17,7 @@ metadata:
   name: {{ include "prometheus-pushgateway.fullname" . }}
   namespace: {{ template "prometheus-pushgateway.namespace" . }}
 spec:
-  {{- if semverCompare ">=1.19-0" .Capabilities.KubeVersion.GitVersion }}
   ingressClassName: {{ $ingressClassName }}
-  {{- end }}
   rules:
     {{- range $host := .Values.ingress.hosts }}
     - host: {{ $host }}
@@ -29,19 +27,12 @@ spec:
           {{- toYaml . | nindent 10 }}
           {{- end }}
           - path: {{ $ingressPath }}
-            {{- if semverCompare ">=1.19-0" $.Capabilities.KubeVersion.GitVersion }}
             pathType: {{ $ingressPathType }}
-            {{- end }}
             backend:
-              {{- if semverCompare ">=1.19-0" $.Capabilities.KubeVersion.GitVersion }}
               service:
                 name: {{ $serviceName }}
                 port:
                   number: {{ $servicePort }}
-              {{- else }}
-              serviceName: {{ $serviceName }}
-              servicePort: {{ $servicePort }}
-              {{- end }}
     {{- end -}}
   {{- with .Values.ingress.tls }}
   tls:

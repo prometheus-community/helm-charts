@@ -1,11 +1,17 @@
 # Default values for prometheus-node-exporter.
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
+
+# Prometheus scrape service annotation flag
+prometheusScrape: true
+
 image:
   registry: quay.io
   repository: prometheus/node-exporter
   # Overrides the image tag whose default is {{ printf "v%s" .Chart.AppVersion }}
   tag: ""
+  # Use the distroless image variant.
+  distroless: false
   pullPolicy: IfNotPresent
   digest: ""
 
@@ -45,7 +51,7 @@ kubeRBACProxy:
   image:
     registry: quay.io
     repository: brancz/kube-rbac-proxy
-    tag: v0.19.1
+    tag: v0.23.1
     sha: ""
     pullPolicy: IfNotPresent
 
@@ -61,6 +67,8 @@ kubeRBACProxy:
 
   # Specify the port used for the Node exporter container (upstream port)
   port: 8100
+  # Host/interface prefix for --secure-listen-address (for example ":" or "$(POD_IP):")
+  listenHost: ":"
   # Specify the name of the container port
   portName: http
   # Configure a hostPort. If true, hostPort will be enabled in the container and set to service.port.
@@ -142,8 +150,8 @@ service:
   listenOnAllInterfaces: true
 
   ## Additional annotations and labels for the service
-  annotations:
-    prometheus.io/scrape: "true"
+  annotations: {}
+
   labels: {}
 
   ## Dual stack settings for the service
@@ -153,8 +161,10 @@ service:
     ipFamilies: ["IPv6", "IPv4"]
     ipFamilyPolicy: "PreferDualStack"
 
-  ## External traffic policy setting (Cluster, Local)
+  ## External/Internal traffic policy setting (Cluster, Local)
+  ## https://kubernetes.io/docs/reference/networking/virtual-ips/#traffic-policies
   externalTrafficPolicy: ""
+  internalTrafficPolicy: ""
 
 # Set a NetworkPolicy with:
 # ingress only on service.port or custom policy
@@ -281,13 +291,13 @@ prometheus:
 
     # ProxyURL eg http://proxyserver:2195. Directs scrapes through proxy to this endpoint.
     proxyUrl: ""
-    # Interval at which endpoints should be scraped. If not specified Prometheus’ global scrape interval is used.
+    # Interval at which endpoints should be scraped. If not specified Prometheus' global scrape interval is used.
     interval: ""
     # Timeout after which the scrape is ended. If not specified, the Prometheus global scrape interval is used.
     scrapeTimeout: ""
     # HonorTimestamps controls whether Prometheus respects the timestamps present in scraped data.
     honorTimestamps: true
-    # HonorLabels chooses the metric’s labels on collisions with target labels.
+    # HonorLabels chooses the metric's labels on collisions with target labels.
     honorLabels: true
     # Whether to enable HTTP2. Default false.
     enableHttp2: ""
@@ -300,7 +310,7 @@ prometheus:
     params: {}
 
     # RelabelConfigs to apply to samples before scraping. Prometheus Operator automatically adds
-    # relabelings for a few standard Kubernetes fields. The original scrape job’s name
+    # relabelings for a few standard Kubernetes fields. The original scrape job's name
     # is available via the __tmp_prometheus_job_name label.
     # More info: https://prometheus.io/docs/prometheus/latest/configuration/configuration/#relabel_config
     relabelings: []
@@ -369,10 +379,6 @@ rbac:
   ## If true, create & use RBAC resources
   ##
   create: true
-  ## If true, create & use Pod Security Policy resources
-  ## https://kubernetes.io/docs/concepts/policy/pod-security-policy/
-  pspEnabled: true
-  pspAnnotations: {}
 
 # for deployments that have node_exporter deployed outside of the cluster, list
 # their addresses here
@@ -380,6 +386,11 @@ endpoints: []
 
 # Expose the service to the host network
 hostNetwork: true
+
+# hostUsers should be `true` or `~` if hostNetwork is true
+# for more information on the limitations of hostUsers
+# see https://kubernetes.io/docs/concepts/workloads/pods/user-namespaces/#limitations
+hostUsers: ~
 
 # Share the host process ID namespace
 hostPID: true
@@ -409,7 +420,7 @@ hostSysFsMount:
 
 ## Assign a group of affinity scheduling rules
 ## The default nodeAffinity excludes Fargate nodes and virtual kubelets from scheduling
-## unless overriden by hard node affinity set in the field.
+## unless overridden by hard node affinity set in the field.
 affinity: {}
 #   nodeAffinity:
 #     requiredDuringSchedulingIgnoredDuringExecution:
@@ -436,6 +447,11 @@ daemonsetAnnotations: {}
 
 ## set to true to add the release label so scraping of the servicemonitor with kube-prometheus-stack works out of the box
 releaseLabel: false
+
+# DNS policy for prometheus-node-exporter pods
+# When hostNetwork is true, you typically want "Default" or "ClusterFirstWithHostNet"
+# Ref: https://kubernetes.io/docs/concepts/services-networking/dns-pod-service/#pod-s-dns-policy
+dnsPolicy: ""
 
 # Custom DNS configuration to be added to prometheus-node-exporter pods
 dnsConfig: {}
@@ -477,9 +493,11 @@ terminationMessageParams:
 
 ## Additional container arguments
 ##
-extraArgs: []
-#   - --collector.diskstats.ignored-devices=^(ram|loop|fd|(h|s|v)d[a-z]|nvme\\d+n\\d+p)\\d+$
-#   - --collector.textfile.directory=/run/prometheus
+extraArgs:
+  - --collector.filesystem.mount-points-exclude=^/(dev|proc|sys|run/containerd/.+|var/lib/docker/.+|var/lib/kubelet/.+)($|/)
+  - --collector.filesystem.fs-types-exclude=^(autofs|binfmt_misc|bpf|cgroup2?|configfs|debugfs|devpts|devtmpfs|fusectl|hugetlbfs|iso9660|mqueue|nsfs|overlay|proc|procfs|pstore|rpc_pipefs|securityfs|selinuxfs|squashfs|sysfs|tracefs|erofs)$
+# - --collector.diskstats.ignored-devices=^(ram|loop|fd|(h|s|v)d[a-z]|nvme\\d+n\\d+p)\\d+$
+# - --collector.textfile.directory=/run/prometheus
 
 ## Additional mounts from the host to node-exporter container
 ##
@@ -534,6 +552,28 @@ sidecarHostVolumeMounts: []
 ## Additional InitContainers to initialize the pod
 ##
 extraInitContainers: []
+
+## Additional InitContainer to fix hostfile permissions required for some exporters. All fixes are disabled by default.
+##
+permissionInitContainer:
+  image:
+    registry: quay.io
+    repository: prometheus/busybox
+    tag: latest
+    sha: ""
+    pullPolicy: IfNotPresent
+  securityContext:
+    runAsUser: 0
+    runAsGroup: 0
+    runAsNonRoot: false
+  fixes:
+    # Fixes /sys/devices/virtual/powercap/*/energy_uj
+    # Collector enabled by default
+    rapl: false
+    # Fixes /proc/slabinfo
+    # Collector disabled by default
+    slabinfo: false
+  extraCommands: []
 
 ## Liveness probe
 ##
@@ -614,5 +654,7 @@ extraVolumeMounts: []
   #   mountPath: /extra
   #   readOnly: true
 
-# Override version of app, required if image.tag is defined and does not follow semver
+# Override app version for feature gates when image.tag is not a plain semver
+# (for example "latest"). Digests and full image refs in image.tag are normalized
+# automatically for comparison; use image.digest when pinning with registry/repository.
 version: ""

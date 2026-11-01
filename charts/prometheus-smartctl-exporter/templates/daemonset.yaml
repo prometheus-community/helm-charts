@@ -1,5 +1,5 @@
 {{- $global := . }}
-{{- $base := dict "annotations" .Values.annotations "resources" .Values.resources "nodeSelector" .Values.nodeSelector "affinity" .Values.affinity "tolerations" .Values.tolerations "config" .Values.config  "hostNetwork" .Values.hostNetwork }}
+{{- $base := dict "annotations" .Values.annotations "resources" .Values.resources "nodeSelector" .Values.nodeSelector "affinity" .Values.affinity "tolerations" .Values.tolerations "config" .Values.config  "hostNetwork" .Values.hostNetwork "priorityClassName" .Values.priorityClassName "extraArgs" .Values.extraArgs }}
 {{- $items := prepend .Values.extraInstances $base }}
 {{- range $idx, $item := $items }}
 {{- $config := mergeOverwrite $item.config $global.Values.common.config }}
@@ -33,6 +33,9 @@ spec:
       labels:
         {{- include "prometheus-smartctl-exporter.selectorLabels" $global | nindent 8 }}
         idx: i{{ $idx }}
+        {{- with $global.Values.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
     spec:
       {{- if $global.Values.image.pullSecrets }}
       imagePullSecrets:
@@ -48,6 +51,7 @@ spec:
         imagePullPolicy: {{ $global.Values.image.pullPolicy }}
         args:
         - '--smartctl.path={{ $config.smartctl_location }}'
+        - '--smartctl.powermode-check={{ $config.smartctl_powermode_check }}'
         - '--smartctl.interval={{ $config.collect_not_more_than_period }}'
 {{- if $config.device_exclude }}
         - '--smartctl.device-exclude={{ $config.device_exclude }}'
@@ -60,6 +64,9 @@ spec:
 {{ end }}
         - '--web.listen-address={{ $config.bind_to }}'
         - '--web.telemetry-path={{ $config.url_path }}'
+        {{- range $key, $value := $item.extraArgs }}
+        - '--{{ $key }}={{ $value }}'
+        {{- end }}
         name: main
         securityContext:
           privileged: true
@@ -73,14 +80,27 @@ spec:
         volumeMounts:
         - mountPath: /hostdev
           name: dev
+{{- if ne $global.Values.drivedb "" }}
+        - name: config-volume
+          mountPath: /etc/smart_drivedb.h
+          subPath: smart_drivedb.h
+{{- end }}
       dnsPolicy: ClusterFirst
       hostNetwork: {{ $item.hostNetwork }}
+      {{- if $item.priorityClassName }}
+      priorityClassName: {{ $item.priorityClassName }}
+      {{- end }}
       restartPolicy: Always
-      serviceAccountName: {{ template "prometheus-smartctl-exporter.fullname" $global }}
+      serviceAccountName: {{ include "prometheus-smartctl-exporter.serviceAccountName" $global }}
       volumes:
       - hostPath:
           path: /dev
         name: dev
+{{- if ne $global.Values.drivedb "" }}
+      - name: config-volume
+        configMap:
+          name: {{ template "prometheus-smartctl-exporter.fullname" $global }}-drivedb
+{{- end }}
     {{- with $item.nodeSelector }}
       nodeSelector:
 {{ toYaml . | indent 8 }}

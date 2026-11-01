@@ -1,0 +1,60 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/helm-unittest/helm-unittest/main/schema/helm-testsuite.json
+suite: test kube-state-metrics network policy
+templates:
+  - networkpolicy.yaml
+tests:
+  - it: should allow only the http port without selfMonitor
+    set:
+      networkPolicy:
+        enabled: true
+    asserts:
+      - equal:
+          path: spec.ingress[0].ports
+          value:
+            - port: http
+              protocol: TCP
+
+  - it: should allow the metrics port with selfMonitor
+    set:
+      networkPolicy:
+        enabled: true
+      selfMonitor:
+        enabled: true
+    asserts:
+      - equal:
+          path: spec.ingress[0].ports
+          value:
+            - port: http
+              protocol: TCP
+            - port: metrics
+              protocol: TCP
+
+  - it: should allow the telemetry proxy port, not the internal telemetry port, with kube-rbac-proxy and selfMonitor
+    set:
+      networkPolicy:
+        enabled: true
+      kubeRBACProxy:
+        enabled: true
+      selfMonitor:
+        enabled: true
+    asserts:
+      - equal:
+          path: spec.ingress[0].ports
+          value:
+            - port: http
+              protocol: TCP
+            - port: metrics
+              protocol: TCP
+
+  - it: should keep the telemetry proxy port closed with kube-rbac-proxy but without selfMonitor
+    set:
+      networkPolicy:
+        enabled: true
+      kubeRBACProxy:
+        enabled: true
+    asserts:
+      - equal:
+          path: spec.ingress[0].ports
+          value:
+            - port: http
+              protocol: TCP

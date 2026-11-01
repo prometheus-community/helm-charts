@@ -3,8 +3,6 @@
 {{- $count := .Values.prometheus.prometheusSpec.replicas | int -}}
 {{- $servicePort := .Values.prometheus.servicePerReplica.port -}}
 {{- $ingressValues := .Values.prometheus.ingressPerReplica -}}
-{{- $apiIsStable := eq (include "kube-prometheus-stack.ingress.isStable" .) "true" -}}
-{{- $ingressSupportsPathType := eq (include "kube-prometheus-stack.ingress.supportsPathType" .) "true" -}}
 apiVersion: v1
 kind: List
 metadata:
@@ -13,7 +11,7 @@ metadata:
 items:
 {{ range $i, $e := until $count }}
   - kind: Ingress
-    apiVersion: {{ include "kube-prometheus-stack.ingress.apiVersion" $ }}
+    apiVersion: networking.k8s.io/v1
     metadata:
       name: {{ include "kube-prometheus-stack.fullname" $ }}-prometheus-{{ $i }}
       namespace: {{ template "kube-prometheus-stack.namespace" $ }}
@@ -28,10 +26,8 @@ items:
         {{- tpl (toYaml $ingressValues.annotations) $ | nindent 8 }}
       {{- end }}
     spec:
-      {{- if $apiIsStable }}
       {{- if $ingressValues.ingressClassName }}
       ingressClassName: {{ $ingressValues.ingressClassName }}
-      {{- end }}
       {{- end }}
       rules:
         - host: {{ $ingressValues.hostPrefix }}-{{ $i }}.{{ $ingressValues.hostDomain }}
@@ -39,19 +35,12 @@ items:
             paths:
       {{- range $p := $ingressValues.paths }}
               - path: {{ tpl $p $ }}
-                {{- if and $pathType $ingressSupportsPathType }}
                 pathType: {{ $pathType }}
-                {{- end }}
                 backend:
-                  {{- if $apiIsStable }}
                   service:
                     name: {{ include "kube-prometheus-stack.fullname" $ }}-prometheus-{{ $i }}
                     port:
                       number: {{ $servicePort }}
-                  {{- else }}
-                  serviceName: {{ include "kube-prometheus-stack.fullname" $ }}-prometheus-{{ $i }}
-                  servicePort: {{ $servicePort }}
-      {{- end }}
       {{- end -}}
       {{- if or $ingressValues.tlsSecretName $ingressValues.tlsSecretPerReplica.enabled }}
       tls:

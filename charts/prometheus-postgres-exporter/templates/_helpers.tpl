@@ -35,9 +35,11 @@ Create chart name and version as used by the chart label.
 Common labels
 */}}
 {{- define "prometheus-postgres-exporter.labels" -}}
-chart: {{ include "prometheus-postgres-exporter.chart" . }}
+helm.sh/chart: {{ include "prometheus-postgres-exporter.chart" . }}
 {{ include "prometheus-postgres-exporter.selectorLabels" . }}
-heritage: {{ .Release.Service }}
+{{- if .Chart.AppVersion }}
+app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
+{{- end }}
 {{- if .Values.commonLabels}}
 {{ toYaml .Values.commonLabels }}
 {{- end }}
@@ -47,8 +49,8 @@ heritage: {{ .Release.Service }}
 Selector labels
 */}}
 {{- define "prometheus-postgres-exporter.selectorLabels" -}}
-app: {{ include "prometheus-postgres-exporter.name" . }}
-release: {{ .Release.Name }}
+app.kubernetes.io/name: {{ include "prometheus-postgres-exporter.name" . }}
+app.kubernetes.io/instance: {{ .Release.Name }}
 {{- end }}
 
 {{/*

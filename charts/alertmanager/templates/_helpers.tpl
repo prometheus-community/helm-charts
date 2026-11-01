@@ -70,17 +70,6 @@ Define Ingress apiVersion
 {{- end }}
 
 {{/*
-Define Pdb apiVersion
-*/}}
-{{- define "alertmanager.pdb.apiVersion" -}}
-{{- if $.Capabilities.APIVersions.Has "policy/v1/PodDisruptionBudget" }}
-{{- printf "policy/v1" }}
-{{- else }}
-{{- printf "policy/v1beta1" }}
-{{- end }}
-{{- end }}
-
-{{/*
 Allow overriding alertmanager namespace
 */}}
 {{- define "alertmanager.namespace" -}}

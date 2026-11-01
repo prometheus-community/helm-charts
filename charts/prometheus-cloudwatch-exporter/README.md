@@ -9,30 +9,30 @@ This chart bootstraps a [cloudwatch exporter](http://github.com/prometheus/cloud
 - [kube2iam](../../stable/kube2iam) installed to used the **aws.role** config option otherwise configure **aws.aws_access_key_id** and **aws.aws_secret_access_key** or **aws.secret.name**
 - Or an [IAM Role for service account](https://aws.amazon.com/blogs/opensource/introducing-fine-grained-iam-roles-service-accounts/) attached to a service account with an annotation. If you run the pod as nobody in `securityContext.runAsUser` then also set `securityContext.fsGroup` to the same value so it will be able to access to the mounted secret.
 
-## Get Repository Info
+## Usage
 
-```console
-helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
-helm repo update
-```
+The chart is distributed as an [OCI Artifact](https://helm.sh/docs/topics/registries/) as well as via a traditional [Helm Repository](https://helm.sh/docs/topics/chart_repository/).
 
-_See [`helm repo`](https://helm.sh/docs/helm/helm_repo/) for command documentation._
+- OCI Artifact: `oci://ghcr.io/prometheus-community/charts/prometheus-cloudwatch-exporter`
+- Helm Repository: `https://prometheus-community.github.io/helm-charts` with chart `prometheus-cloudwatch-exporter`
 
-## Install Chart
+The installation instructions use the OCI registry. Refer to the [`helm repo`]([`helm repo`](https://helm.sh/docs/helm/helm_repo/)) command documentation for information on installing charts via the traditional repository.
+
+### Install Chart
 
 ```console
 # Helm 3
-$ helm install [RELEASE_NAME] prometheus-community/prometheus-cloudwatch-exporter
+$ helm install [RELEASE_NAME] oci://ghcr.io/prometheus-community/charts/prometheus-cloudwatch-exporter
 
 # Helm 2
-$ helm install --name [RELEASE_NAME] prometheus-community/prometheus-cloudwatch-exporter
+$ helm install --name [RELEASE_NAME] oci://ghcr.io/prometheus-community/charts/prometheus-cloudwatch-exporter
 ```
 
 _See [Configuring](#configuring) below._
 
 _See [helm install](https://helm.sh/docs/helm/helm_install/) for command documentation._
 
-## Uninstall Chart
+### Uninstall Chart
 
 ```console
 # Helm 3
@@ -46,7 +46,7 @@ This removes all the Kubernetes components associated with the chart and deletes
 
 _See [helm uninstall](https://helm.sh/docs/helm/helm_uninstall/) for command documentation._
 
-## Upgrading Chart
+### Upgrading Chart
 
 ```console
 # Helm 3 or 2
@@ -61,10 +61,10 @@ See [Customizing the Chart Before Installing](https://helm.sh/docs/intro/using_h
 
 ```console
 # Helm 2
-$ helm inspect values prometheus-community/prometheus-cloudwatch-exporter
+$ helm inspect values oci://ghcr.io/prometheus-community/charts/prometheus-cloudwatch-exporter
 
 # Helm 3
-$ helm show values prometheus-community/prometheus-cloudwatch-exporter
+$ helm show values oci://ghcr.io/prometheus-community/charts/prometheus-cloudwatch-exporter
 ```
 
 ### AWS Credentials or Role

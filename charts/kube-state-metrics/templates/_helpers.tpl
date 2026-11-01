@@ -76,6 +76,16 @@ release: {{ .Release.Name }}
 {{/*
 Selector labels
 */}}
+{{/*
+Pod labels: the common labels without helm.sh/chart. That label carries the chart version, so
+including it in the pod template recreates the pod on every chart upgrade, even when nothing
+about the workload changed.
+*/}}
+{{- define "kube-state-metrics.podLabels" }}
+{{- $podLabels := (include "kube-state-metrics.labels" . | fromYaml) }}
+{{- omit $podLabels "helm.sh/chart" | toYaml }}
+{{- end }}
+
 {{- define "kube-state-metrics.selectorLabels" }}
 {{- if .Values.selectorOverride }}
 {{ toYaml .Values.selectorOverride }}
@@ -156,6 +166,32 @@ The image to use for kube-state-metrics
 {{- end }}
 
 {{/*
+Compute the effective collectors list from collectors, collectorsExclude, and collectorsExtra.
+*/}}
+{{- define "kube-state-metrics.collectors" -}}
+{{- $exclude := .Values.collectorsExclude | default (list) }}
+{{- if kindIs "string" $exclude }}
+{{- $exclude = list $exclude }}
+{{- end }}
+{{- $collectors := .Values.collectors | default (list) }}
+{{- if kindIs "string" $collectors }}
+{{- $collectors = list $collectors }}
+{{- end }}
+{{- $extra := .Values.collectorsExtra | default (list) }}
+{{- if kindIs "string" $extra }}
+{{- $extra = list $extra }}
+{{- end }}
+{{- $final := list }}
+{{- range $collectors }}
+{{- if not (has . $exclude) }}
+{{- $final = append $final . }}
+{{- end }}
+{{- end }}
+{{- $final = concat $final $extra | mustUniq }}
+{{- toYaml $final | nindent 0 -}}
+{{- end -}}
+
+{{/*
 The image to use for kubeRBACProxy
 */}}
 {{- define "kubeRBACProxy.image" -}}
@@ -172,4 +208,15 @@ The image to use for kubeRBACProxy
 {{- printf "%s/%s:%s" .Values.kubeRBACProxy.image.registry .Values.kubeRBACProxy.image.repository (default (printf "v%s" .Chart.AppVersion) .Values.kubeRBACProxy.image.tag) }}
 {{- end }}
 {{- end }}
+{{- end }}
+
+{{/*
+The name of the ConfigMap for the customResourceState config.
+*/}}
+{{- define "kube-state-metrics.crsConfigMapName" -}}
+  {{- if ne .Values.customResourceState.name "" }}
+    {{- .Values.customResourceState.name }}
+  {{- else }}
+    {{- template "kube-state-metrics.fullname" . }}-customresourcestate-config
+  {{- end }}
 {{- end }}

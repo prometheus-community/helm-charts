@@ -1,10 +1,10 @@
 ---
 {{- if .Values.serviceMonitor.enabled }}
-apiVersion: monitoring.coreos.com/v1
+apiVersion: {{ .Values.serviceMonitor.apiVersion }}
 kind: ServiceMonitor
 metadata:
   name: {{ template "prometheus-nginx-exporter.fullname" .  }}
-  namespace: {{ template "prometheus-nginx-exporter.namespace" . }}
+  namespace: {{ .Values.serviceMonitor.namespace | default (include "prometheus-nginx-exporter.namespace" .) }}
   {{- with .Values.additionalAnnotations }}
   annotations: {{ toYaml . | nindent 4 }}
   {{- end }}
@@ -23,11 +23,22 @@ spec:
       {{- if .Values.serviceMonitor.honorLabels }}
       honorLabels: true
       {{- end }}
+      {{- if .Values.serviceMonitor.targetLabels }}
+      targetLabels:
+      {{ toYaml .Values.serviceMonitor.targetLabels | indent 4 }}
+      {{- end }}
       {{- if .Values.serviceMonitor.metricRelabelings }}
       metricRelabelings:
       {{ toYaml .Values.serviceMonitor.metricRelabelings | indent 4 }}
       {{- end }}
+      {{- if .Values.serviceMonitor.relabelings }}
+      relabelings:
+      {{ toYaml .Values.serviceMonitor.relabelings | indent 4 }}
+      {{- end }}
   selector:
     matchLabels:
       {{- include "prometheus-nginx-exporter.selectorLabels" . | indent 6 }}
+  namespaceSelector:
+    matchNames:
+      - {{ include "prometheus-nginx-exporter.namespace" . }}
 {{- end }}
