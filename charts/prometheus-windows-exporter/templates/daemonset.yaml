@@ -127,21 +127,21 @@ spec:
             - name: {{ .name }}
               mountPath: {{ .mountPath }}
             {{- end }}
-        {{- with .Values.sidecars }}
-        {{- toYaml . | nindent 8 }}
-          {{- if or .Values.sidecarVolumeMount .Values.sidecarHostVolumeMounts }}
-          volumeMounts:
-            {{- range $_, $mount := .Values.sidecarVolumeMount }}
-            - name: {{ $mount.name }}
-              mountPath: {{ $mount.mountPath }}
-              readOnly: {{ $mount.readOnly }}
+        {{- range .Values.sidecars }}
+          {{- $sidecarMounts := list }}
+          {{- range (concat $.Values.sidecarVolumeMount $.Values.sidecarHostVolumeMounts) }}
+            {{- $mount := dict "name" .name "mountPath" .mountPath }}
+            {{- if hasKey . "readOnly" }}
+              {{- $_ := set $mount "readOnly" .readOnly }}
             {{- end }}
-            {{- range $_, $mount := .Values.sidecarHostVolumeMounts }}
-            - name: {{ $mount.name }}
-              mountPath: {{ $mount.mountPath }}
-              readOnly: {{ $mount.readOnly }}
-            {{- end }}
+            {{- $sidecarMounts = append $sidecarMounts $mount }}
           {{- end }}
+          {{- $sidecar := deepCopy . }}
+          {{- $volumeMounts := concat ($sidecar.volumeMounts | default list) $sidecarMounts }}
+          {{- if $volumeMounts }}
+            {{- $_ := set $sidecar "volumeMounts" $volumeMounts }}
+          {{- end }}
+        - {{- toYaml $sidecar | nindent 10 }}
         {{- end }}
       {{- if or .Values.imagePullSecrets .Values.global.imagePullSecrets }}
       imagePullSecrets:
