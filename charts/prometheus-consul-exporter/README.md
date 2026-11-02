@@ -6,7 +6,7 @@ This chart creates a [Consul Exporter](https://github.com/prometheus/consul_expo
 
 ## Prerequisites
 
-- Kubernetes 1.9+ with Beta APIs enabled
+- Kubernetes 1.25+ with Beta APIs enabled
 - Helm 3
 
 ## Usage
@@ -45,6 +45,11 @@ helm upgrade [RELEASE_NAME] [CHART] --install
 ```
 
 _See [helm upgrade](https://helm.sh/docs/helm/helm_upgrade/) for command documentation._
+
+#### From 1.1.1 to 2.0.0
+
+support for PSP was removed, as a result support for older k8s version where those resources are needed is dropped as well
+This version supports k8s version 1.25+
 
 #### From 0.5.x to 1.0.0
 

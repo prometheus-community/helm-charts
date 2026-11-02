@@ -47,6 +47,7 @@ metadata:
 spec:
   secretName: {{ template "kube-prometheus-stack.fullname" . }}-admission
   duration: {{ .Values.prometheusOperator.admissionWebhooks.certManager.admissionCert.duration | default "8760h0m0s" | quote }}
+  commonName: {{ template "kube-prometheus-stack.operator.fullname" . }}
   {{- with .Values.prometheusOperator.admissionWebhooks.certManager.admissionCert.revisionHistoryLimit }}
   revisionHistoryLimit: {{ . }}
   {{- end }}
@@ -56,6 +57,10 @@ spec:
     {{- else }}
     name: {{ template "kube-prometheus-stack.fullname" . }}-root-issuer
     {{- end }}
+  {{- if .Values.prometheusOperator.admissionWebhooks.certManager.privateKey }}
+  privateKey:
+    {{- toYaml .Values.prometheusOperator.admissionWebhooks.certManager.privateKey | nindent 4 }}
+  {{- end }}
   dnsNames:
     {{- include "kube-prometheus-stack.operator.admission-webhook.dnsNames" . | splitList "\n" | toYaml | nindent 4 }}
 {{- end -}}

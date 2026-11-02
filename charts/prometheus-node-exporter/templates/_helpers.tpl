@@ -54,6 +54,16 @@ release: {{ .Release.Name }}
 {{/*
 Selector labels
 */}}
+{{/*
+Pod labels: the common labels without helm.sh/chart. That label carries the chart version, so
+including it in the pod template restarts the DaemonSet on every chart upgrade, on every node,
+even when nothing about the workload changed.
+*/}}
+{{- define "prometheus-node-exporter.podLabels" }}
+{{- $podLabels := (include "prometheus-node-exporter.labels" . | fromYaml) }}
+{{- omit $podLabels "helm.sh/chart" | toYaml }}
+{{- end }}
+
 {{- define "prometheus-node-exporter.selectorLabels" -}}
 app.kubernetes.io/name: {{ include "prometheus-node-exporter.name" . }}
 app.kubernetes.io/instance: {{ .Release.Name }}
@@ -72,25 +82,48 @@ Create the name of the service account to use
 {{- end }}
 
 {{/*
-The image to use
+The image to use.
+
+If image.tag contains "/", treat it as a full image reference (optionally with
+@digest) and use it as-is. Prefer image.registry/repository/tag (+ image.digest)
+for the normal case.
 */}}
 {{- define "prometheus-node-exporter.image" -}}
 {{- if .Values.image.sha }}
 {{- fail "image.sha forbidden. Use image.digest instead" }}
+{{- else if and .Values.image.tag (contains "/" (.Values.image.tag | toString)) }}
+{{- .Values.image.tag }}
 {{- else if .Values.image.digest }}
 {{- if .Values.global.imageRegistry }}
-{{- printf "%s/%s:%s@%s" .Values.global.imageRegistry .Values.image.repository (default (printf "v%s" .Chart.AppVersion) .Values.image.tag) .Values.image.digest }}
+{{- printf "%s/%s:%s%s@%s" .Values.global.imageRegistry .Values.image.repository (default (printf "v%s" .Chart.AppVersion) .Values.image.tag) (ternary "-distroless" "" .Values.image.distroless) .Values.image.digest }}
 {{- else }}
-{{- printf "%s/%s:%s@%s" .Values.image.registry .Values.image.repository (default (printf "v%s" .Chart.AppVersion) .Values.image.tag) .Values.image.digest }}
+{{- printf "%s/%s:%s%s@%s" .Values.image.registry .Values.image.repository (default (printf "v%s" .Chart.AppVersion) .Values.image.tag) (ternary "-distroless" "" .Values.image.distroless) .Values.image.digest }}
 {{- end }}
 {{- else }}
 {{- if .Values.global.imageRegistry }}
-{{- printf "%s/%s:%s" .Values.global.imageRegistry .Values.image.repository (default (printf "v%s" .Chart.AppVersion) .Values.image.tag) }}
+{{- printf "%s/%s:%s%s" .Values.global.imageRegistry .Values.image.repository (default (printf "v%s" .Chart.AppVersion) .Values.image.tag) (ternary "-distroless" "" .Values.image.distroless) }}
 {{- else }}
-{{- printf "%s/%s:%s" .Values.image.registry .Values.image.repository (default (printf "v%s" .Chart.AppVersion) .Values.image.tag) }}
+{{- printf "%s/%s:%s%s" .Values.image.registry .Values.image.repository (default (printf "v%s" .Chart.AppVersion) .Values.image.tag) (ternary "-distroless" "" .Values.image.distroless) }}
 {{- end }}
 {{- end }}
 {{- end }}
+
+{{/*
+Semver used for feature gates (semverCompare). Prefers Values.version, then
+image.tag, then Chart.AppVersion. Normalizes common image-ref forms:
+- tag@sha256:...
+- registry/repository:tag[@digest]
+- registry:port/repository:tag[@digest]
+*/}}
+{{- define "prometheus-node-exporter.appSemver" -}}
+{{- $raw := coalesce .Values.version .Values.image.tag .Chart.AppVersion | toString -}}
+{{- $noDigest := ternary (index (splitList "@" $raw) 0) $raw (contains "@" $raw) -}}
+{{- if contains "/" $noDigest -}}
+{{- last (splitList ":" $noDigest) -}}
+{{- else -}}
+{{- $noDigest -}}
+{{- end -}}
+{{- end -}}
 
 {{/*
 Allow the release namespace to be overridden for multi-namespace deployments in combined charts
@@ -202,8 +235,8 @@ labelValueLengthLimit: {{ . }}
 {{- end }}
 
 {{/*
-The default node affinity to exclude 
-- AWS Fargate 
+The default node affinity to exclude
+- AWS Fargate
 - Azure virtual nodes
 */}}
 {{- define "prometheus-node-exporter.defaultAffinity" -}}
@@ -212,11 +245,11 @@ nodeAffinity:
     nodeSelectorTerms:
     - matchExpressions:
       - key: eks.amazonaws.com/compute-type
-        operator: NotIn
+        operator: NotIn # codespell:ignore
         values:
         - fargate
       - key: type
-        operator: NotIn
+        operator: NotIn # codespell:ignore
         values:
         - virtual-kubelet
 {{- end -}}

@@ -1,0 +1,40 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/helm-unittest/helm-unittest/main/schema/helm-testsuite.json
+suite: test name and fullname overrides
+templates:
+  - serviceaccount.yaml
+tests:
+  - it: uses release name + chart name by default
+    asserts:
+      - equal:
+          path: metadata.name
+          value: RELEASE-NAME-kube-state-metrics
+      - equal:
+          path: metadata.labels["app.kubernetes.io/name"]
+          value: kube-state-metrics
+
+  - it: nameOverride replaces the chart name in the resource name and labels
+    set:
+      nameOverride: custom
+    asserts:
+      - equal:
+          path: metadata.name
+          value: RELEASE-NAME-custom
+      - equal:
+          path: metadata.labels["app.kubernetes.io/name"]
+          value: custom
+
+  - it: fullnameOverride fully overrides the resource name
+    set:
+      fullnameOverride: my-ksm
+    asserts:
+      - equal:
+          path: metadata.name
+          value: my-ksm
+
+  - it: uses the release name alone when it already contains the chart name
+    release:
+      name: kube-state-metrics
+    asserts:
+      - equal:
+          path: metadata.name
+          value: kube-state-metrics

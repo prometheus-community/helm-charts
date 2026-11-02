@@ -29,15 +29,21 @@ spec:
 {{- if not (.Values.defaultRules.disabled.PrometheusOperatorListErrors | default false) }}
     - alert: PrometheusOperatorListErrors
       annotations:
-{{- if .Values.defaultRules.additionalRuleAnnotations }}
-{{ toYaml .Values.defaultRules.additionalRuleAnnotations | indent 8 }}
+{{- $ruleAnnotations := dig "PrometheusOperatorListErrors" (dict) .Values.defaultRules.additionalRuleAnnotations }}
+{{- $groupAnnotations := default (dict) .Values.defaultRules.additionalRuleGroupAnnotations.prometheusOperator }}
+{{- $additionalAnnotations := mergeOverwrite (dict) $groupAnnotations $ruleAnnotations }}
+{{- if $additionalAnnotations }}
+{{ toYaml $additionalAnnotations | indent 8 }}
 {{- end }}
-{{- if .Values.defaultRules.additionalRuleGroupAnnotations.prometheusOperator }}
-{{ toYaml .Values.defaultRules.additionalRuleGroupAnnotations.prometheusOperator | indent 8 }}
-{{- end }}
+        {{- if not (hasKey $additionalAnnotations "description") }}
         description: Errors while performing List operations in controller {{`{{`}}$labels.controller{{`}}`}} in {{`{{`}}$labels.namespace{{`}}`}} namespace.
+        {{- end }}
+        {{- if not (hasKey $additionalAnnotations "runbook_url") }}
         runbook_url: {{ .Values.defaultRules.runbookUrl }}/prometheus-operator/prometheusoperatorlisterrors
+        {{- end }}
+        {{- if not (hasKey $additionalAnnotations "summary") }}
         summary: Errors while performing list operations in controller.
+        {{- end }}
       expr: (sum by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster,controller,namespace) (rate(prometheus_operator_list_operations_failed_total{job="{{ $operatorJob }}",namespace="{{ $namespace }}"}[10m])) / sum by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster,controller,namespace) (rate(prometheus_operator_list_operations_total{job="{{ $operatorJob }}",namespace="{{ $namespace }}"}[10m]))) > 0.4
       for: {{ dig "PrometheusOperatorListErrors" "for" "15m" .Values.customRules }}
       {{- with .Values.defaultRules.keepFiringFor }}
@@ -57,15 +63,21 @@ spec:
 {{- if not (.Values.defaultRules.disabled.PrometheusOperatorWatchErrors | default false) }}
     - alert: PrometheusOperatorWatchErrors
       annotations:
-{{- if .Values.defaultRules.additionalRuleAnnotations }}
-{{ toYaml .Values.defaultRules.additionalRuleAnnotations | indent 8 }}
+{{- $ruleAnnotations := dig "PrometheusOperatorWatchErrors" (dict) .Values.defaultRules.additionalRuleAnnotations }}
+{{- $groupAnnotations := default (dict) .Values.defaultRules.additionalRuleGroupAnnotations.prometheusOperator }}
+{{- $additionalAnnotations := mergeOverwrite (dict) $groupAnnotations $ruleAnnotations }}
+{{- if $additionalAnnotations }}
+{{ toYaml $additionalAnnotations | indent 8 }}
 {{- end }}
-{{- if .Values.defaultRules.additionalRuleGroupAnnotations.prometheusOperator }}
-{{ toYaml .Values.defaultRules.additionalRuleGroupAnnotations.prometheusOperator | indent 8 }}
-{{- end }}
+        {{- if not (hasKey $additionalAnnotations "description") }}
         description: Errors while performing watch operations in controller {{`{{`}}$labels.controller{{`}}`}} in {{`{{`}}$labels.namespace{{`}}`}} namespace.
+        {{- end }}
+        {{- if not (hasKey $additionalAnnotations "runbook_url") }}
         runbook_url: {{ .Values.defaultRules.runbookUrl }}/prometheus-operator/prometheusoperatorwatcherrors
+        {{- end }}
+        {{- if not (hasKey $additionalAnnotations "summary") }}
         summary: Errors while performing watch operations in controller.
+        {{- end }}
       expr: (sum by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster,controller,namespace) (rate(prometheus_operator_watch_operations_failed_total{job="{{ $operatorJob }}",namespace="{{ $namespace }}"}[5m])) / sum by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster,controller,namespace) (rate(prometheus_operator_watch_operations_total{job="{{ $operatorJob }}",namespace="{{ $namespace }}"}[5m]))) > 0.4
       for: {{ dig "PrometheusOperatorWatchErrors" "for" "15m" .Values.customRules }}
       {{- with .Values.defaultRules.keepFiringFor }}
@@ -85,15 +97,21 @@ spec:
 {{- if not (.Values.defaultRules.disabled.PrometheusOperatorSyncFailed | default false) }}
     - alert: PrometheusOperatorSyncFailed
       annotations:
-{{- if .Values.defaultRules.additionalRuleAnnotations }}
-{{ toYaml .Values.defaultRules.additionalRuleAnnotations | indent 8 }}
+{{- $ruleAnnotations := dig "PrometheusOperatorSyncFailed" (dict) .Values.defaultRules.additionalRuleAnnotations }}
+{{- $groupAnnotations := default (dict) .Values.defaultRules.additionalRuleGroupAnnotations.prometheusOperator }}
+{{- $additionalAnnotations := mergeOverwrite (dict) $groupAnnotations $ruleAnnotations }}
+{{- if $additionalAnnotations }}
+{{ toYaml $additionalAnnotations | indent 8 }}
 {{- end }}
-{{- if .Values.defaultRules.additionalRuleGroupAnnotations.prometheusOperator }}
-{{ toYaml .Values.defaultRules.additionalRuleGroupAnnotations.prometheusOperator | indent 8 }}
-{{- end }}
+        {{- if not (hasKey $additionalAnnotations "description") }}
         description: Controller {{`{{`}} $labels.controller {{`}}`}} in {{`{{`}} $labels.namespace {{`}}`}} namespace fails to reconcile {{`{{`}} $value {{`}}`}} objects.
+        {{- end }}
+        {{- if not (hasKey $additionalAnnotations "runbook_url") }}
         runbook_url: {{ .Values.defaultRules.runbookUrl }}/prometheus-operator/prometheusoperatorsyncfailed
+        {{- end }}
+        {{- if not (hasKey $additionalAnnotations "summary") }}
         summary: Last controller reconciliation failed
+        {{- end }}
       expr: min_over_time(prometheus_operator_syncs{status="failed",job="{{ $operatorJob }}",namespace="{{ $namespace }}"}[5m]) > 0
       for: {{ dig "PrometheusOperatorSyncFailed" "for" "10m" .Values.customRules }}
       {{- with .Values.defaultRules.keepFiringFor }}
@@ -113,15 +131,21 @@ spec:
 {{- if not (.Values.defaultRules.disabled.PrometheusOperatorReconcileErrors | default false) }}
     - alert: PrometheusOperatorReconcileErrors
       annotations:
-{{- if .Values.defaultRules.additionalRuleAnnotations }}
-{{ toYaml .Values.defaultRules.additionalRuleAnnotations | indent 8 }}
+{{- $ruleAnnotations := dig "PrometheusOperatorReconcileErrors" (dict) .Values.defaultRules.additionalRuleAnnotations }}
+{{- $groupAnnotations := default (dict) .Values.defaultRules.additionalRuleGroupAnnotations.prometheusOperator }}
+{{- $additionalAnnotations := mergeOverwrite (dict) $groupAnnotations $ruleAnnotations }}
+{{- if $additionalAnnotations }}
+{{ toYaml $additionalAnnotations | indent 8 }}
 {{- end }}
-{{- if .Values.defaultRules.additionalRuleGroupAnnotations.prometheusOperator }}
-{{ toYaml .Values.defaultRules.additionalRuleGroupAnnotations.prometheusOperator | indent 8 }}
-{{- end }}
+        {{- if not (hasKey $additionalAnnotations "description") }}
         description: '{{`{{`}} $value | humanizePercentage {{`}}`}} of reconciling operations failed for {{`{{`}} $labels.controller {{`}}`}} controller in {{`{{`}} $labels.namespace {{`}}`}} namespace.'
+        {{- end }}
+        {{- if not (hasKey $additionalAnnotations "runbook_url") }}
         runbook_url: {{ .Values.defaultRules.runbookUrl }}/prometheus-operator/prometheusoperatorreconcileerrors
+        {{- end }}
+        {{- if not (hasKey $additionalAnnotations "summary") }}
         summary: Errors while reconciling objects.
+        {{- end }}
       expr: (sum by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster,controller,namespace) (rate(prometheus_operator_reconcile_errors_total{job="{{ $operatorJob }}",namespace="{{ $namespace }}"}[5m]))) / (sum by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster,controller,namespace) (rate(prometheus_operator_reconcile_operations_total{job="{{ $operatorJob }}",namespace="{{ $namespace }}"}[5m]))) > 0.1
       for: {{ dig "PrometheusOperatorReconcileErrors" "for" "10m" .Values.customRules }}
       {{- with .Values.defaultRules.keepFiringFor }}
@@ -141,15 +165,21 @@ spec:
 {{- if not (.Values.defaultRules.disabled.PrometheusOperatorStatusUpdateErrors | default false) }}
     - alert: PrometheusOperatorStatusUpdateErrors
       annotations:
-{{- if .Values.defaultRules.additionalRuleAnnotations }}
-{{ toYaml .Values.defaultRules.additionalRuleAnnotations | indent 8 }}
+{{- $ruleAnnotations := dig "PrometheusOperatorStatusUpdateErrors" (dict) .Values.defaultRules.additionalRuleAnnotations }}
+{{- $groupAnnotations := default (dict) .Values.defaultRules.additionalRuleGroupAnnotations.prometheusOperator }}
+{{- $additionalAnnotations := mergeOverwrite (dict) $groupAnnotations $ruleAnnotations }}
+{{- if $additionalAnnotations }}
+{{ toYaml $additionalAnnotations | indent 8 }}
 {{- end }}
-{{- if .Values.defaultRules.additionalRuleGroupAnnotations.prometheusOperator }}
-{{ toYaml .Values.defaultRules.additionalRuleGroupAnnotations.prometheusOperator | indent 8 }}
-{{- end }}
+        {{- if not (hasKey $additionalAnnotations "description") }}
         description: '{{`{{`}} $value | humanizePercentage {{`}}`}} of status update operations failed for {{`{{`}} $labels.controller {{`}}`}} controller in {{`{{`}} $labels.namespace {{`}}`}} namespace.'
+        {{- end }}
+        {{- if not (hasKey $additionalAnnotations "runbook_url") }}
         runbook_url: {{ .Values.defaultRules.runbookUrl }}/prometheus-operator/prometheusoperatorstatusupdateerrors
+        {{- end }}
+        {{- if not (hasKey $additionalAnnotations "summary") }}
         summary: Errors while updating objects status.
+        {{- end }}
       expr: (sum by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster,controller,namespace) (rate(prometheus_operator_status_update_errors_total{job="{{ $operatorJob }}",namespace="{{ $namespace }}"}[5m]))) / (sum by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster,controller,namespace) (rate(prometheus_operator_status_update_operations_total{job="{{ $operatorJob }}",namespace="{{ $namespace }}"}[5m]))) > 0.1
       for: {{ dig "PrometheusOperatorStatusUpdateErrors" "for" "10m" .Values.customRules }}
       {{- with .Values.defaultRules.keepFiringFor }}
@@ -169,15 +199,21 @@ spec:
 {{- if not (.Values.defaultRules.disabled.PrometheusOperatorNodeLookupErrors | default false) }}
     - alert: PrometheusOperatorNodeLookupErrors
       annotations:
-{{- if .Values.defaultRules.additionalRuleAnnotations }}
-{{ toYaml .Values.defaultRules.additionalRuleAnnotations | indent 8 }}
+{{- $ruleAnnotations := dig "PrometheusOperatorNodeLookupErrors" (dict) .Values.defaultRules.additionalRuleAnnotations }}
+{{- $groupAnnotations := default (dict) .Values.defaultRules.additionalRuleGroupAnnotations.prometheusOperator }}
+{{- $additionalAnnotations := mergeOverwrite (dict) $groupAnnotations $ruleAnnotations }}
+{{- if $additionalAnnotations }}
+{{ toYaml $additionalAnnotations | indent 8 }}
 {{- end }}
-{{- if .Values.defaultRules.additionalRuleGroupAnnotations.prometheusOperator }}
-{{ toYaml .Values.defaultRules.additionalRuleGroupAnnotations.prometheusOperator | indent 8 }}
-{{- end }}
+        {{- if not (hasKey $additionalAnnotations "description") }}
         description: Errors while reconciling Prometheus in {{`{{`}} $labels.namespace {{`}}`}} Namespace.
+        {{- end }}
+        {{- if not (hasKey $additionalAnnotations "runbook_url") }}
         runbook_url: {{ .Values.defaultRules.runbookUrl }}/prometheus-operator/prometheusoperatornodelookuperrors
+        {{- end }}
+        {{- if not (hasKey $additionalAnnotations "summary") }}
         summary: Errors while reconciling Prometheus.
+        {{- end }}
       expr: rate(prometheus_operator_node_address_lookup_errors_total{job="{{ $operatorJob }}",namespace="{{ $namespace }}"}[5m]) > 0.1
       for: {{ dig "PrometheusOperatorNodeLookupErrors" "for" "10m" .Values.customRules }}
       {{- with .Values.defaultRules.keepFiringFor }}
@@ -197,15 +233,21 @@ spec:
 {{- if not (.Values.defaultRules.disabled.PrometheusOperatorNotReady | default false) }}
     - alert: PrometheusOperatorNotReady
       annotations:
-{{- if .Values.defaultRules.additionalRuleAnnotations }}
-{{ toYaml .Values.defaultRules.additionalRuleAnnotations | indent 8 }}
+{{- $ruleAnnotations := dig "PrometheusOperatorNotReady" (dict) .Values.defaultRules.additionalRuleAnnotations }}
+{{- $groupAnnotations := default (dict) .Values.defaultRules.additionalRuleGroupAnnotations.prometheusOperator }}
+{{- $additionalAnnotations := mergeOverwrite (dict) $groupAnnotations $ruleAnnotations }}
+{{- if $additionalAnnotations }}
+{{ toYaml $additionalAnnotations | indent 8 }}
 {{- end }}
-{{- if .Values.defaultRules.additionalRuleGroupAnnotations.prometheusOperator }}
-{{ toYaml .Values.defaultRules.additionalRuleGroupAnnotations.prometheusOperator | indent 8 }}
-{{- end }}
+        {{- if not (hasKey $additionalAnnotations "description") }}
         description: Prometheus operator in {{`{{`}} $labels.namespace {{`}}`}} namespace isn't ready to reconcile {{`{{`}} $labels.controller {{`}}`}} resources.
+        {{- end }}
+        {{- if not (hasKey $additionalAnnotations "runbook_url") }}
         runbook_url: {{ .Values.defaultRules.runbookUrl }}/prometheus-operator/prometheusoperatornotready
+        {{- end }}
+        {{- if not (hasKey $additionalAnnotations "summary") }}
         summary: Prometheus operator not ready
+        {{- end }}
       expr: min by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster,controller,namespace) (max_over_time(prometheus_operator_ready{job="{{ $operatorJob }}",namespace="{{ $namespace }}"}[5m]) == 0)
       for: {{ dig "PrometheusOperatorNotReady" "for" "5m" .Values.customRules }}
       {{- with .Values.defaultRules.keepFiringFor }}
@@ -225,15 +267,21 @@ spec:
 {{- if not (.Values.defaultRules.disabled.PrometheusOperatorRejectedResources | default false) }}
     - alert: PrometheusOperatorRejectedResources
       annotations:
-{{- if .Values.defaultRules.additionalRuleAnnotations }}
-{{ toYaml .Values.defaultRules.additionalRuleAnnotations | indent 8 }}
+{{- $ruleAnnotations := dig "PrometheusOperatorRejectedResources" (dict) .Values.defaultRules.additionalRuleAnnotations }}
+{{- $groupAnnotations := default (dict) .Values.defaultRules.additionalRuleGroupAnnotations.prometheusOperator }}
+{{- $additionalAnnotations := mergeOverwrite (dict) $groupAnnotations $ruleAnnotations }}
+{{- if $additionalAnnotations }}
+{{ toYaml $additionalAnnotations | indent 8 }}
 {{- end }}
-{{- if .Values.defaultRules.additionalRuleGroupAnnotations.prometheusOperator }}
-{{ toYaml .Values.defaultRules.additionalRuleGroupAnnotations.prometheusOperator | indent 8 }}
-{{- end }}
+        {{- if not (hasKey $additionalAnnotations "description") }}
         description: Prometheus operator in {{`{{`}} $labels.namespace {{`}}`}} namespace rejected {{`{{`}} printf "%0.0f" $value {{`}}`}} {{`{{`}} $labels.controller {{`}}`}}/{{`{{`}} $labels.resource {{`}}`}} resources.
+        {{- end }}
+        {{- if not (hasKey $additionalAnnotations "runbook_url") }}
         runbook_url: {{ .Values.defaultRules.runbookUrl }}/prometheus-operator/prometheusoperatorrejectedresources
+        {{- end }}
+        {{- if not (hasKey $additionalAnnotations "summary") }}
         summary: Resources rejected by Prometheus operator
+        {{- end }}
       expr: min_over_time(prometheus_operator_managed_resources{state="rejected",job="{{ $operatorJob }}",namespace="{{ $namespace }}"}[5m]) > 0
       for: {{ dig "PrometheusOperatorRejectedResources" "for" "5m" .Values.customRules }}
       {{- with .Values.defaultRules.keepFiringFor }}
