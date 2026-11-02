@@ -139,7 +139,8 @@ rbac:
 authFilter:
   enabled: false
 
-# Configure kube-rbac-proxy. When enabled, creates one kube-rbac-proxy container per exposed HTTP endpoint (metrics and telemetry if enabled).
+# Configure kube-rbac-proxy. When enabled, creates one kube-rbac-proxy container per HTTP endpoint (metrics and telemetry).
+# The telemetry one is created even with selfMonitor disabled, as the readiness probe needs it; selfMonitor only exposes it on the service.
 # The requests are served through the same service but requests are then HTTPS.
 kubeRBACProxy:
   enabled: false
@@ -150,7 +151,7 @@ kubeRBACProxy:
     sha: ""
     pullPolicy: IfNotPresent
 
-  # This set --ignore-paths=/livez,/readyz to kubeRBACProxy container args
+  # This set --ignore-paths=/healthz,/livez,/readyz to kubeRBACProxy container args
   # to allow the pod probes working properly with kubeRBACProxy enabled.
   ignoreProbePaths: true
 
@@ -174,6 +175,9 @@ kubeRBACProxy:
   # Configure specific proxy endpoints port
   # This port is for healthz on readinessProbe kube-rbac-proxy-http container
   proxyEndpointsPort: 8888
+  # Configure specific proxy endpoints port of the kube-rbac-proxy-telemetry container
+  # It must differ from proxyEndpointsPort, as both containers share the pod network
+  telemetryProxyEndpointsPort: 8889
 
   resources: {}
     # We usually recommend not to specify default resources and to leave this as a conscious
