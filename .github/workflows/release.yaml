@@ -61,9 +61,14 @@ jobs:
           GPG_KEY_PATH: "${{ runner.temp }}/private.key"
 
       - name: Run chart-releaser
-        uses: helm/chart-releaser-action@df287104677278f869ca5480bd260358397cc3f9 # v1.8.0
+        uses: helm/chart-releaser-action@92c6b97fa9f664492a2592e0d1d80bc6bf378957 # v1.9.0
         with:
+          # renovate: github=helm/chart-releaser
+          version: v1.10.1
           skip_existing: true
+          oci_registry_url: "oci://ghcr.io/${{ github.repository_owner }}/charts"
+          oci_username: "${{ github.actor }}"
+          oci_password: "${{ secrets.GITHUB_TOKEN }}"
         env:
           CR_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
           CR_GENERATE_RELEASE_NOTES: true
@@ -71,36 +76,3 @@ jobs:
           CR_KEY: "${{ vars.GPG_KEY_NAME }}"
           CR_KEYRING: "~/.gnupg/secring.gpg"
           CR_PASSPHRASE_FILE: "${{ runner.temp }}/gpg-passphrase"
-
-      # see https://github.com/helm/chart-releaser/issues/183
-      - name: Login to GitHub Container Registry
-        uses: docker/login-action@81c6f93d4bc991e510b342a00b419b3bb4efc5c6 # v4.7.0
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Push charts to GHCR
-        run: |
-          shopt -s nullglob
-          for pkg in .cr-release-packages/*.tgz; do
-            if [ -z "${pkg:-}" ]; then
-              break
-            fi
-            # chart-releaser packages every chart with changed files, even without a version bump.
-            # Never overwrite a published version, so tags keep resolving to the same digest.
-            chart="$(helm show chart "${pkg}")"
-            name="$(yq -r '.name' <<< "${chart}")"
-            version="$(yq -r '.version' <<< "${chart}")"
-            ref="oci://ghcr.io/${GITHUB_REPOSITORY_OWNER}/charts/${name}"
-
-            if output="$(helm show chart "${ref}" --version "${version}" 2>&1)"; then
-              echo "Skipping ${name}:${version}, already published"
-            # ghcr.io may answer denied instead of not found for charts that were never published.
-            elif [[ "${output}" == *": not found"* || "${output}" == *"denied"* ]]; then
-              helm push "${pkg}" "oci://ghcr.io/${GITHUB_REPOSITORY_OWNER}/charts"
-            else
-              echo "::error::Failed to check ghcr.io for ${name}:${version}: ${output}"
-              exit 1
-            fi
-          done

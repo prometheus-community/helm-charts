@@ -2,7 +2,7 @@
 
 This chart brings Custom Resource Definitions (CRD) used by Prometheus Operator introducing the API group `monitoring.coreos.com`. The Prometheus Operator uses Kubernetes custom resources to simplify the deployment and configuration of Prometheus, Alertmanager and related monitoring components.
 
-For more information on Prometheus Operator and CRDs, please, see [documentation](https://prometheus-operator.dev/docs/operator/design/).
+For more information on Prometheus Operator and CRDs, please, see [documentation](https://prometheus-operator.dev/docs/getting-started/design/).
 
 ## Prerequisites
 
