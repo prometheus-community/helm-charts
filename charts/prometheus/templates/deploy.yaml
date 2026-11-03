@@ -65,15 +65,16 @@ spec:
   revisionHistoryLimit: {{ .Values.server.revisionHistoryLimit }}
   template:
     metadata:
-    {{- if .Values.server.podAnnotations }}
       annotations:
-        {{ toYaml .Values.server.podAnnotations | nindent 8 }}
-    {{- end }}
+        kubectl.kubernetes.io/default-container: {{ template "prometheus.name" . }}-{{ .Values.server.name }}
+        {{- with .Values.server.podAnnotations }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
       labels:
         {{- include "prometheus.server.labels" . | nindent 8 }}
-        {{- if .Values.server.podLabels}}
-        {{ toYaml .Values.server.podLabels | nindent 8 }}
-        {{- end}}
+        {{- with .Values.server.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
     spec:
 {{- if .Values.server.priorityClassName }}
       priorityClassName: "{{ .Values.server.priorityClassName }}"

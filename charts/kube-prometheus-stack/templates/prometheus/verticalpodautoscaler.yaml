@@ -31,9 +31,14 @@ spec:
         {{- toYaml .Values.prometheus.verticalPodAutoscaler.minAllowed | nindent 8 }}
       {{- end }}
   targetRef:
-    apiVersion: apps/v1
-    kind: StatefulSet
-    name: prometheus-{{ template "kube-prometheus-stack.prometheus.crname" . }}
+    {{- if .Values.prometheus.agentMode }}
+    apiVersion: monitoring.coreos.com/v1alpha1
+    kind: PrometheusAgent
+    {{- else }}
+    apiVersion: monitoring.coreos.com/v1
+    kind: Prometheus
+    {{- end }}
+    name: {{ template "kube-prometheus-stack.prometheus.crname" . }}
   {{- with .Values.prometheus.verticalPodAutoscaler.updatePolicy }}
   updatePolicy:
     {{- toYaml . | nindent 4 }}

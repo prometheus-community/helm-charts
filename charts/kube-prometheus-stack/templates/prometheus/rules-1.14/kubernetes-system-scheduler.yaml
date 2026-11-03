@@ -4,7 +4,7 @@ Do not change in-place! In order to change this file first read following link:
 https://github.com/prometheus-community/helm-charts/tree/main/charts/kube-prometheus-stack/hack
 */ -}}
 {{- $kubeTargetVersion := default .Capabilities.KubeVersion.GitVersion .Values.kubeTargetVersionOverride }}
-{{- if and (semverCompare ">=1.14.0-0" $kubeTargetVersion) (semverCompare "<9.9.9-9" $kubeTargetVersion) .Values.defaultRules.create .Values.kubeScheduler.enabled .Values.defaultRules.rules.kubeSchedulerAlerting }}
+{{- if and (semverCompare ">=1.14.0-0" $kubeTargetVersion) (semverCompare "<9.9.9-9" $kubeTargetVersion) .Values.defaultRules.create .Values.kubeScheduler.enabled .Values.defaultRules.rules.kubeSchedulerAlerting (not (.Values.defaultRules.disabled.KubeSchedulerDown | default false)) }}
 {{- $kubeSchedulerJob := include "kube-prometheus-stack-kube-scheduler.name" . }}
 apiVersion: monitoring.coreos.com/v1
 kind: PrometheusRule
@@ -29,15 +29,21 @@ spec:
 {{- if not (.Values.defaultRules.disabled.KubeSchedulerDown | default false) }}
     - alert: KubeSchedulerDown
       annotations:
-{{- if .Values.defaultRules.additionalRuleAnnotations }}
-{{ toYaml .Values.defaultRules.additionalRuleAnnotations | indent 8 }}
+{{- $ruleAnnotations := dig "KubeSchedulerDown" (dict) .Values.defaultRules.additionalRuleAnnotations }}
+{{- $groupAnnotations := default (dict) .Values.defaultRules.additionalRuleGroupAnnotations.kubeSchedulerAlerting }}
+{{- $additionalAnnotations := mergeOverwrite (dict) $groupAnnotations $ruleAnnotations }}
+{{- if $additionalAnnotations }}
+{{ toYaml $additionalAnnotations | indent 8 }}
 {{- end }}
-{{- if .Values.defaultRules.additionalRuleGroupAnnotations.kubeSchedulerAlerting }}
-{{ toYaml .Values.defaultRules.additionalRuleGroupAnnotations.kubeSchedulerAlerting | indent 8 }}
-{{- end }}
+        {{- if not (hasKey $additionalAnnotations "description") }}
         description: KubeScheduler has disappeared from Prometheus target discovery.
+        {{- end }}
+        {{- if not (hasKey $additionalAnnotations "runbook_url") }}
         runbook_url: {{ .Values.defaultRules.runbookUrl }}/kubernetes/kubeschedulerdown
+        {{- end }}
+        {{- if not (hasKey $additionalAnnotations "summary") }}
         summary: Target disappeared from Prometheus target discovery.
+        {{- end }}
       expr: absent(up{job="{{ $kubeSchedulerJob }}"})
       for: {{ dig "KubeSchedulerDown" "for" "15m" .Values.customRules }}
       {{- with .Values.defaultRules.keepFiringFor }}
@@ -54,5 +60,39 @@ spec:
         {{- end }}
       {{- end }}
 {{- end }}
+{{- end }}
+{{- if not (.Values.defaultRules.disabled.KubeSchedulerInstanceUnreachable | default false) }}
+    - alert: KubeSchedulerInstanceUnreachable
+      annotations:
+{{- $ruleAnnotations := dig "KubeSchedulerInstanceUnreachable" (dict) .Values.defaultRules.additionalRuleAnnotations }}
+{{- $groupAnnotations := default (dict) .Values.defaultRules.additionalRuleGroupAnnotations.kubeSchedulerAlerting }}
+{{- $additionalAnnotations := mergeOverwrite (dict) $groupAnnotations $ruleAnnotations }}
+{{- if $additionalAnnotations }}
+{{ toYaml $additionalAnnotations | indent 8 }}
+{{- end }}
+        {{- if not (hasKey $additionalAnnotations "description") }}
+        description: A KubeScheduler instance has been unreachable for more than 15 minutes.
+        {{- end }}
+        {{- if not (hasKey $additionalAnnotations "runbook_url") }}
+        runbook_url: {{ .Values.defaultRules.runbookUrl }}/kubernetes/kubeschedulerinstanceunreachable
+        {{- end }}
+        {{- if not (hasKey $additionalAnnotations "summary") }}
+        summary: KubeScheduler instance is unreachable.
+        {{- end }}
+      expr: up{job="{{ $kubeSchedulerJob }}"} == 0
+      for: {{ dig "KubeSchedulerInstanceUnreachable" "for" "15m" .Values.customRules }}
+      {{- with .Values.defaultRules.keepFiringFor }}
+      keep_firing_for: "{{ . }}"
+      {{- end }}
+      labels:
+        severity: {{ dig "KubeSchedulerInstanceUnreachable" "severity" "warning" .Values.customRules }}
+      {{- if or .Values.defaultRules.additionalRuleLabels .Values.defaultRules.additionalRuleGroupLabels.kubeSchedulerAlerting }}
+        {{- with .Values.defaultRules.additionalRuleLabels }}
+          {{- toYaml . | nindent 8 }}
+        {{- end }}
+        {{- with .Values.defaultRules.additionalRuleGroupLabels.kubeSchedulerAlerting }}
+          {{- toYaml . | nindent 8 }}
+        {{- end }}
+      {{- end }}
 {{- end }}
 {{- end }}

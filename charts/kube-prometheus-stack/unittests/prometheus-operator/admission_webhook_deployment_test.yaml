@@ -1,0 +1,61 @@
+suite: admission webhook deployment
+templates:
+  - prometheus-operator/admission-webhooks/deployment/deployment.yaml
+tests:
+  - it: renders PromQL parser options for admission webhook validation
+    set:
+      prometheusOperator.admissionWebhooks.deployment.enabled: true
+      prometheusOperator.admissionWebhooks.deployment.promqlOptions:
+        - extended-range-selectors
+        - experimental-functions
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: --promql-options=extended-range-selectors,experimental-functions
+
+  - it: reads the certificate from the kubernetes.io/tls keys of the certgen secret
+    set:
+      prometheusOperator.admissionWebhooks.deployment.enabled: true
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: --web.cert-file=/cert/tls.crt
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: --web.key-file=/cert/tls.key
+
+  - it: reads the certificate from the kubernetes.io/tls keys of the cert-manager secret
+    set:
+      prometheusOperator.admissionWebhooks.deployment.enabled: true
+      prometheusOperator.admissionWebhooks.certManager.enabled: true
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: --web.cert-file=/cert/tls.crt
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: --web.key-file=/cert/tls.key
+
+  - it: keeps reading cert and key of the certgen secret without secretType
+    set:
+      prometheusOperator.admissionWebhooks.deployment.enabled: true
+      prometheusOperator.admissionWebhooks.patch.secretType: ""
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: --web.cert-file=/cert/cert
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: --web.key-file=/cert/key
+
+  - it: keeps reading cert and key of a self-managed secret if the certgen job is disabled
+    set:
+      prometheusOperator.admissionWebhooks.deployment.enabled: true
+      prometheusOperator.admissionWebhooks.patch.enabled: false
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: --web.cert-file=/cert/cert
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: --web.key-file=/cert/key

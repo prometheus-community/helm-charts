@@ -1,0 +1,47 @@
+suite: test server VerticalPodAutoscaler
+templates:
+  - vpa.yaml
+tests:
+  - it: renders with the default (empty) containerPolicies
+    set:
+      server.verticalAutoscaler.enabled: true
+    asserts:
+      - isKind:
+          of: VerticalPodAutoscaler
+      - equal:
+          path: spec.updatePolicy.updateMode
+          value: "Off"
+      - equal:
+          path: spec.resourcePolicy.containerPolicies
+          value: []
+      - equal:
+          path: spec.targetRef.kind
+          value: Deployment
+
+  - it: renders configured containerPolicies
+    set:
+      server.verticalAutoscaler.enabled: true
+      server.verticalAutoscaler.updateMode: Auto
+      server.statefulSet.enabled: true
+      server.verticalAutoscaler.containerPolicies:
+        - containerName: prometheus-server
+          minAllowed:
+            memory: 512Mi
+    asserts:
+      - equal:
+          path: spec.updatePolicy.updateMode
+          value: Auto
+      - equal:
+          path: spec.targetRef.kind
+          value: StatefulSet
+      - equal:
+          path: spec.resourcePolicy.containerPolicies
+          value:
+            - containerName: prometheus-server
+              minAllowed:
+                memory: 512Mi
+
+  - it: renders nothing when disabled
+    asserts:
+      - hasDocuments:
+          count: 0

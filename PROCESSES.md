@@ -41,7 +41,7 @@ The pull request which does that should also update [CODEOWNERS](./.github/CODEO
 One of the existing chart maintainers needs to approve the PR in addition one of the repository admins needs to approve it.
 They are then responsible for also granting the new maintainer write permissions to this repository.
 
-Each maintainer has defined in the Chart.yaml of the chart itself unter the maintainer section,
+Each maintainer has defined in the Chart.yaml of the chart itself under the maintainer section,
 using the following format:
 
 ```yaml
@@ -50,6 +50,16 @@ maintainers:
   email:  # A contact mail. Optional
   url:    # The URL of the GitHub profile, using the format https://github.com/<username>. Required. 
 ```
+
+## Maintainer liveness check
+
+A yearly maintainer liveness check ensures that inactive maintainers are retired after some time.
+
+The liveness check is tracked through a GitHub issue in the `prometheus-community/helm-charts` repository. The issue should mention the targeted maintainer and give them 60 days to respond.
+
+If the maintainer does not respond within this 60-day period, they are considered to have resigned from their maintainer role. Their maintainer status can then be removed from the chart, `CODEOWNERS`, and any related repository permissions.
+
+This process helps keep chart ownership accurate and ensures that pull requests can still be reviewed by active maintainers.
 
 ## GitHub Settings
 
