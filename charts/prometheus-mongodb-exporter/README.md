@@ -12,7 +12,7 @@ The chart is distributed as an [OCI Artifact](https://helm.sh/docs/topics/regist
 - OCI Artifact: `oci://ghcr.io/prometheus-community/charts/prometheus-mongodb-exporter`
 - Helm Repository: `https://prometheus-community.github.io/helm-charts` with chart `prometheus-mongodb-exporter`
 
-The installation instructions use the OCI registry. Refer to the [`helm repo`]([`helm repo`](https://helm.sh/docs/helm/helm_repo/)) command documentation for information on installing charts via the traditional repository.
+The installation instructions use the OCI registry. Refer to the [`helm repo`](https://helm.sh/docs/helm/helm_repo/) command documentation for information on installing charts via the traditional repository.
 
 ### Install Chart
 
@@ -52,7 +52,7 @@ This version uses the original percona/mongodb_exporter Docker image again, as d
 
 The commnad arguments of the exporter have changed. If you have custom `extraArgs` settings you have to adjust them. Because of the newer version of the exporter image metrics may varry though, so you might need to adjust your dashboard querries or try out the "--compatible-mode" parameter in `extraArgs`.
 
-The `mongodb.uri` variable got "mongodb://monogdb:27017" as default parameter.
+The `mongodb.uri` variable got "mongodb://mongodb:27017" as default parameter.
 
 Chart API was raisded to v2, so Helm 2 is not supported anymore.
 
@@ -60,7 +60,7 @@ The servicemonitor has been disabled by default as prometheus operator might not
 
 ## Configuration
 
-See [Customizing the Chart Before Installing](https://helm.sh/docs/intro/using_helm/#customizing-the-chart-before-installing). To see all configurable options with detailed comments, visit the chart's [values.yaml](./values.yaml), or run these configuration commands:
+See [Customizing the Chart Before Installing](https://helm.sh/docs/intro/using_helm/#customizing-the-chart-before-installing). To see all configurable options with detailed comments, visit the chart's [values.yaml](https://github.com/prometheus-community/helm-charts/blob/main/charts/prometheus-mongodb-exporter/values.yaml), or run these configuration commands:
 
 ```console
 helm show values oci://ghcr.io/prometheus-community/charts/prometheus-mongodb-exporter
@@ -74,12 +74,14 @@ If the MongoDB server requires authentication, credentials should be populated i
 
 ### Service Monitor
 
-The chart comes with a ServiceMonitor for use with the [Prometheus Operator](https://github.com/helm/charts/tree/master/stable/prometheus-operator). By default, the ServiceMonitor is disabled. You can enable the ServiceMonitor by setting `serviceMonitor.enabled` to `true`. For the ServiceMonitor to be detected by the Prometheus Operator, you must add the selector label to `serviceMonitor.additionalLabels`. You can find this label under `spec.serviceMonitorSelector` of the Prometheus CRD.
+The chart comes with a ServiceMonitor for use with the [Prometheus Operator](https://github.com/prometheus-operator/prometheus-operator). By default, the ServiceMonitor is disabled. You can enable the ServiceMonitor by setting `serviceMonitor.enabled` to `true`. For the ServiceMonitor to be detected by the Prometheus Operator, you must add the selector label to `serviceMonitor.additionalLabels`. You can find this label under `spec.serviceMonitorSelector` of the Prometheus CRD.
 
 If you're not using the Prometheus Operator, you can instead populate the `podAnnotations` as below:
 
 ```yaml
 podAnnotations:
   prometheus.io/scrape: "true"
-  prometheus.io/port: "metrics"
+  prometheus.io/port: "9216"
 ```
+
+Use the exporter port number in `prometheus.io/port`, and update it if you override `port`.
