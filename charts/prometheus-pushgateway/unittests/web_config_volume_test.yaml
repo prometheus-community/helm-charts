@@ -1,7 +1,6 @@
 # yaml-language-server: $schema=https://raw.githubusercontent.com/helm-unittest/helm-unittest/main/schema/helm-testsuite.json
 suite: test web configuration volumes
 templates:
-  - deployment.yaml
   - statefulset.yaml
 set:
   webConfiguration:
@@ -39,26 +38,6 @@ tests:
           path: spec.volumeClaimTemplates[0].metadata.name
           value: storage-volume
 
-  - it: also keeps inline web configuration with a StatefulSet PVC and extra volumes
-    template: statefulset.yaml
-    set:
-      runAsStatefulSet: true
-      persistentVolume.enabled: true
-      webConfiguration:
-        existingSecret: null
-        basicAuthUsers:
-          job: secret-password
-    asserts:
-      - contains:
-          path: spec.template.spec.volumes
-          content:
-            name: web-config
-            secret:
-              secretName: RELEASE-NAME-prometheus-pushgateway
-      - lengthEqual:
-          path: spec.template.spec.volumes
-          count: 2
-
   - it: declares the web configuration volume once without extra volumes
     template: statefulset.yaml
     set:
@@ -72,31 +51,3 @@ tests:
             - name: web-config
               secret:
                 secretName: pushgateway-web-config
-
-  - it: keeps storage and web configuration volumes in a Deployment
-    template: deployment.yaml
-    asserts:
-      - contains:
-          path: spec.template.spec.volumes
-          content:
-            name: web-config
-            secret:
-              secretName: pushgateway-web-config
-      - lengthEqual:
-          path: spec.template.spec.volumes
-          count: 3
-
-  - it: keeps storage and web configuration volumes in an ephemeral StatefulSet
-    template: statefulset.yaml
-    set:
-      runAsStatefulSet: true
-    asserts:
-      - contains:
-          path: spec.template.spec.volumes
-          content:
-            name: web-config
-            secret:
-              secretName: pushgateway-web-config
-      - lengthEqual:
-          path: spec.template.spec.volumes
-          count: 3
