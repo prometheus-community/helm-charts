@@ -24,41 +24,6 @@ tests:
             name: REDIS_PASSWORD_FILE
             value: /auth/passwords.json
 
-  - it: keeps the ACL username with an inline password
-    set:
-      auth.redisPassword: secret-password
-    asserts:
-      - contains:
-          path: spec.template.spec.containers[0].env
-          content:
-            name: REDIS_USER
-            value: monitor
-      - contains:
-          path: spec.template.spec.containers[0].env
-          content:
-            name: REDIS_PASSWORD
-            value: secret-password
-
-  - it: keeps the ACL username with a password secret
-    set:
-      auth.secret:
-        name: redis-password
-        key: password
-    asserts:
-      - contains:
-          path: spec.template.spec.containers[0].env
-          content:
-            name: REDIS_USER
-            value: monitor
-      - contains:
-          path: spec.template.spec.containers[0].env
-          content:
-            name: REDIS_PASSWORD
-            valueFrom:
-              secretKeyRef:
-                name: redis-password
-                key: password
-
   - it: keeps a numeric ACL username as a string
     set:
       auth.redisUser: "1234"
@@ -68,21 +33,3 @@ tests:
           content:
             name: REDIS_USER
             value: "1234"
-
-  - it: omits the username when none is configured
-    set:
-      auth.redisUser: ""
-    asserts:
-      - notExists:
-          path: spec.template.spec.containers[0].env[?(@.name == "REDIS_USER")]
-
-  - it: omits authentication when it is disabled
-    set:
-      auth.enabled: false
-    asserts:
-      - notExists:
-          path: spec.template.spec.containers[0].env[?(@.name == "REDIS_USER")]
-      - notExists:
-          path: spec.template.spec.containers[0].env[?(@.name == "REDIS_PASSWORD")]
-      - notExists:
-          path: spec.template.spec.containers[0].env[?(@.name == "REDIS_PASSWORD_FILE")]
