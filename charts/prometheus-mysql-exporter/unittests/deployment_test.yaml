@@ -1,0 +1,80 @@
+suite: exporter container resources
+templates:
+  - deployment.yaml
+  - secret.yaml
+  - secret-config.yaml
+tests:
+  - template: deployment.yaml
+    it: keeps exporter resources without Cloud SQL Proxy
+    set:
+      resources:
+        limits:
+          cpu: 200m
+          memory: 128Mi
+        requests:
+          cpu: 100m
+          memory: 64Mi
+      cloudsqlproxy.enabled: false
+      cloudsqlproxy.workloadIdentity.enabled: true
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].resources
+          value:
+            limits:
+              cpu: 200m
+              memory: 128Mi
+            requests:
+              cpu: 100m
+              memory: 64Mi
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: GOMEMLIMIT
+            valueFrom:
+              resourceFieldRef:
+                resource: limits.memory
+  - template: deployment.yaml
+    it: keeps exporter resources with Cloud SQL Proxy
+    set:
+      resources:
+        limits:
+          cpu: 200m
+          memory: 128Mi
+        requests:
+          cpu: 100m
+          memory: 64Mi
+      cloudsqlproxy.enabled: true
+      cloudsqlproxy.workloadIdentity.enabled: true
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].resources
+          value:
+            limits:
+              cpu: 200m
+              memory: 128Mi
+            requests:
+              cpu: 100m
+              memory: 64Mi
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: GOMEMLIMIT
+            valueFrom:
+              resourceFieldRef:
+                resource: limits.memory
+      - notExists:
+          path: spec.template.spec.containers[1].resources
+  - template: deployment.yaml
+    it: leaves resource limits unset by default
+    set:
+      cloudsqlproxy.enabled: true
+      cloudsqlproxy.workloadIdentity.enabled: true
+    asserts:
+      - notExists:
+          path: spec.template.spec.containers[0].resources.limits
+      - notExists:
+          path: spec.template.spec.containers[0].resources.requests
+      - notExists:
+          path: spec.template.spec.containers[1].resources.limits
+      - notExists:
+          path: spec.template.spec.containers[1].resources.requests
