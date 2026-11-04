@@ -1,4 +1,4 @@
-suite: exporter container resources
+suite: container resources
 templates:
   - deployment.yaml
   - secret.yaml
@@ -17,6 +17,9 @@ tests:
       cloudsqlproxy.enabled: false
       cloudsqlproxy.workloadIdentity.enabled: true
     asserts:
+      - lengthEqual:
+          path: spec.template.spec.containers
+          count: 1
       - equal:
           path: spec.template.spec.containers[0].resources
           value:
@@ -62,8 +65,72 @@ tests:
             valueFrom:
               resourceFieldRef:
                 resource: limits.memory
-      - notExists:
+      - equal:
           path: spec.template.spec.containers[1].resources
+          value: {}
+  - template: deployment.yaml
+    it: keeps separate resources on the exporter and Cloud SQL Proxy
+    set:
+      resources:
+        limits:
+          cpu: 200m
+          memory: 128Mi
+        requests:
+          cpu: 100m
+          memory: 64Mi
+      cloudsqlproxy.enabled: true
+      cloudsqlproxy.workloadIdentity.enabled: true
+      cloudsqlproxy.resources:
+        limits:
+          cpu: 500m
+          memory: 256Mi
+        requests:
+          cpu: 250m
+          memory: 128Mi
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].resources
+          value:
+            limits:
+              cpu: 200m
+              memory: 128Mi
+            requests:
+              cpu: 100m
+              memory: 64Mi
+      - equal:
+          path: spec.template.spec.containers[1].resources
+          value:
+            limits:
+              cpu: 500m
+              memory: 256Mi
+            requests:
+              cpu: 250m
+              memory: 128Mi
+  - template: deployment.yaml
+    it: keeps proxy resources separate when exporter resources are unset
+    set:
+      cloudsqlproxy.enabled: true
+      cloudsqlproxy.workloadIdentity.enabled: true
+      cloudsqlproxy.resources:
+        limits:
+          cpu: 500m
+          memory: 256Mi
+        requests:
+          cpu: 250m
+          memory: 128Mi
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].resources
+          value: {}
+      - equal:
+          path: spec.template.spec.containers[1].resources
+          value:
+            limits:
+              cpu: 500m
+              memory: 256Mi
+            requests:
+              cpu: 250m
+              memory: 128Mi
   - template: deployment.yaml
     it: leaves resource limits unset by default
     set:
