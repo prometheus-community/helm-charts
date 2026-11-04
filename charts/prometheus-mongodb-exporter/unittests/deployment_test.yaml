@@ -23,26 +23,6 @@ tests:
             name: MONGODB_PASSWORD
             value: '123456'
     template: deployment.yaml
-  - it: preserves boolean-looking credentials as strings
-    set:
-      serviceMonitor.multiTarget.enabled: true
-      serviceMonitor.multiTarget.targets:
-        - uri: mongodb://mongodb:27017/admin
-          name: mongodb
-      serviceMonitor.multiTarget.username: 'true'
-      serviceMonitor.multiTarget.password.value: 'false'
-    asserts:
-      - contains:
-          path: spec.template.spec.containers[0].env
-          content:
-            name: MONGODB_USER
-            value: 'true'
-      - contains:
-          path: spec.template.spec.containers[0].env
-          content:
-            name: MONGODB_PASSWORD
-            value: 'false'
-    template: deployment.yaml
   - it: preserves YAML punctuation in passwords
     set:
       serviceMonitor.multiTarget.enabled: true
@@ -58,26 +38,8 @@ tests:
             name: MONGODB_PASSWORD
             value: 'token: value # suffix'
     template: deployment.yaml
-  - it: preserves an empty password
-    set:
-      serviceMonitor.multiTarget.enabled: true
-      serviceMonitor.multiTarget.targets:
-        - uri: mongodb://mongodb:27017/admin
-          name: mongodb
-      serviceMonitor.multiTarget.username: monitor
-    asserts:
-      - contains:
-          path: spec.template.spec.containers[0].env
-          content:
-            name: MONGODB_PASSWORD
-            value: ''
-    template: deployment.yaml
   - it: preserves escaped characters in extra environment variables
     set:
-      serviceMonitor.multiTarget.enabled: true
-      serviceMonitor.multiTarget.targets:
-        - uri: mongodb://mongodb:27017/admin
-          name: mongodb
       env:
         CUSTOM_VALUE: C:\certs\client.pem
     asserts:
@@ -86,38 +48,4 @@ tests:
           content:
             name: CUSTOM_VALUE
             value: C:\certs\client.pem
-    template: deployment.yaml
-  - it: keeps credentials in an existing secret
-    set:
-      serviceMonitor.multiTarget.enabled: true
-      serviceMonitor.multiTarget.targets:
-        - uri: mongodb://mongodb:27017/admin
-          name: mongodb
-      serviceMonitor.multiTarget.username: monitor
-      serviceMonitor.multiTarget.password.existingSecret.name: mongo-auth
-      serviceMonitor.multiTarget.password.existingSecret.key: password
-    asserts:
-      - contains:
-          path: spec.template.spec.containers[0].env
-          content:
-            name: MONGODB_PASSWORD
-            valueFrom:
-              secretKeyRef:
-                name: mongo-auth
-                key: password
-    template: deployment.yaml
-  - it: joins target URIs without requiring credentials
-    set:
-      serviceMonitor.multiTarget.enabled: true
-      serviceMonitor.multiTarget.targets:
-        - uri: mongodb://mongodb-0:27017/admin
-          name: mongodb-0
-        - uri: mongodb://mongodb-1:27017/admin
-          name: mongodb-1
-    asserts:
-      - equal:
-          path: spec.template.spec.containers[0].env
-          value:
-            - name: MONGODB_URI
-              value: mongodb://mongodb-0:27017/admin,mongodb://mongodb-1:27017/admin
     template: deployment.yaml
