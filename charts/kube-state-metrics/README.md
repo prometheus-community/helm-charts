@@ -45,6 +45,12 @@ You can upgrade in-place:
 
 1. [upgrade](#upgrading-chart) your existing release name using the new chart repository
 
+## Upgrading to v9.0.0
+
+The default `nodeSelector` now includes `kubernetes.io/os: linux` to keep kube-state-metrics off Windows nodes in mixed clusters. This applies to both the Deployment and the autosharded StatefulSet and triggers a pod rollout on upgrade.
+
+Helm merges custom `nodeSelector` labels with this default. Make sure the selected nodes are Linux nodes before upgrading. If you use a custom image for another OS, override `nodeSelector.kubernetes.io/os`. Set `nodeSelector: null` to remove the selector entirely.
+
 ## Upgrading to v8.0.0
 
 This version drops support for configuring `CiliumNetworkPolicy` as it is a vendor specific resource.
