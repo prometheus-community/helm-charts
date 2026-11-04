@@ -83,5 +83,3 @@ podAnnotations:
   prometheus.io/scrape: "true"
   prometheus.io/port: "9216"
 ```
-
-Use the exporter port number in `prometheus.io/port`, and update it if you override `port`.
