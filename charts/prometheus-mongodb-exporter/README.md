@@ -50,7 +50,7 @@ A major chart version change (like v1.2.3 -> v2.0.0) indicates that there is an 
 
 This version uses the original percona/mongodb_exporter Docker image again, as described in the readme and Chart.yaml. It's maintained and it uses frequent Docker builds, so this is preferable for security reasons.
 
-The commnad arguments of the exporter have changed. If you have custom `extraArgs` settings you have to adjust them. Because of the newer version of the exporter image metrics may varry though, so you might need to adjust your dashboard querries or try out the "--compatible-mode" parameter in `extraArgs`.
+The command arguments of the exporter have changed. If you have custom `extraArgs` settings you have to adjust them. Because of the newer version of the exporter image metrics may vary though, so you might need to adjust your dashboard queries or try out the "--compatible-mode" parameter in `extraArgs`.
 
 The `mongodb.uri` variable got "mongodb://mongodb:27017" as default parameter.
 
