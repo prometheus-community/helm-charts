@@ -16,7 +16,7 @@ The chart is distributed as an [OCI Artifact](https://helm.sh/docs/topics/regist
 - OCI Artifact: `oci://ghcr.io/prometheus-community/charts/prometheus-redis-exporter`
 - Helm Repository: `https://prometheus-community.github.io/helm-charts` with chart `prometheus-redis-exporter`
 
-The installation instructions use the OCI registry. Refer to the [`helm repo`]([`helm repo`](https://helm.sh/docs/helm/helm_repo/)) command documentation for information on installing charts via the traditional repository.
+The installation instructions use the OCI registry. Refer to the [`helm repo`](https://helm.sh/docs/helm/helm_repo/) command documentation for information on installing charts via the traditional repository.
 
 ### Install Chart
 
@@ -79,7 +79,7 @@ serviceMonitor:
 
 ## Configuring
 
-See [Customizing the Chart Before Installing](https://helm.sh/docs/intro/using_helm/#customizing-the-chart-before-installing). To see all configurable options with detailed comments, visit the chart's [values.yaml](./values.yaml), or run these configuration commands:
+See [Customizing the Chart Before Installing](https://helm.sh/docs/intro/using_helm/#customizing-the-chart-before-installing). To see all configurable options with detailed comments, visit the chart's [values.yaml](https://github.com/prometheus-community/helm-charts/blob/main/charts/prometheus-redis-exporter/values.yaml), or run these configuration commands:
 
 ```console
 helm show values oci://ghcr.io/prometheus-community/charts/prometheus-redis-exporter
@@ -92,7 +92,17 @@ For more information please refer to the [redis_exporter](https://github.com/oli
 - To configure Redis connection by value set `redisAddress` string (example format: `redis://myredis:6379`)
 - To configure Redis connection by configmap set `redisAddressConfig.enabled` to `true`, set `redisAddressConfig.configmap.name` and `redisAddressConfig.configmap.key` values
 - To configure auth by value, set `auth.enabled` to `true`, and `auth.redisPassword` value
-- To configure auth by secret, set `auth.secret.name` and `auth.secret.key` values
+- To configure auth by secret, set `auth.enabled` to `true`, and set `auth.secret.name` and `auth.secret.key` values
+
+For example, to use the `password` key from an existing `redis-credentials` Secret:
+
+```yaml
+auth:
+  enabled: true
+  secret:
+    name: redis-credentials
+    key: password
+```
 
 ### Using a custom LUA-Script
 
