@@ -1,0 +1,94 @@
+suite: deployment option arguments
+templates:
+  - deployment.yaml
+tests:
+  - it: preserves false boolean option with image 1.5.3
+    set:
+      image.tag: 1.5.3
+      nginxServer: http://nginx:8080/stub_status
+      options:
+        nginx.ssl-verify: false
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].args
+          value:
+            - --nginx.scrape-uri=http://nginx:8080/stub_status
+            - --no-nginx.ssl-verify
+  - it: preserves true boolean option with image 1.5.3
+    set:
+      image.tag: 1.5.3
+      nginxServer: http://nginx:8080/stub_status
+      options:
+        nginx.ssl-verify: true
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].args
+          value:
+            - --nginx.scrape-uri=http://nginx:8080/stub_status
+            - --nginx.ssl-verify
+  - it: keeps valueless option with image 1.5.3
+    set:
+      image.tag: 1.5.3
+      nginxServer: http://nginx:8080/stub_status
+      options:
+        nginx.ssl-verify: null
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].args
+          value:
+            - --nginx.scrape-uri=http://nginx:8080/stub_status
+            - --nginx.ssl-verify
+  - it: preserves false boolean option with image 0.11.0
+    set:
+      image.tag: 0.11.0
+      nginxServer: http://nginx:8080/stub_status
+      options:
+        nginx.ssl-verify: false
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].args
+          value:
+            - -nginx.scrape-uri=http://nginx:8080/stub_status
+            - -nginx.ssl-verify=false
+  - it: preserves true boolean option with image 0.11.0
+    set:
+      image.tag: 0.11.0
+      nginxServer: http://nginx:8080/stub_status
+      options:
+        nginx.ssl-verify: true
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].args
+          value:
+            - -nginx.scrape-uri=http://nginx:8080/stub_status
+            - -nginx.ssl-verify=true
+  - it: keeps valueless option with image 0.11.0
+    set:
+      image.tag: 0.11.0
+      nginxServer: http://nginx:8080/stub_status
+      options:
+        nginx.ssl-verify: null
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].args
+          value:
+            - -nginx.scrape-uri=http://nginx:8080/stub_status
+            - -nginx.ssl-verify
+  - it: preserves string option values with image 1.5.3
+    set:
+      image.tag: 1.5.3
+      options:
+        nginx.timeout: 5s
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: --nginx.timeout=5s
+  - it: preserves string option values with image 0.11.0
+    set:
+      image.tag: 0.11.0
+      options:
+        nginx.timeout: 5s
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: -nginx.timeout=5s
