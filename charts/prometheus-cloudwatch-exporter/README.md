@@ -70,7 +70,7 @@ $ helm show values oci://ghcr.io/prometheus-community/charts/prometheus-cloudwat
 
 For Cloudwatch Exporter to operate properly, you must configure either an IAM role or AWS credentials with the [correct policy](https://github.com/prometheus/cloudwatch_exporter#credentials-and-permissions).
 
-- To use [IRSA](https://docs.aws.amazon.com/eks/latest/userguide/iam-roles-for-service-accounts.html), annotate the service account with the role ARN:
+- To use [IRSA](https://docs.aws.amazon.com/eks/latest/userguide/iam-roles-for-service-accounts.html), set the service account annotation `eks.amazonaws.com/role-arn` to the role ARN. The chart writes `serviceAccount.annotations` onto the ServiceAccount when `serviceAccount.create` is `true` (the default). If you set `serviceAccount.create` to `false`, add that annotation on the existing ServiceAccount yourself:
 
   ```yaml
   serviceAccount:
@@ -78,12 +78,12 @@ For Cloudwatch Exporter to operate properly, you must configure either an IAM ro
       eks.amazonaws.com/role-arn: arn:aws:iam::123456789012:role/[ROLE_NAME]
   ```
 
-  If you change `securityContext.runAsUser`, set `securityContext.fsGroup` to the same value so the pod can read the mounted token.
-- To use [EKS Pod Identity](https://docs.aws.amazon.com/eks/latest/userguide/pod-identities.html), set `serviceAccount.name` to [SERVICE_ACCOUNT_NAME] and create an association for it. No other chart values are needed.
+  `securityContext.runAsUser` and `securityContext.fsGroup` both default to `65534` so the pod can read the mounted token. If you change `securityContext.runAsUser`, set `securityContext.fsGroup` to the same value.
+- To use [EKS Pod Identity](https://docs.aws.amazon.com/eks/latest/userguide/pod-identities.html), associate the service account this chart runs with the role. No service account annotation and no `aws.role` value are required. Set `serviceAccount.name` only when the association should use a fixed name instead of the generated fullname.
 
   ```console
   $ aws eks create-pod-identity-association --cluster-name [CLUSTER_NAME] --namespace [NAMESPACE] --service-account [SERVICE_ACCOUNT_NAME] --role-arn [ROLE_ARN]
   ```
 - To configure AWS credentials by value, set `aws.aws_access_key_id` to your [AWS_ACCESS_KEY_ID], and `aws.aws_secret_access_key` to [AWS_SECRET_ACCESS_KEY].
 - To configure AWS credentials by secret, you must store them in a secret (`kubectl create secret generic [SECRET_NAME] --from-literal=access_key=[AWS_ACCESS_KEY_ID] --from-literal=secret_key=[AWS_SECRET_ACCESS_KEY]`) and set `aws.secret.name` to [SECRET_NAME]
-- `aws.role` only adds the `iam.amazonaws.com/role` pod annotation used by [kube2iam](https://github.com/jtblin/kube2iam). It is kept for clusters that still run kube2iam. Use IRSA or EKS Pod Identity for new installs.
+- Legacy: `aws.role` only adds the pod annotation `iam.amazonaws.com/role`, which [kube2iam](https://github.com/jtblin/kube2iam) and [kiam](https://github.com/uswitch/kiam) read. Leave `aws.role` empty and use IRSA or EKS Pod Identity for new installs.
