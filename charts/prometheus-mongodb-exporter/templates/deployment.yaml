@@ -30,10 +30,10 @@ spec:
           env:
           {{- if .Values.serviceMonitor.multiTarget.enabled }}
             - name: MONGODB_URI
-              value: {{ include "prometheus-mongodb-exporter.mongodbUri" . }}
+              value: {{ include "prometheus-mongodb-exporter.mongodbUri" . | quote }}
             {{- if .Values.serviceMonitor.multiTarget.username }}
             - name: MONGODB_USER
-              value: {{ .Values.serviceMonitor.multiTarget.username }}
+              value: {{ .Values.serviceMonitor.multiTarget.username | quote }}
             - name: MONGODB_PASSWORD
               {{- if and .Values.serviceMonitor.multiTarget.password.existingSecret.name .Values.serviceMonitor.multiTarget.password.existingSecret.key }}
               valueFrom:
@@ -41,7 +41,7 @@ spec:
                   name: {{ .Values.serviceMonitor.multiTarget.password.existingSecret.name }}
                   key: {{ .Values.serviceMonitor.multiTarget.password.existingSecret.key }}
               {{- else }}
-              value: {{ .Values.serviceMonitor.multiTarget.password.value }}
+              value: {{ .Values.serviceMonitor.multiTarget.password.value | quote }}
               {{- end }}
             {{- end }}
           {{- else }}
@@ -53,8 +53,8 @@ spec:
           {{- end }}
           {{- if .Values.env }}
           {{- range $key, $value := .Values.env }}
-            - name: "{{ $key }}"
-              value: "{{ $value }}"
+            - name: {{ $key | quote }}
+              value: {{ $value | quote }}
           {{- end }}
           {{- end }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
