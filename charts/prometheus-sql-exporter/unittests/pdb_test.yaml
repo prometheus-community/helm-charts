@@ -1,0 +1,33 @@
+suite: disruption budget API
+templates:
+  - pdb.yaml
+tests:
+  - it: does not create a disruption budget by default
+    asserts:
+      - hasDocuments:
+          count: 0
+  - it: uses the stable API on the minimum supported Kubernetes version
+    capabilities:
+      majorVersion: 1
+      minorVersion: 27
+    set:
+      podDisruptionBudget.enabled: true
+    asserts:
+      - isAPIVersion:
+          of: policy/v1
+      - equal:
+          path: spec.maxUnavailable
+          value: 1
+  - it: keeps a zero disruption limit on current Kubernetes
+    set:
+      podDisruptionBudget.enabled: true
+      podDisruptionBudget.maxUnavailable: 0
+    asserts:
+      - isAPIVersion:
+          of: policy/v1
+      - equal:
+          path: spec.maxUnavailable
+          value: 0
+      - equal:
+          path: spec.selector.matchLabels["app.kubernetes.io/instance"]
+          value: RELEASE-NAME
