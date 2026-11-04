@@ -70,7 +70,7 @@ $ helm show values oci://ghcr.io/prometheus-community/charts/prometheus-cloudwat
 
 For Cloudwatch Exporter to operate properly, you must configure either an IAM role or AWS credentials with the [correct policy](https://github.com/prometheus/cloudwatch_exporter#credentials-and-permissions).
 
-- To use [IRSA](https://docs.aws.amazon.com/eks/latest/userguide/iam-roles-for-service-accounts.html), set the service account annotation `eks.amazonaws.com/role-arn` to the role ARN. The chart writes `serviceAccount.annotations` onto the ServiceAccount when `serviceAccount.create` is `true` (the default). If you set `serviceAccount.create` to `false`, add that annotation on the existing ServiceAccount yourself:
+- To use [IRSA](https://docs.aws.amazon.com/eks/latest/userguide/iam-roles-for-service-accounts.html), set the service account annotation `eks.amazonaws.com/role-arn` to the role ARN:
 
   ```yaml
   serviceAccount:
@@ -78,8 +78,8 @@ For Cloudwatch Exporter to operate properly, you must configure either an IAM ro
       eks.amazonaws.com/role-arn: arn:aws:iam::123456789012:role/[ROLE_NAME]
   ```
 
-  `securityContext.runAsUser` and `securityContext.fsGroup` both default to `65534` so the pod can read the mounted token. If you change `securityContext.runAsUser`, set `securityContext.fsGroup` to the same value.
-- To use [EKS Pod Identity](https://docs.aws.amazon.com/eks/latest/userguide/pod-identities.html), associate the service account this chart runs with the role. No service account annotation and no `aws.role` value are required. Set `serviceAccount.name` only when the association should use a fixed name instead of the generated fullname.
+  If you change `securityContext.runAsUser`, set `securityContext.fsGroup` to the same value.
+- To use [EKS Pod Identity](https://docs.aws.amazon.com/eks/latest/userguide/pod-identities.html), associate the service account this chart runs with the role:
 
   ```console
   $ aws eks create-pod-identity-association --cluster-name [CLUSTER_NAME] --namespace [NAMESPACE] --service-account [SERVICE_ACCOUNT_NAME] --role-arn [ROLE_ARN]
