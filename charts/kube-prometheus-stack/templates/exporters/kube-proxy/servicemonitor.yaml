@@ -20,6 +20,9 @@ spec:
   targetLabels:
     {{- toYaml . | nindent 4 }}
   {{- end }}
+  {{- with include "kube-prometheus-stack.controlPlane.scrapeClass" (dict "serviceMonitor" .Values.kubeProxy.serviceMonitor "root" .) }}
+  scrapeClass: {{ . }}
+  {{- end }}
   {{- include "servicemonitor.scrapeLimits" .Values.kubeProxy.serviceMonitor | nindent 2 }}
   selector:
     {{- if .Values.kubeProxy.serviceMonitor.selector }}
@@ -37,9 +40,8 @@ spec:
     {{- if .Values.kubeProxy.serviceMonitor.interval }}
     interval: {{ .Values.kubeProxy.serviceMonitor.interval }}
     {{- end }}
-    {{- with .Values.kubeProxy.serviceMonitor.authorization }}
-    authorization:
-      {{- tpl (toYaml .) $ | nindent 6 }}
+    {{- with include "kube-prometheus-stack.controlPlane.authorization" (dict "serviceMonitor" $.Values.kubeProxy.serviceMonitor "root" $) }}
+    {{- . | nindent 4 }}
     {{- end }}
     {{- if .Values.kubeProxy.serviceMonitor.proxyUrl }}
     proxyUrl: {{ .Values.kubeProxy.serviceMonitor.proxyUrl}}

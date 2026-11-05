@@ -121,7 +121,11 @@ spec:
   otlp:
 {{ toYaml .Values.prometheus.prometheusSpec.otlp | indent 4 }}
 {{- end }}
-{{- with .Values.prometheus.prometheusSpec.scrapeClasses }}
+{{- $scrapeClasses := .Values.prometheus.prometheusSpec.scrapeClasses | default list }}
+{{- if .Values.prometheus.controlPlaneScrapeClass.enabled }}
+{{- $scrapeClasses = append $scrapeClasses (pick .Values.prometheus.controlPlaneScrapeClass "name" "authorization") }}
+{{- end }}
+{{- with $scrapeClasses }}
   scrapeClasses:
     {{- tpl (toYaml . | nindent 4) $ }}
 {{- end }}

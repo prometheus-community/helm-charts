@@ -1,0 +1,24 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/helm-unittest/helm-unittest/main/schema/helm-testsuite.json
+suite: test kubelet cAdvisor metric relabelings
+templates:
+  - exporters/kubelet/servicemonitor.yaml
+tests:
+  - it: should keep container_memory_swap for the k8s.rules.container_memory_swap recording rule
+    asserts:
+      - equal:
+          path: spec.endpoints[1].path
+          value: /metrics/cadvisor
+      - contains:
+          path: spec.endpoints[1].metricRelabelings
+          content:
+            action: drop
+            regex: container_memory_mapped_file
+            sourceLabels:
+              - __name__
+      - notContains:
+          path: spec.endpoints[1].metricRelabelings
+          content:
+            action: drop
+            regex: container_memory_(mapped_file|swap)
+            sourceLabels:
+              - __name__

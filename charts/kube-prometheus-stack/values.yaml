@@ -679,7 +679,7 @@ alertmanager:
   # Be aware that this is an early beta of this feature,
   # kube-prometheus-stack does not guarantee this works and is subject to change.
   # Being BETA this can/will change in the future without notice, do not use unless you want to take that risk
-  # [[ref]](https://gateway-api.sigs.k8s.io/reference/spec/#gateway.networking.k8s.io%2fv1alpha2)
+  # [[ref]](https://gateway-api.sigs.k8s.io/reference/api-spec/main/spec/#gatewaynetworkingk8siov1alpha2)
   route:
     main:
       # -- Enables or disables the route
@@ -942,6 +942,11 @@ alertmanager:
     ##
     additionalLabels: {}
 
+    ## ScrapeClass to use for this ServiceMonitor, as defined in prometheus.prometheusSpec.scrapeClasses.
+    ## If not set, the default scrape class (if any) is used.
+    ##
+    scrapeClass: ""
+
     ## SampleLimit defines per-scrape limit on number of scraped samples that will be accepted.
     ##
     sampleLimit: 0
@@ -1031,7 +1036,7 @@ alertmanager:
     image:
       registry: quay.io
       repository: prometheus/alertmanager
-      tag: v0.34.1
+      tag: v0.34.2
       sha: ""
       pullPolicy: IfNotPresent
 
@@ -1764,6 +1769,11 @@ kubeApiServer:
         name: '{{ include "kube-prometheus-stack.prometheus.tokenSecretName" . }}'
         key: token
 
+    ## ScrapeClass to use for this ServiceMonitor, as defined in prometheus.prometheusSpec.scrapeClasses.
+    ## If not set, the default scrape class (if any) is used.
+    ##
+    scrapeClass: ""
+
     ## SampleLimit defines per-scrape limit on number of scraped samples that will be accepted.
     ##
     sampleLimit: 0
@@ -1872,6 +1882,11 @@ kubelet:
     ## For more details see: https://github.com/prometheus-community/helm-charts/pull/5063#issuecomment-2545374849
     trackTimestampsStaleness: true
 
+    ## ScrapeClass to use for this ServiceMonitor, as defined in prometheus.prometheusSpec.scrapeClasses.
+    ## If not set, the default scrape class (if any) is used.
+    ##
+    scrapeClass: ""
+
     ## SampleLimit defines per-scrape limit on number of scraped samples that will be accepted.
     ##
     sampleLimit: 0
@@ -1960,10 +1975,12 @@ kubelet:
       - sourceLabels: [__name__]
         action: drop
         regex: 'container_fs_(io_current|io_time_seconds_total|io_time_weighted_seconds_total|reads_merged_total|sector_reads_total|sector_writes_total|writes_merged_total)'
-      # Drop less useful / always zero container memory metrics.
+      # Drop less useful container memory metrics. container_memory_swap is kept because the
+      # k8s.rules.container_memory_swap recording rule and the "Memory Usage (Swap)" columns
+      # of the Compute Resources dashboards are built on it.
       - sourceLabels: [__name__]
         action: drop
-        regex: 'container_memory_(mapped_file|swap)'
+        regex: 'container_memory_mapped_file'
       # Drop less useful container process metrics.
       - sourceLabels: [__name__]
         action: drop
@@ -2137,6 +2154,11 @@ kubeControllerManager:
     ##
     interval: ""
 
+    ## ScrapeClass to use for this ServiceMonitor, as defined in prometheus.prometheusSpec.scrapeClasses.
+    ## If not set, the default scrape class (if any) is used.
+    ##
+    scrapeClass: ""
+
     ## SampleLimit defines per-scrape limit on number of scraped samples that will be accepted.
     ##
     sampleLimit: 0
@@ -2247,6 +2269,11 @@ coreDns:
     ##
     interval: ""
 
+    ## ScrapeClass to use for this ServiceMonitor, as defined in prometheus.prometheusSpec.scrapeClasses.
+    ## If not set, the default scrape class (if any) is used.
+    ##
+    scrapeClass: ""
+
     ## SampleLimit defines per-scrape limit on number of scraped samples that will be accepted.
     ##
     sampleLimit: 0
@@ -2340,6 +2367,11 @@ kubeDns:
     ## Scrape interval. If not set, the Prometheus default scrape interval is used.
     ##
     interval: ""
+
+    ## ScrapeClass to use for this ServiceMonitor, as defined in prometheus.prometheusSpec.scrapeClasses.
+    ## If not set, the default scrape class (if any) is used.
+    ##
+    scrapeClass: ""
 
     ## SampleLimit defines per-scrape limit on number of scraped samples that will be accepted.
     ##
@@ -2479,6 +2511,11 @@ kubeEtcd:
     ##
     interval: ""
 
+    ## ScrapeClass to use for this ServiceMonitor, as defined in prometheus.prometheusSpec.scrapeClasses.
+    ## If not set, the default scrape class (if any) is used.
+    ##
+    scrapeClass: ""
+
     ## SampleLimit defines per-scrape limit on number of scraped samples that will be accepted.
     ##
     sampleLimit: 0
@@ -2597,6 +2634,11 @@ kubeScheduler:
     ## Scrape interval. If not set, the Prometheus default scrape interval is used.
     ##
     interval: ""
+
+    ## ScrapeClass to use for this ServiceMonitor, as defined in prometheus.prometheusSpec.scrapeClasses.
+    ## If not set, the default scrape class (if any) is used.
+    ##
+    scrapeClass: ""
 
     ## SampleLimit defines per-scrape limit on number of scraped samples that will be accepted.
     ##
@@ -2747,6 +2789,11 @@ kubeProxy:
     ## Scrape interval. If not set, the Prometheus default scrape interval is used.
     ##
     interval: ""
+
+    ## ScrapeClass to use for this ServiceMonitor, as defined in prometheus.prometheusSpec.scrapeClasses.
+    ## If not set, the default scrape class (if any) is used.
+    ##
+    scrapeClass: ""
 
     ## SampleLimit defines per-scrape limit on number of scraped samples that will be accepted.
     ##
@@ -3300,9 +3347,18 @@ prometheusOperator:
       image:
         registry: ghcr.io
         repository: jkroepke/kube-webhook-certgen
-        tag: 1.8.9
+        tag: 1.11.0
         sha: ""
         pullPolicy: IfNotPresent
+      ## Type of the secret created by the certgen job. Requires kube-webhook-certgen 1.11.0 or newer.
+      ## kubernetes.io/tls stores the certificates as ca.crt, tls.crt and tls.key. An existing Opaque secret is
+      ## deleted and recreated as kubernetes.io/tls with the same certificates, keeping the legacy ca, cert and key entries.
+      ## Set to "" to keep the previous Opaque secret with ca, cert and key, e.g. when using an older certgen image.
+      ## Without cert-manager and the certgen job, the chart reads ca, cert and key from the <fullname>-admission secret.
+      ## A secret created by this job as kubernetes.io/tls only contains ca.crt, tls.crt and tls.key, so replace it
+      ## before disabling the job or the admission webhooks while prometheusOperator.tls.enabled is true.
+      ##
+      secretType: kubernetes.io/tls
       resources: {}
       ## Provide a priority class name to the webhook patching job
       ##
@@ -3514,7 +3570,7 @@ prometheusOperator:
 
   kubeletService:
     ## If true, the operator will create and maintain a service for scraping kubelets
-    ## ref: https://github.com/prometheus-operator/prometheus-operator/blob/main/helm/prometheus-operator/README.md
+    ## ref: https://prometheus-operator.dev/docs/platform/operator/ (`-kubelet-service`)
     ##
     enabled: true
     namespace: kube-system
@@ -3545,6 +3601,11 @@ prometheusOperator:
     ## Scrape interval. If not set, the Prometheus default scrape interval is used.
     ##
     interval: ""
+
+    ## ScrapeClass to use for this ServiceMonitor, as defined in prometheus.prometheusSpec.scrapeClasses.
+    ## If not set, the default scrape class (if any) is used.
+    ##
+    scrapeClass: ""
 
     ## SampleLimit defines per-scrape limit on number of scraped samples that will be accepted.
     ##
@@ -3751,7 +3812,7 @@ prometheusOperator:
   thanosImage:
     registry: quay.io
     repository: thanos/thanos
-    tag: v0.42.4
+    tag: v0.42.5
     sha: ""
 
   ## Set a Label Selector to filter watched prometheus and prometheusAgent
@@ -3772,7 +3833,7 @@ prometheusOperator:
   secretFieldSelector: "type!=kubernetes.io/dockercfg,type!=helm.sh/release.v1"
 
   ## Feature gates to enable/disable operator features, rendered as --feature-gates=<key>=<value>.
-  ## See https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/api-reference/feature-gates.md
+  ## See https://prometheus-operator.dev/docs/platform/operator/ (`-feature-gates`)
   ## Example:
   ##   featureGates:
   ##     PrometheusAgentDaemonSet: true
@@ -3848,13 +3909,33 @@ prometheus:
     ## The control-plane ServiceMonitors reference it by default, because ServiceMonitors can only
     ## authenticate through a Secret and Kubernetes no longer creates one automatically.
     ## The resulting token is long-lived and does not expire; disable this and set the
-    ## `authorization` values of the control-plane components if you manage the credential yourself.
+    ## `authorization` values of the control-plane components if you manage the credential yourself,
+    ## or enable `prometheus.controlPlaneScrapeClass` below to use the pod's projected token instead.
     ## Only rendered together with the service account, so it requires `prometheus.enabled` and
     ## `create` above. Leaving a control-plane component on the default `authorization` while the
     ## Secret is not rendered is a rendering error rather than a silently broken ServiceMonitor.
     ## ref: https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-account/#manually-create-an-api-token-for-a-serviceaccount
     ##
     createTokenSecret: true
+
+  ## Scrape class for the control-plane ServiceMonitors (kubelet, kubeApiServer, kubeControllerManager,
+  ## kubeScheduler, kubeEtcd, kubeProxy, coreDns and kubeDns), as an alternative to the Secret above.
+  ## When enabled, the class is appended to `prometheusSpec.scrapeClasses` and each control-plane
+  ## ServiceMonitor selects it in place of its `serviceMonitor.authorization`. A ServiceMonitor whose `serviceMonitor.scrapeClass` names a
+  ## different class keeps its own `authorization`.
+  ## The default authorization reads the Prometheus pod's projected service account token, which the
+  ## kubelet rotates, so no long-lived token is needed; set `serviceAccount.createTokenSecret` to false
+  ## once every control-plane component uses this class.
+  ## Only applies to this chart's Prometheus (`prometheus.enabled`). Other scrapers that read these
+  ## ServiceMonitors, such as Grafana Alloy, do not support scrape classes and still need the Secret.
+  ## ref: https://prometheus-operator.dev/docs/developer/scrapeclass/
+  ##
+  controlPlaneScrapeClass:
+    enabled: false
+    name: kube-prometheus-stack-control-plane
+    authorization:
+      type: Bearer
+      credentialsFile: /var/run/secrets/kubernetes.io/serviceaccount/token
 
   # Service for thanos service discovery on sidecar
   # Enable this can make Thanos Query can use
@@ -4201,7 +4282,7 @@ prometheus:
   # Be aware that this is an early beta of this feature,
   # kube-prometheus-stack does not guarantee this works and is subject to change.
   # Being BETA this can/will change in the future without notice, do not use unless you want to take that risk
-  # [[ref]](https://gateway-api.sigs.k8s.io/reference/spec/#gateway.networking.k8s.io%2fv1alpha2)
+  # [[ref]](https://gateway-api.sigs.k8s.io/reference/api-spec/main/spec/#gatewaynetworkingk8siov1alpha2)
   route:
     main:
       # -- Enables or disables the route
@@ -4363,6 +4444,11 @@ prometheus:
     ## Additional labels
     ##
     additionalLabels: {}
+
+    ## ScrapeClass to use for this ServiceMonitor, as defined in prometheus.prometheusSpec.scrapeClasses.
+    ## If not set, the default scrape class (if any) is used.
+    ##
+    scrapeClass: ""
 
     ## SampleLimit defines per-scrape limit on number of scraped samples that will be accepted.
     ##
@@ -4550,7 +4636,7 @@ prometheus:
     image:
       registry: quay.io
       repository: prometheus/prometheus
-      tag: v3.15.0-distroless
+      tag: v3.15.1-distroless
       sha: ""
       pullPolicy: IfNotPresent
 
@@ -5326,8 +5412,23 @@ prometheus:
   #      - nodes/proxy
   #    verbs: [ "get", "list", "watch" ]
 
-  additionalServiceMonitors: []
-  ## Name of the ServiceMonitor to create
+  ## Additional ServiceMonitors to deploy as a list or map.
+  ## Maps allow individual monitors and their fields to be merged across values files.
+  ## Set a map entry to null to remove it when overriding values.
+  ## The map key is used as the name unless an explicit name is set.
+  ## Nested lists such as endpoints are replaced when overridden.
+  ##
+  additionalServiceMonitors: null
+  ## Map example:
+  #   example-service:
+  #     selector:
+  #       matchLabels:
+  #         app: example-service
+  #     endpoints:
+  #       - port: metrics
+
+  ## List example and available fields:
+  ## Name of the ServiceMonitor to create (required for list entries)
   ##
   # - name: ""
 
@@ -5457,8 +5558,23 @@ prometheus:
     # attachMetadata:
     #   node: true
 
-  additionalPodMonitors: []
-  ## Name of the PodMonitor to create
+  ## Additional PodMonitors to deploy as a list or map.
+  ## Maps allow individual monitors and their fields to be merged across values files.
+  ## Set a map entry to null to remove it when overriding values.
+  ## The map key is used as the name unless an explicit name is set.
+  ## Nested lists such as podMetricsEndpoints are replaced when overridden.
+  ##
+  additionalPodMonitors: null
+  ## Map example:
+  #   example-pod:
+  #     selector:
+  #       matchLabels:
+  #         app: example-pod
+  #     podMetricsEndpoints:
+  #       - port: metrics
+
+  ## List example and available fields:
+  ## Name of the PodMonitor to create (required for list entries)
   ##
   # - name: ""
 
@@ -5589,7 +5705,7 @@ thanosRuler:
   # Be aware that this is an early beta of this feature,
   # kube-prometheus-stack does not guarantee this works and is subject to change.
   # Being BETA this can/will change in the future without notice, do not use unless you want to take that risk
-  # [[ref]](https://gateway-api.sigs.k8s.io/reference/spec/#gateway.networking.k8s.io%2fv1alpha2)
+  # [[ref]](https://gateway-api.sigs.k8s.io/reference/api-spec/main/spec/#gatewaynetworkingk8siov1alpha2)
   route:
     main:
       # -- Enables or disables the route
@@ -5695,6 +5811,11 @@ thanosRuler:
     ##
     additionalLabels: {}
 
+    ## ScrapeClass to use for this ServiceMonitor, as defined in prometheus.prometheusSpec.scrapeClasses.
+    ## If not set, the default scrape class (if any) is used.
+    ##
+    scrapeClass: ""
+
     ## SampleLimit defines per-scrape limit on number of scraped samples that will be accepted.
     ##
     sampleLimit: 0
@@ -5770,7 +5891,7 @@ thanosRuler:
     image:
       registry: quay.io
       repository: thanos/thanos
-      tag: v0.42.4
+      tag: v0.42.5
       sha: ""
 
     ## Namespaces to be selected for PrometheusRules discovery.

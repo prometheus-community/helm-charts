@@ -11,3 +11,20 @@ certmanager.k8s.io/inject-ca-from: {{ printf "%s/%s-admission" (include "kube-pr
 cert-manager.io/inject-ca-from: {{ printf "%s/%s-admission" (include "kube-prometheus-stack.namespace" .) (include "kube-prometheus-stack.fullname" .) | quote }}
 {{- end }}
 {{- end }}
+
+{{/* Returns "true" if the admission secret stores its certificates under the kubernetes.io/tls keys (ca.crt, tls.crt, tls.key) instead of ca, cert, key */}}
+{{- define "kube-prometheus-stack.prometheus-operator-webhook.tlsSecretKeys" -}}
+{{- $admissionWebhooks := .Values.prometheusOperator.admissionWebhooks -}}
+{{- if or $admissionWebhooks.certManager.enabled (and $admissionWebhooks.enabled $admissionWebhooks.patch.enabled (eq $admissionWebhooks.patch.secretType "kubernetes.io/tls")) -}}
+true
+{{- end -}}
+{{- end }}
+
+{{/*
+Pod labels for prometheus-operator-webhook: the common labels without the two that carry the
+chart version. See kube-prometheus-stack.prometheus-operator.podLabels.
+*/}}
+{{- define "kube-prometheus-stack.prometheus-operator-webhook.podLabels" }}
+{{- $podLabels := (include "kube-prometheus-stack.prometheus-operator-webhook.labels" . | fromYaml) }}
+{{- omit $podLabels "chart" "app.kubernetes.io/version" | toYaml }}
+{{- end }}

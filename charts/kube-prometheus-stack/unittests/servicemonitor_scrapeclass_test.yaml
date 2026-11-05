@@ -1,0 +1,35 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/helm-unittest/helm-unittest/main/schema/helm-testsuite.json
+suite: test chart ServiceMonitor scrape class
+templates:
+  - alertmanager/servicemonitor.yaml
+  - prometheus/servicemonitor.yaml
+  - prometheus/servicemonitorThanosSidecar.yaml
+  - prometheus-operator/servicemonitor.yaml
+  - thanos-ruler/servicemonitor.yaml
+release:
+  name: kps
+set:
+  thanosRuler.enabled: true
+  prometheus.thanosService.enabled: true
+  prometheus.thanosServiceMonitor.enabled: true
+tests:
+  - it: should not set a scrape class by default
+    set:
+      prometheus.controlPlaneScrapeClass.enabled: true
+    asserts:
+      - notExists:
+          path: spec.scrapeClass
+
+  - it: should set the scrape class when configured
+    set:
+      alertmanager.serviceMonitor.scrapeClass: custom
+      prometheus.serviceMonitor.scrapeClass: custom
+      prometheus.thanosServiceMonitor.scrapeClass: custom
+      prometheusOperator.serviceMonitor.scrapeClass: custom
+      thanosRuler.serviceMonitor.scrapeClass: custom
+    asserts:
+      - hasDocuments:
+          count: 1
+      - equal:
+          path: spec.scrapeClass
+          value: custom
