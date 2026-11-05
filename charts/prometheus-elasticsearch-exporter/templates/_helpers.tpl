@@ -131,6 +131,16 @@ app.kubernetes.io/instance: {{ .Release.Name }}
 {{- end }}
 
 {{/*
+Pod labels: the common labels without helm.sh/chart. That label carries the chart version, so
+including it in the pod template recreates the pod on every chart upgrade, even when nothing
+about the workload changed.
+*/}}
+{{- define "elasticsearch-exporter.podLabels" }}
+{{- $podLabels := (include "elasticsearch-exporter.labels" . | fromYaml) }}
+{{- omit $podLabels "helm.sh/chart" | toYaml }}
+{{- end }}
+
+{{/*
 Create the name of the service account to use
 */}}
 {{- define "elasticsearch-exporter.serviceAccountName" -}}
