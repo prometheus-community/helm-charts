@@ -16,3 +16,20 @@ restarts the operator on every helm upgrade even when nothing about the workload
 {{- $podLabels := (include "kube-prometheus-stack.prometheus-operator.labels" . | fromYaml) }}
 {{- omit $podLabels "chart" "app.kubernetes.io/version" | toYaml }}
 {{- end }}
+
+{{/*
+Returns "true" if the secret the operator itself mounts stores its certificates under the
+kubernetes.io/tls keys (ca.crt, tls.crt, tls.key) instead of ca, cert, key.
+
+A secret named by prometheusOperator.tls.secretName is always read as kubernetes.io/tls, so a
+secret you manage yourself is read the same way whatever the admission webhook settings are.
+Without that value the operator mounts the admission secret, whose layout depends on how it was
+created, so the webhook helper decides.
+*/}}
+{{- define "kube-prometheus-stack.prometheus-operator.tlsSecretKeys" -}}
+{{- if .Values.prometheusOperator.tls.secretName -}}
+true
+{{- else -}}
+{{- include "kube-prometheus-stack.prometheus-operator-webhook.tlsSecretKeys" . -}}
+{{- end -}}
+{{- end }}

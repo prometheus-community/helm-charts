@@ -2,7 +2,7 @@
 {{- $defaultKubeletSvcName := printf "%s-kubelet" (include "kube-prometheus-stack.fullname" .) }}
 {{- if .Values.prometheusOperator.enabled }}
 {{- if and .Values.prometheusOperator.tls.enabled (not .Values.prometheusOperator.tls.secretName) (not .Values.prometheusOperator.admissionWebhooks.certManager.enabled) (not (and .Values.prometheusOperator.admissionWebhooks.enabled .Values.prometheusOperator.admissionWebhooks.patch.enabled)) }}
-{{- fail "prometheusOperator.tls.enabled is true, but nothing in this release will create the TLS secret it mounts, so the operator pod would stay in ContainerCreating. That secret is created by the admission webhook patch job (prometheusOperator.admissionWebhooks.enabled and prometheusOperator.admissionWebhooks.patch.enabled, both true by default) or by cert-manager (prometheusOperator.admissionWebhooks.certManager.enabled). Set prometheusOperator.tls.secretName to a secret you manage yourself, holding the cert and key keys; or set prometheusOperator.admissionWebhooks.certManager.enabled=true; or set prometheusOperator.tls.enabled=false to run the operator without TLS on its metrics endpoint." }}
+{{- fail "prometheusOperator.tls.enabled is true, but neither the certgen job (prometheusOperator.admissionWebhooks.enabled and prometheusOperator.admissionWebhooks.patch.enabled) nor cert-manager (prometheusOperator.admissionWebhooks.certManager.enabled) is enabled to create the TLS secret. Set prometheusOperator.tls.secretName to an existing kubernetes.io/tls secret, or set prometheusOperator.tls.enabled=false." }}
 {{- end }}
 apiVersion: apps/v1
 kind: Deployment
@@ -149,8 +149,8 @@ spec:
             {{- end }}
             {{- if .Values.prometheusOperator.tls.enabled }}
             - --web.enable-tls=true
-            - --web.cert-file=/cert/{{ if include "kube-prometheus-stack.prometheus-operator-webhook.tlsSecretKeys" . }}tls.crt{{ else }}cert{{ end }}
-            - --web.key-file=/cert/{{ if include "kube-prometheus-stack.prometheus-operator-webhook.tlsSecretKeys" . }}tls.key{{ else }}key{{ end }}
+            - --web.cert-file=/cert/{{ if include "kube-prometheus-stack.prometheus-operator.tlsSecretKeys" . }}tls.crt{{ else }}cert{{ end }}
+            - --web.key-file=/cert/{{ if include "kube-prometheus-stack.prometheus-operator.tlsSecretKeys" . }}tls.key{{ else }}key{{ end }}
             - --web.listen-address=:{{ .Values.prometheusOperator.tls.internalPort }}
             - --web.tls-min-version={{ .Values.prometheusOperator.tls.tlsMinVersion }}
             {{- else }}
