@@ -1,0 +1,53 @@
+suite: test deployment pod labels
+templates:
+  - deployment.yaml
+tests:
+  - it: should not put the chart version in the pod labels
+    asserts:
+      - notExists:
+          path: spec.template.metadata.labels["helm.sh/chart"]
+      - exists:
+          path: metadata.labels["helm.sh/chart"]
+
+  - it: should pin the whole pod label set
+    chart:
+      version: 99.99.99
+      appVersion: 0.0.0-test
+    asserts:
+      - equal:
+          path: spec.template.metadata.labels
+          value:
+            app.kubernetes.io/name: prometheus-operator-admission-webhook
+            app.kubernetes.io/instance: RELEASE-NAME
+            app.kubernetes.io/version: 0.0.0-test
+
+  - it: should keep the selector labels on the pod template
+    asserts:
+      - equal:
+          path: spec.selector.matchLabels
+          value:
+            app.kubernetes.io/name: prometheus-operator-admission-webhook
+            app.kubernetes.io/instance: RELEASE-NAME
+      - isSubset:
+          path: spec.template.metadata.labels
+          content:
+            app.kubernetes.io/name: prometheus-operator-admission-webhook
+            app.kubernetes.io/instance: RELEASE-NAME
+
+  - it: should still render commonLabels and pod.labels on the pod template
+    set:
+      commonLabels:
+        team: platform
+      pod:
+        labels:
+          extra: "yes"
+    asserts:
+      - isSubset:
+          path: spec.template.metadata.labels
+          content:
+            team: platform
+            extra: "yes"
+      - isSubset:
+          path: metadata.labels
+          content:
+            team: platform
