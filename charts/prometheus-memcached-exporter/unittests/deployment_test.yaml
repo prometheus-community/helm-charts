@@ -35,3 +35,18 @@ tests:
       - equal:
           path: spec.template.spec.containers[0].readinessProbe.httpGet.port
           value: metrics
+
+  - it: uses the literal extra listen-address key instead of adding the default
+    set:
+      extraArgs:
+        web.listen-address: 127.0.0.1:9150
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: --web.listen-address=127.0.0.1:9150
+      - notContains:
+          path: spec.template.spec.containers[0].args
+          content: --web.listen-address=:9150
+      - lengthEqual:
+          path: spec.template.spec.containers[0].args
+          count: 1
