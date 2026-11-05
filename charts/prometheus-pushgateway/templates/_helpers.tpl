@@ -69,6 +69,16 @@ app.kubernetes.io/managed-by: {{ .Release.Service }}
 {{- end }}
 
 {{/*
+Pod labels: the default labels without helm.sh/chart. That label carries the chart version, so
+including it in the pod template recreates the pod on every chart upgrade, even when nothing
+about the workload changed.
+*/}}
+{{- define "prometheus-pushgateway.podLabels" }}
+{{- $podLabels := (include "prometheus-pushgateway.defaultLabels" . | fromYaml) }}
+{{- omit $podLabels "helm.sh/chart" | toYaml }}
+{{- end }}
+
+{{/*
 Selector labels
 */}}
 {{- define "prometheus-pushgateway.selectorLabels" -}}
