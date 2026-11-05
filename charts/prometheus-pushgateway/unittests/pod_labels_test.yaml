@@ -1,0 +1,61 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/helm-unittest/helm-unittest/main/schema/helm-testsuite.json
+suite: test pod labels
+templates:
+  - deployment.yaml
+  - statefulset.yaml
+tests:
+  - it: should not put the chart version in the Deployment pod labels
+    template: deployment.yaml
+    asserts:
+      - notExists:
+          path: spec.template.metadata.labels["helm.sh/chart"]
+      - exists:
+          path: metadata.labels["helm.sh/chart"]
+
+  - it: should not put the chart version in the StatefulSet pod labels
+    template: statefulset.yaml
+    set:
+      runAsStatefulSet: true
+    asserts:
+      - notExists:
+          path: spec.template.metadata.labels["helm.sh/chart"]
+      - exists:
+          path: metadata.labels["helm.sh/chart"]
+
+  - it: should keep the pod labels unchanged when only the chart version changes
+    template: deployment.yaml
+    chart:
+      version: 99.99.99
+    asserts:
+      - equal:
+          path: spec.template.metadata.labels
+          value:
+            app.kubernetes.io/name: prometheus-pushgateway
+            app.kubernetes.io/instance: RELEASE-NAME
+            app.kubernetes.io/version: v1.11.4
+            app.kubernetes.io/managed-by: Helm
+
+  - it: should keep the selector labels on the pod template
+    template: deployment.yaml
+    asserts:
+      - isSubset:
+          path: spec.selector.matchLabels
+          content:
+            app.kubernetes.io/name: prometheus-pushgateway
+            app.kubernetes.io/instance: RELEASE-NAME
+      - isSubset:
+          path: spec.template.metadata.labels
+          content:
+            app.kubernetes.io/name: prometheus-pushgateway
+            app.kubernetes.io/instance: RELEASE-NAME
+
+  - it: should still render user supplied pod labels
+    template: deployment.yaml
+    set:
+      podLabels:
+        team: platform
+    asserts:
+      - isSubset:
+          path: spec.template.metadata.labels
+          content:
+            team: platform
