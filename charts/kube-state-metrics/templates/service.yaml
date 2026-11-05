@@ -13,7 +13,11 @@ metadata:
     {{- toYaml .Values.service.annotations | nindent 4 }}
     {{- end }}
 spec:
+  {{- if .Values.autosharding.enabled }}
+  type: ClusterIP
+  {{- else }}
   type: "{{ .Values.service.type }}"
+  {{- end }}
   {{- if .Values.service.ipDualStack.enabled }}
   ipFamilies: {{ toYaml .Values.service.ipDualStack.ipFamilies | nindent 4 }}
   ipFamilyPolicy: {{ .Values.service.ipDualStack.ipFamilyPolicy }}
@@ -22,23 +26,23 @@ spec:
   - name: http
     protocol: TCP
     port: {{ .Values.service.port | default 8080}}
-  {{- if ( and (eq .Values.service.type "NodePort" ) (not (empty .Values.service.nodePort)) ) }}
+  {{- if and (not .Values.autosharding.enabled) (eq .Values.service.type "NodePort") (not (empty .Values.service.nodePort)) }}
     nodePort: {{ .Values.service.nodePort }}
   {{- end }}
     targetPort: http
-  {{ if .Values.selfMonitor.enabled }}
+  {{- if .Values.selfMonitor.enabled }}
   - name: metrics
     protocol: TCP
     port: {{ .Values.selfMonitor.telemetryPort | default 8081 }}
     targetPort: metrics
-  {{- if ( and (eq .Values.service.type "NodePort" ) (not (empty .Values.service.nodePort)) ) }}
+  {{- if and (not .Values.autosharding.enabled) (eq .Values.service.type "NodePort") (not (empty .Values.selfMonitor.telemetryNodePort)) }}
     nodePort: {{ .Values.selfMonitor.telemetryNodePort }}
   {{- end }}
-  {{ end }}
-{{- if .Values.service.loadBalancerIP }}
+  {{- end }}
+{{- if and (not .Values.autosharding.enabled) .Values.service.loadBalancerIP }}
   loadBalancerIP: "{{ .Values.service.loadBalancerIP }}"
 {{- end }}
-{{- if .Values.service.loadBalancerSourceRanges }}
+{{- if and (not .Values.autosharding.enabled) .Values.service.loadBalancerSourceRanges }}
   loadBalancerSourceRanges:
   {{- range $cidr := .Values.service.loadBalancerSourceRanges }}
     - {{ $cidr }}

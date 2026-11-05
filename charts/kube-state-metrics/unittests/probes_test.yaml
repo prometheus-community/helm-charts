@@ -1,0 +1,138 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/helm-unittest/helm-unittest/main/schema/helm-testsuite.json
+suite: test kube-state-metrics container probes
+templates:
+  - deployment.yaml
+tests:
+  - it: should probe the named ports of the kube-state-metrics container
+    asserts:
+      - lengthEqual:
+          path: spec.template.spec.containers
+          count: 1
+      - equal:
+          path: spec.template.spec.containers[0].livenessProbe.httpGet.port
+          value: http
+      - equal:
+          path: spec.template.spec.containers[0].readinessProbe.httpGet.port
+          value: metrics
+
+  - it: should probe the kube-rbac-proxy ports by number, as the named ports are not on the kube-state-metrics container
+    set:
+      kubeRBACProxy:
+        enabled: true
+      selfMonitor:
+        enabled: true
+      startupProbe:
+        enabled: true
+    asserts:
+      - notExists:
+          path: spec.template.spec.containers[0].ports
+      - equal:
+          path: spec.template.spec.containers[0].startupProbe.httpGet.port
+          value: 8080
+      - equal:
+          path: spec.template.spec.containers[0].livenessProbe.httpGet.port
+          value: 8080
+      - equal:
+          path: spec.template.spec.containers[0].readinessProbe.httpGet.port
+          value: 8081
+      - equal:
+          path: spec.template.spec.containers[0].readinessProbe.httpGet.scheme
+          value: HTTPS
+      - contains:
+          path: spec.template.spec.containers[1].args
+          content: --ignore-paths=/healthz,/livez,/readyz
+      - contains:
+          path: spec.template.spec.containers[2].args
+          content: --ignore-paths=/healthz,/livez,/readyz
+
+  - it: should render the telemetry proxy for the readiness probe when selfMonitor is disabled
+    set:
+      kubeRBACProxy:
+        enabled: true
+      selfMonitor:
+        enabled: false
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: --telemetry-host=127.0.0.1
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: --telemetry-port=9091
+      - equal:
+          path: spec.template.spec.containers[0].readinessProbe.httpGet.port
+          value: 8081
+      - equal:
+          path: spec.template.spec.containers[0].readinessProbe.httpGet.scheme
+          value: HTTPS
+      - lengthEqual:
+          path: spec.template.spec.containers
+          count: 3
+      - equal:
+          path: spec.template.spec.containers[2].name
+          value: kube-rbac-proxy-telemetry
+      - contains:
+          path: spec.template.spec.containers[2].args
+          content: --upstream=http://127.0.0.1:9091/
+      - contains:
+          path: spec.template.spec.containers[2].args
+          content: --ignore-paths=/healthz,/livez,/readyz
+      - contains:
+          path: spec.template.spec.containers[2].ports
+          content:
+            containerPort: 8081
+            name: metrics
+
+  - it: should follow a custom service port and telemetry port with kube-rbac-proxy
+    set:
+      kubeRBACProxy:
+        enabled: true
+      selfMonitor:
+        enabled: true
+        telemetryPort: 9443
+      service:
+        port: 8443
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].livenessProbe.httpGet.port
+          value: 8443
+      - equal:
+          path: spec.template.spec.containers[0].readinessProbe.httpGet.port
+          value: 9443
+      - contains:
+          path: spec.template.spec.containers[1].ports
+          content:
+            containerPort: 8443
+            name: http
+      - contains:
+          path: spec.template.spec.containers[2].ports
+          content:
+            containerPort: 9443
+            name: metrics
+
+  - it: should give each kube-rbac-proxy its own proxy endpoints port
+    set:
+      kubeRBACProxy:
+        enabled: true
+        proxyEndpointsPort: 8889
+        telemetryProxyEndpointsPort: 8890
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[1].args
+          content: --proxy-endpoints-port=8889
+      - contains:
+          path: spec.template.spec.containers[2].args
+          content: --proxy-endpoints-port=8890
+      - contains:
+          path: spec.template.spec.containers[2].ports
+          content:
+            containerPort: 8890
+            name: metrics-healthz
+
+  - it: should fail when both kube-rbac-proxy containers get the same proxy endpoints port
+    set:
+      kubeRBACProxy:
+        enabled: true
+        proxyEndpointsPort: 8889
+    asserts:
+      - failedTemplate:
+          errorMessage: kubeRBACProxy.proxyEndpointsPort and kubeRBACProxy.telemetryProxyEndpointsPort must differ, as both kube-rbac-proxy containers share the pod network

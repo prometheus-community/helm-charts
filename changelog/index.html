@@ -1,0 +1,1226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Helm Charts Changelog</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-primary: #ffffff;
+            --bg-secondary: #f6f8fa;
+            --bg-tertiary: #eaeef2;
+            --border-color: #d0d7de;
+            --text-primary: #24292f;
+            --text-secondary: #57606a;
+            --text-tertiary: #8c959f;
+            --accent-color: #0969da;
+            --accent-hover: #033d8b;
+            --danger-bg: #f85149;
+            --danger-text: #82071e;
+        }
+
+        /* Dark mode can be enabled via .dark-mode class or system preference */
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --bg-primary: #0d1117;
+                --bg-secondary: #161b22;
+                --bg-tertiary: #21262d;
+                --border-color: #30363d;
+                --text-primary: #e6edf3;
+                --text-secondary: #b1bac4;
+                --text-tertiary: #8b949e;
+                --accent-color: #58a6ff;
+                --accent-hover: #79c0ff;
+            }
+        }
+
+        /* Explicitly set dark mode when .dark-mode class is present (overrides system preference) */
+        :root.dark-mode {
+            --bg-primary: #0d1117;
+            --bg-secondary: #161b22;
+            --bg-tertiary: #21262d;
+            --border-color: #30363d;
+            --text-primary: #e6edf3;
+            --text-secondary: #b1bac4;
+            --text-tertiary: #8b949e;
+            --accent-color: #58a6ff;
+            --accent-hover: #79c0ff;
+        }
+
+        /* Light mode explicitly set (overrides system preference) */
+        :root.light-mode {
+            --bg-primary: #ffffff;
+            --bg-secondary: #f6f8fa;
+            --bg-tertiary: #eaeef2;
+            --border-color: #d0d7de;
+            --text-primary: #24292f;
+            --text-secondary: #57606a;
+            --text-tertiary: #8c959f;
+            --accent-color: #0969da;
+            --accent-hover: #033d8b;
+            --danger-bg: #f85149;
+            --danger-text: #82071e;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            padding: 16px;
+            transition: background-color 0.2s, color 0.2s;
+        }
+
+        .container {
+            max-width: 1280px;
+            margin: 0 auto;
+            background-color: var(--bg-primary);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            overflow: hidden;
+        }
+
+        header {
+            padding: 48px 24px;
+            border-bottom: 1px solid var(--border-color);
+            background-color: var(--bg-primary);
+        }
+
+        header h1 {
+            font-size: 2em;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        header p {
+            font-size: 1em;
+            color: var(--text-secondary);
+        }
+
+        .config-section {
+            padding: 24px;
+            background-color: var(--bg-secondary);
+            border-bottom: 1px solid var(--border-color);
+            display: none;
+        }
+
+        .config-section h2 {
+            font-size: 1.1em;
+            margin-bottom: 16px;
+            font-weight: 600;
+        }
+
+        .input-group {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 16px;
+            margin-bottom: 16px;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 6px;
+            font-weight: 500;
+            font-size: 0.9em;
+            color: var(--text-primary);
+        }
+
+        .input-group input {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            font-size: 1em;
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            transition: border-color 0.2s;
+        }
+
+        .input-group input:focus {
+            outline: none;
+            border-color: var(--accent-color);
+            box-shadow: 0 0 0 3px rgba(9, 105, 218, 0.1);
+        }
+
+        .btn {
+            background-color: var(--accent-color);
+            color: white;
+            padding: 10px 24px;
+            border: 1px solid transparent;
+            border-radius: 6px;
+            font-size: 1em;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background-color 0.2s, box-shadow 0.2s;
+        }
+
+        .btn:hover {
+            background-color: var(--accent-hover);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .chart-selector {
+            padding: 24px;
+            background-color: var(--bg-secondary);
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .chart-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .chart-btn {
+            padding: 6px 12px;
+            border: 1px solid var(--border-color);
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-weight: 500;
+            font-size: 0.9em;
+        }
+
+        .chart-btn:hover {
+            background-color: var(--bg-tertiary);
+            border-color: var(--border-color);
+        }
+
+        .chart-btn.active {
+            background-color: var(--accent-color);
+            color: white;
+            border-color: var(--accent-color);
+        }
+
+        .content {
+            padding: 24px;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--text-secondary);
+        }
+
+        .spinner {
+            border: 3px solid var(--bg-tertiary);
+            border-top: 3px solid var(--accent-color);
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .error {
+            background-color: rgba(248, 81, 73, 0.1);
+            color: var(--danger-text);
+            padding: 16px;
+            border-radius: 6px;
+            border-left: 3px solid var(--danger-bg);
+        }
+
+        .release {
+            padding: 24px 0;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .release:last-child {
+            border-bottom: none;
+        }
+
+        .release-header {
+            font-size: 1.25em;
+            font-weight: 600;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .release-version {
+            color: var(--accent-color);
+            text-decoration: none;
+            font-size: 0.95em;
+            transition: color 0.2s;
+            font-weight: 600;
+        }
+
+        .release-version:hover {
+            color: var(--accent-hover);
+            text-decoration: underline;
+        }
+
+        .release-date {
+            color: var(--text-tertiary);
+            font-size: 0.85em;
+        }
+
+        .artifacthub-links {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .artifacthub-link {
+            color: var(--accent-color);
+            text-decoration: none;
+            font-size: 0.8em;
+            padding: 4px 8px;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            transition: all 0.2s;
+            font-weight: 500;
+            background-color: var(--bg-primary);
+            cursor: pointer;
+        }
+
+        .artifacthub-link:hover {
+            background-color: var(--accent-color);
+            color: white;
+            border-color: var(--accent-color);
+        }
+
+        .release-body {
+            color: var(--text-secondary);
+            line-height: 1.6;
+            margin-top: 12px;
+        }
+
+        .release-body ul {
+            margin-left: 20px;
+            margin-top: 5px;
+        }
+
+        .release-body li {
+            margin-bottom: 5px;
+        }
+
+        .release-body a {
+            color: var(--accent-color);
+            text-decoration: none;
+        }
+
+        .release-body a:hover {
+            text-decoration: underline;
+        }
+
+        .release-body p {
+            margin: 0;
+        }
+
+        .release-body h2,
+        .release-body h3,
+        .release-body h4 {
+            margin-top: 12px;
+            margin-bottom: 6px;
+            color: var(--text-primary);
+        }
+
+        .no-releases {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--text-secondary);
+        }
+
+        .no-releases svg {
+            width: 64px;
+            height: 64px;
+            margin-bottom: 16px;
+            opacity: 0.5;
+            color: var(--text-tertiary);
+            stroke: currentColor;
+        }
+
+
+        .dark-mode-toggle {
+            position: fixed;
+            top: 24px;
+            right: 24px;
+            background-color: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 8px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            z-index: 100;
+        }
+
+        .dark-mode-toggle:hover {
+            background-color: var(--bg-tertiary);
+        }
+
+        .dark-mode-toggle svg {
+            width: 20px;
+            height: 20px;
+            color: var(--text-primary);
+        }
+
+        @media (max-width: 768px) {
+            header {
+                padding: 32px 16px;
+            }
+
+            header h1 {
+                font-size: 1.5em;
+            }
+
+            .content {
+                padding: 16px;
+            }
+
+            .config-section {
+                padding: 16px;
+            }
+
+            .chart-selector {
+                padding: 16px;
+            }
+
+            .release {
+                padding: 16px 0;
+            }
+
+            .release-header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .dark-mode-toggle {
+                top: 16px;
+                right: 16px;
+            }
+        }
+    </style>
+</head>
+<body>
+<button class="dark-mode-toggle" id="dark-mode-toggle" title="Toggle dark mode">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="5"></circle>
+        <line x1="12" y1="1" x2="12" y2="3"></line>
+        <line x1="12" y1="21" x2="12" y2="23"></line>
+        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+        <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+        <line x1="1" y1="12" x2="3" y2="12"></line>
+        <line x1="21" y1="12" x2="23" y2="12"></line>
+        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+        <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+    </svg>
+</button>
+
+<script>
+    // Initialize dark mode immediately (prevent flash)
+    (function() {
+        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        const savedTheme = localStorage.getItem('theme');
+
+        // Determine what mode we should be in
+        let shouldBeDark;
+        if (savedTheme) {
+            shouldBeDark = savedTheme === 'dark';
+        } else {
+            shouldBeDark = prefersDark;
+        }
+
+        // Apply the appropriate class
+        if (shouldBeDark) {
+            document.documentElement.classList.add('dark-mode');
+            document.documentElement.classList.remove('light-mode');
+        } else {
+            document.documentElement.classList.remove('dark-mode');
+            document.documentElement.classList.add('light-mode');
+        }
+    })();
+</script>
+
+<div class="container">
+    <header>
+        <h1>📊 Helm Charts Changelog</h1>
+        <p>Release notes and version history</p>
+    </header>
+
+    <div class="config-section" id="config-section">
+        <h2>Repository Configuration</h2>
+        <div class="input-group">
+            <div>
+                <label for="repo-owner">Repository Owner</label>
+                <input type="text" id="repo-owner" placeholder="e.g., prometheus-community" value="prometheus-community">
+            </div>
+            <div>
+                <label for="repo-name">Repository Name</label>
+                <input type="text" id="repo-name" placeholder="e.g., helm-charts" value="helm-charts">
+            </div>
+        </div>
+        <button class="btn" id="load-repo-btn">Load Repository</button>
+    </div>
+
+    <div class="chart-selector" id="chart-selector" style="display: none;">
+        <div class="chart-buttons" id="chart-buttons"></div>
+    </div>
+
+    <div class="content" id="content">
+        <div class="no-releases">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+            <h3>Loading changelog...</h3>
+            <p>Please wait while we fetch the release information.</p>
+        </div>
+    </div>
+</div>
+
+<script>
+    // ...existing code...
+
+    const allReleases = [];
+    const charts = new Set();
+    let currentChart = null;
+    let currentPage = 1;
+    let currentOwner = null;
+    let currentRepo = null;
+    let hasMoreReleases = true;
+
+    // Dark mode toggle initialization
+    const initializeDarkMode = () => {
+        const darkModeToggle = document.getElementById('dark-mode-toggle');
+
+        if (!darkModeToggle) {
+            console.error('Dark mode toggle button not found');
+            return;
+        }
+
+        // Toggle dark mode on click
+        const toggleDarkMode = () => {
+            const isCurrentlyDark = document.documentElement.classList.contains('dark-mode');
+
+            if (isCurrentlyDark) {
+                // Switch to light mode
+                document.documentElement.classList.remove('dark-mode');
+                document.documentElement.classList.add('light-mode');
+                localStorage.setItem('theme', 'light');
+            } else {
+                // Switch to dark mode
+                document.documentElement.classList.add('dark-mode');
+                document.documentElement.classList.remove('light-mode');
+                localStorage.setItem('theme', 'dark');
+            }
+        };
+
+        // Remove any existing listeners first by cloning
+        darkModeToggle.replaceWith(darkModeToggle.cloneNode(true));
+        const newToggle = document.getElementById('dark-mode-toggle');
+        newToggle.addEventListener('click', toggleDarkMode);
+    };
+
+
+    // Get URL parameters with validation
+    const getUrlParams = () => {
+        const params = new URLSearchParams(window.location.search);
+        return {
+            owner: sanitizeInput(params.get('owner')),
+            repo: sanitizeInput(params.get('repo')),
+            chart: sanitizeInput(params.get('chart'))
+        };
+    };
+
+    // Sanitize and validate user input to prevent injection attacks
+    const sanitizeInput = (input) => {
+        if (!input) return null;
+
+        input = String(input).trim();
+
+        if (input.length > 255) {
+            console.warn('Input exceeds maximum length');
+            return null;
+        }
+
+        if (!/^[a-zA-Z0-9\-_]+$/.test(input)) {
+            console.warn(`Invalid input characters: ${input}`);
+            return null;
+        }
+
+        return input;
+    };
+
+    // Extract GitHub org and repo from URL path
+    const getRepoFromUrl = () => {
+        const { hostname, pathname } = window.location;
+        const githubIoMatch = hostname.match(/^(.+)\.github\.io$/);
+
+        if (githubIoMatch) {
+            const [, owner] = githubIoMatch;
+            const pathParts = pathname.split('/').filter(p => p.length > 0);
+
+            if (pathParts.length > 0) {
+                return { owner, repo: pathParts[0] };
+            }
+        }
+
+        return null;
+    };
+
+    // Update URL without reloading page
+    const updateUrl = (owner, repo, chart) => {
+        const params = new URLSearchParams();
+        if (owner) params.set('owner', owner);
+        if (repo) params.set('repo', repo);
+        if (chart) params.set('chart', chart);
+
+        const newUrl = `${window.location.pathname}?${params.toString()}`;
+        window.history.pushState({ owner, repo, chart }, '', newUrl);
+    };
+
+    // Detect whether a version string is a major release (X.0.0)
+    const isMajorVersion = (version) => {
+        const parts = version.split('.').map(Number);
+        return parts.length >= 3 && parts[1] === 0 && parts[2] === 0;
+    };
+
+    // Parse release tag to extract chart name and version
+    const parseTag = (tag) => {
+        const match = tag.match(/^(.+?)-(\d+\..+)$/);
+        return match ? { chart: match[1], version: match[2] } : null;
+    };
+
+    // Clean release body - remove "What's Changed" section and "Full Changelog" line
+    const cleanReleaseBody = (body, chartName) => {
+        if (!body) return '';
+
+        // Split into lines
+        let lines = body.split('\n');
+
+        // Find the first bullet point after "What's Changed"
+        let startIndex = 0;
+        let foundWhatsChanged = false;
+
+        for (let i = 0; i < lines.length; i++) {
+            const line = lines[i].trim();
+
+            // Check if this is the "What's Changed" header
+            if (line.includes("What's Changed") || line.includes("What's changed")) {
+                foundWhatsChanged = true;
+                continue;
+            }
+
+            // If we found "What's Changed", look for the first bullet point
+            if (foundWhatsChanged && (line.startsWith('* ') || line.startsWith('- '))) {
+                startIndex = i;
+                break;
+            }
+
+            // If we haven't found "What's Changed" yet, but we see a bullet point, start there
+            if (!foundWhatsChanged && (line.startsWith('* ') || line.startsWith('- '))) {
+                startIndex = i;
+                break;
+            }
+        }
+
+        // Take lines from startIndex onwards
+        let relevantLines = lines.slice(startIndex);
+
+        // Find and remove "New Contributors" section and everything after it
+        const newContributorsIndex = relevantLines.findIndex(line => {
+            const trimmed = line.trim();
+            return trimmed.includes('## New Contributors') || trimmed.includes('**New Contributors**');
+        });
+
+        if (newContributorsIndex !== -1) {
+            relevantLines = relevantLines.slice(0, newContributorsIndex);
+        }
+
+        // Filter and process lines
+        const filteredLines = relevantLines
+            .filter(line => {
+                // Filter out "Full Changelog" line
+                if (line.includes('**Full Changelog**:') || line.includes('Full Changelog:')) {
+                    return false;
+                }
+
+                // Check if this is a bullet point line
+                const trimmed = line.trim();
+                if (trimmed.startsWith('* ') || trimmed.startsWith('- ')) {
+                    // Check if it has a prefix in brackets
+                    const prefixMatch = trimmed.match(/^[*-]\s+\[([^\]]+)]/);
+
+                    if (!prefixMatch) {
+                        // No prefix, filter out
+                        return false;
+                    }
+
+                    const prefix = prefixMatch[1];
+
+                    // Filter out [CI] and CI: prefixes (case-insensitive)
+                    if (prefix.toLowerCase() === 'ci' || trimmed.toLowerCase().includes('ci:')) {
+                        return false;
+                    }
+
+                    // Filter out items that don't have the chart name as prefix
+                    return prefix === chartName;
+                }
+
+                // Keep non-bullet lines
+                return true;
+            })
+            .map(line => {
+                // Remove chart name prefix like [prometheus-mongodb-exporter] or [chart-name]
+                const bulletMatch = line.match(/^(\s*)([*-])\s+\[([^\]]+)]\s+(.+)$/);
+                return bulletMatch ? `${bulletMatch[1]}${bulletMatch[2]} ${bulletMatch[4]}` : line;
+            })
+            .map(line => {
+                // Convert @username to clickable GitHub profile link
+                let processed = line.replace(/@([a-zA-Z0-9-_]+)(?:\[bot])?/g, (match, username) => {
+                    const botSuffix = match.includes('[bot]') ? '[bot]' : '';
+                    return `<a href="https://github.com/${username}" target="_blank" data-github-link="true">@${username}${botSuffix}</a>`;
+                });
+
+                // Convert PR links to just show #number
+                processed = processed.replace(/in https:\/\/github\.com\/([^\/]+)\/([^\/]+)\/pull\/(\d+)/g,
+                    'in <a href="https://github.com/$1/$2/pull/$3" target="_blank" data-github-link="true">#$3</a>');
+
+                return processed;
+            });
+
+        return filteredLines.join('\n').trim();
+    };
+
+    // Convert markdown to HTML (basic)
+    const markdownToHtml = (markdown) => {
+        if (!markdown) return '';
+
+        let html = markdown;
+
+        // Convert headers
+        html = html.replace(/^### (.+)$/gm, '<h4>$1</h4>');
+        html = html.replace(/^## (.+)$/gm, '<h3>$1</h3>');
+        html = html.replace(/^# (.+)$/gm, '<h2>$1</h2>');
+
+        // Convert bold
+        html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+
+        // NOTE: We intentionally do NOT convert markdown links [text](url) to HTML links
+        // because we only allow GitHub and ArtifactHub links. Any user-provided links are stripped by sanitizeHtml.
+        // Users should reference GitHub handles with @ instead.
+
+        // Convert lists
+        const lines = html.split('\n');
+        const listLines = [];
+        let inList = false;
+
+        lines.forEach(line => {
+            if (line.trim().startsWith('* ') || line.trim().startsWith('- ')) {
+                if (!inList) {
+                    listLines.push('<ul>');
+                    inList = true;
+                }
+                listLines.push(`<li>${line.trim().substring(2)}</li>`);
+            } else {
+                if (inList) {
+                    listLines.push('</ul>');
+                    inList = false;
+                }
+                listLines.push(line);
+            }
+        });
+
+        if (inList) {
+            listLines.push('</ul>');
+        }
+
+        html = listLines.join('\n');
+
+        // Convert line breaks
+        html = html.replace(/\n\n/g, '</p><p>');
+        html = `<p>${html}</p>`;
+
+        // Clean up empty paragraphs
+        html = html.replace(/<p><\/p>/g, '');
+        html = html.replace(/<p>\s*<\/p>/g, '');
+
+        return html;
+    };
+
+    // Sanitize HTML to prevent XSS - only allow safe tags and attributes
+    const sanitizeHtml = (html) => {
+        const allowedTags = ['p', 'strong', 'em', 'h2', 'h3', 'h4', 'ul', 'li', 'a', 'br'];
+        const allowedAttributes = {
+            'a': ['href', 'target', 'data-github-link']
+        };
+
+        // Safe domains - only GitHub and ArtifactHub
+        const safeDomains = ['github.com', 'artifacthub.io'];
+
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = html;
+
+        const sanitize = (node) => {
+            const nodesToRemove = [];
+
+            for (let i = 0; i < node.childNodes.length; i++) {
+                const child = node.childNodes[i];
+
+                if (child.nodeType === 3) {
+                    // Text node - keep as is
+                } else if (child.nodeType === 1) {
+                    // Element node
+                    const tagName = child.tagName.toLowerCase();
+
+                    if (!allowedTags.includes(tagName)) {
+                        // Not allowed tag - remove it
+                        nodesToRemove.push(child);
+                        continue;
+                    }
+
+                    // Remove disallowed attributes
+                    const allowedAttrs = allowedAttributes[tagName] || [];
+                    const attrsToRemove = [];
+
+                    for (let j = 0; j < child.attributes.length; j++) {
+                        const attr = child.attributes[j];
+                        if (!allowedAttrs.includes(attr.name)) {
+                            attrsToRemove.push(attr.name);
+                        }
+                    }
+
+                    attrsToRemove.forEach(attr => child.removeAttribute(attr));
+
+                    // Validate href for 'a' tags - only allow safe domains
+                    if (tagName === 'a') {
+                        const href = child.getAttribute('href');
+
+                        if (!href) {
+                            // No href - remove link
+                            nodesToRemove.push(child);
+                            continue;
+                        }
+
+                        // Check if it's a safe domain
+                        const isSafeDomain = safeDomains.some(domain => href.includes(domain));
+
+                        if (!isSafeDomain) {
+                            // Unsafe domain - remove the link but keep the text
+                            const textNode = document.createTextNode(child.textContent);
+                            child.parentNode.replaceChild(textNode, child);
+                            continue;
+                        }
+
+                        // Block javascript: and data: URLs
+                        if (href.startsWith('javascript:') || href.startsWith('data:')) {
+                            nodesToRemove.push(child);
+                            continue;
+                        }
+                    }
+
+                    // Recursively sanitize children
+                    sanitize(child);
+                }
+            }
+
+            // Remove nodes that are not allowed
+            nodesToRemove.forEach(node => node.parentNode.removeChild(node));
+        };
+
+        sanitize(tempDiv);
+        return tempDiv;
+    };
+
+    // Show loading state
+    const showLoading = () => {
+        const content = document.getElementById('content');
+
+        // Clear existing content safely
+        while (content.firstChild) {
+            content.removeChild(content.firstChild);
+        }
+
+        const loadingDiv = document.createElement('div');
+        loadingDiv.className = 'loading';
+
+        const spinner = document.createElement('div');
+        spinner.className = 'spinner';
+
+        const title = document.createElement('h3');
+        title.textContent = 'Loading releases...';
+
+        const subtitle = document.createElement('p');
+        subtitle.textContent = 'Fetching data from GitHub';
+
+        loadingDiv.appendChild(spinner);
+        loadingDiv.appendChild(title);
+        loadingDiv.appendChild(subtitle);
+        content.appendChild(loadingDiv);
+    };
+
+    // Show error
+    const showError = (message) => {
+        const content = document.getElementById('content');
+
+        // Clear existing content safely
+        while (content.firstChild) {
+            content.removeChild(content.firstChild);
+        }
+
+        const errorDiv = document.createElement('div');
+        errorDiv.className = 'error';
+
+        const strong = document.createElement('strong');
+        strong.textContent = 'Error: ';
+
+        const text = document.createTextNode(message);
+
+        errorDiv.appendChild(strong);
+        errorDiv.appendChild(text);
+        content.appendChild(errorDiv);
+    };
+
+    // Load releases from GitHub
+    const loadReleases = async (owner, repo) => {
+        showLoading();
+        currentOwner = owner;
+        currentRepo = repo;
+        currentPage = 1;
+        allReleases.length = 0;
+        hasMoreReleases = true;
+
+        // Fetch all pages so every chart appears in the selector regardless of release frequency
+        try {
+            while (hasMoreReleases) {
+                await loadMoreReleases();
+            }
+        } catch (error) {
+            showError(error.message);
+            return;
+        }
+
+        // Build chart set from the complete release list
+        charts.clear();
+        allReleases.forEach(release => {
+            const parsed = parseTag(release.tag_name);
+            if (parsed) {
+                charts.add(parsed.chart);
+            }
+        });
+
+        if (charts.size === 0) {
+            showError('No charts found in this repository. Make sure the releases use the format: chart-name-version');
+            return;
+        }
+
+        renderChartSelector();
+
+        const urlParams = getUrlParams();
+        if (urlParams.chart && charts.has(urlParams.chart)) {
+            selectChart(urlParams.chart, owner, repo);
+        } else {
+            selectChart(Array.from(charts).sort()[0], owner, repo);
+        }
+    };
+
+    // Load one page of releases — pure data fetch, no UI side-effects
+    const loadMoreReleases = async () => {
+        const response = await fetch(
+            `https://api.github.com/repos/${currentOwner}/${currentRepo}/releases?per_page=100&page=${currentPage}`
+        );
+
+        if (!response.ok) {
+            // 422 means we've exceeded GitHub's pagination offset limit — treat as end of results
+            if (response.status === 422) {
+                hasMoreReleases = false;
+                return;
+            }
+            throw new Error(`GitHub API error: ${response.status} ${response.statusText}`);
+        }
+
+        const newReleases = await response.json();
+
+        if (newReleases.length < 100) {
+            hasMoreReleases = false;
+        }
+
+        allReleases.push(...newReleases);
+        currentPage++;
+    };
+
+    // Render chart selector buttons
+    const renderChartSelector = () => {
+        const chartButtons = document.getElementById('chart-buttons');
+
+        // Clear existing buttons safely
+        while (chartButtons.firstChild) {
+            chartButtons.removeChild(chartButtons.firstChild);
+        }
+
+        Array.from(charts).sort().forEach(chart => {
+            const btn = document.createElement('button');
+            btn.className = 'chart-btn';
+            btn.textContent = chart;
+            btn.onclick = () => {
+                const owner = document.getElementById('repo-owner').value;
+                const repo = document.getElementById('repo-name').value;
+                selectChart(chart, owner, repo);
+            };
+            chartButtons.appendChild(btn);
+        });
+
+        document.getElementById('chart-selector').style.display = 'block';
+    };
+
+    // Select and display a specific chart
+    const selectChart = (chartName, owner, repo) => {
+        currentChart = chartName;
+
+        // Update URL
+        updateUrl(owner, repo, chartName);
+
+        // Update active button
+        document.querySelectorAll('.chart-btn').forEach(btn => {
+            btn.classList.toggle('active', btn.textContent === chartName);
+        });
+
+        // Filter releases for this chart and sort by semver descending
+        const chartReleases = allReleases
+            .map(release => {
+                const parsed = parseTag(release.tag_name);
+                return parsed?.chart === chartName
+                    ? { ...release, chartName: parsed.chart, version: parsed.version }
+                    : null;
+            })
+            .filter(r => r !== null)
+            .sort((a, b) => {
+                const pa = a.version.split('.').map(Number);
+                const pb = b.version.split('.').map(Number);
+                for (let i = 0; i < Math.max(pa.length, pb.length); i++) {
+                    const diff = (pb[i] || 0) - (pa[i] || 0);
+                    if (diff !== 0) return diff;
+                }
+                return 0;
+            });
+
+        renderReleases(chartReleases);
+    };
+
+    // Render releases
+    const renderReleases = (releases) => {
+        const content = document.getElementById('content');
+
+        // Clear existing content safely
+        while (content.firstChild) {
+            content.removeChild(content.firstChild);
+        }
+
+        if (releases.length === 0) {
+            const noReleasesDiv = document.createElement('div');
+            noReleasesDiv.className = 'no-releases';
+
+            const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+            svg.setAttribute('fill', 'none');
+            svg.setAttribute('viewBox', '0 0 24 24');
+            svg.setAttribute('stroke', 'currentColor');
+
+            const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+            path.setAttribute('stroke-linecap', 'round');
+            path.setAttribute('stroke-linejoin', 'round');
+            path.setAttribute('stroke-width', '2');
+            path.setAttribute('d', 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z');
+            svg.appendChild(path);
+
+            const title = document.createElement('h3');
+            title.textContent = 'No releases found';
+
+            const subtitle = document.createElement('p');
+            subtitle.textContent = 'This chart doesn\'t have any releases yet.';
+
+            noReleasesDiv.appendChild(svg);
+            noReleasesDiv.appendChild(title);
+            noReleasesDiv.appendChild(subtitle);
+            content.appendChild(noReleasesDiv);
+            return;
+        }
+
+        const ownerInput = document.getElementById('repo-owner').value;
+        const repoInput = document.getElementById('repo-name').value;
+        const owner = sanitizeInput(ownerInput);
+        const repo = sanitizeInput(repoInput);
+
+        if (!owner || !repo) {
+            return;
+        }
+
+        releases.forEach((release, index) => {
+            const cleanBody = cleanReleaseBody(release.body, release.chartName);
+            const htmlBody = markdownToHtml(cleanBody);
+            const dateStr = new Date(release.published_at).toISOString().split('T')[0];
+
+            const releaseDiv = document.createElement('div');
+            releaseDiv.className = 'release';
+
+            const headerDiv = document.createElement('h2');
+            headerDiv.className = 'release-header';
+
+            const versionLink = document.createElement('a');
+            versionLink.href = release.html_url;
+            versionLink.target = '_blank';
+            versionLink.className = 'release-version';
+            versionLink.textContent = release.version;
+
+            const dateSpan = document.createElement('span');
+            dateSpan.className = 'release-date';
+            dateSpan.textContent = `- ${dateStr}`;
+
+            const linksDiv = document.createElement('div');
+            linksDiv.className = 'artifacthub-links';
+
+            // Add ArtifactHub links
+            if (index < releases.length - 1) {
+                const prevVersion = releases[index + 1].version;
+                const baseUrl = `https://artifacthub.io/packages/helm/${owner}/${release.chartName}/${release.version}`;
+
+                const templatesLink = document.createElement('a');
+                templatesLink.href = `${baseUrl}?modal=template&compare-to=${prevVersion}`;
+                templatesLink.target = '_blank';
+                templatesLink.className = 'artifacthub-link';
+                templatesLink.textContent = '📋 Diff Templates';
+
+                const valuesLink = document.createElement('a');
+                valuesLink.href = `${baseUrl}?modal=values&compare-to=${prevVersion}`;
+                valuesLink.target = '_blank';
+                valuesLink.className = 'artifacthub-link';
+                valuesLink.textContent = '⚙️ Diff Values';
+
+                linksDiv.appendChild(templatesLink);
+                linksDiv.appendChild(valuesLink);
+            } else {
+                const baseUrl = `https://artifacthub.io/packages/helm/${owner}/${release.chartName}/${release.version}`;
+
+                const templatesLink = document.createElement('a');
+                templatesLink.href = `${baseUrl}?modal=template`;
+                templatesLink.target = '_blank';
+                templatesLink.className = 'artifacthub-link';
+                templatesLink.textContent = '📋 Diff Templates';
+
+                const valuesLink = document.createElement('a');
+                valuesLink.href = `${baseUrl}?modal=values`;
+                valuesLink.target = '_blank';
+                valuesLink.className = 'artifacthub-link';
+                valuesLink.textContent = '⚙️ Diff Values';
+
+                linksDiv.appendChild(templatesLink);
+                linksDiv.appendChild(valuesLink);
+            }
+
+            // Add upgrading guide link for major versions (X.0.0)
+            if (isMajorVersion(release.version)) {
+                const upgradingLink = document.createElement('a');
+                upgradingLink.href = `https://github.com/${owner}/${repo}/blob/main/charts/${release.chartName}/README.md#upgrading`;
+                upgradingLink.target = '_blank';
+                upgradingLink.className = 'artifacthub-link';
+                upgradingLink.textContent = '⬆️ Upgrading Guide';
+                linksDiv.appendChild(upgradingLink);
+            }
+
+            headerDiv.appendChild(versionLink);
+            headerDiv.appendChild(dateSpan);
+            headerDiv.appendChild(linksDiv);
+
+            const bodyDiv = document.createElement('div');
+            bodyDiv.className = 'release-body';
+
+            // Sanitize and safely append HTML content
+            const sanitizedContent = sanitizeHtml(htmlBody);
+            while (sanitizedContent.firstChild) {
+                bodyDiv.appendChild(sanitizedContent.firstChild);
+            }
+
+            releaseDiv.appendChild(headerDiv);
+            releaseDiv.appendChild(bodyDiv);
+            content.appendChild(releaseDiv);
+        });
+
+    };
+
+    // Handle browser back/forward
+    window.addEventListener('popstate', (event) => {
+        if (event.state) {
+            const { owner, repo, chart } = event.state;
+            if (owner) document.getElementById('repo-owner').value = owner;
+            if (repo) document.getElementById('repo-name').value = repo;
+            if (chart && currentChart !== chart) {
+                selectChart(chart, owner, repo);
+            }
+        }
+    });
+
+    // Load repository button
+    document.getElementById('load-repo-btn').addEventListener('click', () => {
+        const ownerInput = document.getElementById('repo-owner').value.trim();
+        const repoInput = document.getElementById('repo-name').value.trim();
+
+        const owner = sanitizeInput(ownerInput);
+        const repo = sanitizeInput(repoInput);
+
+        if (!owner || !repo) {
+            showError('Invalid repository owner or name. Only alphanumeric characters, hyphens, and underscores are allowed.');
+            return;
+        }
+
+        loadReleases(owner, repo);
+    });
+
+    // Check for URL parameters on load
+    window.addEventListener('DOMContentLoaded', () => {
+        // Initialize dark mode
+        initializeDarkMode();
+
+        const params = getUrlParams();
+        const autoDetected = getRepoFromUrl();
+
+        let owner = null;
+        let repo = null;
+
+        if (params.owner) {
+            owner = params.owner;
+        } else if (autoDetected) {
+            owner = autoDetected.owner;
+        }
+
+        if (params.repo) {
+            repo = params.repo;
+        } else if (autoDetected) {
+            repo = autoDetected.repo;
+        }
+
+        if (owner && repo) {
+            document.getElementById('repo-owner').value = owner;
+            document.getElementById('repo-name').value = repo;
+
+            loadReleases(owner, repo);
+        }
+    });
+
+    // Fallback for if DOMContentLoaded already fired
+    if (document.readyState !== 'loading') {
+        initializeDarkMode();
+    }
+
+
+</script>
+</body>
+</html>

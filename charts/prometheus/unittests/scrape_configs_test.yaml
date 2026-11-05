@@ -1,0 +1,19 @@
+suite: test scrape configuration relabel hooks
+templates:
+  - cm.yaml
+tests:
+  - it: renders templated relabel hooks around managed relabel rules
+    values:
+      - ../ci/18-scrape-configs-values.yaml
+    release:
+      name: hook-test
+    asserts:
+      - matchRegex:
+          path: data["prometheus.yml"]
+          pattern: '(?s)- job_name: foo.*?relabel_configs:\n  - replacement: hook-test\n    target_label: pre_instance\n  - action: keep\n    regex: true\n    source_labels:\n    - __meta_kubernetes_service_annotation_prometheus_io_probe\n  - replacement: hook-test\n    target_label: post_instance'
+      - notMatchRegex:
+          path: data["prometheus.yml"]
+          pattern: pre_relabel_configs
+      - notMatchRegex:
+          path: data["prometheus.yml"]
+          pattern: post_relabel_configs

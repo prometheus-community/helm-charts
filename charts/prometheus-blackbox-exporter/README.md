@@ -124,3 +124,33 @@ See [Customizing the Chart Before Installing](https://helm.sh/docs/intro/using_h
 ```console
 helm show values oci://ghcr.io/prometheus-community/charts/prometheus-blackbox-exporter
 ```
+
+### Binary protocol (TCP) modules (PostgreSQL, LDAP, etc.)
+
+If your module configuration requires binary send payloads — for example probing
+[PostgreSQL SSL negotiation](https://github.com/prometheus/blackbox_exporter/pull/1441)
+or [LDAP STARTTLS](https://github.com/prometheus/blackbox_exporter/issues/295) —
+you cannot configure them via the `config:` value in `values.yaml`.
+
+The contents of `config:` are passed through `toYaml` in the ConfigMap template,
+which round-trips the values through Helm's YAML parser, which decodes
+`!!binary` tags and re-encodes them as UTF-8 strings. Any byte ≥ `0x80` is
+silently corrupted or dropped. The failure only manifests at probe time as a
+cryptic byte-mismatch error, with no warning during `helm install` or `helm
+template`.
+
+**Workaround:** create the blackbox config as a Kubernetes Secret outside of Helm
+and reference it via `configExistingSecretName`:
+
+```yaml
+configExistingSecretName: blackbox-binary-config
+```
+
+The Secret must contain a `blackbox.yaml` key:
+
+```bash
+kubectl create secret generic blackbox-binary-config \
+  --from-file=blackbox.yaml=./blackbox.yaml
+```
+
+This bypasses the `toYaml` pipeline entirely and delivers the config verbatim.

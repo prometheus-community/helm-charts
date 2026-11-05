@@ -13,12 +13,19 @@ spec:
     metadata:
       labels:
         {{- include "prometheus-fastly-exporter.selectorLabels" . | nindent 8 }}
+        {{- with .Values.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
       {{- with .Values.podAnnotations }}
       annotations:
         {{- toYaml . | nindent 8 }}
       {{- end }}
     spec:
       serviceAccountName: {{ template "prometheus-fastly-exporter.serviceAccountName" . }}
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
       {{- with .Values.initContainers }}
       initContainers: {{ toYaml . | nindent 8 }}
       {{- end }}
@@ -32,7 +39,21 @@ spec:
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           args:
             {{- range $key, $value := .Values.options }}
-            - "-{{ $key }}{{ if $value }}={{ $value }}{{ end }}"
+            {{- if kindIs "slice" $value }}
+            {{- range $v := $value }}
+            {{- if $v }}
+            - {{ printf "-%s=%v" $key $v | quote }}
+            {{- else }}
+            - {{ printf "-%s" $key | quote }}
+            {{- end }}
+            {{- end }}
+            {{- else }}
+            {{- if $value }}
+            - {{ printf "-%s=%v" $key $value | quote }}
+            {{- else }}
+            - {{ printf "-%s" $key | quote }}
+            {{- end }}
+            {{- end }}
             {{- end }}
           env:
             - name: FASTLY_API_TOKEN
@@ -40,6 +61,9 @@ spec:
                 secretKeyRef:
                   name: {{ include "prometheus-fastly-exporter.secretName" . }}
                   key: {{ .Values.existingSecret.key }}
+            {{- with .Values.extraEnv }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
           ports:
             - name: http
               containerPort: {{ .Values.service.port }}
@@ -65,9 +89,6 @@ spec:
           {{- end }}
           {{- with .Values.extraVolumeMounts }}
           volumeMounts: {{ toYaml . | nindent 12 }}
-          {{- end }}
-          {{- with .Values.extraEnv }}
-          env: {{ toYaml . | nindent 12 }}
           {{- end }}
         {{- with .Values.extraContainers }}
         {{- toYaml . | nindent 8 }}

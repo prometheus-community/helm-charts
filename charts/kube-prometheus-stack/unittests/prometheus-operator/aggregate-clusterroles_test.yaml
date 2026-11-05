@@ -1,0 +1,28 @@
+suite: test prometheus-operator aggregate clusterroles
+templates:
+  - prometheus-operator/aggregate-clusterroles.yaml
+tests:
+  - it: should not render by default
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: should cover every monitoring.coreos.com kind in both roles
+    set:
+      global.rbac.createAggregateClusterRoles: true
+    asserts:
+      - hasDocuments:
+          count: 2
+      - equal:
+          path: rules[0].resources
+          value:
+            - alertmanagers
+            - alertmanagerconfigs
+            - podmonitors
+            - probes
+            - prometheuses
+            - prometheusagents
+            - prometheusrules
+            - scrapeconfigs
+            - servicemonitors
+            - thanosrulers

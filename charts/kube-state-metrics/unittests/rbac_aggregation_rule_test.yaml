@@ -1,0 +1,46 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/helm-unittest/helm-unittest/main/schema/helm-testsuite.json
+suite: test rbac aggregationRule
+templates:
+  - role.yaml
+tests:
+  - it: should render aggregationRule and omit rules when clusterRoleSelectors is set
+    set:
+      rbac:
+        useClusterRole: true
+        clusterRoleSelectors:
+          - matchLabels:
+              rbac.example.com/aggregate-to-monitoring: "true"
+    asserts:
+      - equal:
+          path: aggregationRule.clusterRoleSelectors
+          value:
+            - matchLabels:
+                rbac.example.com/aggregate-to-monitoring: "true"
+      - isNull:
+          path: rules
+
+  - it: should render rules and omit aggregationRule when clusterRoleSelectors is empty
+    set:
+      rbac:
+        useClusterRole: true
+        clusterRoleSelectors: []
+    asserts:
+      - isNull:
+          path: aggregationRule
+      - isNotNull:
+          path: rules
+
+  - it: should ignore clusterRoleSelectors and render rules when useClusterRole is false
+    set:
+      rbac:
+        useClusterRole: false
+        namespaces:
+          - default
+        clusterRoleSelectors:
+          - matchLabels:
+              rbac.example.com/aggregate-to-monitoring: "true"
+    asserts:
+      - isNull:
+          path: aggregationRule
+      - isNotNull:
+          path: rules

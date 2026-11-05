@@ -1,4 +1,5 @@
-{{- if and .Values.networkPolicy.enabled (eq .Values.networkPolicy.flavor "kubernetes") }}
+{{- if .Values.networkPolicy.enabled -}}
+---
 kind: NetworkPolicy
 apiVersion: networking.k8s.io/v1
 metadata:
@@ -25,8 +26,7 @@ spec:
     - port: http
       protocol: TCP
     {{- if .Values.selfMonitor.enabled }}
-    {{- $telemetryPort := ternary 9091 (.Values.selfMonitor.telemetryPort | default 8081) .Values.kubeRBACProxy.enabled}}
-    - port: {{ $telemetryPort }}
+    - port: metrics
       protocol: TCP
     {{- end }}
   {{- end }}
@@ -40,4 +40,4 @@ spec:
   policyTypes:
     - Ingress
     - Egress
-{{- end }}
+{{- end -}}

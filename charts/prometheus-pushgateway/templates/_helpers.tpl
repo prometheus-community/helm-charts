@@ -69,6 +69,16 @@ app.kubernetes.io/managed-by: {{ .Release.Service }}
 {{- end }}
 
 {{/*
+Pod labels: the default labels without helm.sh/chart. That label carries the chart version, so
+including it in the pod template recreates the pod on every chart upgrade, even when nothing
+about the workload changed.
+*/}}
+{{- define "prometheus-pushgateway.podLabels" }}
+{{- $podLabels := (include "prometheus-pushgateway.defaultLabels" . | fromYaml) }}
+{{- omit $podLabels "helm.sh/chart" | toYaml }}
+{{- end }}
+
+{{/*
 Selector labels
 */}}
 {{- define "prometheus-pushgateway.selectorLabels" -}}
@@ -85,6 +95,28 @@ basic_auth_users:
   {{ $k }}: {{ htpasswd "" $v | trimPrefix ":"}}
 {{- end }}
 {{- end }}
+
+{{/*
+Return the name of an existing Secret holding the web configuration, or "" if none is set.
+*/}}
+{{- define "prometheus-pushgateway.webConfigurationExistingSecretName" -}}
+{{- $webConfiguration := .Values.webConfiguration | default dict -}}
+{{- $existingSecret := get $webConfiguration "existingSecret" | default dict -}}
+{{- get $existingSecret "name" | default "" -}}
+{{- end -}}
+
+{{/*
+Return the Secret name to mount as the web configuration: the user-provided
+existing Secret when set, otherwise the chart-managed Secret.
+*/}}
+{{- define "prometheus-pushgateway.webConfigurationSecretName" -}}
+{{- $existingSecretName := include "prometheus-pushgateway.webConfigurationExistingSecretName" . -}}
+{{- if $existingSecretName -}}
+{{- $existingSecretName -}}
+{{- else -}}
+{{- include "prometheus-pushgateway.fullname" . -}}
+{{- end -}}
+{{- end -}}
 
 {{/*
 Define Authorization
@@ -169,6 +201,11 @@ containers:
     {{- if .Values.liveness.enabled }}
     {{- $livenessCommon := omit .Values.liveness.probe "httpGet" }}
     livenessProbe:
+    {{- if (include "prometheus-pushgateway.webConfigurationExistingSecretName" $) }}
+      tcpSocket:
+        port: {{ .Values.liveness.probe.httpGet.port }}
+      {{- toYaml $livenessCommon | nindent 6 }}
+    {{- else }}
     {{- with .Values.liveness.probe }}
       httpGet:
         path: {{ .httpGet.path }}
@@ -187,9 +224,15 @@ containers:
         {{- toYaml $livenessCommon | nindent 6 }}
       {{- end }}
     {{- end }}
+    {{- end }}
     {{- if .Values.readiness.enabled }}
     {{- $readinessCommon := omit .Values.readiness.probe "httpGet" }}
     readinessProbe:
+    {{- if (include "prometheus-pushgateway.webConfigurationExistingSecretName" $) }}
+      tcpSocket:
+        port: {{ .Values.readiness.probe.httpGet.port }}
+      {{- toYaml $readinessCommon | nindent 6 }}
+    {{- else }}
     {{- with .Values.readiness.probe }}
       httpGet:
         path: {{ .httpGet.path }}
@@ -207,6 +250,7 @@ containers:
         {{- end }}
         {{- toYaml $readinessCommon | nindent 6 }}
       {{- end }}
+    {{- end }}
     {{- end }}
     {{- with .Values.resources }}
     resources:
@@ -277,12 +321,13 @@ volumes:
     persistentVolumeClaim:
       claimName: {{ if .Values.persistentVolume.existingClaim }}{{ .Values.persistentVolume.existingClaim }}{{- else }}{{ include "prometheus-pushgateway.fullname" . }}{{- end }}
   {{- else }}
-    emptyDir: {}
+    emptyDir:
+      {{- toYaml .Values.persistentVolume.emptyDir | nindent 6 }}
   {{- end }}
   {{- if .Values.webConfiguration }}
   - name: web-config
     secret:
-      secretName: {{ include "prometheus-pushgateway.fullname" . }}
+      secretName: {{ include "prometheus-pushgateway.webConfigurationSecretName" . }}
   {{- end }}
   {{- end }}
   {{- if .Values.extraVolumes }}
@@ -291,7 +336,7 @@ volumes:
   {{- if .Values.webConfiguration }}
   - name: web-config
     secret:
-      secretName: {{ include "prometheus-pushgateway.fullname" . }}
+      secretName: {{ include "prometheus-pushgateway.webConfigurationSecretName" . }}
   {{- else }}
   []
   {{- end }}

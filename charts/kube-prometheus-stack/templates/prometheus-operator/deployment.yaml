@@ -29,7 +29,7 @@ spec:
   template:
     metadata:
       labels:
-        {{- include "kube-prometheus-stack.prometheus-operator.labels" . | nindent 8 }}
+        {{- include "kube-prometheus-stack.prometheus-operator.podLabels" . | nindent 8 }}
 {{- if .Values.prometheusOperator.podLabels }}
 {{ toYaml .Values.prometheusOperator.podLabels | indent 8 }}
 {{- end }}
@@ -137,10 +137,17 @@ spec:
             {{- if .Values.prometheusOperator.clusterDomain }}
             - --cluster-domain={{ .Values.prometheusOperator.clusterDomain }}
             {{- end }}
+            {{- with .Values.prometheusOperator.featureGates }}
+            {{- $gates := list }}
+            {{- range $key, $value := . }}
+            {{- $gates = append $gates (printf "%s=%v" $key $value) }}
+            {{- end }}
+            - --feature-gates={{ join "," $gates }}
+            {{- end }}
             {{- if .Values.prometheusOperator.tls.enabled }}
             - --web.enable-tls=true
-            - --web.cert-file=/cert/{{ if .Values.prometheusOperator.admissionWebhooks.certManager.enabled }}tls.crt{{ else }}cert{{ end }}
-            - --web.key-file=/cert/{{ if .Values.prometheusOperator.admissionWebhooks.certManager.enabled }}tls.key{{ else }}key{{ end }}
+            - --web.cert-file=/cert/{{ if include "kube-prometheus-stack.prometheus-operator-webhook.tlsSecretKeys" . }}tls.crt{{ else }}cert{{ end }}
+            - --web.key-file=/cert/{{ if include "kube-prometheus-stack.prometheus-operator-webhook.tlsSecretKeys" . }}tls.key{{ else }}key{{ end }}
             - --web.listen-address=:{{ .Values.prometheusOperator.tls.internalPort }}
             - --web.tls-min-version={{ .Values.prometheusOperator.tls.tlsMinVersion }}
             {{- else }}

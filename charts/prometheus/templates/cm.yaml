@@ -60,7 +60,11 @@ data:
 {{- if $scrapeValue.enabled }}
 {{- $jobName := default $scrapeKey $scrapeValue.job_name}}
     - {{ printf "job_name: %s" $jobName }}
-      {{- toYaml (omit $scrapeValue "enabled" "job_name") | nindent 6 }}
+      {{- $relabelConfigs := (concat (tpl ($scrapeValue.pre_relabel_configs | default "[]") $ | fromYamlArray) ($scrapeValue.relabel_configs | default (list)) (tpl ($scrapeValue.post_relabel_configs | default "[]") $ | fromYamlArray))}}
+      {{- if $relabelConfigs }}
+      {{- $_ := set $scrapeValue "relabel_configs" $relabelConfigs }}
+      {{- end }}
+      {{- toYaml (omit $scrapeValue "enabled" "job_name" "pre_relabel_configs" "post_relabel_configs") | nindent 6 }}
 {{- end }}
 {{- end }}
 {{- if $value.scrape_configs }}

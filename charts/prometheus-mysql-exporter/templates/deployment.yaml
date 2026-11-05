@@ -32,6 +32,9 @@ spec:
       {{- with .Values.priorityClassName }}
       priorityClassName: {{ . }}
       {{- end }}
+      {{- if kindIs "bool" .Values.hostUsers }}
+      hostUsers: {{ .Values.hostUsers }}
+      {{- end }}
       securityContext:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
       {{- if and .Values.imagePullSecrets }}
@@ -102,6 +105,8 @@ spec:
             {{ toYaml . | nindent 12 }}
           {{- end }}
           {{- end }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
           ports:
             - containerPort: {{ .Values.service.internalPort }}
           livenessProbe:
@@ -123,6 +128,8 @@ spec:
         - name: cloudsql-proxy
           image: "{{ .Values.cloudsqlproxy.image.repo }}:{{ .Values.cloudsqlproxy.image.tag }}"
           imagePullPolicy: "{{ .Values.cloudsqlproxy.image.PullPolicy  }}"
+          resources:
+            {{- toYaml .Values.cloudsqlproxy.resources | nindent 12 }}
           args: ["{{ .Values.cloudsqlproxy.instanceConnectionName }}?port:{{ .Values.cloudsqlproxy.port }}"
                   ,"--health-check"
                   ,"--http-address=0.0.0.0"
@@ -176,8 +183,6 @@ spec:
               readOnly: true
           {{- end }}
         {{- end }}
-          resources:
-{{ toYaml .Values.resources | indent 12 }}
     {{- with .Values.nodeSelector }}
       nodeSelector:
 {{ toYaml . | indent 8 }}
