@@ -1,0 +1,91 @@
+suite: prometheus-operator pod labels
+templates:
+  - prometheus-operator/deployment.yaml
+  - prometheus-operator/admission-webhooks/deployment/deployment.yaml
+tests:
+  - it: keeps the chart version off the operator pod template
+    template: prometheus-operator/deployment.yaml
+    asserts:
+      - notExists:
+          path: spec.template.metadata.labels.chart
+      - notExists:
+          path: spec.template.metadata.labels["app.kubernetes.io/version"]
+      - exists:
+          path: metadata.labels.chart
+      - exists:
+          path: metadata.labels["app.kubernetes.io/version"]
+
+  - it: keeps the chart version off the admission webhook pod template
+    template: prometheus-operator/admission-webhooks/deployment/deployment.yaml
+    set:
+      prometheusOperator.admissionWebhooks.deployment.enabled: true
+    asserts:
+      - notExists:
+          path: spec.template.metadata.labels.chart
+      - notExists:
+          path: spec.template.metadata.labels["app.kubernetes.io/version"]
+      - exists:
+          path: metadata.labels.chart
+      - exists:
+          path: metadata.labels["app.kubernetes.io/version"]
+
+  - it: pins the whole operator pod label set
+    template: prometheus-operator/deployment.yaml
+    chart:
+      version: 99.99.99
+    asserts:
+      - equal:
+          path: spec.template.metadata.labels
+          value:
+            app: kube-prometheus-stack-operator
+            app.kubernetes.io/component: prometheus-operator
+            app.kubernetes.io/instance: RELEASE-NAME
+            app.kubernetes.io/managed-by: Helm
+            app.kubernetes.io/name: kube-prometheus-stack-prometheus-operator
+            app.kubernetes.io/part-of: kube-prometheus-stack
+            heritage: Helm
+            release: RELEASE-NAME
+
+  - it: keeps the operator selector keys on the pod template
+    template: prometheus-operator/deployment.yaml
+    asserts:
+      - equal:
+          path: spec.selector.matchLabels
+          value:
+            app: kube-prometheus-stack-operator
+            release: RELEASE-NAME
+      - isSubset:
+          path: spec.template.metadata.labels
+          content:
+            app: kube-prometheus-stack-operator
+            release: RELEASE-NAME
+
+  - it: keeps the admission webhook selector keys on the pod template
+    template: prometheus-operator/admission-webhooks/deployment/deployment.yaml
+    set:
+      prometheusOperator.admissionWebhooks.deployment.enabled: true
+    asserts:
+      - equal:
+          path: spec.selector.matchLabels
+          value:
+            app: kube-prometheus-stack-operator-webhook
+            release: RELEASE-NAME
+      - isSubset:
+          path: spec.template.metadata.labels
+          content:
+            app: kube-prometheus-stack-operator-webhook
+            release: RELEASE-NAME
+
+  - it: still renders commonLabels and podLabels on the operator pod template
+    template: prometheus-operator/deployment.yaml
+    set:
+      commonLabels:
+        team: platform
+      prometheusOperator.podLabels:
+        extra: "yes"
+    asserts:
+      - isSubset:
+          path: spec.template.metadata.labels
+          content:
+            team: platform
+            extra: "yes"
