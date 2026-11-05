@@ -1,0 +1,163 @@
+{{- include "prometheus-mcp.validateHTTPConfig" . -}}
+{{- include "prometheus-mcp.validateValues" . -}}
+{{- $httpConfigSecret := include (print $.Template.BasePath "/secret.yaml") . | trim -}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "prometheus-mcp.fullname" . }}
+  labels:
+    {{- include "prometheus-mcp.labels" . | nindent 4 }}
+spec:
+  {{- if not .Values.autoscaling.enabled }}
+  replicas: {{ .Values.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "prometheus-mcp.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- if or $httpConfigSecret .Values.podAnnotations }}
+      annotations:
+        {{- if $httpConfigSecret }}
+        checksum/http-config: {{ $httpConfigSecret | sha256sum }}
+        {{- end }}
+        {{- with .Values.podAnnotations }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      {{- end }}
+      labels:
+        {{- include "prometheus-mcp.labels" . | nindent 8 }}
+        {{- with .Values.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "prometheus-mcp.serviceAccountName" . }}
+      {{- if kindIs "bool" .Values.serviceAccount.automountServiceAccountToken }}
+      automountServiceAccountToken: {{ .Values.serviceAccount.automountServiceAccountToken }}
+      {{- end }}
+      {{- with .Values.priorityClassName }}
+      priorityClassName: {{ . }}
+      {{- end }}
+      {{- with .Values.podSecurityContext }}
+      securityContext:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: {{ .Chart.Name }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          args:
+            - "--prometheus.url={{ .Values.prometheus.url }}"
+            {{- /* Not configurable: the stdio transport reads MCP messages from
+            the container's stdin, which no remote client can reach, and the
+            process exits as soon as stdin closes. */}}
+            - "--mcp.transport=http"
+            - "--web.listen-address=:{{ .Values.containerPort }}"
+            - "--web.telemetry-path={{ .Values.telemetryPath }}"
+            - "--log.level={{ .Values.log.level }}"
+            {{- if .Values.log.format }}
+            - "--log.format={{ .Values.log.format }}"
+            {{- end }}
+            {{- if .Values.prometheus.backend }}
+            - "--prometheus.backend={{ .Values.prometheus.backend }}"
+            {{- end }}
+            {{- if .Values.prometheus.timeout }}
+            - "--prometheus.timeout={{ .Values.prometheus.timeout }}"
+            {{- end }}
+            {{- if .Values.prometheus.truncationLimit }}
+            - "--prometheus.truncation-limit={{ .Values.prometheus.truncationLimit }}"
+            {{- end }}
+            {{- range .Values.mcp.tools }}
+            - "--mcp.tools={{ . }}"
+            {{- end }}
+            {{- if .Values.mcp.enableToonOutput }}
+            - "--mcp.enable-toon-output"
+            {{- end }}
+            {{- if .Values.mcp.enableClientLogging }}
+            - "--mcp.enable-client-logging"
+            {{- end }}
+            {{- if .Values.docs.autoUpdate }}
+            - "--docs.auto-update"
+            {{- end }}
+            {{- if .Values.tsdbAdmin.enabled }}
+            - "--dangerous.enable-tsdb-admin-tools"
+            {{- end }}
+            {{- if .Values.httpConfig.enabled }}
+            - "--http.config=/etc/prometheus-mcp/{{ .Values.httpConfig.secretKey }}"
+            {{- end }}
+            {{- if .Values.log.file }}
+            - "--log.file={{ .Values.log.file }}"
+            {{- end }}
+            {{- with .Values.extraArgs }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.containerPort }}
+              protocol: TCP
+          {{- with .Values.startupProbe }}
+          startupProbe:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.livenessProbe }}
+          livenessProbe:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.readinessProbe }}
+          readinessProbe:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.containerSecurityContext }}
+          securityContext:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- if or .Values.httpConfig.enabled .Values.extraVolumeMounts }}
+          volumeMounts:
+            {{- if .Values.httpConfig.enabled }}
+            - name: http-config
+              mountPath: /etc/prometheus-mcp
+              readOnly: true
+            {{- end }}
+            {{- with .Values.extraVolumeMounts }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+          {{- end }}
+          {{- with .Values.extraEnv }}
+          env:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+      {{- if or .Values.httpConfig.enabled .Values.extraVolumes }}
+      volumes:
+        {{- if .Values.httpConfig.enabled }}
+        - name: http-config
+          secret:
+            secretName: {{ include "prometheus-mcp.httpConfigSecretName" . }}
+        {{- end }}
+        {{- with .Values.extraVolumes }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.topologySpreadConstraints }}
+      topologySpreadConstraints:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

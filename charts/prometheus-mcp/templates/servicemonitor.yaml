@@ -1,0 +1,53 @@
+{{- if .Values.serviceMonitor.enabled }}
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: {{ include "prometheus-mcp.fullname" . }}
+  {{- with .Values.serviceMonitor.namespace }}
+  namespace: {{ . }}
+  {{- end }}
+  labels:
+    {{- include "prometheus-mcp.labels" . | nindent 4 }}
+    {{- with .Values.serviceMonitor.labels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+spec:
+  {{- if not (empty .Values.serviceMonitor.namespaceSelector) }}
+  namespaceSelector:
+    {{- toYaml .Values.serviceMonitor.namespaceSelector | nindent 4 }}
+  {{- else if .Values.serviceMonitor.namespace }}
+  {{- /* Deployed to a different namespace than the release: point
+  namespaceSelector at the release namespace where the Service actually
+  lives, or Prometheus won't discover it. */}}
+  namespaceSelector:
+    matchNames:
+      - {{ .Release.Namespace }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "prometheus-mcp.selectorLabels" . | nindent 6 }}
+  endpoints:
+    - port: http
+      path: {{ .Values.telemetryPath }}
+      {{- with .Values.serviceMonitor.scheme }}
+      scheme: {{ . }}
+      {{- end }}
+      {{- with .Values.serviceMonitor.tlsConfig }}
+      tlsConfig:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.serviceMonitor.interval }}
+      interval: {{ . }}
+      {{- end }}
+      {{- with .Values.serviceMonitor.scrapeTimeout }}
+      scrapeTimeout: {{ . }}
+      {{- end }}
+      {{- with .Values.serviceMonitor.relabelings }}
+      relabelings:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.serviceMonitor.metricRelabelings }}
+      metricRelabelings:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+{{- end }}
