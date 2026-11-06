@@ -160,7 +160,16 @@ jobs:
           chart="${chart#charts/}"
           chart="${chart%%/*}"
 
-          helm dependency update "./target/charts/$chart"
+          # A chart that does not exist on the target branch has no baseline
+          # release to install or diff against; the PR version is installed
+          # directly.
+          if [[ -d "./target/charts/$chart" ]]; then
+            helm dependency update "./target/charts/$chart"
+            echo baseline=true >> "$GITHUB_OUTPUT"
+          else
+            echo "charts/$chart does not exist on the target branch; skipping the baseline install"
+            echo baseline=false >> "$GITHUB_OUTPUT"
+          fi
           helm dependency update "./charts/$chart"
 
           echo chart="$chart" >> "$GITHUB_OUTPUT"
@@ -187,6 +196,7 @@ jobs:
 
       - name: Run helm install from main branch
         id: install
+        if: steps.setup.outputs.baseline == 'true'
         env:
           chart: "${{ steps.setup.outputs.chart }}"
           value_file: "${{ matrix.valuefile }}"
@@ -250,6 +260,7 @@ jobs:
             printf '```diff\n'
             helm diff upgrade "$chart" "./charts/$chart" \
               --namespace "$chart" \
+              --allow-unreleased \
               --suppress=CustomResourceDefinition \
               --normalize-manifests \
               --reset-values \
