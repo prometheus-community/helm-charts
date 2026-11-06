@@ -1,0 +1,61 @@
+suite: test deployment
+templates:
+  - templates/deployment.yaml
+tests:
+  - it: should only render the exporter container by default
+    asserts:
+      - lengthEqual:
+          path: spec.template.spec.containers
+          count: 1
+
+  - it: should render extraContainers after the exporter container
+    set:
+      extraContainers: |
+        - name: sidecar
+          image: busybox:1.37
+          args: ["sleep", "infinity"]
+    asserts:
+      - lengthEqual:
+          path: spec.template.spec.containers
+          count: 2
+      - equal:
+          path: spec.template.spec.containers[0].name
+          value: prometheus-nats-exporter
+      - equal:
+          path: spec.template.spec.containers[1]
+          value:
+            name: sidecar
+            image: busybox:1.37
+            args: ["sleep", "infinity"]
+
+  - it: should render templates in extraContainers
+    set:
+      extraContainers: |
+        - name: "{{ .Release.Name }}-sidecar"
+          image: busybox:1.37
+    release:
+      name: my-release
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[1].name
+          value: my-release-sidecar
+
+  - it: should keep extraVolumes working next to extraContainers
+    set:
+      extraContainers: |
+        - name: sidecar
+          image: busybox:1.37
+          volumeMounts:
+            - name: shared
+              mountPath: /shared
+      extraVolumes: |
+        volumes:
+          - name: shared
+            emptyDir: {}
+    asserts:
+      - equal:
+          path: spec.template.spec.volumes[0].name
+          value: shared
+      - equal:
+          path: spec.template.spec.containers[1].volumeMounts[0].name
+          value: shared
