@@ -1,0 +1,52 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/helm-unittest/helm-unittest/main/schema/helm-testsuite.json
+suite: test option arguments
+templates:
+  - deployment.yaml
+tests:
+  - it: preserves backslashes in a regular expression
+    set:
+      options:
+        metric-allowlist: 'status_\dxx$'
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].args
+          value:
+            - '-metric-allowlist=status_\dxx$'
+
+  - it: preserves double quotes in an option value
+    set:
+      options:
+        metric-allowlist: 'metric_"quoted"'
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].args
+          value:
+            - '-metric-allowlist=metric_"quoted"'
+
+  - it: quotes each repeated option value
+    set:
+      options:
+        metric-allowlist:
+          - 'status_\dxx$'
+          - 'metric_"quoted"'
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].args
+          value:
+            - '-metric-allowlist=status_\dxx$'
+            - '-metric-allowlist=metric_"quoted"'
+
+  - it: keeps repeatable services and valueless options
+    set:
+      options:
+        service:
+          - first-service
+          - second-service
+        verbose: ""
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].args
+          value:
+            - -service=first-service
+            - -service=second-service
+            - -verbose
