@@ -1,0 +1,36 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/helm-unittest/helm-unittest/main/schema/helm-testsuite.json
+suite: test deployment
+templates:
+  - deployment.yaml
+  - configmap.yaml
+tests:
+  - it: should not set dnsPolicy or dnsConfig by default
+    template: deployment.yaml
+    asserts:
+      - notExists:
+          path: spec.template.spec.dnsPolicy
+      - notExists:
+          path: spec.template.spec.dnsConfig
+
+  - it: should set dnsPolicy and dnsConfig on the pod
+    template: deployment.yaml
+    set:
+      dnsPolicy: None
+      dnsConfig:
+        nameservers:
+          - 10.0.0.10
+        options:
+          - name: ndots
+            value: "2"
+    asserts:
+      - equal:
+          path: spec.template.spec.dnsPolicy
+          value: None
+      - equal:
+          path: spec.template.spec.dnsConfig
+          value:
+            nameservers:
+              - 10.0.0.10
+            options:
+              - name: ndots
+                value: "2"
