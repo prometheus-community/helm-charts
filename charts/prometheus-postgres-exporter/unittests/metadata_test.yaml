@@ -1,0 +1,41 @@
+suite: test metadata rendering
+templates:
+  - serviceaccount.yaml
+  - networkpolicy.yaml
+set:
+  config:
+    datasource:
+      password: secret
+tests:
+  - it: should render multiple serviceAccount annotations
+    template: serviceaccount.yaml
+    set:
+      serviceAccount:
+        annotations:
+          eks.amazonaws.com/role-arn: arn:aws:iam::123456789012:role/exporter
+          example.com/owner: dba
+    asserts:
+      - equal:
+          path: metadata.annotations
+          value:
+            eks.amazonaws.com/role-arn: arn:aws:iam::123456789012:role/exporter
+            example.com/owner: dba
+
+  - it: should render multiple networkPolicy labels
+    template: networkpolicy.yaml
+    set:
+      networkPolicy:
+        enabled: true
+        labels:
+          team: dba
+          tier: monitoring
+    asserts:
+      - equal:
+          path: metadata.labels.team
+          value: dba
+      - equal:
+          path: metadata.labels.tier
+          value: monitoring
+      - equal:
+          path: metadata.labels["app.kubernetes.io/name"]
+          value: prometheus-postgres-exporter
