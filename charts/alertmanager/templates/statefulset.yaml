@@ -121,7 +121,13 @@ spec:
             - "--listen-address=0.0.0.0:{{ .Values.configmapReload.containerPort }}"
             {{- end }}
             {{- range $key, $value := .Values.configmapReload.extraArgs }}
-            - "--{{ $key }}={{ tpl (toString $value) $ }}"
+            {{- $values := list $value }}
+            {{- if kindIs "slice" $value }}
+            {{- $values = $value }}
+            {{- end }}
+            {{- range $val := $values }}
+            - "--{{ $key }}={{ tpl (toString $val) $ }}"
+            {{- end }}
             {{- end }}
           {{- with .Values.configmapReload.resources }}
           resources:
