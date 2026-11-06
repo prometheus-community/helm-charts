@@ -41,12 +41,22 @@ helm upgrade [RELEASE_NAME] oci://ghcr.io/prometheus-community/charts/prometheus
 
 _See [helm upgrade](https://helm.sh/docs/helm/helm_upgrade/) for command documentation._
 
-#### 4.x to 5.x
+#### 5.x to 6.x
 
 The default filesystem collector arguments moved from `extraArgs` to the new `defaultArgs` value, and `extraArgs` is now empty, so arguments you add no longer replace the defaults.
 
 If you copied the defaults into your own `extraArgs`, remove them there. node-exporter refuses a flag given twice and would not start.
 To change or drop a default, override `defaultArgs` instead.
+
+#### 4.x to 5.x
+
+Version 5.0.0 adds restrictive security context defaults. Host access is unchanged (`hostNetwork`, `hostPID` and the `/proc`, `/sys` and `/` hostPath mounts keep their previous defaults).
+
+- `containerSecurityContext` sets `allowPrivilegeEscalation: false`, `capabilities.drop: [ALL]` and `seccompProfile.type: RuntimeDefault`. These defaults are also applied to `sidecars`.
+- `kubeRBACProxy.containerSecurityContext` sets the same three fields.
+- The opt-in `permissionInitContainer` (runs as root to fix host file permissions) is unchanged.
+
+Helm merges your values into these defaults. If you set `privileged: true` or add `CAP_SYS_ADMIN` in `containerSecurityContext` (for example for the `perf` collector), also set `allowPrivilegeEscalation: true`, because the API server rejects `allowPrivilegeEscalation: false` together with either of them. To restore the previous behaviour, set the new keys to `null`.
 
 #### 3.x to 4.x
 

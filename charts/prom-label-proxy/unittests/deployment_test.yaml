@@ -1,0 +1,71 @@
+suite: optional proxy config volume
+templates:
+  - deployment.yaml
+  - rbac-configmap.yaml
+tests:
+  - it: does not mount a missing config volume when the proxy config is empty
+    template: deployment.yaml
+    set:
+      kubeRBACProxy.enabled: true
+    asserts:
+      - notExists:
+          path: spec.template.spec.containers[1].volumeMounts
+      - notExists:
+          path: spec.template.spec.volumes
+      - notContains:
+          path: spec.template.spec.containers[1].args
+          content: --config-file=/etc/kube-rbac-proxy-config/config-file.yaml
+  - it: keeps the configured proxy volume and mount
+    template: deployment.yaml
+    set:
+      kubeRBACProxy.enabled: true
+      kubeRBACProxy.config:
+        authorization:
+          resourceAttributes:
+            resource: namespaces
+            subresource: metrics
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[1].volumeMounts
+          content:
+            name: kube-rbac-proxy-config
+            mountPath: /etc/kube-rbac-proxy-config
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: kube-rbac-proxy-config
+            configMap:
+              name: RELEASE-NAME-prom-label-proxy-rbac-config
+      - contains:
+          path: spec.template.spec.containers[1].args
+          content: --config-file=/etc/kube-rbac-proxy-config/config-file.yaml
+  - it: preserves additional proxy mounts with configured authorization
+    template: deployment.yaml
+    set:
+      kubeRBACProxy.enabled: true
+      kubeRBACProxy.config:
+        authorization:
+          resourceAttributes:
+            resource: namespaces
+            subresource: metrics
+      kubeRBACProxy.volumeMounts:
+        - name: kube-rbac-proxy-config
+          mountPath: /additional-config
+          readOnly: true
+    asserts:
+      - lengthEqual:
+          path: spec.template.spec.containers[1].volumeMounts
+          count: 2
+      - contains:
+          path: spec.template.spec.containers[1].volumeMounts
+          content:
+            name: kube-rbac-proxy-config
+            mountPath: /additional-config
+            readOnly: true
+  - it: does not create a config map for an empty proxy config
+    template: rbac-configmap.yaml
+    set:
+      kubeRBACProxy.enabled: true
+    asserts:
+      - hasDocuments:
+          count: 0

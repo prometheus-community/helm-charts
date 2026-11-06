@@ -1,0 +1,63 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/helm-unittest/helm-unittest/main/schema/helm-testsuite.json
+suite: test node selection
+templates:
+  - deployment.yaml
+tests:
+  - it: schedules the Deployment on Linux nodes by default
+    asserts:
+      - isKind:
+          of: Deployment
+      - equal:
+          path: spec.template.spec.nodeSelector
+          value:
+            kubernetes.io/os: linux
+
+  - it: schedules the autosharded StatefulSet on Linux nodes by default
+    set:
+      autosharding.enabled: true
+    asserts:
+      - isKind:
+          of: StatefulSet
+      - equal:
+          path: spec.template.spec.nodeSelector
+          value:
+            kubernetes.io/os: linux
+
+  - it: preserves custom node labels alongside the Linux selector
+    set:
+      nodeSelector:
+        nodepool: monitoring
+    asserts:
+      - equal:
+          path: spec.template.spec.nodeSelector
+          value:
+            kubernetes.io/os: linux
+            nodepool: monitoring
+
+  - it: still templates custom node labels
+    set:
+      nodeSelector:
+        nodepool: '{{ .Release.Namespace }}'
+    asserts:
+      - equal:
+          path: spec.template.spec.nodeSelector
+          value:
+            kubernetes.io/os: linux
+            nodepool: NAMESPACE
+
+  - it: allows an explicit OS override for a custom image
+    set:
+      nodeSelector:
+        kubernetes.io/os: windows
+    asserts:
+      - equal:
+          path: spec.template.spec.nodeSelector
+          value:
+            kubernetes.io/os: windows
+
+  - it: allows removing the node selector explicitly
+    set:
+      nodeSelector: null
+    asserts:
+      - notExists:
+          path: spec.template.spec.nodeSelector
