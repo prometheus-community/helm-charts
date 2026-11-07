@@ -332,12 +332,13 @@ volumes:
   {{- end }}
   {{- if .Values.extraVolumes }}
   {{- toYaml .Values.extraVolumes  | nindent 2 }}
-  {{- else if $storageVolumeAsPVCTemplate }}
+  {{- end }}
+  {{- if $storageVolumeAsPVCTemplate }}
   {{- if .Values.webConfiguration }}
   - name: web-config
     secret:
       secretName: {{ include "prometheus-pushgateway.webConfigurationSecretName" . }}
-  {{- else }}
+  {{- else if not .Values.extraVolumes }}
   []
   {{- end }}
   {{- end }}
