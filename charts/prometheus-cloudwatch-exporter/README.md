@@ -86,4 +86,4 @@ For Cloudwatch Exporter to operate properly, you must configure either an IAM ro
   ```
 - To configure AWS credentials by value, set `aws.aws_access_key_id` to your [AWS_ACCESS_KEY_ID], and `aws.aws_secret_access_key` to [AWS_SECRET_ACCESS_KEY].
 - To configure AWS credentials by secret, you must store them in a secret (`kubectl create secret generic [SECRET_NAME] --from-literal=access_key=[AWS_ACCESS_KEY_ID] --from-literal=secret_key=[AWS_SECRET_ACCESS_KEY]`) and set `aws.secret.name` to [SECRET_NAME]
-- Legacy: `aws.role` only adds the pod annotation `iam.amazonaws.com/role`, which [kube2iam](https://github.com/jtblin/kube2iam) and [kiam](https://github.com/uswitch/kiam) read. Leave `aws.role` empty and use IRSA or EKS Pod Identity for new installs.
+- Legacy: `aws.role` adds the pod annotation `iam.amazonaws.com/role`, which [kube2iam](https://github.com/jtblin/kube2iam) and [kiam](https://github.com/uswitch/kiam) read, and makes the chart skip the credentials Secret and env vars. Leave `aws.role` empty and use IRSA or EKS Pod Identity for new installs. Note that `aws.stsRegional.enabled` is currently only applied when `aws.role` is set.
