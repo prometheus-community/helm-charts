@@ -1,0 +1,44 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/helm-unittest/helm-unittest/main/schema/helm-testsuite.json
+suite: test DaemonSet pod labels
+templates:
+  - daemonset.yaml
+release:
+  name: r
+set:
+  kind: DaemonSet
+tests:
+  - it: should not put helm.sh/chart in the pod labels
+    asserts:
+      - isKind:
+          of: DaemonSet
+      - notExists:
+          path: spec.template.metadata.labels["helm.sh/chart"]
+
+  - it: should keep helm.sh/chart on the DaemonSet's own metadata
+    asserts:
+      - exists:
+          path: metadata.labels["helm.sh/chart"]
+
+  - it: should keep both selector labels on the pod template
+    asserts:
+      - exists:
+          path: spec.template.metadata.labels["app.kubernetes.io/name"]
+      - exists:
+          path: spec.template.metadata.labels["app.kubernetes.io/instance"]
+
+  - it: should put the version and managed-by labels on the pod template
+    asserts:
+      - exists:
+          path: spec.template.metadata.labels["app.kubernetes.io/version"]
+      - equal:
+          path: spec.template.metadata.labels["app.kubernetes.io/managed-by"]
+          value: Helm
+
+  - it: should put commonLabels on the pod template
+    set:
+      commonLabels:
+        team: platform
+    asserts:
+      - equal:
+          path: spec.template.metadata.labels.team
+          value: platform
