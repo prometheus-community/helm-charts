@@ -1,0 +1,26 @@
+suite: test service
+templates:
+  - templates/service.yaml
+tests:
+  - it: should render without extra labels by default
+    asserts:
+      - isKind:
+          of: Service
+      - notExists:
+          path: metadata.labels.team
+  - it: should add service.labels to the Service
+    set:
+      service:
+        labels:
+          team: platform
+          tier: monitoring
+    asserts:
+      - equal:
+          path: metadata.labels.team
+          value: platform
+      - equal:
+          path: metadata.labels.tier
+          value: monitoring
+      - equal:
+          path: metadata.labels.release
+          value: RELEASE-NAME
