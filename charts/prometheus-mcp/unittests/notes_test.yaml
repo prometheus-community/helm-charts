@@ -1,0 +1,20 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/helm-unittest/helm-unittest/main/schema/helm-testsuite.json
+suite: test notes
+templates:
+  - NOTES.txt
+tests:
+  - it: should print the ingress URL ahead of an enabled route and the Service
+    set:
+      ingress.enabled: true
+      route.main.enabled: true
+      route.main.parentRefs:
+        - name: my-gateway
+      route.main.hostnames:
+        - mcp.example.com
+    asserts:
+      - matchRegexRaw:
+          pattern: (?m)^  http://prometheus-mcp\.local/mcp$
+      - notMatchRegexRaw:
+          pattern: mcp\.example\.com
+      - notMatchRegexRaw:
+          pattern: port-forward

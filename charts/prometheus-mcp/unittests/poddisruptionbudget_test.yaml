@@ -1,0 +1,33 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/helm-unittest/helm-unittest/main/schema/helm-testsuite.json
+suite: test poddisruptionbudget
+templates:
+  - poddisruptionbudget.yaml
+tests:
+  - it: should be empty when podDisruptionBudget is not set
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: should render the budget fields against the pod selector
+    set:
+      podDisruptionBudget:
+        minAvailable: 1
+        unhealthyPodEvictionPolicy: AlwaysAllow
+    asserts:
+      - hasDocuments:
+          count: 1
+      - isKind:
+          of: PodDisruptionBudget
+      - isAPIVersion:
+          of: policy/v1
+      - equal:
+          path: spec.minAvailable
+          value: 1
+      - equal:
+          path: spec.unhealthyPodEvictionPolicy
+          value: AlwaysAllow
+      - equal:
+          path: spec.selector.matchLabels
+          value:
+            app.kubernetes.io/name: prometheus-mcp
+            app.kubernetes.io/instance: RELEASE-NAME

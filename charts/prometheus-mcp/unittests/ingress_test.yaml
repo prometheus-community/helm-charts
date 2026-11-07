@@ -1,0 +1,52 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/helm-unittest/helm-unittest/main/schema/helm-testsuite.json
+suite: test ingress
+templates:
+  - ingress.yaml
+tests:
+  - it: should be empty if ingress is not enabled
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: should render valid rules with an ingressClassName and TLS
+    set:
+      ingress.enabled: true
+      ingress.ingressClassName: nginx
+      ingress.tls:
+        - secretName: mcp-tls
+          hosts:
+            - prometheus-mcp.local
+    asserts:
+      - hasDocuments:
+          count: 1
+      - isAPIVersion:
+          of: networking.k8s.io/v1
+      - equal:
+          path: spec.ingressClassName
+          value: nginx
+      - equal:
+          path: spec.rules[0].host
+          value: prometheus-mcp.local
+      - equal:
+          path: spec.rules[0].http.paths[0].path
+          value: /
+      - equal:
+          path: spec.rules[0].http.paths[0].pathType
+          value: Prefix
+      - equal:
+          path: spec.rules[0].http.paths[0].backend.service.name
+          value: RELEASE-NAME-prometheus-mcp
+      - equal:
+          path: spec.rules[0].http.paths[0].backend.service.port.number
+          value: 8080
+      - equal:
+          path: spec.tls[0].secretName
+          value: mcp-tls
+
+  - it: should fail when enabled with no hosts
+    set:
+      ingress.enabled: true
+      ingress.hosts: []
+    asserts:
+      - failedTemplate:
+          errorPattern: "ingress.hosts is empty"

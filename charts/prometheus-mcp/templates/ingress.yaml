@@ -1,0 +1,54 @@
+{{- if .Values.ingress.enabled -}}
+{{- if empty .Values.ingress.hosts -}}
+{{- fail "ingress.enabled is true but ingress.hosts is empty" -}}
+{{- end -}}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ include "prometheus-mcp.fullname" . }}
+  labels:
+    {{- include "prometheus-mcp.labels" . | nindent 4 }}
+    {{- with .Values.ingress.labels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+  {{- with .Values.ingress.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  {{- with .Values.ingress.ingressClassName }}
+  ingressClassName: {{ . }}
+  {{- end }}
+  {{- if .Values.ingress.tls }}
+  tls:
+    {{- range .Values.ingress.tls }}
+    - hosts:
+        {{- range .hosts }}
+        - {{ . | quote }}
+        {{- end }}
+      secretName: {{ .secretName }}
+    {{- end }}
+  {{- end }}
+  rules:
+    {{- range .Values.ingress.hosts }}
+    {{- $host := .host }}
+    {{- if empty .paths }}
+    {{- fail (printf "ingress.hosts entry %q has no paths" $host) }}
+    {{- end }}
+    - host: {{ $host | quote }}
+      http:
+        paths:
+          {{- range .paths }}
+          {{- if not .path }}
+          {{- fail (printf "ingress.hosts entry %q has a paths entry without a path" $host) }}
+          {{- end }}
+          - path: {{ .path }}
+            pathType: {{ .pathType | default "Prefix" }}
+            backend:
+              service:
+                name: {{ include "prometheus-mcp.fullname" $ }}
+                port:
+                  number: {{ $.Values.service.port }}
+          {{- end }}
+    {{- end }}
+{{- end }}
