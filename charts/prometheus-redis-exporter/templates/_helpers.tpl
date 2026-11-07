@@ -75,3 +75,12 @@ Selector labels
 app.kubernetes.io/name: {{ include "prometheus-redis-exporter.name" . }}
 app.kubernetes.io/instance: {{ .Release.Name }}
 {{- end }}
+
+{{/*
+Pod labels: the common labels without helm.sh/chart. That label carries the chart version, so
+including it in the pod template changes the pod-template hash on every chart release, rolling
+the workload even when neither the image nor the configuration changed.
+*/}}
+{{- define "prometheus-redis-exporter.podLabels" -}}
+{{- omit (include "prometheus-redis-exporter.labels" . | fromYaml) "helm.sh/chart" | toYaml -}}
+{{- end }}
