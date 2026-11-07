@@ -291,5 +291,6 @@ including it in the pod template changes the pod-template hash on every chart re
 the workload even when neither the image nor the configuration changed.
 */}}
 {{- define "prometheus-blackbox-exporter.podLabels" -}}
-{{- omit (include "prometheus-blackbox-exporter.labels" . | fromYaml) "helm.sh/chart" | toYaml -}}
+{{- $labels := omit (include "prometheus-blackbox-exporter.labels" . | fromYaml) "helm.sh/chart" -}}
+{{- merge (deepCopy (.Values.pod.labels | default dict)) $labels | toYaml -}}
 {{- end }}
