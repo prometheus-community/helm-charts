@@ -13,7 +13,7 @@ The chart is distributed as an [OCI Artifact](https://helm.sh/docs/topics/regist
 - OCI Artifact: `oci://ghcr.io/prometheus-community/charts/prometheus-adapter`
 - Helm Repository: `https://prometheus-community.github.io/helm-charts` with chart `prometheus-adapter`
 
-The installation instructions use the OCI registry. Refer to the [`helm repo`]([`helm repo`](https://helm.sh/docs/helm/helm_repo/)) command documentation for information on installing charts via the traditional repository.
+The installation instructions use the OCI registry. Refer to the [`helm repo`](https://helm.sh/docs/helm/helm_repo/) command documentation for information on installing charts via the traditional repository.
 
 ### Install Helm Chart
 
@@ -53,7 +53,7 @@ Readiness and liveness probes are now fully configurable through values `readine
 
 #### To 4.0.0
 
-Previously, security context of the container was set directly in the deployment template. This release makes it configurable through the new configuration variable `securityContext` whilst keeping the previously set values as defaults. Furthermore, previous variable `runAsUser` is now set in `securityContext` and is not used any longer. Please, use `securityContext.runAsUser` instead. In the same security context, `seccompProfile` has been enabled and set to type `RuntimeDefault`.
+Previously, security context of the container was set directly in the deployment template. This release makes it configurable through the new configuration variable `securityContext` whilst keeping the previously set values as defaults. Furthermore, the previous variable `runAsUser` is now set in `securityContext` and is not used any longer. Please, use `securityContext.runAsUser` instead. In the same security context, `seccompProfile` has been enabled and set to type `RuntimeDefault`.
 
 #### To 3.0.0
 
@@ -61,7 +61,7 @@ Due to a change in deployment labels, the upgrade requires `helm upgrade --force
 
 ## Configuration
 
-See [Customizing the Chart Before Installing](https://helm.sh/docs/intro/using_helm/#customizing-the-chart-before-installing). To see all configurable options with detailed comments, visit the chart's [values.yaml](./values.yaml), or run these configuration commands:
+See [Customizing the Chart Before Installing](https://helm.sh/docs/intro/using_helm/#customizing-the-chart-before-installing). To see all configurable options with detailed comments, visit the chart's [values.yaml](https://github.com/prometheus-community/helm-charts/blob/main/charts/prometheus-adapter/values.yaml), or run these configuration commands:
 
 ```console
 helm show values oci://ghcr.io/prometheus-community/charts/prometheus-adapter
