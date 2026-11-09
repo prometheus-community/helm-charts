@@ -1,0 +1,38 @@
+suite: test servicemonitor
+templates:
+  - templates/servicemonitor.yaml
+tests:
+  - it: should not render by default
+    asserts:
+      - hasDocuments:
+          count: 0
+  - it: should use monitoring.coreos.com/v1 by default
+    set:
+      prometheus:
+        monitor:
+          enabled: true
+    asserts:
+      - isKind:
+          of: ServiceMonitor
+      - isAPIVersion:
+          of: monitoring.coreos.com/v1
+  - it: should use the configured apiVersion
+    set:
+      prometheus:
+        monitor:
+          enabled: true
+          apiVersion: azmonitoring.coreos.com/v1
+    asserts:
+      - isKind:
+          of: ServiceMonitor
+      - isAPIVersion:
+          of: azmonitoring.coreos.com/v1
+  - it: should fall back to monitoring.coreos.com/v1 when apiVersion is empty
+    set:
+      prometheus:
+        monitor:
+          enabled: true
+          apiVersion: ""
+    asserts:
+      - isAPIVersion:
+          of: monitoring.coreos.com/v1
