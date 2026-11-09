@@ -1,13 +1,11 @@
-{{- if eq (printf "%s" .Values.stackdriver.projectId) "FALSE" }}
-######################################################################################
-####   ERROR: You did not set stackdriver.projectId in your `helm install' call. ####
-######################################################################################
-
-This deployment will be incomplete until you set an appropriate Google Cloud
-Project ID so we know where to gather metrics from.  You can do this by:
+{{- if not (or .Values.stackdriver.projectIds .Values.stackdriver.projectFilters) }}
+Neither stackdriver.projectIds nor stackdriver.projectFilters is set, so the
+exporter will use the default project of its Google credentials. To choose
+the projects, run for example:
 
     helm upgrade {{ .Release.Name }} \
-        --set stackdriver.projectId=project-id stable/stackdriver-exporter
+        oci://ghcr.io/prometheus-community/charts/prometheus-stackdriver-exporter \
+        --reuse-values --set 'stackdriver.projectIds[0]=project-id'
 {{- end }}
 {{- $namespace := include "stackdriver-exporter.namespace" . }}
 
@@ -15,14 +13,14 @@ Project ID so we know where to gather metrics from.  You can do this by:
 {{- if contains "NodePort" .Values.service.type }}
   export NODE_PORT=$(kubectl get --namespace {{ $namespace }} -o jsonpath="{.spec.ports[0].nodePort}" services {{ template "stackdriver-exporter.fullname" . }})
   export NODE_IP=$(kubectl get nodes --namespace {{ $namespace }} -o jsonpath="{.items[0].status.addresses[0].address}")
-  echo http://$NODE_IP:$NODE_PORT{{ .Values.web.path }}
+  echo http://$NODE_IP:$NODE_PORT{{ .Values.web.telemetryPath }}
 {{- else if contains "LoadBalancer" .Values.service.type }}
      NOTE: It may take a few minutes for the LoadBalancer IP to be available.
            You can watch the status of by running 'kubectl get svc -w {{ template "stackdriver-exporter.fullname" . }}'
   export SERVICE_IP=$(kubectl get svc --namespace {{ $namespace }} {{ template "stackdriver-exporter.fullname" . }} -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
-  echo http://$SERVICE_IP:{{ .Values.service.httpPort }}{{ .Values.web.path }}
+  echo http://$SERVICE_IP:{{ .Values.service.httpPort }}{{ .Values.web.telemetryPath }}
 {{- else if contains "ClusterIP"  .Values.service.type }}
-  export POD_NAME=$(kubectl get pods --namespace {{ $namespace }} -l "app={{ template "stackdriver-exporter.fullname" . }}" -o jsonpath="{.items[0].metadata.name}")
-  echo "Visit http://127.0.0.1:{{ .Values.service.httpPort }}{{ .Values.web.path }} to use your application"
+  export POD_NAME=$(kubectl get pods --namespace {{ $namespace }} -l "app.kubernetes.io/name={{ include "stackdriver-exporter.name" . }},app.kubernetes.io/instance={{ .Release.Name }}" -o jsonpath="{.items[0].metadata.name}")
+  echo "Visit http://127.0.0.1:{{ .Values.service.httpPort }}{{ .Values.web.telemetryPath }} to use your application"
   kubectl port-forward $POD_NAME {{ .Values.service.httpPort }}:{{ .Values.service.httpPort }} --namespace {{ $namespace }}
 {{- end }}
