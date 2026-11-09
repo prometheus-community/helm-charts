@@ -1,0 +1,33 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/helm-unittest/helm-unittest/main/schema/helm-testsuite.json
+suite: NOTES
+templates:
+  - NOTES.txt
+release:
+  name: my-release
+  namespace: monitoring
+tests:
+  - it: selects the exporter pod by its selector labels and prints the metrics path
+    set:
+      stackdriver:
+        projectIds:
+          - my-project
+    asserts:
+      - matchRegexRaw:
+          pattern: '-l "app.kubernetes.io/name=prometheus-stackdriver-exporter,app.kubernetes.io/instance=my-release"'
+      - matchRegexRaw:
+          pattern: 'Visit http://127.0.0.1:9255/metrics to use your application'
+      - notMatchRegexRaw:
+          pattern: 'Neither stackdriver.projectIds'
+
+  - it: says the default project is used when no project is set
+    asserts:
+      - matchRegexRaw:
+          pattern: 'Neither stackdriver.projectIds nor stackdriver.projectFilters is set'
+
+  - it: does not warn when only projectFilters is set
+    set:
+      stackdriver:
+        projectFilters: "labels.monitored:true"
+    asserts:
+      - notMatchRegexRaw:
+          pattern: 'Neither stackdriver.projectIds'
