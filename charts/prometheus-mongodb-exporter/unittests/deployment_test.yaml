@@ -1,0 +1,51 @@
+suite: deployment environment variables
+templates:
+  - deployment.yaml
+  - secret.yaml
+tests:
+  - it: preserves numeric credentials as strings
+    set:
+      serviceMonitor.multiTarget.enabled: true
+      serviceMonitor.multiTarget.targets:
+        - uri: mongodb://mongodb:27017/admin
+          name: mongodb
+      serviceMonitor.multiTarget.username: '1234'
+      serviceMonitor.multiTarget.password.value: '123456'
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: MONGODB_USER
+            value: '1234'
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: MONGODB_PASSWORD
+            value: '123456'
+    template: deployment.yaml
+  - it: preserves YAML punctuation in passwords
+    set:
+      serviceMonitor.multiTarget.enabled: true
+      serviceMonitor.multiTarget.targets:
+        - uri: mongodb://mongodb:27017/admin
+          name: mongodb
+      serviceMonitor.multiTarget.username: monitor
+      serviceMonitor.multiTarget.password.value: 'token: value # suffix'
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: MONGODB_PASSWORD
+            value: 'token: value # suffix'
+    template: deployment.yaml
+  - it: preserves escaped characters in extra environment variables
+    set:
+      env:
+        CUSTOM_VALUE: C:\certs\client.pem
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: CUSTOM_VALUE
+            value: C:\certs\client.pem
+    template: deployment.yaml
