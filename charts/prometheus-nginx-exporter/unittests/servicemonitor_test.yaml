@@ -1,0 +1,70 @@
+suite: test servicemonitor
+templates:
+  - servicemonitor.yaml
+tests:
+  - it: should not render by default
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: should render multiple additional labels
+    set:
+      serviceMonitor:
+        enabled: true
+        additionalLabels:
+          team: web
+          release: prometheus
+    asserts:
+      - equal:
+          path: metadata.labels.team
+          value: web
+      - equal:
+          path: metadata.labels.release
+          value: prometheus
+
+  - it: should render targetLabels under spec
+    set:
+      serviceMonitor:
+        enabled: true
+        targetLabels:
+          - app
+          - team
+    asserts:
+      - equal:
+          path: spec.targetLabels
+          value:
+            - app
+            - team
+      - notExists:
+          path: spec.endpoints[0].targetLabels
+
+  - it: should render multiple relabelings
+    set:
+      serviceMonitor:
+        enabled: true
+        metricRelabelings:
+          - action: drop
+            sourceLabels: [__name__]
+            regex: foo
+          - action: drop
+            sourceLabels: [__name__]
+            regex: bar
+        relabelings:
+          - action: replace
+            targetLabel: env
+            replacement: prod
+          - action: labeldrop
+            regex: tmp
+    asserts:
+      - lengthEqual:
+          path: spec.endpoints[0].metricRelabelings
+          count: 2
+      - equal:
+          path: spec.endpoints[0].metricRelabelings[1].regex
+          value: bar
+      - lengthEqual:
+          path: spec.endpoints[0].relabelings
+          count: 2
+      - equal:
+          path: spec.endpoints[0].relabelings[0].replacement
+          value: prod

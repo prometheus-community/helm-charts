@@ -22,7 +22,7 @@ spec:
   template:
     metadata:
       labels:
-        {{- include "prometheus-nginx-exporter.labels" . | indent 8 }}
+        {{- include "prometheus-nginx-exporter.podLabels" . | nindent 8 }}
         {{- with .Values.podLabels }}
         {{- toYaml . | nindent 8 }}
         {{- end }}
@@ -50,12 +50,16 @@ spec:
             {{- if semverCompare ">=1.0.0-0" (coalesce .Values.image.tag .Chart.AppVersion) }}
             - "--nginx.scrape-uri={{ tpl .Values.nginxServer . }}"
             {{- range $key, $value := .Values.options }}
+            {{- if kindIs "bool" $value }}
+            - "--{{ if not $value }}no-{{ end }}{{ $key }}"
+            {{- else }}
             - "--{{ $key }}{{ if $value }}={{ $value }}{{ end }}"
+            {{- end }}
             {{- end }}
             {{- else }}
             - "-nginx.scrape-uri={{ tpl .Values.nginxServer . }}"
             {{- range $key, $value := .Values.options }}
-            - "-{{ $key }}{{ if $value }}={{ $value }}{{ end }}"
+            - "-{{ $key }}{{ if or $value (kindIs "bool" $value) }}={{ $value }}{{ end }}"
             {{- end}}
             {{- end}}
           ports:

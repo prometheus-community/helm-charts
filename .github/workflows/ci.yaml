@@ -25,7 +25,7 @@ jobs:
           persist-credentials: false
 
       - name: Set up Helm
-        uses: azure/setup-helm@9bc31f4ebc9c6b171d7bfbaa5d006ae7abdb4310 # v5.0.1
+        uses: azure/setup-helm@2f5e7bc67f1f9972ab16657bb795f36d8f04de0e # v5.1.0
         with:
           # renovate: github=helm/helm
           version: v4.3.1
@@ -128,7 +128,7 @@ jobs:
           persist-credentials: false
 
       - name: Set up Helm
-        uses: azure/setup-helm@9bc31f4ebc9c6b171d7bfbaa5d006ae7abdb4310 # v5.0.1
+        uses: azure/setup-helm@2f5e7bc67f1f9972ab16657bb795f36d8f04de0e # v5.1.0
         with:
           # renovate: github=helm/helm
           version: v4.3.1
@@ -140,7 +140,7 @@ jobs:
           VERSION: 3.15.15
 
       - name: Create kind cluster
-        uses: helm/kind-action@1544676c07bb3570fcb70166beaa07c4528fd4aa # v1.15.1
+        uses: helm/kind-action@ea822c7bf1874f08e5a491df991c228edffc3376 # v1.15.2
         with:
           config: .github/linters/kind.yaml
           ignore_failed_clean: 'true'
@@ -160,7 +160,16 @@ jobs:
           chart="${chart#charts/}"
           chart="${chart%%/*}"
 
-          helm dependency update "./target/charts/$chart"
+          # A chart that does not exist on the target branch has no baseline
+          # release to install or diff against; the PR version is installed
+          # directly.
+          if [[ -d "./target/charts/$chart" ]]; then
+            helm dependency update "./target/charts/$chart"
+            echo baseline=true >> "$GITHUB_OUTPUT"
+          else
+            echo "charts/$chart does not exist on the target branch; skipping the baseline install"
+            echo baseline=false >> "$GITHUB_OUTPUT"
+          fi
           helm dependency update "./charts/$chart"
 
           echo chart="$chart" >> "$GITHUB_OUTPUT"
@@ -187,6 +196,7 @@ jobs:
 
       - name: Run helm install from main branch
         id: install
+        if: steps.setup.outputs.baseline == 'true'
         env:
           chart: "${{ steps.setup.outputs.chart }}"
           value_file: "${{ matrix.valuefile }}"
@@ -250,6 +260,7 @@ jobs:
             printf '```diff\n'
             helm diff upgrade "$chart" "./charts/$chart" \
               --namespace "$chart" \
+              --allow-unreleased \
               --suppress=CustomResourceDefinition \
               --normalize-manifests \
               --reset-values \
@@ -452,7 +463,47 @@ jobs:
           permission-contents: write
           permission-pull-requests: write
 
+      # The merge below uses --admin, which bypasses the ruleset's review requirements.
+      # A pending changes-requested review must still block the auto-merge. Pushes don't
+      # dismiss such reviews, so this also holds after Renovate rebases the branch.
+      - name: Check for changes-requested reviews
+        id: reviews
+        env:
+          GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          REPOSITORY: ${{ github.repository }}
+          # Passed via env so shellcheck doesn't flag the GraphQL $variables in single quotes (SC2016).
+          REVIEWS_QUERY: |-
+            query($owner: String!, $name: String!, $number: Int!, $endCursor: String) {
+              repository(owner: $owner, name: $name) {
+                pullRequest(number: $number) {
+                  latestOpinionatedReviews(first: 100, after: $endCursor) {
+                    nodes { state author { login } }
+                    pageInfo { hasNextPage endCursor }
+                  }
+                }
+              }
+            }
+        # language=bash
+        run: |
+          set -euo pipefail
+
+          blocking="$(
+            gh api graphql --paginate --slurp \
+              -F owner="${REPOSITORY%/*}" -F name="${REPOSITORY#*/}" -F number="$PR_NUMBER" \
+              -f query="$REVIEWS_QUERY" \
+              | jq -r '[.[].data.repository.pullRequest.latestOpinionatedReviews.nodes[] | select(.state == "CHANGES_REQUESTED") | .author.login] | join(", ")'
+          )"
+
+          if [[ -n "$blocking" ]]; then
+            echo "::warning::Changes requested by ${blocking}; skipping auto-approve and auto-merge."
+            echo "blocked=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "blocked=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Approve PR
+        if: steps.reviews.outputs.blocked == 'false'
         run: |
           gh pr review ${{ github.event.pull_request.number }} --approve --repo "${{ github.repository }}"
           gh pr merge ${{ github.event.pull_request.number }} --admin --squash --repo "${{ github.repository }}" --match-head-commit "${{ github.event.pull_request.head.sha }}" --delete-branch

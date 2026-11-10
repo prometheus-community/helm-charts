@@ -1,0 +1,32 @@
+suite: cloud sql proxy image pull policy
+templates:
+  - deployment.yaml
+  - secret.yaml
+  - secret-config.yaml
+tests:
+  - template: deployment.yaml
+    it: uses the default cloudsqlproxy.image.pullPolicy
+    set:
+      cloudsqlproxy.enabled: true
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[1].imagePullPolicy
+          value: IfNotPresent
+  - template: deployment.yaml
+    it: honors cloudsqlproxy.image.pullPolicy
+    set:
+      cloudsqlproxy.enabled: true
+      cloudsqlproxy.image.pullPolicy: Always
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[1].imagePullPolicy
+          value: Always
+  - template: deployment.yaml
+    it: still honors the legacy cloudsqlproxy.image.PullPolicy key
+    set:
+      cloudsqlproxy.enabled: true
+      cloudsqlproxy.image.PullPolicy: Never
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[1].imagePullPolicy
+          value: Never
