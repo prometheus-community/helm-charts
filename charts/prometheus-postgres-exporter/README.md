@@ -16,7 +16,7 @@ The chart is distributed as an [OCI Artifact](https://helm.sh/docs/topics/regist
 - OCI Artifact: `oci://ghcr.io/prometheus-community/charts/prometheus-postgres-exporter`
 - Helm Repository: `https://prometheus-community.github.io/helm-charts` with chart `prometheus-postgres-exporter`
 
-The installation instructions use the OCI registry. Refer to the [`helm repo`]([`helm repo`](https://helm.sh/docs/helm/helm_repo/)) command documentation for information on installing charts via the traditional repository.
+The installation instructions use the OCI registry. Refer to the [`helm repo`](https://helm.sh/docs/helm/helm_repo/) command documentation for information on installing charts via the traditional repository.
 
 ### Install Chart
 
@@ -160,7 +160,7 @@ kubectl patch deployment prometheus-postgres-exporter --type=json -p='[{"op": "r
 This chart can scrape metrics using either a [ServiceMonitor](https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/api-reference/api.md#servicemonitor) (`serviceMonitor.enabled`) or a [PodMonitor](https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/api-reference/api.md#podmonitor) (`podMonitor.enabled`) for the Prometheus Operator. Use PodMonitor when scraping pods directly without going through the Kubernetes Service.
 
 See [Customizing the Chart Before Installing](https://helm.sh/docs/intro/using_helm/#customizing-the-chart-before-installing).
-To see all configurable options with detailed comments, visit the chart's [values.yaml](./values.yaml), or run this command:
+To see all configurable options with detailed comments, visit the chart's [values.yaml](https://github.com/prometheus-community/helm-charts/blob/main/charts/prometheus-postgres-exporter/values.yaml), or run this command:
 
 ```console
 helm show values oci://ghcr.io/prometheus-community/charts/prometheus-postgres-exporter
