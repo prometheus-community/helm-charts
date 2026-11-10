@@ -63,6 +63,25 @@ tests:
           path: spec.template.spec.containers[1].args
           content: --web.external-url=https://am.example.com
 
+  - it: supports repeated and templated config reloader arguments
+    template: statefulset.yaml
+    set:
+      configmapReload:
+        extraArgs:
+          interval: 60
+          watched-dir:
+            - /etc/alertmanager
+            - "/etc/{{ .Chart.Name }}/secrets"
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].args
+          value:
+            - --reload-url=http://127.0.0.1:9093/-/reload
+            - --listen-address=0.0.0.0:8080
+            - --interval=60
+            - --watched-dir=/etc/alertmanager
+            - --watched-dir=/etc/alertmanager/secrets
+
   - it: omits the config reloader and adds a config checksum when disabled
     template: statefulset.yaml
     set:
