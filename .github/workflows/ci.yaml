@@ -472,6 +472,18 @@ jobs:
           GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
           REPOSITORY: ${{ github.repository }}
+          # Passed via env so shellcheck doesn't flag the GraphQL $variables in single quotes (SC2016).
+          REVIEWS_QUERY: |-
+            query($owner: String!, $name: String!, $number: Int!, $endCursor: String) {
+              repository(owner: $owner, name: $name) {
+                pullRequest(number: $number) {
+                  latestOpinionatedReviews(first: 100, after: $endCursor) {
+                    nodes { state author { login } }
+                    pageInfo { hasNextPage endCursor }
+                  }
+                }
+              }
+            }
         # language=bash
         run: |
           set -euo pipefail
@@ -479,7 +491,7 @@ jobs:
           blocking="$(
             gh api graphql --paginate --slurp \
               -F owner="${REPOSITORY%/*}" -F name="${REPOSITORY#*/}" -F number="$PR_NUMBER" \
-              -f query='query($owner: String!, $name: String!, $number: Int!, $endCursor: String) { repository(owner: $owner, name: $name) { pullRequest(number: $number) { latestOpinionatedReviews(first: 100, after: $endCursor) { nodes { state author { login } } pageInfo { hasNextPage endCursor } } } } }' \
+              -f query="$REVIEWS_QUERY" \
               | jq -r '[.[].data.repository.pullRequest.latestOpinionatedReviews.nodes[] | select(.state == "CHANGES_REQUESTED") | .author.login] | join(", ")'
           )"
 
