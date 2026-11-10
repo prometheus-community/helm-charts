@@ -477,8 +477,10 @@ jobs:
           set -euo pipefail
 
           blocking="$(
-            gh pr view "$PR_NUMBER" --repo "$REPOSITORY" --json latestReviews \
-              --jq '[.latestReviews[] | select(.state == "CHANGES_REQUESTED") | .author.login] | join(", ")'
+            gh api graphql --paginate --slurp \
+              -F owner="${REPOSITORY%/*}" -F name="${REPOSITORY#*/}" -F number="$PR_NUMBER" \
+              -f query='query($owner: String!, $name: String!, $number: Int!, $endCursor: String) { repository(owner: $owner, name: $name) { pullRequest(number: $number) { latestOpinionatedReviews(first: 100, after: $endCursor) { nodes { state author { login } } pageInfo { hasNextPage endCursor } } } } }' \
+              --jq '[.[].data.repository.pullRequest.latestOpinionatedReviews.nodes[] | select(.state == "CHANGES_REQUESTED") | .author.login] | join(", ")'
           )"
 
           if [[ -n "$blocking" ]]; then
