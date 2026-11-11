@@ -1,0 +1,25 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/helm-unittest/helm-unittest/main/schema/helm-testsuite.json
+suite: test kube-apiserver metric relabelings
+templates:
+  - exporters/kube-api-server/servicemonitor.yaml
+tests:
+  - it: should drop the fine-grained apiserver_watch_events_dispatch_duration_seconds buckets
+    asserts:
+      - contains:
+          path: spec.endpoints[0].metricRelabelings
+          content:
+            action: drop
+            regex: apiserver_watch_events_dispatch_duration_seconds_bucket;(0\.0005|0\.005|0\.025|0\.05|0\.25|0\.5|2\.5)
+            sourceLabels:
+              - __name__
+              - le
+  - it: should still drop the noisy apiserver request buckets
+    asserts:
+      - contains:
+          path: spec.endpoints[0].metricRelabelings
+          content:
+            action: drop
+            regex: (etcd_request|apiserver_request_slo|apiserver_request_sli|apiserver_request)_duration_seconds_bucket;(0\.15|0\.2|0\.3|0\.35|0\.4|0\.45|0\.6|0\.7|0\.8|0\.9|1\.25|1\.5|1\.75|2|3|3\.5|4|4\.5|6|7|8|9|15|20|40|45|50)(\.0)?
+            sourceLabels:
+              - __name__
+              - le
