@@ -1,0 +1,33 @@
+suite: test daemonset
+templates:
+  - templates/daemonset.yaml
+tests:
+  - it: should not set env by default
+    asserts:
+      - notExists:
+          path: spec.template.spec.containers[0].env
+
+  - it: should render env as name/value pairs
+    set:
+      env:
+        HTTP_PROXY: http://proxy:3128
+        NO_PROXY: localhost
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].env
+          value:
+            - name: HTTP_PROXY
+              value: http://proxy:3128
+            - name: NO_PROXY
+              value: localhost
+
+  - it: should quote non-string env values
+    set:
+      env:
+        GOMAXPROCS: 2
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: GOMAXPROCS
+            value: "2"
