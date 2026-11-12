@@ -22,6 +22,8 @@ tests:
           path: spec.shardingStrategy
       - notExists:
           path: spec.remoteWriteReceiverMessageVersions
+      - notExists:
+          path: spec.extraScrapeMetrics
 
   - it: should render the global scrape limits
     set:
@@ -227,3 +229,23 @@ tests:
       - equal:
           path: spec.tsdb.staleSeriesCompactionThreshold
           value: 0.5
+
+  - it: should render extraScrapeMetrics when enabled
+    set:
+      prometheus.enabled: true
+      prometheus.prometheusSpec.extraScrapeMetrics: true
+    asserts:
+      - equal:
+          path: spec.extraScrapeMetrics
+          value: true
+
+  - it: should render extraScrapeMetrics when explicitly disabled
+    # kindIs "bool" rather than a truthiness check, so an explicit false is
+    # distinguishable from leaving the value unset
+    set:
+      prometheus.enabled: true
+      prometheus.prometheusSpec.extraScrapeMetrics: false
+    asserts:
+      - equal:
+          path: spec.extraScrapeMetrics
+          value: false

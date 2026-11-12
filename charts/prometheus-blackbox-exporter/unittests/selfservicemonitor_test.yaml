@@ -1,0 +1,43 @@
+suite: self ServiceMonitor
+templates:
+  - templates/selfservicemonitor.yaml
+tests:
+  - it: scrapes only the http port by default
+    set:
+      serviceMonitor.selfMonitor.enabled: true
+    asserts:
+      - lengthEqual:
+          path: spec.endpoints
+          count: 1
+      - equal:
+          path: spec.endpoints[0].port
+          value: http
+
+  - it: scrapes each port once when the config reloader is enabled
+    set:
+      serviceMonitor.selfMonitor.enabled: true
+      configReloader.enabled: true
+    asserts:
+      - lengthEqual:
+          path: spec.endpoints
+          count: 2
+      - equal:
+          path: spec.endpoints[0].port
+          value: http
+      - equal:
+          path: spec.endpoints[1].port
+          value: reloader-web
+
+  - it: keeps user-defined port names
+    set:
+      serviceMonitor.selfMonitor.enabled: true
+      serviceMonitor.selfMonitor.port: metrics
+      configReloader.enabled: true
+      configReloader.serviceMonitor.selfMonitor.port: reloader
+    asserts:
+      - equal:
+          path: spec.endpoints[0].port
+          value: metrics
+      - equal:
+          path: spec.endpoints[1].port
+          value: reloader

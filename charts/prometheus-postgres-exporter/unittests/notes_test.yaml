@@ -1,0 +1,27 @@
+suite: NOTES
+templates:
+  - NOTES.txt
+release:
+  name: my-release
+  namespace: monitoring
+set:
+  config:
+    datasource:
+      password: secret
+tests:
+  - it: selects the exporter pod by its selector labels
+    asserts:
+      - matchRegexRaw:
+          pattern: '-l "app.kubernetes.io/name=prometheus-postgres-exporter,app.kubernetes.io/instance=my-release"'
+      - matchRegexRaw:
+          pattern: 'kubectl port-forward \$POD_NAME 8080:9187 --namespace monitoring'
+  - it: uses namespaceOverride and service.targetPort
+    set:
+      namespaceOverride: exporters
+      service:
+        targetPort: 9999
+    asserts:
+      - matchRegexRaw:
+          pattern: 'kubectl get pods --namespace exporters -l'
+      - matchRegexRaw:
+          pattern: 'kubectl port-forward \$POD_NAME 8080:9999 --namespace exporters'
