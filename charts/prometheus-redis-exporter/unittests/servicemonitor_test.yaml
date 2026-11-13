@@ -1,0 +1,43 @@
+suite: test servicemonitor
+templates:
+  - templates/servicemonitor.yaml
+tests:
+  - it: should not render when disabled
+    capabilities:
+      apiVersions:
+        - monitoring.coreos.com/v1
+    asserts:
+      - hasDocuments:
+          count: 0
+  - it: should render with the default apiVersion when the cluster serves it
+    capabilities:
+      apiVersions:
+        - monitoring.coreos.com/v1
+    set:
+      serviceMonitor:
+        enabled: true
+    asserts:
+      - isKind:
+          of: ServiceMonitor
+      - isAPIVersion:
+          of: monitoring.coreos.com/v1
+  - it: should not render when the cluster does not serve the apiVersion
+    set:
+      serviceMonitor:
+        enabled: true
+    asserts:
+      - hasDocuments:
+          count: 0
+  - it: should render a custom apiVersion served without monitoring.coreos.com
+    capabilities:
+      apiVersions:
+        - azmonitoring.coreos.com/v1
+    set:
+      serviceMonitor:
+        enabled: true
+        apiVersion: azmonitoring.coreos.com/v1
+    asserts:
+      - isKind:
+          of: ServiceMonitor
+      - isAPIVersion:
+          of: azmonitoring.coreos.com/v1
