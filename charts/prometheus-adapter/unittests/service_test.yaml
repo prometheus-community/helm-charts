@@ -1,0 +1,34 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/helm-unittest/helm-unittest/main/schema/helm-testsuite.json
+suite: test service annotations
+templates:
+  - service.yaml
+tests:
+  - it: should not set annotations by default
+    asserts:
+      - notExists:
+          path: metadata.annotations
+
+  - it: should render multiple service annotations
+    set:
+      service.annotations:
+        a.example.com/one: "1"
+        a.example.com/two: "2"
+    asserts:
+      - equal:
+          path: metadata.annotations
+          value:
+            a.example.com/one: "1"
+            a.example.com/two: "2"
+
+  - it: should merge service annotations with customAnnotations
+    set:
+      service.annotations:
+        a.example.com/one: "1"
+      customAnnotations:
+        c.example.com/x: "x"
+    asserts:
+      - equal:
+          path: metadata.annotations
+          value:
+            a.example.com/one: "1"
+            c.example.com/x: "x"
