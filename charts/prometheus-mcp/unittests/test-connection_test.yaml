@@ -1,0 +1,18 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/helm-unittest/helm-unittest/main/schema/helm-testsuite.json
+suite: test connection test pod
+templates:
+  - tests/test-connection.yaml
+tests:
+  - it: should wait for readiness, then probe the metrics endpoint at telemetryPath
+    set:
+      telemetryPath: /internal/metrics
+    asserts:
+      - equal:
+          path: metadata.annotations["helm.sh/hook"]
+          value: test
+      - matchRegex:
+          path: spec.initContainers[0].args[0]
+          pattern: http://RELEASE-NAME-prometheus-mcp:8080/-/ready
+      - equal:
+          path: spec.containers[0].args[2]
+          value: http://RELEASE-NAME-prometheus-mcp:8080/internal/metrics
