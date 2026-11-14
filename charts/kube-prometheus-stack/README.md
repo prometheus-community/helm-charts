@@ -230,6 +230,22 @@ You can read more information on how to add firewall rules for the GKE control p
 
 Alternatively, you can disable the hooks by setting `prometheusOperator.admissionWebhooks.enabled=false`.
 
+### Monitoring kube-dns on GKE 1.36 and later
+
+GKE 1.36 and later use CoreDNS for `kube-dns` and expose [DNS metrics on port 9153](https://docs.cloud.google.com/kubernetes-engine/docs/concepts/kube-dns#view-kube-dns-metrics). If you previously enabled `kubeDns`, the legacy monitor still scrapes ports 10054 and 10055. Switch to the CoreDNS monitor in your Helm values:
+
+```yaml
+kubeDns:
+  enabled: false
+coreDns:
+  enabled: true
+  service:
+    selector:
+      k8s-app: kube-dns
+```
+
+After upgrading the release, check that the CoreDNS target on port 9153 is up in Prometheus.
+
 ### Argo CD
 
 The operator CRDs are larger than the 262144 byte limit on the `kubectl.kubernetes.io/last-applied-configuration` annotation — `crd-prometheuses.yaml` alone is around 840 KiB — so a client-side apply fails with `metadata.annotations: Too long`. Sync the application with `ServerSideApply=true`.
