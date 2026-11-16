@@ -51,6 +51,16 @@ app.kubernetes.io/component: {{ .Values.server.name }}
 {{- end -}}
 
 {{/*
+Pod labels for the server: the server labels without helm.sh/chart. That label carries the chart
+version, so including it in the pod template recreates the pod on every chart upgrade, even when
+nothing about the workload changed.
+*/}}
+{{- define "prometheus.server.podLabels" -}}
+{{- $podLabels := (include "prometheus.server.labels" . | fromYaml) }}
+{{- omit $podLabels "helm.sh/chart" | toYaml }}
+{{- end -}}
+
+{{/*
 Create a default fully qualified app name.
 We truncate at 63 chars because some Kubernetes name fields are limited to this (by the DNS naming spec).
 */}}

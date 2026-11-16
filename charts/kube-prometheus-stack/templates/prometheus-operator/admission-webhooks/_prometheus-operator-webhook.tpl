@@ -19,3 +19,12 @@ cert-manager.io/inject-ca-from: {{ printf "%s/%s-admission" (include "kube-prome
 true
 {{- end -}}
 {{- end }}
+
+{{/*
+Pod labels for prometheus-operator-webhook: the common labels without the two that carry the
+chart version. See kube-prometheus-stack.prometheus-operator.podLabels.
+*/}}
+{{- define "kube-prometheus-stack.prometheus-operator-webhook.podLabels" }}
+{{- $podLabels := (include "kube-prometheus-stack.prometheus-operator-webhook.labels" . | fromYaml) }}
+{{- omit $podLabels "chart" "app.kubernetes.io/version" | toYaml }}
+{{- end }}

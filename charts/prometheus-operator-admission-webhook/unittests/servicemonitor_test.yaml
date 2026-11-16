@@ -1,0 +1,43 @@
+suite: test servicemonitor
+templates:
+  - servicemonitor.yaml
+tests:
+  - it: should render metricRelabelings
+    set:
+      serviceMonitor:
+        enabled: true
+        metricRelabelings:
+          - action: drop
+            regex: go_.*
+            sourceLabels: [__name__]
+    asserts:
+      - equal:
+          path: spec.endpoints[0].metricRelabelings
+          value:
+            - action: drop
+              regex: go_.*
+              sourceLabels: [__name__]
+
+  - it: should still render the previously documented metricRelabeling value
+    set:
+      serviceMonitor:
+        enabled: true
+        metricRelabeling:
+          - action: drop
+            regex: go_.*
+            sourceLabels: [__name__]
+    asserts:
+      - equal:
+          path: spec.endpoints[0].metricRelabelings
+          value:
+            - action: drop
+              regex: go_.*
+              sourceLabels: [__name__]
+
+  - it: should not render metricRelabelings by default
+    set:
+      serviceMonitor:
+        enabled: true
+    asserts:
+      - notExists:
+          path: spec.endpoints[0].metricRelabelings

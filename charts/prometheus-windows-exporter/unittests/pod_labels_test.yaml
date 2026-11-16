@@ -1,0 +1,51 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/helm-unittest/helm-unittest/main/schema/helm-testsuite.json
+suite: test daemonset pod labels
+templates:
+  - daemonset.yaml
+tests:
+  - it: should not put the chart version in the pod labels
+    asserts:
+      - notExists:
+          path: spec.template.metadata.labels["helm.sh/chart"]
+      - exists:
+          path: metadata.labels["helm.sh/chart"]
+
+  - it: should keep the pod labels unchanged when only the chart version changes
+    chart:
+      version: 99.99.99
+    asserts:
+      - isSubset:
+          path: spec.template.metadata.labels
+          content:
+            app.kubernetes.io/name: prometheus-windows-exporter
+            app.kubernetes.io/instance: RELEASE-NAME
+            app.kubernetes.io/component: metrics
+            app.kubernetes.io/part-of: prometheus-windows-exporter
+            app.kubernetes.io/managed-by: Helm
+      - notExists:
+          path: spec.template.metadata.labels["helm.sh/chart"]
+
+  - it: should keep the selector labels on the pod template
+    asserts:
+      - isSubset:
+          path: spec.selector.matchLabels
+          content:
+            app.kubernetes.io/name: prometheus-windows-exporter
+            app.kubernetes.io/instance: RELEASE-NAME
+      - isSubset:
+          path: spec.template.metadata.labels
+          content:
+            app.kubernetes.io/name: prometheus-windows-exporter
+            app.kubernetes.io/instance: RELEASE-NAME
+
+  - it: should still render user supplied pod labels
+    set:
+      podLabels:
+        team: platform
+      releaseLabel: true
+    asserts:
+      - isSubset:
+          path: spec.template.metadata.labels
+          content:
+            team: platform
+            release: RELEASE-NAME

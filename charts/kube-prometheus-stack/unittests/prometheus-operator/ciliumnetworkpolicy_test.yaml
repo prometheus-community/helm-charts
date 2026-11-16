@@ -1,0 +1,47 @@
+suite: prometheus-operator CiliumNetworkPolicy
+templates:
+  - prometheus-operator/ciliumnetworkpolicy.yaml
+set:
+  prometheusOperator.networkPolicy.enabled: true
+  prometheusOperator.networkPolicy.flavor: cilium
+tests:
+  - it: selects the operator pods by their pod labels without the chart version
+    chart:
+      version: 99.99.99
+    asserts:
+      - equal:
+          path: spec.endpointSelector.matchLabels
+          value:
+            app: kube-prometheus-stack-operator
+            app.kubernetes.io/component: prometheus-operator
+            app.kubernetes.io/instance: RELEASE-NAME
+            app.kubernetes.io/managed-by: Helm
+            app.kubernetes.io/name: kube-prometheus-stack-prometheus-operator
+            app.kubernetes.io/part-of: kube-prometheus-stack
+            heritage: Helm
+            release: RELEASE-NAME
+
+  - it: keeps chart-derived labels on the policy object
+    asserts:
+      - exists:
+          path: metadata.labels.chart
+      - exists:
+          path: metadata.labels["app.kubernetes.io/version"]
+
+  - it: uses app and the custom matchLabels when set
+    set:
+      prometheusOperator.networkPolicy.matchLabels:
+        team: platform
+    asserts:
+      - equal:
+          path: spec.endpointSelector.matchLabels
+          value:
+            app: kube-prometheus-stack-operator
+            team: platform
+
+  - it: renders nothing for the kubernetes flavor
+    set:
+      prometheusOperator.networkPolicy.flavor: kubernetes
+    asserts:
+      - hasDocuments:
+          count: 0

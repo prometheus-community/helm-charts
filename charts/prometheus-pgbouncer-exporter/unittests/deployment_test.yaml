@@ -1,0 +1,27 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/helm-unittest/helm-unittest/main/schema/helm-testsuite.json
+suite: test deployment args
+templates:
+  - deployment.yaml
+tests:
+  - it: should only render the default args
+    asserts:
+      - lengthEqual:
+          path: spec.template.spec.containers[0].args
+          count: 3
+
+  - it: should append config.extraArgs to the args
+    set:
+      config:
+        extraArgs:
+          - --pgBouncer.pid-file=/var/run/pgbouncer/pgbouncer.pid
+          - --web.config.file=/etc/pgbouncer-exporter/web-config.yml
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: --pgBouncer.pid-file=/var/run/pgbouncer/pgbouncer.pid
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: --web.config.file=/etc/pgbouncer-exporter/web-config.yml
+      - lengthEqual:
+          path: spec.template.spec.containers[0].args
+          count: 5

@@ -1,0 +1,26 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/helm-unittest/helm-unittest/main/schema/helm-testsuite.json
+suite: test statefulset volumeClaimTemplates
+templates:
+  - statefulset.yaml
+set:
+  runAsStatefulSet: true
+  persistentVolume.enabled: true
+tests:
+  - it: should render the default access mode
+    asserts:
+      - equal:
+          path: spec.volumeClaimTemplates[0].spec.accessModes
+          value:
+            - ReadWriteOnce
+
+  - it: should render multiple access modes
+    set:
+      persistentVolume.accessModes:
+        - ReadWriteOnce
+        - ReadWriteOncePod
+    asserts:
+      - equal:
+          path: spec.volumeClaimTemplates[0].spec.accessModes
+          value:
+            - ReadWriteOnce
+            - ReadWriteOncePod

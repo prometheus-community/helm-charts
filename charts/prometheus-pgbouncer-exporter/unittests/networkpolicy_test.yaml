@@ -1,0 +1,33 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/helm-unittest/helm-unittest/main/schema/helm-testsuite.json
+suite: test networkpolicy
+templates:
+  - networkpolicy.yaml
+tests:
+  - it: should not render the networkpolicy by default
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: should render without labels
+    set:
+      networkPolicy:
+        enabled: true
+    asserts:
+      - hasDocuments:
+          count: 1
+      - notExists:
+          path: metadata.labels
+
+  - it: should render multiple labels
+    set:
+      networkPolicy:
+        enabled: true
+        labels:
+          team: monitoring
+          example.com/owner: dba
+    asserts:
+      - equal:
+          path: metadata.labels
+          value:
+            team: monitoring
+            example.com/owner: dba

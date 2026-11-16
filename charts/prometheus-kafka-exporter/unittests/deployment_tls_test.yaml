@@ -1,0 +1,47 @@
+suite: exporter server TLS
+templates:
+  - deployment.yaml
+tests:
+  - it: enables server TLS without mutual authentication
+    set:
+      server.tls.enabled: true
+      server.tls.mountPath: /secret/certs
+      server.tls.secretName: server-tls
+      server.tls.mutualAuthEnabled: false
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: --server.tls.enabled
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: --server.tls.cert-file=/secret/certs/tls.crt
+      - notContains:
+          path: spec.template.spec.containers[0].args
+          content: --server.tls.mutual-auth-enabled
+      - notContains:
+          path: spec.template.spec.containers[0].args
+          content: --server.tls.mutual-auth-enabled=false
+  - it: enables server TLS with mutual authentication
+    set:
+      server.tls.enabled: true
+      server.tls.mountPath: /secret/certs
+      server.tls.secretName: server-tls
+      server.tls.mutualAuthEnabled: true
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: --server.tls.enabled
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: --server.tls.cert-file=/secret/certs/tls.crt
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: --server.tls.mutual-auth-enabled
+      - notContains:
+          path: spec.template.spec.containers[0].args
+          content: --server.tls.mutual-auth-enabled=true
+  - it: leaves the server TLS flag absent by default
+    asserts:
+      - notContains:
+          path: spec.template.spec.containers[0].args
+          content: --server.tls.enabled

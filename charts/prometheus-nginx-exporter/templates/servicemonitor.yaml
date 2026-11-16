@@ -10,11 +10,15 @@ metadata:
   {{- end }}
   labels:
     {{- include "prometheus-nginx-exporter.labels" . | indent 4 }}
-    {{- if .Values.serviceMonitor.additionalLabels }}
-    {{ toYaml .Values.serviceMonitor.additionalLabels }}
+    {{- with .Values.serviceMonitor.additionalLabels }}
+    {{- toYaml . | nindent 4 }}
     {{- end }}
 spec:
   jobLabel: {{ template "prometheus-nginx-exporter.fullname" . }}
+  {{- with .Values.serviceMonitor.targetLabels }}
+  targetLabels:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
   endpoints:
     - port: http
       interval: {{ .Values.serviceMonitor.interval }}
@@ -23,17 +27,13 @@ spec:
       {{- if .Values.serviceMonitor.honorLabels }}
       honorLabels: true
       {{- end }}
-      {{- if .Values.serviceMonitor.targetLabels }}
-      targetLabels:
-      {{ toYaml .Values.serviceMonitor.targetLabels | indent 4 }}
-      {{- end }}
       {{- if .Values.serviceMonitor.metricRelabelings }}
       metricRelabelings:
-      {{ toYaml .Values.serviceMonitor.metricRelabelings | indent 4 }}
+        {{- toYaml .Values.serviceMonitor.metricRelabelings | nindent 8 }}
       {{- end }}
       {{- if .Values.serviceMonitor.relabelings }}
       relabelings:
-      {{ toYaml .Values.serviceMonitor.relabelings | indent 4 }}
+        {{- toYaml .Values.serviceMonitor.relabelings | nindent 8 }}
       {{- end }}
   selector:
     matchLabels:

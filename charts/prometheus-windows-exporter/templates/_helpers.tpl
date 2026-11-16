@@ -59,6 +59,16 @@ app.kubernetes.io/name: {{ include "prometheus-windows-exporter.name" . }}
 app.kubernetes.io/instance: {{ .Release.Name }}
 {{- end }}
 
+{{/*
+Pod labels: the common labels without helm.sh/chart. That label carries the chart version, so
+including it in the pod template restarts the DaemonSet on every chart upgrade, on every Windows
+node, even when nothing about the workload changed.
+*/}}
+{{- define "prometheus-windows-exporter.podLabels" }}
+{{- $podLabels := (include "prometheus-windows-exporter.labels" . | fromYaml) }}
+{{- omit $podLabels "helm.sh/chart" | toYaml }}
+{{- end }}
+
 
 {{/*
 Create the name of the service account to use

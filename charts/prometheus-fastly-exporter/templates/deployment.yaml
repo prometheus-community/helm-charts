@@ -41,10 +41,18 @@ spec:
             {{- range $key, $value := .Values.options }}
             {{- if kindIs "slice" $value }}
             {{- range $v := $value }}
-            - "-{{ $key }}{{ if $v }}={{ $v }}{{ end }}"
+            {{- if $v }}
+            - {{ printf "-%s=%v" $key $v | quote }}
+            {{- else }}
+            - {{ printf "-%s" $key | quote }}
+            {{- end }}
             {{- end }}
             {{- else }}
-            - "-{{ $key }}{{ if $value }}={{ $value }}{{ end }}"
+            {{- if $value }}
+            - {{ printf "-%s=%v" $key $value | quote }}
+            {{- else }}
+            - {{ printf "-%s" $key | quote }}
+            {{- end }}
             {{- end }}
             {{- end }}
           env:
