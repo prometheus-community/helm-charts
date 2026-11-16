@@ -1,0 +1,33 @@
+suite: test image rendering
+templates:
+  - deployment.yaml
+  - configmap.yaml
+  - secrets.yaml
+set:
+  config:
+    datasource:
+      password: secret
+tests:
+  - it: should prefix the registry when set
+    template: deployment.yaml
+    set:
+      image:
+        registry: quay.io
+        repository: prometheuscommunity/postgres-exporter
+        tag: v0.20.1
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: quay.io/prometheuscommunity/postgres-exporter:v0.20.1
+
+  - it: should omit the registry and slash when registry is empty
+    template: deployment.yaml
+    set:
+      image:
+        registry: ""
+        repository: registry.example.com/team/postgres-exporter
+        tag: v0.20.1
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: registry.example.com/team/postgres-exporter:v0.20.1
