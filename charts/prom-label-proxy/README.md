@@ -2,7 +2,7 @@
 
 A proxy that enforces a given label in a given PromQL query.
 
-**Homepage:** <https://github.com/oci://ghcr.io/prometheus-community/charts/prom-label-proxy>
+**Homepage:** <https://github.com/prometheus-community/prom-label-proxy>
 
 ## Usage
 

@@ -1,0 +1,48 @@
+suite: disruption budget constraints
+templates:
+  - pdb.yaml
+tests:
+  - it: does not create a disruption budget by default
+    asserts:
+      - hasDocuments:
+          count: 0
+  - it: preserves minAvailable set to 0 over the default maxUnavailable
+    set:
+      podDisruptionBudget.enabled: true
+      podDisruptionBudget.minAvailable: 0
+    asserts:
+      - equal:
+          path: spec.minAvailable
+          value: 0
+      - notExists:
+          path: spec.maxUnavailable
+  - it: preserves maxUnavailable set to 0
+    set:
+      podDisruptionBudget.enabled: true
+      podDisruptionBudget.maxUnavailable: 0
+    asserts:
+      - equal:
+          path: spec.maxUnavailable
+          value: 0
+      - notExists:
+          path: spec.minAvailable
+  - it: preserves minAvailable set to 50%
+    set:
+      podDisruptionBudget.enabled: true
+      podDisruptionBudget.minAvailable: 50%
+      podDisruptionBudget.maxUnavailable: null
+    asserts:
+      - equal:
+          path: spec.minAvailable
+          value: 50%
+      - notExists:
+          path: spec.maxUnavailable
+  - it: uses the default maxUnavailable when enabled
+    set:
+      podDisruptionBudget.enabled: true
+    asserts:
+      - equal:
+          path: spec.maxUnavailable
+          value: 1
+      - notExists:
+          path: spec.minAvailable
