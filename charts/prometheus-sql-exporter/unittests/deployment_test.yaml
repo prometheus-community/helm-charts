@@ -1,0 +1,35 @@
+suite: configuration rollout
+templates:
+  - deployment.yaml
+tests:
+  - it: tracks the default configuration checksum
+    set: {}
+    asserts:
+      - equal:
+          path: spec.template.metadata.annotations["checksum/config"]
+          value: 44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a
+  - it: tracks the exporter configuration content
+    set:
+      config:
+        jobs:
+          - name: postgres
+            interval: 30s
+            connections:
+              - postgres://postgres:password@postgres:5432/postgres?sslmode=disable
+            queries:
+              - name: up
+                query: SELECT 1 AS value
+                values:
+                  - value
+    asserts:
+      - equal:
+          path: spec.template.metadata.annotations["checksum/config"]
+          value: 16b9b34e31b02e081af002a61f3f48f36d8a3639f4ca0c30968895f88eea7e68
+  - it: keeps custom pod annotations
+    set:
+      annotations:
+        example.com/custom: retained
+    asserts:
+      - equal:
+          path: spec.template.metadata.annotations["example.com/custom"]
+          value: retained

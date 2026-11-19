@@ -1,0 +1,53 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/helm-unittest/helm-unittest/main/schema/helm-testsuite.json
+suite: test web configuration volumes
+templates:
+  - statefulset.yaml
+set:
+  webConfiguration:
+    existingSecret:
+      name: pushgateway-web-config
+  extraVolumes:
+    - name: custom-config
+      configMap:
+        name: custom-config
+tests:
+  - it: keeps the web configuration volume with a StatefulSet PVC and extra volumes
+    template: statefulset.yaml
+    set:
+      runAsStatefulSet: true
+      persistentVolume.enabled: true
+    asserts:
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: web-config
+            secret:
+              secretName: pushgateway-web-config
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: custom-config
+            configMap:
+              name: custom-config
+      - contains:
+          path: spec.template.spec.containers[0].volumeMounts
+          content:
+            name: web-config
+            mountPath: /etc/config
+      - equal:
+          path: spec.volumeClaimTemplates[0].metadata.name
+          value: storage-volume
+
+  - it: declares the web configuration volume once without extra volumes
+    template: statefulset.yaml
+    set:
+      runAsStatefulSet: true
+      persistentVolume.enabled: true
+      extraVolumes: []
+    asserts:
+      - equal:
+          path: spec.template.spec.volumes
+          value:
+            - name: web-config
+              secret:
+                secretName: pushgateway-web-config
