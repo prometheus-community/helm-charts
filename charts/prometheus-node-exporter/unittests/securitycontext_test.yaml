@@ -1,0 +1,79 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/helm-unittest/helm-unittest/main/schema/helm-testsuite.json
+suite: test daemonset security context defaults
+templates:
+  - daemonset.yaml
+tests:
+  - it: should keep the pod security context unchanged
+    asserts:
+      - equal:
+          path: spec.template.spec.securityContext
+          value:
+            fsGroup: 65534
+            runAsGroup: 65534
+            runAsNonRoot: true
+            runAsUser: 65534
+
+  - it: should harden the node-exporter container
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[?(@.name == "node-exporter")].securityContext
+          value:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+            seccompProfile:
+              type: RuntimeDefault
+
+  - it: should keep host access unchanged
+    asserts:
+      - equal:
+          path: spec.template.spec.hostNetwork
+          value: true
+      - equal:
+          path: spec.template.spec.hostPID
+          value: true
+
+  - it: should harden kube-rbac-proxy when enabled
+    set:
+      kubeRBACProxy:
+        enabled: true
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[?(@.name == "kube-rbac-proxy")].securityContext
+          value:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            seccompProfile:
+              type: RuntimeDefault
+
+  - it: should leave the opt-in root permission init container unchanged
+    set:
+      permissionInitContainer:
+        fixes:
+          rapl: true
+          slabinfo: true
+    asserts:
+      - equal:
+          path: spec.template.spec.initContainers[?(@.name == "permission-fix")].securityContext
+          value:
+            runAsGroup: 0
+            runAsNonRoot: false
+            runAsUser: 0
+      - notExists:
+          path: spec.template.spec.securityContext.seccompProfile
+
+  - it: should allow restoring the previous container security context
+    set:
+      containerSecurityContext:
+        allowPrivilegeEscalation: null
+        capabilities: null
+        seccompProfile: null
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[?(@.name == "node-exporter")].securityContext
+          value:
+            readOnlyRootFilesystem: true

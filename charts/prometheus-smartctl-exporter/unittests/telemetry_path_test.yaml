@@ -1,0 +1,46 @@
+suite: telemetry path
+templates:
+  - servicemonitor.yaml
+  - daemonset.yaml
+tests:
+  - it: uses the default telemetry path
+    template: servicemonitor.yaml
+    set:
+      serviceMonitor.enabled: true
+    asserts:
+      - equal:
+          path: spec.endpoints[0].path
+          value: /metrics
+  - it: scrapes the configured telemetry path
+    template: servicemonitor.yaml
+    set:
+      serviceMonitor.enabled: true
+      common.config.url_path: /custom/metrics
+    asserts:
+      - equal:
+          path: spec.endpoints[0].path
+          value: /custom/metrics
+  - it: serves the same telemetry path in every instance
+    template: daemonset.yaml
+    set:
+      common.config.url_path: /custom/metrics
+      extraInstances:
+        - config:
+            devices:
+              - /dev/nvme0n1
+    asserts:
+      - hasDocuments:
+          count: 2
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: --web.telemetry-path=/custom/metrics
+        documentIndex: 0
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: --web.telemetry-path=/custom/metrics
+        documentIndex: 1
+  - it: does not create a monitor when disabled
+    template: servicemonitor.yaml
+    asserts:
+      - hasDocuments:
+          count: 0

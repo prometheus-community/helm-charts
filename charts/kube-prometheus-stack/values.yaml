@@ -1036,7 +1036,7 @@ alertmanager:
     image:
       registry: quay.io
       repository: prometheus/alertmanager
-      tag: v0.34.2
+      tag: v0.35.0
       sha: ""
       pullPolicy: IfNotPresent
 
@@ -1110,6 +1110,14 @@ alertmanager:
     ## Example with select a global alertmanagerconfig
     # alertmanagerConfiguration:
     #   name: global-alertmanager-Configuration
+
+    ## Defines how the operator handles AlertmanagerConfig resources that reference the
+    ## Alertmanager container's filesystem rather than a secret key, such as a Telegram receiver
+    ## using botTokenFile. Anyone able to create an AlertmanagerConfig could otherwise read files
+    ## out of the container. One of AllowAll, FromAlertmanagerConfigMatcherStrategy or DenyAll.
+    ## Leave empty to use the operator's own default.
+    ##
+    alertmanagerConfigFileSystemMode: ""
 
     ## Defines the strategy used by AlertmanagerConfig objects to match alerts. eg:
     ##
@@ -1811,6 +1819,13 @@ kubeApiServer:
       # Drop excessively noisy apiserver buckets.
       - action: drop
         regex: (etcd_request|apiserver_request_slo|apiserver_request_sli|apiserver_request)_duration_seconds_bucket;(0\.15|0\.2|0\.3|0\.35|0\.4|0\.45|0\.6|0\.7|0\.8|0\.9|1\.25|1\.5|1\.75|2|3|3\.5|4|4\.5|6|7|8|9|15|20|40|45|50)(\.0)?
+        sourceLabels:
+          - __name__
+          - le
+      # Drop every other bucket of the watch event dispatch histogram (Kubernetes 1.37+),
+      # keeping 0.0001, 0.001, 0.01, 0.1, 1, 5 and +Inf.
+      - action: drop
+        regex: apiserver_watch_events_dispatch_duration_seconds_bucket;(0\.0005|0\.005|0\.025|0\.05|0\.25|0\.5|2\.5)
         sourceLabels:
           - __name__
           - le
@@ -3347,7 +3362,7 @@ prometheusOperator:
       image:
         registry: ghcr.io
         repository: jkroepke/kube-webhook-certgen
-        tag: 1.11.0
+        tag: 1.11.1
         sha: ""
         pullPolicy: IfNotPresent
       ## Type of the secret created by the certgen job. Requires kube-webhook-certgen 1.11.0 or newer.
@@ -4686,6 +4701,12 @@ prometheus:
     ## enable --web.enable-remote-write-receiver flag on prometheus-server
     ##
     enableRemoteWriteReceiver: false
+
+    ## Store additional time series for each scrape: scrape_timeout_seconds, scrape_sample_limit and
+    ## scrape_body_size_bytes. Useful for seeing how close targets are to their configured limits.
+    ## Uses the operator default when left unset (~). Requires Prometheus >= v2.32.0.
+    ##
+    extraScrapeMetrics: ~
 
     ## Name of the external label used to denote replica name
     ##
