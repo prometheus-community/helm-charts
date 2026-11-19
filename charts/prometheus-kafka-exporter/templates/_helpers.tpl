@@ -65,6 +65,43 @@ Create the name of the SASL SCRAM secret to use
 {{- end -}}
 
 {{/*
+Name of the secret holding the OAuthBearer client credentials
+*/}}
+{{- define "prometheus-kafka-exporter.saslOAuthBearerSecretName" -}}
+{{- if .Values.sasl.oauthbearer.secretName -}}
+    {{ .Values.sasl.oauthbearer.secretName }}
+{{- else -}}
+    {{ include "prometheus-kafka-exporter.fullname" . }}-oauthbearer
+{{- end -}}
+{{- end -}}
+
+{{/*
+OAuthBearer token mode: "file", "url" or "" when OAuthBearer is off
+*/}}
+{{- define "prometheus-kafka-exporter.oauthbearerMode" -}}
+{{- $o := .Values.sasl.oauthbearer -}}
+{{- if and .Values.sasl.enabled $o.enabled -}}
+  {{- if or $o.tokenFile $o.serviceAccountToken.enabled -}}
+    file
+  {{- else if $o.tokenUrl -}}
+    {{- if not (or $o.clientId $o.secretName) -}}
+      {{- fail "sasl.oauthbearer.tokenUrl needs sasl.oauthbearer.clientId or sasl.oauthbearer.secretName" -}}
+    {{- end -}}
+    url
+  {{- else -}}
+    {{- fail "sasl.oauthbearer needs serviceAccountToken.enabled, tokenFile or tokenUrl" -}}
+  {{- end -}}
+{{- end -}}
+{{- end -}}
+
+{{/*
+Path the exporter reads the OAuthBearer token from
+*/}}
+{{- define "prometheus-kafka-exporter.oauthbearerTokenFile" -}}
+{{- .Values.sasl.oauthbearer.tokenFile | default "/var/run/secrets/kafka-oauthbearer/token" -}}
+{{- end -}}
+
+{{/*
 Formats imagePullSecrets. Input is (dict "Values" .Values "imagePullSecrets" .{specific imagePullSecrets})
 */}}
 {{- define "prometheus-kafka-exporter.imagePullSecrets" -}}
