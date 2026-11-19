@@ -23,6 +23,41 @@ tests:
             name: config
             configMap:
               name: RELEASE-NAME-alertmanager
+      - notExists:
+          path: spec.volumeClaimTemplates[0].spec.volumeAttributesClassName
+
+  - it: should render the configured volumeAttributesClassName
+    template: statefulset.yaml
+    set:
+      persistence.enabled: true
+      persistence.volumeAttributesClassName: high-performance
+    asserts:
+      - equal:
+          path: spec.volumeClaimTemplates[0].spec.volumeAttributesClassName
+          value: high-performance
+
+  - it: should omit an empty volumeAttributesClassName
+    template: statefulset.yaml
+    set:
+      persistence.enabled: true
+      persistence.volumeAttributesClassName: ""
+    asserts:
+      - notExists:
+          path: spec.volumeClaimTemplates[0].spec.volumeAttributesClassName
+
+  - it: should ignore volumeAttributesClassName when persistence is disabled
+    template: statefulset.yaml
+    set:
+      persistence.enabled: false
+      persistence.volumeAttributesClassName: high-performance
+    asserts:
+      - notExists:
+          path: spec.volumeClaimTemplates
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: storage
+            emptyDir: {}
 
   - it: should mount an empty emptyDir storage volume when persistence is disabled
     template: statefulset.yaml

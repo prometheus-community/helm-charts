@@ -41,6 +41,16 @@ helm upgrade [RELEASE_NAME] oci://ghcr.io/prometheus-community/charts/prometheus
 
 _See [helm upgrade](https://helm.sh/docs/helm/helm_upgrade/) for command documentation._
 
+#### 4.x to 5.x
+
+Version 5.0.0 adds restrictive security context defaults. Host access is unchanged (`hostNetwork`, `hostPID` and the `/proc`, `/sys` and `/` hostPath mounts keep their previous defaults).
+
+- `containerSecurityContext` sets `allowPrivilegeEscalation: false`, `capabilities.drop: [ALL]` and `seccompProfile.type: RuntimeDefault`. These defaults are also applied to `sidecars`.
+- `kubeRBACProxy.containerSecurityContext` sets the same three fields.
+- The opt-in `permissionInitContainer` (runs as root to fix host file permissions) is unchanged.
+
+Helm merges your values into these defaults. If you set `privileged: true` or add `CAP_SYS_ADMIN` in `containerSecurityContext` (for example for the `perf` collector), also set `allowPrivilegeEscalation: true`, because the API server rejects `allowPrivilegeEscalation: false` together with either of them. To restore the previous behaviour, set the new keys to `null`.
+
 #### 3.x to 4.x
 
 Starting from version 4.0.0, the `node exporter` chart is using the [Kubernetes recommended labels](https://kubernetes.io/docs/concepts/overview/working-with-objects/common-labels/). Therefore you have to delete the daemonset before you upgrade.

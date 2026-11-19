@@ -63,7 +63,13 @@ kubeRBACProxy:
   ## Specify security settings for a Container
   ## Allows overrides and additional options compared to (Pod) securityContext
   ## Ref: https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-the-security-context-for-a-container
-  containerSecurityContext: {}
+  containerSecurityContext:
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+      - ALL
+    seccompProfile:
+      type: RuntimeDefault
 
   # Specify the port used for the Node exporter container (upstream port)
   port: 8100
@@ -370,10 +376,15 @@ securityContext:
   runAsUser: 65534
 
 containerSecurityContext:
+  allowPrivilegeEscalation: false
   readOnlyRootFilesystem: true
-  # capabilities:
-  #   add:
-  #   - SYS_TIME
+  capabilities:
+    drop:
+    - ALL
+    # add:
+    # - SYS_TIME
+  seccompProfile:
+    type: RuntimeDefault
 
 rbac:
   ## If true, create & use RBAC resources
@@ -585,7 +596,7 @@ livenessProbe:
   initialDelaySeconds: 0
   periodSeconds: 10
   successThreshold: 1
-  timeoutSeconds: 1
+  timeoutSeconds: 5
 
 ## Readiness probe
 ##
@@ -597,7 +608,7 @@ readinessProbe:
   initialDelaySeconds: 0
   periodSeconds: 10
   successThreshold: 1
-  timeoutSeconds: 1
+  timeoutSeconds: 5
 
 # Enable vertical pod autoscaler support for prometheus-node-exporter
 verticalPodAutoscaler:
