@@ -1,0 +1,35 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/helm-unittest/helm-unittest/main/schema/helm-testsuite.json
+suite: test Redis authentication
+templates:
+  - deployment.yaml
+set:
+  auth:
+    enabled: true
+    redisUser: monitor
+tests:
+  - it: sends the ACL username with a password file
+    set:
+      auth.redisPasswordFile.secret:
+        name: redis-passwords
+        key: passwords.json
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: REDIS_USER
+            value: monitor
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: REDIS_PASSWORD_FILE
+            value: /auth/passwords.json
+
+  - it: keeps a numeric ACL username as a string
+    set:
+      auth.redisUser: "1234"
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: REDIS_USER
+            value: "1234"
