@@ -1,0 +1,92 @@
+suite: test data source configuration
+templates:
+  - deployment.yaml
+  - configmap.yaml
+  - secrets.yaml
+set:
+  config:
+    datasource:
+      host: db
+      password: secret
+      sslmode: verify-full
+tests:
+  - it: should pass the data source URI as a flag from v0.21.0
+    template: deployment.yaml
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: --datasource.uri=db:5432/?sslmode=verify-full
+      - notContains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: DATA_SOURCE_URI
+            value: db:5432/?sslmode=verify-full
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: DATA_SOURCE_USER
+            value: postgres
+
+  - it: should keep DATA_SOURCE_URI for images older than v0.21.0
+    template: deployment.yaml
+    set:
+      image:
+        tag: v0.20.1
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: DATA_SOURCE_URI
+            value: db:5432/?sslmode=verify-full
+      - notContains:
+          path: spec.template.spec.containers[0].args
+          content: --datasource.uri=db:5432/?sslmode=verify-full
+
+  - it: should read the version from a digest-pinned tag
+    template: deployment.yaml
+    set:
+      image:
+        tag: v0.20.1@sha256:0000000000000000000000000000000000000000000000000000000000000000
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: DATA_SOURCE_URI
+            value: db:5432/?sslmode=verify-full
+
+  - it: should pass the user and password files as flags from v0.21.0
+    template: deployment.yaml
+    set:
+      config:
+        datasource:
+          userFile: /etc/exporter/user
+          passwordFile: /etc/exporter/password
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: --datasource.user-file=/etc/exporter/user
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: --datasource.pass-file=/etc/exporter/password
+      - isNullOrEmpty:
+          path: spec.template.spec.containers[0].env
+
+  - it: should not set the URI when datasourceSecret provides the whole data source
+    template: deployment.yaml
+    set:
+      config:
+        datasourceSecret:
+          name: exporter-dsn
+          key: dsn
+    asserts:
+      - notContains:
+          path: spec.template.spec.containers[0].args
+          content: --datasource.uri=db:5432/?sslmode=verify-full
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: DATA_SOURCE_NAME
+            valueFrom:
+              secretKeyRef:
+                name: exporter-dsn
+                key: dsn
