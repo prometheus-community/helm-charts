@@ -1,0 +1,20 @@
+suite: NOTES
+templates:
+  - templates/NOTES.txt
+release:
+  name: my-release
+  namespace: monitoring
+tests:
+  - it: selects the exporter pod by its labels and forwards the exporter port
+    asserts:
+      - matchRegexRaw:
+          pattern: '-l "app.kubernetes.io/name=prometheus-redis-exporter,app.kubernetes.io/instance=my-release"'
+      - matchRegexRaw:
+          pattern: 'kubectl port-forward \$POD_NAME 8080:9121 --namespace monitoring'
+  - it: prints the service port for a LoadBalancer
+    set:
+      service.type: LoadBalancer
+      service.port: 9999
+    asserts:
+      - matchRegexRaw:
+          pattern: 'echo http://\$SERVICE_IP:9999'
