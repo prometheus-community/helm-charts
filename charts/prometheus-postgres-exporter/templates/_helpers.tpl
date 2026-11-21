@@ -72,8 +72,30 @@ Define the prometheus-postgres-exporter.namespace template if set with namespace
 {{- end }}
 
 {{/*
+The data source URI, in host:port/dbname form, unquoted
+*/}}
+{{- define "prometheus-postgres-exporter.data_source_uri_raw" -}}
+{{ printf "%s:%d/%s?sslmode=%s&%s" (tpl .Values.config.datasource.host .) (tpl .Values.config.datasource.port . | int) (tpl .Values.config.datasource.database .) (tpl .Values.config.datasource.sslmode .) (tpl .Values.config.datasource.extraParams .) | trimSuffix "&" }}
+{{- end }}
+
+{{/*
 Set DATA_SOURCE_URI environment variable
 */}}
 {{- define "prometheus-postgres-exporter.data_source_uri" -}}
-{{ printf "%s:%d/%s?sslmode=%s&%s" (tpl .Values.config.datasource.host .) (tpl .Values.config.datasource.port . | int) (tpl .Values.config.datasource.database .) (tpl .Values.config.datasource.sslmode .) (tpl .Values.config.datasource.extraParams .) | trimSuffix "&" | quote }}
+{{ include "prometheus-postgres-exporter.data_source_uri_raw" . | quote }}
+{{- end }}
+
+{{/*
+Whether the exporter takes the data source URI and the user and password files as flags
+(--datasource.uri, --datasource.user-file, --datasource.pass-file), added in v0.21.0, which
+deprecates their DATA_SOURCE_* environment variables. A tag that isn't a version (a digest, or a
+custom build) is assumed to be recent.
+*/}}
+{{- define "prometheus-postgres-exporter.datasourceFlags" -}}
+{{- $tag := regexReplaceAll "@.*$" (toString (.Values.image.tag | default .Chart.AppVersion)) "" -}}
+{{- if regexMatch "^v?[0-9]+\\.[0-9]+\\.[0-9]+" $tag -}}
+{{- if semverCompare ">=0.21.0-0" $tag -}}true{{- end -}}
+{{- else -}}
+true
+{{- end -}}
 {{- end }}
