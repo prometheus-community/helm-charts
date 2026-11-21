@@ -82,6 +82,42 @@ tests:
             - --watched-dir=/etc/alertmanager
             - --watched-dir=/etc/alertmanager/secrets
 
+  - it: sets default resources on the config reloader
+    template: statefulset.yaml
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].resources
+          value:
+            limits:
+              cpu: 10m
+              memory: 50Mi
+            requests:
+              cpu: 10m
+              memory: 50Mi
+
+  - it: removes the config reloader resources when set to null
+    template: statefulset.yaml
+    set:
+      configmapReload.resources: null
+    asserts:
+      - notExists:
+          path: spec.template.spec.containers[0].resources
+
+  - it: replaces the config reloader resources with user values
+    template: statefulset.yaml
+    set:
+      configmapReload.resources:
+        requests:
+          memory: 32Mi
+        limits: null
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].resources
+          value:
+            requests:
+              cpu: 10m
+              memory: 32Mi
+
   - it: omits the config reloader and adds a config checksum when disabled
     template: statefulset.yaml
     set:
