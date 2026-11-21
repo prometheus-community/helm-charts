@@ -76,3 +76,46 @@ jobs:
           CR_KEY: "${{ vars.GPG_KEY_NAME }}"
           CR_KEYRING: "~/.gnupg/secring.gpg"
           CR_PASSPHRASE_FILE: "${{ runner.temp }}/gpg-passphrase"
+
+  release-notes:
+    needs: release
+    permissions:
+      contents: write # to edit the release notes
+
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: 'false'
+
+      # Generated notes list every PR since the previous tag of the chart, across all charts.
+      - name: Limit release notes to the released chart
+        env:
+          GH_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
+          NOTES_FILE: "${{ runner.temp }}/release-notes.md"
+        run: |
+          for chart in charts/*/Chart.yaml; do
+            name="$(yq -r '.name' "${chart}")"
+            tag="${name}-$(yq -r '.version' "${chart}")"
+            if [[ "$(git tag --points-at HEAD "${tag}")" != "${tag}" ]]; then
+              continue
+            fi
+            if ! previous="$(git describe --tags --abbrev=0 --match "${name}-[0-9]*" "${tag}^")"; then
+              echo "No previous release of ${name}, keeping the generated notes of ${tag}"
+              continue
+            fi
+
+            {
+              yq -r '.description' "${chart}"
+              echo
+              echo "## What's Changed"
+              echo
+              git log --format='* %s' "${previous}..${tag}" -- "charts/${name}"
+              echo
+              echo "**Full Changelog**: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/compare/${previous}...${tag}"
+            } > "${NOTES_FILE}"
+
+            gh release edit "${tag}" --repo "${GITHUB_REPOSITORY}" --notes-file "${NOTES_FILE}"
+          done
