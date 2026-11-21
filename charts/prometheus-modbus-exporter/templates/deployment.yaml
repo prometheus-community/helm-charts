@@ -54,9 +54,14 @@ spec:
           volumeMounts:
           - name: configfile
             mountPath: /etc/modbus_exporter/
-        {{ if .Values.configReloaderSidecar.enable }}
+        {{- if .Values.configReloaderSidecar.enabled }}
         - name: {{ include "prometheus-modbus-exporter.fullname" . }}-config-reloader-sidecar
           image: "{{ .Values.configReloaderSidecar.image.registry }}/{{ .Values.configReloaderSidecar.image.repository }}:{{ .Values.configReloaderSidecar.image.tag }}"
+          imagePullPolicy: {{ .Values.configReloaderSidecar.image.pullPolicy }}
+          {{- with .Values.configReloaderSidecar.securityContext }}
+          securityContext:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
           env:
           - name: CONFIG_DIR
             value: /etc/modbus_exporter/
@@ -65,7 +70,7 @@ spec:
           volumeMounts:
           - name: configfile
             mountPath: /etc/modbus_exporter/
-        {{- end -}}
+        {{- end }}
       {{- with .Values.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
