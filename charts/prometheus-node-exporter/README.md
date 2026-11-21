@@ -104,3 +104,23 @@ rules:
 ```
 
 See [kube-rbac-proxy examples](https://github.com/brancz/kube-rbac-proxy/tree/master/examples/resource-attributes) for more details.
+
+## Troubleshooting
+
+### `path "/" is mounted on "/" but it is not a shared or slave mount`
+
+The root filesystem mount (`hostRootFsMount`) uses `mountPropagation: HostToContainer` by default, which needs `/` on the node to be a shared or slave mount. Some single-node setups, for example k3s or kind inside WSL2 or Docker Desktop, mount `/` as private, and the container then fails to start with:
+
+```text
+Error: failed to generate container "..." spec: failed to generate spec: path "/" is mounted on "/" but it is not a shared or slave mount
+```
+
+Turn off mount propagation for the root filesystem mount:
+
+```yaml
+hostRootFsMount:
+  enabled: true
+  mountPropagation: ""
+```
+
+The root filesystem is still mounted and its metrics are still collected; filesystems mounted on the node after the pod starts only appear after the pod restarts. When the chart is installed as part of kube-prometheus-stack, set the same values under `prometheus-node-exporter:`.
