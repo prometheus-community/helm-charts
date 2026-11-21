@@ -1,0 +1,44 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/helm-unittest/helm-unittest/main/schema/helm-testsuite.json
+suite: test pod labels exclude the chart version
+templates:
+  - deployment.yaml
+release:
+  name: r
+tests:
+  - it: should not put helm.sh/chart in the pod labels
+    asserts:
+      - notExists:
+          path: spec.template.metadata.labels["helm.sh/chart"]
+
+  - it: should keep helm.sh/chart on the workload's own metadata
+    asserts:
+      - exists:
+          path: metadata.labels["helm.sh/chart"]
+
+  - it: should keep both selector labels on the pod template
+    asserts:
+      - exists:
+          path: spec.template.metadata.labels["app.kubernetes.io/name"]
+      - exists:
+          path: spec.template.metadata.labels["app.kubernetes.io/instance"]
+
+  - it: should keep commonLabels on the pod template
+    set:
+      commonLabels:
+        team: platform
+    asserts:
+      - equal:
+          path: spec.template.metadata.labels.team
+          value: platform
+
+  - it: should let pod.labels win over commonLabels without duplicating the key
+    set:
+      commonLabels:
+        team: a
+      pod:
+        labels:
+          team: b
+    asserts:
+      - equal:
+          path: spec.template.metadata.labels.team
+          value: b

@@ -284,3 +284,13 @@ volumes:
     defaultMode: {{ .defaultMode }}
 {{- end }}
 {{- end -}}
+
+{{/*
+Pod labels: the common labels without helm.sh/chart. That label carries the chart version, so
+including it in the pod template changes the pod-template hash on every chart release, rolling
+the workload even when neither the image nor the configuration changed.
+*/}}
+{{- define "prometheus-blackbox-exporter.podLabels" -}}
+{{- $labels := omit (include "prometheus-blackbox-exporter.labels" . | fromYaml) "helm.sh/chart" -}}
+{{- merge (deepCopy (.Values.pod.labels | default dict)) $labels | toYaml -}}
+{{- end }}
