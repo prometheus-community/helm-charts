@@ -1,0 +1,20 @@
+suite: SASL OAuthBearer validation
+templates:
+  - deployment.yaml
+tests:
+  - it: fails without a token source
+    set:
+      sasl.enabled: true
+      sasl.oauthbearer.enabled: true
+    asserts:
+      - failedTemplate:
+          errorMessage: sasl.oauthbearer needs serviceAccountToken.enabled, tokenFile or tokenUrl
+
+  - it: fails when tokenUrl has no client credentials
+    set:
+      sasl.enabled: true
+      sasl.oauthbearer.enabled: true
+      sasl.oauthbearer.tokenUrl: https://idp.example.com/oauth2/token
+    asserts:
+      - failedTemplate:
+          errorMessage: sasl.oauthbearer.tokenUrl needs sasl.oauthbearer.clientId or sasl.oauthbearer.secretName

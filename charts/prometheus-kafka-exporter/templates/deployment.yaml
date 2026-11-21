@@ -1,3 +1,5 @@
+{{- $oauthMode := include "prometheus-kafka-exporter.oauthbearerMode" . }}
+{{- $oauthToken := and (eq $oauthMode "file") .Values.sasl.oauthbearer.serviceAccountToken.enabled }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -85,6 +87,19 @@ spec:
             - '--sasl.password=$(SCRAM_PASSWORD)'
             - '--sasl.mechanism={{ .Values.sasl.scram.mechanism }}'
           {{- end }}
+          {{- if $oauthMode }}
+            - '--sasl.mechanism=oauthbearer'
+          {{- if eq $oauthMode "file" }}
+            - '--sasl.oauthbearer-token-file={{ include "prometheus-kafka-exporter.oauthbearerTokenFile" . }}'
+          {{- else }}
+            - '--sasl.oauthbearer-token-url={{ .Values.sasl.oauthbearer.tokenUrl }}'
+            - '--sasl.username=$(OAUTHBEARER_CLIENT_ID)'
+            - '--sasl.password=$(OAUTHBEARER_CLIENT_SECRET)'
+          {{- with .Values.sasl.oauthbearer.scopes }}
+            - '--sasl.oauthbearer-scopes={{ . }}'
+          {{- end }}
+          {{- end }}
+          {{- end }}
           {{- if .Values.sasl.kerberos.enabled }}
             - '--sasl.service-name={{ .Values.sasl.kerberos.serviceName }}'
             - '--sasl.kerberos-config-path={{ .Values.sasl.kerberos.mountPath }}/kerberos.conf'
@@ -123,6 +138,18 @@ spec:
                   name: {{ template "prometheus-kafka-exporter.saslScramSecretName" . }}
                   key: password
           {{- end }}
+          {{- if eq $oauthMode "url" }}
+            - name: OAUTHBEARER_CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: {{ template "prometheus-kafka-exporter.saslOAuthBearerSecretName" . }}
+                  key: clientId
+            - name: OAUTHBEARER_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: {{ template "prometheus-kafka-exporter.saslOAuthBearerSecretName" . }}
+                  key: clientSecret
+          {{- end }}
           name: {{ .Chart.Name }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
@@ -153,7 +180,7 @@ spec:
           securityContext:
             {{- toYaml . | nindent 12 }}
           {{- end }}
-          {{- if or (.Values.tls.mountPath) (.Values.sasl.kerberos.mountPath) (.Values.server.tls.mountPath) }}
+          {{- if or (.Values.tls.mountPath) (.Values.sasl.kerberos.mountPath) (.Values.server.tls.mountPath) $oauthToken }}
           volumeMounts:
             {{- if .Values.tls.mountPath }}
             - mountPath: {{ .Values.tls.mountPath }}
@@ -170,6 +197,11 @@ spec:
               name: server-certs
               readOnly: true
             {{- end }}
+            {{- if $oauthToken }}
+            - mountPath: {{ include "prometheus-kafka-exporter.oauthbearerTokenFile" . | dir }}
+              name: kafka-oauthbearer-token
+              readOnly: true
+            {{- end }}
           {{- end }}
     {{- with .Values.nodeSelector }}
       nodeSelector:
@@ -183,7 +215,7 @@ spec:
       tolerations:
 {{ toYaml . | indent 8 }}
     {{- end }}
-      {{- if or (.Values.tls.mountPath) (.Values.sasl.kerberos.mountPath) (.Values.server.tls.mountPath) }}
+      {{- if or (.Values.tls.mountPath) (.Values.sasl.kerberos.mountPath) (.Values.server.tls.mountPath) $oauthToken }}
       volumes:
         {{- if .Values.tls.mountPath }}
         - name: kafka-certs
@@ -199,6 +231,17 @@ spec:
         - name: server-certs
           secret:
             secretName: {{ .Values.server.tls.secretName }}
+        {{- end }}
+        {{- if $oauthToken }}
+        - name: kafka-oauthbearer-token
+          projected:
+            sources:
+              - serviceAccountToken:
+                  path: {{ include "prometheus-kafka-exporter.oauthbearerTokenFile" . | base }}
+                  expirationSeconds: {{ .Values.sasl.oauthbearer.serviceAccountToken.expirationSeconds }}
+                  {{- with .Values.sasl.oauthbearer.serviceAccountToken.audience }}
+                  audience: {{ . }}
+                  {{- end }}
         {{- end }}
       {{- end }}
       {{- if or .Values.imagePullSecrets .Values.global.imagePullSecrets }}
