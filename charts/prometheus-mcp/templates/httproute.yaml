@@ -1,0 +1,51 @@
+{{- range $name, $route := .Values.route }}
+{{- if $route.enabled }}
+{{- if empty $route.parentRefs }}
+{{- fail (printf "route.%s.enabled is true but route.%s.parentRefs is empty; a route with no parent Gateway never receives traffic" $name $name) }}
+{{- end }}
+---
+apiVersion: {{ $route.apiVersion | default "gateway.networking.k8s.io/v1" }}
+kind: {{ $route.kind | default "HTTPRoute" }}
+metadata:
+  {{- with $route.annotations }}
+  annotations: {{ toYaml . | nindent 4 }}
+  {{- end }}
+  name: {{ if ne $name "main" }}{{ printf "%s-%s" (include "prometheus-mcp.fullname" $) $name | trunc 63 | trimSuffix "-" }}{{ else }}{{ include "prometheus-mcp.fullname" $ }}{{ end }}
+  labels:
+    {{- include "prometheus-mcp.labels" $ | nindent 4 }}
+    {{- with $route.labels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+spec:
+  parentRefs: {{ toYaml $route.parentRefs | nindent 4 }}
+  {{- with $route.hostnames }}
+  hostnames: {{ tpl (toYaml .) $ | nindent 4 }}
+  {{- end }}
+  rules:
+    {{- with $route.additionalRules }}
+    {{- tpl (toYaml .) $ | nindent 4 }}
+    {{- end }}
+    {{- if $route.httpsRedirect }}
+    - filters:
+        - type: RequestRedirect
+          requestRedirect:
+            scheme: https
+            statusCode: 301
+    {{- else }}
+    - backendRefs:
+        - name: {{ include "prometheus-mcp.fullname" $ }}
+          port: {{ $.Values.service.port }}
+      {{- with $route.filters }}
+      filters: {{ toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with $route.matches }}
+      matches: {{ toYaml . | nindent 8 }}
+      {{- end }}
+      {{- if eq ($route.kind | default "HTTPRoute") "HTTPRoute" }}
+      {{- with $route.timeouts }}
+      timeouts: {{ toYaml . | nindent 8 }}
+      {{- end }}
+      {{- end }}
+    {{- end }}
+{{- end }}
+{{- end }}

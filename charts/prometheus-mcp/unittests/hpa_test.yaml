@@ -1,0 +1,79 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/helm-unittest/helm-unittest/main/schema/helm-testsuite.json
+suite: test hpa
+templates:
+  - hpa.yaml
+  - deployment.yaml
+  # secret.yaml must be loaded for deployment.yaml's checksum include.
+  - secret.yaml
+tests:
+  - it: should not render an HPA by default and pin the Deployment replicas
+    asserts:
+      - hasDocuments:
+          count: 0
+        template: hpa.yaml
+      - equal:
+          path: spec.replicas
+          value: 1
+        template: deployment.yaml
+
+  - it: should render a CPU-target HPA and leave the replica count to it
+    set:
+      autoscaling.enabled: true
+      autoscaling.minReplicas: 2
+      autoscaling.maxReplicas: 5
+    asserts:
+      - hasDocuments:
+          count: 1
+        template: hpa.yaml
+      - isKind:
+          of: HorizontalPodAutoscaler
+        template: hpa.yaml
+      - isAPIVersion:
+          of: autoscaling/v2
+        template: hpa.yaml
+      - equal:
+          path: spec.scaleTargetRef
+          value:
+            apiVersion: apps/v1
+            kind: Deployment
+            name: RELEASE-NAME-prometheus-mcp
+        template: hpa.yaml
+      - equal:
+          path: spec.minReplicas
+          value: 2
+        template: hpa.yaml
+      - equal:
+          path: spec.maxReplicas
+          value: 5
+        template: hpa.yaml
+      - equal:
+          path: spec.metrics
+          value:
+            - type: Resource
+              resource:
+                name: cpu
+                target:
+                  type: Utilization
+                  averageUtilization: 80
+        template: hpa.yaml
+      - notExists:
+          path: spec.replicas
+        template: deployment.yaml
+
+  - it: should add a memory target when one is set
+    set:
+      autoscaling.enabled: true
+      autoscaling.targetMemoryUtilizationPercentage: 70
+    asserts:
+      - lengthEqual:
+          path: spec.metrics
+          count: 2
+        template: hpa.yaml
+      - equal:
+          path: spec.metrics[1].resource
+          value:
+            name: memory
+            target:
+              type: Utilization
+              averageUtilization: 70
+        template: hpa.yaml

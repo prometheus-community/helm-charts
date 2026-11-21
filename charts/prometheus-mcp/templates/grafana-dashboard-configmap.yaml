@@ -1,0 +1,24 @@
+{{- if .Values.grafana.dashboards.enabled }}
+{{- $dashboardFiles := (.Files.Glob "dashboards/*.json") }}
+{{- range $path, $_ := $dashboardFiles }}
+{{- $name := trimSuffix ".json" (base $path) }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ printf "%s-%s" (include "prometheus-mcp.fullname" $) $name | trunc 63 | trimSuffix "-" }}
+  {{- with $.Values.grafana.dashboards.namespace }}
+  namespace: {{ . }}
+  {{- end }}
+  labels:
+    {{- include "prometheus-mcp.labels" $ | nindent 4 }}
+    {{ $.Values.grafana.dashboards.label }}: {{ $.Values.grafana.dashboards.labelValue | quote }}
+  {{- with $.Values.grafana.dashboards.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+data:
+  {{ $name }}.json: |-
+    {{- $.Files.Get $path | nindent 4 }}
+{{- end }}
+{{- end }}

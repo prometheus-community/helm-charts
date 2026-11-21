@@ -1,0 +1,146 @@
+# Exercises most optional template paths together.
+
+fullnameOverride: "prometheus-mcp-full-test"
+
+prometheus:
+  url: "http://prometheus:9090"
+  backend: "thanos"
+  timeout: "2m"
+  truncationLimit: 500
+
+mcp:
+  tools:
+    - "all"
+  enableToonOutput: true
+  enableClientLogging: true
+
+grafana:
+  dashboards:
+    enabled: true
+    annotations:
+      grafana_folder: "Prometheus MCP Server"
+
+docs:
+  autoUpdate: true
+
+tsdbAdmin:
+  enabled: true
+
+httpConfig:
+  enabled: true
+  config:
+    tls_config:
+      insecure_skip_verify: true
+
+# containerPort differs from service.port to exercise the named-port
+# indirection (Service port -> targetPort "http" -> containerPort).
+containerPort: 9090
+
+service:
+  type: ClusterIP
+  port: 8080
+
+serviceMonitor:
+  enabled: true
+  labels:
+    release: prometheus
+  interval: "30s"
+  scrapeTimeout: "10s"
+  relabelings:
+    - sourceLabels: [__meta_kubernetes_pod_node_name]
+      targetLabel: node
+  metricRelabelings:
+    - sourceLabels: [__name__]
+      action: drop
+      regex: "go_.*"
+
+ingress:
+  enabled: true
+  ingressClassName: nginx
+  annotations:
+    test-annotation: "true"
+  hosts:
+    - host: prometheus-mcp.test
+      paths:
+        - path: /
+          pathType: Prefix
+  tls:
+    - secretName: prometheus-mcp-tls
+      hosts:
+        - prometheus-mcp.test
+
+serviceAccount:
+  create: true
+  name: "prometheus-mcp-test-service-account"
+  annotations:
+    eks.amazonaws.com/role-arn: "arn:aws:iam::role/test"
+  automountServiceAccountToken: false
+
+resources:
+  limits:
+    cpu: 200m
+    memory: 256Mi
+  requests:
+    cpu: 100m
+    memory: 128Mi
+
+autoscaling:
+  enabled: true
+  minReplicas: 1
+  maxReplicas: 3
+  targetCPUUtilizationPercentage: 70
+  targetMemoryUtilizationPercentage: 80
+
+podDisruptionBudget:
+  maxUnavailable: 1
+
+podAnnotations:
+  test-annotation: "true"
+
+podLabels:
+  test-label: "true"
+
+extraArgs:
+  - "--web.max-requests=10"
+
+extraEnv:
+  - name: GOMAXPROCS
+    value: "2"
+
+extraVolumes:
+  - name: extra-configuration
+    emptyDir: {}
+
+extraVolumeMounts:
+  - name: extra-configuration
+    mountPath: /etc/extra-config
+    readOnly: false
+
+nodeSelector:
+  kubernetes.io/os: linux
+
+tolerations:
+  - key: "dedicated"
+    operator: "Equal"
+    value: "monitoring"
+    effect: "NoSchedule"
+
+affinity:
+  nodeAffinity:
+    requiredDuringSchedulingIgnoredDuringExecution:
+      nodeSelectorTerms:
+        - matchExpressions:
+            - key: kubernetes.io/arch
+              operator: In
+              values:
+                - amd64
+                - arm64
+
+# Exercises a test.containerSecurityContext override with a key the defaults lack.
+test:
+  containerSecurityContext:
+    runAsUser: 65534
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+        - ALL

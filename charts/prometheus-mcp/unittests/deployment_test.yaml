@@ -1,0 +1,309 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/helm-unittest/helm-unittest/main/schema/helm-testsuite.json
+suite: test deployment
+templates:
+  - deployment.yaml
+  # secret.yaml must be loaded for deployment.yaml's checksum include; every
+  # test pins its asserts to deployment.yaml via `template`.
+  - secret.yaml
+tests:
+  - it: should render the default flags, health probes and hardened pod defaults
+    template: deployment.yaml
+    asserts:
+      - hasDocuments:
+          count: 1
+      - isKind:
+          of: Deployment
+      - matchRegex:
+          path: spec.template.spec.containers[0].image
+          pattern: ^quay\.io/prometheus/prometheus-mcp:.+$
+      - equal:
+          path: spec.template.spec.containers[0].args
+          value:
+            - --prometheus.url=http://prometheus:9090
+            - --mcp.transport=http
+            - --web.listen-address=:8080
+            - --web.telemetry-path=/metrics
+            - --log.level=info
+            - --prometheus.timeout=1m
+            - --mcp.tools=all
+      - equal:
+          path: spec.template.spec.containers[0].startupProbe.httpGet.path
+          value: /-/healthy
+      - equal:
+          path: spec.template.spec.containers[0].livenessProbe.httpGet.path
+          value: /-/healthy
+      - equal:
+          path: spec.template.spec.containers[0].readinessProbe.httpGet.path
+          value: /-/ready
+      - equal:
+          path: spec.template.spec.automountServiceAccountToken
+          value: false
+      - equal:
+          path: spec.template.spec.containers[0].securityContext.readOnlyRootFilesystem
+          value: true
+
+  - it: should emit the conditional flags when their values are set
+    template: deployment.yaml
+    set:
+      prometheus:
+        url: http://thanos-query:9090
+        backend: thanos
+        timeout: 30s
+        truncationLimit: 500
+      mcp:
+        tools:
+          - core
+          - query
+        enableToonOutput: true
+        enableClientLogging: true
+      docs.autoUpdate: true
+      tsdbAdmin.enabled: true
+      telemetryPath: /internal/metrics
+      log:
+        # Passed through unchanged; the server lowercases the level itself.
+        level: DEBUG
+        format: json
+        file: /tmp/logs/mcp.log
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: --prometheus.url=http://thanos-query:9090
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: --prometheus.backend=thanos
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: --prometheus.timeout=30s
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: --prometheus.truncation-limit=500
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: --mcp.tools=core
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: --mcp.tools=query
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: --mcp.enable-toon-output
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: --mcp.enable-client-logging
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: --docs.auto-update
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: --dangerous.enable-tsdb-admin-tools
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: --web.telemetry-path=/internal/metrics
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: --log.level=DEBUG
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: --log.format=json
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: --log.file=/tmp/logs/mcp.log
+
+  - it: should fail when mcp.tools is not a non-empty list
+    template: deployment.yaml
+    set:
+      mcp.tools: core
+    asserts:
+      - failedTemplate:
+          errorPattern: "mcp.tools must be a non-empty list"
+
+  - it: should fail when mcp.tools combines all with other entries
+    template: deployment.yaml
+    set:
+      mcp.tools:
+        - all
+        - query
+    asserts:
+      - failedTemplate:
+          errorPattern: 'must not combine "all"'
+
+  - it: should fail when an mcp.tools entry is not a lowercase tool name
+    template: deployment.yaml
+    set:
+      mcp.tools:
+        - All
+        - query
+    asserts:
+      - failedTemplate:
+          errorPattern: 'entry "All" must be a lowercase tool name'
+
+  - it: should append extraArgs, including a second --web.listen-address listener
+    template: deployment.yaml
+    set:
+      extraArgs:
+        - --web.listen-address=:9091
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].args[7]
+          value: --web.listen-address=:9091
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: --web.listen-address=:8080
+
+  - it: should fail when extraArgs repeats a chart-managed flag, even negated
+    template: deployment.yaml
+    set:
+      extraArgs:
+        - --no-docs.auto-update
+    asserts:
+      - failedTemplate:
+          errorPattern: "repeats --docs.auto-update"
+
+  - it: should fail when prometheus.url is empty
+    template: deployment.yaml
+    set:
+      prometheus.url: ""
+    asserts:
+      - failedTemplate:
+          errorPattern: "prometheus.url must not be empty"
+
+  - it: should fail when prometheus.timeout is not a duration string
+    template: deployment.yaml
+    set:
+      prometheus.timeout: 30
+    asserts:
+      - failedTemplate:
+          errorPattern: "prometheus.timeout must be a duration string"
+
+  - it: should fail on an invalid log.level
+    template: deployment.yaml
+    set:
+      log.level: verbose
+    asserts:
+      - failedTemplate:
+          errorPattern: "log.level must be one of"
+
+  # Unlike the level, the server matches the format case-sensitively.
+  - it: should fail on a log.format the server does not accept
+    template: deployment.yaml
+    set:
+      log.format: JSON
+    asserts:
+      - failedTemplate:
+          errorPattern: "log.format must be one of"
+
+  - it: should fail when telemetryPath collides with a path the server serves
+    template: deployment.yaml
+    set:
+      telemetryPath: /mcp
+    asserts:
+      - failedTemplate:
+          errorPattern: "collides with a path the server already serves"
+
+  # httpConfig validation failures are covered in secret_test.yaml: the guard is
+  # shared with secret.yaml, which Helm renders first.
+  - it: should mount the rendered http-config Secret and roll pods on its checksum
+    template: deployment.yaml
+    set:
+      httpConfig:
+        enabled: true
+        config:
+          tls_config:
+            insecure_skip_verify: true
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: --http.config=/etc/prometheus-mcp/http-config.yaml
+      - contains:
+          path: spec.template.spec.containers[0].volumeMounts
+          content:
+            name: http-config
+            mountPath: /etc/prometheus-mcp
+            readOnly: true
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: http-config
+            secret:
+              secretName: RELEASE-NAME-prometheus-mcp-http-config
+      - matchRegex:
+          path: spec.template.metadata.annotations["checksum/http-config"]
+          pattern: ^[a-f0-9]{64}$
+
+  - it: should mount an existing Secret under its secretKey without a checksum
+    template: deployment.yaml
+    set:
+      httpConfig:
+        enabled: true
+        existingSecret: my-secret
+        secretKey: config.yaml
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: --http.config=/etc/prometheus-mcp/config.yaml
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: http-config
+            secret:
+              secretName: my-secret
+      - notExists:
+          path: spec.template.metadata.annotations["checksum/http-config"]
+
+  - it: should pass through pod scheduling and runtime settings
+    template: deployment.yaml
+    set:
+      replicaCount: 2
+      resources:
+        limits:
+          cpu: 500m
+      nodeSelector:
+        kubernetes.io/os: linux
+      tolerations:
+        - key: dedicated
+          operator: Exists
+      podLabels:
+        team: observability
+      priorityClassName: high-priority
+      extraEnv:
+        - name: GOMAXPROCS
+          value: "2"
+      extraVolumes:
+        - name: logs
+          emptyDir: {}
+      extraVolumeMounts:
+        - name: logs
+          mountPath: /var/log/prometheus-mcp
+    asserts:
+      - equal:
+          path: spec.replicas
+          value: 2
+      - equal:
+          path: spec.template.spec.containers[0].resources.limits.cpu
+          value: 500m
+      - equal:
+          path: spec.template.spec.nodeSelector["kubernetes.io/os"]
+          value: linux
+      - equal:
+          path: spec.template.spec.tolerations[0].key
+          value: dedicated
+      - equal:
+          path: spec.template.metadata.labels.team
+          value: observability
+      - equal:
+          path: spec.template.spec.priorityClassName
+          value: high-priority
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: GOMAXPROCS
+            value: "2"
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: logs
+            emptyDir: {}
+      - contains:
+          path: spec.template.spec.containers[0].volumeMounts
+          content:
+            name: logs
+            mountPath: /var/log/prometheus-mcp

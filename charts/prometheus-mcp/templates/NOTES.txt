@@ -1,0 +1,37 @@
+{{- $routeEnabled := false }}
+{{- range .Values.route }}{{ if .enabled }}{{ $routeEnabled = true }}{{ end }}{{ end -}}
+1. Get the MCP endpoint URL by running these commands:
+{{- if .Values.ingress.enabled }}
+{{- range $host := .Values.ingress.hosts }}
+{{- if $host.host }}
+{{- $scheme := "http" }}
+{{- range $.Values.ingress.tls }}{{ if has $host.host .hosts }}{{ $scheme = "https" }}{{ end }}{{ end }}
+  {{ $scheme }}://{{ $host.host }}/mcp
+{{- else }}
+  An ingress rule sets no host: use the ingress controller's address with the path /mcp
+{{- end }}
+{{- end }}
+{{- else if $routeEnabled }}
+{{- range $name, $route := .Values.route }}
+{{- if $route.enabled }}
+{{- range $route.hostnames }}
+  {{ if $route.httpsRedirect }}https{{ else }}http{{ end }}://{{ tpl . $ }}/mcp
+{{- end }}
+{{- if not $route.hostnames }}
+  Route "{{ $name }}" sets no hostnames: use the parent Gateway's address with the path /mcp
+{{- end }}
+{{- end }}
+{{- end }}
+{{- else if contains "NodePort" .Values.service.type }}
+  export NODE_PORT=$(kubectl get --namespace {{ .Release.Namespace }} -o jsonpath="{.spec.ports[0].nodePort}" services {{ include "prometheus-mcp.fullname" . }})
+  export NODE_IP=$(kubectl get nodes --namespace {{ .Release.Namespace }} -o jsonpath="{.items[0].status.addresses[0].address}")
+  echo http://$NODE_IP:$NODE_PORT/mcp
+{{- else if contains "LoadBalancer" .Values.service.type }}
+     NOTE: It may take a few minutes for the LoadBalancer IP to be available.
+           You can watch the status of the service by running 'kubectl get --namespace {{ .Release.Namespace }} svc -w {{ include "prometheus-mcp.fullname" . }}'
+  export SERVICE_IP=$(kubectl get svc --namespace {{ .Release.Namespace }} {{ include "prometheus-mcp.fullname" . }} --template "{{"{{ with index .status.loadBalancer.ingress 0 }}{{ or .ip .hostname }}{{ end }}"}}")
+  echo http://$SERVICE_IP:{{ .Values.service.port }}/mcp
+{{- else if contains "ClusterIP" .Values.service.type }}
+  kubectl --namespace {{ .Release.Namespace }} port-forward svc/{{ include "prometheus-mcp.fullname" . }} {{ .Values.service.port }}
+  echo "Point your MCP client at http://127.0.0.1:{{ .Values.service.port }}/mcp"
+{{- end }}

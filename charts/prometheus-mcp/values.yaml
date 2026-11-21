@@ -1,0 +1,340 @@
+# The HTTP transport is stateless (no MCP sessions), so replicas need no
+# session affinity.
+replicaCount: 1
+
+# Horizontal Pod Autoscaler. When enabled, replicaCount is ignored and the
+# autoscaler owns the Deployment's replica count. Utilization targets are
+# relative to resources.requests, so set a CPU request alongside this.
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 80
+  # The Go runtime returns memory to the OS lazily, so a memory target tends
+  # to scale up and never back down; prefer the CPU target.
+  # targetMemoryUtilizationPercentage: 80
+
+# PodDisruptionBudget. Set minAvailable or maxUnavailable to create one.
+podDisruptionBudget: {}
+  # minAvailable: 1
+  # maxUnavailable: 1
+
+image:
+  repository: quay.io/prometheus/prometheus-mcp
+  pullPolicy: IfNotPresent
+  # Overrides the image tag whose default is the chart appVersion.
+  tag: ""
+
+imagePullSecrets: []
+
+nameOverride: ""
+fullnameOverride: ""
+
+prometheus:
+  # URL of the Prometheus instance to connect to
+  url: "http://prometheus:9090"
+  # Prometheus-compatible backend type (leave empty for standard Prometheus, otherwise specify)
+  backend: ""
+  # Timeout for API calls to the Prometheus backend (Go duration string, e.g., "30s", "2m", "1h")
+  timeout: "1m"
+  # Maximum query response size in lines/entries (0 to disable truncation)
+  truncationLimit: 0
+
+mcp:
+  # Tools to load. ["all"] loads everything, ["core"] only the core set; named
+  # tools load in addition to core, which is always included. "all" must be
+  # alone.
+  tools:
+    - "all"
+  # Enable Token-Oriented Object Notation (TOON) output instead of JSON
+  enableToonOutput: false
+  # Enable sending log messages to connected MCP clients
+  enableClientLogging: false
+
+docs:
+  # Enable automatic documentation updates from prometheus/docs. Updates are
+  # held in each pod's memory and need egress to github.com and
+  # codeload.github.com; failures are not fatal.
+  autoUpdate: false
+
+tsdbAdmin:
+  # Allow execution of the dangerous TSDB admin tools (snapshot, delete_series,
+  # clean_tombstones). The tools are listed to clients whenever mcp.tools
+  # includes them; without this flag, calling them returns an error.
+  enabled: false
+
+httpConfig:
+  # Enable Prometheus HTTP client configuration via Secret
+  enabled: false
+  # Annotations to add to the Secret created by the chart
+  annotations: {}
+  # Name of an existing Secret holding the HTTP client config. Mutually
+  # exclusive with config.
+  existingSecret: ""
+  # Key within the Secret that holds the configuration; also used as the data
+  # key of the chart-created Secret. Must match the existing Secret exactly:
+  # the server exits at startup when the config file is missing or invalid.
+  secretKey: "http-config.yaml"
+  # Prometheus HTTP client configuration content (stored in a Secret since it
+  # may contain credentials such as basic_auth passwords or bearer tokens).
+  # Accepts either a YAML map or a pre-rendered YAML string (e.g. via
+  # --set-file httpConfig.config=http-config.yaml).
+  # See https://prometheus.io/docs/prometheus/latest/configuration/configuration/#http_config
+  # config:
+  #   basic_auth:
+  #     username: admin
+  #     password: secret
+
+# Container port the server listens on
+containerPort: 8080
+
+# Path under which the server exposes Prometheus metrics
+# (--web.telemetry-path); also drives the ServiceMonitor endpoint and the
+# `helm test` check
+telemetryPath: /metrics
+
+log:
+  # Log level (debug, info, warn, error)
+  level: "info"
+  # Log format (logfmt, json). Empty for upstream default (logfmt)
+  format: ""
+  # Log file path (empty for stdout). Needs a writable volume via
+  # extraVolumes/extraVolumeMounts at the target path: the container's root
+  # filesystem is read-only under containerSecurityContext. With this set,
+  # kubectl logs returns nothing.
+  file: ""
+
+service:
+  type: ClusterIP
+  port: 8080
+  # Annotations to add to the service
+  annotations: {}
+
+ingress:
+  # Enable ingress resource
+  enabled: false
+  ingressClassName: ""
+  annotations: {}
+  # Extra labels to add to the ingress
+  labels: {}
+  # Narrow the paths; the listener also serves /debug/pprof/.
+  hosts:
+    - host: prometheus-mcp.local
+      paths:
+        - path: /
+          pathType: Prefix
+  tls: []
+  #  - secretName: prometheus-mcp-tls
+  #    hosts:
+  #      - prometheus-mcp.local
+
+# Gateway API routes, keyed by route name. "main" is named after the release;
+# any other key renders an additional route named <fullname>-<key>.
+# Requires Gateway API resources and a suitable controller installed within the cluster
+route:
+  main:
+    # Enable this route
+    enabled: false
+    # apiVersion of the route resource (defaults to gateway.networking.k8s.io/v1)
+    apiVersion: ""
+    # kind of the route resource (defaults to HTTPRoute)
+    kind: ""
+    # Annotations to add to the route
+    annotations: {}
+    # Extra labels to add to the route
+    labels: {}
+    # Gateways this route attaches to (required when enabled)
+    parentRefs: []
+    #  - name: my-gateway
+    #    namespace: gateway-system
+    #    sectionName: http
+    # Hostnames to match against the HTTP Host header (templated). Matches any
+    # host when empty.
+    hostnames: []
+    #  - prometheus-mcp.example.com
+    # Extra rules (templated) placed before the rule that targets the Service
+    additionalRules: []
+    # Filters applied to the rule that targets the Service
+    filters: []
+    # Narrow this; the listener also serves /debug/pprof/.
+    matches:
+      - path:
+          type: PathPrefix
+          value: /
+    # Timeouts for the rule that targets the Service (HTTPRoute only; Gateway
+    # API v1.2.0+). Controllers with a short default request timeout (Envoy
+    # Gateway: 15s) cut tool calls that run longer; "0s" disables it.
+    timeouts: {}
+    #  request: 0s
+    # Replace the Service rule with a 301 redirect to https. Attach this route
+    # to the Gateway's HTTP listener only (parentRefs[].sectionName) and serve
+    # HTTPS from a second route key; a route on both listeners redirects HTTPS
+    # to itself. matches/filters are ignored; additionalRules still render
+    # ahead of it.
+    # Ref. https://gateway-api.sigs.k8s.io/guides/http-redirect-rewrite/
+    httpsRedirect: false
+
+grafana:
+  dashboards:
+    # Enable Grafana dashboard provisioning via sidecar ConfigMap discovery.
+    # Requires Grafana's sidecar to be enabled (standard in kube-prometheus-stack).
+    enabled: false
+    # Namespace to deploy dashboard ConfigMaps to (defaults to release namespace)
+    namespace: ""
+    # Label key the Grafana sidecar watches for dashboard ConfigMaps
+    label: grafana_dashboard
+    # Label value to match
+    labelValue: "1"
+    # Annotations to add to the dashboard ConfigMap. grafana_folder takes effect
+    # only when the sidecar sets sidecar.dashboards.folderAnnotation and
+    # sidecar.dashboards.provider.foldersFromFilesStructure (both off in stock
+    # kube-prometheus-stack).
+    annotations: {}
+    # annotations:
+    #   grafana_folder: "Prometheus MCP Server"
+
+# Enable this if you're using https://github.com/prometheus-operator/prometheus-operator
+serviceMonitor:
+  enabled: false
+  # Extra labels to add to the ServiceMonitor (for serviceMonitorSelector matching)
+  labels: {}
+  namespace: ""
+  interval: ""
+  scrapeTimeout: ""
+  # Scheme to scrape with (http or https). Set https when the listener is
+  # behind --web.config.file TLS (wired up via extraArgs)
+  scheme: ""
+  # TLS settings for the scrape (Prometheus Operator TLSConfig, e.g. ca,
+  # serverName, insecureSkipVerify)
+  tlsConfig: {}
+  namespaceSelector: {}
+  # Relabel configs applied to discovered targets before scraping. Target
+  # labels only; filter by metric name with metricRelabelings.
+  relabelings: []
+  # Relabel configs applied to scraped samples before ingestion
+  metricRelabelings: []
+
+serviceAccount:
+  # Specifies whether a service account should be created
+  create: true
+  # The name of the service account to use.
+  # If not set and create is true, a name is generated using the fullname template
+  name: ""
+  # Annotations to add to the service account
+  annotations: {}
+  # Whether to automatically mount a service account token into the pod. Set on
+  # the pod spec, so it also holds for an existing account (create: false).
+  automountServiceAccountToken: false
+
+# Resource requests and limits.
+# Startup builds an in-memory search index of the embedded documentation
+# corpus, which costs a few CPU-seconds; tight CPU limits stretch this into
+# minutes (roughly 20s at 200m, close to a minute at 100m). The startupProbe
+# budget below accommodates slow starts, but avoid CPU limits below a few
+# hundred millicores.
+resources: {}
+  # limits:
+  #   cpu: 500m
+  #   memory: 256Mi
+  # requests:
+  #   cpu: 250m
+  #   memory: 128Mi
+
+# Pod annotations
+podAnnotations: {}
+
+# Pod labels
+podLabels: {}
+
+podSecurityContext:
+  runAsNonRoot: true
+  # Required alongside runAsNonRoot: the image's `USER nobody` is a name, not
+  # a UID, so without an explicit numeric user the kubelet cannot verify the
+  # container is non-root and fails it with CreateContainerConfigError.
+  runAsUser: 65534
+  runAsGroup: 65534
+  fsGroup: 65534
+  seccompProfile:
+    type: RuntimeDefault
+
+containerSecurityContext:
+  readOnlyRootFilesystem: true
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+      - ALL
+  seccompProfile:
+    type: RuntimeDefault
+
+startupProbe:
+  httpGet:
+    path: /-/healthy
+    port: http
+  periodSeconds: 5
+  failureThreshold: 24
+  # The kubelet default timeout of 1s is tight when the whole process is
+  # CPU-throttled; a wider timeout avoids restarting a healthy server
+  timeoutSeconds: 5
+
+livenessProbe:
+  httpGet:
+    path: /-/healthy
+    port: http
+  periodSeconds: 10
+  timeoutSeconds: 5
+
+readinessProbe:
+  httpGet:
+    path: /-/ready
+    port: http
+  periodSeconds: 10
+  timeoutSeconds: 5
+
+# Priority class name for pod scheduling
+priorityClassName: ""
+
+# Node selector for pod scheduling
+nodeSelector: {}
+
+tolerations: []
+
+# Affinity rules for pod scheduling
+affinity: {}
+
+# Topology spread constraints for pod scheduling
+topologySpreadConstraints: []
+
+# Extra command-line arguments, appended after the chart's own flags.
+# Repeating a chart-managed flag is rejected at render time -- set the value
+# instead. --web.listen-address is exempt (repeatable, but the extra listener
+# is pod-IP only).
+extraArgs: []
+
+# Extra environment variables. The server also reads flags from
+# PROMETHEUS_MCP_<FLAG> env vars, but only for flags the chart does not pass;
+# set the values above instead.
+extraEnv: []
+
+# Extra volumes to add to the pod
+extraVolumes: []
+
+# Extra volume mounts to add to the container
+extraVolumeMounts: []
+
+test:
+  image:
+    repository: busybox
+    tag: "1.37"
+  # Annotations to add to the test pod
+  annotations: {}
+  # Container security context for the test containers. Kept separate from
+  # containerSecurityContext so the test image can be locked down (or relaxed)
+  # independently of the server.
+  containerSecurityContext:
+    readOnlyRootFilesystem: true
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+        - ALL
+    seccompProfile:
+      type: RuntimeDefault
