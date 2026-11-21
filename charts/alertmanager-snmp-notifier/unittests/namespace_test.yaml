@@ -1,0 +1,58 @@
+suite: test namespaceOverride
+templates:
+  - configmap.yaml
+  - deployment.yaml
+  - hpa.yaml
+  - ingress.yaml
+  - secrets.yaml
+  - service.yaml
+  - serviceaccount.yaml
+  - servicemonitor.yaml
+release:
+  namespace: release-ns
+set:
+  namespaceOverride: override-ns
+  snmpNotifier:
+    snmpCommunity: public
+    trapTemplates:
+      description: "{{ .Labels.alertname }}"
+  autoscaling:
+    enabled: true
+  ingress:
+    enabled: true
+  serviceMonitor:
+    enabled: true
+    namespace: ""
+tests:
+  - it: renders every namespaced resource in namespaceOverride
+    asserts:
+      - equal:
+          path: metadata.namespace
+          value: override-ns
+
+  - it: scrapes the Service in namespaceOverride
+    template: servicemonitor.yaml
+    asserts:
+      - equal:
+          path: spec.namespaceSelector.matchNames
+          value:
+            - override-ns
+
+  - it: keeps serviceMonitor.namespace when it is set
+    template: servicemonitor.yaml
+    set:
+      serviceMonitor:
+        namespace: monitoring
+    asserts:
+      - equal:
+          path: metadata.namespace
+          value: monitoring
+
+  - it: uses the release namespace without namespaceOverride
+    template: deployment.yaml
+    set:
+      namespaceOverride: ""
+    asserts:
+      - equal:
+          path: metadata.namespace
+          value: release-ns
