@@ -52,6 +52,7 @@ charts = [
                 mixin+: {
                   _config+: {
                     fsSelector: '$.Values.defaultRules.node.fsSelector',
+                    diskDeviceSelector: '$.Values.defaultRules.node.diskDeviceSelector',
                   },
                 },
               },
@@ -241,6 +242,9 @@ replacement_map = {
         'init': ''},
     '$.Values.defaultRules.node.fsSelector': {
         'replacement': '{{ $.Values.defaultRules.node.fsSelector }}',
+        'init': ''},
+    '$.Values.defaultRules.node.diskDeviceSelector': {
+        'replacement': '{{ $.Values.defaultRules.node.diskDeviceSelector }}',
         'init': ''},
     'kubelet_certificate_manager_client_ttl_seconds < 604800': {
         'replacement': 'kubelet_certificate_manager_client_ttl_seconds < {{ .Values.defaultRules.kubeletClientCertificateExpiration.warning }}',
