@@ -1,0 +1,81 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/helm-unittest/helm-unittest/main/schema/helm-testsuite.json
+suite: test Service trafficDistribution
+templates:
+  - alertmanager/service.yaml
+  - prometheus/service.yaml
+  - prometheus/serviceThanosSidecar.yaml
+  - prometheus/serviceThanosSidecarExternal.yaml
+tests:
+  - it: should not render trafficDistribution on the Alertmanager Service by default
+    template: alertmanager/service.yaml
+    asserts:
+      - notExists:
+          path: spec.trafficDistribution
+  - it: should render trafficDistribution on the Alertmanager Service when set
+    template: alertmanager/service.yaml
+    set:
+      alertmanager:
+        service:
+          trafficDistribution: PreferClose
+    asserts:
+      - equal:
+          path: spec.trafficDistribution
+          value: PreferClose
+
+  - it: should not render trafficDistribution on the Prometheus Service by default
+    template: prometheus/service.yaml
+    asserts:
+      - notExists:
+          path: spec.trafficDistribution
+  - it: should render trafficDistribution on the Prometheus Service when set
+    template: prometheus/service.yaml
+    set:
+      prometheus:
+        service:
+          trafficDistribution: PreferClose
+    asserts:
+      - equal:
+          path: spec.trafficDistribution
+          value: PreferClose
+
+  - it: should not render trafficDistribution on the Thanos sidecar Service by default
+    template: prometheus/serviceThanosSidecar.yaml
+    set:
+      prometheus:
+        thanosService:
+          enabled: true
+    asserts:
+      - notExists:
+          path: spec.trafficDistribution
+  - it: should render trafficDistribution on the Thanos sidecar Service when set
+    template: prometheus/serviceThanosSidecar.yaml
+    set:
+      prometheus:
+        thanosService:
+          enabled: true
+          trafficDistribution: PreferSameZone
+    asserts:
+      - equal:
+          path: spec.trafficDistribution
+          value: PreferSameZone
+
+  - it: should not render trafficDistribution on the external Thanos sidecar Service by default
+    template: prometheus/serviceThanosSidecarExternal.yaml
+    set:
+      prometheus:
+        thanosServiceExternal:
+          enabled: true
+    asserts:
+      - notExists:
+          path: spec.trafficDistribution
+  - it: should render trafficDistribution on the external Thanos sidecar Service when set
+    template: prometheus/serviceThanosSidecarExternal.yaml
+    set:
+      prometheus:
+        thanosServiceExternal:
+          enabled: true
+          trafficDistribution: PreferClose
+    asserts:
+      - equal:
+          path: spec.trafficDistribution
+          value: PreferClose
