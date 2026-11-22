@@ -572,7 +572,7 @@ spec:
         {{- if not (hasKey $additionalAnnotations "summary") }}
         summary: RAID Array is degraded.
         {{- end }}
-      expr: node_md_disks_required{job="node-exporter",device=~"(/dev/)?(mmcblk.p.+|nvme.+|rbd.+|sd.+|vd.+|xvd.+|dm-.+|md.+|dasd.+)"} - ignoring (state) (node_md_disks{state="active",job="node-exporter",device=~"(/dev/)?(mmcblk.p.+|nvme.+|rbd.+|sd.+|vd.+|xvd.+|dm-.+|md.+|dasd.+)"}) > 0
+      expr: node_md_disks_required{job="node-exporter",{{ $.Values.defaultRules.node.diskDeviceSelector }}} - ignoring (state) (node_md_disks{state="active",job="node-exporter",{{ $.Values.defaultRules.node.diskDeviceSelector }}}) > 0
       for: {{ dig "NodeRAIDDegraded" "for" "15m" .Values.customRules }}
       {{- with .Values.defaultRules.keepFiringFor }}
       keep_firing_for: "{{ . }}"
@@ -606,7 +606,7 @@ spec:
         {{- if not (hasKey $additionalAnnotations "summary") }}
         summary: Failed device in RAID array.
         {{- end }}
-      expr: node_md_disks{state="failed",job="node-exporter",device=~"(/dev/)?(mmcblk.p.+|nvme.+|rbd.+|sd.+|vd.+|xvd.+|dm-.+|md.+|dasd.+)"} > 0
+      expr: node_md_disks{state="failed",job="node-exporter",{{ $.Values.defaultRules.node.diskDeviceSelector }}} > 0
       labels:
         severity: {{ dig "NodeRAIDDiskFailure" "severity" "warning" .Values.customRules }}
       {{- if or .Values.defaultRules.additionalRuleLabels .Values.defaultRules.additionalRuleGroupLabels.nodeExporterAlerting }}
@@ -864,7 +864,7 @@ spec:
         {{- if not (hasKey $additionalAnnotations "summary") }}
         summary: Disk IO queue is high.
         {{- end }}
-      expr: rate(node_disk_io_time_weighted_seconds_total{job="node-exporter", device=~"(/dev/)?(mmcblk.p.+|nvme.+|rbd.+|sd.+|vd.+|xvd.+|dm-.+|md.+|dasd.+)"}[5m]) > 10
+      expr: rate(node_disk_io_time_weighted_seconds_total{job="node-exporter", {{ $.Values.defaultRules.node.diskDeviceSelector }}}[5m]) > 10
       for: {{ dig "NodeDiskIOSaturation" "for" "30m" .Values.customRules }}
       {{- with .Values.defaultRules.keepFiringFor }}
       keep_firing_for: "{{ . }}"
