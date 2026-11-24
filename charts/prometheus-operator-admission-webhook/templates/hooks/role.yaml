@@ -17,14 +17,23 @@ metadata:
     {{- toYaml . | nindent 4 }}
     {{- end }}
 rules:
+  # create cannot be restricted by resourceNames, so it is granted on its own.
   - apiGroups:
       - ""
     resources:
       - secrets
     verbs:
-      - get
       - create
+  - apiGroups:
+      - ""
+    resources:
+      - secrets
+    resourceNames:
+      - {{ include "prometheus-operator-admission-webhook.fullname" . }}
+    verbs:
+      - get
       {{- if .Values.jobs.secretType }}
+      # Allows migrating an existing Opaque secret to kubernetes.io/tls.
       - delete
       {{- end }}
 {{- end }}
