@@ -59,3 +59,20 @@ tests:
       - contains:
           path: spec.template.spec.containers[0].args
           content: --web.key-file=/cert/key
+
+  - it: does not mount a service account token by default
+    set:
+      prometheusOperator.admissionWebhooks.deployment.enabled: true
+    asserts:
+      - equal:
+          path: spec.template.spec.automountServiceAccountToken
+          value: false
+
+  - it: mounts a service account token when enabled
+    set:
+      prometheusOperator.admissionWebhooks.deployment.enabled: true
+      prometheusOperator.admissionWebhooks.deployment.automountServiceAccountToken: true
+    asserts:
+      - equal:
+          path: spec.template.spec.automountServiceAccountToken
+          value: true

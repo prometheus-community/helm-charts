@@ -7,7 +7,18 @@ longer mount a Kubernetes service account token. Alertmanager and the config-rel
 API. If you add containers to the Alertmanager Pods (`alertmanager.alertmanagerSpec.containers` or
 `initContainers`) that need API credentials, set `alertmanager.alertmanagerSpec.automountServiceAccountToken: true`.
 
-The pod spec changes, so Alertmanager restarts once on upgrade.
+The same applies to two other components that do not use the Kubernetes API:
+
+- Thanos Ruler: the ThanosRuler resource has no `automountServiceAccountToken` field, so its Pods follow their
+  ServiceAccount. The new `thanosRuler.serviceAccount.automountServiceAccountToken` defaults to `false` and is set on
+  the chart-managed ServiceAccount. Set it to `true` if you add containers that need API credentials. With
+  `thanosRuler.serviceAccount.create: false`, configure your own ServiceAccount.
+- The standalone admission webhook Deployment (`prometheusOperator.admissionWebhooks.deployment.enabled`):
+  `prometheusOperator.admissionWebhooks.deployment.automountServiceAccountToken` now defaults to `false`. Its
+  ServiceAccount already disabled automounting; the Pod-level setting overrode it.
+
+The pod spec changes, so Alertmanager and the admission webhook Deployment restart once on upgrade. Existing Thanos
+Ruler Pods keep their token until they are recreated, for example by the next rollout.
 
 ## From 92.x to 93.x
 

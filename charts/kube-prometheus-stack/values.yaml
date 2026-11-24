@@ -3373,9 +3373,11 @@ prometheusOperator:
           drop:
             - ALL
 
-      ## If false then the user will opt out of automounting API credentials.
+      ## The admission webhook only serves HTTPS and does not call the Kubernetes API, so no
+      ## service account token is mounted by default. Set to true if you add containers that need
+      ## API credentials.
       ##
-      automountServiceAccountToken: true
+      automountServiceAccountToken: false
 
     patch:
       enabled: true
@@ -5718,6 +5720,11 @@ thanosRuler:
     create: true
     name: ""
     annotations: {}
+    ## The ThanosRuler resource has no automountServiceAccountToken field, so the ThanosRuler Pods
+    ## follow this ServiceAccount setting. Thanos Ruler and its config-reloader sidecar do not call
+    ## the Kubernetes API, so no token is mounted by default. Set to true if you add containers that
+    ## need API credentials.
+    automountServiceAccountToken: false
 
   ## Configure pod disruption budgets for ThanosRuler
   ## ref: https://kubernetes.io/docs/tasks/run-application/configure-pdb/#specifying-a-poddisruptionbudget
