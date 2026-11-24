@@ -1,5 +1,14 @@
 # Upgrade
 
+## From 93.x to 94.x
+
+`alertmanager.alertmanagerSpec.automountServiceAccountToken` now defaults to `false`, so the Alertmanager Pods no
+longer mount a Kubernetes service account token. Alertmanager and the config-reloader sidecar do not use the Kubernetes
+API. If you add containers to the Alertmanager Pods (`alertmanager.alertmanagerSpec.containers` or
+`initContainers`) that need API credentials, set `alertmanager.alertmanagerSpec.automountServiceAccountToken: true`.
+
+The pod spec changes, so Alertmanager restarts once on upgrade.
+
 ## From 92.x to 93.x
 
 This version upgrades Prometheus-Operator to v0.95.1.
