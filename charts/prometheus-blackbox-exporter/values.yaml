@@ -387,6 +387,47 @@ serviceMonitor:
 #      additionalMetricsRelabels: {}    # Map of metric labels and values to add
 #      additionalRelabeling: []         # List of metric relabeling actions to run
 
+## Prometheus Operator Probe resources, an alternative to `serviceMonitor.targets`.
+## One Probe is created per target. Its prober is this chart's Service (port `service.port`).
+## ref: https://prometheus-operator.dev/docs/api-reference/api/#monitoring.coreos.com/v1.Probe
+probe:
+  ## Probe CRD API version
+  ##
+  apiVersion: monitoring.coreos.com/v1
+
+  ## If true, a Probe is created for a prometheus operator for each target
+  ##
+  enabled: false
+
+  # Default values that will be used for all Probes created by `targets`
+  defaults:
+    additionalMetricsRelabels: {}
+    additionalRelabeling: []
+    ## labels: Probe object labels, for example to match the Prometheus `probeSelector`
+    labels: {}
+    interval: 30s
+    scrapeTimeout: 30s
+    module: http_2xx
+  ## scheme: HTTP scheme Prometheus uses to reach the blackbox exporter. Can be used with `tlsConfig`.
+  scheme: http
+  ## path: HTTP path of the probe endpoint. Needs to be adjusted, if web.route-prefix is set
+  path: "/probe"
+  ## tlsConfig: TLS configuration to use when scraping the blackbox exporter.
+  ## Of type: https://prometheus-operator.dev/docs/api-reference/api/#monitoring.coreos.com/v1.SafeTLSConfig
+  tlsConfig: {}
+
+  targets:
+#    - name: example                    # Human readable name, set as the `target` label
+#      url: http://example.com/healthz  # The URL that blackbox will probe
+#      urls: []                         # Additional URLs probed by the same Probe (all get the same `target` label)
+#      hostname: example.com            # HTTP probes can accept an additional `hostname` parameter that will set `Host` header and TLS SNI
+#      labels: {}                       # Map of labels for the Probe. Overrides value set in `defaults`
+#      interval: 60s                    # Probing interval. Overrides value set in `defaults`
+#      scrapeTimeout: 60s               # Scrape timeout. Overrides value set in `defaults`
+#      module: http_2xx                 # Module used for probing. Overrides value set in `defaults`
+#      additionalMetricsRelabels: {}    # Map of metric labels and values to add
+#      additionalRelabeling: []         # List of relabeling actions to run on the targets before probing
+
 ## Custom PrometheusRules to be defined
 ## ref: https://github.com/coreos/prometheus-operator#customresourcedefinitions
 prometheusRule:

@@ -1,0 +1,255 @@
+suite: Probe
+templates:
+  - templates/probe.yaml
+release:
+  name: rel
+  namespace: monitoring
+tests:
+  - it: renders nothing by default
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: renders nothing when enabled without targets
+    set:
+      probe.enabled: true
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: renders one Probe per target
+    set:
+      probe.enabled: true
+      probe.targets:
+        - name: one
+          url: http://one.example.com
+        - name: two
+          url: http://two.example.com
+    asserts:
+      - hasDocuments:
+          count: 2
+      - isKind:
+          of: Probe
+      - isAPIVersion:
+          of: monitoring.coreos.com/v1
+      - equal:
+          path: metadata.name
+          value: rel-prometheus-blackbox-exporter-one
+        documentIndex: 0
+      - equal:
+          path: metadata.name
+          value: rel-prometheus-blackbox-exporter-two
+        documentIndex: 1
+      - equal:
+          path: spec.targets.staticConfig.static
+          value:
+            - http://two.example.com
+        documentIndex: 1
+
+  - it: points the prober at the chart Service
+    set:
+      probe.enabled: true
+      probe.targets:
+        - name: one
+          url: http://one.example.com
+    asserts:
+      - equal:
+          path: metadata.namespace
+          value: monitoring
+      - equal:
+          path: spec.prober
+          value:
+            url: rel-prometheus-blackbox-exporter.monitoring.svc:9115
+            scheme: http
+            path: /probe
+
+  - it: follows service.port, namespaceOverride, path and scheme
+    set:
+      namespaceOverride: probes
+      service.port: 8080
+      probe.enabled: true
+      probe.scheme: https
+      probe.path: /blackbox/probe
+      probe.tlsConfig:
+        insecureSkipVerify: true
+      probe.targets:
+        - name: one
+          url: http://one.example.com
+    asserts:
+      - equal:
+          path: metadata.namespace
+          value: probes
+      - equal:
+          path: spec.prober
+          value:
+            url: rel-prometheus-blackbox-exporter.probes.svc:8080
+            scheme: https
+            path: /blackbox/probe
+      - equal:
+          path: spec.tlsConfig
+          value:
+            insecureSkipVerify: true
+
+  - it: uses defaults for module, interval and scrapeTimeout
+    set:
+      probe.enabled: true
+      probe.targets:
+        - name: one
+          url: http://one.example.com
+    asserts:
+      - equal:
+          path: spec.module
+          value: http_2xx
+      - equal:
+          path: spec.interval
+          value: 30s
+      - equal:
+          path: spec.scrapeTimeout
+          value: 30s
+      - notExists:
+          path: spec.params
+      - notExists:
+          path: spec.targets.staticConfig.relabelingConfigs
+      - notExists:
+          path: spec.tlsConfig
+      - equal:
+          path: spec.metricRelabelings
+          value:
+            - targetLabel: target
+              replacement: one
+              action: replace
+
+  - it: lets a target override the defaults
+    set:
+      probe.enabled: true
+      probe.defaults.module: tcp_connect
+      probe.defaults.interval: 15s
+      probe.targets:
+        - name: one
+          url: http://one.example.com
+        - name: two
+          url: http://two.example.com
+          module: http_post_2xx
+          interval: 60s
+          scrapeTimeout: 10s
+    asserts:
+      - equal:
+          path: spec.module
+          value: tcp_connect
+        documentIndex: 0
+      - equal:
+          path: spec.interval
+          value: 15s
+        documentIndex: 0
+      - equal:
+          path: spec.module
+          value: http_post_2xx
+        documentIndex: 1
+      - equal:
+          path: spec.interval
+          value: 60s
+        documentIndex: 1
+      - equal:
+          path: spec.scrapeTimeout
+          value: 10s
+        documentIndex: 1
+
+  - it: uses target labels over default labels
+    set:
+      probe.enabled: true
+      probe.defaults.labels:
+        team: default
+      probe.targets:
+        - name: one
+          url: http://one.example.com
+        - name: two
+          url: http://two.example.com
+          labels:
+            team: two
+    asserts:
+      - equal:
+          path: metadata.labels.team
+          value: default
+        documentIndex: 0
+      - equal:
+          path: metadata.labels.team
+          value: two
+        documentIndex: 1
+      - equal:
+          path: metadata.labels["app.kubernetes.io/name"]
+          value: prometheus-blackbox-exporter
+        documentIndex: 1
+
+  - it: renders url, urls and tpl in targets
+    set:
+      myDomain: tpl.example.com
+      probe.enabled: true
+      probe.targets:
+        - name: one
+          url: http://one.{{ .Values.myDomain }}/healthz
+          urls:
+            - http://extra.example.com/#frag
+    asserts:
+      - equal:
+          path: spec.targets.staticConfig.static
+          value:
+            - http://extra.example.com/#frag
+            - http://one.tpl.example.com/healthz
+
+  - it: fails when a target has no url
+    set:
+      probe.enabled: true
+      probe.targets:
+        - name: one
+    asserts:
+      - failedTemplate:
+          errorMessage: 'probe.targets: target "one" must set url or urls'
+
+  - it: passes hostname as a probe parameter
+    set:
+      probe.enabled: true
+      probe.targets:
+        - name: one
+          url: https://10.0.0.1
+          hostname: one.example.com
+    asserts:
+      - equal:
+          path: spec.params
+          value:
+            - name: hostname
+              values:
+                - one.example.com
+
+  - it: renders relabelings and metric relabelings
+    set:
+      probe.enabled: true
+      probe.defaults.additionalRelabeling:
+        - targetLabel: env
+          replacement: prod
+      probe.defaults.additionalMetricsRelabels:
+        team: default
+      probe.targets:
+        - name: one
+          url: http://one.example.com
+          additionalRelabeling:
+            - targetLabel: zone
+              replacement: a
+          additionalMetricsRelabels:
+            team: one
+    asserts:
+      - equal:
+          path: spec.targets.staticConfig.relabelingConfigs
+          value:
+            - targetLabel: zone
+              replacement: a
+            - targetLabel: env
+              replacement: prod
+      - equal:
+          path: spec.metricRelabelings
+          value:
+            - targetLabel: target
+              replacement: one
+              action: replace
+            - targetLabel: team
+              replacement: one
+              action: replace
