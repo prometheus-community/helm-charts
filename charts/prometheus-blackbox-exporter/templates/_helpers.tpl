@@ -97,6 +97,16 @@ The image to use
 Define pod spec to be reused by highlevel resources (deployment, daemonset)
 */}}
 {{- define "prometheus-blackbox-exporter.podSpec" -}}
+{{- if and .Values.configReloader.enabled .Values.configAutoReload.enabled }}
+{{- fail "configReloader.enabled and configAutoReload.enabled are mutually exclusive: enable only one way of reloading the configuration" }}
+{{- end }}
+{{- if .Values.configAutoReload.enabled }}
+{{- $interval := .Values.configAutoReload.interval }}
+{{- $isNumber := or (kindIs "int" $interval) (kindIs "int64" $interval) (kindIs "float64" $interval) }}
+{{- if or (not $isNumber) (ne (float64 $interval) (floor $interval)) (lt (float64 $interval) 1.0) }}
+{{- fail "configAutoReload.interval must be a whole number of seconds greater than 0" }}
+{{- end }}
+{{- end -}}
 automountServiceAccountToken: {{ .Values.automountServiceAccountToken }}
 serviceAccountName: {{ template "prometheus-blackbox-exporter.serviceAccountName" . }}
 {{- with .Values.topologySpreadConstraints }}
@@ -163,9 +173,9 @@ containers:
 {{- if .Values.configReloader.enabled }}
 {{- $webConfigurationMode := include "prometheus-blackbox-exporter.webConfigurationMode" . }}
 {{- if include "prometheus-blackbox-exporter.webConfigurationExistingSecretName" . }}
-{{- fail "configReloader.enabled cannot be combined with webConfiguration.existingSecret: the chart cannot tell whether the reload endpoint needs TLS or credentials. Use webConfiguration.config, or disable the config reloader and add --config.enable-auto-reload to extraArgs." }}
+{{- fail "configReloader.enabled cannot be combined with webConfiguration.existingSecret: the chart cannot tell whether the reload endpoint needs TLS or credentials. Use webConfiguration.config, or disable the config reloader and set configAutoReload.enabled instead." }}
 {{- else if eq $webConfigurationMode "auth" }}
-{{- fail "configReloader.enabled cannot be combined with basic_auth_users or a required client certificate in webConfiguration.config: the config reloader cannot authenticate to /-/reload without putting credentials into the pod spec. Disable the config reloader and add --config.enable-auto-reload to extraArgs instead." }}
+{{- fail "configReloader.enabled cannot be combined with basic_auth_users or a required client certificate in webConfiguration.config: the config reloader cannot authenticate to /-/reload without putting credentials into the pod spec. Disable the config reloader and set configAutoReload.enabled instead." }}
 {{- end }}
 - name: config-reloader
   image: {{ include "prometheus-blackbox-exporter.config-reloader.image" . }}
@@ -221,6 +231,10 @@ containers:
   {{- end }}
   {{- else }}
   - "--config.file=/etc/blackbox_exporter/config.yml"
+  {{- end }}
+  {{- if .Values.configAutoReload.enabled }}
+  - "--config.enable-auto-reload"
+  - "--config.auto-reload-interval={{ .Values.configAutoReload.interval | int }}"
   {{- end }}
   {{- if include "prometheus-blackbox-exporter.webConfigurationEnabled" . }}
   - "--web.config.file=/etc/blackbox-exporter/web-config/web-config.yaml"

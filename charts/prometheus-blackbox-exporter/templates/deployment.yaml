@@ -25,10 +25,11 @@ spec:
         {{- if .Values.pod.labels }}
 {{ toYaml .Values.pod.labels | indent 8 }}
         {{- end }}
+      {{- $rollOnConfigChange := not (or .Values.configReloader.enabled .Values.configAutoReload.enabled) }}
       {{- $webConfigChecksum := include "prometheus-blackbox-exporter.webConfigurationChecksum" . }}
-      {{- if or (not .Values.configReloader.enabled) .Values.podAnnotations $webConfigChecksum }}
+      {{- if or $rollOnConfigChange .Values.podAnnotations $webConfigChecksum }}
       annotations:
-        {{- if not .Values.configReloader.enabled }}
+        {{- if $rollOnConfigChange }}
         checksum/config: {{ toYaml .Values.config | sha256sum }}
         {{- end }}
         {{- with $webConfigChecksum }}

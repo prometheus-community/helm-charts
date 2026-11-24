@@ -211,6 +211,17 @@ config:
         follow_redirects: true
         preferred_ip_protocol: "ip4"
 
+## Let the exporter reload its configuration file by itself, without restarting the pod
+## (--config.enable-auto-reload). Requires blackbox_exporter v0.28.0 or later.
+## When enabled, the checksum/config pod annotation is no longer set, so changing `config`
+## does not roll the pods; the exporter picks up the new file once the kubelet has refreshed the
+## mounted ConfigMap/Secret (up to about a minute by default) and the next interval has passed.
+## Mutually exclusive with configReloader.enabled. Do not pass the same flags through extraArgs.
+configAutoReload:
+  enabled: false
+  # Interval in seconds (an integer, not a duration) between checks of the configuration file
+  interval: 30
+
 # Set custom config path, other than default /config/blackbox.yaml. If let empty, path will be "/config/blackbox.yaml"
 # configPath: "/foo/bar"
 
@@ -370,7 +381,7 @@ webConfiguration:
   # When it contains basic_auth_users, or a client_auth_type that requires a client certificate,
   # httpGet probes are replaced by tcpSocket probes on the same port, because credentials are
   # never put into the pod spec. configReloader cannot authenticate and is rejected in that case;
-  # use extraArgs: ["--config.enable-auto-reload"] instead.
+  # set configAutoReload.enabled instead.
   # Mount the certificate and key with extraSecretMounts (for example a kubernetes.io/tls Secret).
   config: {}
     # tls_server_config:

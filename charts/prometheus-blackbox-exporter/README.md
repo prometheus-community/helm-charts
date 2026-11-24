@@ -165,8 +165,8 @@ How the rest of the chart adapts:
 - With `basic_auth_users`, a `client_auth_type` that requires a client certificate, or an
   `existingSecret`, every path including `/-/healthy` requires credentials. The chart does not put
   credentials into the pod spec, so `httpGet` probes are replaced by `tcpSocket` probes on the same
-  port. The config reloader cannot authenticate either, so `configReloader.enabled` is rejected; add
-  `--config.enable-auto-reload` to `extraArgs` to let the exporter reload its configuration itself.
+  port. The config reloader cannot authenticate either, so `configReloader.enabled` is rejected; set
+  `configAutoReload.enabled` to let the exporter reload its configuration itself.
 - ServiceMonitors and PodMonitorings are not changed automatically: set `scheme: https` and a matching
   `tlsConfig` on `serviceMonitor`, `serviceMonitor.selfMonitor` and `podMonitoring`. Scraping with
   basic authentication is not configured by the chart.
