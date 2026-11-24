@@ -89,7 +89,14 @@ configmapReload:
       #   readOnly: true
 
     ## Security context to be added to configmap-reload container
-    containerSecurityContext: {}
+    ## Set to null to render no securityContext, or set a single field to override it.
+    ##
+    containerSecurityContext:
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop:
+          - ALL
+      readOnlyRootFilesystem: true
 
     ## Settings for Prometheus reloader's readiness, liveness and startup probes
     ## Ref: https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/
@@ -745,10 +752,21 @@ server:
     runAsNonRoot: true
     runAsGroup: 65534
     fsGroup: 65534
+    seccompProfile:
+      type: RuntimeDefault
 
   ## Security context to be added to server container
+  ## The root filesystem is read-only: Prometheus writes only to its data directory, which is the
+  ## server.persistentVolume.mountPath volume (an emptyDir when persistence is disabled). If you move the storage
+  ## path with server.storagePath or server.defaultFlagsOverride, keep it on a mounted volume.
+  ## Set to null to render no securityContext, or set a single field to override it.
   ##
-  containerSecurityContext: {}
+  containerSecurityContext:
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+        - ALL
+    readOnlyRootFilesystem: true
 
   service:
     ## If false, no Service will be created for the Prometheus server
