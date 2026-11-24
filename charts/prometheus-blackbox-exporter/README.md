@@ -125,6 +125,52 @@ See [Customizing the Chart Before Installing](https://helm.sh/docs/intro/using_h
 helm show values oci://ghcr.io/prometheus-community/charts/prometheus-blackbox-exporter
 ```
 
+### TLS and basic authentication
+
+The exporter's HTTP endpoints can be protected with an
+[exporter-toolkit web configuration](https://prometheus.io/docs/prometheus/latest/configuration/https/)
+through `webConfiguration`. The chart passes it with `--web.config.file`, either rendered from
+`webConfiguration.config` into a `<fullname>-web-config` Secret, or from an existing Secret named in
+`webConfiguration.existingSecret.name` that holds the key `web-config.yaml`.
+
+For TLS, mount the certificate and key, for example from a `kubernetes.io/tls` Secret:
+
+```yaml
+webConfiguration:
+  config:
+    tls_server_config:
+      cert_file: /etc/blackbox-exporter/tls/tls.crt
+      key_file: /etc/blackbox-exporter/tls/tls.key
+
+extraSecretMounts:
+  - name: tls
+    mountPath: /etc/blackbox-exporter/tls
+    secretName: blackbox-exporter-tls
+    readOnly: true
+```
+
+For basic authentication, add bcrypt hashes (never plain passwords) to `basic_auth_users`:
+
+```yaml
+webConfiguration:
+  config:
+    basic_auth_users:
+      <username>: <bcrypt-hash>
+```
+
+How the rest of the chart adapts:
+
+- With TLS only, the `httpGet` liveness and readiness probes use `scheme: HTTPS`, and the config
+  reloader calls `https://127.0.0.1:<containerPort>/-/reload` (it does not verify the certificate).
+- With `basic_auth_users`, a `client_auth_type` that requires a client certificate, or an
+  `existingSecret`, every path including `/-/healthy` requires credentials. The chart does not put
+  credentials into the pod spec, so `httpGet` probes are replaced by `tcpSocket` probes on the same
+  port. The config reloader cannot authenticate either, so `configReloader.enabled` is rejected; add
+  `--config.enable-auto-reload` to `extraArgs` to let the exporter reload its configuration itself.
+- ServiceMonitors and PodMonitorings are not changed automatically: set `scheme: https` and a matching
+  `tlsConfig` on `serviceMonitor`, `serviceMonitor.selfMonitor` and `podMonitoring`. Scraping with
+  basic authentication is not configured by the chart.
+
 ### Binary protocol (TCP) modules (PostgreSQL, LDAP, etc.)
 
 If your module configuration requires binary send payloads — for example probing

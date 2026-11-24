@@ -1,0 +1,250 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/helm-unittest/helm-unittest/main/schema/helm-testsuite.json
+suite: web configuration (TLS and basic auth)
+templates:
+  - deployment.yaml
+  - web-config-secret.yaml
+release:
+  name: r
+tests:
+  - it: renders no web configuration by default
+    asserts:
+      - hasDocuments:
+          count: 0
+        template: web-config-secret.yaml
+      - notContains:
+          path: spec.template.spec.containers[0].args
+          content: --web.config.file=/etc/blackbox-exporter/web-config/web-config.yaml
+        template: deployment.yaml
+      - notContains:
+          path: spec.template.spec.volumes
+          any: true
+          content:
+            name: web-config
+        template: deployment.yaml
+      - equal:
+          path: spec.template.spec.containers[0].livenessProbe
+          value:
+            httpGet:
+              path: /-/healthy
+              port: http
+            failureThreshold: 3
+        template: deployment.yaml
+
+  - it: keeps the plain HTTP reload URL by default
+    set:
+      configReloader.enabled: true
+    template: deployment.yaml
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: --reload-url=http://127.0.0.1:9115/-/reload
+
+  - it: renders the inline TLS web configuration into its own Secret
+    set:
+      webConfiguration.config:
+        tls_server_config:
+          cert_file: /etc/blackbox-exporter/tls/tls.crt
+          key_file: /etc/blackbox-exporter/tls/tls.key
+    template: web-config-secret.yaml
+    asserts:
+      - hasDocuments:
+          count: 1
+      - isKind:
+          of: Secret
+      - equal:
+          path: metadata.name
+          value: r-prometheus-blackbox-exporter-web-config
+      - equal:
+          path: stringData["web-config.yaml"]
+          value: |
+            tls_server_config:
+              cert_file: /etc/blackbox-exporter/tls/tls.crt
+              key_file: /etc/blackbox-exporter/tls/tls.key
+
+  - it: passes the web config flag, mounts it and switches probes to HTTPS with TLS
+    set:
+      webConfiguration.config:
+        tls_server_config:
+          cert_file: /etc/blackbox-exporter/tls/tls.crt
+          key_file: /etc/blackbox-exporter/tls/tls.key
+    template: deployment.yaml
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: --web.config.file=/etc/blackbox-exporter/web-config/web-config.yaml
+      - contains:
+          path: spec.template.spec.containers[0].volumeMounts
+          content:
+            name: web-config
+            mountPath: /etc/blackbox-exporter/web-config
+            readOnly: true
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: web-config
+            secret:
+              secretName: r-prometheus-blackbox-exporter-web-config
+              items:
+                - key: web-config.yaml
+                  path: web-config.yaml
+      - equal:
+          path: spec.template.spec.containers[0].livenessProbe
+          value:
+            httpGet:
+              path: /-/healthy
+              port: http
+              scheme: HTTPS
+            failureThreshold: 3
+      - equal:
+          path: spec.template.spec.containers[0].readinessProbe.httpGet.scheme
+          value: HTTPS
+
+  - it: points the config reloader at the HTTPS reload endpoint with TLS
+    set:
+      configReloader.enabled: true
+      webConfiguration.config:
+        tls_server_config:
+          cert_file: /etc/blackbox-exporter/tls/tls.crt
+          key_file: /etc/blackbox-exporter/tls/tls.key
+    template: deployment.yaml
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].name
+          value: config-reloader
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: --reload-url=https://127.0.0.1:9115/-/reload
+
+  - it: uses tcpSocket probes and keeps credentials out of the pod spec with basic auth
+    set:
+      webConfiguration.config:
+        basic_auth_users:
+          prometheus: <bcrypt-hash>
+    template: deployment.yaml
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].livenessProbe
+          value:
+            tcpSocket:
+              port: http
+            failureThreshold: 3
+      - equal:
+          path: spec.template.spec.containers[0].readinessProbe
+          value:
+            tcpSocket:
+              port: http
+      - notExists:
+          path: spec.template.spec.containers[0].livenessProbe.httpGet
+      - notExists:
+          path: spec.template.spec.containers[0].readinessProbe.httpGet
+      - notExists:
+          path: spec.template.spec.containers[0].env
+      - equal:
+          path: spec.template.spec.containers[0].args
+          value:
+            - --config.file=/config/blackbox.yaml
+            - --web.config.file=/etc/blackbox-exporter/web-config/web-config.yaml
+
+  - it: uses tcpSocket probes when TLS requires a client certificate
+    set:
+      webConfiguration.config:
+        tls_server_config:
+          cert_file: /etc/blackbox-exporter/tls/tls.crt
+          key_file: /etc/blackbox-exporter/tls/tls.key
+          client_ca_file: /etc/blackbox-exporter/tls/ca.crt
+          client_auth_type: RequireAndVerifyClientCert
+    template: deployment.yaml
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].livenessProbe.tcpSocket.port
+          value: http
+      - notExists:
+          path: spec.template.spec.containers[0].livenessProbe.httpGet
+
+  - it: leaves non-httpGet probes untouched
+    set:
+      webConfiguration.config:
+        basic_auth_users:
+          prometheus: <bcrypt-hash>
+      livenessProbe:
+        httpGet: null
+        exec:
+          command: ["true"]
+    template: deployment.yaml
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].livenessProbe
+          value:
+            exec:
+              command: ["true"]
+            failureThreshold: 3
+
+  - it: rejects the config reloader together with basic auth
+    set:
+      configReloader.enabled: true
+      webConfiguration.config:
+        basic_auth_users:
+          prometheus: <bcrypt-hash>
+    template: deployment.yaml
+    asserts:
+      - failedTemplate:
+          errorPattern: configReloader.enabled cannot be combined with basic_auth_users
+
+  - it: mounts an existing Secret without rendering one and uses tcpSocket probes
+    set:
+      webConfiguration.existingSecret.name: my-web-config
+    asserts:
+      - hasDocuments:
+          count: 0
+        template: web-config-secret.yaml
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: --web.config.file=/etc/blackbox-exporter/web-config/web-config.yaml
+        template: deployment.yaml
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: web-config
+            secret:
+              secretName: my-web-config
+              items:
+                - key: web-config.yaml
+                  path: web-config.yaml
+        template: deployment.yaml
+      - equal:
+          path: spec.template.spec.containers[0].readinessProbe
+          value:
+            tcpSocket:
+              port: http
+        template: deployment.yaml
+
+  - it: prefers the existing Secret over the inline configuration
+    set:
+      webConfiguration.config:
+        tls_server_config:
+          cert_file: /etc/blackbox-exporter/tls/tls.crt
+          key_file: /etc/blackbox-exporter/tls/tls.key
+      webConfiguration.existingSecret.name: my-web-config
+    asserts:
+      - hasDocuments:
+          count: 0
+        template: web-config-secret.yaml
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: web-config
+            secret:
+              secretName: my-web-config
+              items:
+                - key: web-config.yaml
+                  path: web-config.yaml
+        template: deployment.yaml
+
+  - it: rejects the config reloader together with an existing Secret
+    set:
+      configReloader.enabled: true
+      webConfiguration.existingSecret.name: my-web-config
+    template: deployment.yaml
+    asserts:
+      - failedTemplate:
+          errorPattern: configReloader.enabled cannot be combined with webConfiguration.existingSecret
