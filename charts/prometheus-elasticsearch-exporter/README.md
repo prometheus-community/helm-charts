@@ -49,6 +49,16 @@ helm upgrade [RELEASE_NAME] oci://ghcr.io/prometheus-community/charts/prometheus
 
 _See [helm upgrade](https://helm.sh/docs/helm/helm_upgrade/) for command documentation._
 
+### To 8.0.0
+
+The exporter Pod no longer mounts a Kubernetes service account token: `serviceAccount.automountServiceAccountToken`
+now defaults to `false` and also applies to the Pod, not only to a ServiceAccount created by the chart. The exporter does
+not call the Kubernetes API. If you add containers that need API credentials, set it back to `true`.
+
+`podSecurityContext.runAsGroup` now defaults to `1000`, so the exporter no longer runs with the root group (GID 0).
+
+The Pod spec changes, so the exporter restarts once on upgrade.
+
 ### To 7.0.0
 
 In Release 7.0.0, the chart has dropped support for PodSecurityPolicy, which was removed in k8s 1.25.
