@@ -376,9 +376,10 @@ requests need credentials. Credentials are never written into the pod spec.
 Usage: include "prometheus-blackbox-exporter.probe" (dict "probe" .Values.livenessProbe "context" $)
 */}}
 {{- define "prometheus-blackbox-exporter.probe" -}}
-{{- $probe := deepCopy .probe -}}
+{{- $probe := .probe -}}
 {{- $mode := include "prometheus-blackbox-exporter.webConfigurationMode" .context -}}
 {{- if and $mode (kindIs "map" $probe) (hasKey $probe "httpGet") -}}
+{{- $probe = deepCopy $probe -}}
 {{- if eq $mode "auth" -}}
 {{- $port := $probe.httpGet.port -}}
 {{- $probe = omit $probe "httpGet" -}}

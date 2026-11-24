@@ -248,3 +248,17 @@ tests:
     asserts:
       - failedTemplate:
           errorPattern: configReloader.enabled cannot be combined with webConfiguration.existingSecret
+
+  - it: still renders when a probe is set to null
+    set:
+      livenessProbe: null
+      webConfiguration.config:
+        basic_auth_users:
+          prometheus: <bcrypt-hash>
+    template: deployment.yaml
+    asserts:
+      - isNull:
+          path: spec.template.spec.containers[0].livenessProbe
+      - equal:
+          path: spec.template.spec.containers[0].readinessProbe.tcpSocket.port
+          value: http
