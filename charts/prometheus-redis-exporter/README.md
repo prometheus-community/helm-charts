@@ -52,7 +52,7 @@ The exporter now runs with hardened defaults that follow the [restricted Pod Sec
 - `securityContext`: `allowPrivilegeEscalation: false`, all capabilities dropped and `readOnlyRootFilesystem: true`.
 - `serviceAccount.automountServiceAccountToken` defaults to `false` and now also applies to the Pod. The exporter does not call the Kubernetes API.
 
-The Pod spec changes, so the exporter restarts once on upgrade. If you run a custom image that needs a different user or a writable root filesystem, override `podSecurityContext` / `securityContext` (set them to `{}` to restore the previous behavior).
+The Pod spec changes, so the exporter restarts once on upgrade. If you run a custom image that needs a different user or a writable root filesystem, override `podSecurityContext` / `securityContext`. To restore the previous behavior, set them to `null`; an empty map `{}` is merged with the new defaults by Helm and does not remove them.
 
 #### To 5.0.0
 
