@@ -46,6 +46,14 @@ _See [helm upgrade](https://helm.sh/docs/helm/helm_upgrade/) for command documen
 
 A major chart version change (like v1.2.3 -> v2.0.0) indicates that there is an incompatible breaking change needing manual actions.
 
+##### From 3.x to 4.x
+
+The exporter Pod no longer mounts a Kubernetes service account token: `serviceAccount.automountServiceAccountToken` now defaults to `false` and also applies to the Pod. The exporter does not call the Kubernetes API. If you add containers that need API credentials, set it back to `true`.
+
+`podSecurityContext` now defaults to `seccompProfile: RuntimeDefault`, so together with the existing `securityContext` the exporter meets the [restricted Pod Security Standard](https://kubernetes.io/docs/concepts/security/pod-security-standards/#restricted). The `helm test` Pod uses a pinned busybox image (`tests.image`) and the same restrictions.
+
+The Pod spec changes, so the exporter restarts once on upgrade.
+
 ##### From 2.x to 3.x
 
 This version uses the original percona/mongodb_exporter Docker image again, as described in the readme and Chart.yaml. It's maintained and it uses frequent Docker builds, so this is preferable for security reasons.
