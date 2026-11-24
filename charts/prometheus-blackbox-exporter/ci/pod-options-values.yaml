@@ -1,0 +1,26 @@
+podSecurityContext:
+  sysctls:
+    - name: net.ipv4.ping_group_range
+      value: "0 2147483647"
+
+startupProbe:
+  httpGet:
+    path: /-/healthy
+    port: http
+  failureThreshold: 30
+  periodSeconds: 2
+
+lifecycle:
+  preStop:
+    exec:
+      command: ["sleep", "5"]
+
+terminationGracePeriodSeconds: 15
+
+config:
+  modules:
+    icmp:
+      prober: icmp
+      timeout: 5s
+      icmp:
+        preferred_ip_protocol: ip4

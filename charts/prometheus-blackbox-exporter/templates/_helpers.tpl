@@ -132,6 +132,9 @@ hostAliases:
 {{- end }}
 {{- end }}
 restartPolicy: {{ .Values.restartPolicy }}
+{{- if not (kindIs "invalid" .Values.terminationGracePeriodSeconds) }}
+terminationGracePeriodSeconds: {{ .Values.terminationGracePeriodSeconds }}
+{{- end }}
 {{- with .Values.priorityClassName }}
 priorityClassName: "{{ . }}"
 {{- end }}
@@ -239,6 +242,14 @@ containers:
   {{- include "prometheus-blackbox-exporter.probe" (dict "probe" .Values.livenessProbe "context" .) | trim | nindent 4 }}
   readinessProbe:
   {{- include "prometheus-blackbox-exporter.probe" (dict "probe" .Values.readinessProbe "context" .) | trim | nindent 4 }}
+  {{- with .Values.startupProbe }}
+  startupProbe:
+  {{- include "prometheus-blackbox-exporter.probe" (dict "probe" . "context" $) | trim | nindent 4 }}
+  {{- end }}
+  {{- with .Values.lifecycle }}
+  lifecycle:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
   volumeMounts:
   - mountPath: /config
     name: config
