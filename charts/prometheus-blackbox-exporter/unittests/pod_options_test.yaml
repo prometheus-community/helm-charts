@@ -3,23 +3,25 @@ suite: test exporter pod options
 release:
   name: r
 tests:
-  - it: should not render startupProbe, lifecycle or terminationGracePeriodSeconds by default (Deployment)
+  - it: should set terminationGracePeriodSeconds to 30 and not render startupProbe or lifecycle by default (Deployment)
     template: deployment.yaml
     asserts:
-      - notExists:
+      - equal:
           path: spec.template.spec.terminationGracePeriodSeconds
+          value: 30
       - notExists:
           path: spec.template.spec.containers[?(@.name == "blackbox-exporter")].startupProbe
       - notExists:
           path: spec.template.spec.containers[?(@.name == "blackbox-exporter")].lifecycle
 
-  - it: should not render startupProbe, lifecycle or terminationGracePeriodSeconds by default (DaemonSet)
+  - it: should set terminationGracePeriodSeconds to 30 and not render startupProbe or lifecycle by default (DaemonSet)
     template: daemonset.yaml
     set:
       kind: DaemonSet
     asserts:
-      - notExists:
+      - equal:
           path: spec.template.spec.terminationGracePeriodSeconds
+          value: 30
       - notExists:
           path: spec.template.spec.containers[?(@.name == "blackbox-exporter")].startupProbe
       - notExists:
@@ -62,6 +64,14 @@ tests:
       <<: *podOptions
       kind: DaemonSet
     asserts: *podOptionsAsserts
+
+  - it: should leave terminationGracePeriodSeconds out when set to null
+    template: deployment.yaml
+    set:
+      terminationGracePeriodSeconds: null
+    asserts:
+      - notExists:
+          path: spec.template.spec.terminationGracePeriodSeconds
 
   - it: should render terminationGracePeriodSeconds 0
     template: deployment.yaml
