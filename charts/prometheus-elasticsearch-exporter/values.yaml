@@ -375,6 +375,19 @@ serviceMonitor:
   targetLabels: []
   metricRelabelings: []
   sampleLimit: 0
+  ## Multi-target scraping: one extra ServiceMonitor per target, scraping the exporter's /probe endpoint with the
+  ## cluster address as the `target` parameter. The `instance` label is set to the target URL.
+  ## Requires exporter >= v1.10.0. See multiTarget for auth modules.
+  ##
+  targets: []
+  # - name: prod                      # required, suffix of the ServiceMonitor name
+  #   url: https://es-prod:9200       # required, Elasticsearch address passed as `target` (templated)
+  #   authModule: prod_basic          # optional, an auth module from multiTarget.authModules
+  #   interval: 30s                   # optional, defaults to serviceMonitor.interval
+  #   scrapeTimeout: 25s              # optional, defaults to serviceMonitor.scrapeTimeout
+  #   labels: {}                      # optional, replaces serviceMonitor.labels for this ServiceMonitor
+  #   relabelings: []                 # optional, prepended to serviceMonitor.relabelings
+  #   metricRelabelings: []           # optional, prepended to serviceMonitor.metricRelabelings
 
 podMonitor:
   ## If true, a PodMonitor CRD is created for a Prometheus Operator
@@ -436,3 +449,31 @@ serviceAccount:
   # to the ServiceAccount.
   automountServiceAccountToken: false
   annotations: {}
+
+## Multi-target scraping through the exporter's /probe endpoint (exporter >= v1.10.0).
+## A single exporter scrapes many clusters: Prometheus passes the cluster address as the `target` parameter and,
+## optionally, an `auth_module` defined here. Add the targets under serviceMonitor.targets.
+## Set es.uri to "" to run the exporter in multi-target mode only.
+## ref: https://github.com/prometheus-community/elasticsearch_exporter#multi-target-scraping-beta
+##
+multiTarget:
+  ## Auth modules rendered into the exporter config file (--config.file). The file is stored in a Secret because
+  ## auth modules hold credentials. Supported types: userpass, apikey, aws, tls.
+  ##
+  authModules: {}
+  #  prod_basic:
+  #    type: userpass
+  #    userpass:
+  #      username: metrics
+  #      password: s3cr3t
+  #  staging_key:
+  #    type: apikey
+  #    apikey: "bXk6YXBpa2V5Ig=="
+
+  ## Use an existing Secret holding the complete config file instead of authModules (templated).
+  ##
+  existingSecret: ""
+
+  ## Key of the config file in the Secret.
+  ##
+  existingSecretKey: config.yml
