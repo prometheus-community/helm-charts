@@ -76,7 +76,7 @@ The Prometheus server Pod now meets the `restricted` Pod Security Standard by de
 Prometheus writes only to its data directory, which the chart mounts at `server.persistentVolume.mountPath` (an
 emptyDir when persistence is disabled). If you moved the storage path with `server.storagePath`, or dropped
 `--storage.tsdb.path` / `--storage.agent.path` through `server.defaultFlagsOverride`, make sure it points to a mounted
-volume, otherwise Prometheus cannot write to it. Containers from `server.sidecarContainers` and
+volume, otherwise Prometheus may not be able to write to it. Containers from `server.sidecarContainers` and
 `server.extraInitContainers` keep the security context you give them.
 
 Because Helm merges maps, setting `containerSecurityContext: {}` keeps the new defaults. To change a single setting,
