@@ -1,0 +1,105 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/helm-unittest/helm-unittest/main/schema/helm-testsuite.json
+suite: test configAutoReload
+templates:
+  - deployment.yaml
+  - daemonset.yaml
+release:
+  name: r
+tests:
+  - it: should keep the checksum annotation and no auto-reload flags by default (Deployment)
+    template: deployment.yaml
+    asserts:
+      - exists:
+          path: spec.template.metadata.annotations["checksum/config"]
+      - notContains:
+          path: spec.template.spec.containers[0].args
+          content: --config.enable-auto-reload
+
+  - it: should keep the checksum annotation and no auto-reload flags by default (DaemonSet)
+    template: daemonset.yaml
+    set:
+      kind: DaemonSet
+    asserts:
+      - exists:
+          path: spec.template.metadata.annotations["checksum/config"]
+      - notContains:
+          path: spec.template.spec.containers[0].args
+          content: --config.enable-auto-reload
+
+  - it: should render the auto-reload flags and drop the checksum annotation (Deployment)
+    template: deployment.yaml
+    set:
+      configAutoReload:
+        enabled: true
+        interval: 15
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: --config.enable-auto-reload
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: --config.auto-reload-interval=15
+      - notExists:
+          path: spec.template.metadata.annotations
+
+  - it: should render the auto-reload flags and drop the checksum annotation (DaemonSet)
+    template: daemonset.yaml
+    set:
+      kind: DaemonSet
+      configAutoReload:
+        enabled: true
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: --config.enable-auto-reload
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: --config.auto-reload-interval=30
+      - notExists:
+          path: spec.template.metadata.annotations
+
+  - it: should keep podAnnotations without the checksum when auto-reload is enabled
+    template: deployment.yaml
+    set:
+      configAutoReload:
+        enabled: true
+      podAnnotations:
+        team: platform
+    asserts:
+      - equal:
+          path: spec.template.metadata.annotations
+          value:
+            team: platform
+
+  - it: should fail when both configReloader and configAutoReload are enabled (Deployment)
+    template: deployment.yaml
+    set:
+      configReloader:
+        enabled: true
+      configAutoReload:
+        enabled: true
+    asserts:
+      - failedTemplate:
+          errorMessage: "configReloader.enabled and configAutoReload.enabled are mutually exclusive: enable only one way of reloading the configuration"
+
+  - it: should fail when both configReloader and configAutoReload are enabled (DaemonSet)
+    template: daemonset.yaml
+    set:
+      kind: DaemonSet
+      configReloader:
+        enabled: true
+      configAutoReload:
+        enabled: true
+    asserts:
+      - failedTemplate:
+          errorMessage: "configReloader.enabled and configAutoReload.enabled are mutually exclusive: enable only one way of reloading the configuration"
+
+  - it: should fail when the interval is not a positive number of seconds
+    template: deployment.yaml
+    set:
+      configAutoReload:
+        enabled: true
+        interval: 0
+    asserts:
+      - failedTemplate:
+          errorMessage: "configAutoReload.interval must be a whole number of seconds greater than 0"
