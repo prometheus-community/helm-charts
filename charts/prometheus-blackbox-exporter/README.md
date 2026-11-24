@@ -170,6 +170,8 @@ How the rest of the chart adapts:
 - ServiceMonitors and PodMonitorings are not changed automatically: set `scheme: https` and a matching
   `tlsConfig` on `serviceMonitor`, `serviceMonitor.selfMonitor` and `podMonitoring`. Scraping with
   basic authentication is not configured by the chart.
+- Pods restart when the inline `webConfiguration.config` changes (the exporter only decides between
+  HTTP and HTTPS at startup). Changes to an existing Secret are not tracked; roll the pods yourself.
 
 ### ICMP probes
 

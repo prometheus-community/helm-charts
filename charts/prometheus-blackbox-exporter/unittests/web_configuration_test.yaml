@@ -304,3 +304,59 @@ tests:
             tcpSocket:
               port: http
             failureThreshold: 30
+
+  - it: keeps the web config Secret name distinct from a long fullname
+    template: web-config-secret.yaml
+    set:
+      fullnameOverride: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab
+      webConfiguration.config:
+        tls_server_config:
+          cert_file: /etc/blackbox-exporter/tls/tls.crt
+          key_file: /etc/blackbox-exporter/tls/tls.key
+    asserts:
+      - equal:
+          path: metadata.name
+          value: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa-web-config
+
+  - it: restarts the pods when the inline web configuration changes, also with the config reloader
+    template: deployment.yaml
+    set:
+      configReloader.enabled: true
+      webConfiguration.config:
+        tls_server_config:
+          cert_file: /etc/blackbox-exporter/tls/tls.crt
+          key_file: /etc/blackbox-exporter/tls/tls.key
+    asserts:
+      - exists:
+          path: spec.template.metadata.annotations["checksum/web-config"]
+      - notExists:
+          path: spec.template.metadata.annotations["checksum/config"]
+
+  - it: does not add a web config checksum for an existing Secret
+    template: deployment.yaml
+    set:
+      webConfiguration.existingSecret.name: my-web-config
+    asserts:
+      - notExists:
+          path: spec.template.metadata.annotations["checksum/web-config"]
+
+  - it: does not add a web config checksum by default
+    template: deployment.yaml
+    asserts:
+      - notExists:
+          path: spec.template.metadata.annotations["checksum/web-config"]
+
+  - it: treats the RequireClientCert alias as requiring authentication
+    template: deployment.yaml
+    set:
+      webConfiguration.config:
+        tls_server_config:
+          cert_file: /etc/blackbox-exporter/tls/tls.crt
+          key_file: /etc/blackbox-exporter/tls/tls.key
+          client_auth_type: RequireClientCert
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].livenessProbe.tcpSocket.port
+          value: http
+      - notExists:
+          path: spec.template.spec.containers[0].livenessProbe.httpGet

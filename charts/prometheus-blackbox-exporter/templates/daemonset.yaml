@@ -17,10 +17,14 @@ spec:
         {{- if .Values.pod.labels }}
 {{ toYaml .Values.pod.labels | indent 8 }}
         {{- end }}
-      {{- if or (not .Values.configReloader.enabled) .Values.podAnnotations }}
+      {{- $webConfigChecksum := include "prometheus-blackbox-exporter.webConfigurationChecksum" . }}
+      {{- if or (not .Values.configReloader.enabled) .Values.podAnnotations $webConfigChecksum }}
       annotations:
         {{- if not .Values.configReloader.enabled }}
         checksum/config: {{ toYaml .Values.config | sha256sum }}
+        {{- end }}
+        {{- with $webConfigChecksum }}
+        checksum/web-config: {{ . }}
         {{- end }}
         {{- if .Values.podAnnotations }}
 {{ toYaml .Values.podAnnotations | indent 8 }}

@@ -355,7 +355,7 @@ existing Secret when set, otherwise the chart-managed Secret.
 {{- if $existingSecretName -}}
 {{- $existingSecretName -}}
 {{- else -}}
-{{- printf "%s-web-config" (include "prometheus-blackbox-exporter.fullname" .) | trunc 63 | trimSuffix "-" -}}
+{{- printf "%s-web-config" (include "prometheus-blackbox-exporter.fullname" . | trunc 52 | trimSuffix "-") -}}
 {{- end -}}
 {{- end -}}
 
@@ -372,7 +372,7 @@ auth
 {{- else -}}
 {{- $config := (.Values.webConfiguration | default dict).config | default dict -}}
 {{- $tls := get $config "tls_server_config" | default dict -}}
-{{- if or (get $config "basic_auth_users") (has (get $tls "client_auth_type") (list "RequireAnyClientCert" "RequireAndVerifyClientCert")) -}}
+{{- if or (get $config "basic_auth_users") (has (get $tls "client_auth_type") (list "RequireAnyClientCert" "RequireClientCert" "RequireAndVerifyClientCert")) -}}
 auth
 {{- else if $tls -}}
 https
@@ -400,4 +400,16 @@ Usage: include "prometheus-blackbox-exporter.probe" (dict "probe" .Values.livene
 {{- end -}}
 {{- end -}}
 {{- toYaml $probe -}}
+{{- end -}}
+
+{{/*
+Return a checksum of the inline web configuration rendered into the chart-managed Secret, or ""
+when there is none. The exporter decides between HTTP and HTTPS when it starts listening, so a
+change to the web configuration must restart the pods; an existing Secret is managed outside the
+chart and cannot be tracked here.
+*/}}
+{{- define "prometheus-blackbox-exporter.webConfigurationChecksum" -}}
+{{- if and (.Values.webConfiguration).config (not (include "prometheus-blackbox-exporter.webConfigurationExistingSecretName" .)) -}}
+{{- toYaml .Values.webConfiguration.config | sha256sum -}}
+{{- end -}}
 {{- end -}}
