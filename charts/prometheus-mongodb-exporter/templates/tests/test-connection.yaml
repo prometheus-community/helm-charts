@@ -7,9 +7,23 @@ metadata:
   annotations:
     "helm.sh/hook": test-success
 spec:
+  automountServiceAccountToken: false
+  securityContext:
+    runAsNonRoot: true
+    runAsUser: 65534
+    runAsGroup: 65534
+    seccompProfile:
+      type: RuntimeDefault
   containers:
   - name: wget
-    image: busybox
+    image: "{{ .Values.tests.image.repository }}:{{ .Values.tests.image.tag }}"
+    imagePullPolicy: {{ .Values.tests.image.pullPolicy }}
     command: ['wget']
     args:  ['-qO-', '{{ include "prometheus-mongodb-exporter.fullname" . }}:{{ .Values.service.port }}/metrics']
+    securityContext:
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop:
+          - ALL
+      readOnlyRootFilesystem: true
   restartPolicy: Never
