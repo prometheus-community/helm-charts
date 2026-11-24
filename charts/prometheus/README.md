@@ -65,6 +65,14 @@ helm upgrade [RELEASE_NAME] oci://ghcr.io/prometheus-community/charts/prometheus
 
 _See [helm upgrade](https://helm.sh/docs/helm/helm_upgrade/) for command documentation._
 
+#### To 30.0
+
+The default filesystem collector arguments in the _prometheus-node-exporter_ subchart moved from `extraArgs` to the new
+`defaultArgs` value. Field `extraArgs` is now empty, so extra arguments you add no longer replace the defaults.
+
+If you previously copied the defaults into your own `extraArgs`, remove them before upgrading as Node exporter refuses
+a flag given twice and would not start. To change or drop a default, override `defaultArgs` instead.
+
 #### To 29.0
 
 Starting with version 29.0, the default `kubernetes_sd_configs` roles for several scrape configurations have been migrated from `endpoints` to `endpointslice` due to the deprecation of the former in Kubernetes release 1.33.
