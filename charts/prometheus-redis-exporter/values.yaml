@@ -7,6 +7,9 @@ serviceAccount:
   # The name of the ServiceAccount to use.
   # If not set and create is true, a name is generated using the fullname template
   name:
+  # Whether to mount a service account token into the exporter Pod. The exporter does not call the Kubernetes API,
+  # so no token is mounted by default. Applies to the Pod and, when create is true, to the ServiceAccount.
+  automountServiceAccountToken: false
 
 replicaCount: 1
 image:
@@ -25,7 +28,13 @@ extraArgs: {}
 # global custom labels, applied to all resrouces
 customLabels: {}
 
-securityContext: {}
+# Container security context. The defaults follow the restricted Pod Security Standard.
+securityContext:
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+      - ALL
+  readOnlyRootFilesystem: true
 
 # Additional Environment variables
 env: {}
@@ -237,13 +246,13 @@ networkPolicy:
   # -- A list of valid from selectors according to https://kubernetes.io/docs/concepts/services-networking/network-policies.
   ingressFrom: []
 
-podSecurityContext: {}
-# Example podsecurity policy
+# Pod security context. The defaults follow the restricted Pod Security Standard and match the user of the upstream
+# image (59000). Set to {} to use the image and cluster defaults.
 # More information available at:
 # https://kubernetes.io/docs/concepts/security/pod-security-standards/
-# podSecurityContext:
-#   seccompProfile:
-#     type: RuntimeDefault
-#   runAsNonRoot: true
-#   runAsUser: 10001
-#   runAsGroup: 10001
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 59000
+  runAsGroup: 59000
+  seccompProfile:
+    type: RuntimeDefault

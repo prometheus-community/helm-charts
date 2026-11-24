@@ -44,6 +44,16 @@ helm upgrade [RELEASE_NAME] [CHART] --install
 
 _See [helm upgrade](https://helm.sh/docs/helm/helm_upgrade/) for command documentation._
 
+#### To 7.0.0
+
+The exporter now runs with hardened defaults that follow the [restricted Pod Security Standard](https://kubernetes.io/docs/concepts/security/pod-security-standards/#restricted):
+
+- `podSecurityContext`: `runAsNonRoot: true`, `runAsUser: 59000`, `runAsGroup: 59000` (the user of the upstream image) and `seccompProfile: RuntimeDefault`.
+- `securityContext`: `allowPrivilegeEscalation: false`, all capabilities dropped and `readOnlyRootFilesystem: true`.
+- `serviceAccount.automountServiceAccountToken` defaults to `false` and now also applies to the Pod. The exporter does not call the Kubernetes API.
+
+The Pod spec changes, so the exporter restarts once on upgrade. If you run a custom image that needs a different user or a writable root filesystem, override `podSecurityContext` / `securityContext` (set them to `{}` to restore the previous behavior).
+
 #### To 5.0.0
 
 From 5.0.0 redis exporter is using the [Kubernetes recommended labels](https://kubernetes.io/docs/concepts/overview/working-with-objects/common-labels/). Therefore you have to delete the deployment before you upgrade.
