@@ -103,3 +103,34 @@ tests:
     asserts:
       - failedTemplate:
           errorMessage: "configAutoReload.interval must be a whole number of seconds greater than 0"
+
+  - it: should fail for a fractional interval instead of truncating it
+    template: deployment.yaml
+    set:
+      configAutoReload:
+        enabled: true
+        interval: 1.5
+    asserts:
+      - failedTemplate:
+          errorMessage: "configAutoReload.interval must be a whole number of seconds greater than 0"
+
+  - it: should fail for a duration string interval
+    template: deployment.yaml
+    set:
+      configAutoReload:
+        enabled: true
+        interval: 30s
+    asserts:
+      - failedTemplate:
+          errorMessage: "configAutoReload.interval must be a whole number of seconds greater than 0"
+
+  - it: should accept a whole-number interval
+    template: deployment.yaml
+    set:
+      configAutoReload:
+        enabled: true
+        interval: 45
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: --config.auto-reload-interval=45

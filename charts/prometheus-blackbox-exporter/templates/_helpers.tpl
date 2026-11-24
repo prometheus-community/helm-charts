@@ -100,8 +100,12 @@ Define pod spec to be reused by highlevel resources (deployment, daemonset)
 {{- if and .Values.configReloader.enabled .Values.configAutoReload.enabled }}
 {{- fail "configReloader.enabled and configAutoReload.enabled are mutually exclusive: enable only one way of reloading the configuration" }}
 {{- end }}
-{{- if and .Values.configAutoReload.enabled (lt (.Values.configAutoReload.interval | int) 1) }}
+{{- if .Values.configAutoReload.enabled }}
+{{- $interval := .Values.configAutoReload.interval }}
+{{- $isNumber := or (kindIs "int" $interval) (kindIs "int64" $interval) (kindIs "float64" $interval) }}
+{{- if or (not $isNumber) (ne (float64 $interval) (floor $interval)) (lt (float64 $interval) 1.0) }}
 {{- fail "configAutoReload.interval must be a whole number of seconds greater than 0" }}
+{{- end }}
 {{- end -}}
 automountServiceAccountToken: {{ .Values.automountServiceAccountToken }}
 serviceAccountName: {{ template "prometheus-blackbox-exporter.serviceAccountName" . }}
