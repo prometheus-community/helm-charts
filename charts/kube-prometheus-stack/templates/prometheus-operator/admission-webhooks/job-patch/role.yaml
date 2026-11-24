@@ -11,14 +11,13 @@ metadata:
     app: {{ template "kube-prometheus-stack.name" $ }}-admission
     {{- include "kube-prometheus-stack.prometheus-operator-webhook.labels" $ | nindent 4 }}
 rules:
+  # create cannot be restricted by resourceNames, so it is granted on its own.
   - apiGroups:
       - ""
     resources:
       - secrets
     verbs:
-      - get
       - create
-  {{- if eq .Values.prometheusOperator.admissionWebhooks.patch.secretType "kubernetes.io/tls" }}
   - apiGroups:
       - ""
     resources:
@@ -26,6 +25,9 @@ rules:
     resourceNames:
       - {{ template "kube-prometheus-stack.fullname" . }}-admission
     verbs:
+      - get
+      {{- if eq .Values.prometheusOperator.admissionWebhooks.patch.secretType "kubernetes.io/tls" }}
+      # Allows migrating an existing Opaque secret to kubernetes.io/tls.
       - delete
-  {{- end }}
+      {{- end }}
 {{- end }}
