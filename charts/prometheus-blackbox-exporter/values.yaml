@@ -109,7 +109,7 @@ strategy:
 image:
   registry: quay.io
   repository: prometheus/blackbox-exporter
-  # Overrides the image tag whose default is {{ printf "v%s" .Chart.AppVersion }}
+  # Overrides the image tag whose default is {{ .Chart.AppVersion }}
   tag: ""
   pullPolicy: IfNotPresent
   digest: ""
@@ -123,6 +123,15 @@ image:
 
 podSecurityContext: {}
 # fsGroup: 1000
+## Preferred way to enable ICMP probes, keeping all capabilities dropped: the exporter first
+## tries an unprivileged ICMP ("ping") socket, which the kernel allows when the process GID is
+## within the pod's net.ipv4.ping_group_range. Kubernetes treats this namespaced sysctl as safe,
+## so it is allowed by default. It cannot be set together with hostNetwork: true.
+## ICMP modules with `dont_fragment: true` still need a raw socket and therefore NET_RAW.
+## ref: https://kubernetes.io/docs/tasks/administer-cluster/sysctl-cluster/
+# sysctls:
+#   - name: net.ipv4.ping_group_range
+#     value: "0 2147483647"
 
 ## User and Group to run blackbox-exporter container as
 securityContext:
@@ -133,7 +142,9 @@ securityContext:
   allowPrivilegeEscalation: false
   capabilities:
     drop: ["ALL"]
-# Add NET_RAW to enable ICMP
+# To enable ICMP, prefer the net.ipv4.ping_group_range sysctl in podSecurityContext above.
+# Add NET_RAW only when that sysctl cannot be used (hostNetwork: true) or for `dont_fragment: true`.
+# For a non-root runAsUser the added capability is not effective on its own, see the README.
 #    add: ["NET_RAW"]
 
 livenessProbe:
@@ -146,6 +157,25 @@ readinessProbe:
   httpGet:
     path: /-/healthy
     port: http
+
+## Startup probe for the blackbox-exporter container, not set by default
+## ref: https://kubernetes.io/docs/concepts/configuration/liveness-readiness-startup-probes/
+startupProbe: {}
+  # httpGet:
+  #   path: /-/healthy
+  #   port: http
+  # failureThreshold: 30
+  # periodSeconds: 2
+
+## Lifecycle hooks for the blackbox-exporter container, not set by default
+## ref: https://kubernetes.io/docs/concepts/containers/container-lifecycle-hooks/
+lifecycle: {}
+  # preStop:
+  #   exec:
+  #     command: ["sleep", "5"]
+
+## Pod termination grace period in seconds. Set to null to leave it out of the pod spec.
+terminationGracePeriodSeconds: 30
 
 nodeSelector: {}
 tolerations: []

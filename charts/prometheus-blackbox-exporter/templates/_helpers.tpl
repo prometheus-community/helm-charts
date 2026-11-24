@@ -138,6 +138,9 @@ hostAliases:
 {{- end }}
 {{- end }}
 restartPolicy: {{ .Values.restartPolicy }}
+{{- if not (kindIs "invalid" .Values.terminationGracePeriodSeconds) }}
+terminationGracePeriodSeconds: {{ .Values.terminationGracePeriodSeconds }}
+{{- end }}
 {{- with .Values.priorityClassName }}
 priorityClassName: "{{ . }}"
 {{- end }}
@@ -240,6 +243,14 @@ containers:
   {{- toYaml .Values.livenessProbe | trim | nindent 4 }}
   readinessProbe:
   {{- toYaml .Values.readinessProbe | trim | nindent 4 }}
+  {{- with .Values.startupProbe }}
+  startupProbe:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  {{- with .Values.lifecycle }}
+  lifecycle:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
   volumeMounts:
   - mountPath: /config
     name: config
