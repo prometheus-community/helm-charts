@@ -97,6 +97,16 @@ The image to use
 Define pod spec to be reused by highlevel resources (deployment, daemonset)
 */}}
 {{- define "prometheus-blackbox-exporter.podSpec" -}}
+{{- if and .Values.configReloader.enabled .Values.configAutoReload.enabled }}
+{{- fail "configReloader.enabled and configAutoReload.enabled are mutually exclusive: enable only one way of reloading the configuration" }}
+{{- end }}
+{{- if .Values.configAutoReload.enabled }}
+{{- $interval := .Values.configAutoReload.interval }}
+{{- $isNumber := or (kindIs "int" $interval) (kindIs "int64" $interval) (kindIs "float64" $interval) }}
+{{- if or (not $isNumber) (ne (float64 $interval) (floor $interval)) (lt (float64 $interval) 1.0) }}
+{{- fail "configAutoReload.interval must be a whole number of seconds greater than 0" }}
+{{- end }}
+{{- end -}}
 automountServiceAccountToken: {{ .Values.automountServiceAccountToken }}
 serviceAccountName: {{ template "prometheus-blackbox-exporter.serviceAccountName" . }}
 {{- with .Values.topologySpreadConstraints }}
@@ -215,6 +225,10 @@ containers:
   {{- end }}
   {{- else }}
   - "--config.file=/etc/blackbox_exporter/config.yml"
+  {{- end }}
+  {{- if .Values.configAutoReload.enabled }}
+  - "--config.enable-auto-reload"
+  - "--config.auto-reload-interval={{ .Values.configAutoReload.interval | int }}"
   {{- end }}
   {{- with .Values.extraArgs }}
 {{ tpl (toYaml .) $ | indent 2 }}

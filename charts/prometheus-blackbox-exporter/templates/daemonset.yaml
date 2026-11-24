@@ -17,9 +17,10 @@ spec:
         {{- if .Values.pod.labels }}
 {{ toYaml .Values.pod.labels | indent 8 }}
         {{- end }}
-      {{- if or (not .Values.configReloader.enabled) .Values.podAnnotations }}
+      {{- $rollOnConfigChange := not (or .Values.configReloader.enabled .Values.configAutoReload.enabled) }}
+      {{- if or $rollOnConfigChange .Values.podAnnotations }}
       annotations:
-        {{- if not .Values.configReloader.enabled }}
+        {{- if $rollOnConfigChange }}
         checksum/config: {{ toYaml .Values.config | sha256sum }}
         {{- end }}
         {{- if .Values.podAnnotations }}
