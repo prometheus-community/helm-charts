@@ -1,0 +1,105 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/helm-unittest/helm-unittest/main/schema/helm-testsuite.json
+suite: test exporter pod options
+release:
+  name: r
+tests:
+  - it: should not render startupProbe, lifecycle or terminationGracePeriodSeconds by default (Deployment)
+    template: deployment.yaml
+    asserts:
+      - notExists:
+          path: spec.template.spec.terminationGracePeriodSeconds
+      - notExists:
+          path: spec.template.spec.containers[?(@.name == "blackbox-exporter")].startupProbe
+      - notExists:
+          path: spec.template.spec.containers[?(@.name == "blackbox-exporter")].lifecycle
+
+  - it: should not render startupProbe, lifecycle or terminationGracePeriodSeconds by default (DaemonSet)
+    template: daemonset.yaml
+    set:
+      kind: DaemonSet
+    asserts:
+      - notExists:
+          path: spec.template.spec.terminationGracePeriodSeconds
+      - notExists:
+          path: spec.template.spec.containers[?(@.name == "blackbox-exporter")].startupProbe
+      - notExists:
+          path: spec.template.spec.containers[?(@.name == "blackbox-exporter")].lifecycle
+
+  - it: should render the pod options on the Deployment
+    template: deployment.yaml
+    set: &podOptions
+      startupProbe:
+        httpGet:
+          path: /-/healthy
+          port: http
+        failureThreshold: 30
+      lifecycle:
+        preStop:
+          exec:
+            command: ["sleep", "5"]
+      terminationGracePeriodSeconds: 15
+    asserts: &podOptionsAsserts
+      - equal:
+          path: spec.template.spec.terminationGracePeriodSeconds
+          value: 15
+      - equal:
+          path: spec.template.spec.containers[?(@.name == "blackbox-exporter")].startupProbe
+          value:
+            httpGet:
+              path: /-/healthy
+              port: http
+            failureThreshold: 30
+      - equal:
+          path: spec.template.spec.containers[?(@.name == "blackbox-exporter")].lifecycle
+          value:
+            preStop:
+              exec:
+                command: ["sleep", "5"]
+
+  - it: should render the pod options on the DaemonSet
+    template: daemonset.yaml
+    set:
+      <<: *podOptions
+      kind: DaemonSet
+    asserts: *podOptionsAsserts
+
+  - it: should render terminationGracePeriodSeconds 0
+    template: deployment.yaml
+    set:
+      terminationGracePeriodSeconds: 0
+    asserts:
+      - equal:
+          path: spec.template.spec.terminationGracePeriodSeconds
+          value: 0
+
+  - it: should only set the pod options on the exporter container, not the config-reloader
+    template: deployment.yaml
+    set:
+      <<: *podOptions
+      configReloader:
+        enabled: true
+    asserts:
+      - notExists:
+          path: spec.template.spec.containers[?(@.name == "config-reloader")].startupProbe
+      - notExists:
+          path: spec.template.spec.containers[?(@.name == "config-reloader")].lifecycle
+      - exists:
+          path: spec.template.spec.containers[?(@.name == "blackbox-exporter")].lifecycle
+
+  - it: should pass podSecurityContext sysctls through for unprivileged ICMP
+    template: deployment.yaml
+    set:
+      podSecurityContext:
+        sysctls:
+          - name: net.ipv4.ping_group_range
+            value: "0 2147483647"
+    asserts:
+      - contains:
+          path: spec.template.spec.securityContext.sysctls
+          content:
+            name: net.ipv4.ping_group_range
+            value: "0 2147483647"
+      - equal:
+          path: spec.template.spec.containers[?(@.name == "blackbox-exporter")].securityContext.capabilities
+          value:
+            drop: ["ALL"]

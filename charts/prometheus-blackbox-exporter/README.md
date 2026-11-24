@@ -125,6 +125,45 @@ See [Customizing the Chart Before Installing](https://helm.sh/docs/intro/using_h
 helm show values oci://ghcr.io/prometheus-community/charts/prometheus-blackbox-exporter
 ```
 
+### ICMP probes
+
+The exporter first tries an unprivileged ICMP ("ping") socket and only falls back to a raw
+socket, which needs the `NET_RAW` capability, when that fails. Unprivileged ICMP sockets are
+allowed when the group ID of the process is within the `net.ipv4.ping_group_range` sysctl of the
+pod's network namespace. That sysctl is namespaced and on the Kubernetes list of safe sysctls, so
+it can be set from the pod without adding any capability, keeping `capabilities.drop: ["ALL"]`:
+
+```yaml
+podSecurityContext:
+  sysctls:
+    - name: net.ipv4.ping_group_range
+      value: "0 2147483647"
+```
+
+Some container runtimes already set this range for every container, in which case ICMP probes
+work without any extra configuration.
+
+Adding the `NET_RAW` capability instead is still needed when:
+
+- the pod uses `hostNetwork: true`, because namespaced sysctls cannot be set on such pods, or
+- an ICMP module sets `dont_fragment: true`, because that IP header option can only be set on a
+  raw socket.
+
+```yaml
+securityContext:
+  capabilities:
+    drop: ["ALL"]
+    add: ["NET_RAW"]
+```
+
+Kubernetes does not support ambient capabilities, so a capability added for a non-root user only
+ends up in the bounding set, not in the effective set of the exporter process. With the chart's
+default `runAsUser: 1000`, adding `NET_RAW` alone is therefore usually not enough for a raw socket,
+which is another reason to prefer the sysctl.
+
+See [Using sysctls in a Kubernetes Cluster](https://kubernetes.io/docs/tasks/administer-cluster/sysctl-cluster/)
+and the [exporter's permissions documentation](https://github.com/prometheus/blackbox_exporter#permissions).
+
 ### Binary protocol (TCP) modules (PostgreSQL, LDAP, etc.)
 
 If your module configuration requires binary send payloads — for example probing
