@@ -1,0 +1,64 @@
+suite: hardened defaults
+templates:
+  - deployment.yaml
+  - secret.yaml
+  - serviceaccount.yaml
+  - tests/test-connection.yaml
+tests:
+  - it: sets the RuntimeDefault seccomp profile on the exporter Pod
+    template: deployment.yaml
+    asserts:
+      - equal:
+          path: spec.template.spec.securityContext
+          value:
+            seccompProfile:
+              type: RuntimeDefault
+
+  - it: does not mount a service account token by default
+    template: deployment.yaml
+    asserts:
+      - equal:
+          path: spec.template.spec.automountServiceAccountToken
+          value: false
+
+  - it: mounts a service account token when enabled
+    template: deployment.yaml
+    set:
+      serviceAccount.automountServiceAccountToken: true
+    asserts:
+      - equal:
+          path: spec.template.spec.automountServiceAccountToken
+          value: true
+
+  - it: applies the token setting to the ServiceAccount
+    template: serviceaccount.yaml
+    asserts:
+      - equal:
+          path: automountServiceAccountToken
+          value: false
+
+  - it: runs the test Pod with a pinned image and restricted security context
+    template: tests/test-connection.yaml
+    asserts:
+      - equal:
+          path: spec.containers[0].image
+          value: busybox:1.38.0
+      - equal:
+          path: spec.securityContext
+          value:
+            runAsNonRoot: true
+            runAsUser: 65534
+            runAsGroup: 65534
+            seccompProfile:
+              type: RuntimeDefault
+      - equal:
+          path: spec.containers[0].securityContext
+          value:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            readOnlyRootFilesystem: true
+      - equal:
+          path: spec.automountServiceAccountToken
+          value: false
