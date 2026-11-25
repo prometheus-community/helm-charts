@@ -98,8 +98,9 @@ configmapReload:
     containerSecurityContext: null
 ```
 
-When this chart is a dependency of another chart, a `null` in the parent chart's `values.yaml` does not remove the
-defaults; override the individual fields there instead, or pass the `null` with `-f`/`--set`.
+When this chart is a dependency of another chart, a `null` in the parent chart's `values.yaml` removes the defaults
+with Helm 3.17.1 or later ([helm/helm#12879](https://github.com/helm/helm/pull/12879)). Older Helm 3 releases, and
+Helm 4 (checked with 4.3.2), keep them; there, override the individual fields or pass the `null` with `-f`/`--set`.
 
 #### To 30.0
 
