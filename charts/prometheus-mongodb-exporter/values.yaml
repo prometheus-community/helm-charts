@@ -74,9 +74,9 @@ resources: {}
 
 # Customize securityContext of the pod.
 # See https://kubernetes.io/docs/concepts/policy/security-context/ for more.
-podSecurityContext: {}
-  # seccompProfile:
-  #  type: RuntimeDefault
+podSecurityContext:
+  seccompProfile:
+    type: RuntimeDefault
 
 securityContext:
   allowPrivilegeEscalation: false
@@ -101,6 +101,9 @@ serviceAccount:
   # If create is true and name is not set, then a name is generated using the
   # fullname template.
   name:
+  # Whether to mount a service account token into the exporter Pod. The exporter does not call the Kubernetes API,
+  # so no token is mounted by default. Applies to the Pod and, when create is true, to the ServiceAccount.
+  automountServiceAccountToken: false
 
 serviceMonitor:
   enabled: false
@@ -145,3 +148,10 @@ volumes: []
 
 # Volumes that will be mounted into the exporter pod
 volumeMounts: []
+
+# Pod run by `helm test` to check that the exporter serves metrics.
+tests:
+  image:
+    repository: busybox
+    tag: "1.38.0"
+    pullPolicy: IfNotPresent

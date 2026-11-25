@@ -1,0 +1,58 @@
+{{- if .Values.probe.enabled }}
+{{- range .Values.probe.targets }}
+{{- with (tpl (toYaml .) $ | fromYaml ) }}
+{{- $static := concat (.urls | default list) (ternary (list .url) list (not (empty .url))) }}
+{{- if not $static }}
+{{- fail (printf "probe.targets: target %q must set url or urls" (.name | default "")) }}
+{{- end }}
+---
+apiVersion: {{ $.Values.probe.apiVersion }}
+kind: Probe
+metadata:
+  name: {{ template "prometheus-blackbox-exporter.fullname" $ }}-{{ .name }}
+  namespace: {{ template "prometheus-blackbox-exporter.namespace" $ }}
+  labels:
+    {{- include "prometheus-blackbox-exporter.labels" $ | nindent 4 }}
+    {{- if or $.Values.probe.defaults.labels .labels }}
+    {{- toYaml (.labels | default $.Values.probe.defaults.labels) | nindent 4 }}
+    {{- end }}
+spec:
+  prober:
+    url: {{ include "prometheus-blackbox-exporter.fullname" $ }}.{{ include "prometheus-blackbox-exporter.namespace" $ }}.svc:{{ $.Values.service.port }}
+    scheme: {{ $.Values.probe.scheme }}
+    path: {{ $.Values.probe.path }}
+  {{- if $.Values.probe.tlsConfig }}
+  tlsConfig:
+    {{- toYaml $.Values.probe.tlsConfig | nindent 4 }}
+  {{- end }}
+  module: {{ .module | default $.Values.probe.defaults.module }}
+  interval: {{ .interval | default $.Values.probe.defaults.interval }}
+  scrapeTimeout: {{ .scrapeTimeout | default $.Values.probe.defaults.scrapeTimeout }}
+  {{- if .hostname }}
+  params:
+    - name: hostname
+      values:
+        - {{ .hostname | quote }}
+  {{- end }}
+  targets:
+    staticConfig:
+      static:
+        {{- range $static }}
+        - {{ . | quote }}
+        {{- end }}
+      {{- if concat (.additionalRelabeling | default list) $.Values.probe.defaults.additionalRelabeling }}
+      relabelingConfigs:
+        {{- toYaml (concat (.additionalRelabeling | default list) $.Values.probe.defaults.additionalRelabeling) | nindent 8 }}
+      {{- end }}
+  metricRelabelings:
+    - targetLabel: target
+      replacement: {{ .name | quote }}
+      action: replace
+    {{- range $targetLabel, $replacement := .additionalMetricsRelabels | default $.Values.probe.defaults.additionalMetricsRelabels }}
+    - targetLabel: {{ $targetLabel | quote }}
+      replacement: {{ $replacement | quote }}
+      action: replace
+    {{- end }}
+{{- end }}
+{{- end }}
+{{- end }}

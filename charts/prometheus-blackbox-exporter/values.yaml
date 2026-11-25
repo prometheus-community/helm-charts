@@ -1,64 +1,120 @@
-global:
-  ## Global image registry to use if it needs to be overridden for some specific use cases (e.g local registries, custom images, ...)
-  ##
-  imageRegistry: ""
+affinity: {}
 
-restartPolicy: Always
-
-kind: Deployment
-
-## Override the namespace
-##
-namespaceOverride: ""
-
-# Override Kubernetes version if your distribution does not follow semver v2
-kubeVersionOverride: ""
-
-## set to true to add the release label so scraping of the servicemonitor with kube-prometheus-stack works out of the box
-releaseLabel: false
-
-podDisruptionBudget: {}
-  # maxUnavailable: 0
-
-## Allow automount the serviceaccount token for sidecar container (eg: oauthproxy)
+## Allow automount the serviceaccount token for sidecar container (eg: oauthproxy).
+## Also rendered on the ServiceAccount created by the chart.
 automountServiceAccountToken: false
 
-## Additional blackbox-exporter container environment variables
-extraEnv: []
-  # - name: GOMAXPROCS
-  #   valueFrom:
-  #     resourceFieldRef:
-  #       resource: limits.cpu
-  #       divisor: "1"
-  # - name: HTTP_PROXY
-  #   value: "http://superproxy.com:3128"
+# global common labels, applied to all resources
+commonLabels: {}
 
-## Additional blackbox-exporter container environment variables for secret or configMap
-extraEnvFrom: []
-  # - configMapRef:
-  #     name: configMapOne
-  # - secretRef:
-  #     name: secretOne
-  # - secretRef:
-  #     name: secretTwo
+# NOTE: Binary payloads (!!binary) in module config are corrupted by Helm's toYaml.
+# The contents of `config:` are passed through `toYaml` in the ConfigMap template,
+# which round-trips the values through Helm's YAML parser and silently corrupts any
+# byte >= 0x80. Use configExistingSecretName instead (see README.md).
+config:
+  modules:
+    http_2xx:
+      http:
+        follow_redirects: true
+        preferred_ip_protocol: "ip4"
+        valid_http_versions: ["HTTP/1.1", "HTTP/2.0"]
+      prober: http
+      timeout: 5s
 
-extraVolumes: []
-  # - name: secret-blackbox-oauth-htpasswd
-  #   secret:
-  #     defaultMode: 420
-  #     secretName: blackbox-oauth-htpasswd
-  # - name: storage-volume
-  #   persistentVolumeClaim:
-  #     claimName: example
+## Let the exporter reload its configuration file by itself, without restarting the pod
+## (--config.enable-auto-reload). Requires blackbox_exporter v0.28.0 or later.
+## When enabled, the checksum/config pod annotation is no longer set, so changing `config`
+## does not roll the pods; the exporter picks up the new file once the kubelet has refreshed the
+## mounted ConfigMap/Secret (up to about a minute by default) and the next interval has passed.
+## Mutually exclusive with configReloader.enabled. Do not pass the same flags through extraArgs.
+configAutoReload:
+  enabled: false
+  # Interval in seconds (an integer, not a duration) between checks of the configuration file
+  interval: 30
 
-## Additional volumes that will be attached to the blackbox-exporter container
-extraVolumeMounts:
-  # - name: ca-certs
-  #   mountPath: /etc/ssl/certs/ca-certificates.crt
+# if the configuration is managed as secret outside the chart, using SealedSecret for example,
+# provide the name of the secret here. If secretConfig is set to true, configExistingSecretName will be ignored
+# in favor of the config value.
+configExistingSecretName: ""
 
-## Additional InitContainers to initialize the pod
-## This supports either a structured array or a templatable string
-extraInitContainers: []
+# Set custom config path, other than default /config/blackbox.yaml. If let empty, path will be "/config/blackbox.yaml"
+# configPath: "/foo/bar"
+
+configReloader:
+  config:
+    logFormat: logfmt
+    logLevel: info
+    watchInterval: 1m
+  containerPort: 8080
+  enabled: false
+  image:
+    digest: ""
+    pullPolicy: IfNotPresent
+    registry: quay.io
+    repository: prometheus-operator/prometheus-config-reloader
+    tag: "v0.95.2"
+  livenessProbe:
+    httpGet:
+      path: /healthz
+      port: reloader-web
+      scheme: HTTP
+  readinessProbe:
+    httpGet:
+      path: /healthz
+      port: reloader-web
+      scheme: HTTP
+  resources:
+    limits:
+      memory: 50Mi
+    requests:
+      cpu: 10m
+      memory: 20Mi
+  securityContext:
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop: ["ALL"]
+    readOnlyRootFilesystem: true
+    runAsGroup: 1000
+    runAsNonRoot: true
+    runAsUser: 1000
+    seccompProfile:
+      type: RuntimeDefault
+  service:
+    port: 8080
+  serviceMonitor:
+    selfMonitor:
+      additionalMetricsRelabels: {}
+      additionalRelabeling: []
+      interval: 30s
+      path: /metrics
+      ## Name of the Service port to scrape. Defaults to "reloader-web".
+      ## port:
+      scheme: http
+      scrapeTimeout: 30s
+      tlsConfig: {}
+
+# Only changes container port. Application port can be changed with extraArgs (--web.listen-address=:9115)
+# https://github.com/prometheus/blackbox_exporter/blob/998037b5b40c1de5fee348ffdea8820509d85171/main.go#L55
+containerPort: 9115
+
+# Annotations for the Deployment
+deploymentAnnotations: {}
+
+## dnsPolicy and dnsConfig for Deployments and Daemonsets if you want non-default settings.
+## These will be passed directly to the PodSpec of same.
+dnsConfig:
+dnsPolicy:
+
+extraArgs: []
+  # - --history.limit=1000
+
+extraConfigmapMounts: []
+  # - name: certs-configmap
+  #   mountPath: /etc/secrets/ssl/
+  #   subPath: certificates.crt # (optional)
+  #   configMap: certs-configmap
+  #   readOnly: true
+  #   defaultMode: 420
 
 ## This supports either a structured array or a templatable string
 
@@ -84,10 +140,6 @@ extraContainers: []
   #     - mountPath: /etc/prometheus/secrets/blackbox-tls
   #       name: secret-blackbox-tls
 
-## Number of replicasets to retain ##
-## default value is 10, 0 will not retain any replicasets and make rollbacks impossible ##
-revisionHistoryLimit: 10
-
 # String mode
 # extraContainers: |-
 #   - name: oAuth2-proxy
@@ -98,99 +150,38 @@ revisionHistoryLimit: 10
 #       - -openshift-delegate-urls={"/":{"group":"monitoring.coreos.com","resource":"prometheuses","verb":"get"}}
 #     image: {{ .Values.global.imageRegistry }}/openshift/oauth-proxy:v1.1.0
 
-hostNetwork: false
+## Additional blackbox-exporter container environment variables
+extraEnv: []
+  # - name: GOMAXPROCS
+  #   valueFrom:
+  #     resourceFieldRef:
+  #       resource: limits.cpu
+  #       divisor: "1"
+  # - name: HTTP_PROXY
+  #   value: "http://superproxy.com:3128"
 
-strategy:
-  rollingUpdate:
-    maxSurge: 1
-    maxUnavailable: 0
-  type: RollingUpdate
+## Additional blackbox-exporter container environment variables for secret or configMap
+extraEnvFrom: []
+  # - configMapRef:
+  #     name: configMapOne
+  # - secretRef:
+  #     name: secretOne
+  # - secretRef:
+  #     name: secretTwo
 
-image:
-  registry: quay.io
-  repository: prometheus/blackbox-exporter
-  # Overrides the image tag whose default is {{ printf "v%s" .Chart.AppVersion }}
-  tag: ""
-  pullPolicy: IfNotPresent
-  digest: ""
+## Additional InitContainers to initialize the pod
+## This supports either a structured array or a templatable string
+extraInitContainers: []
 
-  ## Optionally specify an array of imagePullSecrets.
-  ## Secrets must be manually created in the namespace.
-  ## ref: https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/
-  ##
-  # pullSecrets:
-  #   - myRegistrKeySecretName
-
-podSecurityContext: {}
-# fsGroup: 1000
-
-## User and Group to run blackbox-exporter container as
-securityContext:
-  runAsUser: 1000
-  runAsGroup: 1000
-  readOnlyRootFilesystem: true
-  runAsNonRoot: true
-  allowPrivilegeEscalation: false
-  capabilities:
-    drop: ["ALL"]
-# Add NET_RAW to enable ICMP
-#    add: ["NET_RAW"]
-
-livenessProbe:
-  httpGet:
-    path: /-/healthy
-    port: http
-  failureThreshold: 3
-
-readinessProbe:
-  httpGet:
-    path: /-/healthy
-    port: http
-
-nodeSelector: {}
-tolerations: []
-affinity: {}
-
-## Topology spread constraints rely on node labels to identify the topology domain(s) that each Node is in.
-## Ref: https://kubernetes.io/docs/concepts/workloads/pods/pod-topology-spread-constraints/
-topologySpreadConstraints: []
-  # - maxSkew: 1
-  #   topologyKey: failure-domain.beta.kubernetes.io/zone
-  #   whenUnsatisfiable: DoNotSchedule
-  #   labelSelector:
-  #     matchLabels:
-#       app.kubernetes.io/instance: jiralert
-
-# if the configuration is managed as secret outside the chart, using SealedSecret for example,
-# provide the name of the secret here. If secretConfig is set to true, configExistingSecretName will be ignored
-# in favor of the config value.
-configExistingSecretName: ""
-# Store the configuration as a `Secret` instead of a `ConfigMap`, useful in case it contains sensitive data
-secretConfig: false
-# NOTE: Binary payloads (!!binary) in module config are corrupted by Helm's toYaml.
-# The contents of `config:` are passed through `toYaml` in the ConfigMap template,
-# which round-trips the values through Helm's YAML parser and silently corrupts any
-# byte >= 0x80. Use configExistingSecretName instead (see README.md).
-config:
-  modules:
-    http_2xx:
-      prober: http
-      timeout: 5s
-      http:
-        valid_http_versions: ["HTTP/1.1", "HTTP/2.0"]
-        follow_redirects: true
-        preferred_ip_protocol: "ip4"
-
-# Set custom config path, other than default /config/blackbox.yaml. If let empty, path will be "/config/blackbox.yaml"
-# configPath: "/foo/bar"
-
-extraConfigmapMounts: []
-  # - name: certs-configmap
-  #   mountPath: /etc/secrets/ssl/
-  #   subPath: certificates.crt # (optional)
-  #   configMap: certs-configmap
-  #   readOnly: true
-  #   defaultMode: 420
+# Extra manifests to deploy as an array
+extraManifests: []
+  # - apiVersion: v1
+  #   kind: ConfigMap
+  #   metadata:
+  #   labels:
+  #     name: prometheus-extra
+  #   data:
+  #     extra-data: "value"
 
 ## Additional secret mounts
 # Defines additional mounts with secrets. Secrets must be manually created in the namespace.
@@ -201,120 +192,24 @@ extraSecretMounts: []
   #   readOnly: true
   #   defaultMode: 420
 
-resources: {}
-  # limits:
-  #   memory: 300Mi
-  # requests:
-  #   memory: 50Mi
+## Additional volumes that will be attached to the blackbox-exporter container
+extraVolumeMounts:
+  # - name: ca-certs
+  #   mountPath: /etc/ssl/certs/ca-certificates.crt
 
-priorityClassName: ""
+extraVolumes: []
+  # - name: secret-blackbox-oauth-htpasswd
+  #   secret:
+  #     defaultMode: 420
+  #     secretName: blackbox-oauth-htpasswd
+  # - name: storage-volume
+  #   persistentVolumeClaim:
+  #     claimName: example
 
-service:
-  annotations: {}
-  labels: {}
-  type: ClusterIP
-  port: 9115
-  ipDualStack:
-    enabled: false
-    ipFamilies: ["IPv6", "IPv4"]
-    ipFamilyPolicy: "PreferDualStack"
-
-# Only changes container port. Application port can be changed with extraArgs (--web.listen-address=:9115)
-# https://github.com/prometheus/blackbox_exporter/blob/998037b5b40c1de5fee348ffdea8820509d85171/main.go#L55
-containerPort: 9115
-
-# Number of port to expose on the host. If specified, this must be a valid port number, 0 < x < 65536. If zero, no port is exposed.
-# This is useful for communicating with Daemon Pods when kind is DaemonSet.
-hostPort: 0
-
-serviceAccount:
-  # Specifies whether a ServiceAccount should be created
-  create: true
-  # The name of the ServiceAccount to use.
-  # If not set and create is true, a name is generated using the fullname template
-  name:
-  annotations: {}
-
-## An Ingress resource can provide name-based virtual hosting and TLS
-## termination among other things for CouchDB deployments which are accessed
-## from outside the Kubernetes cluster.
-## ref: https://kubernetes.io/docs/concepts/services-networking/ingress/
-ingress:
-  enabled: false
-  className: ""
-  labels: {}
-  annotations: {}
-    # kubernetes.io/tls-acme: "true"
-  hosts:
-    ## The host property on hosts and tls is passed through helm tpl function.
-    ## ref: https://helm.sh/docs/howto/charts_tips_and_tricks/#using-the-tpl-function
-    - host: chart-example.local
-      paths:
-        - path: /
-          pathType: ImplementationSpecific
-  tls: []
-  #  - secretName: chart-example-tls
-  #    hosts:
-  #      - chart-example.local
-
-## A HTTPRoute (Gateway API) resource is an alternative to Ingress for routing
-## external HTTP traffic to the blackbox exporter Service.
-## ref: https://gateway-api.sigs.k8s.io/reference/api-types/httproute/
-route:
-  main:
-    ## Enable this route
-    enabled: false
-
-    ## ApiVersion set by default to "gateway.networking.k8s.io/v1"
-    apiVersion: ""
-    ## kind set by default to HTTPRoute
-    kind: ""
-
-    ## Optional name for the default rule in the rendered HTTPRoute.
-    name: ""
-
-    ## Annotations to attach to the HTTPRoute resource
-    annotations: {}
-    ## Labels to attach to the HTTPRoute resource
-    labels: {}
-
-    ## ParentRefs refers to resources this HTTPRoute is to be attached to (Gateways)
-    parentRefs: []
-      # - name: contour
-      #   sectionName: http
-
-    ## Hostnames (templated) defines a set of hostnames that should match against the HTTP Host
-    ## header to select a HTTPRoute used to process the request
-    hostnames: []
-      # - my.example.com
-
-    ## additionalRules (templated) allows adding custom rules to the route
-    additionalRules: []
-
-    ## Filters define the filters that are applied to requests that match
-    ## this rule
-    filters: []
-
-    ## Matches define conditions used for matching the rule against incoming
-    ## HTTP requests
-    matches:
-      - path:
-          type: PathPrefix
-          value: /
-
-    ## httpsRedirect adds a filter for redirecting to https (HTTP 301 Moved Permanently).
-    ## To redirect HTTP traffic to HTTPS, you need to have a Gateway with both HTTP and HTTPS listeners.
-    ## Matches and filters do not take effect if enabled.
-    ## Ref. https://gateway-api.sigs.k8s.io/guides/http-redirect-rewrite/
-    httpsRedirect: false
-
-podAnnotations: {}
-
-# Annotations for the Deployment
-deploymentAnnotations: {}
-
-# Annotations for the Secret
-secretAnnotations: {}
+global:
+  ## Global image registry to use if it needs to be overridden for some specific use cases (e.g local registries, custom images, ...)
+  ##
+  imageRegistry: ""
 
 # Hostaliases allow to add additional DNS entries to be injected directly into pods.
 # This will take precedence over your implemented DNS solution
@@ -324,57 +219,372 @@ hostAliases: []
 #      - test.example.com
 #      - another.example.net
 
+hostNetwork: false
+
+# Number of port to expose on the host. If specified, this must be a valid port number, 0 < x < 65536. If zero, no port is exposed.
+# This is useful for communicating with Daemon Pods when kind is DaemonSet.
+hostPort: 0
+
+image:
+  digest: ""
+  pullPolicy: IfNotPresent
+
+  ## Optionally specify an array of imagePullSecrets.
+  ## Secrets must be manually created in the namespace.
+  ## ref: https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/
+  ##
+  # pullSecrets:
+  #   - myRegistrKeySecretName
+
+  registry: quay.io
+  repository: prometheus/blackbox-exporter
+  # Overrides the image tag whose default is {{ .Chart.AppVersion }}
+  tag: ""
+
+## An Ingress resource can provide name-based virtual hosting and TLS
+## termination among other things for CouchDB deployments which are accessed
+## from outside the Kubernetes cluster.
+## ref: https://kubernetes.io/docs/concepts/services-networking/ingress/
+ingress:
+  annotations: {}
+    # kubernetes.io/tls-acme: "true"
+  className: ""
+  enabled: false
+  hosts:
+    ## The host property on hosts and tls is passed through helm tpl function.
+    ## ref: https://helm.sh/docs/howto/charts_tips_and_tricks/#using-the-tpl-function
+    - host: chart-example.local
+      paths:
+        - path: /
+          pathType: ImplementationSpecific
+  labels: {}
+  tls: []
+  #  - secretName: chart-example-tls
+  #    hosts:
+  #      - chart-example.local
+
+kind: Deployment
+
+# Override Kubernetes version if your distribution does not follow semver v2
+kubeVersionOverride: ""
+
+## Lifecycle hooks for the blackbox-exporter container, not set by default
+## ref: https://kubernetes.io/docs/concepts/containers/container-lifecycle-hooks/
+lifecycle: {}
+  # preStop:
+  #   exec:
+  #     command: ["sleep", "5"]
+
+livenessProbe:
+  failureThreshold: 3
+  httpGet:
+    path: /-/healthy
+    port: http
+
+## Override the namespace
+##
+namespaceOverride: ""
+
+## Network policy for chart
+networkPolicy:
+  # Limit access only from monitoring namespace
+  # Before setting this value to true, the monitoring namespace must exist. Kubernetes automatically sets the kubernetes.io/metadata.name label on all namespaces. The namespace name can be configured via monitoringNamespaceName
+  # Network Policy uses label filtering
+  allowMonitoringNamespace: false
+  # Enable network policy and allow access from anywhere
+  enabled: false
+  # Rewrite monitoring namespace in network policy (default value monitoring)
+  monitoringNamespaceName: "monitoring"
+
+nodeSelector: {}
+
 pod:
   labels: {}
 
-extraArgs: []
-  # - --history.limit=1000
+podAnnotations: {}
+
+podDisruptionBudget: {}
+  # maxUnavailable: 0
+
+podMonitoring:
+  ## Default values that will be used for all PodMonitoring created by `targets`
+  ## Following PodMonitoring API specs https://github.com/GoogleCloudPlatform/prometheus-engine/blob/main/doc/api.md#scrapeendpoint
+  defaults:
+    additionalMetricsRelabels: {}
+    interval: 30s
+    labels: {}
+    module: http_2xx
+    scrapeTimeout: 30s
+
+  ## If true, a PodMonitoring CR is created for a google managed prometheus
+  ## https://cloud.google.com/stackdriver/docs/managed-prometheus/setup-managed#gmp-pod-monitoring for each target
+  ##
+  enabled: false
+
+  ## path: HTTP path. Needs to be adjusted, if web.route-prefix is set
+  path: "/probe"
+
+  ## scheme: Protocol scheme to use to scrape.
+  scheme: http
+
+  ## If true, a PodMonitoring CR is created for google managed prometheus
+  ## https://cloud.google.com/stackdriver/docs/managed-prometheus/setup-managed#gmp-pod-monitoring for blackbox-exporter itself
+  ##
+  selfMonitor:
+    additionalMetricsRelabels: {}
+    enabled: false
+    interval: 30s
+    labels: {}
+    path: /metrics
+    scrapeTimeout: 30s
+
+  targets:
+#    - name: example                    # Human readable URL that will appear in Google Managed Prometheus / AlertManager
+#      url: http://example.com/healthz  # The URL that blackbox will scrape
+#      hostname: example.com            # HTTP probes can accept an additional `hostname` parameter that will set `Host` header and TLS SNI
+#      labels: {}                       # Map of labels for PodMonitoring. Overrides value set in `defaults`
+#      interval: 60s                    # Scraping interval. Overrides value set in `defaults`
+#      scrapeTimeout: 60s               # Scrape timeout. Overrides value set in `defaults`
+#      module: http_2xx                 # Module used for scraping. Overrides value set in `defaults`
+#      additionalMetricsRelabels: {}    # Map of metric labels and values to add
+
+  ## tlsConfig: TLS configuration to use when scraping the endpoint. For example if using istio mTLS.
+  ## Of type: https://github.com/GoogleCloudPlatform/prometheus-engine/blob/main/doc/api.md#tls
+  tlsConfig: {}
+
+## Pod-level security context. The defaults meet the "restricted" Pod Security Standard.
+## No UID is set at pod level, so platforms that assign one (e.g. OpenShift) keep working.
+## Set to null to render no pod securityContext: an empty map {} is merged with these defaults.
+podSecurityContext:
+  # fsGroup: 1000
+  runAsNonRoot: true
+  seccompProfile:
+    type: RuntimeDefault
+  ## Preferred way to enable ICMP probes, keeping all capabilities dropped: the exporter first
+  ## tries an unprivileged ICMP ("ping") socket, which the kernel allows when the process GID is
+  ## within the pod's net.ipv4.ping_group_range. Kubernetes treats this namespaced sysctl as safe,
+  ## so it is allowed by default. It cannot be set together with hostNetwork: true.
+  ## ICMP modules with `dont_fragment: true` still need a raw socket and therefore NET_RAW.
+  ## ref: https://kubernetes.io/docs/tasks/administer-cluster/sysctl-cluster/
+  # sysctls:
+  #   - name: net.ipv4.ping_group_range
+  #     value: "0 2147483647"
+
+priorityClassName: ""
+
+## Prometheus Operator Probe resources, an alternative to `serviceMonitor.targets`.
+## One Probe is created per target. Its prober is this chart's Service (port `service.port`).
+## ref: https://prometheus-operator.dev/docs/api-reference/api/#monitoring.coreos.com/v1.Probe
+probe:
+  ## Probe CRD API version
+  ##
+  apiVersion: monitoring.coreos.com/v1
+
+  # Default values that will be used for all Probes created by `targets`
+  defaults:
+    additionalMetricsRelabels: {}
+    additionalRelabeling: []
+    interval: 30s
+    ## labels: Probe object labels, for example to match the Prometheus `probeSelector`
+    labels: {}
+    module: http_2xx
+    scrapeTimeout: 30s
+
+  ## If true, a Probe is created for a prometheus operator for each target
+  ##
+  enabled: false
+
+  ## path: HTTP path of the probe endpoint. Needs to be adjusted, if web.route-prefix is set
+  path: "/probe"
+
+  ## scheme: HTTP scheme Prometheus uses to reach the blackbox exporter. Can be used with `tlsConfig`.
+  scheme: http
+
+  targets:
+#    - name: example                    # Human readable name, set as the `target` label
+#      url: http://example.com/healthz  # The URL that blackbox will probe
+#      urls: []                         # Additional URLs probed by the same Probe (all get the same `target` label)
+#      hostname: example.com            # HTTP probes can accept an additional `hostname` parameter that will set `Host` header and TLS SNI
+#      labels: {}                       # Map of labels for the Probe. Overrides value set in `defaults`
+#      interval: 60s                    # Probing interval. Overrides value set in `defaults`
+#      scrapeTimeout: 60s               # Scrape timeout. Overrides value set in `defaults`
+#      module: http_2xx                 # Module used for probing. Overrides value set in `defaults`
+#      additionalMetricsRelabels: {}    # Map of metric labels and values to add
+#      additionalRelabeling: []         # List of relabeling actions to run on the targets before probing
+
+  ## tlsConfig: TLS configuration to use when scraping the blackbox exporter.
+  ## Of type: https://prometheus-operator.dev/docs/api-reference/api/#monitoring.coreos.com/v1.SafeTLSConfig
+  tlsConfig: {}
+
+## Custom PrometheusRules to be defined
+## ref: https://github.com/coreos/prometheus-operator#customresourcedefinitions
+prometheusRule:
+  additionalLabels: {}
+  enabled: false
+  namespace: ""
+  rules: []
+
+readinessProbe:
+  httpGet:
+    path: /-/healthy
+    port: http
+
+## set to true to add the release label so scraping of the servicemonitor with kube-prometheus-stack works out of the box
+releaseLabel: false
 
 replicas: 1
+
+resources: {}
+  # limits:
+  #   memory: 300Mi
+  # requests:
+  #   memory: 50Mi
+
+restartPolicy: Always
+
+## Number of replicasets to retain ##
+## default value is 10, 0 will not retain any replicasets and make rollbacks impossible ##
+revisionHistoryLimit: 10
+
+## A HTTPRoute (Gateway API) resource is an alternative to Ingress for routing
+## external HTTP traffic to the blackbox exporter Service.
+## ref: https://gateway-api.sigs.k8s.io/reference/api-types/httproute/
+route:
+  main:
+    ## additionalRules (templated) allows adding custom rules to the route
+    additionalRules: []
+
+    ## Annotations to attach to the HTTPRoute resource
+    annotations: {}
+
+    ## ApiVersion set by default to "gateway.networking.k8s.io/v1"
+    apiVersion: ""
+
+    ## Enable this route
+    enabled: false
+
+    ## Filters define the filters that are applied to requests that match
+    ## this rule
+    filters: []
+
+    ## Hostnames (templated) defines a set of hostnames that should match against the HTTP Host
+    ## header to select a HTTPRoute used to process the request
+    hostnames: []
+      # - my.example.com
+
+    ## httpsRedirect adds a filter for redirecting to https (HTTP 301 Moved Permanently).
+    ## To redirect HTTP traffic to HTTPS, you need to have a Gateway with both HTTP and HTTPS listeners.
+    ## Matches and filters do not take effect if enabled.
+    ## Ref. https://gateway-api.sigs.k8s.io/guides/http-redirect-rewrite/
+    httpsRedirect: false
+
+    ## kind set by default to HTTPRoute
+    kind: ""
+
+    ## Labels to attach to the HTTPRoute resource
+    labels: {}
+
+    ## Matches define conditions used for matching the rule against incoming
+    ## HTTP requests
+    matches:
+      - path:
+          type: PathPrefix
+          value: /
+
+    ## Optional name for the default rule in the rendered HTTPRoute.
+    name: ""
+
+    ## ParentRefs refers to resources this HTTPRoute is to be attached to (Gateways)
+    parentRefs: []
+      # - name: contour
+      #   sectionName: http
+
+# Annotations for the Secret
+secretAnnotations: {}
+
+# Store the configuration as a `Secret` instead of a `ConfigMap`, useful in case it contains sensitive data
+secretConfig: false
+
+## User and Group to run blackbox-exporter container as
+securityContext:
+  allowPrivilegeEscalation: false
+  capabilities:
+    # To enable ICMP, prefer the net.ipv4.ping_group_range sysctl in podSecurityContext above.
+    # Add NET_RAW only when that sysctl cannot be used (hostNetwork: true) or for `dont_fragment: true`.
+    # For a non-root runAsUser the added capability is not effective on its own, see the README.
+    # The "restricted" and "baseline" Pod Security Standards do not allow NET_RAW.
+    # add: ["NET_RAW"]
+    drop: ["ALL"]
+  readOnlyRootFilesystem: true
+  runAsGroup: 1000
+  runAsNonRoot: true
+  runAsUser: 1000
+  seccompProfile:
+    type: RuntimeDefault
+
+service:
+  annotations: {}
+  ipDualStack:
+    enabled: false
+    ipFamilies: ["IPv6", "IPv4"]
+    ipFamilyPolicy: "PreferDualStack"
+  labels: {}
+  port: 9115
+  type: ClusterIP
+
+serviceAccount:
+  annotations: {}
+  # Specifies whether a ServiceAccount should be created
+  create: true
+  # The name of the ServiceAccount to use.
+  # If not set and create is true, a name is generated using the fullname template
+  name:
 
 serviceMonitor:
   ## ServiceMonitor CRD API version
   ##
   apiVersion: monitoring.coreos.com/v1
 
-  ## If true, a ServiceMonitor CRD is created for a prometheus operator
-  ## https://github.com/coreos/prometheus-operator for blackbox-exporter itself
-  ##
-  selfMonitor:
-    enabled: false
+  bearerTokenFile:
+
+  # Default values that will be used for all ServiceMonitors created by `targets`
+  defaults:
     additionalMetricsRelabels: {}
     additionalRelabeling: []
-    labels: {}
-    path: /metrics
-    scheme: http
-    tlsConfig: {}
+    honorTimestamps: true
     interval: 30s
+    labels: {}
+    module: http_2xx
     scrapeTimeout: 30s
-    ## Name of the Service port to scrape. Defaults to "http".
-    ## port:
 
   ## If true, a ServiceMonitor CRD is created for a prometheus operator
   ## https://github.com/coreos/prometheus-operator for each target
   ##
   enabled: false
 
-  # Default values that will be used for all ServiceMonitors created by `targets`
-  defaults:
-    additionalMetricsRelabels: {}
-    additionalRelabeling: []
-    labels: {}
-    interval: 30s
-    scrapeTimeout: 30s
-    honorTimestamps: true
-    module: http_2xx
-  ## scheme: HTTP scheme to use for scraping. Can be used with `tlsConfig` for example if using istio mTLS.
-  scheme: http
   ## path: HTTP path. Needs to be adjusted, if web.route-prefix is set
   path: "/probe"
-  ## tlsConfig: TLS configuration to use when scraping the endpoint. For example if using istio mTLS.
-  ## Of type: https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/api-reference/api.md#monitoring.coreos.com/v1.TLSConfig
-  tlsConfig: {}
-  bearerTokenFile:
+
+  ## scheme: HTTP scheme to use for scraping. Can be used with `tlsConfig` for example if using istio mTLS.
+  ## Set to https when webConfiguration enables TLS.
+  scheme: http
+
+  ## If true, a ServiceMonitor CRD is created for a prometheus operator
+  ## https://github.com/coreos/prometheus-operator for blackbox-exporter itself
+  ##
+  selfMonitor:
+    additionalMetricsRelabels: {}
+    additionalRelabeling: []
+    enabled: false
+    interval: 30s
+    labels: {}
+    path: /metrics
+    ## Name of the Service port to scrape. Defaults to "http".
+    ## port:
+    ## Set to https (with tlsConfig) when webConfiguration enables TLS.
+    scheme: http
+    scrapeTimeout: 30s
+    tlsConfig: {}
 
   targets:
 #    - name: example                    # Human readable URL that will appear in Prometheus / AlertManager
@@ -387,100 +597,48 @@ serviceMonitor:
 #      additionalMetricsRelabels: {}    # Map of metric labels and values to add
 #      additionalRelabeling: []         # List of metric relabeling actions to run
 
-## Custom PrometheusRules to be defined
-## ref: https://github.com/coreos/prometheus-operator#customresourcedefinitions
-prometheusRule:
-  enabled: false
-  additionalLabels: {}
-  namespace: ""
-  rules: []
-
-podMonitoring:
-  ## If true, a PodMonitoring CR is created for google managed prometheus
-  ## https://cloud.google.com/stackdriver/docs/managed-prometheus/setup-managed#gmp-pod-monitoring for blackbox-exporter itself
-  ##
-  selfMonitor:
-    enabled: false
-    additionalMetricsRelabels: {}
-    labels: {}
-    path: /metrics
-    interval: 30s
-    scrapeTimeout: 30s
-
-  ## If true, a PodMonitoring CR is created for a google managed prometheus
-  ## https://cloud.google.com/stackdriver/docs/managed-prometheus/setup-managed#gmp-pod-monitoring for each target
-  ##
-  enabled: false
-
-  ## Default values that will be used for all PodMonitoring created by `targets`
-  ## Following PodMonitoring API specs https://github.com/GoogleCloudPlatform/prometheus-engine/blob/main/doc/api.md#scrapeendpoint
-  defaults:
-    additionalMetricsRelabels: {}
-    labels: {}
-    interval: 30s
-    scrapeTimeout: 30s
-    module: http_2xx
-  ## scheme: Protocol scheme to use to scrape.
-  scheme: http
-  ## path: HTTP path. Needs to be adjusted, if web.route-prefix is set
-  path: "/probe"
   ## tlsConfig: TLS configuration to use when scraping the endpoint. For example if using istio mTLS.
-  ## Of type: https://github.com/GoogleCloudPlatform/prometheus-engine/blob/main/doc/api.md#tls
+  ## Of type: https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/api-reference/api.md#monitoring.coreos.com/v1.TLSConfig
   tlsConfig: {}
 
-  targets:
-#    - name: example                    # Human readable URL that will appear in Google Managed Prometheus / AlertManager
-#      url: http://example.com/healthz  # The URL that blackbox will scrape
-#      hostname: example.com            # HTTP probes can accept an additional `hostname` parameter that will set `Host` header and TLS SNI
-#      labels: {}                       # Map of labels for PodMonitoring. Overrides value set in `defaults`
-#      interval: 60s                    # Scraping interval. Overrides value set in `defaults`
-#      scrapeTimeout: 60s               # Scrape timeout. Overrides value set in `defaults`
-#      module: http_2xx                 # Module used for scraping. Overrides value set in `defaults`
-#      additionalMetricsRelabels: {}    # Map of metric labels and values to add
+## Startup probe for the blackbox-exporter container, not set by default
+## ref: https://kubernetes.io/docs/concepts/configuration/liveness-readiness-startup-probes/
+startupProbe: {}
+  # httpGet:
+  #   path: /-/healthy
+  #   port: http
+  # failureThreshold: 30
+  # periodSeconds: 2
 
-## Network policy for chart
-networkPolicy:
-  # Enable network policy and allow access from anywhere
-  enabled: false
-  # Limit access only from monitoring namespace
-  # Before setting this value to true, the monitoring namespace must exist. Kubernetes automatically sets the kubernetes.io/metadata.name label on all namespaces. The namespace name can be configured via monitoringNamespaceName
-  # Network Policy uses label filtering
-  allowMonitoringNamespace: false
-  # Rewrite monitoring namespace in network policy (default value monitoring)
-  monitoringNamespaceName: "monitoring"
+strategy:
+  rollingUpdate:
+    maxSurge: 1
+    maxUnavailable: 0
+  type: RollingUpdate
 
-## dnsPolicy and dnsConfig for Deployments and Daemonsets if you want non-default settings.
-## These will be passed directly to the PodSpec of same.
-dnsPolicy:
-dnsConfig:
+## Pod termination grace period in seconds. Set to null to leave it out of the pod spec.
+terminationGracePeriodSeconds: 30
 
-# Extra manifests to deploy as an array
-extraManifests: []
-  # - apiVersion: v1
-  #   kind: ConfigMap
-  #   metadata:
-  #   labels:
-  #     name: prometheus-extra
-  #   data:
-  #     extra-data: "value"
+tolerations: []
 
-# global common labels, applied to all resources
-commonLabels: {}
+## Topology spread constraints rely on node labels to identify the topology domain(s) that each Node is in.
+## Ref: https://kubernetes.io/docs/concepts/workloads/pods/pod-topology-spread-constraints/
+topologySpreadConstraints: []
+  # - maxSkew: 1
+  #   topologyKey: failure-domain.beta.kubernetes.io/zone
+  #   whenUnsatisfiable: DoNotSchedule
+  #   labelSelector:
+  #     matchLabels:
+  #       app.kubernetes.io/instance: jiralert
 
 # Enable vertical pod autoscaler support for prometheus-blackbox-exporter
 verticalPodAutoscaler:
-  enabled: false
-
-  # Recommender responsible for generating recommendation for the object.
-  # List should be empty (then the default recommender will generate the recommendation)
-  # or contain exactly one recommender.
-  # recommenders:
-  # - name: custom-recommender-performance
-
   # List of resources that the vertical pod autoscaler can control. Defaults to cpu and memory
   controlledResources: []
   # Specifies which resource values should be controlled: RequestsOnly or RequestsAndLimits.
   # controlledValues: RequestsAndLimits
+
+  enabled: false
 
   # Define the max allowed resources for the pod
   maxAllowed: {}
@@ -491,6 +649,12 @@ verticalPodAutoscaler:
   # cpu: 200m
   # memory: 100Mi
 
+  # Recommender responsible for generating recommendation for the object.
+  # List should be empty (then the default recommender will generate the recommendation)
+  # or contain exactly one recommender.
+  # recommenders:
+  # - name: custom-recommender-performance
+
   updatePolicy:
     # Specifies minimal number of replicas which need to be alive for VPA Updater to attempt pod eviction
     # minReplicas: 1
@@ -498,53 +662,29 @@ verticalPodAutoscaler:
     # are applied during the life of a Pod. Possible values are "Off", "Initial", "Recreate", and "Auto".
     updateMode: Auto
 
-configReloader:
-  enabled: false
-  containerPort: 8080
-  config:
-    logFormat: logfmt
-    logLevel: info
-    watchInterval: 1m
-  image:
-    registry: quay.io
-    repository: prometheus-operator/prometheus-config-reloader
-    tag: "v0.95.2"
-    pullPolicy: IfNotPresent
-    digest: ""
-  securityContext:
-    runAsUser: 1000
-    runAsGroup: 1000
-    readOnlyRootFilesystem: true
-    runAsNonRoot: true
-    allowPrivilegeEscalation: false
-    capabilities:
-      drop: ["ALL"]
-  resources:
-    limits:
-      memory: 50Mi
-    requests:
-      cpu: 10m
-      memory: 20Mi
-  livenessProbe:
-    httpGet:
-      path: /healthz
-      port: reloader-web
-      scheme: HTTP
-  readinessProbe:
-    httpGet:
-      path: /healthz
-      port: reloader-web
-      scheme: HTTP
-  service:
-    port: 8080
-  serviceMonitor:
-    selfMonitor:
-      additionalMetricsRelabels: {}
-      additionalRelabeling: []
-      path: /metrics
-      scheme: http
-      tlsConfig: {}
-      interval: 30s
-      scrapeTimeout: 30s
-      ## Name of the Service port to scrape. Defaults to "reloader-web".
-      ## port:
+## Web configuration (TLS and basic authentication) for the exporter's HTTP endpoints, passed
+## with --web.config.file. Format: https://prometheus.io/docs/prometheus/latest/configuration/https/
+## Disabled while both `config` and `existingSecret.name` are empty.
+webConfiguration:
+  # Inline web configuration, rendered into a Secret named <fullname>-web-config.
+  # When it contains tls_server_config, the liveness/readiness probes switch to HTTPS and the
+  # config reloader calls https://127.0.0.1:<containerPort>/-/reload.
+  # When it contains basic_auth_users, or a client_auth_type that requires a client certificate,
+  # httpGet probes are replaced by tcpSocket probes on the same port, because credentials are
+  # never put into the pod spec. configReloader cannot authenticate and is rejected in that case;
+  # set configAutoReload.enabled instead.
+  # Mount the certificate and key with extraSecretMounts (for example a kubernetes.io/tls Secret).
+  config: {}
+    # tls_server_config:
+    #   cert_file: /etc/blackbox-exporter/tls/tls.crt
+    #   key_file: /etc/blackbox-exporter/tls/tls.key
+    # basic_auth_users:
+    #   # bcrypt hash, for example from: htpasswd -nBC 10 "" | tr -d ':\n'
+    #   <username>: <bcrypt-hash>
+
+  # Alternatively, reference an existing Secret that holds the web configuration under the key
+  # web-config.yaml (e.g. managed by Sealed Secrets, Vault, ...). The chart cannot inspect it, so
+  # httpGet probes are replaced by tcpSocket probes, and configReloader cannot be enabled.
+  # Changes to that Secret do not restart the pods; roll them yourself, for example with podAnnotations.
+  existingSecret:
+    name: ""

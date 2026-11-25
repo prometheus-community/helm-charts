@@ -1,0 +1,17 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/helm-unittest/helm-unittest/main/schema/helm-testsuite.json
+suite: test defaultRules.node.diskDeviceSelector
+
+templates:
+  - prometheus/rules-1.14/node-exporter.yaml
+
+tests:
+  - it: should apply a custom disk device selector
+    set:
+      defaultRules.node.diskDeviceSelector: device!~"dm-.+"
+    asserts:
+      - contains:
+          path: spec.groups[0].rules
+          content:
+            alert: NodeDiskIOSaturation
+            expr: rate(node_disk_io_time_weighted_seconds_total{job="node-exporter", device!~"dm-.+"}[5m]) > 10
+          any: true

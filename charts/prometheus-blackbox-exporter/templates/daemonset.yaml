@@ -13,14 +13,16 @@ spec:
   template:
     metadata:
       labels:
-        {{- include "prometheus-blackbox-exporter.selectorLabels" . | nindent 8 }}
-        {{- if .Values.pod.labels }}
-{{ toYaml .Values.pod.labels | indent 8 }}
-        {{- end }}
-      {{- if or (not .Values.configReloader.enabled) .Values.podAnnotations }}
+        {{- include "prometheus-blackbox-exporter.podLabels" . | nindent 8 }}
+      {{- $rollOnConfigChange := not (or .Values.configReloader.enabled .Values.configAutoReload.enabled) }}
+      {{- $webConfigChecksum := include "prometheus-blackbox-exporter.webConfigurationChecksum" . }}
+      {{- if or $rollOnConfigChange .Values.podAnnotations $webConfigChecksum }}
       annotations:
-        {{- if not .Values.configReloader.enabled }}
+        {{- if $rollOnConfigChange }}
         checksum/config: {{ toYaml .Values.config | sha256sum }}
+        {{- end }}
+        {{- with $webConfigChecksum }}
+        checksum/web-config: {{ . }}
         {{- end }}
         {{- if .Values.podAnnotations }}
 {{ toYaml .Values.podAnnotations | indent 8 }}
