@@ -1,0 +1,56 @@
+suite: NetworkPolicy
+templates:
+  - templates/networkpolicy.yaml
+set:
+  networkPolicy.enabled: true
+  networkPolicy.allowMonitoringNamespace: true
+tests:
+  - it: allows the exporter container port by default
+    asserts:
+      - equal:
+          path: spec.ingress[0].ports
+          value:
+            - port: http
+              protocol: TCP
+
+  - it: allows the container port, not the Service port, when service.port differs
+    set:
+      service.port: 80
+    asserts:
+      - equal:
+          path: spec.ingress[0].ports
+          value:
+            - port: http
+              protocol: TCP
+
+  - it: allows the config reloader port when the config reloader is enabled
+    set:
+      configReloader.enabled: true
+    asserts:
+      - equal:
+          path: spec.ingress[0].ports
+          value:
+            - port: http
+              protocol: TCP
+            - port: reloader-web
+              protocol: TCP
+
+  - it: keeps the monitoring namespace selector
+    set:
+      networkPolicy.monitoringNamespaceName: observability
+    asserts:
+      - equal:
+          path: spec.ingress[0].from
+          value:
+            - namespaceSelector:
+                matchLabels:
+                  kubernetes.io/metadata.name: observability
+
+  - it: allows all ingress when the monitoring namespace restriction is off
+    set:
+      networkPolicy.allowMonitoringNamespace: false
+    asserts:
+      - equal:
+          path: spec.ingress
+          value:
+            - {}
