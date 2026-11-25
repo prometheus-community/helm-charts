@@ -371,6 +371,33 @@ pod:
 extraArgs: []
   # - --history.limit=1000
 
+## Web configuration (TLS and basic authentication) for the exporter's HTTP endpoints, passed
+## with --web.config.file. Format: https://prometheus.io/docs/prometheus/latest/configuration/https/
+## Disabled while both `config` and `existingSecret.name` are empty.
+webConfiguration:
+  # Inline web configuration, rendered into a Secret named <fullname>-web-config.
+  # When it contains tls_server_config, the liveness/readiness probes switch to HTTPS and the
+  # config reloader calls https://127.0.0.1:<containerPort>/-/reload.
+  # When it contains basic_auth_users, or a client_auth_type that requires a client certificate,
+  # httpGet probes are replaced by tcpSocket probes on the same port, because credentials are
+  # never put into the pod spec. configReloader cannot authenticate and is rejected in that case;
+  # set configAutoReload.enabled instead.
+  # Mount the certificate and key with extraSecretMounts (for example a kubernetes.io/tls Secret).
+  config: {}
+    # tls_server_config:
+    #   cert_file: /etc/blackbox-exporter/tls/tls.crt
+    #   key_file: /etc/blackbox-exporter/tls/tls.key
+    # basic_auth_users:
+    #   # bcrypt hash, for example from: htpasswd -nBC 10 "" | tr -d ':\n'
+    #   <username>: <bcrypt-hash>
+
+  # Alternatively, reference an existing Secret that holds the web configuration under the key
+  # web-config.yaml (e.g. managed by Sealed Secrets, Vault, ...). The chart cannot inspect it, so
+  # httpGet probes are replaced by tcpSocket probes, and configReloader cannot be enabled.
+  # Changes to that Secret do not restart the pods; roll them yourself, for example with podAnnotations.
+  existingSecret:
+    name: ""
+
 replicas: 1
 
 serviceMonitor:
@@ -387,6 +414,7 @@ serviceMonitor:
     additionalRelabeling: []
     labels: {}
     path: /metrics
+    ## Set to https (with tlsConfig) when webConfiguration enables TLS.
     scheme: http
     tlsConfig: {}
     interval: 30s
@@ -409,6 +437,7 @@ serviceMonitor:
     honorTimestamps: true
     module: http_2xx
   ## scheme: HTTP scheme to use for scraping. Can be used with `tlsConfig` for example if using istio mTLS.
+  ## Set to https when webConfiguration enables TLS.
   scheme: http
   ## path: HTTP path. Needs to be adjusted, if web.route-prefix is set
   path: "/probe"
