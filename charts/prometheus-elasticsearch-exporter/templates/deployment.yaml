@@ -152,10 +152,17 @@ spec:
           readinessProbe:
             {{- toYaml .Values.readinessProbe | nindent 12 }}
           {{- end }}
+          {{- if kindIs "invalid" .Values.lifecycle }}
+          {{- if semverCompare ">=1.30-0" .Capabilities.KubeVersion.Version }}
           lifecycle:
             preStop:
-              exec:
-                command: ["/bin/sleep", "20"]
+              sleep:
+                seconds: 20
+          {{- end }}
+          {{- else if .Values.lifecycle }}
+          lifecycle:
+            {{- toYaml .Values.lifecycle | nindent 12 }}
+          {{- end }}
           {{- if or (and .Values.es.ssl.enabled (eq .Values.es.ssl.useExistingSecrets false)) (not (empty .Values.secretMounts)) (not (empty .Values.extraVolumeMounts)) }}
           volumeMounts:
             {{- if and .Values.es.ssl.enabled (eq .Values.es.ssl.useExistingSecrets false) }}
