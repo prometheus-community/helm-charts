@@ -48,6 +48,29 @@ helm upgrade [RELEASE_NAME] [CHART] --install
 
 _See [helm upgrade](https://helm.sh/docs/helm/helm_upgrade/) for command documentation._
 
+#### To 12.0.0
+
+The default values now meet the [restricted Pod Security Standard](https://kubernetes.io/docs/concepts/security/pod-security-standards/#restricted):
+
+- `podSecurityContext` defaults to `runAsNonRoot: true` and `seccompProfile.type: RuntimeDefault`. No pod-level UID is set.
+- `securityContext` and `configReloader.securityContext` also set `seccompProfile.type: RuntimeDefault`, so it stays in place when `podSecurityContext` is overridden.
+- The ServiceAccount created by the chart now sets `automountServiceAccountToken` to the same value as the pod (`false` by default).
+
+The pod spec changes, so the pods are restarted once on upgrade.
+
+To restore the previous behaviour, for example on clusters whose admission policy does not allow a seccomp profile to be set (such as the `restricted` SCC of OpenShift before 4.11), unset the new fields. Helm merges maps, so `podSecurityContext: {}` is not enough:
+
+```yaml
+podSecurityContext: null
+securityContext:
+  seccompProfile: null
+configReloader:
+  securityContext:
+    seccompProfile: null
+```
+
+The documented ICMP setup (`securityContext.capabilities.add: ["NET_RAW"]`) is unaffected by the `RuntimeDefault` seccomp profile. Adding `NET_RAW` is not allowed by the `restricted` or `baseline` Pod Security Standards, so ICMP probes with that setup need a namespace that permits it.
+
 #### To 11.0.0
 
 This version removes support for the deprecated Kubernetes API `extensions/v1beta1`, `networking.k8s.io/v1beta1`, and `rbac.authorization.k8s.io/v1beta1`. and associated attributes.

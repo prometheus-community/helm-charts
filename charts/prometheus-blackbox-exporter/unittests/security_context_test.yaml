@@ -1,0 +1,112 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/helm-unittest/helm-unittest/main/schema/helm-testsuite.json
+suite: test the default security contexts meet the restricted Pod Security Standard
+templates:
+  - deployment.yaml
+  - daemonset.yaml
+  - serviceaccount.yaml
+release:
+  name: r
+tests:
+  - it: should set runAsNonRoot and the RuntimeDefault seccomp profile on the pod
+    template: deployment.yaml
+    asserts:
+      - equal:
+          path: spec.template.spec.securityContext
+          value:
+            runAsNonRoot: true
+            seccompProfile:
+              type: RuntimeDefault
+
+  - it: should not set a pod-level UID, GID or fsGroup
+    template: deployment.yaml
+    asserts:
+      - notExists:
+          path: spec.template.spec.securityContext.runAsUser
+      - notExists:
+          path: spec.template.spec.securityContext.runAsGroup
+      - notExists:
+          path: spec.template.spec.securityContext.fsGroup
+
+  - it: should set the RuntimeDefault seccomp profile on the exporter container
+    template: deployment.yaml
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[?(@.name == "blackbox-exporter")].securityContext.seccompProfile.type
+          value: RuntimeDefault
+      - equal:
+          path: spec.template.spec.containers[?(@.name == "blackbox-exporter")].securityContext.allowPrivilegeEscalation
+          value: false
+      - equal:
+          path: spec.template.spec.containers[?(@.name == "blackbox-exporter")].securityContext.capabilities.drop
+          value: ["ALL"]
+
+  - it: should set the RuntimeDefault seccomp profile on the config reloader container
+    template: deployment.yaml
+    set:
+      configReloader:
+        enabled: true
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[?(@.name == "config-reloader")].securityContext.seccompProfile.type
+          value: RuntimeDefault
+
+  - it: should keep the container seccomp profile when the pod security context is removed
+    template: deployment.yaml
+    set:
+      podSecurityContext: null
+    asserts:
+      - notExists:
+          path: spec.template.spec.securityContext
+      - equal:
+          path: spec.template.spec.containers[?(@.name == "blackbox-exporter")].securityContext.seccompProfile.type
+          value: RuntimeDefault
+
+  - it: should render no seccomp profile when all three are set to null
+    template: deployment.yaml
+    set:
+      podSecurityContext: null
+      securityContext:
+        seccompProfile: null
+      configReloader:
+        enabled: true
+        securityContext:
+          seccompProfile: null
+    asserts:
+      - notExists:
+          path: spec.template.spec.securityContext
+      - notExists:
+          path: spec.template.spec.containers[?(@.name == "blackbox-exporter")].securityContext.seccompProfile
+      - notExists:
+          path: spec.template.spec.containers[?(@.name == "config-reloader")].securityContext.seccompProfile
+
+  - it: should set the same pod security context on the DaemonSet
+    template: daemonset.yaml
+    set:
+      kind: DaemonSet
+    asserts:
+      - equal:
+          path: spec.template.spec.securityContext
+          value:
+            runAsNonRoot: true
+            seccompProfile:
+              type: RuntimeDefault
+
+  - it: should disable token automount on the ServiceAccount by default
+    template: serviceaccount.yaml
+    asserts:
+      - equal:
+          path: automountServiceAccountToken
+          value: false
+
+  - it: should use the pod's automountServiceAccountToken value on the ServiceAccount
+    set:
+      automountServiceAccountToken: true
+    asserts:
+      - equal:
+          path: automountServiceAccountToken
+          value: true
+        template: serviceaccount.yaml
+      - equal:
+          path: spec.template.spec.automountServiceAccountToken
+          value: true
+        template: deployment.yaml
