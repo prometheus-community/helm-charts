@@ -162,3 +162,10 @@ Empty when multi-target auth modules are not configured.
 {{- printf "%s-config" (include "elasticsearch-exporter.fullname" .) -}}
 {{- end -}}
 {{- end -}}
+
+{{/*
+Exporter config file for multi-target scraping (auth modules), shared by the Secret and the checksum annotation.
+*/}}
+{{- define "elasticsearch-exporter.multiTarget.config" -}}
+{{- dict "auth_modules" .Values.multiTarget.authModules | toYaml -}}
+{{- end -}}

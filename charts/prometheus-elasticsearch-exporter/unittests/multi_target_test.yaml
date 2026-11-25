@@ -133,8 +133,8 @@ tests:
               auth_module:
                 - prod
             relabelings:
-              - targetLabel: instance
-                replacement: https://es-prod:9200
+              - sourceLabels: [__param_target]
+                targetLabel: instance
         documentIndex: 1
       - equal:
           path: metadata.labels.release
@@ -160,3 +160,63 @@ tests:
     asserts:
       - failedTemplate:
           errorMessage: serviceMonitor.targets[].url is required
+
+  - it: should hash only the exporter config, so a chart version bump does not restart the pod
+    template: deployment.yaml
+    chart:
+      version: 99.0.0
+    set:
+      multiTarget.authModules:
+        prod:
+          type: userpass
+          userpass:
+            username: metrics
+            password: x
+    asserts:
+      - equal:
+          path: spec.template.metadata.annotations["checksum/config"]
+          value: 5db0c36db5d95de40c4efff2e91f4f9a70154c23b8a91337454bb2ee4b2a7619
+
+  - it: should copy the probe target into instance instead of using the URL as a replacement
+    template: servicemonitor.yaml
+    set:
+      serviceMonitor.enabled: true
+      serviceMonitor.targets:
+        - name: tenant
+          url: https://es.example/$tenant
+    asserts:
+      - equal:
+          path: spec.endpoints[0].params.target
+          value:
+            - https://es.example/$tenant
+        documentIndex: 1
+      - equal:
+          path: spec.endpoints[0].relabelings
+          value:
+            - sourceLabels: [__param_target]
+              targetLabel: instance
+        documentIndex: 1
+
+  - it: should propagate serviceMonitor.targetLabels to the probe ServiceMonitors
+    template: servicemonitor.yaml
+    set:
+      serviceMonitor.enabled: true
+      serviceMonitor.targetLabels:
+        - environment
+        - team
+      serviceMonitor.targets:
+        - name: prod
+          url: https://es-prod:9200
+    asserts:
+      - equal:
+          path: spec.targetLabels
+          value:
+            - environment
+            - team
+        documentIndex: 0
+      - equal:
+          path: spec.targetLabels
+          value:
+            - environment
+            - team
+        documentIndex: 1

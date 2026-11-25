@@ -73,8 +73,8 @@ spec:
       - {{ . | quote }}
       {{- end }}
     relabelings:
-    - targetLabel: instance
-      replacement: {{ tpl .url $ | quote }}
+    - sourceLabels: [__param_target]
+      targetLabel: instance
     {{- with (concat (.relabelings | default list) $.Values.serviceMonitor.relabelings) }}
     {{- toYaml . | nindent 4 }}
     {{- end }}
@@ -89,6 +89,10 @@ spec:
   namespaceSelector:
     matchNames:
       - {{ include "prometheus-elasticsearch-exporter.namespace" $ }}
+  {{- with $.Values.serviceMonitor.targetLabels }}
+  targetLabels:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
   sampleLimit: {{ $.Values.serviceMonitor.sampleLimit }}
 {{- end }}
 {{- end }}
