@@ -1,6 +1,7 @@
 affinity: {}
 
-## Allow automount the serviceaccount token for sidecar container (eg: oauthproxy)
+## Allow automount the serviceaccount token for sidecar container (eg: oauthproxy).
+## Also rendered on the ServiceAccount created by the chart.
 automountServiceAccountToken: false
 
 # global common labels, applied to all resources
@@ -76,6 +77,8 @@ configReloader:
     runAsGroup: 1000
     runAsNonRoot: true
     runAsUser: 1000
+    seccompProfile:
+      type: RuntimeDefault
   service:
     port: 8080
   serviceMonitor:
@@ -349,8 +352,14 @@ podMonitoring:
   ## Of type: https://github.com/GoogleCloudPlatform/prometheus-engine/blob/main/doc/api.md#tls
   tlsConfig: {}
 
-podSecurityContext: {}
+## Pod-level security context. The defaults meet the "restricted" Pod Security Standard.
+## No UID is set at pod level, so platforms that assign one (e.g. OpenShift) keep working.
+## Set to null to render no pod securityContext: an empty map {} is merged with these defaults.
+podSecurityContext:
   # fsGroup: 1000
+  runAsNonRoot: true
+  seccompProfile:
+    type: RuntimeDefault
   ## Preferred way to enable ICMP probes, keeping all capabilities dropped: the exporter first
   ## tries an unprivileged ICMP ("ping") socket, which the kernel allows when the process GID is
   ## within the pod's net.ipv4.ping_group_range. Kubernetes treats this namespaced sysctl as safe,
@@ -503,12 +512,15 @@ securityContext:
     # To enable ICMP, prefer the net.ipv4.ping_group_range sysctl in podSecurityContext above.
     # Add NET_RAW only when that sysctl cannot be used (hostNetwork: true) or for `dont_fragment: true`.
     # For a non-root runAsUser the added capability is not effective on its own, see the README.
+    # The "restricted" and "baseline" Pod Security Standards do not allow NET_RAW.
     # add: ["NET_RAW"]
     drop: ["ALL"]
   readOnlyRootFilesystem: true
   runAsGroup: 1000
   runAsNonRoot: true
   runAsUser: 1000
+  seccompProfile:
+    type: RuntimeDefault
 
 service:
   annotations: {}
