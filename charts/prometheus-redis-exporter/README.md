@@ -44,6 +44,12 @@ helm upgrade [RELEASE_NAME] [CHART] --install
 
 _See [helm upgrade](https://helm.sh/docs/helm/helm_upgrade/) for command documentation._
 
+#### To 7.0.0
+
+The chart no longer renders a Role and a RoleBinding, and the `rbac.create` and `rbac.pspEnabled` values are gone. With the default values the Role had no rules, since the exporter does not call the Kubernetes API, so nothing changes for most installs: Helm deletes the two empty objects on upgrade.
+
+The Role only granted something with `rbac.pspEnabled: true`, where it allowed the ServiceAccount to `use` a PodSecurityPolicy named after the release. PodSecurityPolicy was removed in Kubernetes 1.25. If you still run an older cluster that enforces it and relied on that Role, create the Role and RoleBinding for the exporter's ServiceAccount yourself (for example through `extraManifests`) before upgrading, otherwise new exporter Pods are rejected at admission.
+
 #### To 5.0.0
 
 From 5.0.0 redis exporter is using the [Kubernetes recommended labels](https://kubernetes.io/docs/concepts/overview/working-with-objects/common-labels/). Therefore you have to delete the deployment before you upgrade.
