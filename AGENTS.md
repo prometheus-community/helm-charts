@@ -71,7 +71,7 @@ Keep the text reviewers have to read short:
 
 - Use the PR template (`.github/PULL_REQUEST_TEMPLATE.md`): keep its headings and their order.
 - Keep a PR description under 200 words of visible text (code blocks and diagrams don't count).
-- When reviewers need more than that, write a short version of under 200 words and put the full text in a folded block below it, closed by default. Leave a blank line after `<summary>` so the Markdown inside renders:
+- When reviewers need more than that, write a short version of under 200 words and put the full text in a folded block below it, closed by default. Leave an empty line after `<summary>` so the Markdown inside renders:
 
   ```markdown
   <details><summary>Details</summary>
