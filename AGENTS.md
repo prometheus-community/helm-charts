@@ -65,6 +65,25 @@ A chart may carry a `ci/lint.sh`, which `ct lint` runs in addition to the unitte
 - **Generated files**: `.github/CODEOWNERS`, `MAINTAINERS.md` and `.github/advanced-issue-labeler.yml` are generated from `charts/` by `scripts/generate-codeowners.sh`, `scripts/generate-maintainers.sh` and `scripts/generate-labeler.sh`. Do not edit them directly.
 - **Minimum Kubernetes version**: Charts that declare `kubeVersion` in `Chart.yaml` use a `>=` range, and the value differs per chart (`>=1.25.0-0` for `kube-prometheus-stack`, lower elsewhere). Most charts declare none at all. Match the chart you are editing instead of assuming a repository-wide floor.
 
+## Pull Request Descriptions and Comments
+
+Keep the text reviewers have to read short:
+
+- Use the PR template (`.github/PULL_REQUEST_TEMPLATE.md`): keep its headings and their order.
+- Keep a PR description under 200 words of visible text (code blocks and diagrams don't count).
+- When reviewers need more than that, write a short version of under 200 words and put the full text in a folded block below it, closed by default. Leave a blank line after `<summary>` so the Markdown inside renders:
+
+  ```markdown
+  <details><summary>Details</summary>
+
+  Full description, test output, reasoning ...
+
+  </details>
+  ```
+
+  Keep the template headings: put the short text under each heading and fold only the long parts within it.
+- Keep review replies and PR comments to a few sentences, and fold logs or long explanations the same way.
+
 ## Dependency Management
 
 Renovate manages all dependency updates.
