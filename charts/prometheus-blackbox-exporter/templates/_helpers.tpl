@@ -171,13 +171,19 @@ containers:
 {{- end }}
 
 {{- if .Values.configReloader.enabled }}
+{{- $webConfigurationMode := include "prometheus-blackbox-exporter.webConfigurationMode" . }}
+{{- if include "prometheus-blackbox-exporter.webConfigurationExistingSecretName" . }}
+{{- fail "configReloader.enabled cannot be combined with webConfiguration.existingSecret: the chart cannot tell whether the reload endpoint needs TLS or credentials. Use webConfiguration.config, or disable the config reloader and set configAutoReload.enabled instead." }}
+{{- else if eq $webConfigurationMode "auth" }}
+{{- fail "configReloader.enabled cannot be combined with basic_auth_users or a required client certificate in webConfiguration.config: the config reloader cannot authenticate to /-/reload without putting credentials into the pod spec. Disable the config reloader and set configAutoReload.enabled instead." }}
+{{- end }}
 - name: config-reloader
   image: {{ include "prometheus-blackbox-exporter.config-reloader.image" . }}
   imagePullPolicy: {{ .Values.configReloader.image.pullPolicy }}
   args:
     - --config-file={{ .Values.configPath | default "/config/blackbox.yaml" }}
     - --watch-interval={{ .Values.configReloader.config.watchInterval }}
-    - --reload-url=http://127.0.0.1:{{ .Values.containerPort }}/-/reload
+    - --reload-url={{ if eq $webConfigurationMode "https" }}https{{ else }}http{{ end }}://127.0.0.1:{{ .Values.containerPort }}/-/reload
     - --listen-address=:{{ .Values.configReloader.containerPort }}
     - --log-format={{ .Values.configReloader.config.logFormat }}
     - --log-level={{ .Values.configReloader.config.logLevel }}
@@ -230,6 +236,9 @@ containers:
   - "--config.enable-auto-reload"
   - "--config.auto-reload-interval={{ .Values.configAutoReload.interval | int }}"
   {{- end }}
+  {{- if include "prometheus-blackbox-exporter.webConfigurationEnabled" . }}
+  - "--web.config.file=/etc/blackbox-exporter/web-config/web-config.yaml"
+  {{- end }}
   {{- with .Values.extraArgs }}
 {{ tpl (toYaml .) $ | indent 2 }}
   {{- end }}
@@ -244,12 +253,12 @@ containers:
     hostPort: {{ .Values.hostPort }}
     {{- end }}
   livenessProbe:
-  {{- toYaml .Values.livenessProbe | trim | nindent 4 }}
+  {{- include "prometheus-blackbox-exporter.probe" (dict "probe" .Values.livenessProbe "context" .) | trim | nindent 4 }}
   readinessProbe:
-  {{- toYaml .Values.readinessProbe | trim | nindent 4 }}
+  {{- include "prometheus-blackbox-exporter.probe" (dict "probe" .Values.readinessProbe "context" .) | trim | nindent 4 }}
   {{- with .Values.startupProbe }}
   startupProbe:
-    {{- toYaml . | nindent 4 }}
+  {{- include "prometheus-blackbox-exporter.probe" (dict "probe" . "context" $) | trim | nindent 4 }}
   {{- end }}
   {{- with .Values.lifecycle }}
   lifecycle:
@@ -258,6 +267,11 @@ containers:
   volumeMounts:
   - mountPath: /config
     name: config
+  {{- if include "prometheus-blackbox-exporter.webConfigurationEnabled" . }}
+  - mountPath: /etc/blackbox-exporter/web-config
+    name: web-config
+    readOnly: true
+  {{- end }}
   {{- range .Values.extraConfigmapMounts }}
   - name: {{ .name }}
     mountPath: {{ .mountPath }}
@@ -296,6 +310,14 @@ volumes:
   configMap:
     name: {{ template "prometheus-blackbox-exporter.fullname" . }}
 {{- end }}
+{{- if include "prometheus-blackbox-exporter.webConfigurationEnabled" . }}
+- name: web-config
+  secret:
+    secretName: {{ include "prometheus-blackbox-exporter.webConfigurationSecretName" . }}
+    items:
+      - key: web-config.yaml
+        path: web-config.yaml
+{{- end }}
 {{- range .Values.extraConfigmapMounts }}
 - name: {{ .name }}
   configMap:
@@ -318,3 +340,90 @@ the workload even when neither the image nor the configuration changed.
 {{- define "prometheus-blackbox-exporter.podLabels" -}}
 {{- omit (include "prometheus-blackbox-exporter.labels" . | fromYaml) "helm.sh/chart" | toYaml -}}
 {{- end }}
+
+{{/*
+Return the name of an existing Secret holding the web configuration, or "" if none is set.
+*/}}
+{{- define "prometheus-blackbox-exporter.webConfigurationExistingSecretName" -}}
+{{- $webConfiguration := .Values.webConfiguration | default dict -}}
+{{- $existingSecret := get $webConfiguration "existingSecret" | default dict -}}
+{{- get $existingSecret "name" | default "" -}}
+{{- end -}}
+
+{{/*
+Return "true" if a web configuration (inline or existing Secret) is set, or "" otherwise.
+*/}}
+{{- define "prometheus-blackbox-exporter.webConfigurationEnabled" -}}
+{{- $webConfiguration := .Values.webConfiguration | default dict -}}
+{{- if or (get $webConfiguration "config") (include "prometheus-blackbox-exporter.webConfigurationExistingSecretName" .) -}}
+true
+{{- end -}}
+{{- end -}}
+
+{{/*
+Return the Secret name to mount as the web configuration: the user-provided
+existing Secret when set, otherwise the chart-managed Secret.
+*/}}
+{{- define "prometheus-blackbox-exporter.webConfigurationSecretName" -}}
+{{- $existingSecretName := include "prometheus-blackbox-exporter.webConfigurationExistingSecretName" . -}}
+{{- if $existingSecretName -}}
+{{- $existingSecretName -}}
+{{- else -}}
+{{- printf "%s-web-config" (include "prometheus-blackbox-exporter.fullname" . | trunc 52 | trimSuffix "-") -}}
+{{- end -}}
+{{- end -}}
+
+{{/*
+How the web configuration affects in-pod HTTP clients (kubelet probes, config reloader):
+  ""      no web configuration, or one that neither enables TLS nor requires authentication
+  "https" TLS without client authentication: plain HTTPS requests still succeed
+  "auth"  basic auth or required client certificates, or an existing Secret whose
+          content the chart cannot inspect: unauthenticated HTTP(S) requests fail
+*/}}
+{{- define "prometheus-blackbox-exporter.webConfigurationMode" -}}
+{{- if include "prometheus-blackbox-exporter.webConfigurationExistingSecretName" . -}}
+auth
+{{- else -}}
+{{- $config := (.Values.webConfiguration | default dict).config | default dict -}}
+{{- $tls := get $config "tls_server_config" | default dict -}}
+{{- if or (get $config "basic_auth_users") (has (get $tls "client_auth_type") (list "RequireAnyClientCert" "RequireClientCert" "RequireAndVerifyClientCert")) -}}
+auth
+{{- else if $tls -}}
+https
+{{- end -}}
+{{- end -}}
+{{- end -}}
+
+{{/*
+Render a liveness or readiness probe, adapting an httpGet handler to the web configuration:
+switch it to HTTPS when TLS is enabled, or to a tcpSocket check on the same port when
+requests need credentials. Credentials are never written into the pod spec.
+Usage: include "prometheus-blackbox-exporter.probe" (dict "probe" .Values.livenessProbe "context" $)
+*/}}
+{{- define "prometheus-blackbox-exporter.probe" -}}
+{{- $probe := .probe -}}
+{{- $mode := include "prometheus-blackbox-exporter.webConfigurationMode" .context -}}
+{{- if and $mode (kindIs "map" $probe) (hasKey $probe "httpGet") -}}
+{{- $probe = deepCopy $probe -}}
+{{- if eq $mode "auth" -}}
+{{- $port := $probe.httpGet.port -}}
+{{- $probe = omit $probe "httpGet" -}}
+{{- $_ := set $probe "tcpSocket" (dict "port" $port) -}}
+{{- else -}}
+{{- $_ := set $probe.httpGet "scheme" "HTTPS" -}}
+{{- end -}}
+{{- end -}}
+{{- toYaml $probe -}}
+{{- end -}}
+
+{{/*
+Return a checksum of the inline web configuration rendered into the chart-managed Secret, or ""
+when there is none. The exporter decides between HTTP and HTTPS when it starts listening, so a
+change to the web configuration must restart the pods; an existing Secret is managed outside the
+chart and cannot be tracked here.
+*/}}
+{{- define "prometheus-blackbox-exporter.webConfigurationChecksum" -}}
+{{- if and (.Values.webConfiguration).config (not (include "prometheus-blackbox-exporter.webConfigurationExistingSecretName" .)) -}}
+{{- toYaml .Values.webConfiguration.config | sha256sum -}}
+{{- end -}}
+{{- end -}}
