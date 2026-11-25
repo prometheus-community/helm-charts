@@ -1,0 +1,43 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/helm-unittest/helm-unittest/main/schema/helm-testsuite.json
+suite: test pod hardening defaults
+templates:
+  - deployment.yaml
+  - serviceaccount.yaml
+tests:
+  - it: should not mount a service account token by default
+    template: deployment.yaml
+    asserts:
+      - equal:
+          path: spec.template.spec.automountServiceAccountToken
+          value: false
+
+  - it: should mount a service account token when enabled
+    template: deployment.yaml
+    set:
+      serviceAccount.automountServiceAccountToken: true
+    asserts:
+      - equal:
+          path: spec.template.spec.automountServiceAccountToken
+          value: true
+
+  - it: should apply the setting to a ServiceAccount created by the chart
+    template: serviceaccount.yaml
+    set:
+      serviceAccount.create: true
+      serviceAccount.name: es
+    asserts:
+      - equal:
+          path: automountServiceAccountToken
+          value: false
+
+  - it: should not run with the root group
+    template: deployment.yaml
+    asserts:
+      - equal:
+          path: spec.template.spec.securityContext
+          value:
+            runAsNonRoot: true
+            runAsUser: 1000
+            runAsGroup: 1000
+            seccompProfile:
+              type: RuntimeDefault
