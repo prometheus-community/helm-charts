@@ -61,6 +61,7 @@ jobs:
           GPG_KEY_PATH: "${{ runner.temp }}/private.key"
 
       - name: Run chart-releaser
+        id: cr
         uses: helm/chart-releaser-action@92c6b97fa9f664492a2592e0d1d80bc6bf378957 # v1.9.0
         with:
           # renovate: github=helm/chart-releaser
@@ -76,3 +77,27 @@ jobs:
           CR_KEY: "${{ vars.GPG_KEY_NAME }}"
           CR_KEYRING: "~/.gnupg/secring.gpg"
           CR_PASSPHRASE_FILE: "${{ runner.temp }}/gpg-passphrase"
+
+      # GitHub generates the release notes from all pull requests merged since
+      # the previous release of the chart, including those of other charts.
+      # Keep only the entries of the released chart and those for all charts,
+      # based on the "[<chart>]" or "[ALL]" prefix of the pull request titles.
+      - name: Filter release notes
+        if: steps.cr.outputs.changed_charts != ''
+        shell: bash
+        run: |
+          IFS=',' read -ra charts <<< "$CHANGED_CHARTS"
+          for chart in "${charts[@]}"; do
+            [[ -f "$chart/Chart.yaml" ]] || continue
+            name=$(yq -r '.name' "$chart/Chart.yaml")
+            release="$name-$(yq -r '.version' "$chart/Chart.yaml")"
+            notes="$RUNNER_TEMP/$release.md"
+            gh release view "$release" --json body --jq .body \
+              | grep -vP "^\* (?!\[(\Q$name\E|ALL)\] )|^## New Contributors$" \
+              | cat -s > "$notes"
+            gh release edit "$release" --notes-file "$notes"
+          done
+        env:
+          CHANGED_CHARTS: "${{ steps.cr.outputs.changed_charts }}"
+          GH_REPO: "${{ github.repository }}"
+          GH_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
