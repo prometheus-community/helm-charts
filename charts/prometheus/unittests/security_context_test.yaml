@@ -1,0 +1,124 @@
+suite: test server pod and container security contexts
+templates:
+  - deploy.yaml
+tests:
+  - it: should set the RuntimeDefault seccomp profile on the server pod
+    asserts:
+      - isKind:
+          of: Deployment
+      - equal:
+          path: spec.template.spec.securityContext
+          value:
+            runAsUser: 65534
+            runAsNonRoot: true
+            runAsGroup: 65534
+            fsGroup: 65534
+            seccompProfile:
+              type: RuntimeDefault
+
+  - it: should harden the server container
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[?(@.name == "prometheus-server")].securityContext
+          value:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            readOnlyRootFilesystem: true
+
+  - it: should harden the configmap-reload container
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[?(@.name == "prometheus-server-configmap-reload")].securityContext
+          value:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            readOnlyRootFilesystem: true
+
+  - it: should harden the StatefulSet pod
+    set:
+      server.statefulSet.enabled: true
+    asserts:
+      - isKind:
+          of: StatefulSet
+      - equal:
+          path: spec.template.spec.securityContext.seccompProfile.type
+          value: RuntimeDefault
+      - equal:
+          path: spec.template.spec.containers[?(@.name == "prometheus-server")].securityContext.readOnlyRootFilesystem
+          value: true
+      - equal:
+          path: spec.template.spec.containers[?(@.name == "prometheus-server-configmap-reload")].securityContext.readOnlyRootFilesystem
+          value: true
+
+  - it: should harden the DaemonSet pod
+    set:
+      server.daemonSet.enabled: true
+      server.persistentVolume.enabled: false
+    asserts:
+      - isKind:
+          of: DaemonSet
+      - equal:
+          path: spec.template.spec.securityContext.seccompProfile.type
+          value: RuntimeDefault
+      - equal:
+          path: spec.template.spec.containers[?(@.name == "prometheus-server")].securityContext.readOnlyRootFilesystem
+          value: true
+      - equal:
+          path: spec.template.spec.containers[?(@.name == "prometheus-server-configmap-reload")].securityContext.readOnlyRootFilesystem
+          value: true
+
+  - it: should mount a writable volume at the TSDB path when persistence is disabled
+    set:
+      server.persistentVolume.enabled: false
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[?(@.name == "prometheus-server")].args
+          content: --storage.tsdb.path=/data
+      - contains:
+          path: spec.template.spec.containers[?(@.name == "prometheus-server")].volumeMounts
+          content:
+            name: storage-volume
+            mountPath: /data
+            subPath: ""
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: storage-volume
+            emptyDir: {}
+
+  - it: should let a single container field be overridden
+    set:
+      server.containerSecurityContext.readOnlyRootFilesystem: false
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[?(@.name == "prometheus-server")].securityContext
+          value:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            readOnlyRootFilesystem: false
+
+  - it: should drop the container security contexts when set to null
+    set:
+      server.containerSecurityContext: null
+      configmapReload.prometheus.containerSecurityContext: null
+    asserts:
+      - notExists:
+          path: spec.template.spec.containers[?(@.name == "prometheus-server")].securityContext
+      - notExists:
+          path: spec.template.spec.containers[?(@.name == "prometheus-server-configmap-reload")].securityContext
+
+  - it: should drop the seccomp profile when set to null
+    set:
+      server.securityContext.seccompProfile: null
+    asserts:
+      - notExists:
+          path: spec.template.spec.securityContext.seccompProfile
+      - equal:
+          path: spec.template.spec.securityContext.runAsUser
+          value: 65534
