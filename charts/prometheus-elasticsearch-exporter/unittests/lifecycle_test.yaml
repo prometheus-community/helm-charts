@@ -1,0 +1,59 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/helm-unittest/helm-unittest/main/schema/helm-testsuite.json
+suite: test exporter container lifecycle
+templates:
+  - deployment.yaml
+tests:
+  - it: should use a native preStop sleep on Kubernetes >= 1.30
+    capabilities:
+      majorVersion: 1
+      minorVersion: 30
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].lifecycle
+          value:
+            preStop:
+              sleep:
+                seconds: 20
+
+  - it: should not exec into the container
+    capabilities:
+      majorVersion: 1
+      minorVersion: 34
+    asserts:
+      - notExists:
+          path: spec.template.spec.containers[0].lifecycle.preStop.exec
+
+  - it: should not add a hook on Kubernetes < 1.30
+    capabilities:
+      majorVersion: 1
+      minorVersion: 29
+    asserts:
+      - notExists:
+          path: spec.template.spec.containers[0].lifecycle
+
+  - it: should not add a hook when lifecycle is an empty map
+    capabilities:
+      majorVersion: 1
+      minorVersion: 30
+    set:
+      lifecycle: {}
+    asserts:
+      - notExists:
+          path: spec.template.spec.containers[0].lifecycle
+
+  - it: should render a custom lifecycle as given
+    capabilities:
+      majorVersion: 1
+      minorVersion: 29
+    set:
+      lifecycle:
+        preStop:
+          exec:
+            command: ["/bin/sleep", "5"]
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].lifecycle
+          value:
+            preStop:
+              exec:
+                command: ["/bin/sleep", "5"]

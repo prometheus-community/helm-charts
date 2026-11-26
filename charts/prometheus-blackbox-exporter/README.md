@@ -48,6 +48,29 @@ helm upgrade [RELEASE_NAME] [CHART] --install
 
 _See [helm upgrade](https://helm.sh/docs/helm/helm_upgrade/) for command documentation._
 
+#### To 12.0.0
+
+The default values now meet the [restricted Pod Security Standard](https://kubernetes.io/docs/concepts/security/pod-security-standards/#restricted):
+
+- `podSecurityContext` defaults to `runAsNonRoot: true` and `seccompProfile.type: RuntimeDefault`. No pod-level UID is set.
+- `securityContext` and `configReloader.securityContext` also set `seccompProfile.type: RuntimeDefault`, so it stays in place when `podSecurityContext` is overridden.
+- The ServiceAccount created by the chart now sets `automountServiceAccountToken` to the same value as the pod (`false` by default).
+
+The pod spec changes, so the pods are restarted once on upgrade.
+
+To restore the previous behaviour, for example on clusters whose admission policy does not allow a seccomp profile to be set (such as the `restricted` SCC of OpenShift before 4.11), unset the new fields. Helm merges maps, so `podSecurityContext: {}` is not enough:
+
+```yaml
+podSecurityContext: null
+securityContext:
+  seccompProfile: null
+configReloader:
+  securityContext:
+    seccompProfile: null
+```
+
+The documented ICMP setup (`securityContext.capabilities.add: ["NET_RAW"]`) is unaffected by the `RuntimeDefault` seccomp profile. Adding `NET_RAW` is not allowed by the `restricted` or `baseline` Pod Security Standards, so ICMP probes with that setup need a namespace that permits it.
+
 #### To 11.0.0
 
 This version removes support for the deprecated Kubernetes API `extensions/v1beta1`, `networking.k8s.io/v1beta1`, and `rbac.authorization.k8s.io/v1beta1`. and associated attributes.
@@ -124,6 +147,54 @@ See [Customizing the Chart Before Installing](https://helm.sh/docs/intro/using_h
 ```console
 helm show values oci://ghcr.io/prometheus-community/charts/prometheus-blackbox-exporter
 ```
+
+### TLS and basic authentication
+
+The exporter's HTTP endpoints can be protected with an
+[exporter-toolkit web configuration](https://prometheus.io/docs/prometheus/latest/configuration/https/)
+through `webConfiguration`. The chart passes it with `--web.config.file`, either rendered from
+`webConfiguration.config` into a `<fullname>-web-config` Secret, or from an existing Secret named in
+`webConfiguration.existingSecret.name` that holds the key `web-config.yaml`.
+
+For TLS, mount the certificate and key, for example from a `kubernetes.io/tls` Secret:
+
+```yaml
+webConfiguration:
+  config:
+    tls_server_config:
+      cert_file: /etc/blackbox-exporter/tls/tls.crt
+      key_file: /etc/blackbox-exporter/tls/tls.key
+
+extraSecretMounts:
+  - name: tls
+    mountPath: /etc/blackbox-exporter/tls
+    secretName: blackbox-exporter-tls
+    readOnly: true
+```
+
+For basic authentication, add bcrypt hashes (never plain passwords) to `basic_auth_users`:
+
+```yaml
+webConfiguration:
+  config:
+    basic_auth_users:
+      <username>: <bcrypt-hash>
+```
+
+How the rest of the chart adapts:
+
+- With TLS only, the `httpGet` liveness and readiness probes use `scheme: HTTPS`, and the config
+  reloader calls `https://127.0.0.1:<containerPort>/-/reload` (it does not verify the certificate).
+- With `basic_auth_users`, a `client_auth_type` that requires a client certificate, or an
+  `existingSecret`, every path including `/-/healthy` requires credentials. The chart does not put
+  credentials into the pod spec, so `httpGet` probes are replaced by `tcpSocket` probes on the same
+  port. The config reloader cannot authenticate either, so `configReloader.enabled` is rejected; set
+  `configAutoReload.enabled` to let the exporter reload its configuration itself.
+- ServiceMonitors and PodMonitorings are not changed automatically: set `scheme: https` and a matching
+  `tlsConfig` on `serviceMonitor`, `serviceMonitor.selfMonitor` and `podMonitoring`. Scraping with
+  basic authentication is not configured by the chart.
+- Pods restart when the inline `webConfiguration.config` changes (the exporter only decides between
+  HTTP and HTTPS at startup). Changes to an existing Secret are not tracked; roll the pods yourself.
 
 ### ICMP probes
 
