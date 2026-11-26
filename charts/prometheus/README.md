@@ -99,8 +99,9 @@ configmapReload:
 ```
 
 When this chart is a dependency of another chart, a `null` in the parent chart's `values.yaml` removes the defaults
-with Helm 3.17.1 or later ([helm/helm#12879](https://github.com/helm/helm/pull/12879)). Older Helm 3 releases, and
-Helm 4 (checked with 4.3.2), keep them; there, override the individual fields or pass the `null` with `-f`/`--set`.
+with Helm 3.17.1 or later ([helm/helm#12879](https://github.com/helm/helm/pull/12879)) and Helm 4.0 to 4.1. Older Helm 3
+releases and Helm 4.2 or later ([helm/helm#32132](https://github.com/helm/helm/issues/32132)) keep them; there, override
+the individual fields or pass the `null` with `-f`/`--set`.
 
 #### To 30.0
 
