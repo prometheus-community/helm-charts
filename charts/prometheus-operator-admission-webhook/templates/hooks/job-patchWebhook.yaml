@@ -1,4 +1,6 @@
-{{- if .Values.jobs.enabled }}
+{{- $mutating := .Values.webhooks.enabled.prometheusruleMutate }}
+{{- $validating := or .Values.webhooks.enabled.prometheusruleValidate .Values.webhooks.enabled.alertmanagerconfigsValidate }}
+{{- if and .Values.jobs.enabled (or $mutating $validating) }}
 {{- $registry := .Values.jobs.image.registry }}
 {{- $repository := .Values.jobs.image.repository }}
 {{- $imageTag := .Values.jobs.image.tag }}
@@ -50,6 +52,8 @@ spec:
             - --namespace={{ template "prometheus-operator-admission-webhook.namespace" . }}
             - --secret-name={{ template "prometheus-operator-admission-webhook.fullname" . }}
             - --webhook-name={{ template "prometheus-operator-admission-webhook.fullname" . }}
+            - --patch-mutating={{ if $mutating }}true{{ else }}false{{ end }}
+            - --patch-validating={{ if $validating }}true{{ else }}false{{ end }}
           {{- with .Values.jobs.containerSecurityContext }}
           securityContext:
             {{- toYaml . | nindent 12 }}

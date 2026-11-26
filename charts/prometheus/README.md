@@ -65,6 +65,44 @@ helm upgrade [RELEASE_NAME] oci://ghcr.io/prometheus-community/charts/prometheus
 
 _See [helm upgrade](https://helm.sh/docs/helm/helm_upgrade/) for command documentation._
 
+#### To 31.0
+
+The Prometheus server Pod now meets the `restricted` Pod Security Standard by default:
+
+- `server.securityContext` adds `seccompProfile.type: RuntimeDefault`.
+- `server.containerSecurityContext` and `configmapReload.prometheus.containerSecurityContext` now default to
+  `allowPrivilegeEscalation: false`, `capabilities.drop: [ALL]` and `readOnlyRootFilesystem: true`.
+
+Prometheus writes only to its data directory, which the chart mounts at `server.persistentVolume.mountPath` (an
+emptyDir when persistence is disabled). If you moved the storage path with `server.storagePath`, or dropped
+`--storage.tsdb.path` / `--storage.agent.path` through `server.defaultFlagsOverride`, make sure it points to a mounted
+volume, otherwise Prometheus may not be able to write to it. Containers from `server.sidecarContainers` and
+`server.extraInitContainers` keep the security context you give them.
+
+Because Helm merges maps, setting `containerSecurityContext: {}` keeps the new defaults. To change a single setting,
+override that field:
+
+```yaml
+server:
+  containerSecurityContext:
+    readOnlyRootFilesystem: false
+```
+
+To render no container security context at all, set it to `null` with `-f` or `--set` on install or upgrade:
+
+```yaml
+server:
+  containerSecurityContext: null
+configmapReload:
+  prometheus:
+    containerSecurityContext: null
+```
+
+When this chart is a dependency of another chart, a `null` in the parent chart's `values.yaml` removes the defaults
+with Helm 3.17.1 or later ([helm/helm#12879](https://github.com/helm/helm/pull/12879)) and Helm 4.0 to 4.1. Older Helm 3
+releases and Helm 4.2 or later ([helm/helm#32132](https://github.com/helm/helm/issues/32132)) keep them; there, override
+the individual fields or pass the `null` with `-f`/`--set`.
+
 #### To 30.0
 
 The default filesystem collector arguments in the _prometheus-node-exporter_ subchart moved from `extraArgs` to the new

@@ -1,0 +1,41 @@
+suite: admission webhooks patch job clusterrole
+templates:
+  - prometheus-operator/admission-webhooks/job-patch/clusterrole.yaml
+release:
+  name: kps
+tests:
+  - it: only grants access to the chart's own webhook configurations
+    asserts:
+      - lengthEqual:
+          path: rules
+          count: 1
+      - equal:
+          path: rules[0]
+          value:
+            apiGroups:
+              - admissionregistration.k8s.io
+            resources:
+              - validatingwebhookconfigurations
+              - mutatingwebhookconfigurations
+            resourceNames:
+              - kps-kube-prometheus-stack-admission
+            verbs:
+              - get
+              - update
+              - patch
+
+  - it: follows fullnameOverride
+    set:
+      fullnameOverride: custom
+    asserts:
+      - equal:
+          path: rules[0].resourceNames
+          value:
+            - custom-admission
+
+  - it: is not rendered when cert-manager provides the certificates
+    set:
+      prometheusOperator.admissionWebhooks.certManager.enabled: true
+    asserts:
+      - hasDocuments:
+          count: 0

@@ -7,16 +7,15 @@ additionalAnnotations: {}
 # Number of instance
 replicaCount: 1
 
-rbac:
-  # Specifies whether RBAC resources should be created
-  create: true
-
 serviceAccount:
   # Specifies whether a ServiceAccount should be created
   create: false
   # The name of the ServiceAccount to use.
   # If not set and create is true, a name is generated using the fullname template
   name:
+  # Whether to mount a service account token into the exporter Pod. The exporter does not call the Kubernetes API,
+  # so no token is mounted by default. Applies to the Pod and, when create is true, to the ServiceAccount.
+  automountServiceAccountToken: false
 
 image:
   repository: nginx/nginx-prometheus-exporter
@@ -63,6 +62,26 @@ service:
   externalTrafficPolicy: ""
 
 podAnnotations: {}
+
+# Pod security context. The defaults follow the restricted Pod Security Standard and match the user of the upstream
+# image (1001). Set to null to use the image and cluster defaults.
+# More information available at:
+# https://kubernetes.io/docs/concepts/security/pod-security-standards/
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 1001
+  runAsGroup: 1001
+  seccompProfile:
+    type: RuntimeDefault
+
+# Container security context. The defaults follow the restricted Pod Security Standard.
+# Set to null to use the image and cluster defaults.
+securityContext:
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+      - ALL
+  readOnlyRootFilesystem: true
 
 # Optional pod labels
 podLabels: {}

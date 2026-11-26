@@ -36,6 +36,7 @@ spec:
       {{- end }}
     spec:
       serviceAccountName: {{ template "elasticsearch-exporter.serviceAccountName" . }}
+      automountServiceAccountToken: {{ .Values.serviceAccount.automountServiceAccountToken }}
 {{- if .Values.priorityClassName }}
       priorityClassName: "{{ .Values.priorityClassName }}"
 {{- end }}
@@ -116,6 +117,21 @@ spec:
                     {{- if .Values.es.ilm }}
                     "--collector.ilm",
                     {{- end }}
+                    {{- if .Values.es.health_report }}
+                    "--collector.health-report",
+                    {{- end }}
+                    {{- if .Values.es.tasks }}
+                    "--collector.tasks",
+                    {{- with .Values.es.tasks_actions }}
+                    {{ printf "--tasks.actions=%s" . | quote }},
+                    {{- end }}
+                    {{- end }}
+                    {{- with .Values.es.node }}
+                    {{ printf "--es.node=%s" . | quote }},
+                    {{- end }}
+                    {{- with .Values.es.clusterinfo_interval }}
+                    {{ printf "--es.clusterinfo.interval=%s" . | quote }},
+                    {{- end }}
                     "--es.timeout={{ .Values.es.timeout }}",
                     {{- if .Values.es.sslSkipVerify }}
                     "--es.ssl-skip-verify",
@@ -151,10 +167,17 @@ spec:
           readinessProbe:
             {{- toYaml .Values.readinessProbe | nindent 12 }}
           {{- end }}
+          {{- if kindIs "invalid" .Values.lifecycle }}
+          {{- if semverCompare ">=1.30-0" .Capabilities.KubeVersion.Version }}
           lifecycle:
             preStop:
-              exec:
-                command: ["/bin/sleep", "20"]
+              sleep:
+                seconds: 20
+          {{- end }}
+          {{- else if .Values.lifecycle }}
+          lifecycle:
+            {{- toYaml .Values.lifecycle | nindent 12 }}
+          {{- end }}
           {{- if or (and .Values.es.ssl.enabled (eq .Values.es.ssl.useExistingSecrets false)) (not (empty .Values.secretMounts)) (not (empty .Values.extraVolumeMounts)) }}
           volumeMounts:
             {{- if and .Values.es.ssl.enabled (eq .Values.es.ssl.useExistingSecrets false) }}
