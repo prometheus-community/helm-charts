@@ -48,6 +48,7 @@ image:
 podSecurityContext:
   runAsNonRoot: true
   runAsUser: 1000
+  runAsGroup: 1000
   seccompProfile:
     type: "RuntimeDefault"
 
@@ -97,6 +98,16 @@ readinessProbe:
   initialDelaySeconds: 1
   timeoutSeconds: 5
   periodSeconds: 5
+
+# Lifecycle hooks for the exporter container.
+# When unset (null), the chart adds a native preStop sleep of 20 seconds on Kubernetes >= 1.30, so the Pod is
+# removed from the Service endpoints before the exporter stops, and no hook on older clusters.
+# Set to {} to disable the hook, or to a full lifecycle spec to replace it.
+# lifecycle:
+#   preStop:
+#     sleep:
+#       seconds: 10
+lifecycle: null
 
 # Example of a more complex liveness probe:
 # livenessProbe:
@@ -278,6 +289,27 @@ es:
   ##
   ilm: false
 
+  ## If true, query the health report (requires Elasticsearch 8.7.0 or later).
+  ##
+  health_report: false
+
+  ## If true, query stats for running tasks, filtered by tasks_actions.
+  ##
+  tasks: false
+
+  ## Task actions to collect when tasks is true, in the same format as the Task API actions parameter.
+  ## Empty uses the exporter default (indices:*).
+  ##
+  tasks_actions: ""
+
+  ## Name of the node to expose metrics for when all is false. Empty uses the exporter default (_local).
+  ##
+  node: ""
+
+  ## Interval at which the cluster info (used for the cluster label) is refreshed. Empty uses the exporter default (5m).
+  ##
+  clusterinfo_interval: ""
+
   ## Timeout for trying to get stats from Elasticsearch. (ex: 20s)
   ##
   timeout: 30s
@@ -399,5 +431,8 @@ prometheusRule:
 serviceAccount:
   create: false
   name: default
-  automountServiceAccountToken: true
+  # Whether to mount a service account token into the exporter Pod. The exporter does not call the
+  # Kubernetes API, so no token is mounted by default. Applies to the Pod and, when create is true,
+  # to the ServiceAccount.
+  automountServiceAccountToken: false
   annotations: {}

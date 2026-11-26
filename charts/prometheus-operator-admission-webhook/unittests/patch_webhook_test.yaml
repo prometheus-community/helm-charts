@@ -1,0 +1,116 @@
+suite: test patchWebhook job and its cluster role
+templates:
+  - hooks/job-patchWebhook.yaml
+  - hooks/clusterrole.yaml
+  - hooks/clusterrolebinding.yaml
+release:
+  name: adm
+tests:
+  - it: should patch both webhook configurations by default
+    template: hooks/job-patchWebhook.yaml
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: --patch-mutating=true
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: --patch-validating=true
+
+  - it: should not patch the mutating webhook configuration when it is disabled
+    template: hooks/job-patchWebhook.yaml
+    set:
+      webhooks.enabled.prometheusruleMutate: false
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: --patch-mutating=false
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: --patch-validating=true
+
+  - it: should not patch the validating webhook configuration when both validating webhooks are disabled
+    template: hooks/job-patchWebhook.yaml
+    set:
+      webhooks.enabled.prometheusruleValidate: false
+      webhooks.enabled.alertmanagerconfigsValidate: false
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: --patch-mutating=true
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: --patch-validating=false
+
+  - it: should patch the validating webhook configuration when only alertmanagerconfigsValidate is enabled
+    template: hooks/job-patchWebhook.yaml
+    set:
+      webhooks.enabled.prometheusruleValidate: false
+      webhooks.enabled.prometheusruleMutate: false
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: --patch-mutating=false
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: --patch-validating=true
+
+  - it: should only grant access to the chart's own webhook configurations
+    template: hooks/clusterrole.yaml
+    asserts:
+      - lengthEqual:
+          path: rules
+          count: 1
+      - equal:
+          path: rules[0]
+          value:
+            apiGroups:
+              - admissionregistration.k8s.io
+            resources:
+              - validatingwebhookconfigurations
+              - mutatingwebhookconfigurations
+            resourceNames:
+              - adm-prometheus-operator-admission-webhook
+            verbs:
+              - get
+              - update
+              - patch
+
+  - it: should follow fullnameOverride in the webhook configuration resourceNames
+    template: hooks/clusterrole.yaml
+    set:
+      fullnameOverride: custom
+    asserts:
+      - equal:
+          path: rules[0].resourceNames
+          value:
+            - custom
+
+  - it: should not grant access to mutating webhook configurations when the mutating webhook is disabled
+    template: hooks/clusterrole.yaml
+    set:
+      webhooks.enabled.prometheusruleMutate: false
+    asserts:
+      - equal:
+          path: rules[0].resources
+          value:
+            - validatingwebhookconfigurations
+
+  - it: should not grant access to validating webhook configurations when both validating webhooks are disabled
+    template: hooks/clusterrole.yaml
+    set:
+      webhooks.enabled.prometheusruleValidate: false
+      webhooks.enabled.alertmanagerconfigsValidate: false
+    asserts:
+      - equal:
+          path: rules[0].resources
+          value:
+            - mutatingwebhookconfigurations
+
+  - it: should not render the patch job and its cluster role when no webhook is enabled
+    set:
+      webhooks.enabled.prometheusruleValidate: false
+      webhooks.enabled.alertmanagerconfigsValidate: false
+      webhooks.enabled.prometheusruleMutate: false
+    asserts:
+      - hasDocuments:
+          count: 0

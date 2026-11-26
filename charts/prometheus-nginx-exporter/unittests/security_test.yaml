@@ -1,0 +1,83 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/helm-unittest/helm-unittest/main/schema/helm-testsuite.json
+suite: test hardened defaults
+templates:
+  - deployment.yaml
+  - serviceaccount.yaml
+tests:
+  - it: should run as the image's non-root user with the RuntimeDefault seccomp profile
+    template: deployment.yaml
+    asserts:
+      - equal:
+          path: spec.template.spec.securityContext
+          value:
+            runAsNonRoot: true
+            runAsUser: 1001
+            runAsGroup: 1001
+            seccompProfile:
+              type: RuntimeDefault
+
+  - it: should drop all capabilities and use a read-only root filesystem
+    template: deployment.yaml
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].securityContext
+          value:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            readOnlyRootFilesystem: true
+
+  - it: should allow removing the security contexts
+    template: deployment.yaml
+    set:
+      podSecurityContext: null
+      securityContext: null
+    asserts:
+      - notExists:
+          path: spec.template.spec.securityContext
+      - notExists:
+          path: spec.template.spec.containers[0].securityContext
+
+  - it: should allow overriding the user
+    template: deployment.yaml
+    set:
+      podSecurityContext.runAsUser: 65534
+      podSecurityContext.runAsGroup: 65534
+    asserts:
+      - equal:
+          path: spec.template.spec.securityContext.runAsUser
+          value: 65534
+      - equal:
+          path: spec.template.spec.securityContext.runAsGroup
+          value: 65534
+      - equal:
+          path: spec.template.spec.securityContext.seccompProfile.type
+          value: RuntimeDefault
+
+  - it: should not mount a service account token by default
+    template: deployment.yaml
+    asserts:
+      - equal:
+          path: spec.template.spec.automountServiceAccountToken
+          value: false
+
+  - it: should mount a service account token when enabled
+    template: deployment.yaml
+    set:
+      serviceAccount.automountServiceAccountToken: true
+    asserts:
+      - equal:
+          path: spec.template.spec.automountServiceAccountToken
+          value: true
+
+  - it: should apply the setting to the ServiceAccount
+    template: serviceaccount.yaml
+    set:
+      serviceAccount.create: true
+    asserts:
+      - isKind:
+          of: ServiceAccount
+      - equal:
+          path: automountServiceAccountToken
+          value: false

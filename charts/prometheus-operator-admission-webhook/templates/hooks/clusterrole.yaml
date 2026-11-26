@@ -1,4 +1,6 @@
-{{- if and .Values.jobs.enabled .Values.rbac.create }}
+{{- $mutating := .Values.webhooks.enabled.prometheusruleMutate }}
+{{- $validating := or .Values.webhooks.enabled.prometheusruleValidate .Values.webhooks.enabled.alertmanagerconfigsValidate }}
+{{- if and .Values.jobs.enabled .Values.rbac.create (or $mutating $validating) }}
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
@@ -19,8 +21,14 @@ rules:
   - apiGroups:
       - admissionregistration.k8s.io
     resources:
+      {{- if $validating }}
       - validatingwebhookconfigurations
+      {{- end }}
+      {{- if $mutating }}
       - mutatingwebhookconfigurations
+      {{- end }}
+    resourceNames:
+      - {{ include "prometheus-operator-admission-webhook.fullname" . }}
     verbs:
       - get
       - update

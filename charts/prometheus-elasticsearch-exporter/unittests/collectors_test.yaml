@@ -1,0 +1,67 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/helm-unittest/helm-unittest/main/schema/helm-testsuite.json
+suite: test optional collectors and flags
+templates:
+  - deployment.yaml
+tests:
+  - it: should not pass the new flags by default
+    asserts:
+      - notMatchRegex:
+          path: spec.template.spec.containers[0].command[*]
+          pattern: ^--(collector\.health-report|collector\.tasks|tasks\.actions|es\.node|es\.clusterinfo\.interval)
+
+  - it: should enable the health report collector
+    set:
+      es.health_report: true
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].command
+          content: --collector.health-report
+
+  - it: should enable the tasks collector with the default actions
+    set:
+      es.tasks: true
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].command
+          content: --collector.tasks
+      - notMatchRegex:
+          path: spec.template.spec.containers[0].command[*]
+          pattern: ^--tasks\.actions
+
+  - it: should pass task actions when the tasks collector is enabled
+    set:
+      es.tasks: true
+      es.tasks_actions: "indices:data/write/*"
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].command
+          content: --tasks.actions=indices:data/write/*
+
+  - it: should ignore task actions when the tasks collector is disabled
+    set:
+      es.tasks_actions: "indices:data/write/*"
+    asserts:
+      - notContains:
+          path: spec.template.spec.containers[0].command
+          content: --tasks.actions=indices:data/write/*
+
+  - it: should pass the node and cluster info interval
+    set:
+      es.node: es-data-0
+      es.clusterinfo_interval: 1m
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].command
+          content: --es.node=es-data-0
+      - contains:
+          path: spec.template.spec.containers[0].command
+          content: --es.clusterinfo.interval=1m
+
+  - it: should pass a node name with a backslash or a double quote unchanged
+    set:
+      es.all: false
+      es.node: es\blue"zone
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].command
+          content: --es.node=es\blue"zone
