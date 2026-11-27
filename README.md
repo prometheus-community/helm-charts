@@ -33,6 +33,15 @@ curl https://prometheus-community.github.io/helm-charts/pubkey.gpg | gpg --impor
 
 After importing the key, you can use the `--verify` flag during `helm install` to enable chart signature validation.
 
+OCI artifacts are also signed keylessly with [cosign](https://docs.sigstore.dev/cosign/) and carry a [build provenance attestation](https://docs.github.com/en/actions/concepts/security/artifact-attestations). Versions published before this was introduced only carry the GPG signature.
+
+```console
+cosign verify ghcr.io/prometheus-community/charts/<chart>:<version> \
+  --certificate-identity https://github.com/prometheus-community/helm-charts/.github/workflows/release.yaml@refs/heads/main \
+  --certificate-oidc-issuer https://token.actions.githubusercontent.com
+gh attestation verify oci://ghcr.io/prometheus-community/charts/<chart>:<version> --repo prometheus-community/helm-charts
+```
+
 ## Contributing
 
 The source code of all [Prometheus](https://prometheus.io) community [Helm](https://helm.sh) charts can be found on GitHub: <https://github.com/prometheus-community/helm-charts/>
