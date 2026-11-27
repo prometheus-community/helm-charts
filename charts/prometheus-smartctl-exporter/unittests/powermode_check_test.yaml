@@ -1,0 +1,66 @@
+suite: powermode check
+templates:
+  - daemonset.yaml
+tests:
+  - it: uses the default powermode check
+    template: daemonset.yaml
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: --smartctl.powermode-check=standby
+  - it: uses the extra powermode-check argument instead of adding the default
+    template: daemonset.yaml
+    set:
+      extraArgs:
+        smartctl.powermode-check: never
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: --smartctl.powermode-check=never
+      - notContains:
+          path: spec.template.spec.containers[0].args
+          content: --smartctl.powermode-check=standby
+  - it: keeps the default in an extra instance without extra arguments
+    template: daemonset.yaml
+    set:
+      extraArgs:
+        smartctl.powermode-check: never
+      extraInstances:
+        - config:
+            devices:
+              - /dev/nvme0n1
+    asserts:
+      - hasDocuments:
+          count: 2
+      - notContains:
+          path: spec.template.spec.containers[0].args
+          content: --smartctl.powermode-check=standby
+        documentIndex: 0
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: --smartctl.powermode-check=standby
+        documentIndex: 1
+  - it: uses the extra powermode-check argument of an extra instance
+    template: daemonset.yaml
+    set:
+      extraInstances:
+        - config:
+            devices:
+              - /dev/nvme0n1
+          extraArgs:
+            smartctl.powermode-check: never
+    asserts:
+      - hasDocuments:
+          count: 2
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: --smartctl.powermode-check=standby
+        documentIndex: 0
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: --smartctl.powermode-check=never
+        documentIndex: 1
+      - notContains:
+          path: spec.template.spec.containers[0].args
+          content: --smartctl.powermode-check=standby
+        documentIndex: 1
