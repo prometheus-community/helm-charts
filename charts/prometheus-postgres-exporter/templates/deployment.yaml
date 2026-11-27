@@ -73,6 +73,15 @@ spec:
           {{- if .Values.config.logFormat }}
           - "--log.format={{ .Values.config.logFormat }}"
           {{- end}}
+          {{- if and (not .Values.config.datasourceSecret) (include "prometheus-postgres-exporter.datasourceFlags" .) }}
+          - {{ printf "--datasource.uri=%s" (include "prometheus-postgres-exporter.data_source_uri_raw" .) | quote }}
+          {{- if and (not .Values.config.datasource.userSecret) .Values.config.datasource.userFile }}
+          - {{ printf "--datasource.user-file=%s" (tpl .Values.config.datasource.userFile .) | quote }}
+          {{- end }}
+          {{- if and (not .Values.config.datasource.pgpassfile) .Values.config.datasource.passwordFile }}
+          - {{ printf "--datasource.pass-file=%s" (tpl .Values.config.datasource.passwordFile .) | quote }}
+          {{- end }}
+          {{- end }}
           {{-  if .Values.config.extraArgs  }}
           {{- .Values.config.extraArgs | toYaml | nindent 10 }}
           {{-  end  }}
@@ -84,8 +93,11 @@ spec:
                 name: {{ tpl .Values.config.datasourceSecret.name . }}
                 key: {{ tpl .Values.config.datasourceSecret.key . }}
           {{- else }}
+          {{- $datasourceFlags := include "prometheus-postgres-exporter.datasourceFlags" . }}
+          {{- if not $datasourceFlags }}
           - name: DATA_SOURCE_URI
             value: {{ template "prometheus-postgres-exporter.data_source_uri" . }}
+          {{- end }}
           {{- if .Values.config.datasource.userSecret }}
           - name: DATA_SOURCE_USER
             valueFrom:
@@ -94,8 +106,10 @@ spec:
                 key: {{ tpl .Values.config.datasource.userSecret.key . }}
           {{- else }}
           {{- if .Values.config.datasource.userFile }}
+          {{- if not $datasourceFlags }}
           - name: DATA_SOURCE_USER_FILE
             value: {{ tpl .Values.config.datasource.userFile . }}
+          {{- end }}
           {{- else }}
           - name: DATA_SOURCE_USER
             value: {{ tpl .Values.config.datasource.user . }}
@@ -108,8 +122,10 @@ spec:
             value: ""
           {{- else }}
           {{- if .Values.config.datasource.passwordFile }}
+          {{- if not $datasourceFlags }}
           - name: DATA_SOURCE_PASS_FILE
             value: {{ tpl .Values.config.datasource.passwordFile . }}
+          {{- end }}
           {{- else }}
           - name: DATA_SOURCE_PASS
             valueFrom:

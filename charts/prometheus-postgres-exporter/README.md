@@ -46,6 +46,10 @@ helm upgrade [RELEASE_NAME] oci://ghcr.io/prometheus-community/charts/prometheus
 
 _See [helm upgrade](https://helm.sh/docs/helm/helm_upgrade/) for command documentation._
 
+#### To 8.4.0
+
+postgres_exporter v0.21.0 deprecates the `DATA_SOURCE_URI`, `DATA_SOURCE_USER_FILE` and `DATA_SOURCE_PASS_FILE` environment variables (removed in v0.22.0) in favour of the `--datasource.uri`, `--datasource.user-file` and `--datasource.pass-file` flags. When the image is v0.21.0 or later (the default), the chart now passes these as flags instead of environment variables. With an older `image.tag`, it keeps setting the environment variables. `DATA_SOURCE_USER`, `DATA_SOURCE_PASS` and `DATA_SOURCE_NAME` (`config.datasourceSecret`) carry secrets and are not deprecated, so they are unchanged. No values need to change.
+
 #### To 8.0.0
 
 The hardcoded fallback password previously baked into the generated `Secret` when `config.datasource.password` was unset has been removed. The chart now fails at render time if no password source is configured.
