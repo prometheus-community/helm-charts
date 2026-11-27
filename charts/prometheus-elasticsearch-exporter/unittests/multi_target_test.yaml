@@ -114,11 +114,11 @@ tests:
             team: search
     asserts:
       - hasDocuments:
-          count: 3
+          count: 2
       - equal:
           path: metadata.name
           value: es-prometheus-elasticsearch-exporter-prod
-        documentIndex: 1
+        documentIndex: 0
       - equal:
           path: spec.endpoints[0]
           value:
@@ -135,21 +135,21 @@ tests:
             relabelings:
               - sourceLabels: [__param_target]
                 targetLabel: instance
-        documentIndex: 1
+        documentIndex: 0
       - equal:
           path: metadata.labels.release
           value: kps
-        documentIndex: 1
+        documentIndex: 0
       - notExists:
           path: spec.endpoints[0].params.auth_module
-        documentIndex: 2
+        documentIndex: 1
       - equal:
           path: metadata.labels.team
           value: search
-        documentIndex: 2
+        documentIndex: 1
       - notExists:
           path: metadata.labels.release
-        documentIndex: 2
+        documentIndex: 1
 
   - it: should fail without a target url
     template: servicemonitor.yaml
@@ -189,13 +189,13 @@ tests:
           path: spec.endpoints[0].params.target
           value:
             - https://es.example/$tenant
-        documentIndex: 1
+        documentIndex: 0
       - equal:
           path: spec.endpoints[0].relabelings
           value:
             - sourceLabels: [__param_target]
               targetLabel: instance
-        documentIndex: 1
+        documentIndex: 0
 
   - it: should propagate serviceMonitor.targetLabels to the probe ServiceMonitors
     template: servicemonitor.yaml
@@ -208,15 +208,28 @@ tests:
         - name: prod
           url: https://es-prod:9200
     asserts:
+      - hasDocuments:
+          count: 1
       - equal:
           path: spec.targetLabels
           value:
             - environment
             - team
         documentIndex: 0
+
+  - it: should not render the /metrics ServiceMonitor when targets are set
+    template: servicemonitor.yaml
+    set:
+      serviceMonitor.enabled: true
+      serviceMonitor.targets:
+        - name: prod
+          url: https://es-prod:9200
+    asserts:
+      - hasDocuments:
+          count: 1
       - equal:
-          path: spec.targetLabels
-          value:
-            - environment
-            - team
-        documentIndex: 1
+          path: metadata.name
+          value: es-prometheus-elasticsearch-exporter-prod
+      - equal:
+          path: spec.endpoints[0].path
+          value: /probe
