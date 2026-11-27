@@ -55,3 +55,65 @@ tests:
               labelSelector:
                 matchLabels:
                   app.kubernetes.io/name: alertmanager-snmp-notifier
+
+  - it: probes the /health endpoint by default
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].livenessProbe
+          value:
+            httpGet:
+              path: /health
+              port: http
+      - equal:
+          path: spec.template.spec.containers[0].readinessProbe
+          value:
+            httpGet:
+              path: /health
+              port: http
+
+  - it: merges probe overrides into the defaults
+    set:
+      livenessProbe:
+        initialDelaySeconds: 10
+      readinessProbe:
+        httpGet:
+          path: /metrics
+        periodSeconds: 30
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].livenessProbe
+          value:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 10
+      - equal:
+          path: spec.template.spec.containers[0].readinessProbe
+          value:
+            httpGet:
+              path: /metrics
+              port: http
+            periodSeconds: 30
+
+  - it: replaces the probe handler when httpGet is set to null
+    set:
+      livenessProbe:
+        httpGet: null
+        tcpSocket:
+          port: http
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].livenessProbe
+          value:
+            tcpSocket:
+              port: http
+
+  - it: omits a probe set to null
+    set:
+      livenessProbe: null
+      readinessProbe: null
+    asserts:
+      - notExists:
+          path: spec.template.spec.containers[0].livenessProbe
+      - notExists:
+          path: spec.template.spec.containers[0].readinessProbe
