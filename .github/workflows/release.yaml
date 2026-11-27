@@ -12,9 +12,10 @@ jobs:
     permissions:
       contents: write # to push chart release and create a release (helm/chart-releaser-action)
       packages: write # needed for ghcr access
-      id-token: write # needed for keyless signing
 
     runs-on: ubuntu-24.04
+    outputs:
+      charts: ${{ steps.charts.outputs.charts }}
     steps:
       - name: Checkout Code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -78,6 +79,18 @@ jobs:
           CR_KEYRING: "~/.gnupg/secring.gpg"
           CR_PASSPHRASE_FILE: "${{ runner.temp }}/gpg-passphrase"
 
+      - name: List released charts
+        id: charts
+        shell: bash # pipefail: never drop a chart silently
+        run: |
+          IFS=',' read -ra dirs <<< "$CHANGED_CHARTS"
+          for dir in "${dirs[@]}"; do
+            [[ -f "$dir/Chart.yaml" ]] || continue
+            yq -o json -I0 '{"name": .name, "version": .version}' "$dir/Chart.yaml"
+          done | jq -rs '"charts=\(tojson)"' >> "$GITHUB_OUTPUT"
+        env:
+          CHANGED_CHARTS: "${{ steps.cr.outputs.changed_charts }}"
+
       # GitHub generates the release notes from all pull requests merged since
       # the previous release of the chart, including those of other charts.
       # Keep only the entries of the released chart and those for all charts,
@@ -101,3 +114,59 @@ jobs:
           CHANGED_CHARTS: "${{ steps.cr.outputs.changed_charts }}"
           GH_REPO: "${{ github.repository }}"
           GH_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
+
+  # Separate job so that the OIDC token used for keyless signing never shares
+  # a job with the GPG signing key.
+  sign:
+    name: Sign ${{ matrix.chart.name }}-${{ matrix.chart.version }}
+    needs: release
+    if: needs.release.outputs.charts != '[]'
+    permissions:
+      packages: write # push signatures and attestations to ghcr
+      id-token: write # keyless signing (Sigstore) and attestations
+      attestations: write # GitHub artifact attestations
+      artifact-metadata: write # attestation storage records
+
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        chart: ${{ fromJSON(needs.release.outputs.charts) }}
+    env:
+      REPOSITORY: "ghcr.io/${{ github.repository_owner }}/charts/${{ matrix.chart.name }}"
+    steps:
+      - name: Set up cosign
+        uses: sigstore/cosign-installer@881c63bd87e38389154debd8331404ce7ca8a3ab # v4.1.4
+        with:
+          # renovate: github=sigstore/cosign
+          cosign-release: v3.1.6
+
+      - name: Set up oras
+        uses: oras-project/setup-oras@ac735097e22fe643015b0d19645f7c9a69942128 # v2.0.4
+
+      # cosign signs digests, not tags; helm replaces "+" with "_" in OCI tags.
+      - name: Resolve digest
+        id: digest
+        run: |
+          docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin <<< "$GITHUB_TOKEN"
+          digest=$(oras resolve "$REPOSITORY:${VERSION//+/_}")
+          echo "digest=$digest" >> "$GITHUB_OUTPUT"
+        env:
+          GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
+          VERSION: "${{ matrix.chart.version }}"
+
+      - name: Sign
+        run: |
+          cosign sign --yes "$REPOSITORY@$DIGEST"
+          cosign verify "$REPOSITORY@$DIGEST" \
+            --certificate-identity "$GITHUB_SERVER_URL/$GITHUB_WORKFLOW_REF" \
+            --certificate-oidc-issuer https://token.actions.githubusercontent.com >/dev/null
+        env:
+          DIGEST: "${{ steps.digest.outputs.digest }}"
+
+      - name: Attest build provenance
+        uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4.2.2
+        with:
+          subject-name: "${{ env.REPOSITORY }}"
+          subject-digest: "${{ steps.digest.outputs.digest }}"
+          push-to-registry: true
