@@ -150,3 +150,22 @@ Create the name of the service account to use
     {{ default "default" .Values.serviceAccount.name }}
 {{- end -}}
 {{- end -}}
+
+{{/*
+Name of the Secret holding the exporter config file (--config.file) for multi-target scraping.
+Empty when multi-target auth modules are not configured.
+*/}}
+{{- define "elasticsearch-exporter.multiTarget.secretName" -}}
+{{- if .Values.multiTarget.existingSecret -}}
+{{- tpl .Values.multiTarget.existingSecret . -}}
+{{- else if .Values.multiTarget.authModules -}}
+{{- printf "%s-config" (include "elasticsearch-exporter.fullname" .) -}}
+{{- end -}}
+{{- end -}}
+
+{{/*
+Exporter config file for multi-target scraping (auth modules), shared by the Secret and the checksum annotation.
+*/}}
+{{- define "elasticsearch-exporter.multiTarget.config" -}}
+{{- dict "auth_modules" .Values.multiTarget.authModules | toYaml -}}
+{{- end -}}

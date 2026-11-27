@@ -1,4 +1,4 @@
-{{- if .Values.serviceMonitor.enabled }}
+{{- if and .Values.serviceMonitor.enabled (not .Values.serviceMonitor.targets) }}
 ---
 apiVersion: {{ .Values.serviceMonitor.apiVersion }}
 kind: ServiceMonitor
@@ -42,4 +42,57 @@ spec:
 {{- end }}
 {{- end }}
   sampleLimit: {{ .Values.serviceMonitor.sampleLimit }}
+{{- end }}
+{{- if .Values.serviceMonitor.enabled }}
+{{- range .Values.serviceMonitor.targets }}
+---
+apiVersion: {{ $.Values.serviceMonitor.apiVersion }}
+kind: ServiceMonitor
+metadata:
+  name: {{ template "elasticsearch-exporter.fullname" $ }}-{{ required "serviceMonitor.targets[].name is required" .name }}
+  namespace: {{ $.Values.serviceMonitor.namespace | default (include "prometheus-elasticsearch-exporter.namespace" $) }}
+  labels:
+    {{- include "elasticsearch-exporter.labels" $ | nindent 4 }}
+    {{- with (.labels | default $.Values.serviceMonitor.labels) }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+spec:
+  endpoints:
+  - interval: {{ .interval | default $.Values.serviceMonitor.interval }}
+    {{- with (.scrapeTimeout | default $.Values.serviceMonitor.scrapeTimeout) }}
+    scrapeTimeout: {{ . }}
+    {{- end }}
+    port: {{ $.Values.service.metricsPort.name }}
+    path: /probe
+    scheme: {{ $.Values.serviceMonitor.scheme }}
+    params:
+      target:
+      - {{ tpl (required "serviceMonitor.targets[].url is required" .url) $ | quote }}
+      {{- with .authModule }}
+      auth_module:
+      - {{ . | quote }}
+      {{- end }}
+    relabelings:
+    - sourceLabels: [__param_target]
+      targetLabel: instance
+    {{- with (concat (.relabelings | default list) $.Values.serviceMonitor.relabelings) }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+    {{- with (concat (.metricRelabelings | default list) $.Values.serviceMonitor.metricRelabelings) }}
+    metricRelabelings:
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+  jobLabel: {{ default $.Release.Name $.Values.serviceMonitor.jobLabel }}
+  selector:
+    matchLabels:
+      {{- include "elasticsearch-exporter.selectorLabels" $ | nindent 6 }}
+  namespaceSelector:
+    matchNames:
+      - {{ include "prometheus-elasticsearch-exporter.namespace" $ }}
+  {{- with $.Values.serviceMonitor.targetLabels }}
+  targetLabels:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  sampleLimit: {{ $.Values.serviceMonitor.sampleLimit }}
+{{- end }}
 {{- end }}

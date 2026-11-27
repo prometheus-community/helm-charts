@@ -1,0 +1,235 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/helm-unittest/helm-unittest/main/schema/helm-testsuite.json
+suite: test multi-target scraping
+release:
+  name: es
+templates:
+  - config-secret.yaml
+  - deployment.yaml
+  - servicemonitor.yaml
+tests:
+  - it: should not render a config Secret or --config.file by default
+    asserts:
+      - hasDocuments:
+          count: 0
+        template: config-secret.yaml
+      - notContains:
+          path: spec.template.spec.containers[0].command
+          content: --config.file=/etc/elasticsearch_exporter/config.yml
+        template: deployment.yaml
+      - notExists:
+          path: spec.template.metadata.annotations
+        template: deployment.yaml
+
+  - it: should render auth modules into a Secret
+    template: config-secret.yaml
+    set:
+      multiTarget.authModules:
+        prod:
+          type: userpass
+          userpass:
+            username: metrics
+            password: s3cr3t
+    asserts:
+      - equal:
+          path: metadata.name
+          value: es-prometheus-elasticsearch-exporter-config
+      - equal:
+          path: stringData["config.yml"]
+          value: |
+            auth_modules:
+              prod:
+                type: userpass
+                userpass:
+                  password: s3cr3t
+                  username: metrics
+
+  - it: should mount the generated config and pass --config.file
+    template: deployment.yaml
+    set:
+      podAnnotations:
+        foo: bar
+      multiTarget.authModules:
+        prod:
+          type: apikey
+          apikey: abc
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].command
+          content: --config.file=/etc/elasticsearch_exporter/config.yml
+      - contains:
+          path: spec.template.spec.containers[0].volumeMounts
+          content:
+            mountPath: /etc/elasticsearch_exporter
+            name: config
+            readOnly: true
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: config
+            secret:
+              secretName: es-prometheus-elasticsearch-exporter-config
+      - exists:
+          path: spec.template.metadata.annotations["checksum/config"]
+      - equal:
+          path: spec.template.metadata.annotations.foo
+          value: bar
+
+  - it: should use an existing Secret without rendering one
+    set:
+      multiTarget.existingSecret: my-es-config
+      multiTarget.existingSecretKey: exporter.yml
+    asserts:
+      - hasDocuments:
+          count: 0
+        template: config-secret.yaml
+      - contains:
+          path: spec.template.spec.containers[0].command
+          content: --config.file=/etc/elasticsearch_exporter/exporter.yml
+        template: deployment.yaml
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: config
+            secret:
+              secretName: my-es-config
+        template: deployment.yaml
+      - notExists:
+          path: spec.template.metadata.annotations
+        template: deployment.yaml
+
+  - it: should render one probe ServiceMonitor per target
+    template: servicemonitor.yaml
+    set:
+      serviceMonitor.enabled: true
+      serviceMonitor.labels:
+        release: kps
+      serviceMonitor.targets:
+        - name: prod
+          url: https://es-prod:9200
+          authModule: prod
+          interval: 30s
+        - name: staging
+          url: http://es-staging:9200
+          labels:
+            team: search
+    asserts:
+      - hasDocuments:
+          count: 2
+      - equal:
+          path: metadata.name
+          value: es-prometheus-elasticsearch-exporter-prod
+        documentIndex: 0
+      - equal:
+          path: spec.endpoints[0]
+          value:
+            interval: 30s
+            scrapeTimeout: 10s
+            port: http
+            path: /probe
+            scheme: http
+            params:
+              target:
+                - https://es-prod:9200
+              auth_module:
+                - prod
+            relabelings:
+              - sourceLabels: [__param_target]
+                targetLabel: instance
+        documentIndex: 0
+      - equal:
+          path: metadata.labels.release
+          value: kps
+        documentIndex: 0
+      - notExists:
+          path: spec.endpoints[0].params.auth_module
+        documentIndex: 1
+      - equal:
+          path: metadata.labels.team
+          value: search
+        documentIndex: 1
+      - notExists:
+          path: metadata.labels.release
+        documentIndex: 1
+
+  - it: should fail without a target url
+    template: servicemonitor.yaml
+    set:
+      serviceMonitor.enabled: true
+      serviceMonitor.targets:
+        - name: prod
+    asserts:
+      - failedTemplate:
+          errorMessage: serviceMonitor.targets[].url is required
+
+  - it: should hash only the exporter config, so a chart version bump does not restart the pod
+    template: deployment.yaml
+    chart:
+      version: 99.0.0
+    set:
+      multiTarget.authModules:
+        prod:
+          type: userpass
+          userpass:
+            username: metrics
+            password: x
+    asserts:
+      - equal:
+          path: spec.template.metadata.annotations["checksum/config"]
+          value: 5db0c36db5d95de40c4efff2e91f4f9a70154c23b8a91337454bb2ee4b2a7619
+
+  - it: should copy the probe target into instance instead of using the URL as a replacement
+    template: servicemonitor.yaml
+    set:
+      serviceMonitor.enabled: true
+      serviceMonitor.targets:
+        - name: tenant
+          url: https://es.example/$tenant
+    asserts:
+      - equal:
+          path: spec.endpoints[0].params.target
+          value:
+            - https://es.example/$tenant
+        documentIndex: 0
+      - equal:
+          path: spec.endpoints[0].relabelings
+          value:
+            - sourceLabels: [__param_target]
+              targetLabel: instance
+        documentIndex: 0
+
+  - it: should propagate serviceMonitor.targetLabels to the probe ServiceMonitors
+    template: servicemonitor.yaml
+    set:
+      serviceMonitor.enabled: true
+      serviceMonitor.targetLabels:
+        - environment
+        - team
+      serviceMonitor.targets:
+        - name: prod
+          url: https://es-prod:9200
+    asserts:
+      - hasDocuments:
+          count: 1
+      - equal:
+          path: spec.targetLabels
+          value:
+            - environment
+            - team
+        documentIndex: 0
+
+  - it: should not render the /metrics ServiceMonitor when targets are set
+    template: servicemonitor.yaml
+    set:
+      serviceMonitor.enabled: true
+      serviceMonitor.targets:
+        - name: prod
+          url: https://es-prod:9200
+    asserts:
+      - hasDocuments:
+          count: 1
+      - equal:
+          path: metadata.name
+          value: es-prometheus-elasticsearch-exporter-prod
+      - equal:
+          path: spec.endpoints[0].path
+          value: /probe
