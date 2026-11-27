@@ -1,0 +1,63 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/helm-unittest/helm-unittest/main/schema/helm-testsuite.json
+suite: test hardened defaults
+templates:
+  - deployment.yaml
+  - serviceaccount.yaml
+tests:
+  - it: should run as the image's non-root user with the RuntimeDefault seccomp profile
+    template: deployment.yaml
+    asserts:
+      - equal:
+          path: spec.template.spec.securityContext
+          value:
+            runAsNonRoot: true
+            runAsUser: 59000
+            runAsGroup: 59000
+            seccompProfile:
+              type: RuntimeDefault
+
+  - it: should drop all capabilities and use a read-only root filesystem
+    template: deployment.yaml
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].securityContext
+          value:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            readOnlyRootFilesystem: true
+
+  - it: should allow restoring the previous empty security contexts
+    template: deployment.yaml
+    set:
+      podSecurityContext: null
+      securityContext: null
+    asserts:
+      - notExists:
+          path: spec.template.spec.securityContext
+      - notExists:
+          path: spec.template.spec.containers[0].securityContext
+
+  - it: should not mount a service account token by default
+    template: deployment.yaml
+    asserts:
+      - equal:
+          path: spec.template.spec.automountServiceAccountToken
+          value: false
+
+  - it: should mount a service account token when enabled
+    template: deployment.yaml
+    set:
+      serviceAccount.automountServiceAccountToken: true
+    asserts:
+      - equal:
+          path: spec.template.spec.automountServiceAccountToken
+          value: true
+
+  - it: should apply the setting to the ServiceAccount
+    template: serviceaccount.yaml
+    asserts:
+      - equal:
+          path: automountServiceAccountToken
+          value: false

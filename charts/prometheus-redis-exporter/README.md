@@ -6,7 +6,7 @@ This chart bootstraps a [Redis exporter](https://github.com/oliver006/redis_expo
 
 ## Prerequisites
 
-- Kubernetes 1.10+ with Beta APIs enabled
+- Kubernetes 1.19+
 - Helm 3+
 
 ## Usage
@@ -43,6 +43,18 @@ helm upgrade [RELEASE_NAME] [CHART] --install
 ```
 
 _See [helm upgrade](https://helm.sh/docs/helm/helm_upgrade/) for command documentation._
+
+#### To 7.0.0
+
+The exporter now runs with hardened defaults that follow the [restricted Pod Security Standard](https://kubernetes.io/docs/concepts/security/pod-security-standards/#restricted):
+
+- `podSecurityContext`: `runAsNonRoot: true`, `runAsUser: 59000`, `runAsGroup: 59000` (the user of the upstream image) and `seccompProfile: RuntimeDefault`.
+- `securityContext`: `allowPrivilegeEscalation: false`, all capabilities dropped and `readOnlyRootFilesystem: true`.
+- `serviceAccount.automountServiceAccountToken` defaults to `false` and now also applies to the Pod. The exporter does not call the Kubernetes API.
+
+The chart now requires Kubernetes 1.19 or later (`kubeVersion: ">=1.19.0-0"`), the first release with the Pod `seccompProfile` field.
+
+The Pod spec changes, so the exporter restarts once on upgrade. If you run a custom image that needs a different user or a writable root filesystem, override `podSecurityContext` / `securityContext`. To restore the previous behavior, set them to `null`; an empty map `{}` is merged with the new defaults by Helm and does not remove them.
 
 #### To 5.0.0
 
