@@ -110,6 +110,10 @@
 - golgoth31 (<golgoth31@notrenet.com> / @golgoth31)
 - zeritti (<rootsandtrees@posteo.de> / @zeritti)
 
+### prometheus-mcp
+
+- tjhop (<t.hoplock@gmail.com> / @tjhop)
+
 ### prometheus-memcached-exporter
 
 - rsicart (<roger.sicart@gmail.com> / @rsicart)

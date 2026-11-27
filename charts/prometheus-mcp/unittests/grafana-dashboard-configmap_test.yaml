@@ -1,0 +1,27 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/helm-unittest/helm-unittest/main/schema/helm-testsuite.json
+suite: test grafana dashboard configmap
+templates:
+  - grafana-dashboard-configmap.yaml
+tests:
+  - it: should be empty if grafana dashboards are not enabled
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: should render a discoverable ConfigMap when enabled
+    set:
+      grafana.dashboards.enabled: true
+    asserts:
+      - hasDocuments:
+          count: 1
+      - isKind:
+          of: ConfigMap
+      - equal:
+          path: metadata.name
+          value: RELEASE-NAME-prometheus-mcp-prometheus-mcp-dashboard
+      - equal:
+          path: metadata.labels.grafana_dashboard
+          value: "1"
+      - matchRegex:
+          path: data["prometheus-mcp-dashboard.json"]
+          pattern: '"uid": "prom-mcp-server"'

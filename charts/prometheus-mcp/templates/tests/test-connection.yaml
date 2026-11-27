@@ -1,0 +1,40 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: {{ printf "%s-test-connection" (include "prometheus-mcp.fullname" .) | trunc 63 | trimSuffix "-" }}
+  labels:
+    {{- include "prometheus-mcp.labels" . | nindent 4 }}
+  annotations:
+    "helm.sh/hook": test
+    {{- with .Values.test.annotations }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+spec:
+  # The startupProbe budget plus fixed headroom, so the test outlives a slow start.
+  {{- $startup := .Values.startupProbe | default dict }}
+  activeDeadlineSeconds: {{ add (dig "initialDelaySeconds" 0 $startup) (mul (dig "periodSeconds" 10 $startup) (dig "failureThreshold" 3 $startup)) 30 }}
+  # The checks need no API access; keep the token out regardless of which
+  # account the pod ends up running under or what the Deployment mounts.
+  automountServiceAccountToken: false
+  {{- with .Values.podSecurityContext }}
+  securityContext:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  initContainers:
+    - name: server-ready-check
+      image: "{{ .Values.test.image.repository }}:{{ .Values.test.image.tag }}"
+      command: ['sh', '-c']
+      args:
+        - |
+          until wget -qO- http://{{ include "prometheus-mcp.fullname" . }}:{{ .Values.service.port }}/-/ready; do
+            echo 'MCP server not ready yet, retrying...'
+            sleep 2
+          done
+      {{- include "prometheus-mcp.testContainerSecurityContext" . | nindent 6 }}
+  containers:
+    - name: metrics-check
+      image: "{{ .Values.test.image.repository }}:{{ .Values.test.image.tag }}"
+      command: ['wget']
+      args: ['--spider', '-q', 'http://{{ include "prometheus-mcp.fullname" . }}:{{ .Values.service.port }}{{ .Values.telemetryPath }}']
+      {{- include "prometheus-mcp.testContainerSecurityContext" . | nindent 6 }}
+  restartPolicy: Never

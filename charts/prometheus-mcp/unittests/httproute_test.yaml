@@ -1,0 +1,162 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/helm-unittest/helm-unittest/main/schema/helm-testsuite.json
+suite: test httproute
+templates:
+  - httproute.yaml
+tests:
+  - it: should be empty if no route is enabled
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: should route to the Service port with no rule name or timeouts by default
+    set:
+      route.main.enabled: true
+      route.main.parentRefs:
+        - name: my-gateway
+      service.port: 9090
+    asserts:
+      - hasDocuments:
+          count: 1
+      - isKind:
+          of: HTTPRoute
+      - isAPIVersion:
+          of: gateway.networking.k8s.io/v1
+      - equal:
+          path: metadata.name
+          value: RELEASE-NAME-prometheus-mcp
+      - lengthEqual:
+          path: spec.rules
+          count: 1
+      - equal:
+          path: spec.rules[0].backendRefs[0].name
+          value: RELEASE-NAME-prometheus-mcp
+      - equal:
+          path: spec.rules[0].backendRefs[0].port
+          value: 9090
+      - equal:
+          path: spec.rules[0].matches[0].path.value
+          value: /
+      # rules[].name only entered the Gateway API standard channel in v1.4.0;
+      # omitting it keeps the route valid under strict validation on older CRDs
+      - notExists:
+          path: spec.rules[0].name
+      - notExists:
+          path: spec.rules[0].timeouts
+
+  - it: should fail when enabled without parentRefs
+    set:
+      route.main.enabled: true
+    asserts:
+      - failedTemplate:
+          errorPattern: route\.main\.parentRefs is empty
+
+  - it: should set parentRefs and templated hostnames
+    set:
+      route.main.enabled: true
+      route.main.parentRefs:
+        - name: my-gateway
+          namespace: gateway-system
+      route.main.hostnames:
+        - "{{ .Release.Name }}.example.com"
+    asserts:
+      - equal:
+          path: spec.parentRefs[0].name
+          value: my-gateway
+      - equal:
+          path: spec.parentRefs[0].namespace
+          value: gateway-system
+      - equal:
+          path: spec.hostnames[0]
+          value: RELEASE-NAME.example.com
+
+  - it: should allow overriding apiVersion and kind, dropping HTTP timeouts for other kinds
+    set:
+      route.main.enabled: true
+      route.main.parentRefs:
+        - name: my-gateway
+      route.main.apiVersion: gateway.networking.k8s.io/v1alpha2
+      route.main.kind: GRPCRoute
+      route.main.timeouts:
+        request: 0s
+    asserts:
+      - isAPIVersion:
+          of: gateway.networking.k8s.io/v1alpha2
+      - isKind:
+          of: GRPCRoute
+      - notExists:
+          path: spec.rules[0].timeouts
+
+  - it: should place templated additionalRules first and apply timeouts only to the backend rule
+    set:
+      route.main.enabled: true
+      route.main.parentRefs:
+        - name: my-gateway
+      route.main.timeouts:
+        request: 0s
+      route.main.additionalRules:
+        - matches:
+            - path:
+                type: Exact
+                value: /-/healthy
+          backendRefs:
+            - name: "{{ .Release.Name }}-health"
+              port: 8080
+    asserts:
+      - lengthEqual:
+          path: spec.rules
+          count: 2
+      - equal:
+          path: spec.rules[0].backendRefs[0].name
+          value: RELEASE-NAME-health
+      - notExists:
+          path: spec.rules[0].timeouts
+      - equal:
+          path: spec.rules[1].backendRefs[0].name
+          value: RELEASE-NAME-prometheus-mcp
+      - equal:
+          path: spec.rules[1].timeouts.request
+          value: 0s
+
+  - it: should replace the backend rule with a bare 301 redirect when httpsRedirect is enabled
+    set:
+      route.main.enabled: true
+      route.main.parentRefs:
+        - name: my-gateway
+      route.main.httpsRedirect: true
+      # Must not leak onto the redirect rule.
+      route.main.timeouts:
+        request: 0s
+    asserts:
+      - equal:
+          path: spec.rules
+          value:
+            - filters:
+                - type: RequestRedirect
+                  requestRedirect:
+                    scheme: https
+                    statusCode: 301
+
+  - it: should render additional routes suffixed with their key
+    set:
+      route.main.enabled: true
+      route.main.parentRefs:
+        - name: my-gateway
+      route.internal.enabled: true
+      route.internal.parentRefs:
+        - name: internal-gateway
+    asserts:
+      - hasDocuments:
+          count: 2
+      # range over a map iterates keys in sorted order: internal, then main
+      - equal:
+          path: metadata.name
+          value: RELEASE-NAME-prometheus-mcp-internal
+        documentIndex: 0
+      - equal:
+          path: spec.parentRefs[0].name
+          value: internal-gateway
+        documentIndex: 0
+      - equal:
+          path: metadata.name
+          value: RELEASE-NAME-prometheus-mcp
+        documentIndex: 1

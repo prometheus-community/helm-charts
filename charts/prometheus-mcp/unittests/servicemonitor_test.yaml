@@ -1,0 +1,52 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/helm-unittest/helm-unittest/main/schema/helm-testsuite.json
+suite: test servicemonitor
+templates:
+  - servicemonitor.yaml
+tests:
+  - it: should be empty if serviceMonitor is not enabled
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: should render a ServiceMonitor when enabled
+    set:
+      serviceMonitor.enabled: true
+    asserts:
+      - hasDocuments:
+          count: 1
+      - isKind:
+          of: ServiceMonitor
+      - isAPIVersion:
+          of: monitoring.coreos.com/v1
+      - equal:
+          path: spec.endpoints[0].port
+          value: http
+      - equal:
+          path: spec.endpoints[0].path
+          value: /metrics
+      - equal:
+          path: spec.selector.matchLabels
+          value:
+            app.kubernetes.io/name: prometheus-mcp
+            app.kubernetes.io/instance: RELEASE-NAME
+
+  - it: should follow telemetryPath and apply a custom namespace and labels
+    set:
+      serviceMonitor.enabled: true
+      serviceMonitor.namespace: monitoring
+      serviceMonitor.labels:
+        release: kube-prometheus-stack
+      telemetryPath: /internal/metrics
+    asserts:
+      - equal:
+          path: spec.endpoints[0].path
+          value: /internal/metrics
+      - equal:
+          path: metadata.namespace
+          value: monitoring
+      - equal:
+          path: metadata.labels.release
+          value: kube-prometheus-stack
+      - contains:
+          path: spec.namespaceSelector.matchNames
+          content: NAMESPACE
