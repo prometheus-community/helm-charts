@@ -12,3 +12,71 @@ tests:
       - equal:
           path: spec.template.spec.containers[0].readinessProbe.httpGet.path
           value: /-/ready
+
+  - it: defaults to ten retained revisions without autoscaling
+    template: deployment.yaml
+    set:
+      autoscaling.enabled: false
+    asserts:
+      - equal:
+          path: spec.revisionHistoryLimit
+          value: 10
+      - equal:
+          path: spec.replicas
+          value: 1
+  - it: respects a revision history limit of 0 without autoscaling
+    template: deployment.yaml
+    set:
+      autoscaling.enabled: false
+      deploymentRevisionHistoryLimit: 0
+    asserts:
+      - equal:
+          path: spec.revisionHistoryLimit
+          value: 0
+      - equal:
+          path: spec.replicas
+          value: 1
+  - it: respects a revision history limit of 3 without autoscaling
+    template: deployment.yaml
+    set:
+      autoscaling.enabled: false
+      deploymentRevisionHistoryLimit: 3
+    asserts:
+      - equal:
+          path: spec.revisionHistoryLimit
+          value: 3
+      - equal:
+          path: spec.replicas
+          value: 1
+  - it: defaults to ten retained revisions with autoscaling
+    template: deployment.yaml
+    set:
+      autoscaling.enabled: true
+    asserts:
+      - equal:
+          path: spec.revisionHistoryLimit
+          value: 10
+      - notExists:
+          path: spec.replicas
+  - it: respects a revision history limit of 0 with autoscaling
+    template: deployment.yaml
+    set:
+      autoscaling.enabled: true
+      deploymentRevisionHistoryLimit: 0
+    asserts:
+      - equal:
+          path: spec.revisionHistoryLimit
+          value: 0
+      - notExists:
+          path: spec.replicas
+  - it: respects a revision history limit of 3 with autoscaling
+    template: deployment.yaml
+    set:
+      autoscaling.enabled: true
+      deploymentRevisionHistoryLimit: 3
+    asserts:
+      - equal:
+          path: spec.revisionHistoryLimit
+          value: 3
+      - notExists:
+          path: spec.replicas
