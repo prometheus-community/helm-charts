@@ -1,0 +1,153 @@
+suite: SASL OAuthBearer
+templates:
+  - deployment.yaml
+  - secret.yaml
+tests:
+  - it: reads a projected service account token
+    template: deployment.yaml
+    set:
+      sasl.enabled: true
+      sasl.oauthbearer.enabled: true
+      sasl.oauthbearer.serviceAccountToken.enabled: true
+      sasl.oauthbearer.serviceAccountToken.audience: kafka
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: --sasl.mechanism=oauthbearer
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: --sasl.oauthbearer-token-file=/var/run/secrets/kafka-oauthbearer/token
+      - contains:
+          path: spec.template.spec.containers[0].volumeMounts
+          content:
+            mountPath: /var/run/secrets/kafka-oauthbearer
+            name: kafka-oauthbearer-token
+            readOnly: true
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: kafka-oauthbearer-token
+            projected:
+              sources:
+                - serviceAccountToken:
+                    path: token
+                    expirationSeconds: 3600
+                    audience: kafka
+
+  - it: mounts the projected token at a custom tokenFile path
+    template: deployment.yaml
+    set:
+      sasl.enabled: true
+      sasl.oauthbearer.enabled: true
+      sasl.oauthbearer.tokenFile: /var/run/kafka/oauth-token
+      sasl.oauthbearer.serviceAccountToken.enabled: true
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: --sasl.oauthbearer-token-file=/var/run/kafka/oauth-token
+      - equal:
+          path: spec.template.spec.volumes[0].projected.sources[0].serviceAccountToken.path
+          value: oauth-token
+      - equal:
+          path: spec.template.spec.containers[0].volumeMounts[0].mountPath
+          value: /var/run/kafka
+
+  - it: passes a user-mounted tokenFile without adding a volume
+    template: deployment.yaml
+    set:
+      sasl.enabled: true
+      sasl.oauthbearer.enabled: true
+      sasl.oauthbearer.tokenFile: /mnt/token
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: --sasl.oauthbearer-token-file=/mnt/token
+      - notExists:
+          path: spec.template.spec.volumes
+
+  - it: uses the client credentials flow with a generated secret
+    template: deployment.yaml
+    set:
+      sasl.enabled: true
+      sasl.oauthbearer.enabled: true
+      sasl.oauthbearer.tokenUrl: https://idp.example.com/oauth2/token
+      sasl.oauthbearer.scopes: kafka.read,kafka.describe
+      sasl.oauthbearer.clientId: exporter
+      sasl.oauthbearer.clientSecret: s3cret
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: --sasl.oauthbearer-token-url=https://idp.example.com/oauth2/token
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: --sasl.oauthbearer-scopes=kafka.read,kafka.describe
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: --sasl.username=$(OAUTHBEARER_CLIENT_ID)
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: --sasl.password=$(OAUTHBEARER_CLIENT_SECRET)
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: OAUTHBEARER_CLIENT_ID
+            valueFrom:
+              secretKeyRef:
+                name: RELEASE-NAME-prometheus-kafka-exporter-oauthbearer
+                key: clientId
+
+  - it: creates the client credentials secret
+    template: secret.yaml
+    set:
+      sasl.enabled: true
+      sasl.oauthbearer.enabled: true
+      sasl.oauthbearer.tokenUrl: https://idp.example.com/oauth2/token
+      sasl.oauthbearer.clientId: exporter
+      sasl.oauthbearer.clientSecret: s3cret
+    asserts:
+      - hasDocuments:
+          count: 1
+      - equal:
+          path: metadata.name
+          value: RELEASE-NAME-prometheus-kafka-exporter-oauthbearer
+      - equal:
+          path: data.clientId
+          value: ZXhwb3J0ZXI=
+      - equal:
+          path: data.clientSecret
+          value: czNjcmV0
+
+  - it: uses an existing secret and creates none
+    set:
+      sasl.enabled: true
+      sasl.oauthbearer.enabled: true
+      sasl.oauthbearer.tokenUrl: https://idp.example.com/oauth2/token
+      sasl.oauthbearer.secretName: kafka-oauth
+    asserts:
+      - template: secret.yaml
+        hasDocuments:
+          count: 0
+      - template: deployment.yaml
+        contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: OAUTHBEARER_CLIENT_SECRET
+            valueFrom:
+              secretKeyRef:
+                name: kafka-oauth
+                key: clientSecret
+      - template: deployment.yaml
+        notContains:
+          path: spec.template.spec.containers[0].args
+          content: --sasl.oauthbearer-scopes=
+
+  - it: renders nothing for OAuthBearer when sasl is disabled
+    template: deployment.yaml
+    set:
+      sasl.oauthbearer.enabled: true
+    asserts:
+      - notContains:
+          path: spec.template.spec.containers[0].args
+          content: --sasl.mechanism=oauthbearer
+      - notExists:
+          path: spec.template.spec.volumes
