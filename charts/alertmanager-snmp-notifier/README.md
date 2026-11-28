@@ -15,7 +15,7 @@ The chart is distributed as an [OCI Artifact](https://helm.sh/docs/topics/regist
 - OCI Artifact: `oci://ghcr.io/prometheus-community/charts/alertmanager-snmp-notifier`
 - Helm Repository: `https://prometheus-community.github.io/helm-charts` with chart `alertmanager-snmp-notifier`
 
-The installation instructions use the OCI registry. Refer to the [`helm repo`]([`helm repo`](https://helm.sh/docs/helm/helm_repo/)) command documentation for information on installing charts via the traditional repository.
+The installation instructions use the OCI registry. Refer to the [`helm repo`](https://helm.sh/docs/helm/helm_repo/) command documentation for information on installing charts via the traditional repository.
 
 ### Install Chart
 
@@ -56,18 +56,19 @@ This version uses SNMP Notifier 2.0.0, with the introduction of the generic `--t
 The chart therefore accepts the `trapTemplates` object with the `description` and `userObjects` variables instead of the previous `snmpTemplates`:
 
 ```yaml
-trapTemplates:
+snmpNotifier:
+  trapTemplates:
     userObjects:
-    - subOid: 1
+      - subOid: 1
         template: |
-        {{- if .Alerts -}}
-        Status: NOK
-        {{- else -}}
-        Status: OK
-        {{- end -}}
-    - subOid: 5
+          {{- if .Alerts -}}
+          Status: NOK
+          {{- else -}}
+          Status: OK
+          {{- end -}}
+      - subOid: 5
         template: |
-        This is a constant
+          This is a constant
 ```
 
 See [SNMP Notifier Repository](https://github.com/maxwo/snmp_notifier) for more details about new arguments.
@@ -76,7 +77,7 @@ It also updates the `HorizontalPodAutoscaler` to the `autoscaling/v2` API versio
 
 ## Configuration
 
-See [Customizing the Chart Before Installing](https://helm.sh/docs/intro/using_helm/#customizing-the-chart-before-installing). To see all configurable options with detailed comments, visit the chart's [values.yaml](./values.yaml), or run these configuration commands:
+See [Customizing the Chart Before Installing](https://helm.sh/docs/intro/using_helm/#customizing-the-chart-before-installing). To see all configurable options with detailed comments, visit the chart's [values.yaml](https://github.com/prometheus-community/helm-charts/blob/main/charts/alertmanager-snmp-notifier/values.yaml), or run these configuration commands:
 
 ```console
 helm show values oci://ghcr.io/prometheus-community/charts/alertmanager-snmp-notifier
